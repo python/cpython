@@ -803,7 +803,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_SHRINK(1);
         }
 
         TARGET(LIST_APPEND) {
@@ -969,7 +968,6 @@
                 break;
             }
             if (true) { STACK_SHRINK(oparg); goto error; }
-            STACK_SHRINK(oparg);
         }
 
         TARGET(INTERPRETER_EXIT) {
@@ -982,18 +980,17 @@
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             return retval;
-            STACK_SHRINK(1);
         }
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -1044,7 +1041,6 @@
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
-            STACK_SHRINK(1);
         }
 
         TARGET(RETURN_CONST) {
@@ -1055,13 +1051,13 @@
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -1388,7 +1384,6 @@
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
-            STACK_SHRINK(1);
         }
 
         TARGET(END_ASYNC_FOR) {
@@ -1675,65 +1670,14 @@
             DISPATCH();
         }
 
-        TARGET(LOAD_NAME) {
-            PyObject *locals;
-            PyObject *mod_or_class_dict;
-            PyObject *v;
-            // _LOAD_LOCALS
-            {
-                locals = LOCALS();
-                if (locals == NULL) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                                     "no locals found");
-                    if (true) goto error;
-                }
-                Py_INCREF(locals);
-            }
-            // _LOAD_FROM_DICT_OR_GLOBALS
-            mod_or_class_dict = locals;
-            {
-                PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                    Py_DECREF(mod_or_class_dict);
-                    goto error;
-                }
-                Py_DECREF(mod_or_class_dict);
-                if (v == NULL) {
-                    v = PyDict_GetItemWithError(GLOBALS(), name);
-                    if (v != NULL) {
-                        Py_INCREF(v);
-                    }
-                    else if (_PyErr_Occurred(tstate)) {
-                        goto error;
-                    }
-                    else {
-                        if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
-                            goto error;
-                        }
-                        if (v == NULL) {
-                            _PyEval_FormatExcCheckArg(
-                                        tstate, PyExc_NameError,
-                                        NAME_ERROR_MSG, name);
-                            goto error;
-                        }
-                    }
-                }
-            }
-            STACK_GROW(1);
-            stack_pointer[-1] = v;
-            DISPATCH();
-        }
-
         TARGET(LOAD_FROM_DICT_OR_GLOBALS) {
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1754,6 +1698,44 @@
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
+            stack_pointer[-1] = v;
+            DISPATCH();
+        }
+
+        TARGET(LOAD_NAME) {
+            PyObject *v;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) goto error;
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            STACK_GROW(1);
             stack_pointer[-1] = v;
             DISPATCH();
         }
@@ -2090,9 +2072,6 @@
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -2226,8 +2205,6 @@
             // don't want to specialize instrumented instructions
             INCREMENT_ADAPTIVE_COUNTER(cache->counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-            STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
         }
 
         TARGET(LOAD_SUPER_ATTR) {
@@ -3009,8 +2986,13 @@
             PyObject *cond;
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsFalse(cond));
+            int flag = Py_IsFalse(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3018,8 +3000,13 @@
             PyObject *cond;
             cond = stack_pointer[-1];
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsTrue(cond));
+            int flag = Py_IsTrue(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3027,7 +3014,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
-            // IS_NONE
+            // _IS_NONE
             value = stack_pointer[-1];
             {
                 if (Py_IsNone(value)) {
@@ -3042,9 +3029,14 @@
             cond = b;
             {
                 assert(PyBool_Check(cond));
-                JUMPBY(oparg * Py_IsTrue(cond));
+                int flag = Py_IsTrue(cond);
+                #if ENABLE_SPECIALIZATION
+                next_instr->cache = (next_instr->cache << 1) | flag;
+                #endif
+                JUMPBY(oparg * flag);
             }
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3052,7 +3044,7 @@
             PyObject *value;
             PyObject *b;
             PyObject *cond;
-            // IS_NONE
+            // _IS_NONE
             value = stack_pointer[-1];
             {
                 if (Py_IsNone(value)) {
@@ -3067,9 +3059,14 @@
             cond = b;
             {
                 assert(PyBool_Check(cond));
-                JUMPBY(oparg * Py_IsFalse(cond));
+                int flag = Py_IsFalse(cond);
+                #if ENABLE_SPECIALIZATION
+                next_instr->cache = (next_instr->cache << 1) | flag;
+                #endif
+                JUMPBY(oparg * flag);
             }
             STACK_SHRINK(1);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -3418,7 +3415,6 @@
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
-            STACK_GROW(1);
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -3872,14 +3868,14 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -3951,14 +3947,14 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // SAVE_CURRENT_IP
+            // _SAVE_CURRENT_IP
             next_instr += 3;
             {
                 #if TIER_ONE
                 frame->prev_instr = next_instr - 1;
                 #endif
                 #if TIER_TWO
-                // Relies on a preceding SAVE_IP
+                // Relies on a preceding _SET_IP
                 frame->prev_instr--;
                 #endif
             }
@@ -4028,8 +4024,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
@@ -4165,8 +4159,6 @@
              * as it will be checked after start_frame */
             tstate->py_recursion_remaining--;
             goto start_frame;
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(EXIT_INIT_CHECK) {
@@ -4449,8 +4441,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(next_instr[-1].op.code == POP_TOP);
             DISPATCH();
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
@@ -4934,8 +4924,13 @@
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsTrue(cond) * oparg;
+            int flag = Py_IsTrue(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -4943,23 +4938,33 @@
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsFalse(cond) * oparg;
+            int flag = Py_IsFalse(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
             PyObject *value = POP();
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = next_instr - 1;
+            int flag = Py_IsNone(value);
             int offset;
-            if (Py_IsNone(value)) {
+            if (flag) {
                 offset = oparg;
             }
             else {
                 Py_DECREF(value);
                 offset = 0;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 
@@ -4967,14 +4972,19 @@
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
-            if (Py_IsNone(value)) {
+            int nflag = Py_IsNone(value);
+            if (nflag) {
                 offset = 0;
             }
             else {
                 Py_DECREF(value);
                 offset = oparg;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | !nflag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
+            next_instr += 1;
             DISPATCH();
         }
 

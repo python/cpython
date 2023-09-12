@@ -1046,7 +1046,7 @@
             break;
         }
 
-        case _LOAD_LOCALS: {
+        case LOAD_LOCALS: {
             PyObject *locals;
             locals = LOCALS();
             if (locals == NULL) {
@@ -1060,16 +1060,14 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
+        case LOAD_FROM_DICT_OR_GLOBALS: {
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1090,6 +1088,44 @@
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
+            stack_pointer[-1] = v;
+            break;
+        }
+
+        case LOAD_NAME: {
+            PyObject *v;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) goto error;
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            STACK_GROW(1);
             stack_pointer[-1] = v;
             break;
         }
@@ -1397,9 +1433,6 @@
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -1866,7 +1899,7 @@
             break;
         }
 
-        case IS_NONE: {
+        case _IS_NONE: {
             PyObject *value;
             PyObject *b;
             value = stack_pointer[-1];
@@ -2851,29 +2884,29 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             pc = 0;
             CHECK_EVAL_BREAKER();
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             frame->prev_instr = ip_offset + oparg;
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif
             #if TIER_TWO
-            // Relies on a preceding SAVE_IP
+            // Relies on a preceding _SET_IP
             frame->prev_instr--;
             #endif
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
@@ -2881,7 +2914,7 @@
             break;
         }
 
-        case INSERT: {
+        case _INSERT: {
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;
