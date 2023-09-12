@@ -1866,6 +1866,14 @@ class ArgsTestCase(BaseTestCase):
     def test_random_seed_workers(self):
         self._check_random_seed(run_workers=True)
 
+    def test_import_from_tests(self):
+        testdir = os.path.join(os.path.dirname(__file__),
+                               'regrtestdata', 'import_from_tests')
+        tests = [f'test_regrtest_{name}' for name in ('a', 'b', 'c')]
+        args = ['-Wd', '-E', '-bb', '-m', 'test', '--testdir=%s' % testdir, *tests]
+        output = self.run_python(args)
+        self.check_executed_tests(output, tests, stats=3)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
