@@ -157,7 +157,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
 class TestInteractiveConsoleBlockExit(unittest.TestCase, MockSys):
 
     def setUp(self):
-        self.console = code.InteractiveConsole(block_exit=True)
+        self.console = code.InteractiveConsole(local_exit=True)
         self.mock_sys()
 
     def test_exit(self):
