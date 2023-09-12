@@ -739,6 +739,11 @@ class EnumType(type):
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
+        if names is None and type is None:
+            # no body? no data-type? possibly wrong usage
+            raise TypeError(
+                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    )
         return cls._create_(
                 class_name=value,
                 names=names,
