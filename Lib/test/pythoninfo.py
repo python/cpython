@@ -1,16 +1,11 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
-import unittest
 import warnings
-
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 
 def normalize_text(text):
@@ -493,12 +488,9 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
-    # On Windows, sysconfig is not reliable to get macros used
-    # to build Python
-    if MS_WINDOWS:
-        return
-
     import sysconfig
+
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
 
     for name in (
         'ABIFLAGS',
@@ -523,7 +515,9 @@ def collect_sysconfig(info_add):
         'Py_NOGIL',
         'SHELL',
         'SOABI',
+        'abs_builddir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -666,11 +660,33 @@ def collect_decimal(info_add):
 
 def collect_testcapi(info_add):
     try:
+        import _testcapi
+    except ImportError:
+        return
+
+    for name in (
+        'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
+        'PY_SSIZE_T_MAX',
+        'Py_C_RECURSION_LIMIT',
+        'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
+        'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
+    ):
+        copy_attr(info_add, f'_testcapi.{name}', _testcapi, name)
+
+
+def collect_testinternalcapi(info_add):
+    try:
         import _testinternalcapi
     except ImportError:
         return
 
     call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
+
+    for name in (
+        'SIZEOF_PYGC_HEAD',
+        'SIZEOF_PYOBJECT',
+    ):
+        copy_attr(info_add, f'_testinternalcapi.{name}', _testinternalcapi, name)
 
 
 def collect_resource(info_add):
@@ -689,6 +705,7 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
     except (ImportError, unittest.SkipTest):
@@ -874,6 +891,11 @@ def collect_fips(info_add):
         pass
 
 
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -907,6 +929,8 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_testcapi,
+        collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,

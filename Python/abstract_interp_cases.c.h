@@ -291,13 +291,19 @@
             break;
         }
 
-        case _LOAD_LOCALS: {
+        case LOAD_LOCALS: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
+        case LOAD_FROM_DICT_OR_GLOBALS: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case LOAD_NAME: {
+            STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
             break;
         }
@@ -515,7 +521,7 @@
             break;
         }
 
-        case IS_NONE: {
+        case _IS_NONE: {
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
             break;
         }
@@ -786,23 +792,23 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             break;
         }
 
-        case INSERT: {
+        case _INSERT: {
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - oparg)), true);
             break;
         }

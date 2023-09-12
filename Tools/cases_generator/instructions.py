@@ -124,7 +124,7 @@ class Instruction:
         if "FRAME" in self.name:
             dprint = print
 
-        if self.name == "EXIT_TRACE":
+        if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")

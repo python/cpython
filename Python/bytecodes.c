@@ -154,8 +154,8 @@ dummy_func(
 
         inst(RESUME_CHECK, (--)) {
 #if defined(__EMSCRIPTEN__)
-            DEOPT_IF(emscripten_signal_clock == 0, RESUME);
-            emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             /* Possibly combine these two checks */
             DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
@@ -803,8 +803,8 @@ dummy_func(
         }
 
         macro(RETURN_VALUE) =
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SET_IP +  // Tier 2 only; special-cased oparg
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -828,8 +828,8 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SET_IP +  // Tier 2 only; special-cased oparg
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -1286,7 +1286,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_LOCALS, ( -- locals)) {
+        inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1296,15 +1296,45 @@ dummy_func(
             Py_INCREF(locals);
         }
 
-        macro(LOAD_LOCALS) = _LOAD_LOCALS;
-
-        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            DECREF_INPUTS();
+        }
+
+        inst(LOAD_NAME, (-- v)) {
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1326,10 +1356,6 @@ dummy_func(
                 }
             }
         }
-
-        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
-
-        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(LOAD_GLOBAL, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL_MODULE,
@@ -2266,17 +2292,25 @@ dummy_func(
             goto resume_frame;
         }
 
-        inst(POP_JUMP_IF_FALSE, (cond -- )) {
+        inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsFalse(cond));
+            int flag = Py_IsFalse(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
         }
 
-        inst(POP_JUMP_IF_TRUE, (cond -- )) {
+        inst(POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
             assert(PyBool_Check(cond));
-            JUMPBY(oparg * Py_IsTrue(cond));
+            int flag = Py_IsTrue(cond);
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
+            JUMPBY(oparg * flag);
         }
 
-        op(IS_NONE, (value -- b)) {
+        op(_IS_NONE, (value -- b)) {
             if (Py_IsNone(value)) {
                 b = Py_True;
             }
@@ -2286,9 +2320,9 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = IS_NONE + POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = IS_NONE + POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -3035,8 +3069,8 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SET_IP +  // Tier 2 only; special-cased oparg
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3045,8 +3079,8 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            SAVE_IP +  // Tier 2 only; special-cased oparg
-            SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SET_IP +  // Tier 2 only; special-cased oparg
+            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3725,47 +3759,63 @@ dummy_func(
             INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_TRUE, ( -- )) {
+        inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsTrue(cond) * oparg;
+            int flag = Py_IsTrue(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_FALSE, ( -- )) {
+        inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
             _Py_CODEUNIT *here = next_instr - 1;
-            int offset = Py_IsFalse(cond) * oparg;
+            int flag = Py_IsFalse(cond);
+            int offset = flag * oparg;
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_NONE, ( -- )) {
+        inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
             PyObject *value = POP();
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = next_instr - 1;
+            int flag = Py_IsNone(value);
             int offset;
-            if (Py_IsNone(value)) {
+            if (flag) {
                 offset = oparg;
             }
             else {
                 Py_DECREF(value);
                 offset = 0;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | flag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, ( -- )) {
+        inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
             PyObject *value = POP();
             _Py_CODEUNIT *here = next_instr-1;
             int offset;
-            if (Py_IsNone(value)) {
+            int nflag = Py_IsNone(value);
+            if (nflag) {
                 offset = 0;
             }
             else {
                 Py_DECREF(value);
                 offset = oparg;
             }
+            #if ENABLE_SPECIALIZATION
+            next_instr->cache = (next_instr->cache << 1) | !nflag;
+            #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
 
@@ -3801,33 +3851,33 @@ dummy_func(
             }
         }
 
-        op(JUMP_TO_TOP, (--)) {
+        op(_JUMP_TO_TOP, (--)) {
             pc = 0;
             CHECK_EVAL_BREAKER();
         }
 
-        op(SAVE_IP, (--)) {
+        op(_SET_IP, (--)) {
             frame->prev_instr = ip_offset + oparg;
         }
 
-        op(SAVE_CURRENT_IP, (--)) {
+        op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif
             #if TIER_TWO
-            // Relies on a preceding SAVE_IP
+            // Relies on a preceding _SET_IP
             frame->prev_instr--;
             #endif
         }
 
-        op(EXIT_TRACE, (--)) {
+        op(_EXIT_TRACE, (--)) {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;
         }
 
-        op(INSERT, (unused[oparg], top -- top, unused[oparg])) {
+        op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {
             // Inserts TOS at position specified by oparg;
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
         }
