@@ -1104,8 +1104,8 @@ The following recipes have a more mathematical flavor:
        # Evaluate x³ -4x² -17x + 60 at x = 2.5
        # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
        n = len(coefficients)
-       if n == 0:
-           return x * 0  # coerce zero to the type of x
+       if not n:
+           return type(x)(0)
        powers = map(pow, repeat(x), reversed(range(n)))
        return math.sumprod(coefficients, powers)
 
