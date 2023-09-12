@@ -170,7 +170,7 @@ class InteractiveConsole(InteractiveInterpreter):
 
     """
 
-    def __init__(self, locals=None, filename="<console>", block_exit=False):
+    def __init__(self, locals=None, filename="<console>", local_exit=False):
         """Constructor.
 
         The optional locals argument will be passed to the
@@ -182,7 +182,7 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         InteractiveInterpreter.__init__(self, locals)
         self.filename = filename
-        self.block_exit = block_exit
+        self.local_exit = local_exit
         self.resetbuffer()
 
     def resetbuffer(self):
@@ -227,14 +227,14 @@ class InteractiveConsole(InteractiveInterpreter):
         # process. exit and quit in builtins closes sys.stdin which makes
         # it super difficult to restore
         #
-        # When self.block_exit is True, we overwrite the builtins so
+        # When self.local_exit is True, we overwrite the builtins so
         # exit() and quit() only raises SystemExit and we can catch that
         # to only exit the interactive shell
 
         _exit = None
         _quit = None
 
-        if self.block_exit:
+        if self.local_exit:
             if hasattr(builtins, "exit"):
                 _exit = builtins.exit
                 builtins.exit = Quitter("exit")
@@ -262,7 +262,7 @@ class InteractiveConsole(InteractiveInterpreter):
                     self.resetbuffer()
                     more = 0
                 except SystemExit as e:
-                    if self.block_exit:
+                    if self.local_exit:
                         self.write("\n")
                         break
                     else:
@@ -328,7 +328,7 @@ class Quitter:
         raise SystemExit(code)
 
 
-def interact(banner=None, readfunc=None, local=None, exitmsg=None, block_exit=False):
+def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False):
     """Closely emulate the interactive Python interpreter.
 
     This is a backwards compatible interface to the InteractiveConsole
@@ -341,9 +341,10 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, block_exit=Fa
     readfunc -- if not None, replaces InteractiveConsole.raw_input()
     local -- passed to InteractiveInterpreter.__init__()
     exitmsg -- passed to InteractiveConsole.interact()
+    local_exit -- passed to InteractiveConsole.__init__()
 
     """
-    console = InteractiveConsole(local, block_exit=block_exit)
+    console = InteractiveConsole(local, local_exit=local_exit)
     if readfunc is not None:
         console.raw_input = readfunc
     else:
