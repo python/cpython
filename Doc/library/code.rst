@@ -28,9 +28,8 @@ build applications which provide an interactive interpreter prompt.
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar
    ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is True,
-   ``exit()`` and ``quit()`` in the console will not close ``sys.stdin`` like the
-   regular Python intepreter, instead they will only raise ``SystemExit`` which can
-   be handled by the caller.
+   ``exit()`` and ``quit()`` in the console will not raise :exc:`SystemExit`, but
+   instead return to the calling code.
 
    .. versionchanged:: 3.13
       Added *local_exit* parameter.
