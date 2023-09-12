@@ -406,7 +406,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
-            json_fd=None,
+            json_file=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:

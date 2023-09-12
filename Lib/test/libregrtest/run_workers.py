@@ -17,7 +17,7 @@ from test.support import os_helper
 from .logger import Logger
 from .result import TestResult, State
 from .results import TestResults
-from .runtests import RunTests
+from .runtests import RunTests, JsonFileType, JSON_FILE_USE_FILENAME
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, StrJSON, TestName, MS_WINDOWS,
@@ -155,10 +155,11 @@ class WorkerThread(threading.Thread):
     ) -> MultiprocessResult:
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, runtests: RunTests, output_fd: int, json_fd: int,
+    def _run_process(self, runtests: RunTests, output_fd: int,
+                     json_file: JsonFileType,
                      tmp_dir: StrPath | None = None) -> int:
         try:
-            popen = create_worker_process(runtests, output_fd, json_fd,
+            popen = create_worker_process(runtests, output_fd, json_file,
                                           tmp_dir)
 
             self._killed = False
@@ -226,21 +227,29 @@ class WorkerThread(threading.Thread):
             match_tests = None
         err_msg = None
 
+        stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
+        if JSON_FILE_USE_FILENAME:
+            json_tmpfile = tempfile.NamedTemporaryFile('w+', encoding='utf8')
+        else:
+            json_tmpfile = tempfile.TemporaryFile('w+', encoding='utf8')
+
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with (tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file,
-              tempfile.TemporaryFile('w+', encoding='utf8') as json_file):
+        with (stdout_file, json_tmpfile):
             stdout_fd = stdout_file.fileno()
-            json_fd = json_file.fileno()
-            if MS_WINDOWS:
-                json_fd = msvcrt.get_osfhandle(json_fd)
+            if JSON_FILE_USE_FILENAME:
+                json_file = json_tmpfile.name
+            else:
+                json_file = json_tmpfile.fileno()
+                if MS_WINDOWS:
+                    json_file = msvcrt.get_osfhandle(json_file)
 
             kwargs = {}
             if match_tests:
                 kwargs['match_tests'] = match_tests
             worker_runtests = self.runtests.copy(
                 tests=tests,
-                json_fd=json_fd,
+                json_file=json_file,
                 **kwargs)
 
             # gh-93353: Check for leaked temporary files in the parent process,
@@ -254,13 +263,13 @@ class WorkerThread(threading.Thread):
                 tmp_dir = os.path.abspath(tmp_dir)
                 try:
                     retcode = self._run_process(worker_runtests,
-                                                stdout_fd, json_fd, tmp_dir)
+                                                stdout_fd, json_file, tmp_dir)
                 finally:
                     tmp_files = os.listdir(tmp_dir)
                     os_helper.rmtree(tmp_dir)
             else:
                 retcode = self._run_process(worker_runtests,
-                                            stdout_fd, json_fd)
+                                            stdout_fd, json_file)
                 tmp_files = ()
             stdout_file.seek(0)
 
@@ -275,8 +284,8 @@ class WorkerThread(threading.Thread):
 
             try:
                 # deserialize run_tests_worker() output
-                json_file.seek(0)
-                worker_json: StrJSON = json_file.read()
+                json_tmpfile.seek(0)
+                worker_json: StrJSON = json_tmpfile.read()
                 if worker_json:
                     result = TestResult.from_json(worker_json)
                 else:

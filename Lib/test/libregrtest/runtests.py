@@ -2,8 +2,23 @@ import dataclasses
 import json
 from typing import Any
 
+from test import support
+
 from .utils import (
     StrPath, StrJSON, TestTuple, FilterTuple, FilterDict)
+
+
+if support.is_emscripten or support.is_wasi:
+    # On Emscripten/WASI, it's a filename. Passing a file descriptor to a
+    # worker process fails with "OSError: [Errno 8] Bad file descriptor" in the
+    # worker process.
+    JsonFileType = StrPath
+    JSON_FILE_USE_FILENAME = True
+else:
+    # On Unix, it's a file descriptor.
+    # On Windows, it's a handle.
+    JsonFileType = int
+    JSON_FILE_USE_FILENAME = False
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -38,9 +53,7 @@ class RunTests:
     python_cmd: tuple[str] | None
     randomize: bool
     random_seed: int | None
-    # On Unix, it's a file descriptor.
-    # On Windows, it's a handle.
-    json_fd: int | None
+    json_file: JsonFileType  | None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)

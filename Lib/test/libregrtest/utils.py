@@ -387,7 +387,7 @@ def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
     # milisecond clock resolution. Use randint() instead.
-    if sys.platform in {"emscripten", "wasi"}:
+    if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
         nounce = os.getpid()

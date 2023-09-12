@@ -7,7 +7,7 @@ from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests
+from .runtests import RunTests, JsonFileType, JSON_FILE_USE_FILENAME
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple, MS_WINDOWS,
@@ -18,7 +18,7 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def create_worker_process(runtests: RunTests,
-                          output_fd: int, json_fd: int,
+                          output_fd: int, json_file: JsonFileType,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
@@ -55,33 +55,42 @@ def create_worker_process(runtests: RunTests,
         close_fds=True,
         cwd=work_dir,
     )
-    if not MS_WINDOWS:
-        kwargs['pass_fds'] = [json_fd]
-    else:
+    if JSON_FILE_USE_FILENAME:
+        # Nothing to do to pass the JSON filename to the worker process
+        pass
+    elif MS_WINDOWS:
+        # Pass the JSON handle to the worker process
         startupinfo = subprocess.STARTUPINFO()
-        startupinfo.lpAttributeList = {"handle_list": [json_fd]}
+        startupinfo.lpAttributeList = {"handle_list": [json_file]}
         kwargs['startupinfo'] = startupinfo
+    else:
+        # Pass the JSON file descriptor to the worker process
+        kwargs['pass_fds'] = [json_file]
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
 
     if MS_WINDOWS:
-        os.set_handle_inheritable(json_fd, True)
+        os.set_handle_inheritable(json_file, True)
     try:
         return subprocess.Popen(cmd, **kwargs)
     finally:
         if MS_WINDOWS:
-            os.set_handle_inheritable(json_fd, False)
+            os.set_handle_inheritable(json_file, False)
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
-    json_fd: int = runtests.json_fd
+    # On Unix, it's a file descriptor.
+    # On Windows, it's a handle.
+    # On Emscripten/WASI, it's a filename.
+    json_file: JsonFileType = runtests.json_file
 
     if MS_WINDOWS:
         import msvcrt
-        json_fd = msvcrt.open_osfhandle(json_fd, os.O_WRONLY)
+        # Create a file descriptor from the handle
+        json_file = msvcrt.open_osfhandle(json_file, os.O_WRONLY)
 
 
     setup_test_dir(runtests.test_dir)
@@ -96,8 +105,8 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
     result = run_single_test(test_name, runtests)
 
-    with open(json_fd, 'w', encoding='utf-8') as json_file:
-        result.write_json_into(json_file)
+    with open(json_file, 'w', encoding='utf-8') as fp:
+        result.write_json_into(fp)
 
     sys.exit(0)
 
