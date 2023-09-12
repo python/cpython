@@ -495,7 +495,7 @@ class TestSpecifics(unittest.TestCase):
             type_ignores=[],
         )
 
-        with self.assertRaises(SyntaxError):
+        with self.assertRaisesRegex(TypeError, "TypeAlias with non-Name name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
 
     def test_dict_evaluation_order(self):
