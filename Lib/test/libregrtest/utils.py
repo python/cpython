@@ -17,6 +17,8 @@ from test.support import threading_helper
 
 
 MS_WINDOWS = (sys.platform == 'win32')
+WORK_DIR_PREFIX = 'test_python_'
+WORKER_WORK_DIR_PREFIX = f'{WORK_DIR_PREFIX}worker_'
 
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
@@ -346,7 +348,7 @@ def get_build_info():
     return build
 
 
-def get_temp_dir(tmp_dir):
+def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     if tmp_dir:
         tmp_dir = os.path.expanduser(tmp_dir)
     else:
@@ -379,7 +381,7 @@ def fix_umask():
             os.umask(old_mask)
 
 
-def get_work_dir(*, parent_dir: StrPath = '', worker: bool = False):
+def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
@@ -391,12 +393,11 @@ def get_work_dir(*, parent_dir: StrPath = '', worker: bool = False):
         nounce = os.getpid()
 
     if worker:
-        work_dir = 'test_python_worker_{}'.format(nounce)
+        work_dir = WORK_DIR_PREFIX + str(nounce)
     else:
-        work_dir = 'test_python_{}'.format(nounce)
+        work_dir = WORKER_WORK_DIR_PREFIX + str(nounce)
     work_dir += os_helper.FS_NONASCII
-    if parent_dir:
-        work_dir = os.path.join(parent_dir, work_dir)
+    work_dir = os.path.join(parent_dir, work_dir)
     return work_dir
 
 
@@ -579,7 +580,7 @@ def display_header():
 def cleanup_temp_dir(tmp_dir: StrPath):
     import glob
 
-    path = os.path.join(glob.escape(tmp_dir), 'test_python_*')
+    path = os.path.join(glob.escape(tmp_dir), WORK_DIR_PREFIX + '*')
     print("Cleanup %s directory" % tmp_dir)
     for name in glob.glob(path):
         if os.path.isdir(name):
