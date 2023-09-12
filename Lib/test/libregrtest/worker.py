@@ -27,10 +27,12 @@ def create_worker_process(runtests: RunTests,
         executable = python_cmd
     else:
         executable = [sys.executable]
+    print("main process executable:", executable)
     cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
            worker_json]
+    print("main process worker cmd:", cmd)
 
     env = dict(os.environ)
     if tmp_dir is not None:

@@ -117,6 +117,7 @@ class Regrtest:
             self.python_cmd: tuple[str] = tuple(ns.python)
         else:
             self.python_cmd = None
+        print("main process python_cmd:", self.python_cmd)
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self.tmp_dir: StrPath | None = ns.tempdir
