@@ -154,7 +154,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.assertIn(expected, output)
 
 
-class TestInteractiveConsoleBlockExit(unittest.TestCase, MockSys):
+class TestInteractiveConsoleLocalExit(unittest.TestCase, MockSys):
 
     def setUp(self):
         self.console = code.InteractiveConsole(local_exit=True)
