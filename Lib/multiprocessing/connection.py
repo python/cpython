@@ -75,10 +75,10 @@ def arbitrary_address(family):
     if family == 'AF_INET':
         return ('localhost', 0)
     elif family == 'AF_UNIX':
-        return tempfile.mktemp(prefix='listener-', dir=util.get_temp_dir())
+        return tempfile.mkstemp(prefix='listener-', dir=util.get_temp_dir())[1]
     elif family == 'AF_PIPE':
-        return tempfile.mktemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
-                               (os.getpid(), next(_mmap_counter)), dir="")
+        return tempfile.mkstemp(prefix=r'\\.\pipe\pyc-%d-%d-' %
+                               (os.getpid(), next(_mmap_counter)), dir="")[1]
     else:
         raise ValueError('unrecognized family')
 
