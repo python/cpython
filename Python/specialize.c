@@ -123,7 +123,7 @@ _Py_GetSpecializationStats(void) {
 
 #define PRINT_STAT(i, field) \
     if (stats[i].field) { \
-        fprintf(out, "    opcode[%d]." #field " : %" PRIu64 "\n", i, stats[i].field); \
+        fprintf(out, "    opcode[%s]." #field " : %" PRIu64 "\n", _PyOpcode_OpName[i], stats[i].field); \
     }
 
 static void
@@ -131,11 +131,11 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 {
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "opcode[%d].specializable : 1\n", BINARY_SLICE);
-    fprintf(out, "opcode[%d].specializable : 1\n", STORE_SLICE);
+    fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
+    fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
-            fprintf(out, "opcode[%d].specializable : 1\n", i);
+            fprintf(out, "opcode[%s].specializable : 1\n", _PyOpcode_OpName[i]);
         }
         PRINT_STAT(i, specialization.success);
         PRINT_STAT(i, specialization.failure);
@@ -147,14 +147,14 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
         for (int j = 0; j < SPECIALIZATION_FAILURE_KINDS; j++) {
             uint64_t val = stats[i].specialization.failure_kinds[j];
             if (val) {
-                fprintf(out, "    opcode[%d].specialization.failure_kinds[%d] : %"
-                    PRIu64 "\n", i, j, val);
+                fprintf(out, "    opcode[%s].specialization.failure_kinds[%d] : %"
+                    PRIu64 "\n", _PyOpcode_OpName[i], j, val);
             }
         }
         for (int j = 0; j < 256; j++) {
             if (stats[i].pair_count[j]) {
-                fprintf(out, "opcode[%d].pair_count[%d] : %" PRIu64 "\n",
-                        i, j, stats[i].pair_count[j]);
+                fprintf(out, "opcode[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyOpcode_OpName[i], _PyOpcode_OpName[j], stats[i].pair_count[j]);
             }
         }
     }
