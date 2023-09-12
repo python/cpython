@@ -118,10 +118,16 @@ def list_all_channels():
 class _ChannelEnd:
     """The base class for RecvChannel and SendChannel."""
 
-    def __init__(self, id):
-        if not isinstance(id, (int, _channels.ChannelID)):
-            raise TypeError(f'id must be an int, got {id!r}')
-        self._id = id
+    _end = None
+
+    def __init__(self, cid):
+        if self._end == 'send':
+            cid = _channels._channel_id(cid, send=True)
+        elif self._end == 'recv':
+            cid = _channels._channel_id(cid, recv=True)
+        else:
+            raise NotImplementedError(self._end)
+        self._id = cid
 
     def __repr__(self):
         return f'{type(self).__name__}(id={int(self._id)})'
@@ -147,6 +153,8 @@ _NOT_SET = object()
 
 class RecvChannel(_ChannelEnd):
     """The receiving end of a cross-interpreter channel."""
+
+    _end = 'recv'
 
     def recv(self, *, _sentinel=object(), _delay=10 / 1000):  # 10 milliseconds
         """Return the next object from the channel.
@@ -179,6 +187,8 @@ class RecvChannel(_ChannelEnd):
 class SendChannel(_ChannelEnd):
     """The sending end of a cross-interpreter channel."""
 
+    _end = 'send'
+
     def send(self, obj):
         """Send the object (i.e. its data) to the channel's receiving end.
 
@@ -203,3 +213,6 @@ class SendChannel(_ChannelEnd):
 
     def close(self):
         _channels.close(self._id, send=True)
+
+
+_channels._register_end_types(SendChannel, RecvChannel)

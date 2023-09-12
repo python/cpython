@@ -1529,17 +1529,20 @@ typedef struct channelid {
 struct channel_id_converter_data {
     PyObject *module;
     int64_t cid;
+    int end;
 };
 
 static int
 channel_id_converter(PyObject *arg, void *ptr)
 {
     int64_t cid;
+    int end = 0;
     struct channel_id_converter_data *data = ptr;
     module_state *state = get_module_state(data->module);
     assert(state != NULL);
     if (PyObject_TypeCheck(arg, state->ChannelIDType)) {
         cid = ((channelid *)arg)->id;
+        end = ((channelid *)arg)->end;
     }
     else if (PyIndex_Check(arg)) {
         cid = PyLong_AsLongLong(arg);
@@ -1559,6 +1562,7 @@ channel_id_converter(PyObject *arg, void *ptr)
         return 0;
     }
     data->cid = cid;
+    data->end = end;
     return 1;
 }
 
@@ -1600,6 +1604,7 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 {
     static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
     int64_t cid;
+    int end;
     struct channel_id_converter_data cid_data = {
         .module = mod,
     };
@@ -1614,6 +1619,7 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
         return NULL;
     }
     cid = cid_data.cid;
+    end = cid_data.end;
 
     // Handle "send" and "recv".
     if (send == 0 && recv == 0) {
@@ -1621,14 +1627,17 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
                         "'send' and 'recv' cannot both be False");
         return NULL;
     }
-
-    int end = 0;
-    if (send == 1) {
+    else if (send == 1) {
         if (recv == 0 || recv == -1) {
             end = CHANNEL_SEND;
         }
+        else {
+            assert(recv == 1);
+            end = 0;
+        }
     }
     else if (recv == 1) {
+        assert(send == 0 || send == -1);
         end = CHANNEL_RECV;
     }
 
@@ -2346,13 +2355,9 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     PyTypeObject *cls = state->ChannelIDType;
-    PyObject *mod = get_module_from_owned_type(cls);
-    if (mod == NULL) {
-        return NULL;
-    }
-    PyObject *cid = _channelid_new(mod, cls, args, kwds);
-    Py_DECREF(mod);
-    return cid;
+    assert(get_module_from_owned_type(cls) == self);
+
+    return _channelid_new(self, cls, args, kwds);
 }
 
 static PyMethodDef module_functions[] = {
