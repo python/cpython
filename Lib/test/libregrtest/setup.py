@@ -1,5 +1,6 @@
 import faulthandler
 import os
+import random
 import signal
 import sys
 import unittest
@@ -127,3 +128,6 @@ def setup_tests(runtests: RunTests):
 
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)
+
+    if runtests.randomize:
+        random.seed(runtests.random_seed)

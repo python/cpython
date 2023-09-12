@@ -16,26 +16,31 @@ class HuntRefleak:
 @dataclasses.dataclass(slots=True, frozen=True)
 class RunTests:
     tests: TestTuple
-    fail_fast: bool = False
-    fail_env_changed: bool = False
-    match_tests: FilterTuple | None = None
-    ignore_tests: FilterTuple | None = None
-    match_tests_dict: FilterDict | None = None
-    rerun: bool = False
-    forever: bool = False
-    pgo: bool = False
-    pgo_extended: bool = False
-    output_on_failure: bool = False
-    timeout: float | None = None
-    verbose: int = 0
-    quiet: bool = False
-    hunt_refleak: HuntRefleak | None = None
-    test_dir: StrPath | None = None
-    use_junit: bool = False
-    memory_limit: str | None = None
-    gc_threshold: int | None = None
-    use_resources: list[str] = dataclasses.field(default_factory=list)
-    python_cmd: list[str] | None = None
+    fail_fast: bool
+    fail_env_changed: bool
+    match_tests: FilterTuple | None
+    ignore_tests: FilterTuple | None
+    match_tests_dict: FilterDict | None
+    rerun: bool
+    forever: bool
+    pgo: bool
+    pgo_extended: bool
+    output_on_failure: bool
+    timeout: float | None
+    verbose: int
+    quiet: bool
+    hunt_refleak: HuntRefleak | None
+    test_dir: StrPath | None
+    use_junit: bool
+    memory_limit: str | None
+    gc_threshold: int | None
+    use_resources: tuple[str]
+    python_cmd: tuple[str] | None
+    randomize: bool
+    random_seed: int | None
+    # On Unix, it's a file descriptor.
+    # On Windows, it's a handle.
+    json_fd: int | None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -47,6 +52,13 @@ class RunTests:
             return self.match_tests_dict.get(test_name, None)
         else:
             return None
+
+    def get_jobs(self):
+        # Number of run_single_test() calls needed to run all tests.
+        # None means that there is not bound limit (--forever option).
+        if self.forever:
+            return None
+        return len(self.tests)
 
     def iter_tests(self):
         if self.forever:

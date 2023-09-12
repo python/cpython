@@ -20,12 +20,14 @@ from .results import TestResults
 from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, TestName,
-    format_duration, print_warning)
+    StrPath, StrJSON, TestName, MS_WINDOWS,
+    format_duration, print_warning, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
-if sys.platform == 'win32':
+if MS_WINDOWS:
     import locale
+    import msvcrt
+
 
 
 # Display the running tests if nothing happened last N seconds
@@ -153,10 +155,11 @@ class WorkerThread(threading.Thread):
     ) -> MultiprocessResult:
         return MultiprocessResult(test_result, stdout, err_msg)
 
-    def _run_process(self, runtests: RunTests, output_file: TextIO,
+    def _run_process(self, runtests: RunTests, output_fd: int, json_fd: int,
                      tmp_dir: StrPath | None = None) -> int:
         try:
-            popen = create_worker_process(runtests, output_file, tmp_dir)
+            popen = create_worker_process(runtests, output_fd, json_fd,
+                                          tmp_dir)
 
             self._killed = False
             self._popen = popen
@@ -208,7 +211,7 @@ class WorkerThread(threading.Thread):
     def _runtest(self, test_name: TestName) -> MultiprocessResult:
         self.current_test_name = test_name
 
-        if sys.platform == 'win32':
+        if MS_WINDOWS:
             # gh-95027: When stdout is not a TTY, Python uses the ANSI code
             # page for the sys.stdout encoding. If the main process runs in a
             # terminal, sys.stdout uses WindowsConsoleIO with UTF-8 encoding.
@@ -221,14 +224,25 @@ class WorkerThread(threading.Thread):
             match_tests = self.runtests.get_match_tests(test_name)
         else:
             match_tests = None
-        kwargs = {}
-        if match_tests:
-            kwargs['match_tests'] = match_tests
-        worker_runtests = self.runtests.copy(tests=tests, **kwargs)
+        err_msg = None
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        with tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file:
+        with (tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file,
+              tempfile.TemporaryFile('w+', encoding='utf8') as json_file):
+            stdout_fd = stdout_file.fileno()
+            json_fd = json_file.fileno()
+            if MS_WINDOWS:
+                json_fd = msvcrt.get_osfhandle(json_fd)
+
+            kwargs = {}
+            if match_tests:
+                kwargs['match_tests'] = match_tests
+            worker_runtests = self.runtests.copy(
+                tests=tests,
+                json_fd=json_fd,
+                **kwargs)
+
             # gh-93353: Check for leaked temporary files in the parent process,
             # since the deletion of temporary files can happen late during
             # Python finalization: too late for libregrtest.
@@ -239,12 +253,14 @@ class WorkerThread(threading.Thread):
                 tmp_dir = tempfile.mkdtemp(prefix="test_python_")
                 tmp_dir = os.path.abspath(tmp_dir)
                 try:
-                    retcode = self._run_process(worker_runtests, stdout_file, tmp_dir)
+                    retcode = self._run_process(worker_runtests,
+                                                stdout_fd, json_fd, tmp_dir)
                 finally:
                     tmp_files = os.listdir(tmp_dir)
                     os_helper.rmtree(tmp_dir)
             else:
-                retcode = self._run_process(worker_runtests, stdout_file)
+                retcode = self._run_process(worker_runtests,
+                                            stdout_fd, json_fd)
                 tmp_files = ()
             stdout_file.seek(0)
 
@@ -257,23 +273,27 @@ class WorkerThread(threading.Thread):
                 result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
                 return self.mp_result_error(result, err_msg=err_msg)
 
+            try:
+                # deserialize run_tests_worker() output
+                json_file.seek(0)
+                worker_json: StrJSON = json_file.read()
+                if worker_json:
+                    result = TestResult.from_json(worker_json)
+                else:
+                    err_msg = f"empty JSON"
+            except Exception as exc:
+                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+                # decoded from encoding
+                err_msg = f"Fail to read or parser worker process JSON: {exc}"
+                result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
+                return self.mp_result_error(result, stdout, err_msg=err_msg)
+
         if retcode is None:
             result = TestResult(test_name, state=State.TIMEOUT)
             return self.mp_result_error(result, stdout)
 
-        err_msg = None
         if retcode != 0:
             err_msg = "Exit code %s" % retcode
-        else:
-            stdout, _, worker_json = stdout.rpartition("\n")
-            stdout = stdout.rstrip()
-            if not worker_json:
-                err_msg = "Failed to parse worker stdout"
-            else:
-                try:
-                    result = TestResult.from_json(worker_json)
-                except Exception as exc:
-                    err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg:
             result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
@@ -381,10 +401,24 @@ class RunWorkers:
             self.worker_timeout = None
         self.workers = None
 
+        jobs = self.runtests.get_jobs()
+        if jobs is not None:
+            # Don't spawn more threads than the number of jobs:
+            # these worker threads would never get anything to do.
+            self.num_workers = min(self.num_workers, jobs)
+
     def start_workers(self) -> None:
         self.workers = [WorkerThread(index, self)
                         for index in range(1, self.num_workers + 1)]
-        msg = f"Run tests in parallel using {len(self.workers)} child processes"
+        jobs = self.runtests.get_jobs()
+        if jobs is not None:
+            tests = f'{jobs} tests'
+        else:
+            tests = 'tests'
+        nworkers = len(self.workers)
+        processes = plural(nworkers, "process", "processes")
+        msg = (f"Run {tests} in parallel using "
+               f"{nworkers} worker {processes}")
         if self.timeout:
             msg += (" (timeout: %s, worker timeout: %s)"
                     % (format_duration(self.timeout),
