@@ -2564,16 +2564,17 @@ class CommandLineTest(unittest.TestCase):
         return script_helper.assert_python_failure('-m', 'tarfile', *args)
 
     def make_simple_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             for tardata in files:
                 tf.add(tardata, arcname=os.path.basename(tardata))
 
     def make_evil_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             benign = tarfile.TarInfo('benign')
@@ -2654,9 +2655,11 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(rc, 1)
 
     def test_create_command(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-c', '--create':
             try:
                 out = self.tarfilecmd(opt, tmpname, *files)
@@ -2667,9 +2670,11 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_verbose(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-v', '--verbose':
             try:
                 out = self.tarfilecmd(opt, '-c', tmpname, *files,
@@ -2681,7 +2686,7 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_dotless_filename(self):
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', dotlessname, *files)
             self.assertEqual(out, b'')
@@ -2692,7 +2697,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_create_command_dot_started_filename(self):
         tar_name = os.path.join(TEMPDIR, ".testtar")
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', tar_name, *files)
             self.assertEqual(out, b'')
@@ -2702,9 +2707,11 @@ class CommandLineTest(unittest.TestCase):
             os_helper.unlink(tar_name)
 
     def test_create_command_compressed(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for filetype in (GzipTest, Bz2Test, LzmaTest):
             if not filetype.open:
                 continue
