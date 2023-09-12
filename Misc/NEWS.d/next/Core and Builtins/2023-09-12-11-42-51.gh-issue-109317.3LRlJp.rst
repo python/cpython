@@ -1,0 +1,1 @@
+Replaced the mktemp method usage with mkstemp as it's recommended by the Python documentation.
