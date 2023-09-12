@@ -9,7 +9,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Literal, TextIO
+from typing import Literal
 
 from test import support
 from test.support import os_helper
@@ -21,7 +21,7 @@ from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, StrJSON, TestName, MS_WINDOWS,
-    format_duration, print_warning, plural)
+    format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -280,7 +280,7 @@ class WorkerThread(threading.Thread):
                 if worker_json:
                     result = TestResult.from_json(worker_json)
                 else:
-                    err_msg = f"empty JSON"
+                    err_msg = "empty JSON"
             except Exception as exc:
                 # gh-101634: Catch UnicodeDecodeError if stdout cannot be
                 # decoded from encoding
@@ -412,7 +412,7 @@ class RunWorkers:
                         for index in range(1, self.num_workers + 1)]
         jobs = self.runtests.get_jobs()
         if jobs is not None:
-            tests = f'{jobs} tests'
+            tests = count(jobs, 'test')
         else:
             tests = 'tests'
         nworkers = len(self.workers)
