@@ -4,7 +4,7 @@ from typing import Any
 
 from test.support import TestStats
 
-from test.libregrtest.utils import (
+from .utils import (
     StrJSON, TestName, FilterTuple,
     format_duration, normalize_test_name, print_warning)
 
@@ -156,7 +156,7 @@ class TestResult:
             return None
         return tuple(match_tests)
 
-    def write_json(self, file) -> None:
+    def write_json_into(self, file) -> None:
         json.dump(self, file, cls=_EncodeTestResult)
 
     @staticmethod

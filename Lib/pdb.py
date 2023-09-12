@@ -514,6 +514,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if obj is not None:
             self.message(repr(obj))
 
+    @contextmanager
+    def _disable_tab_completion(self):
+        if self.use_rawinput and self.completekey == 'tab':
+            try:
+                import readline
+            except ImportError:
+                yield
+                return
+            try:
+                readline.parse_and_bind('tab: self-insert')
+                yield
+            finally:
+                readline.parse_and_bind('tab: complete')
+        else:
+            yield
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
@@ -521,28 +537,29 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                buffer = line
-                continue_prompt = "...   "
-                while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
-                    if self.use_rawinput:
-                        try:
-                            line = input(continue_prompt)
-                        except (EOFError, KeyboardInterrupt):
-                            self.lastcmd = ""
-                            print('\n')
-                            return
-                    else:
-                        self.stdout.write(continue_prompt)
-                        self.stdout.flush()
-                        line = self.stdin.readline()
-                        if not len(line):
-                            self.lastcmd = ""
-                            self.stdout.write('\n')
-                            self.stdout.flush()
-                            return
+                with self._disable_tab_completion():
+                    buffer = line
+                    continue_prompt = "...   "
+                    while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                        if self.use_rawinput:
+                            try:
+                                line = input(continue_prompt)
+                            except (EOFError, KeyboardInterrupt):
+                                self.lastcmd = ""
+                                print('\n')
+                                return
                         else:
-                            line = line.rstrip('\r\n')
-                    buffer += '\n' + line
+                            self.stdout.write(continue_prompt)
+                            self.stdout.flush()
+                            line = self.stdin.readline()
+                            if not len(line):
+                                self.lastcmd = ""
+                                self.stdout.write('\n')
+                                self.stdout.flush()
+                                return
+                            else:
+                                line = line.rstrip('\r\n')
+                        buffer += '\n' + line
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook

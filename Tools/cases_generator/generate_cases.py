@@ -68,7 +68,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SAVE_IP": 7,
+    "OPARG_SET_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -549,10 +549,20 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name, _ in self.families.items():
-                    instr = self.instrs[name]
-                    if instr.cache_offset > 0:
-                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                family_member_names: set[str] = set()
+                for family in self.families.values():
+                    family_member_names.update(family.members)
+                for instr in self.instrs.values():
+                    if (
+                        instr.name not in family_member_names
+                        and instr.cache_offset > 0
+                        and instr.kind == "inst"
+                        and not instr.name.startswith("INSTRUMENTED_")
+                    ):
+                        self.out.emit(f"[{instr.name}] = {instr.cache_offset},")
+                for mac in self.macro_instrs.values():
+                    if mac.name not in family_member_names and mac.cache_offset > 0:
+                        self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
                 # Irregular case:
                 self.out.emit('[JUMP_BACKWARD] = 1,')
 
@@ -648,8 +658,8 @@ class Generator(Analyzer):
             seen.add(name)
 
         # These two are first by convention
-        add("EXIT_TRACE")
-        add("SAVE_IP")
+        add("_EXIT_TRACE")
+        add("_SET_IP")
 
         for instr in self.instrs.values():
             if instr.kind == "op":
@@ -677,8 +687,8 @@ class Generator(Analyzer):
                     )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "SAVE_IP":
-                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    if part.instr.name == "_SET_IP":
+                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:

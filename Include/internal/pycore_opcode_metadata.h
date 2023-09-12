@@ -25,8 +25,8 @@
     ((OP) == POP_BLOCK) || \
     0)
 
-#define EXIT_TRACE 300
-#define SAVE_IP 301
+#define _EXIT_TRACE 300
+#define _SET_IP 301
 #define _GUARD_BOTH_INT 302
 #define _BINARY_OP_MULTIPLY_INT 303
 #define _BINARY_OP_ADD_INT 304
@@ -46,7 +46,7 @@
 #define _GUARD_TYPE_VERSION 318
 #define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
 #define _LOAD_ATTR_INSTANCE_VALUE 320
-#define IS_NONE 321
+#define _IS_NONE 321
 #define _ITER_CHECK_LIST 322
 #define _ITER_JUMP_LIST 323
 #define _IS_ITER_EXHAUSTED_LIST 324
@@ -68,9 +68,9 @@
 #define _PUSH_FRAME 340
 #define _POP_JUMP_IF_FALSE 341
 #define _POP_JUMP_IF_TRUE 342
-#define JUMP_TO_TOP 343
-#define SAVE_CURRENT_IP 344
-#define INSERT 345
+#define _JUMP_TO_TOP 343
+#define _SAVE_CURRENT_IP 344
+#define _INSERT 345
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -402,7 +402,7 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case POP_JUMP_IF_TRUE:
             return 1;
-        case IS_NONE:
+        case _IS_NONE:
             return 1;
         case POP_JUMP_IF_NONE:
             return 1;
@@ -586,15 +586,15 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _POP_JUMP_IF_TRUE:
             return 1;
-        case JUMP_TO_TOP:
+        case _JUMP_TO_TOP:
             return 0;
-        case SAVE_IP:
+        case _SET_IP:
             return 0;
-        case SAVE_CURRENT_IP:
+        case _SAVE_CURRENT_IP:
             return 0;
-        case EXIT_TRACE:
+        case _EXIT_TRACE:
             return 0;
-        case INSERT:
+        case _INSERT:
             return oparg + 1;
         default:
             return -1;
@@ -932,7 +932,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case POP_JUMP_IF_TRUE:
             return 0;
-        case IS_NONE:
+        case _IS_NONE:
             return 1;
         case POP_JUMP_IF_NONE:
             return 0;
@@ -1116,15 +1116,15 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case _POP_JUMP_IF_TRUE:
             return 0;
-        case JUMP_TO_TOP:
+        case _JUMP_TO_TOP:
             return 0;
-        case SAVE_IP:
+        case _SET_IP:
             return 0;
-        case SAVE_CURRENT_IP:
+        case _SAVE_CURRENT_IP:
             return 0;
-        case EXIT_TRACE:
+        case _EXIT_TRACE:
             return 0;
-        case INSERT:
+        case _INSERT:
             return oparg + 1;
         default:
             return -1;
@@ -1186,7 +1186,7 @@ struct opcode_macro_expansion {
 #define OPARG_CACHE_4 4
 #define OPARG_TOP 5
 #define OPARG_BOTTOM 6
-#define OPARG_SAVE_IP 7
+#define OPARG_SET_IP 7
 
 #define OPCODE_METADATA_FMT(OP) (_PyOpcode_opcode_metadata[(OP)].instr_format)
 #define SAME_OPCODE_METADATA(OP1, OP2) \
@@ -1361,11 +1361,11 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [JUMP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [ENTER_EXECUTOR] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
-    [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [IS_NONE] = { true, INSTR_FMT_IX, 0 },
-    [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
-    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [_IS_NONE] = { true, INSTR_FMT_IX, 0 },
+    [POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
+    [POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [JUMP_BACKWARD_NO_INTERRUPT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_JUMP_FLAG },
     [GET_LEN] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [MATCH_CLASS] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG },
@@ -1449,20 +1449,20 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [INSTRUMENTED_INSTRUCTION] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG },
     [INSTRUMENTED_JUMP_FORWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [INSTRUMENTED_JUMP_BACKWARD] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG },
-    [INSTRUMENTED_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [INSTRUMENTED_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [INSTRUMENTED_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [INSTRUMENTED_POP_JUMP_IF_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
+    [INSTRUMENTED_POP_JUMP_IF_NOT_NONE] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG },
     [EXTENDED_ARG] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [CACHE] = { true, INSTR_FMT_IX, 0 },
     [RESERVED] = { true, INSTR_FMT_IX, 0 },
     [_POP_JUMP_IF_FALSE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [_POP_JUMP_IF_TRUE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
-    [SAVE_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
-    [SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
-    [EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
-    [INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [_JUMP_TO_TOP] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG },
+    [_SET_IP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [_SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
+    [_EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
+    [_INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
 };
 #endif // NEED_OPCODE_METADATA
 
@@ -1515,8 +1515,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [DELETE_SUBSCR] = { .nuops = 1, .uops = { { DELETE_SUBSCR, 0, 0 } } },
     [CALL_INTRINSIC_1] = { .nuops = 1, .uops = { { CALL_INTRINSIC_1, 0, 0 } } },
     [CALL_INTRINSIC_2] = { .nuops = 1, .uops = { { CALL_INTRINSIC_2, 0, 0 } } },
-    [RETURN_VALUE] = { .nuops = 3, .uops = { { SAVE_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
-    [RETURN_CONST] = { .nuops = 4, .uops = { { LOAD_CONST, 0, 0 }, { SAVE_IP, 7, 0 }, { SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_VALUE] = { .nuops = 3, .uops = { { _SET_IP, 7, 0 }, { _SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
+    [RETURN_CONST] = { .nuops = 4, .uops = { { LOAD_CONST, 0, 0 }, { _SET_IP, 7, 0 }, { _SAVE_CURRENT_IP, 0, 0 }, { _POP_FRAME, 0, 0 } } },
     [GET_AITER] = { .nuops = 1, .uops = { { GET_AITER, 0, 0 } } },
     [GET_ANEXT] = { .nuops = 1, .uops = { { GET_ANEXT, 0, 0 } } },
     [GET_AWAITABLE] = { .nuops = 1, .uops = { { GET_AWAITABLE, 0, 0 } } },
@@ -1579,8 +1579,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
-    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
-    [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { SAVE_IP, 7, 3 }, { SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
+    [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_NO_KW_TYPE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TYPE_1, 0, 0 } } },
     [CALL_NO_KW_STR_1] = { .nuops = 1, .uops = { { CALL_NO_KW_STR_1, 0, 0 } } },
     [CALL_NO_KW_TUPLE_1] = { .nuops = 1, .uops = { { CALL_NO_KW_TUPLE_1, 0, 0 } } },
@@ -1607,8 +1607,8 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
 extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 #ifdef NEED_OPCODE_METADATA
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
-    [EXIT_TRACE] = "EXIT_TRACE",
-    [SAVE_IP] = "SAVE_IP",
+    [_EXIT_TRACE] = "_EXIT_TRACE",
+    [_SET_IP] = "_SET_IP",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",
@@ -1628,7 +1628,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = "_CHECK_MANAGED_OBJECT_HAS_VALUES",
     [_LOAD_ATTR_INSTANCE_VALUE] = "_LOAD_ATTR_INSTANCE_VALUE",
-    [IS_NONE] = "IS_NONE",
+    [_IS_NONE] = "_IS_NONE",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
     [_ITER_JUMP_LIST] = "_ITER_JUMP_LIST",
     [_IS_ITER_EXHAUSTED_LIST] = "_IS_ITER_EXHAUSTED_LIST",
@@ -1650,9 +1650,9 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_PUSH_FRAME] = "_PUSH_FRAME",
     [_POP_JUMP_IF_FALSE] = "_POP_JUMP_IF_FALSE",
     [_POP_JUMP_IF_TRUE] = "_POP_JUMP_IF_TRUE",
-    [JUMP_TO_TOP] = "JUMP_TO_TOP",
-    [SAVE_CURRENT_IP] = "SAVE_CURRENT_IP",
-    [INSERT] = "INSERT",
+    [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
+    [_SAVE_CURRENT_IP] = "_SAVE_CURRENT_IP",
+    [_INSERT] = "_INSERT",
 };
 #endif // NEED_OPCODE_METADATA
 
@@ -1885,7 +1885,6 @@ extern const uint8_t _PyOpcode_Caches[256];
 #ifdef NEED_OPCODE_METADATA
 const uint8_t _PyOpcode_Caches[256] = {
     [TO_BOOL] = 3,
-    [BINARY_OP] = 1,
     [BINARY_SUBSCR] = 1,
     [STORE_SUBSCR] = 1,
     [SEND] = 1,
@@ -1895,8 +1894,13 @@ const uint8_t _PyOpcode_Caches[256] = {
     [LOAD_SUPER_ATTR] = 1,
     [LOAD_ATTR] = 9,
     [COMPARE_OP] = 1,
+    [POP_JUMP_IF_FALSE] = 1,
+    [POP_JUMP_IF_TRUE] = 1,
     [FOR_ITER] = 1,
     [CALL] = 3,
+    [BINARY_OP] = 1,
+    [POP_JUMP_IF_NONE] = 1,
+    [POP_JUMP_IF_NOT_NONE] = 1,
     [JUMP_BACKWARD] = 1,
 };
 #endif // NEED_OPCODE_METADATA

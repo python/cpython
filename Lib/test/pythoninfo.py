@@ -1,16 +1,11 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
-import unittest
 import warnings
-
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 
 def normalize_text(text):
@@ -493,12 +488,9 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
-    # On Windows, sysconfig is not reliable to get macros used
-    # to build Python
-    if MS_WINDOWS:
-        return
-
     import sysconfig
+
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
 
     for name in (
         'ABIFLAGS',
@@ -523,7 +515,9 @@ def collect_sysconfig(info_add):
         'Py_NOGIL',
         'SHELL',
         'SOABI',
+        'abs_builddir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -711,6 +705,7 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
     except (ImportError, unittest.SkipTest):
@@ -896,6 +891,11 @@ def collect_fips(info_add):
         pass
 
 
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -930,6 +930,7 @@ def collect_info(info):
         collect_sysconfig,
         collect_testcapi,
         collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,
