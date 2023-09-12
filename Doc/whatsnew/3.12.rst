@@ -258,6 +258,9 @@ Inlining does result in a few visible behavior changes:
 
 * There is no longer a separate frame for the comprehension in tracebacks,
   and tracing/profiling no longer shows the comprehension as a function call.
+* The :mod:`symtable` module will no longer produce child symbol tables for each
+  comprehension; instead, the comprehension's locals will be included in the
+  parent function's symbol table.
 * Calling :func:`locals` inside a comprehension now includes variables
   from outside the comprehension, and no longer includes the synthetic ``.0``
   variable for the comprehension "argument".
@@ -1274,13 +1277,19 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
-* ``asynchat`` and ``asyncore``: These two modules have been removed
+asynchat and asyncore
+---------------------
+
+* These two modules have been removed
   according to the schedule in :pep:`594`,
   having been deprecated in Python 3.6.
   Use :mod:`asyncio` instead.
   (Contributed by Nikita Sobolev in :gh:`96580`.)
 
-* :mod:`configparser`: Several names deprecated in the :mod:`configparser` way back in 3.2 have
+configparser
+------------
+
+* Several names deprecated in the :mod:`configparser` way back in 3.2 have
   been removed per :gh:`89336`:
 
   * :class:`configparser.ParsingError` no longer has a ``filename`` attribute
@@ -1290,13 +1299,19 @@ Removed
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
 
-* ``distutils``: Remove the ``distutils`` package. It was deprecated in Python 3.10 by
+distutils
+---------
+
+* Remove the :py:mod:`!distutils` package. It was deprecated in Python 3.10 by
   :pep:`632` "Deprecate distutils module". For projects still using
   ``distutils`` and cannot be updated to something else, the ``setuptools``
   project can be installed: it still provides ``distutils``.
   (Contributed by Victor Stinner in :gh:`92584`.)
 
-* :mod:`ensurepip`: Remove the bundled setuptools wheel from :mod:`ensurepip`,
+ensurepip
+---------
+
+* Remove the bundled setuptools wheel from :mod:`ensurepip`,
   and stop installing setuptools in environments created by :mod:`venv`.
 
   ``pip (>= 22.1)`` does not require setuptools to be installed in the
@@ -1314,27 +1329,42 @@ Removed
 
   (Contributed by Pradyun Gedam in :gh:`95299`.)
 
-* :mod:`enum`: Remove ``EnumMeta.__getattr__``, which is no longer needed for
+enum
+----
+
+* Remove :mod:`enum`'s ``EnumMeta.__getattr__``, which is no longer needed for
   enum attribute access.
   (Contributed by Ethan Furman in :gh:`95083`.)
 
-* :mod:`ftplib`: Remove the ``FTP_TLS.ssl_version`` class attribute: use the
+ftplib
+------
+
+* Remove :mod:`ftplib`'s ``FTP_TLS.ssl_version`` class attribute: use the
   *context* parameter instead.
   (Contributed by Victor Stinner in :gh:`94172`.)
 
-* :mod:`gzip`: Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
+gzip
+----
+
+* Remove the ``filename`` attribute of :mod:`gzip`'s :class:`gzip.GzipFile`,
   deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
   instead. In write mode, the ``filename`` attribute added ``'.gz'`` file
   extension if it was not present.
   (Contributed by Victor Stinner in :gh:`94196`.)
 
-* :mod:`hashlib`: Remove the pure Python implementation of
+hashlib
+-------
+
+* Remove the pure Python implementation of :mod:`hashlib`'s
   :func:`hashlib.pbkdf2_hmac()`, deprecated in Python 3.10. Python 3.10 and
   newer requires OpenSSL 1.1.1 (:pep:`644`): this OpenSSL version provides
   a C implementation of :func:`~hashlib.pbkdf2_hmac()` which is faster.
   (Contributed by Victor Stinner in :gh:`94199`.)
 
-* :mod:`importlib`: Many previously deprecated cleanups in :mod:`importlib` have now been
+importlib
+---------
+
+* Many previously deprecated cleanups in :mod:`importlib` have now been
   completed:
 
   * References to, and support for :meth:`!module_repr()` has been removed.
@@ -1350,10 +1380,13 @@ Removed
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
-  * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
-    :gh:`98040`.)
+imp
+---
 
-  * Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
+* The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
+  :gh:`98040`.)
+
+* Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
 
     =================================  =======================================
        imp                                importlib
@@ -1370,7 +1403,7 @@ Removed
     ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
     =================================  =======================================
 
-  * Replace ``imp.load_source()`` with::
+* Replace ``imp.load_source()`` with::
 
         import importlib.util
         import importlib.machinery
@@ -1385,28 +1418,34 @@ Removed
             loader.exec_module(module)
             return module
 
-  * Removed :mod:`!imp` functions and attributes with no replacements:
+* Removed :mod:`!imp` functions and attributes with no replacements:
 
-    * undocumented functions:
+  * undocumented functions:
 
-      * ``imp.init_builtin()``
-      * ``imp.load_compiled()``
-      * ``imp.load_dynamic()``
-      * ``imp.load_package()``
+    * ``imp.init_builtin()``
+    * ``imp.load_compiled()``
+    * ``imp.load_dynamic()``
+    * ``imp.load_package()``
 
-    * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
-      the locking scheme has changed in Python 3.3 to per-module locks.
-    * ``imp.find_module()`` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
-      ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
-      ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
+  * ``imp.lock_held()``, ``imp.acquire_lock()``, ``imp.release_lock()``:
+    the locking scheme has changed in Python 3.3 to per-module locks.
+  * ``imp.find_module()`` constants: ``SEARCH_ERROR``, ``PY_SOURCE``,
+    ``PY_COMPILED``, ``C_EXTENSION``, ``PY_RESOURCE``, ``PKG_DIRECTORY``,
+    ``C_BUILTIN``, ``PY_FROZEN``, ``PY_CODERESOURCE``, ``IMP_HOOK``.
 
-* :mod:`io`: Remove ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
+io
+--
+
+* Remove :mod:`io`'s ``io.OpenWrapper`` and ``_pyio.OpenWrapper``, deprecated in Python
   3.10: just use :func:`open` instead. The :func:`open` (:func:`io.open`)
   function is a built-in function. Since Python 3.10, :func:`!_pyio.open` is
   also a static method.
   (Contributed by Victor Stinner in :gh:`94169`.)
 
-* :mod:`locale`: Remove the :func:`!locale.format` function, deprecated in Python 3.7:
+locale
+------
+
+* Remove :mod:`locale`'s :func:`!locale.format` function, deprecated in Python 3.7:
   use :func:`locale.format_string` instead.
   (Contributed by Victor Stinner in :gh:`94226`.)
 
@@ -1418,7 +1457,10 @@ Removed
 
 .. _aiosmtpd: https://pypi.org/project/aiosmtpd/
 
-* :mod:`sqlite3`: The following undocumented :mod:`sqlite3` features, deprecated in Python
+sqlite3
+-------
+
+* The following undocumented :mod:`sqlite3` features, deprecated in Python
   3.10, are now removed:
 
   * ``sqlite3.enable_shared_cache()``
@@ -1434,30 +1476,34 @@ Removed
 
   (Contributed by Erlend E. Aasland in :gh:`92548`.)
 
-* :mod:`ssl`:
+ssl
+---
 
-    * Remove the :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
-      use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
-      (Contributed by Victor Stinner in :gh:`94199`.)
+* Remove :mod:`ssl`'s :func:`!ssl.RAND_pseudo_bytes` function, deprecated in Python 3.6:
+  use :func:`os.urandom` or :func:`ssl.RAND_bytes` instead.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
-    * Remove the :func:`!ssl.match_hostname` function.
-      It was deprecated in Python 3.7. OpenSSL performs
-      hostname matching since Python 3.7, Python no longer uses the
-      :func:`!ssl.match_hostname` function.
-      (Contributed by Victor Stinner in :gh:`94199`.)
+* Remove the :func:`!ssl.match_hostname` function.
+  It was deprecated in Python 3.7. OpenSSL performs
+  hostname matching since Python 3.7, Python no longer uses the
+  :func:`!ssl.match_hostname` function.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
-    * Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
-      instead, create a :class:`ssl.SSLContext` object and call its
-      :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
-      :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
-      SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
-      <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
-      Validation.
-      (Contributed by Victor Stinner in :gh:`94199`.)
+* Remove the :func:`!ssl.wrap_socket` function, deprecated in Python 3.7:
+  instead, create a :class:`ssl.SSLContext` object and call its
+  :class:`ssl.SSLContext.wrap_socket` method. Any package that still uses
+  :func:`!ssl.wrap_socket` is broken and insecure. The function neither sends a
+  SNI TLS extension nor validates server hostname. Code is subject to `CWE-295
+  <https://cwe.mitre.org/data/definitions/295.html>`_: Improper Certificate
+  Validation.
+  (Contributed by Victor Stinner in :gh:`94199`.)
 
-* :mod:`unittest`: Removed many old deprecated :mod:`unittest` features:
+unittest
+--------
 
-  - A number of :class:`~unittest.TestCase` method aliases:
+* Removed many old deprecated :mod:`unittest` features:
+
+  * A number of :class:`~unittest.TestCase` method aliases:
 
     ============================ =============================== ===============
        Deprecated alias           Method Name                     Deprecated in
@@ -1482,32 +1528,44 @@ Removed
     You can use https://github.com/isidentical/teyit to automatically modernise
     your unit tests.
 
-  - Undocumented and broken :class:`~unittest.TestCase` method
+  * Undocumented and broken :class:`~unittest.TestCase` method
     ``assertDictContainsSubset`` (deprecated in Python 3.2).
 
-  - Undocumented :meth:`TestLoader.loadTestsFromModule
+  * Undocumented :meth:`TestLoader.loadTestsFromModule
     <unittest.TestLoader.loadTestsFromModule>` parameter *use_load_tests*
     (deprecated and ignored since Python 3.2).
 
-  - An alias of the :class:`~unittest.TextTestResult` class:
+  * An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
 
   (Contributed by Serhiy Storchaka in :issue:`45162`.)
 
-* :mod:`webbrowser`: Remove support for obsolete browsers from :mod:`webbrowser`.
+webbrowser
+----------
+
+* Remove support for obsolete browsers from :mod:`webbrowser`.
   Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
   Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
 
-* :mod:`xml.etree.ElementTree`: Remove the ``ElementTree.Element.copy()`` method of the
+xml.etree.ElementTree
+---------------------
+
+* Remove the ``ElementTree.Element.copy()`` method of the
   pure Python implementation, deprecated in Python 3.10, use the
   :func:`copy.copy` function instead.  The C implementation of :mod:`xml.etree.ElementTree`
   has no ``copy()`` method, only a ``__copy__()`` method.
   (Contributed by Victor Stinner in :gh:`94383`.)
 
-* :mod:`zipimport`: Remove ``find_loader()`` and ``find_module()`` methods,
+zipimport
+---------
+
+* Remove :mod:`zipimport`'s ``find_loader()`` and ``find_module()`` methods,
   deprecated in Python 3.10: use the ``find_spec()`` method instead.  See
   :pep:`451` for the rationale.
   (Contributed by Victor Stinner in :gh:`94379`.)
+
+Others
+------
 
 * Removed the ``suspicious`` rule from the documentation Makefile, and
   removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
@@ -1599,7 +1657,7 @@ Changes in the Python API
   functions is now changed due to the changes introduced in :pep:`701`. This
   means that ``STRING`` tokens are not emitted any more for f-strings and the
   tokens described in :pep:`701` are now produced instead: ``FSTRING_START``,
-  ``FSRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
+  ``FSTRING_MIDDLE`` and ``FSTRING_END`` are now emitted for f-string "string"
   parts in addition to the appropriate tokens for the tokenization in the
   expression components. For example for the f-string ``f"start {1+1} end"``
   the old version of the tokenizer emitted::

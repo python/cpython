@@ -877,6 +877,7 @@ which incur interpreter overhead.
                    yield i
        else:
            # Fast path for sequences
+           stop = len(iterable) if stop is None else stop
            i = start - 1
            try:
                while True:
@@ -1030,13 +1031,16 @@ The following recipes have a more mathematical flavor:
    def sieve(n):
        "Primes less than n."
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       if n > 2:
+           yield 2
+       start = 3
        data = bytearray((0, 1)) * (n // 2)
-       data[:3] = 0, 0, 0
        limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
+       for p in iter_index(data, 1, start, limit):
+           yield from iter_index(data, 1, start, p*p)
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-       data[2] = 1
-       return iter_index(data, 1) if n > 2 else iter([])
+           start = p*p
+       yield from iter_index(data, 1, start)
 
    def factor(n):
        "Prime factors of n."
@@ -1344,6 +1348,16 @@ The following recipes have a more mathematical flavor:
     Traceback (most recent call last):
     ...
     ValueError
+    >>> # Verify that both paths can find identical NaN values
+    >>> x = float('NaN')
+    >>> y = float('NaN')
+    >>> list(iter_index([0, x, x, y, 0], x))
+    [1, 2]
+    >>> list(iter_index(iter([0, x, x, y, 0]), x))
+    [1, 2]
+    >>> # Test list input. Lists do not support None for the stop argument
+    >>> list(iter_index(list('AABCADEAF'), 'A'))
+    [0, 1, 4, 7]
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]

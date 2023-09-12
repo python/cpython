@@ -1718,3 +1718,11 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
             make_foo_optimized_then_set_event()
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_gh108976(self):
+        sys.monitoring.use_tool_id(0, "test")
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.LINE, lambda *args: sys.monitoring.set_events(0, 0))
+        sys.monitoring.register_callback(0, E.INSTRUCTION, lambda *args: 0)
+        sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
+        sys.monitoring.set_events(0, 0)
