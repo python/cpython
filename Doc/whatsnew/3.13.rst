@@ -301,6 +301,11 @@ Deprecated
 
   (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
 
+* The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
+  in :data:`~dis.hasarg` instead.
+  (Contributed by Irit Katriel in :gh:`109319`.)
+
+
 Pending Removal in Python 3.14
 ------------------------------
 

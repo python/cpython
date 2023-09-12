@@ -1623,6 +1623,8 @@ iterations of the loop.
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
+   .. deprecated:: 3.13
+      Use :data:`hasarg` instead.
 
 .. opcode:: CALL_INTRINSIC_1
 
