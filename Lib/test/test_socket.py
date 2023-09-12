@@ -2566,7 +2566,7 @@ class BasicHyperVTest(unittest.TestCase):
         socket.HV_GUID_BROADCAST
         socket.HV_GUID_CHILDREN
         socket.HV_GUID_LOOPBACK
-        socket.HV_GUID_LOOPBACK
+        socket.HV_GUID_PARENT
 
     def testCreateHyperVSocketWithUnknownProtoFailure(self):
         expected = r"\[WinError 10041\]"
@@ -5288,6 +5288,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         finally:
             socket.socket = old_socket
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_connect(self):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5296,6 +5297,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection(self):
         # Issue #9792: errors raised by create_connection() should have
         # a proper errno attribute.

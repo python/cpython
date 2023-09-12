@@ -1,0 +1,2 @@
+Fix handling of multiline parenthesized lambdas in
+:func:`inspect.getsource`. Patch by Pablo Galindo

@@ -60,6 +60,9 @@ class _sha3.shake_256 "SHA3object *" "&SHAKE256type"
 
 typedef struct {
     PyObject_HEAD
+    // Prevents undefined behavior via multiple threads entering the C API.
+    // The lock will be NULL before threaded access has been enabled.
+    PyThread_type_lock lock;
     Hacl_Streaming_Keccak_state *hash_state;
 } SHA3object;
 
@@ -73,6 +76,7 @@ newSHA3object(PyTypeObject *type)
     if (newobj == NULL) {
         return NULL;
     }
+    newobj->lock = NULL;
     return newobj;
 }
 
@@ -133,7 +137,15 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 
     if (data) {
         GET_BUFFER_VIEW_OR_ERROR(data, &buf, goto error);
-        sha3_update(self->hash_state, buf.buf, buf.len);
+        if (buf.len >= HASHLIB_GIL_MINSIZE) {
+            /* We do not initialize self->lock here as this is the constructor
+             * where it is not yet possible to have concurrent access. */
+            Py_BEGIN_ALLOW_THREADS
+            sha3_update(self->hash_state, buf.buf, buf.len);
+            Py_END_ALLOW_THREADS
+        } else {
+            sha3_update(self->hash_state, buf.buf, buf.len);
+        }
     }
 
     PyBuffer_Release(&buf);
@@ -157,6 +169,9 @@ static void
 SHA3_dealloc(SHA3object *self)
 {
     Hacl_Streaming_Keccak_free(self->hash_state);
+    if (self->lock != NULL) {
+        PyThread_free_lock(self->lock);
+    }
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -181,7 +196,9 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
     if ((newobj = newSHA3object(Py_TYPE(self))) == NULL) {
         return NULL;
     }
+    ENTER_HASHLIB(self);
     newobj->hash_state = Hacl_Streaming_Keccak_copy(self->hash_state);
+    LEAVE_HASHLIB(self);
     return (PyObject *)newobj;
 }
 
@@ -199,7 +216,9 @@ _sha3_sha3_224_digest_impl(SHA3object *self)
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
     // This function errors out if the algorithm is Shake. Here, we know this
     // not to be the case, and therefore do not perform error checking.
+    ENTER_HASHLIB(self);
     Hacl_Streaming_Keccak_finish(self->hash_state, digest);
+    LEAVE_HASHLIB(self);
     return PyBytes_FromStringAndSize((const char *)digest,
         Hacl_Streaming_Keccak_hash_len(self->hash_state));
 }
@@ -216,7 +235,9 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
 /*[clinic end generated code: output=75ad03257906918d input=2d91bb6e0d114ee3]*/
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE];
+    ENTER_HASHLIB(self);
     Hacl_Streaming_Keccak_finish(self->hash_state, digest);
+    LEAVE_HASHLIB(self);
     return _Py_strhex((const char *)digest,
         Hacl_Streaming_Keccak_hash_len(self->hash_state));
 }
@@ -237,7 +258,18 @@ _sha3_sha3_224_update(SHA3object *self, PyObject *data)
 {
     Py_buffer buf;
     GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
-    sha3_update(self->hash_state, buf.buf, buf.len);
+    if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
+        self->lock = PyThread_allocate_lock();
+    }
+    if (self->lock != NULL) {
+        Py_BEGIN_ALLOW_THREADS
+        PyThread_acquire_lock(self->lock, 1);
+        sha3_update(self->hash_state, buf.buf, buf.len);
+        PyThread_release_lock(self->lock);
+        Py_END_ALLOW_THREADS
+    } else {
+        sha3_update(self->hash_state, buf.buf, buf.len);
+    }
     PyBuffer_Release(&buf);
     Py_RETURN_NONE;
 }

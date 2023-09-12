@@ -8,9 +8,9 @@
 #  include <windows.h>
 #endif
 
-#include "pycore_call.h"            // _PyObject_CallNoArgs()
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #include <stdbool.h>
 
@@ -416,25 +416,29 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
         PyErr_Format(PyExc_NotImplementedError, "ffi_prep_closure_loc() is missing");
         goto error;
 #else
-#if defined(__clang__)
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic push
-        #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
+        // GH-85272, GH-23327, GH-100540: On macOS,
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is checked at runtime because the
+        // symbol might not be available at runtime when targeting macOS 10.14
+        // or earlier. Even if ffi_prep_closure_loc() is called in practice,
+        // the deprecated ffi_prep_closure() code path is needed if
+        // HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is false.
+        //
+        // On non-macOS platforms, even if HAVE_FFI_PREP_CLOSURE_LOC_RUNTIME is
+        // defined as 1 and ffi_prep_closure_loc() is used in practice, this
+        // code path is still compiled and emits a compiler warning. The
+        // deprecated code path is likely to be removed by a simple
+        // optimization pass.
+        //
+        // Ignore the compiler warning on the ffi_prep_closure() deprecation,
+        // rather than using complex #if/#else code paths for the different
+        // platforms.
+        _Py_COMP_DIAG_PUSH
+        _Py_COMP_DIAG_IGNORE_DEPR_DECLS
         result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
-
-#if defined(__clang__)
-        #pragma clang diagnostic pop
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5)))
-        #pragma GCC diagnostic pop
-#endif
-
+        _Py_COMP_DIAG_POP
 #endif
     }
+
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
                      "ffi_prep_closure failed with %d", result);
@@ -479,12 +483,22 @@ long Call_GetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 
     {
         PyObject *py_rclsid = PyLong_FromVoidPtr((void *)rclsid);
+        if (py_rclsid == NULL) {
+            Py_DECREF(func);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_riid = PyLong_FromVoidPtr((void *)riid);
+        if (py_riid == NULL) {
+            Py_DECREF(func);
+            Py_DECREF(py_rclsid);
+            PyErr_WriteUnraisable(context ? context : Py_None);
+            return E_FAIL;
+        }
         PyObject *py_ppv = PyLong_FromVoidPtr(ppv);
-        if (!py_rclsid || !py_riid || !py_ppv) {
-            Py_XDECREF(py_rclsid);
-            Py_XDECREF(py_riid);
-            Py_XDECREF(py_ppv);
+        if (py_ppv == NULL) {
+            Py_DECREF(py_rclsid);
+            Py_DECREF(py_riid);
             Py_DECREF(func);
             PyErr_WriteUnraisable(context ? context : Py_None);
             return E_FAIL;

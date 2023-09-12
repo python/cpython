@@ -1,5 +1,0 @@
-Change behavior of ``sys.monitoring.events.LINE`` events in
-``sys.monitoring``: Line events now occur when a new line is reached
-dynamically, instead of using a static approximation, as before. This makes
-the behavior very similar to that of "line" events in ``sys.settrace``. This
-should ease porting of tools from 3.11 to 3.12.

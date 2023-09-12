@@ -72,6 +72,8 @@ The following exceptions are raised by :mod:`urllib.error` as appropriate:
    This exception is raised when the :func:`~urllib.request.urlretrieve`
    function detects that
    the amount of the downloaded data is less than the expected amount (given by
-   the *Content-Length* header).  The :attr:`content` attribute stores the
-   downloaded (and supposedly truncated) data.
+   the *Content-Length* header).
 
+   .. attribute:: content
+
+      The downloaded (and supposedly truncated) data.

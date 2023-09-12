@@ -1,9 +1,6 @@
 /* C Extension module to test all aspects of PEP-3118.
    Written by Stefan Krah. */
 
-
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 
 

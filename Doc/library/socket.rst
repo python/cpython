@@ -436,7 +436,8 @@ Constants
       ``TCP_FASTOPEN_CONNECT``, ``TCP_ULP``, ``TCP_MD5SIG_EXT``,
       ``TCP_FASTOPEN_KEY``, ``TCP_FASTOPEN_NO_COOKIE``,
       ``TCP_ZEROCOPY_RECEIVE``, ``TCP_INQ``, ``TCP_TX_DELAY``.
-      Added ``IP_PKTINFO``.
+      Added ``IP_PKTINFO``, ``IP_UNBLOCK_SOURCE``, ``IP_BLOCK_SOURCE``,
+      ``IP_ADD_SOURCE_MEMBERSHIP``, ``IP_DROP_SOURCE_MEMBERSHIP``.
 
 .. data:: AF_CAN
           PF_CAN
@@ -665,7 +666,7 @@ Constants
           HV_GUID_BROADCAST
           HV_GUID_CHILDREN
           HV_GUID_LOOPBACK
-          HV_GUID_LOOPBACK
+          HV_GUID_PARENT
 
    Constants for Windows Hyper-V sockets for host/guest communications.
 
@@ -978,7 +979,7 @@ The :mod:`socket` module also offers various network-related services:
 .. function:: gethostbyname_ex(hostname)
 
    Translate a host name to IPv4 address format, extended interface. Return a
-   triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
+   3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the host's
    primary host name, *aliaslist* is a (possibly
    empty) list of alternative host names for the same address, and *ipaddrlist* is
    a list of IPv4 addresses for the same interface on the same host (often but not
@@ -1006,7 +1007,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: gethostbyaddr(ip_address)
 
-   Return a triple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
+   Return a 3-tuple ``(hostname, aliaslist, ipaddrlist)`` where *hostname* is the
    primary host name responding to the given *ip_address*, *aliaslist* is a
    (possibly empty) list of alternative host names for the same address, and
    *ipaddrlist* is a list of IPv4/v6 addresses for the same interface on the same
@@ -1526,7 +1527,7 @@ to sockets.
    Return ``True`` if socket is in blocking mode, ``False`` if in
    non-blocking.
 
-   This is equivalent to checking ``socket.gettimeout() == 0``.
+   This is equivalent to checking ``socket.gettimeout() != 0``.
 
    .. versionadded:: 3.7
 
@@ -2251,7 +2252,7 @@ This is because the previous execution has left the socket in a ``TIME_WAIT``
 state, and can't be immediately reused.
 
 There is a :mod:`socket` flag to set, in order to prevent this,
-:data:`socket.SO_REUSEADDR`::
+:const:`socket.SO_REUSEADDR`::
 
    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

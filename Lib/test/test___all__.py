@@ -12,10 +12,19 @@ except ModuleNotFoundError:
 
 
 if support.check_sanitizer(address=True, memory=True):
-    # bpo-46633: test___all__ is skipped because importing some modules
-    # directly can trigger known problems with ASAN (like tk or crypt).
-    raise unittest.SkipTest("workaround ASAN build issues on loading tests "
-                            "like tk or crypt")
+    SKIP_MODULES = frozenset((
+        # gh-90791: Tests involving libX11 can SEGFAULT on ASAN/MSAN builds.
+        # Skip modules, packages and tests using '_tkinter'.
+        '_tkinter',
+        'tkinter',
+        'test_tkinter',
+        'test_ttk',
+        'test_ttk_textonly',
+        'idlelib',
+        'test_idle',
+    ))
+else:
+    SKIP_MODULES = ()
 
 
 class NoAll(RuntimeError):
@@ -83,15 +92,23 @@ class AllTest(unittest.TestCase):
         for fn in sorted(os.listdir(basedir)):
             path = os.path.join(basedir, fn)
             if os.path.isdir(path):
+                if fn in SKIP_MODULES:
+                    continue
                 pkg_init = os.path.join(path, '__init__.py')
                 if os.path.exists(pkg_init):
                     yield pkg_init, modpath + fn
                     for p, m in self.walk_modules(path, modpath + fn + "."):
                         yield p, m
                 continue
-            if not fn.endswith('.py') or fn == '__init__.py':
+
+            if fn == '__init__.py':
                 continue
-            yield path, modpath + fn[:-3]
+            if not fn.endswith('.py'):
+                continue
+            modname = fn.removesuffix('.py')
+            if modname in SKIP_MODULES:
+                continue
+            yield path, modpath + modname
 
     def test_all(self):
         # List of denied modules and packages
@@ -101,7 +118,8 @@ class AllTest(unittest.TestCase):
         ])
 
         # In case _socket fails to build, make this test fail more gracefully
-        # than an AttributeError somewhere deep in CGIHTTPServer.
+        # than an AttributeError somewhere deep in concurrent.futures, email
+        # or unittest.
         import _socket
 
         ignored = []
@@ -118,14 +136,14 @@ class AllTest(unittest.TestCase):
             if denied:
                 continue
             if support.verbose:
-                print(modname)
+                print(f"Check {modname}", flush=True)
             try:
                 # This heuristic speeds up the process by removing, de facto,
                 # most test modules (and avoiding the auto-executing ones).
                 with open(path, "rb") as f:
                     if b"__all__" not in f.read():
                         raise NoAll(modname)
-                    self.check_all(modname)
+                self.check_all(modname)
             except NoAll:
                 ignored.append(modname)
             except FailedImport:
