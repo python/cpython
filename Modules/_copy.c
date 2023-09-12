@@ -1,6 +1,7 @@
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
+#define Py_BUILD_CORE
 
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
