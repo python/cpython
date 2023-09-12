@@ -7,14 +7,17 @@
 #include "pycore_pystate.h"     // _PyThreadState_GET
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#   include <windows.h>
 #elif (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
      defined(HAVE_SEM_TIMEDWAIT))
-#define USE_SEMAPHORES
-#include <semaphore.h>
+#   define USE_SEMAPHORES
+#   include <semaphore.h>
+#elif defined(HAVE_PTHREAD_H)
+#   include <pthread.h>
+#elif defined(HAVE_PTHREAD_STUBS)
+#   include "cpython/pthread_stubs.h"
 #else
-#include <pthread.h>
+#   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
 // A simple, cross-platform binary semaphore that can be used to implement
