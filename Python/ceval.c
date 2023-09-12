@@ -3315,8 +3315,9 @@ handle_eval_breaker:
                 Py_DECREF(POP());
                 Py_DECREF(POP());
             }
-            if (map == NULL)
+            if (map == NULL) {
                 goto error;
+            }
             PUSH(map);
             DISPATCH();
         }
