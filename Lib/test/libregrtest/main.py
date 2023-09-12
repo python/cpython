@@ -295,7 +295,12 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        msg = "Run tests sequentially"
+        jobs = runtests.get_jobs()
+        if jobs is not None:
+            tests = f'{jobs} tests'
+        else:
+            tests = 'tests'
+        msg = f"Run {tests} sequentially"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)

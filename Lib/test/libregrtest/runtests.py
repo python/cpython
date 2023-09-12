@@ -53,6 +53,13 @@ class RunTests:
         else:
             return None
 
+    def get_jobs(self):
+        # Number of run_single_test() calls needed to run all tests.
+        # None means that there is not bound limit (--forever option).
+        if self.forever:
+            return None
+        return len(self.tests)
+
     def iter_tests(self):
         if self.forever:
             while True:

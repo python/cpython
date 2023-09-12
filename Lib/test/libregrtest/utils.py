@@ -70,11 +70,20 @@ def strip_py_suffix(names: list[str]):
             names[idx] = basename
 
 
+def plural(n, singular, plural=None):
+    if n == 1:
+        return singular
+    elif plural is not None:
+        return plural
+    else:
+        return singular + 's'
+
+
 def count(n, word):
     if n == 1:
-        return "%d %s" % (n, word)
+        return f"{n} {word}"
     else:
-        return "%d %ss" % (n, word)
+        return f"{n} {word}s"
 
 
 def printlist(x, width=70, indent=4, file=None):
