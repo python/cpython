@@ -1869,7 +1869,10 @@ static int
 symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
 {
     assert(st->st_stack);
-    assert(e->kind == Name_kind);
+    if (e->kind != Name_kind) {
+        PyErr_SetString(PyExc_SyntaxError, ":= target must be a Name");
+        VISIT_QUIT(st, 0);
+    }
 
     PyObject *target_name = e->v.Name.id;
     Py_ssize_t i, size;
