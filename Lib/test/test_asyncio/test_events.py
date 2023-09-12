@@ -31,6 +31,7 @@ import asyncio
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
@@ -2781,6 +2782,8 @@ class GetEventLoopTestsMixin:
             self.assertEqual(
                 self.loop.run_until_complete(main()),
                 'hello')
+
+            multiprocessing_cleanup_tests()
 
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):

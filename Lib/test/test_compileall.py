@@ -18,6 +18,7 @@ from unittest import mock, skipUnless
 try:
     # compileall relies on ProcessPoolExecutor if ProcessPoolExecutor exists
     # and it can function.
+    from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
     from concurrent.futures import ProcessPoolExecutor
     from concurrent.futures.process import _check_system_limits
     _check_system_limits()
@@ -68,6 +69,7 @@ class CompileallTestsBase:
 
     def tearDown(self):
         shutil.rmtree(self.directory)
+        multiprocessing_cleanup_tests()
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
