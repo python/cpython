@@ -457,6 +457,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3559 (Generate opcode IDs from bytecodes.c)
 #     Python 3.13a1 3560 (Add RESUME_CHECK instruction)
 #     Python 3.13a1 3561 (Add cache entry to branch instructions)
+#     Python 3.13a1 3562 (Assign opcode IDs for internal ops in separate range)
 
 #     Python 3.14 will start with 3600
 
@@ -473,7 +474,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3561).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3562).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
