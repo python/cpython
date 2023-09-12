@@ -145,9 +145,6 @@ The module defines the following functions:
    about where the syntax error occurred. Following the message, the list
    contains the exception's :attr:`notes <BaseException.__notes__>`.
 
-   .. versionchanged:: 3.11
-      The returned list now includes any notes attached to the exception.
-
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
    argument is ignored in order to provide backwards compatibility.
@@ -155,6 +152,9 @@ The module defines the following functions:
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
+
+   .. versionchanged:: 3.11
+      The returned list now includes any notes attached to the exception.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
