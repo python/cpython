@@ -983,7 +983,8 @@ class TestCopyPy(TestCopy, unittest.TestCase):
 
 class TestReplacePy(TestReplace, unittest.TestCase):
     copy_module = py_copy
-    
+
+
 class TestDeepcopyPy(TestDeepcopy, unittest.TestCase):
     copy_module = py_copy
 
