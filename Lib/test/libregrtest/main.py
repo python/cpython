@@ -421,6 +421,13 @@ class Regrtest:
         self.first_runtests = runtests
         self.logger.set_tests(runtests)
 
+        print()
+        print("tempfile.gettempdir:", tempfile.gettempdir())
+        print("self.tmp_dir:", self.tmp_dir)
+        print("runtests.work_dir:", runtests.work_dir)
+        print("cwd:", os.getcwd())
+        print()
+
         setup_process()
 
         self.logger.start_load_tracker()

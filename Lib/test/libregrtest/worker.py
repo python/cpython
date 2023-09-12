@@ -102,7 +102,13 @@ def main():
 
     with exit_timeout():
         runtests = RunTests.from_json(worker_json)
+        cwd = os.getcwd()
         with os_helper.change_cwd(runtests.work_dir):
+            msg = f"worker {runtests.tests[0]} (pid {os.getpid()}): {cwd}"
+            cwd2 = os.getcwd()
+            if cwd2 != cwd:
+                msg = f"{cwd} => {cwd2}"
+            print(msg)
             worker_process(runtests)
 
 
