@@ -911,17 +911,17 @@ class TestDeepcopy:
         g.b()
 
 
-class TestReplace(unittest.TestCase):
+class TestReplace:
 
     def test_unsupported(self):
-        self.assertRaises(TypeError, copy.replace, 1)
-        self.assertRaises(TypeError, copy.replace, [])
-        self.assertRaises(TypeError, copy.replace, {})
+        self.assertRaises(TypeError, self.copy_module.replace, 1)
+        self.assertRaises(TypeError, self.copy_module.replace, [])
+        self.assertRaises(TypeError, self.copy_module.replace, {})
         def f(): pass
-        self.assertRaises(TypeError, copy.replace, f)
+        self.assertRaises(TypeError, self.copy_module.replace, f)
         class A: pass
-        self.assertRaises(TypeError, copy.replace, A)
-        self.assertRaises(TypeError, copy.replace, A())
+        self.assertRaises(TypeError, self.copy_module.replace, A)
+        self.assertRaises(TypeError, self.copy_module.replace, A())
 
     def test_replace_method(self):
         class A:
@@ -941,21 +941,21 @@ class TestReplace(unittest.TestCase):
 
         attrs = attrgetter('x', 'y', 'z')
         a = A(11, 22)
-        self.assertEqual(attrs(copy.replace(a)), (11, 22, 33))
-        self.assertEqual(attrs(copy.replace(a, x=1)), (1, 22, 23))
-        self.assertEqual(attrs(copy.replace(a, y=2)), (11, 2, 13))
-        self.assertEqual(attrs(copy.replace(a, x=1, y=2)), (1, 2, 3))
+        self.assertEqual(attrs(self.copy_module.replace(a)), (11, 22, 33))
+        self.assertEqual(attrs(self.copy_module.replace(a, x=1)), (1, 22, 23))
+        self.assertEqual(attrs(self.copy_module.replace(a, y=2)), (11, 2, 13))
+        self.assertEqual(attrs(self.copy_module.replace(a, x=1, y=2)), (1, 2, 3))
 
     def test_namedtuple(self):
         from collections import namedtuple
         Point = namedtuple('Point', 'x y', defaults=(0,))
         p = Point(11, 22)
-        self.assertEqual(copy.replace(p), (11, 22))
-        self.assertEqual(copy.replace(p, x=1), (1, 22))
-        self.assertEqual(copy.replace(p, y=2), (11, 2))
-        self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
+        self.assertEqual(self.copy_module.replace(p), (11, 22))
+        self.assertEqual(self.copy_module.replace(p, x=1), (1, 22))
+        self.assertEqual(self.copy_module.replace(p, y=2), (11, 2))
+        self.assertEqual(self.copy_module.replace(p, x=1, y=2), (1, 2))
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
-            copy.replace(p, x=1, error=2)
+            self.copy_module.replace(p, x=1, error=2)
 
     def test_dataclass(self):
         from dataclasses import dataclass
@@ -966,12 +966,12 @@ class TestReplace(unittest.TestCase):
 
         attrs = attrgetter('x', 'y')
         c = C(11, 22)
-        self.assertEqual(attrs(copy.replace(c)), (11, 22))
-        self.assertEqual(attrs(copy.replace(c, x=1)), (1, 22))
-        self.assertEqual(attrs(copy.replace(c, y=2)), (11, 2))
-        self.assertEqual(attrs(copy.replace(c, x=1, y=2)), (1, 2))
+        self.assertEqual(attrs(self.copy_module.replace(c)), (11, 22))
+        self.assertEqual(attrs(self.copy_module.replace(c, x=1)), (1, 22))
+        self.assertEqual(attrs(self.copy_module.replace(c, y=2)), (11, 2))
+        self.assertEqual(attrs(self.copy_module.replace(c, x=1, y=2)), (1, 2))
         with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
-            copy.replace(c, x=1, error=2)
+            self.copy_module.replace(c, x=1, error=2)
 
 
 def global_foo(x, y): return x+y
@@ -981,6 +981,9 @@ class TestCopyPy(TestCopy, unittest.TestCase):
     copy_module = py_copy
 
 
+class TestReplacePy(TestReplace, unittest.TestCase):
+    copy_module = py_copy
+    
 class TestDeepcopyPy(TestDeepcopy, unittest.TestCase):
     copy_module = py_copy
 
