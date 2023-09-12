@@ -2766,6 +2766,8 @@ class GetEventLoopTestsMixin:
             # multiprocessing.synchronize module cannot be imported.
             support.skip_if_broken_multiprocessing_synchronize()
 
+            self.addCleanup(multiprocessing_cleanup_tests)
+
             async def main():
                 if multiprocessing.get_start_method() == 'fork':
                     # Avoid 'fork' DeprecationWarning.
@@ -2782,8 +2784,6 @@ class GetEventLoopTestsMixin:
             self.assertEqual(
                 self.loop.run_until_complete(main()),
                 'hello')
-
-            multiprocessing_cleanup_tests()
 
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):
