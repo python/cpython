@@ -227,11 +227,17 @@ class WorkerThread(threading.Thread):
             match_tests = None
         err_msg = None
 
+        print("main process is_emscripten:", support.is_emscripten)
+        print("main process is_wasi:", support.is_wasi)
+        print("main process JSON_FILE_USE_FILENAME:", JSON_FILE_USE_FILENAME)
+
         stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
         if JSON_FILE_USE_FILENAME:
             json_tmpfile = tempfile.NamedTemporaryFile('w+', encoding='utf8')
+            print("main process: create NamedTemporaryFile")
         else:
             json_tmpfile = tempfile.TemporaryFile('w+', encoding='utf8')
+            print("main process: create TemporaryFile")
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
@@ -243,6 +249,8 @@ class WorkerThread(threading.Thread):
                 json_file = json_tmpfile.fileno()
                 if MS_WINDOWS:
                     json_file = msvcrt.get_osfhandle(json_file)
+            print("main process json_type file:", type(json_file))
+            print("main process json_type:", json_file)
 
             kwargs = {}
             if match_tests:

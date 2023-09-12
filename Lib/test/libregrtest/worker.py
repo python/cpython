@@ -86,6 +86,8 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     # On Windows, it's a handle.
     # On Emscripten/WASI, it's a filename.
     json_file: JsonFileType = runtests.json_file
+    print("worker: json_file type:", type(json_file))
+    print("worker: json_file:", json_file)
 
     if MS_WINDOWS:
         import msvcrt
