@@ -21,7 +21,7 @@ from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
 from .utils import (
     StrPath, StrJSON, TestName, MS_WINDOWS,
-    format_duration, print_warning)
+    format_duration, print_warning, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -401,10 +401,24 @@ class RunWorkers:
             self.worker_timeout = None
         self.workers = None
 
+        jobs = self.runtests.get_jobs()
+        if jobs is not None:
+            # Don't spawn more threads than the number of jobs:
+            # these worker threads would never get anything to do.
+            self.num_workers = min(self.num_workers, jobs)
+
     def start_workers(self) -> None:
         self.workers = [WorkerThread(index, self)
                         for index in range(1, self.num_workers + 1)]
-        msg = f"Run tests in parallel using {len(self.workers)} child processes"
+        jobs = self.runtests.get_jobs()
+        if jobs is not None:
+            tests = f'{jobs} tests'
+        else:
+            tests = 'tests'
+        nworkers = len(self.workers)
+        processes = plural(nworkers, "process", "processes")
+        msg = (f"Run {tests} in parallel using "
+               f"{nworkers} worker {processes}")
         if self.timeout:
             msg += (" (timeout: %s, worker timeout: %s)"
                     % (format_duration(self.timeout),
