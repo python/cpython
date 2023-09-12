@@ -143,7 +143,10 @@ The module defines the following functions:
    normally a single string; however, for :exc:`SyntaxError` exceptions, it
    contains several lines that (when printed) display detailed information
    about where the syntax error occurred. Following the message, the list
-   contains the exception's notes.
+   contains the exception's :attr:`notes <BaseException.__notes__>`.
+
+   .. versionchanged:: 3.11
+      The returned list now includes any notes attached to the exception.
 
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
