@@ -50,7 +50,7 @@ build applications which provide an interactive interpreter prompt.
    .. versionchanged:: 3.6
       Added *exitmsg* parameter.
 
-   .. versionchanged:: 3.12
+   .. versionchanged:: 3.13
       Added *local_exit* parameter.
 
 .. function:: compile_command(source, filename="<input>", symbol="single")
