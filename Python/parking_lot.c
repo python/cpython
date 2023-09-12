@@ -62,7 +62,7 @@ typedef struct {
 static Bucket buckets[NUM_BUCKETS];
 
 #ifdef HAVE_THREAD_LOCAL
-_Py_thread_local ThreadData *thread_data = NULL;
+static _Py_thread_local ThreadData *thread_data = NULL;
 #else
 #error "no supported thread-local variable storage classifier"
 #endif
