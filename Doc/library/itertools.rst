@@ -1030,13 +1030,16 @@ The following recipes have a more mathematical flavor:
    def sieve(n):
        "Primes less than n."
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       if n > 2:
+           yield 2
+       start = 3
        data = bytearray((0, 1)) * (n // 2)
-       data[:3] = 0, 0, 0
        limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
+       for p in iter_index(data, 1, start, limit):
+           yield from iter_index(data, 1, start, p*p)
            data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-       data[2] = 1
-       return iter_index(data, 1) if n > 2 else iter([])
+           start = p*p
+       yield from iter_index(data, 1, start)
 
    def factor(n):
        "Prime factors of n."
