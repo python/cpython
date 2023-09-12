@@ -318,8 +318,10 @@ class InteractiveConsole(InteractiveInterpreter):
 class Quitter:
     def __init__(self, name):
         self.name = name
-        self.eof = 'Ctrl-Z plus Return' if sys.platform == "win32" else \
-                   'Ctrl-D (i.e. EOF)'
+        if sys.platform == "win32":
+            self.eof = 'Ctrl-Z plus Return'
+        else:
+            self.eof = 'Ctrl-D (i.e. EOF)'
 
     def __repr__(self):
         return f'Use {self.name} or {self.eof} to exit'
