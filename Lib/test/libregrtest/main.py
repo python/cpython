@@ -112,8 +112,11 @@ class Regrtest:
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: list[str] = ns.use_resources
-        self.python_cmd: list[str] | None = ns.python
+        self.use_resources: tuple[str] = tuple(ns.use_resources)
+        if ns.python:
+            self.python_cmd: tuple[str] = tuple(ns.python)
+        else:
+            self.python_cmd = None
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self.tmp_dir: StrPath | None = ns.tempdir
@@ -377,8 +380,11 @@ class Regrtest:
         return RunTests(
             tests,
             fail_fast=self.fail_fast,
+            fail_env_changed=self.fail_env_changed,
             match_tests=self.match_tests,
             ignore_tests=self.ignore_tests,
+            match_tests_dict=None,
+            rerun=None,
             forever=self.forever,
             pgo=self.pgo,
             pgo_extended=self.pgo_extended,
@@ -393,6 +399,9 @@ class Regrtest:
             gc_threshold=self.gc_threshold,
             use_resources=self.use_resources,
             python_cmd=self.python_cmd,
+            randomize=self.randomize,
+            random_seed=self.random_seed,
+            json_fd=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
