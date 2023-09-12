@@ -467,7 +467,7 @@ class TestSpecifics(unittest.TestCase):
             type_ignores=[],
         )
 
-        with self.assertRaisesRegex(ValueError, "NamedExpr target must be a Name"):
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
             compile(ast.fix_missing_locations(m), "<file>", "exec")
 
     def test_compile_ast(self):
