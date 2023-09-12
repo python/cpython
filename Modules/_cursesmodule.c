@@ -104,8 +104,6 @@ static const char PyCursesVersion[] = "2.2";
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_structseq.h"     // _PyStructSequence_NewType()
@@ -3071,8 +3069,8 @@ _curses_getwin(PyObject *module, PyObject *file)
     }
     datalen = PyBytes_GET_SIZE(data);
     if (fwrite(PyBytes_AS_STRING(data), 1, datalen, fp) != datalen) {
-        Py_DECREF(data);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(data);
         goto error;
     }
     Py_DECREF(data);

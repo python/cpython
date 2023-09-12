@@ -13,7 +13,7 @@ import sysconfig
 import types
 
 
-CORE_VENV_DEPS = ('pip', 'setuptools')
+CORE_VENV_DEPS = ('pip',)
 logger = logging.getLogger(__name__)
 
 
@@ -523,7 +523,7 @@ def main(args=None):
                              'this environment.')
     parser.add_argument('--upgrade-deps', default=False, action='store_true',
                         dest='upgrade_deps',
-                        help=f'Upgrade core dependencies: {", ".join(CORE_VENV_DEPS)} '
+                        help=f'Upgrade core dependencies ({", ".join(CORE_VENV_DEPS)}) '
                              'to the latest version in PyPI')
     options = parser.parse_args(args)
     if options.upgrade and options.clear:

@@ -1,2 +1,0 @@
-Improve import time of ``platform`` by removing IronPython version parsing. The IronPython version parsing
-was not functional (see https://github.com/IronLanguages/ironpython3/issues/1667).

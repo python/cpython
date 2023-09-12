@@ -2,7 +2,6 @@ import logging
 import sys
 import textwrap
 
-from c_common.fsutil import expand_filenames, iter_files_by_suffix
 from c_common.scriptutil import (
     VERBOSITY,
     add_verbosity_cli,
@@ -11,7 +10,6 @@ from c_common.scriptutil import (
     add_kind_filtering_cli,
     add_files_cli,
     add_progress_cli,
-    main_for_filenames,
     process_args_by_key,
     configure_logger,
     get_prog,
