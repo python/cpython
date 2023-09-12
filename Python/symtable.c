@@ -1581,7 +1581,12 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
     }
     case TypeAlias_kind: {
         VISIT(st, expr, s->v.TypeAlias.name);
-        assert(s->v.TypeAlias.name->kind == Name_kind);
+        // This is only possible for a manually created AST
+        if (s->v.TypeAlias.name->kind != Name_kind) {
+            PyErr_SetString(PyExc_SyntaxError,
+                            "Type alias name must be a simple name");
+            VISIT_QUIT(st, 0);
+        }
         PyObject *name = s->v.TypeAlias.name->v.Name.id;
         int is_in_class = st->st_cur->ste_type == ClassBlock;
         int is_generic = asdl_seq_LEN(s->v.TypeAlias.type_params) > 0;
