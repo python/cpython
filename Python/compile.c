@@ -4776,7 +4776,7 @@ load_args_for_super(struct compiler *c, expr_ty e) {
 
     // load super() global
     PyObject *super_name = e->v.Call.func->v.Name.id;
-    RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+    RETURN_IF_ERROR(compiler_nameop(c, LOC(e->v.Call.func), super_name, Load));
 
     if (asdl_seq_LEN(e->v.Call.args) == 2) {
         VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
