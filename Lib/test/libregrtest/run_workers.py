@@ -227,10 +227,6 @@ class WorkerThread(threading.Thread):
             match_tests = None
         err_msg = None
 
-        print("main process is_emscripten:", support.is_emscripten)
-        print("main process is_wasi:", support.is_wasi)
-        print("main process JSON_FILE_USE_FILENAME:", JSON_FILE_USE_FILENAME)
-
         stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
         if JSON_FILE_USE_FILENAME:
             json_tmpfile = tempfile.NamedTemporaryFile('w+', encoding='utf8')

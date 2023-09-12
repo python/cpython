@@ -507,5 +507,10 @@ class Regrtest:
 
 def main(tests=None, **kwargs):
     """Run the Python suite."""
+
+    print("main process start sys.platform:", sys.platform)
+    print("main process start is_emscripten:", support.is_emscripten)
+    print("main process start is_wasi:", support.is_wasi)
+
     ns = _parse_args(sys.argv[1:], **kwargs)
     Regrtest(ns).main(tests=tests)

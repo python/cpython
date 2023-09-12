@@ -122,6 +122,10 @@ def main():
     tmp_dir = get_temp_dir()
     work_dir = get_work_dir(tmp_dir, worker=True)
 
+    print("worker process sys.platform:", sys.platform)
+    print("worker process is_emscripten:", support.is_emscripten)
+    print("worker process is_wasi:", support.is_wasi)
+
     with exit_timeout():
         with os_helper.temp_cwd(work_dir, quiet=True):
             worker_process(worker_json)

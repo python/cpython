@@ -20,6 +20,11 @@ else:
     JsonFileType = int
     JSON_FILE_USE_FILENAME = False
 
+import os
+print(os.getpid(), "JSON_FILE_USE_FILENAME:", JSON_FILE_USE_FILENAME)
+print(os.getpid(), "JsonFileType:", JsonFileType)
+
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class HuntRefleak:
