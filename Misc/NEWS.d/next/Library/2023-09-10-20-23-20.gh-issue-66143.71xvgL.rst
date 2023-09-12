@@ -1,1 +1,2 @@
-The CodecInfo object has been made copyable. Patched by Robert Lehmann and Furkan Onder.
+The :class:`codecs.CodecInfo` object has been made copyable and picleable.
+Patched by Robert Lehmann and Furkan Onder.
