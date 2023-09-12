@@ -7,7 +7,7 @@ from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests, JsonFileType, JSON_FILE_USE_FILENAME
+from .runtests import RunTests, JsonFileType
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple, MS_WINDOWS,
@@ -57,17 +57,23 @@ def create_worker_process(runtests: RunTests,
         close_fds=True,
         cwd=work_dir,
     )
-    if JSON_FILE_USE_FILENAME:
-        # Nothing to do to pass the JSON filename to the worker process
+
+    # Pass json_file to the worker process
+    if isinstance(json_file, str):
+        # Filename: nothing to do to
+        print("create_worker_process() json_file: filename")
         pass
     elif MS_WINDOWS:
-        # Pass the JSON handle to the worker process
+        # Windows handle
+        print("create_worker_process() json_file: Windows handle")
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {"handle_list": [json_file]}
         kwargs['startupinfo'] = startupinfo
     else:
-        # Pass the JSON file descriptor to the worker process
+        # Unix file descriptor
+        print("create_worker_process() json_file: Unix fd")
         kwargs['pass_fds'] = [json_file]
+
     if USE_PROCESS_GROUP:
         kwargs['start_new_session'] = True
 

@@ -8,20 +8,10 @@ from .utils import (
     StrPath, StrJSON, TestTuple, FilterTuple, FilterDict)
 
 
-if support.is_emscripten or support.is_wasi:
-    # On Emscripten/WASI, it's a filename. Passing a file descriptor to a
-    # worker process fails with "OSError: [Errno 8] Bad file descriptor" in the
-    # worker process.
-    JsonFileType = StrPath
-    JSON_FILE_USE_FILENAME = True
-else:
-    # On Unix, it's a file descriptor.
-    # On Windows, it's a handle.
-    JsonFileType = int
-    JSON_FILE_USE_FILENAME = False
+# See RunTests.json_file_use_filename()
+JsonFileType = int | StrPath
 
 import os
-print(os.getpid(), "JSON_FILE_USE_FILENAME:", JSON_FILE_USE_FILENAME)
 print(os.getpid(), "JsonFileType:", JsonFileType)
 
 
@@ -58,7 +48,7 @@ class RunTests:
     python_cmd: tuple[str] | None
     randomize: bool
     random_seed: int | None
-    json_file: JsonFileType  | None
+    json_file: JsonFileType | None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -91,6 +81,18 @@ class RunTests:
     @staticmethod
     def from_json(worker_json: StrJSON) -> 'RunTests':
         return json.loads(worker_json, object_hook=_decode_runtests)
+
+    def json_file_use_filename(self):
+        # On Unix, it's a file descriptor.
+        # On Windows, it's a handle.
+        # On Emscripten/WASI, it's a filename. Passing a file descriptor to a
+        # worker process fails with "OSError: [Errno 8] Bad file descriptor" in the
+        # worker process.
+        return (
+            self.python_cmd
+            or support.is_emscripten
+            or support.is_wasi
+        )
 
 
 class _EncodeRunTests(json.JSONEncoder):

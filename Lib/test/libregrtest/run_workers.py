@@ -17,10 +17,10 @@ from test.support import os_helper
 from .logger import Logger
 from .result import TestResult, State
 from .results import TestResults
-from .runtests import RunTests, JsonFileType, JSON_FILE_USE_FILENAME
+from .runtests import RunTests, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, MS_WINDOWS,
+    StrPath, StrJSON, TestName, MS_WINDOWS, TMP_PREFIX,
     format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
@@ -228,9 +228,14 @@ class WorkerThread(threading.Thread):
         err_msg = None
 
         stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
-        if JSON_FILE_USE_FILENAME:
-            json_tmpfile = tempfile.NamedTemporaryFile('w+', encoding='utf8')
-            print("main process: create NamedTemporaryFile")
+
+        json_file_use_filename = self.runtests.json_file_use_filename()
+        print("main process: json_file_use_filename?", json_file_use_filename)
+        if json_file_use_filename:
+            prefix = TMP_PREFIX + 'json_'
+            json_tmpfile = tempfile.NamedTemporaryFile('w+', encoding='utf8',
+                                                       prefix=prefix)
+            print("main process: create NamedTemporaryFile", json_tmpfile.name)
         else:
             json_tmpfile = tempfile.TemporaryFile('w+', encoding='utf8')
             print("main process: create TemporaryFile")
@@ -239,14 +244,14 @@ class WorkerThread(threading.Thread):
         # non-blocking pipes on Emscripten with NodeJS.
         with (stdout_file, json_tmpfile):
             stdout_fd = stdout_file.fileno()
-            if JSON_FILE_USE_FILENAME:
+            if json_file_use_filename:
                 json_file = json_tmpfile.name
             else:
                 json_file = json_tmpfile.fileno()
                 if MS_WINDOWS:
                     json_file = msvcrt.get_osfhandle(json_file)
-            print("main process json_type file:", type(json_file))
-            print("main process json_type:", json_file)
+            print("main process json_file type:", type(json_file))
+            print("main process json_file:", json_file)
 
             kwargs = {}
             if match_tests:
