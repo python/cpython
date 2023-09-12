@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from typing import TextIO, NoReturn
+from typing import NoReturn
 
 from test import support
 from test.support import os_helper
@@ -11,7 +11,7 @@ from .runtests import RunTests
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple, MS_WINDOWS,
-    get_work_dir, exit_timeout)
+    get_temp_dir, get_work_dir, exit_timeout)
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
@@ -38,6 +38,11 @@ def create_worker_process(runtests: RunTests,
         env['TEMP'] = tmp_dir
         env['TMP'] = tmp_dir
 
+    # Emscripten and WASI Python must start in the Python source code directory
+    # to get 'python.js' or 'python.wasm' file. Then worker_process() changes
+    # to a temporary directory created to run tests.
+    work_dir = os_helper.SAVEDCWD
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
@@ -48,6 +53,7 @@ def create_worker_process(runtests: RunTests,
         stderr=output_fd,
         text=True,
         close_fds=True,
+        cwd=work_dir,
     )
     if not MS_WINDOWS:
         kwargs['pass_fds'] = [json_fd]
@@ -102,7 +108,8 @@ def main():
         sys.exit(1)
     worker_json = sys.argv[1]
 
-    work_dir = get_work_dir(worker=True)
+    tmp_dir = get_temp_dir()
+    work_dir = get_work_dir(tmp_dir, worker=True)
 
     with exit_timeout():
         with os_helper.temp_cwd(work_dir, quiet=True):
