@@ -2319,6 +2319,8 @@ If there is no open transaction upon leaving the body of the ``with`` statement,
 or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
+
+
 .. note::
 
    The context manager neither implicitly opens a new transaction
@@ -2345,6 +2347,28 @@ the context manager does nothing.
    # so the connection object should be closed manually
    con.close()
 
+``context.closing`` can also be used to perform singular transactions.
+In this case, the ``sqlite3`` connection is closed without an additional
+``sqlite.connect().close()`` after a context manager closes.
+
+For default ``sqlite`` context management cases which don't use
+``contextlib.closing``, this is intended to perform multiple transactions
+without fully closing the connection.
+
+A ``contextlib.closing`` example
+
+.. testcode::
+
+   import sqlite3
+   from contextlib import closing
+
+   with closing(sqlite3.connect("workfile.sqlite")) as cx:
+      with cx:
+        cx.execute("CREATE TABLE lang(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE)")
+        cx.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
+
+
+   # no need to close the connection as contextlib.closing closed it for us
 .. testoutput::
    :hide:
 
@@ -2352,6 +2376,7 @@ the context manager does nothing.
 
 
 .. _sqlite3-uri-tricks:
+
 
 How to work with SQLite URIs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
