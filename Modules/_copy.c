@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"  // _PyNone_Type, _PyNotImplemented_Type
+#include "pycore_dict.h"  // _PyDict_NewPresized
 #include "clinic/_copy.c.h"
 
 /*[clinic input]
