@@ -238,6 +238,12 @@ capture data for later printing in a lightweight fashion.
    group's exceptions array. The formatted output is truncated when either
    limit is exceeded.
 
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *max_group_width* and *max_group_depth* parameters.
+
    .. attribute:: __cause__
 
       A :class:`TracebackException` of the original ``__cause__``.
@@ -349,16 +355,11 @@ capture data for later printing in a lightweight fashion.
       :exc:`BaseExceptionGroup`, the nested exceptions are included as
       well, recursively, with indentation relative to their nesting depth.
 
+      .. versionchanged:: 3.11
+         The exception's notes are now included in the output.
+
       .. versionchanged:: 3.13
          Added the *show_group* parameter.
-
-   .. versionchanged:: 3.10
-      Added the *compact* parameter.
-
-   .. versionchanged:: 3.11
-      Added the *max_group_width* and *max_group_depth* parameters.
-      The exception's notes are now included in the output.
-
 
 
 :class:`StackSummary` Objects
