@@ -172,9 +172,9 @@ The module defines the following functions:
    which the lock starts, relative to *whence*, and *whence* is as with
    :func:`io.IOBase.seek`, specifically:
 
-   * :const:`0` -- relative to the start of the file (:const:`os.SEEK_SET`)
-   * :const:`1` -- relative to the current buffer position (:const:`os.SEEK_CUR`)
-   * :const:`2` -- relative to the end of the file (:const:`os.SEEK_END`)
+   * ``0`` -- relative to the start of the file (:const:`os.SEEK_SET`)
+   * ``1`` -- relative to the current buffer position (:const:`os.SEEK_CUR`)
+   * ``2`` -- relative to the end of the file (:const:`os.SEEK_END`)
 
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The

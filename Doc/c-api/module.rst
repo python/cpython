@@ -338,6 +338,7 @@ The available slot types are:
    The *value* pointer of this slot must point to a function of the signature:
 
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
+      :noindex:
 
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
    instance, as defined in :PEP:`451`, and the module definition.
@@ -372,9 +373,43 @@ The available slot types are:
    The signature of the function is:
 
    .. c:function:: int exec_module(PyObject* module)
+      :noindex:
 
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
+
+.. c:macro:: Py_mod_multiple_interpreters
+
+   Specifies one of the following values:
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+
+      The module does not support being imported in subinterpreters.
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      but only when they share the main interpreter's GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   .. c:macro:: Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      even when they have their own GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   This slot determines whether or not importing this module
+   in a subinterpreter will fail.
+
+   Multiple ``Py_mod_multiple_interpreters`` slots may not be specified
+   in one module definition.
+
+   If ``Py_mod_multiple_interpreters`` is not specified, the import
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+
+   .. versionadded:: 3.12
 
 See :PEP:`489` for more details on multi-phase initialization.
 
@@ -515,7 +550,7 @@ state:
    .. note::
 
       Unlike other functions that steal references, ``PyModule_AddObject()``
-      only decrements the reference count of *value* **on success**.
+      only releases the reference to *value* **on success**.
 
       This means that its return value must be checked, and calling code must
       :c:func:`Py_XDECREF` *value* manually on error.

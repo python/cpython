@@ -1,12 +1,11 @@
-
 #ifndef Py_INTERNAL_INSTRUMENT_H
 #define Py_INTERNAL_INSTRUMENT_H
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
 
-#include "pycore_bitutils.h"      // _Py_popcount32
-#include "pycore_frame.h"
-
-#include "cpython/code.h"
+#include "pycore_frame.h"         // _PyInterpreterFrame
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +28,7 @@ extern "C" {
 #define PY_MONITORING_EVENT_STOP_ITERATION 9
 
 #define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
-    ((ev) <= PY_MONITORING_EVENT_STOP_ITERATION)
+    ((ev) < _PY_MONITORING_LOCAL_EVENTS)
 
 /* Other events, mainly exceptions */
 
@@ -89,10 +88,6 @@ _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
 extern int
 _Py_call_instrumentation_2args(PyThreadState *tstate, int event,
     _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
-
-extern void
-_Py_call_instrumentation_exc0(PyThreadState *tstate, int event,
-    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 
 extern void
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,

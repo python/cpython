@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_io_open__doc__,
 "open($module, /, file, mode=\'r\', buffering=-1, encoding=None,\n"
@@ -202,7 +201,7 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
         }
     }
     if (args[2]) {
-        buffering = _PyLong_AsInt(args[2]);
+        buffering = PyLong_AsInt(args[2]);
         if (buffering == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -332,7 +331,7 @@ _io_text_encoding(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    stacklevel = _PyLong_AsInt(args[1]);
+    stacklevel = PyLong_AsInt(args[1]);
     if (stacklevel == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -404,4 +403,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6800c35366b1a5f3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=aaf96c8d9bd20abc input=a9049054013a1b77]*/

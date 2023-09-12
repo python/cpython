@@ -1574,12 +1574,12 @@ Build and C API Changes
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
   * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
-  * Private functions: :c:func:`_PyObject_GC_TRACK`,
-    :c:func:`_PyObject_GC_UNTRACK`, :c:func:`_Py_Dealloc`
+  * Private functions: :c:func:`!_PyObject_GC_TRACK`,
+    :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
   (Contributed by Victor Stinner in :issue:`35059`.)
 
-* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+* The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
   (Contributed by Victor Stinner in :issue:`35713`.)
@@ -1628,7 +1628,7 @@ Build and C API Changes
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
-* :c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+* :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
   path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
   (:c:func:`Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
@@ -1845,11 +1845,11 @@ Changes in Python behavior
   always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
-* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+* :c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  behavior is not desired, guard the call by checking :c:func:`!_Py_IsFinalizing`
   or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
@@ -2021,7 +2021,7 @@ Changes in the C API
   *cf_flags*.
   (Contributed by Guido van Rossum in :issue:`35766`.)
 
-* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+* The :c:func:`!PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
@@ -2121,7 +2121,7 @@ Changes in the C API
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
 
-* The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
+* The functions :c:func:`!PyNode_AddChild` and :c:func:`!PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against

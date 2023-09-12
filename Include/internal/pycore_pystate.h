@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.
@@ -66,6 +66,15 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
+
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
+// Export for most shared extensions, used via _PyThreadState_GET() static
+// inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.
@@ -125,11 +134,6 @@ extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
-extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
-extern void _PyThreadState_ClearDetached(PyThreadState *);
-extern void _PyThreadState_BindDetached(PyThreadState *);
-extern void _PyThreadState_UnbindDetached(PyThreadState *);
-
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
 
@@ -176,6 +180,14 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 // Export for test_peg_generator.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
+// Get the single PyInterpreterState used by this process' GILState
+// implementation.
+//
+// This function doesn't check for error. Return NULL before _PyGILState_Init()
+// is called and after _PyGILState_Fini() is called.
+//
+// See also PyInterpreterState_Get() and _PyInterpreterState_GET().
+extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
 #ifdef __cplusplus
 }

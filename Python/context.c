@@ -1267,7 +1267,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
 static PyObject *
 get_token_missing(void)
 {
-    return Py_NewRef(&_Py_SINGLETON(context_token_missing));
+    return (PyObject *)&_Py_SINGLETON(context_token_missing);
 }
 
 

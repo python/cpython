@@ -1,0 +1,1 @@
+Propagate ``frozen_modules`` to multiprocessing spawned process interpreters.

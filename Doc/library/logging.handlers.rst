@@ -97,7 +97,7 @@ sends logging output to a disk file.  It inherits the output functionality from
 
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely. If
    *errors* is specified, it's used to determine how encoding errors are handled.
@@ -182,7 +182,7 @@ for this value.
 
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
-   :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
+   ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely. If
    *errors* is provided, it determines how encoding errors are handled.
