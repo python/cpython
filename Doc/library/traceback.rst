@@ -357,6 +357,7 @@ capture data for later printing in a lightweight fashion.
 
    .. versionchanged:: 3.11
       Added the *max_group_width* and *max_group_depth* parameters.
+      The exception's notes are now included in the output.
 
 
 
