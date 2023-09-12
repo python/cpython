@@ -741,23 +741,23 @@ ABC hierarchy::
 
     .. abstractmethod:: iterdir()
 
-       Yield Traversable objects in self.
+       Yield ``Traversable`` objects in ``self``.
 
     .. abstractmethod:: is_dir()
 
-       Return True if self is a directory.
+       Return ``True`` if ``self`` is a directory.
 
     .. abstractmethod:: is_file()
 
-       Return True if self is a file.
+       Return ``True`` if ``self`` is a file.
 
     .. abstractmethod:: joinpath(child)
 
-       Return Traversable child in self.
+       Return Traversable child in ``self``.
 
     .. abstractmethod:: __truediv__(child)
 
-       Return Traversable child in self.
+       Return ``Traversable`` child in ``self``.
 
     .. abstractmethod:: open(mode='r', *args, **kwargs)
 
@@ -769,11 +769,11 @@ ABC hierarchy::
 
     .. method:: read_bytes()
 
-       Read contents of self as bytes.
+       Read contents of ``self`` as bytes.
 
     .. method:: read_text(encoding=None)
 
-       Read contents of self as text.
+       Read contents of ``self`` as text.
 
 
 .. class:: TraversableResources
