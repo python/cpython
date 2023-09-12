@@ -6,7 +6,8 @@
 #include "pycore_pyerrors.h"    // _Py_FatalErrorFormat
 #include "pycore_pystate.h"     // _PyThreadState_GET
 
-#ifdef _WIN32
+#ifdef MS_WINDOWS
+#   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 #elif (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
      defined(HAVE_SEM_TIMEDWAIT))
@@ -23,7 +24,7 @@
 // A simple, cross-platform binary semaphore that can be used to implement
 // wakeup/sleep.
 struct _PySemaphore {
-#if defined(_WIN32)
+#if defined(MS_WINDOWS)
     HANDLE platform_sem;
 #elif defined(USE_SEMAPHORES)
     sem_t platform_sem;
@@ -73,7 +74,7 @@ static _Py_thread_local ThreadData *thread_data = NULL;
 static void
 _PySemaphore_Init(_PySemaphore *sema)
 {
-#if defined(_WIN32)
+#if defined(MS_WINDOWS)
     sema->platform_sem = CreateSemaphore(
         NULL,   //  attributes
         0,      //  initial count
@@ -100,7 +101,7 @@ _PySemaphore_Init(_PySemaphore *sema)
 static void
 _PySemaphore_Destroy(_PySemaphore *sema)
 {
-#if defined(_WIN32)
+#if defined(MS_WINDOWS)
     CloseHandle(sema->platform_sem);
 #elif defined(USE_SEMAPHORES)
     sem_destroy(&sema->platform_sem);
@@ -114,7 +115,7 @@ static int
 _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
 {
     int res = Py_PARK_INTR;
-#if defined(_WIN32)
+#if defined(MS_WINDOWS)
     DWORD wait;
     DWORD millis = 0;
     if (timeout < 0) {
@@ -213,7 +214,7 @@ _PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout, int detach)
 void
 _PySemaphore_Wakeup(_PySemaphore *sema)
 {
-#if defined(_WIN32)
+#if defined(MS_WINDOWS)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
         Py_FatalError("parking_lot: ReleaseSemaphore failed");
     }

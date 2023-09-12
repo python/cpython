@@ -5,7 +5,8 @@
 #include "pycore_lock.h"
 #include "clinic/test_lock.c.h"
 
-#ifdef _WIN32
+#ifdef MS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
 #include <unistd.h>         // usleep()
@@ -20,7 +21,7 @@ module _testinternalcapi
 static void
 pysleep(int ms)
 {
-#ifdef _WIN32
+#ifdef MS_WINDOWS
     Sleep(ms);
 #else
     usleep(ms * 1000);

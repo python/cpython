@@ -5,7 +5,8 @@
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
 
-#ifdef _WIN32
+#ifdef MS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
@@ -37,7 +38,7 @@ struct mutex_entry {
 static void
 _Py_yield(void)
 {
-#ifdef _WIN32
+#ifdef MS_WINDOWS
     SwitchToThread();
 #elif defined(HAVE_SCHED_H)
     sched_yield();
