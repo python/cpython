@@ -218,6 +218,21 @@ get_module_state(PyObject *mod)
     return state;
 }
 
+static module_state *
+_get_current_module_state(void)
+{
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        // XXX import it?
+        PyErr_SetString(PyExc_RuntimeError,
+                        MODULE_NAME " module not imported yet");
+        return NULL;
+    }
+    module_state *state = get_module_state(mod);
+    Py_DECREF(mod);
+    return state;
+}
+
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
