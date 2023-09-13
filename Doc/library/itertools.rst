@@ -1028,34 +1028,6 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def sieve(n):
-       "Primes less than n."
-       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-       if n > 2:
-           yield 2
-       start = 3
-       data = bytearray((0, 1)) * (n // 2)
-       limit = math.isqrt(n) + 1
-       for p in iter_index(data, 1, start, limit):
-           yield from iter_index(data, 1, start, p*p)
-           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-           start = p*p
-       yield from iter_index(data, 1, start)
-
-   def factor(n):
-       "Prime factors of n."
-       # factor(99) --> 3 3 11
-       # factor(1_000_000_000_000_007) --> 47 59 360620266859
-       # factor(1_000_000_000_000_403) --> 1000000000000403
-       for prime in sieve(math.isqrt(n) + 1):
-           while not n % prime:
-               yield prime
-               n //= prime
-               if n == 1:
-                   return
-       if n > 1:
-           yield n
-
    def sum_of_squares(it):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) -> 1400
@@ -1079,16 +1051,15 @@ The following recipes have a more mathematical flavor:
        The signal is consumed lazily and can be infinite.
 
        Convolutions are mathematically commutative.
-       If the signal and kernel are swapped, the
-       output will be the same.
+       If the signal and kernel are swapped,
+       the output will be the same.
 
        Article:  https://betterexplained.com/articles/intuitive-convolution/
        Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
-       Tables:   https://www.ams.org/journals/mcom/1988-51-184/S0025-5718-1988-0935077-0/S0025-5718-1988-0935077-0.pdf
        """
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
-       # convolve(data, [1/2, 0.0, -1/2]) --> Estimate 1st derivative
-       # convolve(data, [1, -2, 1]) --> Estimate 2nd derivative
+       # convolve(data, [1/2, 0, -1/2]) --> 1st derivative estimate
+       # convolve(data, [1, -2, 1]) --> 2nd derivative estimate
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
@@ -1127,6 +1098,34 @@ The following recipes have a more mathematical flavor:
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(operator.mul, coefficients, powers))
+
+   def sieve(n):
+       "Primes less than n."
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       if n > 2:
+           yield 2
+       start = 3
+       data = bytearray((0, 1)) * (n // 2)
+       limit = math.isqrt(n) + 1
+       for p in iter_index(data, 1, start, limit):
+           yield from iter_index(data, 1, start, p*p)
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+           start = p*p
+       yield from iter_index(data, 1, start)
+
+   def factor(n):
+       "Prime factors of n."
+       # factor(99) --> 3 3 11
+       # factor(1_000_000_000_000_007) --> 47 59 360620266859
+       # factor(1_000_000_000_000_403) --> 1000000000000403
+       for prime in sieve(math.isqrt(n) + 1):
+           while not n % prime:
+               yield prime
+               n //= prime
+               if n == 1:
+                   return
+       if n > 1:
+           yield n
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
