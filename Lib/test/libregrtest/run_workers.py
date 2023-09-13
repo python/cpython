@@ -104,9 +104,9 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self.test_name = None
-        self.start_time = None
-        self._popen = None
+        self.test_name: TestName | None = None
+        self.start_time: float | None = None
+        self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
 
@@ -121,8 +121,9 @@ class WorkerThread(threading.Thread):
             info.append(f'test={test}')
         popen = self._popen
         if popen is not None:
+            assert self.start_time is not None
             dt = time.monotonic() - self.start_time
-            info.extend((f'pid={self._popen.pid}',
+            info.extend((f'pid={popen.pid}',
                          f'time={format_duration(dt)}'))
         return '<%s>' % ' '.join(info)
 
@@ -160,7 +161,7 @@ class WorkerThread(threading.Thread):
         self._kill()
 
     def _run_process(self, runtests: RunTests, output_fd: int,
-                     tmp_dir: StrPath | None = None) -> int:
+                     tmp_dir: StrPath | None = None) -> int | None:
         popen = create_worker_process(runtests, output_fd, tmp_dir)
         self._popen = popen
         self._killed = False
@@ -192,6 +193,7 @@ class WorkerThread(threading.Thread):
                 # bpo-38207: Don't attempt to call communicate() again: on it
                 # can hang until all child processes using stdout
                 # pipes completes.
+                return retcode
             except OSError:
                 if self._stopped:
                     # kill() has been called: communicate() fails
@@ -235,7 +237,7 @@ class WorkerThread(threading.Thread):
 
             json_fd = json_tmpfile.fileno()
             if MS_WINDOWS:
-                json_handle = msvcrt.get_osfhandle(json_fd)
+                json_handle = msvcrt.get_osfhandle(json_fd)  # type: ignore[attr-defined]
                 json_file = JsonFile(json_handle,
                                      JsonFileType.WINDOWS_HANDLE)
             else:
@@ -260,7 +262,7 @@ class WorkerThread(threading.Thread):
             **kwargs)
 
     def run_tmp_files(self, worker_runtests: RunTests,
-                      stdout_fd: int) -> (int, list[StrPath]):
+                      stdout_fd: int) -> tuple[int | None, list[StrPath]]:
         # gh-93353: Check for leaked temporary files in the parent process,
         # since the deletion of temporary files can happen late during
         # Python finalization: too late for libregrtest.
@@ -283,6 +285,7 @@ class WorkerThread(threading.Thread):
         return (retcode, tmp_files)
 
     def read_stdout(self, stdout_file: TextIO) -> str:
+        assert self.test_name is not None
         stdout_file.seek(0)
         try:
             return stdout_file.read().strip()
@@ -294,16 +297,18 @@ class WorkerThread(threading.Thread):
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
+        assert self.test_name is not None
+        worker_json: StrJSON
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
-                worker_json: StrJSON = json_tmpfile.read()
+                worker_json = json_tmpfile.read()
             elif json_file.file_type == JsonFileType.STDOUT:
                 stdout, _, worker_json = stdout.rpartition("\n")
                 stdout = stdout.rstrip()
             else:
                 with json_file.open(encoding='utf8') as json_fp:
-                    worker_json: StrJSON = json_fp.read()
+                    worker_json = json_fp.read()
         except Exception as exc:
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
@@ -337,9 +342,9 @@ class WorkerThread(threading.Thread):
             stdout = self.read_stdout(stdout_file)
 
             if retcode is None:
-                raise WorkerError(self.test_name, None, stdout, state=State.TIMEOUT)
+                raise WorkerError(test_name, None, stdout, state=State.TIMEOUT)
             if retcode != 0:
-                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout)
+                raise WorkerError(test_name, f"Exit code {retcode}", stdout)
 
             result, stdout = self.read_json(json_file, json_tmpfile, stdout)
 
@@ -383,6 +388,7 @@ class WorkerThread(threading.Thread):
 
     def _wait_completed(self) -> None:
         popen = self._popen
+        assert popen is not None
 
         try:
             popen.wait(JOIN_TIMEOUT)
@@ -414,12 +420,13 @@ class WorkerThread(threading.Thread):
                 break
 
 
-def get_running(workers: list[WorkerThread]) -> list[str]:
-    running = []
+def get_running(workers: list[WorkerThread]) -> str | None:
+    running: list[str] = []
     for worker in workers:
         test_name = worker.test_name
         if not test_name:
             continue
+        assert worker.start_time is not None
         dt = time.monotonic() - worker.start_time
         if dt >= PROGRESS_MIN_TIME:
             text = f'{test_name} ({format_duration(dt)})'
@@ -431,7 +438,7 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 class RunWorkers:
     def __init__(self, num_workers: int, runtests: RunTests,
-                 logger: Logger, results: TestResult) -> None:
+                 logger: Logger, results: TestResults) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
         self.log = logger.log
@@ -446,10 +453,10 @@ class RunWorkers:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
             # of 5 minutes to faulthandler to kill the worker.
-            self.worker_timeout = min(self.timeout * 1.5, self.timeout + 5 * 60)
+            self.worker_timeout: float | None = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
-        self.workers = None
+        self.workers: list[WorkerThread] | None = None
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -458,14 +465,15 @@ class RunWorkers:
             self.num_workers = min(self.num_workers, jobs)
 
     def start_workers(self) -> None:
-        self.workers = [WorkerThread(index, self)
-                        for index in range(1, self.num_workers + 1)]
+        self.workers = workers = [
+            WorkerThread(index, self) for index in range(1, self.num_workers + 1)
+        ]
         jobs = self.runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        nworkers = len(self.workers)
+        nworkers = len(workers)
         processes = plural(nworkers, "process", "processes")
         msg = (f"Run {tests} in parallel using "
                f"{nworkers} worker {processes}")
@@ -474,10 +482,11 @@ class RunWorkers:
                     % (format_duration(self.timeout),
                        format_duration(self.worker_timeout)))
         self.log(msg)
-        for worker in self.workers:
+        for worker in workers:
             worker.start()
 
     def stop_workers(self) -> None:
+        assert self.workers
         start_time = time.monotonic()
         for worker in self.workers:
             worker.stop()
@@ -487,6 +496,7 @@ class RunWorkers:
     def _get_result(self) -> QueueOutput | None:
         pgo = self.runtests.pgo
         use_faulthandler = (self.timeout is not None)
+        assert self.workers
 
         # bpo-46205: check the status of workers every iteration to avoid
         # waiting forever on an empty queue.
@@ -521,15 +531,18 @@ class RunWorkers:
         if mp_result.err_msg:
             # MULTIPROCESSING_ERROR
             text += ' (%s)' % mp_result.err_msg
-        elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
-            text += ' (%s)' % format_duration(result.duration)
+        else:
+            assert isinstance(result.duration, float)
+            if (result.duration >= PROGRESS_MIN_TIME and not pgo):
+                text += ' (%s)' % format_duration(result.duration)
+        assert self.workers
         if not pgo:
             running = get_running(self.workers)
             if running:
                 text += f' -- {running}'
         self.display_progress(self.test_index, text)
 
-    def _process_result(self, item: QueueOutput) -> bool:
+    def _process_result(self, item: QueueOutput) -> TestResult:
         """Returns True if test runner must stop."""
         if item[0]:
             # Thread got an exception

@@ -7,6 +7,7 @@ import sys
 import time
 import traceback
 import unittest
+from typing import Protocol, cast
 
 from test import support
 from test.support import TestStats
@@ -51,8 +52,10 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     if refleak:
         result.state = State.REFLEAK
 
+    stats: TestStats | None
+
     match test_result:
-        case TestStats():
+        case TestStats():  # type: ignore[misc]
             stats = test_result
         case unittest.TestResult():
             stats = TestStats.from_unittest(test_result)
@@ -134,14 +137,14 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         with saved_test_environment(test_name,
                                     runtests.verbose, quiet, pgo=pgo):
             _load_run_test(result, runtests)
-    except support.ResourceDenied as msg:
+    except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {msg}", flush=True)
+            print(f"{test_name} skipped -- {exc}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
-    except unittest.SkipTest as msg:
+    except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {msg}", flush=True)
+            print(f"{test_name} skipped -- {exc}", flush=True)
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
@@ -184,6 +187,11 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.state = State.PASSED
 
 
+class PrintWarningsType(Protocol):
+    orig_stderr: io.TextIOWrapper
+    def __call__(self, msg: str) -> None: ...
+
+
 def _runtest(result: TestResult, runtests: RunTests) -> None:
     # Capture stdout and stderr, set faulthandler timeout,
     # and create JUnit XML report.
@@ -195,7 +203,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
         timeout is not None and threading_helper.can_start_thread
     )
     if use_timeout:
-        faulthandler.dump_traceback_later(timeout, exit=True)
+        faulthandler.dump_traceback_later(cast(float, timeout), exit=True)
 
     try:
         setup_tests(runtests)
@@ -206,7 +214,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
             stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
-            print_warning = support.print_warning
+            print_warning = cast(PrintWarningsType, support.print_warning)
             orig_print_warnings_stderr = print_warning.orig_stderr
 
             output = None

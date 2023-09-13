@@ -1,4 +1,5 @@
 import faulthandler
+import gc
 import os
 import random
 import signal
@@ -6,10 +7,6 @@ import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
-try:
-    import gc
-except ImportError:
-    gc = None
 
 from .runtests import RunTests
 from .utils import (
@@ -124,7 +121,7 @@ def setup_tests(runtests: RunTests):
         support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if runtests.hunt_refleak:
-        unittest.BaseTestSuite._cleanup = False
+        unittest.BaseTestSuite._cleanup = False  # type: ignore[attr-defined]
 
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)

@@ -26,14 +26,14 @@ class JsonFile:
     file: int | None
     file_type: str
 
-    def configure_subprocess(self, popen_kwargs: dict) -> None:
+    def configure_subprocess(self, popen_kwargs: dict[str, Any]) -> None:
         match self.file_type:
             case JsonFileType.UNIX_FD:
                 # Unix file descriptor
                 popen_kwargs['pass_fds'] = [self.file]
             case JsonFileType.WINDOWS_HANDLE:
                 # Windows handle
-                startupinfo = subprocess.STARTUPINFO()
+                startupinfo = subprocess.STARTUPINFO()  # type: ignore[attr-defined]
                 startupinfo.lpAttributeList = {"handle_list": [self.file]}
                 popen_kwargs['startupinfo'] = startupinfo
 
@@ -88,8 +88,8 @@ class RunTests:
     use_junit: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str]
-    python_cmd: tuple[str] | None
+    use_resources: tuple[str, ...] | None
+    python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | None
     json_file: JsonFile | None

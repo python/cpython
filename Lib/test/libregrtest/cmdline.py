@@ -3,6 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
+from typing import Literal
 
 
 USAGE = """\
@@ -157,11 +158,11 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources = None
+        self.use_resources: list[str] | None = None
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
-        self.huntrleaks = False
+        self.huntrleaks: tuple[int, int, str] | Literal[False] = False
         self.rerun = False
         self.verbose3 = False
         self.print_slow = False

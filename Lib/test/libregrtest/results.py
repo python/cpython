@@ -1,4 +1,5 @@
 import sys
+import xml.etree.ElementTree as ET
 from test.support import TestStats
 
 from .runtests import RunTests
@@ -31,7 +32,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list[ET.Element] = []
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -98,6 +99,7 @@ class TestResults:
                     raise ValueError(f"invalid test state: {result.state!r}")
 
         if result.has_meaningful_duration() and not rerun:
+            assert result.duration is not None
             self.test_times.append((result.duration, test_name))
         if result.stats is not None:
             self.stats.accumulate(result.stats)
@@ -111,7 +113,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.bad_results)
 
-    def prepare_rerun(self) -> (TestTuple, FilterDict):
+    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.bad_results:
@@ -130,7 +132,6 @@ class TestResults:
         return (tuple(tests), match_tests_dict)
 
     def add_junit(self, xml_data: list[str]):
-        import xml.etree.ElementTree as ET
         for e in xml_data:
             try:
                 self.testsuite_xml.append(ET.fromstring(e))
@@ -231,8 +232,7 @@ class TestResults:
             report.append(f'failures={stats.failures:,}')
         if stats.skipped:
             report.append(f'skipped={stats.skipped:,}')
-        report = ' '.join(report)
-        print(f"Total tests: {report}")
+        print(f"Total tests: {' '.join(report)}")
 
         # Total test files
         all_tests = [self.good, self.bad, self.rerun,
@@ -256,5 +256,4 @@ class TestResults:
         ):
             if tests:
                 report.append(f'{name}={len(tests)}')
-        report = ' '.join(report)
-        print(f"Total test files: {report}")
+        print(f"Total test files: {' '.join(report)}")

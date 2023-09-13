@@ -14,7 +14,7 @@ class Logger:
         self.start_time = time.perf_counter()
         self.test_count_text = ''
         self.test_count_width = 3
-        self.win_load_tracker = None
+        self.win_load_tracker: WindowsLoadTracker | None = None
         self._results: TestResults = results
         self._quiet: bool = quiet
         self._pgo: bool = pgo
@@ -32,9 +32,9 @@ class Logger:
 
         mins, secs = divmod(int(test_time), 60)
         hours, mins = divmod(mins, 60)
-        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+        formatted_test_time = "%d:%02d:%02d" % (hours, mins, secs)
 
-        line = f"{test_time} {line}"
+        line = f"{formatted_test_time} {line}"
         if empty:
             line = line[:-1]
 

@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from test import support
 from test.support import os_helper
@@ -18,14 +18,14 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def create_worker_process(runtests: RunTests, output_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
     if python_cmd is not None:
         executable = python_cmd
     else:
-        executable = [sys.executable]
+        executable = (sys.executable,)
     cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
@@ -45,7 +45,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         env=env,
         stdout=output_fd,
         # bpo-45410: Write stderr into stdout to keep messages order
@@ -57,6 +57,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 
     # Pass json_file to the worker process
     json_file = runtests.json_file
+    assert json_file is not None
     json_file.configure_subprocess(kwargs)
 
     with json_file.inherit_subprocess():
@@ -67,7 +68,8 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
-    json_file: JsonFile = runtests.json_file
+    json_file = runtests.json_file
+    assert isinstance(json_file, JsonFile)
 
     setup_test_dir(runtests.test_dir)
     setup_process()

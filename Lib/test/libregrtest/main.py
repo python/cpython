@@ -3,6 +3,7 @@ import random
 import re
 import sys
 import time
+from typing import cast
 
 from test import support
 from test.support import os_helper
@@ -46,7 +47,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace):
+    def __init__(self, ns: Namespace) -> None:
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
@@ -71,11 +72,11 @@ class Regrtest:
 
         # Select tests
         if ns.match_tests:
-            self.match_tests: FilterTuple = tuple(ns.match_tests)
+            self.match_tests: FilterTuple | None = tuple(ns.match_tests)
         else:
             self.match_tests = None
         if ns.ignore_tests:
-            self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
+            self.ignore_tests: FilterTuple | None = tuple(ns.ignore_tests)
         else:
             self.ignore_tests = None
         self.exclude: bool = ns.exclude
@@ -105,16 +106,16 @@ class Regrtest:
         if ns.huntrleaks:
             warmups, runs, filename = ns.huntrleaks
             filename = os.path.abspath(filename)
-            self.hunt_refleak: HuntRefleak = HuntRefleak(warmups, runs, filename)
+            self.hunt_refleak: HuntRefleak | None = HuntRefleak(warmups, runs, filename)
         else:
             self.hunt_refleak = None
         self.test_dir: StrPath | None = ns.testdir
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: tuple[str] = tuple(ns.use_resources)
+        self.use_resources: tuple[str, ...] = tuple(ns.use_resources or ())
         if ns.python:
-            self.python_cmd: tuple[str] = tuple(ns.python)
+            self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
         else:
             self.python_cmd = None
         self.coverage: bool = ns.trace
@@ -139,6 +140,7 @@ class Regrtest:
         self.logger.log(line)
 
     def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        assert self.tmp_dir is not None
         if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
@@ -183,6 +185,7 @@ class Regrtest:
             else:
                 selected = alltests
         else:
+            assert tests is not None
             selected = tests
 
         if self.single_test_run:
@@ -389,7 +392,7 @@ class Regrtest:
             match_tests=self.match_tests,
             ignore_tests=self.ignore_tests,
             match_tests_dict=None,
-            rerun=None,
+            rerun=False,
             forever=self.forever,
             pgo=self.pgo,
             pgo_extended=self.pgo_extended,
@@ -457,6 +460,7 @@ class Regrtest:
                                          self.fail_rerun)
 
     def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        assert self.tmp_dir is not None
         os.makedirs(self.tmp_dir, exist_ok=True)
         work_dir = get_work_dir(self.tmp_dir)
 

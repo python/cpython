@@ -1,6 +1,7 @@
 import sys
 import warnings
 from inspect import isabstract
+from typing import Any, Callable
 
 from test import support
 from test.support import os_helper
@@ -45,12 +46,13 @@ def runtest_refleak(test_name, test_func,
     fs = warnings.filters[:]
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    zdc: dict[str, Any] | None
     try:
         import zipimport
     except ImportError:
         zdc = None # Run unmodified on platforms without zipimport support
     else:
-        zdc = zipimport._zip_directory_cache.copy()
+        zdc = zipimport._zip_directory_cache.copy()  # type: ignore[attr-defined]  
     abcs = {}
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):
@@ -78,7 +80,7 @@ def runtest_refleak(test_name, test_func,
     fd_deltas = [0] * repcount
     getallocatedblocks = sys.getallocatedblocks
     gettotalrefcount = sys.gettotalrefcount
-    getunicodeinternedsize = sys.getunicodeinternedsize
+    getunicodeinternedsize: Callable[[], int] = sys.getunicodeinternedsize  # type: ignore[attr-defined]
     fd_count = os_helper.fd_count
     # initialize variables to make pyflakes quiet
     rc_before = alloc_before = fd_before = interned_before = 0
@@ -175,6 +177,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     except ImportError:
         pass # Run unmodified on platforms without zipimport support
     else:
+        assert zdc is not None
         zipimport._zip_directory_cache.clear()
         zipimport._zip_directory_cache.update(zdc)
 
