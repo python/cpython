@@ -838,16 +838,12 @@ normalize_environment(PyObject* environment)
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
-            Py_DECREF(result);
-            result = NULL;
             goto error;
         }
         if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
             PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "embedded null character");
-            Py_DECREF(result);
-            result = NULL;
             goto error;
         }
         /* Search from index 1 because on Windows starting '=' is allowed for
@@ -856,8 +852,6 @@ normalize_environment(PyObject* environment)
             PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-            Py_DECREF(result);
-            result = NULL;
             goto error;
         }
 
@@ -891,6 +885,10 @@ error:
     Py_XDECREF(kwargs);
     if (prev_key_string != NULL) {
         PyMem_Free(prev_key_string);
+    }
+    if (PyErr_Occurred()) {
+        Py_XDECREF(result);
+        result = NULL;
     }
 
     return result;
