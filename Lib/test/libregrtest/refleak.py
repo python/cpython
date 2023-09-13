@@ -1,11 +1,12 @@
-import os
 import sys
 import warnings
 from inspect import isabstract
+
 from test import support
 from test.support import os_helper
-from test.libregrtest.runtest import HuntRefleak
-from test.libregrtest.utils import clear_caches
+
+from .runtests import HuntRefleak
+from .utils import clear_caches
 
 try:
     from _abc import _get_dump
@@ -68,7 +69,6 @@ def runtest_refleak(test_name, test_func,
     warmups = hunt_refleak.warmups
     runs = hunt_refleak.runs
     filename = hunt_refleak.filename
-    filename = os.path.join(os_helper.SAVEDCWD, filename)
     repcount = warmups + runs
 
     # Pre-allocate to ensure that the loop doesn't allocate anything new

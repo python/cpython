@@ -1433,9 +1433,6 @@
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -1902,7 +1899,7 @@
             break;
         }
 
-        case IS_NONE: {
+        case _IS_NONE: {
             PyObject *value;
             PyObject *b;
             value = stack_pointer[-1];
@@ -2887,29 +2884,29 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             pc = 0;
             CHECK_EVAL_BREAKER();
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             frame->prev_instr = ip_offset + oparg;
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif
             #if TIER_TWO
-            // Relies on a preceding SAVE_IP
+            // Relies on a preceding _SET_IP
             frame->prev_instr--;
             #endif
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
@@ -2917,7 +2914,7 @@
             break;
         }
 
-        case INSERT: {
+        case _INSERT: {
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;

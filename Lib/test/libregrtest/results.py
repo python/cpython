@@ -1,10 +1,11 @@
 import sys
 from test.support import TestStats
 
-from test.libregrtest.runtest import (
-    TestName, TestTuple, TestList, FilterDict, StrPath, State,
-    TestResult, RunTests)
-from test.libregrtest.utils import printlist, count, format_duration
+from .runtests import RunTests
+from .result import State, TestResult
+from .utils import (
+    StrPath, TestName, TestTuple, TestList, FilterDict,
+    printlist, count, format_duration)
 
 
 EXITCODE_BAD_TEST = 2
@@ -105,7 +106,7 @@ class TestResults:
 
         xml_data = result.xml_data
         if xml_data:
-            self.add_junit(result.xml_data)
+            self.add_junit(xml_data)
 
     def need_rerun(self):
         return bool(self.bad_results)
@@ -162,7 +163,7 @@ class TestResults:
             for s in ET.tostringlist(root):
                 f.write(s)
 
-    def display_result(self, tests: TestList, quiet: bool, print_slowest: bool):
+    def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
         if self.interrupted:
             print("Test suite interrupted by signal SIGINT.")
 
