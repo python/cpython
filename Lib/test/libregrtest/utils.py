@@ -360,14 +360,25 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
         # to keep the test files in a subfolder.  This eases the cleanup of leftover
         # files using the "make distclean" command.
         if sysconfig.is_python_build():
-            tmp_dir = sysconfig.get_config_var('abs_builddir')
-            if tmp_dir is None:
-                # bpo-30284: On Windows, only srcdir is available. Using
-                # abs_builddir mostly matters on UNIX when building Python
-                # out of the source tree, especially when the source tree
-                # is read only.
-                tmp_dir = sysconfig.get_config_var('srcdir')
-            tmp_dir = os.path.join(tmp_dir, 'build')
+            if not support.is_wasi:
+                tmp_dir = sysconfig.get_config_var('abs_builddir')
+                if tmp_dir is None:
+                    # bpo-30284: On Windows, only srcdir is available. Using
+                    # abs_builddir mostly matters on UNIX when building Python
+                    # out of the source tree, especially when the source tree
+                    # is read only.
+                    tmp_dir = sysconfig.get_config_var('srcdir')
+                tmp_dir = os.path.join(tmp_dir, 'build')
+            else:
+                # WASI platform
+                tmp_dir = sysconfig.get_config_var('projectbase')
+                tmp_dir = os.path.join(tmp_dir, 'build')
+
+                # When get_temp_dir() is called in a worker process,
+                # get_temp_dir() path is different than in the parent process
+                # which is not a WASI process. So the parent does not create
+                # the same "tmp_dir" than the test worker process.
+                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
