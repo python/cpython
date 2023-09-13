@@ -1721,6 +1721,7 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
 
     def test_gh108976(self):
         sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
         sys.monitoring.set_events(0, 0)
         sys.monitoring.register_callback(0, E.LINE, lambda *args: sys.monitoring.set_events(0, 0))
         sys.monitoring.register_callback(0, E.INSTRUCTION, lambda *args: 0)
