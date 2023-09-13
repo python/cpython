@@ -891,7 +891,7 @@ class SSLObject:
         """Returns unverified certificate chain provided by the other
         end of the SSL channel as a list of DER-encoded bytes.
         """
-        chain = self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_unverified_chain()
 
         if chain is None:
             return []
