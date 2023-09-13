@@ -141,7 +141,7 @@ and header files with debug builds.
 #### Cross compile to wasm32-emscripten for node
 
 ```shell
-./Tools/wasm/wasm_build.py emscripten-browser-dl
+./Tools/wasm/wasm_build.py emscripten-node-dl
 ```
 
 The command is roughly equivalent to:
