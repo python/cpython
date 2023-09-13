@@ -2123,7 +2123,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4], (ValueError, 'exception'))
+    @jump_test(5, 11, [2, 4], (ValueError, 'comes after the current code block'))
     def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
