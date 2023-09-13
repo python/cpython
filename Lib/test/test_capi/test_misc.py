@@ -2391,7 +2391,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_SET_IP", uops)
-        self.assertIn("__LOAD_FAST", uops)
+        self.assertIn("LOAD_FAST", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
@@ -2438,7 +2438,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertIn(("__LOAD_FAST", 259, 0), list(ex))
+        self.assertIn(("LOAD_FAST", 259, 0), list(ex))
 
     def test_unspecialized_unpack(self):
         # An example of an unspecialized opcode
@@ -2460,7 +2460,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("__UNPACK_SEQUENCE", uops)
+        self.assertIn("UNPACK_SEQUENCE", uops)
 
     def test_pop_jump_if_false(self):
         def testfunc(n):

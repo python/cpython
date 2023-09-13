@@ -191,7 +191,7 @@ dummy_func(
         }
 
         pseudo(LOAD_CLOSURE) = {
-            __LOAD_FAST,
+            LOAD_FAST,
         };
 
         inst(LOAD_FAST_CHECK, (-- value)) {
@@ -231,7 +231,7 @@ dummy_func(
         }
 
         pseudo(STORE_FAST_MAYBE_NULL) = {
-            __STORE_FAST,
+            STORE_FAST,
         };
 
         inst(STORE_FAST_LOAD_FAST, (value1 -- value2)) {
@@ -257,7 +257,7 @@ dummy_func(
             res = NULL;
         }
 
-        macro(END_FOR) = __POP_TOP + __POP_TOP;
+        macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
             /* Need to create a fake StopIteration error here,
@@ -826,7 +826,7 @@ dummy_func(
         }
 
         macro(RETURN_CONST) =
-            __LOAD_CONST  +
+            LOAD_CONST  +
             _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
@@ -1750,15 +1750,15 @@ dummy_func(
         }
 
         pseudo(LOAD_SUPER_METHOD) = {
-            __LOAD_SUPER_ATTR,
+            LOAD_SUPER_ATTR,
         };
 
         pseudo(LOAD_ZERO_SUPER_METHOD) = {
-            __LOAD_SUPER_ATTR,
+            LOAD_SUPER_ATTR,
         };
 
         pseudo(LOAD_ZERO_SUPER_ATTR) = {
-            __LOAD_SUPER_ATTR,
+            LOAD_SUPER_ATTR,
         };
 
         inst(LOAD_SUPER_ATTR_ATTR, (unused/1, global_super, class, self -- attr, unused if (0))) {
@@ -1858,7 +1858,7 @@ dummy_func(
         }
 
         pseudo(LOAD_METHOD) = {
-            __LOAD_ATTR,
+            LOAD_ATTR,
         };
 
         op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
@@ -2258,13 +2258,13 @@ dummy_func(
         }
 
         pseudo(JUMP) = {
-            __JUMP_FORWARD,
-            __JUMP_BACKWARD,
+            JUMP_FORWARD,
+            JUMP_BACKWARD,
         };
 
         pseudo(JUMP_NO_INTERRUPT) = {
-            __JUMP_FORWARD,
-            __JUMP_BACKWARD_NO_INTERRUPT,
+            JUMP_FORWARD,
+            JUMP_BACKWARD_NO_INTERRUPT,
         };
 
         inst(ENTER_EXECUTOR, (--)) {
@@ -2312,9 +2312,9 @@ dummy_func(
             }
         }
 
-        macro(POP_JUMP_IF_NONE) = _IS_NONE + __POP_JUMP_IF_TRUE;
+        macro(POP_JUMP_IF_NONE) = _IS_NONE + POP_JUMP_IF_TRUE;
 
-        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + __POP_JUMP_IF_FALSE;
+        macro(POP_JUMP_IF_NOT_NONE) = _IS_NONE + POP_JUMP_IF_FALSE;
 
         inst(JUMP_BACKWARD_NO_INTERRUPT, (--)) {
             /* This bytecode is used in the `yield from` or `await` loop.
@@ -2742,19 +2742,19 @@ dummy_func(
         }
 
         pseudo(SETUP_FINALLY) = {
-            __NOP,
+            NOP,
         };
 
         pseudo(SETUP_CLEANUP) = {
-            __NOP,
+            NOP,
         };
 
         pseudo(SETUP_WITH) = {
-            __NOP,
+            NOP,
         };
 
         pseudo(POP_BLOCK) = {
-            __NOP,
+            NOP,
         };
 
         inst(PUSH_EXC_INFO, (new_exc -- prev_exc, new_exc)) {

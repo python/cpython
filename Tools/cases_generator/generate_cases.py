@@ -160,14 +160,9 @@ class Generator(Analyzer):
         pushed: str | None = None
         match thing:
             case parsing.InstDef():
-                if self.instrs[thing.name].is_viable_uop():
-                    instr = self.instrs[thing.name]
-                    popped = effect_str(instr.input_effects)
-                    pushed = effect_str(instr.output_effects)
-                else:
-                    instr = None
-                    popped = ""
-                    pushed = ""
+                instr = self.instrs[thing.name]
+                popped = effect_str(instr.input_effects)
+                pushed = effect_str(instr.output_effects)
             case parsing.Macro():
                 instr = self.macro_instrs[thing.name]
                 popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
@@ -207,6 +202,8 @@ class Generator(Analyzer):
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
             if isinstance(thing, OverriddenInstructionPlaceHolder):
+                continue
+            if isinstance(thing, parsing.Macro) and thing.name in self.instrs:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
@@ -259,11 +256,9 @@ class Generator(Analyzer):
         for name, family in self.families.items():
             specialized_ops.update(family.members)
 
-        for instr in itertools.chain(
-            [instr for instr in self.instrs.values() if instr.kind != "op"],
-            self.macro_instrs.values(),
-        ):
+        for instr in self.macro_instrs.values():
             assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
+            assert isinstance(instr, MacroInstruction)
             name = instr.name
             if name in specialized_ops:
                 continue
@@ -320,7 +315,7 @@ class Generator(Analyzer):
             while opname[next_opcode] is not None:
                 next_opcode += 1
 
-        assert next_opcode < min_internal
+        assert next_opcode < min_internal, next_opcode
 
         for i, op in enumerate(sorted(specialized_ops)):
             map_op(min_internal + i, op)
@@ -421,13 +416,12 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
-            self.out.emit("\n" + textwrap.dedent("""
-                #ifndef Py_BUILD_CORE
-                #  error "this header requires Py_BUILD_CORE define"
-                #endif
-            """).strip())
-
-            self.out.emit("\n#include <stdbool.h>              // bool")
+            self.out.emit("")
+            self.out.emit("#ifndef Py_BUILD_CORE")
+            self.out.emit('#  error "this header requires Py_BUILD_CORE define"')
+            self.out.emit("#endif")
+            self.out.emit("")
+            self.out.emit("#include <stdbool.h>              // bool")
 
             self.write_pseudo_instrs()
 
@@ -498,7 +492,10 @@ class Generator(Analyzer):
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
-                            self.write_metadata_for_macro(self.macro_instrs[thing.name])
+                            if thing.name not in self.instrs:
+                                self.write_metadata_for_macro(
+                                    self.macro_instrs[thing.name]
+                                )
                         case parsing.Pseudo():
                             self.write_metadata_for_pseudo(
                                 self.pseudo_instrs[thing.name]
@@ -569,19 +566,15 @@ class Generator(Analyzer):
                 family_member_names: set[str] = set()
                 for family in self.families.values():
                     family_member_names.update(family.members)
-                for instr in self.instrs.values():
-                    if (
-                        instr.name not in family_member_names
-                        and instr.cache_offset > 0
-                        and instr.kind == "inst"
-                        and not instr.name.startswith("INSTRUMENTED_")
-                    ):
-                        self.out.emit(f"[{instr.name}] = {instr.cache_offset},")
                 for mac in self.macro_instrs.values():
-                    if mac.name not in family_member_names and mac.cache_offset > 0:
+                    if (
+                        mac.cache_offset > 0
+                        and mac.name not in family_member_names
+                        and not mac.name.startswith("INSTRUMENTED_")
+                    ):
                         self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
                 # Irregular case:
-                self.out.emit('[JUMP_BACKWARD] = 1,')
+                self.out.emit("[JUMP_BACKWARD] = 1,")
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -663,7 +656,7 @@ class Generator(Analyzer):
 
     def write_uop_items(self, make_text: typing.Callable[[str, int], str]) -> None:
         """Write '#define XXX NNN' for each uop"""
-        counter = 275  # TODO: Avoid collision with pseudo instructions
+        counter = 300  # TODO: Avoid collision with pseudo instructions
         seen = set()
 
         def add(name: str) -> None:
@@ -679,7 +672,8 @@ class Generator(Analyzer):
         add("_SET_IP")
 
         for instr in self.instrs.values():
-            if instr.kind == "op":
+            # Skip ops that are also macros -- those are desugared inst()s
+            if instr.name not in self.macros:
                 add(instr.name)
 
     def write_macro_expansions(
@@ -741,8 +735,8 @@ class Generator(Analyzer):
         """
         pieces = name.split("_")
         assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
-        name1 = "__" + "_".join(pieces[:2])
-        name2 = "__" + "_".join(pieces[2:])
+        name1 = "_".join(pieces[:2])
+        name2 = "_".join(pieces[2:])
         assert name1 in self.instrs, f"{name1} doesn't match any instr"
         assert name2 in self.instrs, f"{name2} doesn't match any instr"
         instr1 = self.instrs[name1]
@@ -836,38 +830,17 @@ class Generator(Analyzer):
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
-            for thing in self.everything:
-                match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        # TODO: Is this helpful?
-                        self.write_overridden_instr_place_holder(thing)
-                    case parsing.InstDef(name=name):
-                        if name not in self.instrs:
-                            breakpoint()
-                            continue
-                        instr = self.instrs[thing.name]
-                        assert instr.kind == "op"
-                        if instr.is_viable_uop():
-                            if instr.kind == "op":
-                                n_uops += 1
-                            else:
-                                n_instrs += 1
-                            self.out.emit("")
-                            with self.out.block(f"case {thing.name}:"):
-                                stacking.write_single_instr(
-                                    instr, self.out, tier=TIER_TWO
-                                )
-                                if instr.check_eval_breaker:
-                                    self.out.emit("CHECK_EVAL_BREAKER();")
-                                self.out.emit("break;")
-                        elif instr.kind != "op":
-                            print(f"NOTE: {thing.name} is not a viable uop")
-                    case parsing.Macro():
-                        pass
-                    case parsing.Pseudo():
-                        pass
-                    case _:
-                        assert_never(thing)
+            for instr in self.instrs.values():
+                if instr.is_viable_uop():
+                    n_uops += 1
+                    self.out.emit("")
+                    with self.out.block(f"case {instr.name}:"):
+                        stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
+                        if instr.check_eval_breaker:
+                            self.out.emit("CHECK_EVAL_BREAKER();")
+                        self.out.emit("break;")
+                else:
+                    print(f"NOTE: {instr.name} is not a viable uop")
         print(
             f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,

@@ -352,7 +352,7 @@ class TestGeneratedCases(unittest.TestCase):
         op(OP2, (extra/2, arg2, left, right -- res)) {
             res = op2(arg2, left, right);
         }
-        macro(OP) = __OP1 + cache/2 + OP2;
+        macro(OP) = OP1 + cache/2 + OP2;
         inst(OP3, (unused/5, arg2, left, right -- res)) {
             res = op3(arg2, left, right);
         }
@@ -376,7 +376,7 @@ class TestGeneratedCases(unittest.TestCase):
             PyObject *left;
             PyObject *arg2;
             PyObject *res;
-            // __OP1
+            // OP1
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             {

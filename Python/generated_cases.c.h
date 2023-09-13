@@ -173,12 +173,12 @@
 
         TARGET(END_FOR) {
             PyObject *value;
-            // __POP_TOP
+            // POP_TOP
             value = stack_pointer[-1];
             {
                 Py_DECREF(value);
             }
-            // __POP_TOP
+            // POP_TOP
             value = stack_pointer[-2];
             {
                 Py_DECREF(value);
@@ -1046,7 +1046,7 @@
         TARGET(RETURN_CONST) {
             PyObject *value;
             PyObject *retval;
-            // __LOAD_CONST
+            // LOAD_CONST
             {
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
@@ -3021,7 +3021,7 @@
                     Py_DECREF(value);
                 }
             }
-            // __POP_JUMP_IF_TRUE
+            // POP_JUMP_IF_TRUE
             cond = b;
             {
                 assert(PyBool_Check(cond));
@@ -3051,7 +3051,7 @@
                     Py_DECREF(value);
                 }
             }
-            // __POP_JUMP_IF_FALSE
+            // POP_JUMP_IF_FALSE
             cond = b;
             {
                 assert(PyBool_Check(cond));

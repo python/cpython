@@ -147,12 +147,9 @@ class Analyzer:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
                     if thing.kind == "inst":
-                        opname = "__" + name
-                        # self.note(f"Desugaring {name} to {opname}", thing)
-                        macro = parsing.Macro(name, [parsing.OpName(opname)])
+                        # self.note(f"Desugaring {name}", thing)
+                        macro = parsing.Macro(name, [parsing.OpName(name)])
                         thing.kind = "op"
-                        thing.name = opname
-                        name = opname
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -211,9 +208,9 @@ class Analyzer:
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
-                elif target_macro := self.macro_instrs.get(target):
+                if target_macro := self.macro_instrs.get(target):
                     target_macro.predicted = True
-                else:
+                if not target_instr and not target_macro:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
                         instr.inst,  # TODO: Use better location
