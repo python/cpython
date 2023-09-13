@@ -7,7 +7,7 @@ from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests, JsonFile
+from .runtests import RunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple,
@@ -67,10 +67,6 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
-    # json_file type depends on the platform:
-    # - Unix: file descriptor (int)
-    # - Windows: handle (int)
-    # - Emscripten/WASI or if --python is used: filename (str)
     json_file: JsonFile = runtests.json_file
 
     setup_test_dir(runtests.test_dir)
@@ -85,8 +81,12 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
     result = run_single_test(test_name, runtests)
 
-    with json_file.open('w', encoding='utf-8') as json_fp:
-        result.write_json_into(json_fp)
+    if json_file.file_type == JsonFileType.STDOUT:
+        print()
+        result.write_json_into(sys.stdout)
+    else:
+        with json_file.open('w', encoding='utf-8') as json_fp:
+            result.write_json_into(json_fp)
 
     sys.exit(0)
 
