@@ -14,13 +14,16 @@ from .utils import (
 class JsonFileType:
     UNIX_FD = "UNIX_FD"
     WINDOWS_HANDLE = "WINDOWS_HANDLE"
-    FILENAME = "FILENAME"
+    STDOUT = "STDOUT"
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class JsonFile:
-    # See RunTests.json_file_use_filename()
-    file: int | StrPath
+    # file type depends on file_type:
+    # - UNIX_FD: file descriptor (int)
+    # - WINDOWS_HANDLE: handle (int)
+    # - STDOUT: use process stdout (None)
+    file: int | None
     file_type: str
 
     def configure_subprocess(self, popen_kwargs: dict) -> None:
@@ -33,9 +36,6 @@ class JsonFile:
                 startupinfo = subprocess.STARTUPINFO()
                 startupinfo.lpAttributeList = {"handle_list": [self.file]}
                 popen_kwargs['startupinfo'] = startupinfo
-            case JsonFileType.FILENAME:
-                # Filename: nothing to do to
-                pass
 
     @contextlib.contextmanager
     def inherit_subprocess(self):
@@ -49,6 +49,9 @@ class JsonFile:
             yield
 
     def open(self, mode='r', *, encoding):
+        if self.file_type == JsonFileType.STDOUT:
+            raise ValueError("for STDOUT file type, just use sys.stdout")
+
         file = self.file
         if self.file_type == JsonFileType.WINDOWS_HANDLE:
             import msvcrt
@@ -123,11 +126,13 @@ class RunTests:
     def from_json(worker_json: StrJSON) -> 'RunTests':
         return json.loads(worker_json, object_hook=_decode_runtests)
 
-    def json_file_use_filename(self) -> bool:
-        # json_file type depends on the platform:
-        # - Unix: file descriptor (int)
-        # - Windows: handle (int)
-        # - Emscripten/WASI or if --python is used: filename (str)
+    def json_file_use_stdout(self) -> bool:
+        # Use STDOUT in two cases:
+        #
+        # - If --python command line option is used;
+        # - On Emscripten and WASI.
+        #
+        # On other platforms, UNIX_FD or WINDOWS_HANDLE can be used.
         return (
             bool(self.python_cmd)
             or support.is_emscripten
