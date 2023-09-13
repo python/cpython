@@ -885,16 +885,15 @@ class Generator(Analyzer):
                     case OverriddenInstructionPlaceHolder():
                         pass
                     case parsing.InstDef():
-                        pass
-                        # instr = AbstractInstruction(self.instrs[thing.name].inst)
-                        # if (
-                        #     instr.is_viable_uop()
-                        #     and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
-                        # ):
-                        #     self.out.emit("")
-                        #     with self.out.block(f"case {thing.name}:"):
-                        #         instr.write(self.out, tier=TIER_TWO)
-                        #         self.out.emit("break;")
+                        instr = AbstractInstruction(self.instrs[thing.name].inst)
+                        if (
+                            instr.is_viable_uop()
+                            and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
+                        ):
+                            self.out.emit("")
+                            with self.out.block(f"case {thing.name}:"):
+                                instr.write(self.out, tier=TIER_TWO)
+                                self.out.emit("break;")
                     case parsing.Macro():
                         pass
                     case parsing.Pseudo():
