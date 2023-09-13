@@ -293,8 +293,6 @@ class Regrtest:
         else:
             tracer = None
 
-        save_modules = set(sys.modules)
-
         jobs = runtests.get_jobs()
         if jobs is not None:
             tests = f'{jobs} tests'
@@ -316,11 +314,6 @@ class Regrtest:
             self.logger.display_progress(test_index, text)
 
             result = self.run_test(test_name, runtests, tracer)
-
-            # Unload the newly imported modules (best effort finalization)
-            for module in list(sys.modules):
-                if module not in save_modules and module.startswith("test."):
-                    sys.modules.pop(module, None)
 
             if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break

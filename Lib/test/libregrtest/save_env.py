@@ -329,3 +329,15 @@ class saved_test_environment:
                         f"  Before: {original}\n"
                         f"  After:  {current} ")
         return False
+
+
+class saved_sys_modules:
+
+    def __enter__(self):
+        self.save_modules = set(sys.modules)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Unload the newly imported modules (best effort finalization)
+        for module in list(sys.modules):
+            if module not in self.save_modules and module.startswith("test."):
+                sys.modules.pop(module, None)

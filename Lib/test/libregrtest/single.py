@@ -14,7 +14,7 @@ from test.support import threading_helper
 
 from .result import State, TestResult
 from .runtests import RunTests
-from .save_env import saved_test_environment
+from .save_env import saved_test_environment, saved_sys_modules
 from .setup import setup_tests
 from .utils import (
     TestName,
@@ -127,8 +127,9 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         clear_caches()
         support.gc_collect()
 
-        with saved_test_environment(test_name,
-                                    runtests.verbose, quiet, pgo=pgo):
+        with (saved_sys_modules(),
+              saved_test_environment(test_name,
+                                    runtests.verbose, quiet, pgo=pgo)):
             _load_run_test(result, runtests)
     except support.ResourceDenied as msg:
         if not quiet and not pgo:
