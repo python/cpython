@@ -3,7 +3,20 @@ select = [
     "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
 extend-exclude = [
-#    # TODO Fix: F811 Redefinition of unused name
+    # Failed to lint
+    "badsyntax_pep3120.py",
+    "encoded_modules/module_iso_8859_1.py",
+    "encoded_modules/module_koi8_r.py",
+    # Failed to parse
+    "test_lib2to3/data/false_encoding.py",
+    "test_lib2to3/data/different_encoding.py",
+    "test_lib2to3/data/crlf.py",
+    "test_lib2to3/data/bom.py",
+    "test_fstring.py",
+    "badsyntax_3131.py",
+    "support/socket_helper.py",
+    "test_lib2to3/data/py2_test_grammar.py",
+    # TODO Fix: F811 Redefinition of unused name
     "test_buffer.py",
     "test_capi/test_misc.py",
     "test_capi/test_unicode.py",
