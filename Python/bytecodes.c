@@ -2242,21 +2242,17 @@ dummy_func(
             here[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (here[1].cache > tstate->interp->optimizer_backedge_threshold &&
                 // Double-check that the opcode isn't instrumented or something:
-                here->op.code == JUMP_BACKWARD &&
-                // _PyOptimizer_BackEdge is going to change frame->prev_instr,
-                // which breaks line event calculations:
-                next_instr->op.code != INSTRUMENTED_LINE
-                )
+                here->op.code == JUMP_BACKWARD)
             {
                 OBJECT_STAT_INC(optimization_attempts);
-                frame = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
-                if (frame == NULL) {
-                    frame = tstate->current_frame;
-                    goto resume_with_error;
+                int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
+                ERROR_IF(optimized < 0, error);
+                if (optimized) {
+                    // Rewind and enter the executor:
+                    assert(here->op.code == ENTER_EXECUTOR);
+                    next_instr = here;
                 }
-                assert(frame == tstate->current_frame);
-                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) -1);
-                goto resume_frame;
+                here[1].cache &= ((1 << OPTIMIZER_BITS_IN_COUNTER) - 1);
             }
             #endif  /* ENABLE_SPECIALIZATION */
         }
