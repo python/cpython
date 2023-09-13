@@ -457,7 +457,7 @@ def write_components(
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1] and not next_instr_is_set:
+        if mgr is managers[-1] and not next_instr_is_set and not mgr.instr.always_exits:
             # Adjust the stack to its final depth, *then* write the
             # pokes for all preceding uops.
             # Note that for array output effects we may still write

@@ -803,7 +803,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_SHRINK(1);
         }
 
         TARGET(LIST_APPEND) {
@@ -969,7 +968,6 @@
                 break;
             }
             if (true) { STACK_SHRINK(oparg); goto error; }
-            STACK_SHRINK(oparg);
         }
 
         TARGET(INTERPRETER_EXIT) {
@@ -982,7 +980,6 @@
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             return retval;
-            STACK_SHRINK(1);
         }
 
         TARGET(RETURN_VALUE) {
@@ -1044,7 +1041,6 @@
             frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
-            STACK_SHRINK(1);
         }
 
         TARGET(RETURN_CONST) {
@@ -1388,7 +1384,6 @@
             _PyErr_SetRaisedException(tstate, exc);
             monitor_reraise(tstate, frame, next_instr-1);
             goto exception_unwind;
-            STACK_SHRINK(1);
         }
 
         TARGET(END_ASYNC_FOR) {
@@ -2077,9 +2072,6 @@
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -2213,8 +2205,6 @@
             // don't want to specialize instrumented instructions
             INCREMENT_ADAPTIVE_COUNTER(cache->counter);
             GO_TO_INSTRUCTION(LOAD_SUPER_ATTR);
-            STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
         }
 
         TARGET(LOAD_SUPER_ATTR) {
@@ -3425,7 +3415,6 @@
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             frame->return_offset = oparg;
             DISPATCH_INLINED(gen_frame);
-            STACK_GROW(1);
         }
 
         TARGET(BEFORE_ASYNC_WITH) {
@@ -4035,8 +4024,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
             DISPATCH_INLINED(new_frame);
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(CALL_NO_KW_TYPE_1) {
@@ -4172,8 +4159,6 @@
              * as it will be checked after start_frame */
             tstate->py_recursion_remaining--;
             goto start_frame;
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(EXIT_INIT_CHECK) {
@@ -4456,8 +4441,6 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL + 1);
             assert(next_instr[-1].op.code == POP_TOP);
             DISPATCH();
-            STACK_SHRINK(oparg);
-            STACK_SHRINK(1);
         }
 
         TARGET(CALL_NO_KW_METHOD_DESCRIPTOR_O) {
