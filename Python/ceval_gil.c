@@ -67,11 +67,9 @@ COMPUTE_EVAL_BREAKER(PyInterpreterState *interp,
 {
     _Py_atomic_store_relaxed(&ceval2->eval_breaker,
         _Py_atomic_load_relaxed_int32(&ceval2->gil_drop_request)
-        | (_Py_atomic_load_relaxed_int32(&ceval->signals_pending)
-           && _Py_ThreadCanHandleSignals(interp))
+        | _Py_atomic_load_relaxed_int32(&ceval->signals_pending)
         | (_Py_atomic_load_relaxed_int32(&ceval2->pending.calls_to_do))
-        | (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)
-           &&_Py_atomic_load_relaxed_int32(&ceval->pending_mainthread.calls_to_do))
+        | _Py_atomic_load_relaxed_int32(&ceval->pending_mainthread.calls_to_do)
         | ceval2->pending.async_exc
         | _Py_atomic_load_relaxed_int32(&ceval2->gc_scheduled));
 }
