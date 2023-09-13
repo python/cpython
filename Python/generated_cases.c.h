@@ -4670,6 +4670,7 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
