@@ -499,6 +499,20 @@ class TypeParamsAccessTest(unittest.TestCase):
                                             r"Cannot use [a-z]+ in annotation scope within class scope"):
                     run_code(code.format(case))
 
+    def test_complex_nested_classes(self):
+        code = """
+            def f():
+                T = str
+                class C:
+                    T = int
+                    class D[U](T):
+                        x = T
+                return C
+        """
+        C = run_code(code)["f"]()
+        self.assertIn(int, C.D.__bases__)
+        self.assertIs(C.D.x, str)
+
 
 def make_base(arg):
     class Base:
