@@ -52,7 +52,7 @@ def runtest_refleak(test_name, test_func,
     except ImportError:
         zdc = None # Run unmodified on platforms without zipimport support
     else:
-        zdc = zipimport._zip_directory_cache.copy()  # type: ignore[attr-defined]  
+        zdc = zipimport._zip_directory_cache.copy()  # type: ignore[attr-defined]
     abcs = {}
     for abc in [getattr(collections.abc, a) for a in collections.abc.__all__]:
         if not isabstract(abc):

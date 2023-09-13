@@ -48,9 +48,9 @@ jobs:
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
-      - if: ${{ matrix.target != "Lib/test/libregrtest" }}
+      - if: ${{ matrix.target != 'Lib/test/libregrtest' }}
         run: mypy --config-file ${{ matrix.target }}/mypy.ini
-      - if: ${{ matrix.target == "Lib/test/libregrtest" }}
+      - if: ${{ matrix.target == 'Lib/test/libregrtest' }}
         # Mypy can't be run on libregrtest from the repo root,
         # or it (amusingly) thinks that the entire Lib directory is "shadowing the stdlib",
         # and refuses to do any type-checking at all

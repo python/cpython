@@ -19,7 +19,7 @@ class AuditTest(unittest.TestCase):
     maxDiff = None
 
     @support.requires_subprocess()
-    def run_test_in_subprocess(self, *args: str) -> subprocess.Popen[str]:
+    def run_test_in_subprocess(self, *args):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
