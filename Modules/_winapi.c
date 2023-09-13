@@ -828,22 +828,30 @@ normalize_environment(PyObject* environment)
     for (int i=0; i<PyList_GET_SIZE(keys); i++) {
         PyObject *key = PyList_GET_ITEM(keys, i);
         if (key == NULL) {
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
         PyObject* value = PyObject_GetItem(environment, key);
         if (value == NULL) {
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
 
         if (! PyUnicode_Check(key) || ! PyUnicode_Check(value)) {
             PyErr_SetString(PyExc_TypeError,
                 "environment can only contain strings");
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
         if (PyUnicode_FindChar(key, '\0', 0, PyUnicode_GET_LENGTH(key), 1) != -1 ||
             PyUnicode_FindChar(value, '\0', 0, PyUnicode_GET_LENGTH(value), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "embedded null character");
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
         /* Search from index 1 because on Windows starting '=' is allowed for
@@ -852,12 +860,16 @@ normalize_environment(PyObject* environment)
             PyUnicode_FindChar(key, '=', 1, PyUnicode_GET_LENGTH(key), 1) != -1)
         {
             PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
 
         if (i == 0) {
             prev_key_string = PyUnicode_AsWideCharString(key, NULL);
             if (prev_key_string == NULL) {
+                Py_XDECREF(result);
+                result = NULL;
                 goto error;
             }
             continue;
@@ -865,12 +877,16 @@ normalize_environment(PyObject* environment)
 
         wchar_t *key_string = PyUnicode_AsWideCharString(key, NULL);
         if (key_string == NULL) {
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
         if (CompareStringOrdinal(prev_key_string, -1, key_string, -1, TRUE) == CSTR_EQUAL) {
             continue;
         }
         if (PyObject_SetItem(result, key, value) < 0) {
+            Py_XDECREF(result);
+            result = NULL;
             goto error;
         }
         PyMem_Free(prev_key_string);
@@ -885,10 +901,6 @@ error:
     Py_XDECREF(kwargs);
     if (prev_key_string != NULL) {
         PyMem_Free(prev_key_string);
-    }
-    if (PyErr_Occurred()) {
-        Py_XDECREF(result);
-        result = NULL;
     }
 
     return result;
