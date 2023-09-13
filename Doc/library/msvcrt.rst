@@ -98,7 +98,8 @@ Console I/O
 
 .. function:: kbhit()
 
-   Return ``True`` if a keypress is waiting to be read.
+   Returns a nonzero value if a keypress is waiting to be read. Otherwise,
+   return 0.
 
 
 .. function:: getch()

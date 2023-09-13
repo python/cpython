@@ -1,5 +1,5 @@
 import argparse
-import os
+import os.path
 import shlex
 import sys
 from test.support import os_helper
@@ -107,6 +107,8 @@ resources to test.  Currently only the following are defined:
 
     cpu -       Used for certain CPU-heavy tests.
 
+    walltime -  Long running but not CPU-bound tests.
+
     subprocess  Run all tests for the subprocess module.
 
     urlfetch -  It is okay to download files required on testing.
@@ -129,7 +131,7 @@ Pattern examples:
 
 
 ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
 
 # Other resources excluded from --use=all:
 #
@@ -147,6 +149,10 @@ class Namespace(argparse.Namespace):
         self.verbose = 0
         self.quiet = False
         self.exclude = False
+        self.cleanup = False
+        self.wait = False
+        self.list_cases = False
+        self.list_tests = False
         self.single = False
         self.randomize = False
         self.fromfile = None
@@ -168,6 +174,13 @@ class Namespace(argparse.Namespace):
         self.ignore_tests = None
         self.pgo = False
         self.pgo_extended = False
+        self.worker_json = None
+        self.start = None
+        self.timeout = None
+        self.memlimit = None
+        self.threshold = None
+        self.fail_rerun = False
+        self.tempdir = None
 
         super().__init__(**kwargs)
 
@@ -203,7 +216,6 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--worker-args', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
@@ -399,10 +411,6 @@ def _parse_args(args, **kwargs):
     if ns.timeout is not None:
         if ns.timeout <= 0:
             ns.timeout = None
-    if ns.use_mp is not None:
-        if ns.use_mp <= 0:
-            # Use all cores + extras for tests that like to sleep
-            ns.use_mp = 2 + (os.cpu_count() or 1)
     if ns.use:
         for a in ns.use:
             for r in a:
@@ -445,5 +453,14 @@ def _parse_args(args, **kwargs):
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
+
+    if ns.huntrleaks:
+        warmup, repetitions, _ = ns.huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print(msg, file=sys.stderr, flush=True)
+            sys.exit(2)
 
     return ns

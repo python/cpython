@@ -412,6 +412,99 @@ class TypeParamsAccessTest(unittest.TestCase):
         func, = T.__bound__
         self.assertEqual(func(), 1)
 
+    def test_gen_exp_in_nested_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner(make_base(T for _ in (1,)), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
+        T, = C.__type_params__
+        base1, base2 = C.Inner.__bases__
+        self.assertEqual(list(base1.__arg__), [T])
+        self.assertEqual(base2.__arg__, "class")
+
+    def test_gen_exp_in_nested_generic_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner[U](make_base(T for _ in (1,)), make_base(T)):
+                    pass
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
+
+    def test_listcomp_in_nested_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner(make_base([T for _ in (1,)]), make_base(T)):
+                    pass
+        """
+        C = run_code(code)["C"]
+        T, = C.__type_params__
+        base1, base2 = C.Inner.__bases__
+        self.assertEqual(base1.__arg__, [T])
+        self.assertEqual(base2.__arg__, "class")
+
+    def test_listcomp_in_nested_generic_class(self):
+        code = """
+            from test.test_type_params import make_base
+
+            class C[T]:
+                T = "class"
+                class Inner[U](make_base([T for _ in (1,)]), make_base(T)):
+                    pass
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
+
+    def test_gen_exp_in_generic_method(self):
+        code = """
+            class C[T]:
+                T = "class"
+                def meth[U](x: (T for _ in (1,)), y: T):
+                    pass
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Cannot use comprehension in annotation scope within class scope"):
+            run_code(code)
+
+    def test_nested_scope_in_generic_alias(self):
+        code = """
+            class C[T]:
+                T = "class"
+                {}
+        """
+        error_cases = [
+            "type Alias1[T] = lambda: T",
+            "type Alias2 = lambda: T",
+            "type Alias3[T] = (T for _ in (1,))",
+            "type Alias4 = (T for _ in (1,))",
+            "type Alias5[T] = [T for _ in (1,)]",
+            "type Alias6 = [T for _ in (1,)]",
+        ]
+        for case in error_cases:
+            with self.subTest(case=case):
+                with self.assertRaisesRegex(SyntaxError,
+                                            r"Cannot use [a-z]+ in annotation scope within class scope"):
+                    run_code(code.format(case))
+
+
+def make_base(arg):
+    class Base:
+        __arg__ = arg
+    return Base
+
 
 def global_generic_func[T]():
     pass
@@ -956,3 +1049,43 @@ class TypeParamsWeakRefTest(unittest.TestCase):
         for case in cases:
             with self.subTest(case=case):
                 weakref.ref(case)
+
+
+class TypeParamsRuntimeTest(unittest.TestCase):
+    def test_name_error(self):
+        # gh-109118: This crashed the interpreter due to a refcounting bug
+        code = """
+        class name_2[name_5]:
+            class name_4[name_5](name_0):
+                pass
+        """
+        with self.assertRaises(NameError):
+            run_code(code)
+
+        # Crashed with a slightly different stack trace
+        code = """
+        class name_2[name_5]:
+            class name_4[name_5: name_5](name_0):
+                pass
+        """
+        with self.assertRaises(NameError):
+            run_code(code)
+
+    def test_broken_class_namespace(self):
+        code = """
+        class WeirdMapping(dict):
+            def __missing__(self, key):
+                if key == "T":
+                    raise RuntimeError
+                raise KeyError(key)
+
+        class Meta(type):
+            def __prepare__(name, bases):
+                return WeirdMapping()
+
+        class MyClass[V](metaclass=Meta):
+            class Inner[U](T):
+                pass
+        """
+        with self.assertRaises(RuntimeError):
+            run_code(code)

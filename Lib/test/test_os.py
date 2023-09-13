@@ -737,7 +737,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
