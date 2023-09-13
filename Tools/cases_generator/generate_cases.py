@@ -537,9 +537,13 @@ class Generator(Analyzer):
                             #     self.write_super_expansions(instr.name)
                         case parsing.Macro():
                             mac = self.macro_instrs[thing.name]
-                            self.write_macro_expansions(
-                                mac.name, mac.parts, mac.cache_offset
-                            )
+                            # Special-case the heck out of super-instructions
+                            if is_super_instruction(mac):
+                                self.write_super_expansions(mac.name)
+                            else:
+                                self.write_macro_expansions(
+                                    mac.name, mac.parts, mac.cache_offset
+                                )
                         case parsing.Pseudo():
                             pass
                         case _:
@@ -738,8 +742,8 @@ class Generator(Analyzer):
         """
         pieces = name.split("_")
         assert len(pieces) == 4, f"{name} doesn't look like a super-instr"
-        name1 = "_".join(pieces[:2])
-        name2 = "_".join(pieces[2:])
+        name1 = "__" + "_".join(pieces[:2])
+        name2 = "__" + "_".join(pieces[2:])
         assert name1 in self.instrs, f"{name1} doesn't match any instr"
         assert name2 in self.instrs, f"{name2} doesn't match any instr"
         instr1 = self.instrs[name1]
@@ -929,6 +933,18 @@ class Generator(Analyzer):
                 if instr.check_eval_breaker:
                     self.out.emit("CHECK_EVAL_BREAKER();")
                 self.out.emit(f"DISPATCH();")
+
+
+def is_super_instruction(mac: MacroInstruction) -> bool:
+    if (
+        len(mac.parts) == 1
+        and isinstance(mac.parts[0], Component)
+        and variable_used(mac.parts[0].instr.inst, "oparg1")
+    ):
+        assert variable_used(mac.parts[0].instr.inst, "oparg2")
+        return True
+    else:
+        return False
 
 
 def main() -> None:
