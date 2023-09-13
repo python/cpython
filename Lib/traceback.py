@@ -502,27 +502,8 @@ class StackSummary(list):
                 start_offset = max(0, start_offset)
                 end_offset = max(0, end_offset)
 
-                # expression corresponding to the instruction so we can get anchors
-                segment = ""
-                # underline markers to be printed - start with `~` marker and replace with `^` later
-                markers = []
-
-                # Compute segment and initial markers
-                if frame_summary.lineno == frame_summary.end_lineno:
-                    segment = all_lines[0][start_offset:end_offset]
-                    markers.append(" " * start_offset + "~" * (end_offset - start_offset))
-                else:
-                    segment = all_lines[0][start_offset:] + "\n"
-                    markers.append(" " * start_offset + "~" * (len(all_lines[0]) - start_offset))
-                    for lineno in range(1, len(all_lines) - 1):
-                        line = all_lines[lineno]
-                        segment += line + "\n"
-                        # don't underline leading spaces
-                        num_spaces = len(line) - len(line.lstrip())
-                        markers.append(" " * num_spaces + "~" * (len(line) - num_spaces))
-                    segment += all_lines[-1][:end_offset]
-                    num_spaces = len(all_lines[-1]) - len(all_lines[-1].lstrip())
-                    markers.append(" " * num_spaces + "~" * (end_offset - num_spaces))
+                segment = "\n".join(all_lines)
+                segment = segment[start_offset:len(segment) - (len(all_lines[-1]) - end_offset)]
 
                 anchors: Optional[_Anchors] = None
                 try:
@@ -530,16 +511,10 @@ class StackSummary(list):
                 except AssertionError:
                     pass
 
-                if anchors is None:
-                    if len(all_lines[0][:start_offset].lstrip()) == 0 and len(all_lines[-1][end_offset:].rstrip()) == 0:
-                        # do not use markers if there are no anchors and the primary char spans all lines
-                        markers = None
-                    else:
-                        # replace `~` markers with `^` where necessary
-                        markers = [marker.replace("~", "^") for marker in markers]
-                else:
-                    # make markers mutable
-                    markers = [list(marker) for marker in markers]
+                carets = None
+                # only use carets if there are anchors or the carets do not span all lines
+                if anchors or all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
+                    carets = []
 
                     # anchor positions do not take start_offset into account
                     anchors_left_end_offset = anchors.left_end_offset
@@ -549,32 +524,26 @@ class StackSummary(list):
                     if anchors.right_start_lineno == 0:
                         anchors_right_start_offset += start_offset
 
-                    # Turn `~` markers between anchors to primary/secondary characters (default, `~`, `^`)
-                    for line in range(len(markers)):
-                        for col in range(len(markers[line])):
-                            use_secondary = True
-                            if line < anchors.left_end_lineno:
-                                use_secondary = False
-                            elif line == anchors.left_end_lineno and col < anchors_left_end_offset:
-                                use_secondary = False
-                            elif (
-                                line == anchors.right_start_lineno
-                                and col >= anchors_right_start_offset
-                            ):
-                                use_secondary = False
-                            elif line > anchors.right_start_lineno:
-                                use_secondary = False
-                            if markers[line][col] == "~":
-                                markers[line][col] = anchors.secondary_char if use_secondary else anchors.primary_char
+                    for i in range(len(all_lines)):
+                        num_spaces = len(all_lines[i]) - len(all_lines[i].lstrip())
+                        caret_line = []
+                        for j in range(len(all_lines[i])):
+                            if j < num_spaces:
+                                caret_line.append(' ')
+                            elif (i == 0 and j < start_offset) or (i == len(all_lines) - 1 and j >= end_offset):
+                                caret_line.append(' ')
+                            elif (i > anchors.left_end_lineno or j >= anchors_left_end_offset) and (i < anchors.right_start_lineno or j < anchors_right_start_offset):
+                                caret_line.append(anchors.secondary_char)
+                            else:
+                                caret_line.append(anchors.primary_char)
 
-                    # make markers into strings again
-                    markers = ["".join(marker) for marker in markers]
+                    carets.append("".join(caret_line))
 
                 result = ""
                 for i in range(len(all_lines)):
                     result += all_lines[i] + "\n"
-                    if markers is not None:
-                        result += markers[i] + "\n"
+                    if carets is not None:
+                        result += carets[i] + "\n"
                 row.append(textwrap.indent(textwrap.dedent(result), '    '))
 
         if frame_summary.locals:
@@ -688,7 +657,6 @@ def _extract_caret_anchors_from_line_segment(segment):
     def increment(lineno, col):
         col += 1
         lineno, col = next_valid_char(lineno, col)
-        assert lineno < len(lines) and col < len(lines[lineno])
         return lineno, col
 
     # Get the next valid character at least on the next line
@@ -696,7 +664,6 @@ def _extract_caret_anchors_from_line_segment(segment):
         col = 0
         lineno += 1
         lineno, col = next_valid_char(lineno, col)
-        assert lineno < len(lines) and col < len(lines[lineno])
         return lineno, col
 
     # Get the next valid non-"\#" character that satisfies the `stop` predicate
