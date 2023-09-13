@@ -378,7 +378,7 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
                 # get_temp_dir() path is different than in the parent process
                 # which is not a WASI process. So the parent does not create
                 # the same "tmp_dir" than the test worker process.
-                os.makedirs(self.tmp_dir, exist_ok=True)
+                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
