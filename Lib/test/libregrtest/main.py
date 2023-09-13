@@ -297,7 +297,7 @@ class Regrtest:
 
         jobs = runtests.get_jobs()
         if jobs is not None:
-            tests = f'{jobs} tests'
+            tests = count(jobs, 'test')
         else:
             tests = 'tests'
         msg = f"Run {tests} sequentially"
@@ -406,7 +406,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
-            json_fd=None,
+            json_file=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -458,7 +458,7 @@ class Regrtest:
 
     def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
         os.makedirs(self.tmp_dir, exist_ok=True)
-        work_dir = get_work_dir(parent_dir=self.tmp_dir)
+        work_dir = get_work_dir(self.tmp_dir)
 
         # Put a timeout on Python exit
         with exit_timeout():
