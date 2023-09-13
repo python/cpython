@@ -1,13 +1,8 @@
-
 /* interpreters module */
 /* low-level access to interpreter primitives */
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
 
 #include "Python.h"
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_interpreteridobject.h"
+#include "interpreteridobject.h"
 
 
 /*
@@ -2140,7 +2135,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            id_obj = _PyInterpreterState_GetIDObject(interp);
+            id_obj = PyInterpreterState_GetIDObject(interp);
             if (id_obj == NULL) {
                 goto except;
             }
@@ -2407,7 +2402,7 @@ module_exec(PyObject *mod)
 
     // Make sure chnnels drop objects owned by this interpreter
     PyInterpreterState *interp = _get_current_interp();
-    _Py_AtExit(interp, clear_interpreter, (void *)interp);
+    PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 
@@ -2418,6 +2413,7 @@ error:
 
 static struct PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
 

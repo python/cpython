@@ -55,12 +55,12 @@ point to the directories of the virtual environment,
 whereas :data:`sys.base_prefix` and :data:`sys.base_exec_prefix`
 point to those of the base Python used to create the environment.
 It is sufficient to check
-``sys.prefix == sys.base_prefix`` to determine if the current interpreter is
+``sys.prefix != sys.base_prefix`` to determine if the current interpreter is
 running from a virtual environment.
 
 A virtual environment may be "activated" using a script in its binary directory
 (``bin`` on POSIX; ``Scripts`` on Windows).
-This will prepend that directory to your :envvar:`!PATH`, so that running
+This will prepend that directory to your :envvar:`PATH`, so that running
 :program:`python` will invoke the environment's Python interpreter
 and you can run installed scripts without having to use their full path.
 The invocation of the activation script is platform-specific
@@ -100,10 +100,10 @@ In order to achieve this, scripts installed into virtual environments have
 a "shebang" line which points to the environment's Python interpreter,
 i.e. :samp:`#!/{<path-to-venv>}/bin/python`.
 This means that the script will run with that interpreter regardless of the
-value of :envvar:`!PATH`. On Windows, "shebang" line processing is supported if
+value of :envvar:`PATH`. On Windows, "shebang" line processing is supported if
 you have the :ref:`launcher` installed. Thus, double-clicking an installed
 script in a Windows Explorer window should run it with the correct interpreter
-without the environment needing to be activated or on the :envvar:`!PATH`.
+without the environment needing to be activated or on the :envvar:`PATH`.
 
 When a virtual environment has been activated, the :envvar:`!VIRTUAL_ENV`
 environment variable is set to the path of the environment.
@@ -284,11 +284,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     .. method:: upgrade_dependencies(context)
 
-       Upgrades the core venv dependency packages (currently ``pip`` and
-       ``setuptools``) in the environment. This is done by shelling out to the
+       Upgrades the core venv dependency packages (currently ``pip``)
+       in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
        .. versionadded:: 3.9
+       .. versionchanged:: 3.12
+
+          ``setuptools`` is no longer a core venv dependency.
 
     .. method:: post_setup(context)
 

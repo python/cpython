@@ -46,7 +46,7 @@ void Hacl_Streaming_MD5_legacy_init(Hacl_Streaming_MD_state_32 *s);
 /**
 0 = success, 1 = max length exceeded
 */
-uint32_t
+Hacl_Streaming_Types_error_code
 Hacl_Streaming_MD5_legacy_update(Hacl_Streaming_MD_state_32 *p, uint8_t *data, uint32_t len);
 
 void Hacl_Streaming_MD5_legacy_finish(Hacl_Streaming_MD_state_32 *p, uint8_t *dst);

@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(pysqlite_complete_statement__doc__,
 "complete_statement($module, /, statement)\n"
@@ -133,9 +132,6 @@ pysqlite_register_converter(PyObject *module, PyObject *const *args, Py_ssize_t 
         _PyArg_BadArgument("register_converter", "argument 1", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     orig_name = args[0];
     callable = args[1];
     return_value = pysqlite_register_converter_impl(module, orig_name, callable);
@@ -162,7 +158,7 @@ pysqlite_enable_callback_trace(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int enable;
 
-    enable = _PyLong_AsInt(arg);
+    enable = PyLong_AsInt(arg);
     if (enable == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -211,4 +207,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=39d38c6cfc455042 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a14893a7c2eead5e input=a9049054013a1b77]*/

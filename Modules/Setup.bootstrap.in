@@ -21,6 +21,7 @@ itertools itertoolsmodule.c
 _sre _sre/sre.c
 _thread _threadmodule.c
 time timemodule.c
+_typing _typingmodule.c
 _weakref _weakref.c
 
 # commonly used core modules

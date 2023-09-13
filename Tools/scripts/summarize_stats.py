@@ -16,22 +16,6 @@ if os.name == "nt":
 else:
     DEFAULT_DIR = "/tmp/py_stats/"
 
-#Create list of all instruction names
-specialized = iter(opcode._specialized_instructions)
-opname = ["<0>"]
-for name in opcode.opname[1:]:
-    if name.startswith("<"):
-        try:
-            name = next(specialized)
-        except StopIteration:
-            pass
-    opname.append(name)
-
-# opcode_name --> opcode
-# Sort alphabetically.
-opmap = {name: i for i, name in enumerate(opname)}
-opmap = dict(sorted(opmap.items()))
-
 TOTAL = "specialization.hit", "specialization.miss", "execution_count"
 
 def format_ratio(num, den):
@@ -200,12 +184,12 @@ def gather_stats(input):
         raise ValueError(f"{input:r} is not a file or directory path")
 
 def extract_opcode_stats(stats):
-    opcode_stats = [ {} for _ in range(256) ]
+    opcode_stats = collections.defaultdict(dict)
     for key, value in stats.items():
         if not key.startswith("opcode"):
             continue
-        n, _, rest = key[7:].partition("]")
-        opcode_stats[int(n)][rest.strip(".")] = value
+        name, _, rest = key[7:].partition("]")
+        opcode_stats[name][rest.strip(".")] = value
     return opcode_stats
 
 def parse_kinds(spec_src, prefix="SPEC_FAIL"):
@@ -226,9 +210,13 @@ def pretty(defname):
 def kind_to_text(kind, defines, opname):
     if kind <= 8:
         return pretty(defines[kind][0])
-    if opname.endswith("ATTR"):
+    if opname == "LOAD_SUPER_ATTR":
+        opname = "SUPER"
+    elif opname.endswith("ATTR"):
         opname = "ATTR"
-    if opname.endswith("SUBSCR"):
+    elif opname in ("FOR_ITER", "SEND"):
+        opname = "ITER"
+    elif opname.endswith("SUBSCR"):
         opname = "SUBSCR"
     for name in defines[kind]:
         if name.startswith(opname):
@@ -240,13 +228,12 @@ def categorized_counts(opcode_stats):
     specialized = 0
     not_specialized = 0
     specialized_instructions = {
-        op for op in opcode._specialized_instructions
+        op for op in opcode._specialized_opmap.keys()
         if "__" not in op}
-    for i, opcode_stat in enumerate(opcode_stats):
+    for name, opcode_stat in opcode_stats.items():
         if "execution_count" not in opcode_stat:
             continue
         count = opcode_stat['execution_count']
-        name = opname[i]
         if "specializable" in opcode_stat:
             not_specialized += count
         elif name in specialized_instructions:
@@ -310,13 +297,13 @@ def emit_table(header, rows):
 
 def calculate_execution_counts(opcode_stats, total):
     counts = []
-    for i, opcode_stat in enumerate(opcode_stats):
+    for name, opcode_stat in opcode_stats.items():
         if "execution_count" in opcode_stat:
             count = opcode_stat['execution_count']
             miss = 0
             if "specializable" not in opcode_stat:
                 miss = opcode_stat.get("specialization.miss")
-            counts.append((count, opname[i], miss))
+            counts.append((count, name, miss))
     counts.sort(reverse=True)
     cumulative = 0
     rows = []
@@ -377,16 +364,17 @@ def get_defines():
 def emit_specialization_stats(opcode_stats):
     defines = get_defines()
     with Section("Specialization stats", summary="specialization stats by family"):
-        for i, opcode_stat in enumerate(opcode_stats):
-            name = opname[i]
+        for name, opcode_stat in opcode_stats.items():
             print_specialization_stats(name, opcode_stat, defines)
 
 def emit_comparative_specialization_stats(base_opcode_stats, head_opcode_stats):
     defines = get_defines()
     with Section("Specialization stats", summary="specialization stats by family"):
-        for i, (base_opcode_stat, head_opcode_stat) in enumerate(zip(base_opcode_stats, head_opcode_stats)):
-            name = opname[i]
-            print_comparative_specialization_stats(name, base_opcode_stat, head_opcode_stat, defines)
+        opcodes = set(base_opcode_stats.keys()) & set(head_opcode_stats.keys())
+        for opcode in opcodes:
+            print_comparative_specialization_stats(
+                opcode, base_opcode_stats[opcode], head_opcode_stats[opcode], defines
+            )
 
 def calculate_specialization_effectiveness(opcode_stats, total):
     basic, not_specialized, specialized = categorized_counts(opcode_stats)
@@ -403,12 +391,12 @@ def emit_specialization_overview(opcode_stats, total):
         for title, field in (("Deferred", "specialization.deferred"), ("Misses", "specialization.miss")):
             total = 0
             counts = []
-            for i, opcode_stat in enumerate(opcode_stats):
+            for name, opcode_stat in opcode_stats.items():
                 # Avoid double counting misses
                 if title == "Misses" and "specializable" in opcode_stat:
                     continue
                 value = opcode_stat.get(field, 0)
-                counts.append((value, opname[i]))
+                counts.append((value, name))
                 total += value
             counts.sort(reverse=True)
             if total:
@@ -426,7 +414,7 @@ def emit_comparative_specialization_overview(base_opcode_stats, base_total, head
         )
 
 def get_stats_defines():
-    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/pystats.h")
+    stats_path = os.path.join(os.path.dirname(__file__), "../../Include/cpython/pystats.h")
     with open(stats_path) as stats_src:
         defines = parse_kinds(stats_src, prefix="EVAL_CALL")
     return defines
@@ -490,6 +478,22 @@ def calculate_object_stats(stats):
             rows.append((label, value, ratio))
     return rows
 
+def calculate_gc_stats(stats):
+    gc_stats = []
+    for key, value in stats.items():
+        if not key.startswith("GC"):
+            continue
+        n, _, rest = key[3:].partition("]")
+        name = rest.strip()
+        gen_n = int(n)
+        while len(gc_stats) <= gen_n:
+            gc_stats.append({})
+        gc_stats[gen_n][name] = value
+    return [
+        (i, gen["collections"], gen["objects collected"], gen["object visits"])
+        for (i, gen) in enumerate(gc_stats)
+    ]
+
 def emit_object_stats(stats):
     with Section("Object stats", summary="allocations, frees and dict materializatons"):
         rows = calculate_object_stats(stats)
@@ -501,31 +505,45 @@ def emit_comparative_object_stats(base_stats, head_stats):
         head_rows = calculate_object_stats(head_stats)
         emit_table(("",  "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
 
+def emit_gc_stats(stats):
+    with Section("GC stats", summary="GC collections and effectiveness"):
+        rows = calculate_gc_stats(stats)
+        emit_table(("Generation:",  "Collections:", "Objects collected:", "Object visits:"), rows)
+
+def emit_comparative_gc_stats(base_stats, head_stats):
+    with Section("GC stats", summary="GC collections and effectiveness"):
+        base_rows = calculate_gc_stats(base_stats)
+        head_rows = calculate_gc_stats(head_stats)
+        emit_table(
+            ("Generation:",
+            "Base collections:", "Head collections:",
+            "Base objects collected:", "Head objects collected:",
+            "Base object visits:", "Head object visits:"),
+            join_rows(base_rows, head_rows))
+
 def get_total(opcode_stats):
     total = 0
-    for opcode_stat in opcode_stats:
+    for opcode_stat in opcode_stats.values():
         if "execution_count" in opcode_stat:
             total += opcode_stat['execution_count']
     return total
 
 def emit_pair_counts(opcode_stats, total):
     pair_counts = []
-    for i, opcode_stat in enumerate(opcode_stats):
-        if i == 0:
-            continue
+    for name_i, opcode_stat in opcode_stats.items():
         for key, value in opcode_stat.items():
             if key.startswith("pair_count"):
-                x, _, _ = key[11:].partition("]")
+                name_j, _, _ = key[11:].partition("]")
                 if value:
-                    pair_counts.append((value, (i, int(x))))
+                    pair_counts.append((value, (name_i, name_j)))
     with Section("Pair counts", summary="Pair counts for top 100 pairs"):
         pair_counts.sort(reverse=True)
         cumulative = 0
         rows = []
         for (count, pair) in itertools.islice(pair_counts, 100):
-            i, j = pair
+            name_i, name_j = pair
             cumulative += count
-            rows.append((opname[i] + " " + opname[j], count, format_ratio(count, total),
+            rows.append((f"{name_i} {name_j}", count, format_ratio(count, total),
                          format_ratio(cumulative, total)))
         emit_table(("Pair", "Count:", "Self:", "Cumulative:"),
             rows
@@ -541,18 +559,18 @@ def emit_pair_counts(opcode_stats, total):
                 successors[first][second] = count
                 total_predecessors[second] += count
                 total_successors[first] += count
-        for name, i in opmap.items():
-            total1 = total_predecessors[i]
-            total2 = total_successors[i]
+        for name in opcode_stats.keys():
+            total1 = total_predecessors[name]
+            total2 = total_successors[name]
             if total1 == 0 and total2 == 0:
                 continue
             pred_rows = succ_rows = ()
             if total1:
-                pred_rows = [(opname[pred], count, f"{count/total1:.1%}")
-                             for (pred, count) in predecessors[i].most_common(5)]
+                pred_rows = [(pred, count, f"{count/total1:.1%}")
+                             for (pred, count) in predecessors[name].most_common(5)]
             if total2:
-                succ_rows = [(opname[succ], count, f"{count/total2:.1%}")
-                             for (succ, count) in successors[i].most_common(5)]
+                succ_rows = [(succ, count, f"{count/total2:.1%}")
+                             for (succ, count) in successors[name].most_common(5)]
             with Section(name, 3, f"Successors and predecessors for {name}"):
                 emit_table(("Predecessors", "Count:", "Percentage:"),
                     pred_rows
@@ -570,6 +588,7 @@ def output_single_stats(stats):
     emit_specialization_overview(opcode_stats, total)
     emit_call_stats(stats)
     emit_object_stats(stats)
+    emit_gc_stats(stats)
     with Section("Meta stats", summary="Meta statistics"):
         emit_table(("", "Count:"), [('Number of data files', stats['__nfiles__'])])
 
@@ -592,6 +611,7 @@ def output_comparative_stats(base_stats, head_stats):
     )
     emit_comparative_call_stats(base_stats, head_stats)
     emit_comparative_object_stats(base_stats, head_stats)
+    emit_comparative_gc_stats(base_stats, head_stats)
 
 def output_stats(inputs, json_output=None):
     if len(inputs) == 1:

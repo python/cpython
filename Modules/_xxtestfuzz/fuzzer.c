@@ -10,7 +10,12 @@
 
   See the source code for LLVMFuzzerTestOneInput for details. */
 
+#ifndef Py_BUILD_CORE
+#  define Py_BUILD_CORE 1
+#endif
+
 #include <Python.h>
+#include "pycore_pyhash.h"        // _Py_HashBytes()
 #include <stdlib.h>
 #include <inttypes.h>
 
@@ -526,13 +531,20 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_compile)
     static int SRE_COMPILE_INITIALIZED = 0;
     if (!SRE_COMPILE_INITIALIZED && !init_sre_compile()) {
-        PyErr_Print();
-        abort();
+        if (!PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            PyErr_Print();
+            abort();
+        }
+        else {
+            PyErr_Clear();
+        }
     } else {
         SRE_COMPILE_INITIALIZED = 1;
     }
 
-    rv |= _run_fuzz(data, size, fuzz_sre_compile);
+    if (SRE_COMPILE_INITIALIZED) {
+        rv |= _run_fuzz(data, size, fuzz_sre_compile);
+    }
 #endif
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_match)
     static int SRE_MATCH_INITIALIZED = 0;

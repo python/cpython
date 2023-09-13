@@ -23,7 +23,6 @@ from shutil import (make_archive,
                     unregister_unpack_format, get_unpack_formats,
                     SameFileError, _GiveupOnFastCopy)
 import tarfile
-import warnings
 import zipfile
 try:
     import posix
@@ -33,6 +32,7 @@ except ImportError:
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN, FakePath
+from test.support import warnings_helper
 
 TESTFN2 = TESTFN + "2"
 TESTFN_SRC = TESTFN + "_SRC"
@@ -1839,14 +1839,59 @@ class TestArchives(BaseTest, unittest.TestCase):
         formats = [name for name, params in get_archive_formats()]
         self.assertNotIn('xxx', formats)
 
+    def test_make_tarfile_rootdir_nodir(self):
+        # GH-99203
+        self.addCleanup(os_helper.unlink, f'{TESTFN}.tar')
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                tmp_dir = self.mkdtemp()
+                nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
+                with self.assertRaises(FileNotFoundError) as cm:
+                    make_archive(TESTFN, 'tar', nonexisting_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOENT)
+                self.assertEqual(cm.exception.filename, nonexisting_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError) as cm:
+                    make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOTDIR)
+                self.assertEqual(cm.exception.filename, tmp_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
+
+    @support.requires_zlib()
+    def test_make_zipfile_rootdir_nodir(self):
+        # GH-99203
+        self.addCleanup(os_helper.unlink, f'{TESTFN}.zip')
+        for dry_run in (False, True):
+            with self.subTest(dry_run=dry_run):
+                tmp_dir = self.mkdtemp()
+                nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
+                with self.assertRaises(FileNotFoundError) as cm:
+                    make_archive(TESTFN, 'zip', nonexisting_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOENT)
+                self.assertEqual(cm.exception.filename, nonexisting_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+
+                tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
+                os.close(tmp_fd)
+                with self.assertRaises(NotADirectoryError) as cm:
+                    make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
+                self.assertEqual(cm.exception.errno, errno.ENOTDIR)
+                self.assertEqual(cm.exception.filename, tmp_file)
+                self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
+
     ### shutil.unpack_archive
 
-    def check_unpack_archive(self, format):
-        self.check_unpack_archive_with_converter(format, lambda path: path)
-        self.check_unpack_archive_with_converter(format, pathlib.Path)
-        self.check_unpack_archive_with_converter(format, FakePath)
+    def check_unpack_archive(self, format, **kwargs):
+        self.check_unpack_archive_with_converter(
+            format, lambda path: path, **kwargs)
+        self.check_unpack_archive_with_converter(
+            format, pathlib.Path, **kwargs)
+        self.check_unpack_archive_with_converter(format, FakePath, **kwargs)
 
-    def check_unpack_archive_with_converter(self, format, converter):
+    def check_unpack_archive_with_converter(self, format, converter, **kwargs):
         root_dir, base_dir = self._create_files()
         expected = rlistdir(root_dir)
         expected.remove('outer')
@@ -1856,36 +1901,48 @@ class TestArchives(BaseTest, unittest.TestCase):
 
         # let's try to unpack it now
         tmpdir2 = self.mkdtemp()
-        unpack_archive(converter(filename), converter(tmpdir2))
+        unpack_archive(converter(filename), converter(tmpdir2), **kwargs)
         self.assertEqual(rlistdir(tmpdir2), expected)
 
         # and again, this time with the format specified
         tmpdir3 = self.mkdtemp()
-        unpack_archive(converter(filename), converter(tmpdir3), format=format)
+        unpack_archive(converter(filename), converter(tmpdir3), format=format,
+                       **kwargs)
         self.assertEqual(rlistdir(tmpdir3), expected)
 
-        self.assertRaises(shutil.ReadError, unpack_archive, converter(TESTFN))
-        self.assertRaises(ValueError, unpack_archive, converter(TESTFN), format='xxx')
+        with self.assertRaises(shutil.ReadError):
+            unpack_archive(converter(TESTFN), **kwargs)
+        with self.assertRaises(ValueError):
+            unpack_archive(converter(TESTFN), format='xxx', **kwargs)
+
+    def check_unpack_tarball(self, format):
+        self.check_unpack_archive(format, filter='fully_trusted')
+        self.check_unpack_archive(format, filter='data')
+        with warnings_helper.check_warnings(
+                ('Python 3.14', DeprecationWarning)):
+            self.check_unpack_archive(format)
 
     def test_unpack_archive_tar(self):
-        self.check_unpack_archive('tar')
+        self.check_unpack_tarball('tar')
 
     @support.requires_zlib()
     def test_unpack_archive_gztar(self):
-        self.check_unpack_archive('gztar')
+        self.check_unpack_tarball('gztar')
 
     @support.requires_bz2()
     def test_unpack_archive_bztar(self):
-        self.check_unpack_archive('bztar')
+        self.check_unpack_tarball('bztar')
 
     @support.requires_lzma()
     @unittest.skipIf(AIX and not _maxdataOK(), "AIX MAXDATA must be 0x20000000 or larger")
     def test_unpack_archive_xztar(self):
-        self.check_unpack_archive('xztar')
+        self.check_unpack_tarball('xztar')
 
     @support.requires_zlib()
     def test_unpack_archive_zip(self):
         self.check_unpack_archive('zip')
+        with self.assertRaises(TypeError):
+            self.check_unpack_archive('zip', filter='data')
 
     def test_unpack_registry(self):
 
@@ -2724,7 +2781,7 @@ class _ZeroCopyFileTest(object):
     def test_same_file(self):
         self.addCleanup(self.reset)
         with self.get_files() as (src, dst):
-            with self.assertRaises(Exception):
+            with self.assertRaises((OSError, _GiveupOnFastCopy)):
                 self.zerocopy_fun(src, src)
         # Make sure src file is not corrupted.
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)

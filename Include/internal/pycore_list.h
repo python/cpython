@@ -8,7 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "listobject.h"           // _PyList_CAST()
+
+extern PyObject* _PyList_Extend(PyListObject *, PyObject *);
+extern void _PyList_DebugMallocStats(FILE *out);
 
 
 /* runtime lifecycle */
@@ -49,8 +51,8 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     Py_ssize_t allocated = self->allocated;
     assert((size_t)len + 1 < PY_SSIZE_T_MAX);
     if (allocated > len) {
-        PyList_SET_ITEM(self, len, newitem);
         Py_SET_SIZE(self, len + 1);
+        PyList_SET_ITEM(self, len, newitem);
         return 0;
     }
     return _PyList_AppendTakeRefListResize(self, newitem);
