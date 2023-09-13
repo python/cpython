@@ -465,15 +465,14 @@ class RunWorkers:
             self.num_workers = min(self.num_workers, jobs)
 
     def start_workers(self) -> None:
-        self.workers = workers = [
-            WorkerThread(index, self) for index in range(1, self.num_workers + 1)
-        ]
+        self.workers = [WorkerThread(index, self)
+                        for index in range(1, self.num_workers + 1)]
         jobs = self.runtests.get_jobs()
         if jobs is not None:
             tests = count(jobs, 'test')
         else:
             tests = 'tests'
-        nworkers = len(workers)
+        nworkers = len(self.workers)
         processes = plural(nworkers, "process", "processes")
         msg = (f"Run {tests} in parallel using "
                f"{nworkers} worker {processes}")
@@ -482,7 +481,7 @@ class RunWorkers:
                     % (format_duration(self.timeout),
                        format_duration(self.worker_timeout)))
         self.log(msg)
-        for worker in workers:
+        for worker in self.workers:
             worker.start()
 
     def stop_workers(self) -> None:
