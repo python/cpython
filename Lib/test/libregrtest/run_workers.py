@@ -21,7 +21,7 @@ from .results import TestResults
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, MS_WINDOWS, TMP_PREFIX,
+    StrPath, StrJSON, TestName, MS_WINDOWS,
     format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
@@ -225,16 +225,9 @@ class WorkerThread(threading.Thread):
     def create_json_file(self, stack: contextlib.ExitStack) -> tuple[JsonFile, TextIO | None]:
         """Create JSON file."""
 
-        json_file_use_filename = self.runtests.json_file_use_filename()
-        if json_file_use_filename:
-            # create an empty file to make the creation atomic
-            # (to prevent races with other worker threads)
-            prefix = TMP_PREFIX + 'json_'
-            json_fd, json_filename = tempfile.mkstemp(prefix=prefix)
-            os.close(json_fd)
-
-            stack.callback(os_helper.unlink, json_filename)
-            json_file = JsonFile(json_filename, JsonFileType.FILENAME)
+        json_file_use_stdout = self.runtests.json_file_use_stdout()
+        if json_file_use_stdout:
+            json_file = JsonFile(None, JsonFileType.STDOUT)
             json_tmpfile = None
         else:
             json_tmpfile = tempfile.TemporaryFile('w+', encoding='utf8')
@@ -300,11 +293,14 @@ class WorkerThread(threading.Thread):
                               f"Cannot read process stdout: {exc}", None)
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
-                  stdout: str) -> TestResult:
+                  stdout: str) -> tuple[TestResult, str]:
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
                 worker_json: StrJSON = json_tmpfile.read()
+            elif json_file.file_type == JsonFileType.STDOUT:
+                stdout, _, worker_json = stdout.rpartition("\n")
+                stdout = stdout.rstrip()
             else:
                 with json_file.open(encoding='utf8') as json_fp:
                     worker_json: StrJSON = json_fp.read()
@@ -319,13 +315,15 @@ class WorkerThread(threading.Thread):
             raise WorkerError(self.test_name, "empty JSON", stdout)
 
         try:
-            return TestResult.from_json(worker_json)
+            result = TestResult.from_json(worker_json)
         except Exception as exc:
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             err_msg = f"Failed to parse worker process JSON: {exc}"
             raise WorkerError(self.test_name, err_msg, stdout,
                               state=State.MULTIPROCESSING_ERROR)
+
+        return (result, stdout)
 
     def _runtest(self, test_name: TestName) -> MultiprocessResult:
         with contextlib.ExitStack() as stack:
@@ -341,7 +339,7 @@ class WorkerThread(threading.Thread):
             if retcode is None:
                 raise WorkerError(self.test_name, None, stdout, state=State.TIMEOUT)
 
-            result = self.read_json(json_file, json_tmpfile, stdout)
+            result, stdout = self.read_json(json_file, json_tmpfile, stdout)
 
         if retcode != 0:
             raise WorkerError(self.test_name, f"Exit code {retcode}", stdout)

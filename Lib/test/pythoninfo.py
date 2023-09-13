@@ -268,6 +268,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -320,6 +321,7 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
@@ -335,7 +337,8 @@ def collect_os(info_add):
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -500,6 +503,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
