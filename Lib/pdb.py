@@ -1755,6 +1755,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         if args[0] in self.aliases and len(args) == 1:
             self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+        elif len(args) == 1:
+            self.error("Unkown alias. To create an alias see 'help alias'")
         else:
             self.aliases[args[0]] = ' '.join(args[1:])
 

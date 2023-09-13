@@ -1,0 +1,1 @@
+The pdb alias builtin now prevents registering aliases without a command.
