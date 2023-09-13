@@ -2073,9 +2073,9 @@ class Test_testinternalcapi(unittest.TestCase):
 
 @threading_helper.requires_working_threading()
 class Test_PyLock(unittest.TestCase):
-        locals().update((name, getattr(_testinternalcapi, name))
-                        for name in dir(_testinternalcapi)
-                        if name.startswith('test_lock_'))
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_lock_'))
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
