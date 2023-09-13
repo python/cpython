@@ -3964,6 +3964,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4053,6 +4054,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4077,6 +4079,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4180,6 +4183,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4219,6 +4223,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4262,6 +4267,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4300,6 +4306,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4441,6 +4448,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4481,6 +4489,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4522,6 +4531,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4561,6 +4571,7 @@
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
             next_instr += 3;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
@@ -4744,6 +4755,7 @@
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
             stack_pointer[-1] = result;
+            CHECK_EVAL_BREAKER();
             DISPATCH();
         }
 
