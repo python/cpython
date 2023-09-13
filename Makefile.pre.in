@@ -491,6 +491,7 @@ OBJECT_OBJS=	\
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
 
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
 DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
 ##########################################################################
@@ -505,7 +506,6 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
-		$(DEEPFREEZE_OBJS) \
 		Modules/getpath.o \
 		Python/frozen.o
 
@@ -778,7 +778,6 @@ coverage-report: regen-token regen-frozen
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
 .PHONY: clinic-tests
 clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
@@ -1253,12 +1252,12 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
+regen-deepfreeze: $(DEEPFREEZE_C)
 
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
-Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
+$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
@@ -1285,8 +1284,6 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
 # END: deepfreeze modules
-	@echo "Note: Deepfreeze may have added some global objects,"
-	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1295,11 +1292,12 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
+# Dependencies which can add and/or remove _Py_ID() identifiers:
+# - deepfreeze.c
+# - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
-	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
-	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1321,9 +1319,10 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
+# "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
 regen-all: regen-cases regen-typeslots \
-	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
+	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects regen-jit
 	@echo
@@ -1725,6 +1724,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/pystats.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
@@ -1800,6 +1800,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pymem_init.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_pystats.h \
 		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
 		$(srcdir)/Include/internal/pycore_range.h \
@@ -2158,6 +2159,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_capi \
 		test/test_cppext \
 		test/test_ctypes \
+		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
 		test/test_import \
@@ -2246,6 +2248,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tkinterdata \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
@@ -2602,6 +2605,7 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
+# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
 	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \

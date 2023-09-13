@@ -1,0 +1,2 @@
+Fix crash when compiling an invalid AST involving a named (walrus)
+expression.

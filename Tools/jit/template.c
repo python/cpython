@@ -59,7 +59,7 @@ _jit_entry(_PyInterpreterFrame *frame, PyObject **stack_pointer,
             Py_UNREACHABLE();
     }
     // Finally, the continuations:
-    if (opcode == JUMP_TO_TOP) {
+    if (opcode == _JUMP_TO_TOP) {
         assert(pc == 0);
         __attribute__((musttail))
         return _jit_loop(frame, stack_pointer, tstate);
@@ -91,7 +91,6 @@ error:
     return NULL;
 deoptimize:
     frame->prev_instr--;
-exit_trace:
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return frame;
 }
