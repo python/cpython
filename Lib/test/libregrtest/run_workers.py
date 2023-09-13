@@ -338,11 +338,10 @@ class WorkerThread(threading.Thread):
 
             if retcode is None:
                 raise WorkerError(self.test_name, None, stdout, state=State.TIMEOUT)
+            if retcode != 0:
+                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout)
 
             result, stdout = self.read_json(json_file, json_tmpfile, stdout)
-
-        if retcode != 0:
-            raise WorkerError(self.test_name, f"Exit code {retcode}", stdout)
 
         if tmp_files:
             msg = (f'\n\n'
