@@ -246,6 +246,14 @@ class DebuggerTests(unittest.TestCase):
             # gh-91960: On Python built with "clang -Og", gdb gets
             # "frame=<optimized out>" for _PyEval_EvalFrameDefault() parameter
             '(unable to read python frame information)',
+            # gh-104736: On Python built with "clang -Og" on ppc64le,
+            # "py-bt" displays a truncated or not traceback, but "where"
+            # logs this error message:
+            'Backtrace stopped: frame did not save the PC',
+            # gh-104736: When "bt" command displays something like:
+            # "#1  0x0000000000000000 in ?? ()", the traceback is likely
+            # truncated or wrong.
+            ' ?? ()',
         ):
             if pattern in out:
                 raise unittest.SkipTest(f"{pattern!r} found in gdb output")
