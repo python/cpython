@@ -160,7 +160,7 @@ dummy_func(
             /* Possibly combine these two checks */
             DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
                 != tstate->interp->monitoring_version, RESUME);
-            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker), RESUME);
+            DEOPT_IF(_Py_atomic_load_int32_relaxed(&tstate->interp->ceval.eval_breaker2), RESUME);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {

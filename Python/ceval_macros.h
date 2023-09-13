@@ -116,7 +116,7 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
+    if (_Py_atomic_load_int32_relaxed(&tstate->interp->ceval.eval_breaker2)) { \
         if (_Py_HandlePending(tstate) != 0) { \
             goto error; \
         } \
