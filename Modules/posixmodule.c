@@ -316,26 +316,23 @@ corresponding Unix manual entries for more information on calls.");
 
 #if defined(USE_XATTRS) && defined(__FreeBSD__)
 
-/* Turns a qualified string into a namespace id on FreeBSD.
- * This ensures that that the namespace is qualified
- * ((user|system).<name>) and that <name> is non-null.
- */
-static int
-xattrnamespace(int *namespace, const char *fullattr)
+// Split a Linux-style qualified xattr name into its components for FreeBSD.
+//
+// This ensures that that the namespace is qualified ((user|system).<name>) and
+// that <name> is non-empty.
+//
+// Sets errno.
+static void
+xattr_split_namespace(const char *fullattr, int *namespace, const char **attr_name)
 {
     char *sep = strchr(fullattr, '.');
-    size_t nslen = 0;
-
-    *namespace = -1;
-    // return ENOATTR on unqualified names
-    if (sep == NULL || *(sep + 1) == '\0')
-        return ENOATTR;
-
-    if (sep < fullattr)
-        return ENOATTR;
-
-    nslen = sep - fullattr;
-
+    // fail with ENOATTR on unqualified or empty names
+    *attr_name = NULL;
+    if (sep == NULL || *(sep + 1) == '\0' || sep < fullattr) {
+        errno = ENOATTR;
+        return;
+    }
+    size_t nslen = sep - fullattr;
     // We could use extattr_string_to_namespace, but we have a prefix, not a
     // null-terminated string, at this point. extattr_string_to_namespace is
     // currently documented to only support 'user' and 'system' namespaces.
@@ -344,146 +341,58 @@ xattrnamespace(int *namespace, const char *fullattr)
     } else if (nslen == 6 && memcmp(fullattr, "system", 6) == 0) {
         *namespace = EXTATTR_NAMESPACE_SYSTEM;
     } else {
-        return ENOATTR;
+        errno = ENOATTR;
+        return;
     }
-
-    return 0;
+    *attr_name = fullattr + nslen + 1;
 }
 
-/* xattr lists come back from FreeBSD without the leading namespace.
- * We need to translate this into a linux-like format
- */
-static ssize_t
-normalize_xattr_list(int namespace, char *attrs, size_t size, ssize_t extattr_ret)
-{
-    char *scratch = NULL, *scratch_ptr;
-    ssize_t ret = 0;
-    ssize_t i = 0, left = size, attr_size;
-
-    /* FreeBSD only returns the size of the attribute names, not including the
-     * namespaces. In order to guess a buffer size, we multiply the size
-     * returned by the longest possible prefix - "system.". This accounts for
-     * the case where each attribute is 1 character in length, and is a system
-     * attribute.
-     *
-     * This does unfortunately give us longer buffers than we need, but since
-     * the extattr(2) interface gives us no way to detect overflow, this is
-     * the best we can do to guess the size.
-     */
-    if (! attrs && extattr_ret) {
-        if (SSIZE_MAX / extattr_ret <= strlen("system.")) {
-            return -ERANGE;
-        }
-        return strlen("system.") * extattr_ret;
-    }
-
-    /* overflow */
-    if (size - SSIZE_MAX < SSIZE_MAX)
-        return -ERANGE;
-
-    if (! (scratch = PyMem_RawCalloc(1, size)))
-        return -ENOMEM;
-
-    scratch_ptr = scratch;
-
-    for (i = 0; i < size && attrs[i] != 0;) {
-        attr_size = attrs[i];
-        if (namespace == EXTATTR_NAMESPACE_USER) {
-            strncat(scratch_ptr, "user.", left);
-            scratch_ptr += strlen("user.");
-            left -= strlen("user.");
-        } else if (namespace == EXTATTR_NAMESPACE_SYSTEM) {
-            strncat(scratch_ptr, "system.", left);
-            scratch_ptr += strlen("system.");
-            left -= strlen("system.");
-        }
-
-        if (attr_size > left) {
-            ret = -ENOMEM;
-            goto bad;
-        }
-
-        memcpy(scratch_ptr, attrs + i + 1, attr_size);
-        scratch_ptr += attr_size + 1;
-        i += attr_size + 1;
-        left -= attr_size + 1;
-    }
-
-    memcpy(attrs, scratch, size);
-    ret = size - left;
-
-bad:
-    PyMem_RawFree(scratch);
-
-    return ret;
-}
-
+/* FreeBSD wrapper that mimics Linux getxattr */
 static ssize_t
 getxattr(const char *path, const char *name, void *value, size_t size)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_get_file(path, nsid, attr_name, value, size);
 }
 
+/* FreeBSD wrapper that mimics Linux lgetxattr */
 static ssize_t
 lgetxattr(const char *path, const char *name, void *value, size_t size)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_get_link(path, nsid, attr_name, value, size);
 }
 
+/* FreeBSD wrapper that mimics Linux fgetxattr */
 static ssize_t
 fgetxattr(int fd, const char *name, void *value, size_t size)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_get_fd(fd, nsid, attr_name, value, size);
 }
 
+/* FreeBSD wrapper that mimics Linux setxattr */
 static int
 setxattr(const char *path, const char *name, const void *value, size_t size, int flags)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-    ssize_t get_ret = 0;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
+    ssize_t get_ret = 0;
     if (flags) {
         get_ret = extattr_get_file(path, nsid, attr_name, NULL, 0);
         if (flags & XATTR_REPLACE && get_ret == -1) {
@@ -500,21 +409,16 @@ setxattr(const char *path, const char *name, const void *value, size_t size, int
     return -1;
 }
 
+/* FreeBSD wrapper that mimics Linux lsetxattr */
 static int
 lsetxattr(const char *path, const char *name, const void *value, size_t size, int flags)
 {
     int nsid = 0;
-    int err = 0;
-    ssize_t get_ret = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
+    ssize_t get_ret = 0;
     if (flags) {
         get_ret = extattr_get_link(path, nsid, attr_name, NULL, 0);
         if (flags & XATTR_REPLACE && get_ret == -1) {
@@ -531,21 +435,16 @@ lsetxattr(const char *path, const char *name, const void *value, size_t size, in
     return -1;
 }
 
+/* FreeBSD wrapper that mimics Linux fsetxattr */
 static int
 fsetxattr(int fd, const char *name, const void *value, size_t size, int flags)
 {
     int nsid = 0;
-    int err = 0;
-    ssize_t get_ret = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
+    ssize_t get_ret = 0;
     if (flags) {
         get_ret = extattr_get_fd(fd, nsid, attr_name, NULL, 0);
         if (flags & XATTR_REPLACE && get_ret == -1) {
@@ -562,157 +461,40 @@ fsetxattr(int fd, const char *name, const void *value, size_t size, int flags)
     return -1;
 }
 
+/* FreeBSD wrapper that mimics Linux removexattr */
 static int
 removexattr(const char *path, const char *name)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_delete_file(path, nsid, attr_name);
 }
 
+/* FreeBSD wrapper that mimics Linux lremovexattr */
 static int
 lremovexattr(const char *path, const char *name)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_delete_link(path, nsid, attr_name);
 }
 
+/* FreeBSD wrapper that mimics Linux fremovexattr */
 static int
 fremovexattr(int fd, const char *name)
 {
     int nsid = 0;
-    int err = 0;
-    char *attr_name = NULL;
-
-    if ((err = xattrnamespace(&nsid, name))) {
-        errno = err;
+    const char *attr_name = NULL;
+    xattr_split_namespace(name, &nsid, &attr_name);
+    if (attr_name == NULL)
         return -1;
-    }
-
-    attr_name = strchr(name, '.') + 1;
-
     return extattr_delete_fd(fd, nsid, attr_name);
-}
-
-static ssize_t
-listxattr(const char *path, char *list, size_t size)
-{
-    ssize_t ret = 0, retadder = 0;
-
-    memset(list, 0, size);
-    retadder = extattr_list_file(path, EXTATTR_NAMESPACE_SYSTEM, list, size);
-    if (retadder == -1 && errno != EPERM) {
-        return retadder;
-    } else if (retadder > 0) {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    retadder = extattr_list_file(path, EXTATTR_NAMESPACE_USER, list + ret, size - ret);
-    if (retadder == -1) {
-        return retadder;
-    } else {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    // empty
-    if (ret < 2) {
-        return 0;
-    }
-
-    return ret;
-}
-
-static ssize_t
-llistxattr(const char *path, char *list, size_t size)
-{
-    ssize_t ret = 0, retadder = 0;
-
-    memset(list, 0, size);
-    retadder = extattr_list_link(path, EXTATTR_NAMESPACE_SYSTEM, list, size);
-    if (retadder == -1 && errno != EPERM) {
-        return retadder;
-    } else if (retadder > 0) {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    retadder = extattr_list_link(path, EXTATTR_NAMESPACE_USER, list + ret, size - retadder);
-    if (retadder == -1) {
-        return retadder;
-    } else {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    // empty
-    if (ret < 2) {
-        return 0;
-    }
-
-    return ret;
-}
-
-static ssize_t
-flistxattr(int fd, char *list, size_t size)
-{
-    ssize_t ret = 0, retadder = 0;
-
-    memset(list, 0, size);
-    retadder = extattr_list_fd(fd, EXTATTR_NAMESPACE_SYSTEM, list, size);
-    if (retadder == -1 && errno != EPERM) {
-        return retadder;
-    } else if (retadder > 0) {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_SYSTEM, list, size, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    retadder = extattr_list_fd(fd, EXTATTR_NAMESPACE_USER, list + ret, size - retadder);
-    if (retadder == -1) {
-        return retadder;
-    } else {
-        retadder = normalize_xattr_list(EXTATTR_NAMESPACE_USER, list + ret, size - ret, retadder);
-        if (retadder < 0)
-            return retadder;
-        ret += retadder;
-    }
-
-    // empty
-    if (ret < 2) {
-        return 0;
-    }
-
-    return ret;
 }
 
 #endif
@@ -14242,10 +14024,6 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
                  int follow_symlinks)
 /*[clinic end generated code: output=5f2f44200a43cff2 input=025789491708f7eb]*/
 {
-    Py_ssize_t i;
-    PyObject *buffer = NULL;
-    Py_ssize_t buffer_size = 0;
-
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
@@ -14253,51 +14031,62 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         return NULL;
     }
 
-    for (i = 0; i < 2; i++) {
-        void *ptr = NULL;
-        ssize_t result;
-        if (i) {
-            buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
-            if (!buffer)
-                return NULL;
-            ptr = PyBytes_AS_STRING(buffer);
-        }
-
-        Py_BEGIN_ALLOW_THREADS;
+    ssize_t result;
+    // First, query buffer size
+    Py_BEGIN_ALLOW_THREADS;
 #ifdef __APPLE__
-        if (path->fd >= 0)
-            result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size,
-                               0, 0);
-        else if (follow_symlinks)
-            result = getxattr(path->narrow, attribute->narrow, ptr,
-                              buffer_size, 0, 0);
-        else
-            result = getxattr(path->narrow, attribute->narrow, ptr,
-                              buffer_size, 0, XATTR_NOFOLLOW);
+    if (path->fd >= 0)
+        result = fgetxattr(path->fd, attribute->narrow, NULL, 0, 0, 0);
+    else if (follow_symlinks)
+        result = getxattr(path->narrow, attribute->narrow, NULL, 0, 0, 0);
+    else
+        result = getxattr(path->narrow, attribute->narrow, NULL, 0, 0,
+                          XATTR_NOFOLLOW);
 #else
-        if (path->fd >= 0)
-            result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
-        else if (follow_symlinks)
-            result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
-        else
-            result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+    if (path->fd >= 0)
+        result = fgetxattr(path->fd, attribute->narrow, NULL, 0);
+    else if (follow_symlinks)
+        result = getxattr(path->narrow, attribute->narrow, NULL, 0);
+    else
+        result = lgetxattr(path->narrow, attribute->narrow, NULL, 0);
 #endif
-        Py_END_ALLOW_THREADS;
-
-        if (result < 0) {
-            if (errno == ERANGE) {
-                Py_DECREF(buffer);
-                continue;
-            }
-            path_error(path);
-            Py_DECREF(buffer);
-            return NULL;
-        }
-
-        if (! buffer_size)
-            buffer_size = result;
+    Py_END_ALLOW_THREADS;
+    if (result < 0) {
+        path_error(path);
+        return NULL;
     }
 
+    // Next, allocate and query the actual value
+    Py_ssize_t buffer_size = result;
+    PyObject *buffer = PyBytes_FromStringAndSize(NULL, buffer_size);
+    if (!buffer)
+        return NULL;
+    void *ptr = PyBytes_AS_STRING(buffer);
+    Py_BEGIN_ALLOW_THREADS;
+#ifdef __APPLE__
+    if (path->fd >= 0)
+        result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size,
+                            0, 0);
+    else if (follow_symlinks)
+        result = getxattr(path->narrow, attribute->narrow, ptr,
+                            buffer_size, 0, 0);
+    else
+        result = getxattr(path->narrow, attribute->narrow, ptr,
+                            buffer_size, 0, XATTR_NOFOLLOW);
+#else
+    if (path->fd >= 0)
+        result = fgetxattr(path->fd, attribute->narrow, ptr, buffer_size);
+    else if (follow_symlinks)
+        result = getxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+    else
+        result = lgetxattr(path->narrow, attribute->narrow, ptr, buffer_size);
+#endif
+    Py_END_ALLOW_THREADS;
+    if (result < 0) {
+        path_error(path);
+        Py_DECREF(buffer);
+        return NULL;
+    }
     return buffer;
 }
 
@@ -14430,15 +14219,16 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
 static PyObject *
 freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
     PyObject *result = list;
-    int namespaces[] = {EXTATTR_NAMESPACE_SYSTEM, EXTATTR_NAMESPACE_USER};
-    char *nsprefix[] = {"system.", "user."};
-    int privileged_namespaces = 1;
+    const int namespaces[] = {EXTATTR_NAMESPACE_SYSTEM, EXTATTR_NAMESPACE_USER};
+    const char *nsprefix[] = {"system.", "user."};
+    const size_t max_nsprefix_len = 7;
+    const int privileged_namespaces = 1;
 
-    char *name = path->narrow ? path->narrow : ".";
+    const char *name = path->narrow ? path->narrow : ".";
 
     for (int i = 0; i < sizeof(namespaces) / sizeof(int); i++) {
         ssize_t length;
-        int namespace = namespaces[i];
+        const int namespace = namespaces[i];
         Py_BEGIN_ALLOW_THREADS;
         if (path->fd > -1)
             length = extattr_list_fd(path->fd, namespace, NULL, 0);
@@ -14456,7 +14246,6 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
                 break;
             }
         }
-        
         char* buffer = PyMem_Malloc(length);
         if (buffer == NULL) {
             result = NULL;
@@ -14470,51 +14259,41 @@ freebsd_listxattr_impl(PyObject* list, path_t *path, int follow_symlinks) {
         else
             length = extattr_list_link(name, namespace, buffer, length);
         Py_END_ALLOW_THREADS;
-
         if (length < 0) {
+            PyMem_Free(buffer);
             path_error(path);
-            goto bad;
+            result = NULL;
+            break;
         }
-
-        // buffer to build "{namespace}.{attr}" strings, must include prefix:
-        char attr_name[EXTATTR_MAXNAMELEN + 8];
-        int attr_name_size = sizeof(attr_name);
-
-        char *next = buffer;
-        char *end = buffer + length;
-        char *attr_suffix = stpcpy(attr_name, nsprefix[i]);
-        ssize_t attr_buf_size = attr_name + attr_name_size - attr_suffix;
-        while (next < end) {
-            char attr_len = *next;
-            if (attr_len >= attr_buf_size) {
-                result = NULL;
-                // TODO handle memory error
-                break;
-            }
-            char *attr_name_end = mempcpy(attr_suffix, next + 1, attr_len);
-            *attr_name_end = '\0';
-            int error;
-            PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(attr_name,
-                                                                   attr_name_end - attr_name);
+        static_assert(EXTATTR_MAXNAMELEN <= UCHAR_MAX,
+                      "extattr length can exceed UCHAR_MAX");
+        // buffer to build qualified "{namespace}.{attr}" strings, including
+        // prefix and separator:
+        char qual_name[UCHAR_MAX + 8];
+        assert(sizeof(qual_name) >= EXTATTR_MAXNAMELEN + max_nsprefix_len + 1);
+        char *attr_suffix = stpcpy(qual_name, nsprefix[i]);
+        unsigned char attr_len;
+        for (size_t pos = 0; pos < length; pos += attr_len + 1) {
+            attr_len = (unsigned char)buffer[pos];
+            const char *attr = buffer + pos + 1;
+            char *qual_name_end = mempcpy(attr_suffix, attr, attr_len);
+            const size_t qual_name_len = qual_name_end - qual_name;
+            PyObject *attribute = PyUnicode_DecodeFSDefaultAndSize(qual_name, qual_name_len);
             if (!attribute) {
                 result = NULL;
                 break;
             }
-            error = PyList_Append(list, attribute);
+            int error = PyList_Append(list, attribute);
             Py_DECREF(attribute);
             if (error) {
                 result = NULL;
                 break;
             }
-            next += attr_len + 1;
         }
-        if (result == NULL)
-            goto bad;
-        continue;
-        bad:
         PyMem_Free(buffer);
-        result = NULL;
-        break;
+        if (result == NULL) {
+            break;
+        }
     }
 
     return result;
@@ -14542,7 +14321,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
 /*[clinic end generated code: output=bebdb4e2ad0ce435 input=9826edf9fdb90869]*/
 {
     if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
-        goto exit;
+        return NULL;
 
     if (PySys_Audit("os.listxattr", "(O)",
                     path->object ? path->object : Py_None) < 0) {
@@ -14623,18 +14402,17 @@ exit:
         PyMem_Free(buffer);
     return result;
 
-#else if defined(HAVE_SYS_EXTATTR_H) || defined(__FreeBSD__)
+#elif defined(HAVE_SYS_EXTATTR_H) || defined(__FreeBSD__)
 
     PyObject *list = PyList_New(0);
     if (!list) {
-        goto exit;
+        return NULL;
     }
     PyObject *result = freebsd_listxattr_impl(list, path, follow_symlinks);
     if (!result) {
         Py_DECREF(list);
         return NULL;
     }
-exit:
     return result;
 
 #endif
