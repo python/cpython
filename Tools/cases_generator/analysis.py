@@ -417,7 +417,8 @@ class Analyzer:
                 case parsing.OpName(name):
                     if name not in self.instrs:
                         self.error(f"Unknown instruction {name!r}", macro)
-                    components.append(self.instrs[name])
+                    else:
+                        components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
