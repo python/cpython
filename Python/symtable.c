@@ -784,7 +784,8 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
 static int
 update_symbols(PyObject *symbols, PyObject *scopes,
                PyObject *bound, PyObject *free,
-               PyObject *inlined_cells, int classflag)
+               PyObject *inlined_cells, int classflag,
+               PySTEntryObject *class_entry)
 {
     PyObject *name = NULL, *itr = NULL;
     PyObject *v = NULL, *v_scope = NULL, *v_new = NULL, *v_free = NULL;
@@ -836,8 +837,16 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            PyObject *class_v = NULL;
+            if (class_entry) {
+                class_v = PyDict_GetItemWithError(class_entry->ste_symbols, name);
+                if (!class_v && PyErr_Occurred()) {
+                    goto error;
+                }
+            }
+            if  ((classflag &&
+                  PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) ||
+                 (class_v && PyLong_AS_LONG(class_v) & (DEF_BOUND | DEF_GLOBAL))) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -1078,7 +1087,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
-                        ste->ste_type == ClassBlock))
+                        ste->ste_type == ClassBlock, class_entry))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
