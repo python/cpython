@@ -13,6 +13,7 @@ import os.path
 import platform
 import random
 import re
+import shlex
 import subprocess
 import sys
 import sysconfig
@@ -432,13 +433,14 @@ class BaseTestCase(unittest.TestCase):
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
-    def check_executed_tests(self, output, tests, skipped=(), failed=(),
+    def check_executed_tests(self, output, tests, *, stats,
+                             skipped=(), failed=(),
                              env_changed=(), omitted=(),
                              rerun=None, run_no_tests=(),
                              resource_denied=(),
-                             randomize=False, interrupted=False,
+                             randomize=False, parallel=False, interrupted=False,
                              fail_env_changed=False,
-                             *, stats, forever=False, filtered=False):
+                             forever=False, filtered=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
@@ -455,6 +457,8 @@ class BaseTestCase(unittest.TestCase):
             run_no_tests = [run_no_tests]
         if isinstance(stats, int):
             stats = TestStats(stats)
+        if parallel:
+            randomize = True
 
         rerun_failed = []
         if rerun is not None:
@@ -1120,7 +1124,7 @@ class ArgsTestCase(BaseTestCase):
         tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, tests, failed=crash_test,
-                                  randomize=True, stats=0)
+                                  parallel=True, stats=0)
 
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
@@ -1744,7 +1748,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testnames,
                                   env_changed=testnames,
                                   fail_env_changed=True,
-                                  randomize=True,
+                                  parallel=True,
                                   stats=len(testnames))
         for testname in testnames:
             self.assertIn(f"Warning -- {testname} leaked temporary "
@@ -1784,7 +1788,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  randomize=True,
+                                  parallel=True,
                                   stats=0)
 
     def test_doctest(self):
@@ -1823,7 +1827,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  randomize=True,
+                                  parallel=True,
                                   stats=TestStats(1, 1, 0))
 
     def _check_random_seed(self, run_workers: bool):
@@ -1865,6 +1869,27 @@ class ArgsTestCase(BaseTestCase):
 
     def test_random_seed_workers(self):
         self._check_random_seed(run_workers=True)
+
+    def test_python_command(self):
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+
+            class WorkerTests(unittest.TestCase):
+                def test_dev_mode(self):
+                    self.assertTrue(sys.flags.dev_mode)
+        """)
+        tests = [self.create_test(code=code) for _ in range(3)]
+
+        # Custom Python command: "python -X dev"
+        python_cmd = [sys.executable, '-X', 'dev']
+        # test.libregrtest.cmdline uses shlex.split() to parse the Python
+        # command line string
+        python_cmd = shlex.join(python_cmd)
+
+        output = self.run_tests("--python", python_cmd, "-j0", *tests)
+        self.check_executed_tests(output, tests,
+                                  stats=len(tests), parallel=True)
 
 
 class TestUtils(unittest.TestCase):
