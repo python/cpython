@@ -396,7 +396,7 @@ class Generator(Analyzer):
                 case OverriddenInstructionPlaceHolder():
                     continue
                 case parsing.InstDef():
-                    continue
+                    format = self.instrs[thing.name].instr_fmt
                 case parsing.Macro():
                     format = self.macro_instrs[thing.name].instr_fmt
                 case parsing.Pseudo():
@@ -496,8 +496,7 @@ class Generator(Analyzer):
                         case OverriddenInstructionPlaceHolder():
                             continue
                         case parsing.InstDef():
-                            continue
-                            # self.write_metadata_for_inst(self.instrs[thing.name])
+                            self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
                             self.write_metadata_for_macro(self.macro_instrs[thing.name])
                         case parsing.Pseudo():
