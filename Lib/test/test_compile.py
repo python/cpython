@@ -478,6 +478,26 @@ class TestSpecifics(unittest.TestCase):
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
+    def test_compile_invalid_typealias(self):
+        # gh-109341
+        m = ast.Module(
+            body=[
+                ast.TypeAlias(
+                    name=ast.Subscript(
+                        value=ast.Name(id="foo", ctx=ast.Load()),
+                        slice=ast.Constant(value="x"),
+                        ctx=ast.Store(),
+                    ),
+                    type_params=[],
+                    value=ast.Name(id="Callable", ctx=ast.Load()),
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "TypeAlias with non-Name name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_dict_evaluation_order(self):
         i = 0
 
