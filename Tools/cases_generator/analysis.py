@@ -286,11 +286,7 @@ class Analyzer:
                     )
 
     def effect_counts(self, name: str) -> tuple[int, int, int]:
-        if instr := self.instrs.get(name):
-            cache = instr.cache_offset
-            input = len(instr.input_effects)
-            output = len(instr.output_effects)
-        elif mac := self.macro_instrs.get(name):
+        if mac := self.macro_instrs.get(name):
             cache = mac.cache_offset
             input, output = 0, 0
             for part in mac.parts:

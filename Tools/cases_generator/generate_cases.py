@@ -915,25 +915,6 @@ class Generator(Analyzer):
             f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
         )
 
-    def write_instr(self, instr: Instruction) -> None:
-        name = instr.name
-        self.out.emit("")
-        if instr.inst.override:
-            self.out.emit("{self.out.comment} Override")
-        with self.out.block(f"TARGET({name})"):
-            if instr.predicted:
-                self.out.emit(f"PREDICTED({name});")
-            self.out.static_assert_family_size(
-                instr.name, instr.family, instr.cache_offset
-            )
-            stacking.write_single_instr(instr, self.out, tier=TIER_ONE)
-            if not instr.always_exits:
-                if instr.cache_offset:
-                    self.out.emit(f"next_instr += {instr.cache_offset};")
-                if instr.check_eval_breaker:
-                    self.out.emit("CHECK_EVAL_BREAKER();")
-                self.out.emit(f"DISPATCH();")
-
 
 def is_super_instruction(mac: MacroInstruction) -> bool:
     if (
