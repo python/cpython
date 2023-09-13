@@ -18,6 +18,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             ('RESUME', 0, 0),
             ('LOAD_CONST', 0, 1),
+            ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
             ('LOAD_CONST', 1, 1),
             ('JUMP', exit_lbl := self.Label()),
@@ -25,6 +26,8 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('LOAD_CONST', 2, 1),
             exit_lbl,
             ('POP_TOP', None),
+            ('LOAD_CONST', 3),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)
 
@@ -38,13 +41,15 @@ class IsolatedCodeGenTests(CodegenTestCase):
             loop_lbl := self.Label(),
             ('FOR_ITER', exit_lbl := self.Label(), 1),
             ('STORE_NAME', 1, 1),
-            ('PUSH_NULL', None, 2),
             ('LOAD_NAME', 2, 2),
+            ('PUSH_NULL', None, 2),
             ('LOAD_NAME', 1, 2),
             ('CALL', 1, 2),
             ('POP_TOP', None),
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
+            ('LOAD_CONST', 0),
+            ('RETURN_VALUE', None),
         ]
         self.codegen_test(snippet, expected)

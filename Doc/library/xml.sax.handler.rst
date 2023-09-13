@@ -393,7 +393,7 @@ implements this interface, then register the object with your
 :class:`~xml.sax.xmlreader.XMLReader`, the parser
 will call the methods in your object to report all warnings and errors. There
 are three levels of errors available: warnings, (possibly) recoverable errors,
-and unrecoverable errors.  All methods take a :exc:`SAXParseException` as the
+and unrecoverable errors.  All methods take a :exc:`~xml.sax.SAXParseException` as the
 only parameter.  Errors and warnings may be converted to an exception by raising
 the passed-in exception object.
 
