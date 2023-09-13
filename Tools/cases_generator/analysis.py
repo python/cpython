@@ -145,6 +145,14 @@ class Analyzer:
 
             match thing:
                 case parsing.InstDef(name=name):
+                    macro: parsing.Macro | None = None
+                    if thing.kind == "inst":
+                        opname = "__" + name
+                        # self.note(f"Desugaring {name} to {opname}", thing)
+                        macro = parsing.Macro(name, [parsing.OpName(opname)])
+                        thing.kind = "op"
+                        thing.name = opname
+                        name = opname
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -152,9 +160,12 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        self.everything[
-                            instrs_idx[name]
-                        ] = OverriddenInstructionPlaceHolder(name=name)
+                        placeholder = OverriddenInstructionPlaceHolder(name=name)
+                        self.everything[instrs_idx[name]] = placeholder
+                        if macro is not None:
+                            self.warning(
+                                f"Overriding desugared {macro.name} may not work", thing
+                            )
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -164,6 +175,9 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
+                    if macro is not None:
+                        self.macros[macro.name] = macro
+                        self.everything.append(macro)
                 case parsing.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
@@ -176,29 +190,6 @@ class Analyzer:
                     assert_never(thing)
         if not psr.eof():
             raise psr.make_syntax_error(f"Extra stuff at the end of {filename}")
-
-    def desugar(self) -> None:
-        """Desugar inst(X, ...) to op(__X, ...) and macro(X) = __X"""
-        updates: dict[str, Instruction] = {}
-        for name, instr in self.instrs.items():
-            if isinstance(instr, Instruction) and instr.kind == "inst":
-                assert name == instr.name
-                opname = "__" + name
-                instr.name = opname
-                instr.inst.name = opname
-                instr.kind = "op"
-                updates[opname] = instr
-                macro = parsing.Macro(name, [parsing.OpName(opname)])
-                self.macros[name] = macro
-                self.everything.append(macro)
-        self.instrs.update(updates)
-        for name in updates:
-            assert name.startswith("__")
-            del self.instrs[name[2:]]
-        for name, instr in self.instrs.items():
-            assert instr.name == name, instr
-            assert instr.kind == "op", instr
-        print(f"Desugared {len(updates)} instructions to ops", file=sys.stderr)
 
     def analyze(self) -> None:
         """Analyze the inputs.

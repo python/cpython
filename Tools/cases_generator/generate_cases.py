@@ -699,7 +699,7 @@ class Generator(Analyzer):
                     # It is sometimes emitted for macros that have a
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
-                    if len(parts) > 1 or part.instr.name != "__" + name or True:
+                    if len(parts) > 1 or part.instr.name != "__" + name:
                         self.note(
                             f"Part {part.instr.name} of {name} is not a viable uop",
                             part.instr.inst,
@@ -938,7 +938,6 @@ def main() -> None:
     a = Generator(args.input)
 
     a.parse()  # Raises SyntaxError on failure
-    a.desugar()  # inst(X) --> op(__X); macro(X) = __X
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
