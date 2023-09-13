@@ -339,6 +339,13 @@ class saved_test_modules:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Unload the newly imported modules (best effort finalization)
         new_modules = [module for module in sys.modules
-                       if module not in self.save_modules and module.startswith("test.")]
+                       if module not in self.save_modules and
+                          module.startswith("test.")]
         for module in new_modules:
             sys.modules.pop(module, None)
+            # Remove the attribute of the parent module.
+            parent, _, name = module.rpartition('.')
+            try:
+                delattr(sys.modules[parent], name)
+            except (KeyError, AttributeError):
+                pass
