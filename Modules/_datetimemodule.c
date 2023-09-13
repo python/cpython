@@ -3590,6 +3590,8 @@ static PyMethodDef date_methods[] = {
     {"replace",     _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return date with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS},
+
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
@@ -4719,6 +4721,8 @@ static PyMethodDef time_methods[] = {
     {"replace",     _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS},
+
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
 
@@ -5136,9 +5140,9 @@ static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "datetime.utcnow() is deprecated and scheduled for removal in a "
+        "datetime.datetime.utcnow() is deprecated and scheduled for removal in a "
         "future version. Use timezone-aware objects to represent datetimes "
-        "in UTC: datetime.now(datetime.UTC).", 1))
+        "in UTC: datetime.datetime.now(datetime.UTC).", 1))
     {
         return NULL;
     }
@@ -5179,9 +5183,9 @@ static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal "
         "in a future version. Use timezone-aware objects to represent "
-        "datetimes in UTC: datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
+        "datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
     {
         return NULL;
     }
@@ -6578,6 +6582,8 @@ static PyMethodDef datetime_methods[] = {
 
     {"replace",     _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return datetime with new specified fields.")},
+
+    {"__replace__", _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS},
 
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
