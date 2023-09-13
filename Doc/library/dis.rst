@@ -528,7 +528,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR
