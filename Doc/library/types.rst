@@ -519,7 +519,7 @@ Additional Utility Classes and Functions
       ``dict``).
 
    .. versionchanged:: 3.13
-      Added support of an optional positional argument.
+      Added support for an optional positional argument.
 
 .. function:: DynamicClassAttribute(fget=None, fset=None, fdel=None, doc=None)
 
