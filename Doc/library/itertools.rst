@@ -1073,14 +1073,22 @@ The following recipes have a more mathematical flavor:
        return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
-       """Linear convolution of two iterables.
+       """Discrete linear convolution of two iterables.
+
+       The kernel is fully consumed before the calculations begin.
+       The signal is consumed lazily and can be infinite.
+
+       Convolutions are mathematically commutative.
+       If the signal and kernel are swapped, the
+       output will be the same.
 
        Article:  https://betterexplained.com/articles/intuitive-convolution/
        Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
+       Tables:   https://www.ams.org/journals/mcom/1988-51-184/S0025-5718-1988-0935077-0/S0025-5718-1988-0935077-0.pdf
        """
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
-       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
-       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       # convolve(data, [1/2, 0.0, -1/2]) --> Estimate 1st derivative
+       # convolve(data, [1, -2, 1]) --> Estimate 2nd derivative
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
