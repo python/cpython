@@ -47,7 +47,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace) -> None:
+    def __init__(self, ns: Namespace):
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
