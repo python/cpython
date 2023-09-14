@@ -666,7 +666,7 @@ class Generator(Analyzer):
                     # It is sometimes emitted for macros that have a
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
-                    if len(parts) > 1 or part.instr.name != "__" + name:
+                    if len(parts) > 1 or part.instr.name != name:
                         self.note(
                             f"Part {part.instr.name} of {name} is not a viable uop",
                             part.instr.inst,
@@ -813,8 +813,6 @@ class Generator(Analyzer):
                         if instr.check_eval_breaker:
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
-                else:
-                    print(f"NOTE: {instr.name} is not a viable uop")
         print(
             f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
             file=sys.stderr,
