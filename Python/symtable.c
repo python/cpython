@@ -256,7 +256,7 @@ static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 {
     const char *blocktype = "";
-    switch(ste->ste_type) {
+    switch (ste->ste_type) {
         case FunctionBlock: blocktype = "FunctionBlock"; break;
         case ClassBlock: blocktype = "ClassBlock"; break;
         case ModuleBlock: blocktype = "ModuleBlock"; break;
@@ -266,7 +266,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         case TypeParamBlock: blocktype = "TypeParamBlock"; break;
     }
     const char *comptype = "";
-    switch(ste->ste_comprehension) {
+    switch (ste->ste_comprehension) {
         case ListComprehension: comptype = " ListComprehension"; break;
         case DictComprehension: comptype = " DictComprehension"; break;
         case SetComprehension: comptype = " SetComprehension"; break;
@@ -307,7 +307,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
     printf(PyUnicode_AsUTF8(msg));
     PyObject *name, *value;
     Py_ssize_t pos = 0;
-    while(PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
+    while (PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
         int scope = _PyST_GetScope(ste, name);
         long flags = _PyST_GetSymbol(ste, name);
         printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
