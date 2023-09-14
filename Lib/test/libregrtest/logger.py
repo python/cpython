@@ -14,7 +14,7 @@ class Logger:
         self.start_time = time.perf_counter()
         self.test_count_text = ''
         self.test_count_width = 3
-        self.win_load_tracker = None
+        self.win_load_tracker: WindowsLoadTracker | None = None
         self._results: TestResults = results
         self._quiet: bool = quiet
         self._pgo: bool = pgo

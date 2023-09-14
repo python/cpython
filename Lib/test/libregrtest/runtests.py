@@ -1,9 +1,63 @@
+import contextlib
 import dataclasses
 import json
+import os
+import subprocess
 from typing import Any
+
+from test import support
 
 from .utils import (
     StrPath, StrJSON, TestTuple, FilterTuple, FilterDict)
+
+
+class JsonFileType:
+    UNIX_FD = "UNIX_FD"
+    WINDOWS_HANDLE = "WINDOWS_HANDLE"
+    STDOUT = "STDOUT"
+
+
+@dataclasses.dataclass(slots=True, frozen=True)
+class JsonFile:
+    # file type depends on file_type:
+    # - UNIX_FD: file descriptor (int)
+    # - WINDOWS_HANDLE: handle (int)
+    # - STDOUT: use process stdout (None)
+    file: int | None
+    file_type: str
+
+    def configure_subprocess(self, popen_kwargs: dict) -> None:
+        match self.file_type:
+            case JsonFileType.UNIX_FD:
+                # Unix file descriptor
+                popen_kwargs['pass_fds'] = [self.file]
+            case JsonFileType.WINDOWS_HANDLE:
+                # Windows handle
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.lpAttributeList = {"handle_list": [self.file]}
+                popen_kwargs['startupinfo'] = startupinfo
+
+    @contextlib.contextmanager
+    def inherit_subprocess(self):
+        if self.file_type == JsonFileType.WINDOWS_HANDLE:
+            os.set_handle_inheritable(self.file, True)
+            try:
+                yield
+            finally:
+                os.set_handle_inheritable(self.file, False)
+        else:
+            yield
+
+    def open(self, mode='r', *, encoding):
+        if self.file_type == JsonFileType.STDOUT:
+            raise ValueError("for STDOUT file type, just use sys.stdout")
+
+        file = self.file
+        if self.file_type == JsonFileType.WINDOWS_HANDLE:
+            import msvcrt
+            # Create a file descriptor from the handle
+            file = msvcrt.open_osfhandle(file, os.O_WRONLY)
+        return open(file, mode, encoding=encoding)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -34,13 +88,11 @@ class RunTests:
     use_junit: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str]
-    python_cmd: tuple[str] | None
+    use_resources: tuple[str, ...]
+    python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | None
-    # On Unix, it's a file descriptor.
-    # On Windows, it's a handle.
-    json_fd: int | None
+    json_file: JsonFile | None
 
     def copy(self, **override):
         state = dataclasses.asdict(self)
@@ -74,6 +126,19 @@ class RunTests:
     def from_json(worker_json: StrJSON) -> 'RunTests':
         return json.loads(worker_json, object_hook=_decode_runtests)
 
+    def json_file_use_stdout(self) -> bool:
+        # Use STDOUT in two cases:
+        #
+        # - If --python command line option is used;
+        # - On Emscripten and WASI.
+        #
+        # On other platforms, UNIX_FD or WINDOWS_HANDLE can be used.
+        return (
+            bool(self.python_cmd)
+            or support.is_emscripten
+            or support.is_wasi
+        )
+
 
 class _EncodeRunTests(json.JSONEncoder):
     def default(self, o: Any) -> dict[str, Any]:
@@ -90,6 +155,8 @@ def _decode_runtests(data: dict[str, Any]) -> RunTests | dict[str, Any]:
         data.pop('__runtests__')
         if data['hunt_refleak']:
             data['hunt_refleak'] = HuntRefleak(**data['hunt_refleak'])
+        if data['json_file']:
+            data['json_file'] = JsonFile(**data['json_file'])
         return RunTests(**data)
     else:
         return data
