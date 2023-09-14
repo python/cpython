@@ -664,8 +664,10 @@ def test_pdb_alias_command():
     ...     o.method()
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi',
     ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
     ...     'alias ps pi self',
+    ...     'alias ps',
     ...     'pi o',
     ...     's',
     ...     'ps',
@@ -674,8 +676,12 @@ def test_pdb_alias_command():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
     -> o.method()
+    (Pdb) alias pi
+    *** Unknown alias 'pi'
     (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
     (Pdb) alias ps pi self
+    (Pdb) alias ps
+    ps = pi self
     (Pdb) pi o
     o.attr1 = 10
     o.attr2 = str
