@@ -826,7 +826,7 @@ dummy_func(
         }
 
         macro(RETURN_CONST) =
-            LOAD_CONST  +
+            LOAD_CONST +
             _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
