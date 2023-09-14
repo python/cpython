@@ -21,7 +21,7 @@ from .results import TestResults
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, MS_WINDOWS,
+    StrPath, TestName, MS_WINDOWS,
     format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
@@ -294,7 +294,6 @@ class WorkerThread(threading.Thread):
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
-        worker_json: StrJSON
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)

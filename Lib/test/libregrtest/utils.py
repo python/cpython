@@ -34,7 +34,6 @@ EXIT_TIMEOUT = 120.0
 # Types for types hints
 StrPath = str
 TestName = str
-StrJSON = str
 TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
 # --match and --ignore options: list of patterns
