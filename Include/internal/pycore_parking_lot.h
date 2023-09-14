@@ -42,12 +42,24 @@ enum {
 // with respect to unpark operations.
 //
 // The `address_size` argument is the size of the data pointed to by the
-// `address` and `expected` pointers (i.e., sizeof(*address)).
-//
-// `arg`, which can be NULL, is passed to the unpark operation.
+// `address` and `expected` pointers (i.e., sizeof(*address)). It must be
+// 1, 2, 4, or 8.
 //
 // The `timeout_ns` argument specifies the maximum amount of time to wait, with
 // -1 indicating an infinite wait.
+//
+// `arg`, which can be NULL, is passed to the unpark operation.
+//
+// If `detach` is true, then the thread will detach/release the GIL while
+// waiting.
+//
+// Example usage:
+//
+//  if (_Py_atomic_compare_exchange_uint8(address, &expected, new_value)) {
+//    int res = _PyParkingLot_Park(address, &new_value, sizeof(*address),
+//                                 timeout_ns, NULL, 1);
+//    ...
+//  }
 PyAPI_FUNC(int)
 _PyParkingLot_Park(const void *address, const void *expected,
                    size_t address_size, _PyTime_t timeout_ns,
@@ -110,6 +122,8 @@ PyAPI_FUNC(void) _PyParkingLot_AfterFork(void);
 typedef struct _PySemaphore _PySemaphore;
 
 // Puts the current thread to sleep until _PySemaphore_Wakeup() is called.
+// If `detach` is true, then the thread will detach/release the GIL while
+// sleeping.
 PyAPI_FUNC(int)
 _PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout_ns, int detach);
 
