@@ -766,7 +766,6 @@ class Generator(Analyzer):
             self.write_provenance_header()
 
             # Write and count instructions of all kinds
-            n_instrs = 0
             n_macros = 0
             for thing in self.everything:
                 match thing:
@@ -786,8 +785,7 @@ class Generator(Analyzer):
                         assert_never(thing)
 
         print(
-            f"Wrote {n_instrs} instructions and {n_macros} macros "
-            f"to {output_filename}",
+            f"Wrote {n_macros} cases to {output_filename}",
             file=sys.stderr,
         )
 
@@ -795,7 +793,6 @@ class Generator(Analyzer):
         self, executor_filename: str, emit_line_directives: bool
     ) -> None:
         """Generate cases for the Tier 2 interpreter."""
-        n_instrs = 0
         n_uops = 0
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
@@ -810,7 +807,7 @@ class Generator(Analyzer):
                             self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
         print(
-            f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
+            f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,
         )
 
