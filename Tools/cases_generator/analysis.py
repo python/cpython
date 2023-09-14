@@ -94,10 +94,8 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
-        n_instrs = 0
-        n_ops = 0
-        for instr in self.instrs.values():
-            n_ops += 1
+        n_instrs = len(set(self.instrs) & set(self.macros))
+        n_ops = len(self.instrs) - n_instrs
         print(
             f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
