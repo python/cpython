@@ -218,7 +218,12 @@ class WorkerThread(threading.Thread):
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
+        # gh-109425: Use "backslashreplace" error handler: log corrupted
+        # stdout+stderr, instead of failing with a UnicodeDecodeError and not
+        # logging stdout+stderr at all.
+        stdout_file = tempfile.TemporaryFile('w+',
+                                             encoding=encoding,
+                                             errors='backslashreplace')
         stack.enter_context(stdout_file)
         return stdout_file
 

@@ -421,10 +421,12 @@ class BaseTestCase(unittest.TestCase):
             self.fail("%r not found in %r" % (regex, output))
         return match
 
-    def check_line(self, output, regex, full=False):
+    def check_line(self, output, pattern, full=False, regex=True):
+        if not regex:
+            pattern = re.escape(pattern)
         if full:
-            regex += '\n'
-        regex = re.compile(r'^' + regex, re.MULTILINE)
+            pattern += '\n'
+        regex = re.compile(r'^' + pattern, re.MULTILINE)
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
@@ -1755,9 +1757,8 @@ class ArgsTestCase(BaseTestCase):
                           f"files (1): mytmpfile",
                           output)
 
-    def test_mp_decode_error(self):
-        # gh-101634: If a worker stdout cannot be decoded, report a failed test
-        # and a non-zero exit code.
+    def test_worker_decode_error(self):
+        # gh-109425: Use "backslashreplace" error handler to decode stdout.
         if sys.platform == 'win32':
             encoding = locale.getencoding()
         else:
@@ -1767,29 +1768,41 @@ class ArgsTestCase(BaseTestCase):
                 if encoding is None:
                     self.skipTest("cannot get regrtest worker encoding")
 
-        nonascii = b"byte:\xa0\xa9\xff\n"
+        nonascii = bytes(ch for ch in range(128, 256))
+        corrupted_output = b"nonascii:%s\n" % (nonascii,)
+        # gh-108989: On Windows, assertion errors are written in UTF-16: when
+        # decoded each letter is follow by a NUL character.
+        assertion_failed = 'Assertion failed: tstate_is_alive(tstate)\n'
+        corrupted_output += assertion_failed.encode('utf-16-le')
         try:
-            nonascii.decode(encoding)
+            corrupted_output.decode(encoding)
         except UnicodeDecodeError:
             pass
         else:
-            self.skipTest(f"{encoding} can decode non-ASCII bytes {nonascii!a}")
+            self.skipTest(f"{encoding} can decode non-ASCII bytes")
+
+        expected_line = corrupted_output.decode(encoding, 'backslashreplace')
 
         code = textwrap.dedent(fr"""
             import sys
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_pass(self):
+                    pass
+
             # bytes which cannot be decoded from UTF-8
-            nonascii = {nonascii!a}
-            sys.stdout.buffer.write(nonascii)
+            corrupted_output = {corrupted_output!a}
+            sys.stdout.buffer.write(corrupted_output)
             sys.stdout.buffer.flush()
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
-                                exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname)
         self.check_executed_tests(output, [testname],
-                                  failed=[testname],
                                   parallel=True,
-                                  stats=0)
+                                  stats=1)
+        self.check_line(output, expected_line, regex=False)
 
     def test_doctest(self):
         code = textwrap.dedent(r'''
