@@ -112,7 +112,7 @@ complete listing.
    declarations required by the platform, and for C++ declares the function as
    ``extern "C"``.
 
-   The initialization function must be named :c:func:`!PyInit_name`, where
+   The initialization function must be named :samp:`PyInit_{name}`, where
    *name* is the name of the module, and should be the only non-\ ``static``
    item defined in the module file. Example::
 
