@@ -1,12 +1,19 @@
 import sys
-import xml.etree.ElementTree as ET
 from test.support import TestStats
+from typing import TYPE_CHECKING
 
 from .runtests import RunTests
 from .result import State, TestResult
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)
+
+
+if TYPE_CHECKING:
+    # Needed to annotate `TestResults.testsuite_xml` accurately
+    # Delay the runtime import until later,
+    # so that we only import it if we actually have to
+    import xml.etree.ElementTree as ET
 
 
 EXITCODE_BAD_TEST = 2
@@ -32,7 +39,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[ET.Element] = []
+        self.testsuite_xml: list["ET.Element"] = []
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -132,6 +139,9 @@ class TestResults:
         return (tuple(tests), match_tests_dict)
 
     def add_junit(self, xml_data: list[str]):
+        # Local import, so that we only import this if we actually need the xml module.
+        # It's best to import as few things as possible when running a test.
+        import xml.etree.ElementTree as ET
         for e in xml_data:
             try:
                 self.testsuite_xml.append(ET.fromstring(e))
