@@ -27,13 +27,14 @@ def format_ratio(num, den):
     else:
         return f"{num/den:.01%}"
 
-def ratio_to_float(s):
+def percentage_to_float(s):
     """
-    The inverse of format_ratio.
+    Converts a percentage string to a float.  The empty string is returned as 0.0
     """
     if s == "":
         return 0.0
     else:
+        assert s[-1] == "%"
         return float(s[:-1])
 
 def join_rows(a_rows, b_rows):
@@ -368,7 +369,7 @@ def emit_comparative_execution_counts(
                 (opcode, base_entry[0], head_entry[0],
                  f"{100*change:0.1f}%"))
 
-        rows.sort(key=lambda x: -abs(ratio_to_float(x[-1])))
+        rows.sort(key=lambda x: -abs(percentage_to_float(x[-1])))
 
         emit_table(
             ("Name", "Base Count:", "Head Count:", "Change:"),
@@ -476,7 +477,7 @@ def emit_comparative_call_stats(base_stats, head_stats, defines):
         base_rows = calculate_call_stats(base_stats, defines)
         head_rows = calculate_call_stats(head_stats, defines)
         rows = join_rows(base_rows, head_rows)
-        rows.sort(key=lambda x: -ratio_to_float(x[-1]))
+        rows.sort(key=lambda x: -percentage_to_float(x[-1]))
         emit_table(
             ("", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"),
             rows
