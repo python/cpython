@@ -2368,26 +2368,25 @@ while 1:
 """
         self._check_error(source, "too many statically nested blocks")
 
-<<<<<<< HEAD
-        def test_syntax_error_non_matching_elif_else_statements(self):
-            # Check bpo-45759: 'elif' statements that doesn't match an
-            # if-statement or 'else' statements that doesn't match any
-            # valid else-able statement (e.g. 'while')
-            self._check_error(
-                "elif m == n:\n    ...",
-                "'elif' must match an if-statement here")
-            self._check_error(
-                "else:\n    ...",
-                "'else' must match a valid statement here")
-            self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
-            self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
-            self._check_error(
-                "else = 123",
-                "invalid syntax")
-            self._check_error(
-                "elif 55 = 123",
-                "invalid syntax")
-=======
+    def test_syntax_error_non_matching_elif_else_statements(self):
+        # Check bpo-45759: 'elif' statements that doesn't match an
+        # if-statement or 'else' statements that doesn't match any
+        # valid else-able statement (e.g. 'while')
+        self._check_error(
+            "elif m == n:\n    ...",
+            "'elif' must match an if-statement here")
+        self._check_error(
+            "else:\n    ...",
+            "'else' must match a valid statement here")
+        self._check_noerror("if a == b:\n    ...\nelif a == c:\n    ...")
+        self._check_noerror("if x == y:\n    ...\nelse:\n    ...")
+        self._check_error(
+            "else = 123",
+            "invalid syntax")
+        self._check_error(
+            "elif 55 = 123",
+            "cannot assign to literal here")
+
     @support.cpython_only
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
@@ -2403,7 +2402,6 @@ while 1:
         source = "d{{{{{{{{{{{{{{{{{{{{{{{{{```{{{{{{{ef f():y"
         with self.assertRaises(SyntaxError):
             compile(source, "<string>", "exec")
->>>>>>> main
 
 
 def load_tests(loader, tests, pattern):
