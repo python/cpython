@@ -49,11 +49,11 @@ def reduce_array(a):
 reduction.register(array.array, reduce_array)
 
 view_types = [type(getattr({}, name)()) for name in ('items','keys','values')]
-if view_types[0] is not list:       # only needed in Py3.0
-    def rebuild_as_list(obj):
-        return list, (list(obj),)
-    for view_type in view_types:
-        reduction.register(view_type, rebuild_as_list)
+def rebuild_as_list(obj):
+    return list, (list(obj),)
+for view_type in view_types:
+    reduction.register(view_type, rebuild_as_list)
+del view_type, view_types
 
 #
 # Type for identifying shared objects
@@ -90,7 +90,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -433,7 +436,6 @@ class Server(object):
                     self.id_to_refcount[ident] = 1
                     self.id_to_obj[ident] = \
                         self.id_to_local_proxy_obj[ident]
-                    obj, exposed, gettypeid = self.id_to_obj[ident]
                     util.debug('Server re-enabled tracking & INCREF %r', ident)
                 else:
                     raise ke
@@ -497,7 +499,7 @@ class BaseManager(object):
     _Server = Server
 
     def __init__(self, address=None, authkey=None, serializer='pickle',
-                 ctx=None):
+                 ctx=None, *, shutdown_timeout=1.0):
         if authkey is None:
             authkey = process.current_process().authkey
         self._address = address     # XXX not final address if eg ('', 0)
@@ -507,6 +509,7 @@ class BaseManager(object):
         self._serializer = serializer
         self._Listener, self._Client = listener_client[serializer]
         self._ctx = ctx or get_context()
+        self._shutdown_timeout = shutdown_timeout
 
     def get_server(self):
         '''
@@ -570,8 +573,8 @@ class BaseManager(object):
         self._state.value = State.STARTED
         self.shutdown = util.Finalize(
             self, type(self)._finalize_manager,
-            args=(self._process, self._address, self._authkey,
-                  self._state, self._Client),
+            args=(self._process, self._address, self._authkey, self._state,
+                  self._Client, self._shutdown_timeout),
             exitpriority=0
             )
 
@@ -656,7 +659,8 @@ class BaseManager(object):
         self.shutdown()
 
     @staticmethod
-    def _finalize_manager(process, address, authkey, state, _Client):
+    def _finalize_manager(process, address, authkey, state, _Client,
+                          shutdown_timeout):
         '''
         Shutdown the manager process; will be registered as a finalizer
         '''
@@ -671,15 +675,17 @@ class BaseManager(object):
             except Exception:
                 pass
 
-            process.join(timeout=1.0)
+            process.join(timeout=shutdown_timeout)
             if process.is_alive():
                 util.info('manager still alive')
                 if hasattr(process, 'terminate'):
                     util.info('trying to `terminate()` manager process')
                     process.terminate()
-                    process.join(timeout=0.1)
+                    process.join(timeout=shutdown_timeout)
                     if process.is_alive():
                         util.info('manager still alive after terminate')
+                        process.kill()
+                        process.join()
 
         state.value = State.SHUTDOWN
         try:
@@ -830,7 +836,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''

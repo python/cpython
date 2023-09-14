@@ -4,12 +4,22 @@
    have any value except INVALID_SOCKET.
 */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
-#define _GNU_SOURCE
+#  define _GNU_SOURCE
 #endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_fileutils.h"     // _Py_set_inheritable()
+#include "pycore_time.h"          // _PyTime_t
+
+#include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -52,10 +62,17 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
-#  include <winsock.h>
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <winsock2.h>
 #else
 #  define SOCKET int
+#endif
+
+// WASI SDK 16 does not have POLLPRIO, define as no-op
+#if defined(__wasi__) && !defined(POLLPRI)
+#  define POLLPRI 0
 #endif
 
 typedef struct {
@@ -325,7 +342,12 @@ select_select_impl(PyObject *module, PyObject *rlist, PyObject *wlist,
     do {
         Py_BEGIN_ALLOW_THREADS
         errno = 0;
-        n = select(max, &ifdset, &ofdset, &efdset, tvp);
+        n = select(
+            max,
+            imax ? &ifdset : NULL,
+            omax ? &ofdset : NULL,
+            emax ? &efdset : NULL,
+            tvp);
         Py_END_ALLOW_THREADS
 
         if (errno != EINTR)
@@ -565,6 +587,8 @@ select_poll_unregister_impl(pollObject *self, int fd)
 select.poll.poll
 
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -575,7 +599,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=876e837d193ed7e4 input=7a446ed45189e894]*/
+/*[clinic end generated code: output=876e837d193ed7e4 input=c2f6953ec45e5622]*/
 {
     PyObject *result_list = NULL;
     int poll_result, i, j;
@@ -889,6 +913,8 @@ select_devpoll_unregister_impl(devpollObject *self, int fd)
 /*[clinic input]
 select.devpoll.poll
     timeout as timeout_obj: object = None
+      The maximum time to wait in milliseconds, or else None (or a negative
+      value) to wait indefinitely.
     /
 
 Polls the set of registered file descriptors.
@@ -899,7 +925,7 @@ report, as a list of (fd, event) 2-tuples.
 
 static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj)
-/*[clinic end generated code: output=2654e5457cca0b3c input=fd0db698d84f0333]*/
+/*[clinic end generated code: output=2654e5457cca0b3c input=3c3f0a355ec2bedb]*/
 {
     struct dvpoll dvp;
     PyObject *result_list = NULL;
@@ -1271,8 +1297,8 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
         self->epfd = fd;
     }
     if (self->epfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -1633,8 +1659,7 @@ select_epoll___enter___impl(pyEpoll_Object *self)
     if (self->epfd < 0)
         return pyepoll_err_closed();
 
-    Py_INCREF(self);
-    return (PyObject *)self;
+    return Py_NewRef(self);
 }
 
 /*[clinic input]
@@ -1737,18 +1762,18 @@ typedef struct {
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
-#   define T_UINTPTRT         T_ULONGLONG
-#   define T_INTPTRT          T_LONGLONG
+#   define T_UINTPTRT         Py_T_ULONGLONG
+#   define T_INTPTRT          Py_T_LONGLONG
 #   define UINTPTRT_FMT_UNIT  "K"
 #   define INTPTRT_FMT_UNIT   "L"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG)
-#   define T_UINTPTRT         T_ULONG
-#   define T_INTPTRT          T_LONG
+#   define T_UINTPTRT         Py_T_ULONG
+#   define T_INTPTRT          Py_T_LONG
 #   define UINTPTRT_FMT_UNIT  "k"
 #   define INTPTRT_FMT_UNIT   "l"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_INT)
-#   define T_UINTPTRT         T_UINT
-#   define T_INTPTRT          T_INT
+#   define T_UINTPTRT         Py_T_UINT
+#   define T_INTPTRT          Py_T_INT
 #   define UINTPTRT_FMT_UNIT  "I"
 #   define INTPTRT_FMT_UNIT   "i"
 #else
@@ -1756,26 +1781,26 @@ typedef struct {
 #endif
 
 #if SIZEOF_LONG_LONG == 8
-#   define T_INT64          T_LONGLONG
+#   define T_INT64          Py_T_LONGLONG
 #   define INT64_FMT_UNIT   "L"
 #elif SIZEOF_LONG == 8
-#   define T_INT64          T_LONG
+#   define T_INT64          Py_T_LONG
 #   define INT64_FMT_UNIT   "l"
 #elif SIZEOF_INT == 8
-#   define T_INT64          T_INT
+#   define T_INT64          Py_T_INT
 #   define INT64_FMT_UNIT   "i"
 #else
 #   define INT64_FMT_UNIT   "_"
 #endif
 
 #if SIZEOF_LONG_LONG == 4
-#   define T_UINT32         T_ULONGLONG
+#   define T_UINT32         Py_T_ULONGLONG
 #   define UINT32_FMT_UNIT  "K"
 #elif SIZEOF_LONG == 4
-#   define T_UINT32         T_ULONG
+#   define T_UINT32         Py_T_ULONG
 #   define UINT32_FMT_UNIT  "k"
 #elif SIZEOF_INT == 4
-#   define T_UINT32         T_UINT
+#   define T_UINT32         Py_T_UINT
 #   define UINT32_FMT_UNIT  "I"
 #else
 #   define UINT32_FMT_UNIT  "_"
@@ -1792,11 +1817,11 @@ typedef struct {
 #   define FFLAGS_TYPE      T_UINT32
 #   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
-#   define FILTER_TYPE      T_SHORT
+#   define FILTER_TYPE      Py_T_SHORT
 #   define FILTER_FMT_UNIT  "h"
-#   define FLAGS_TYPE       T_USHORT
+#   define FLAGS_TYPE       Py_T_USHORT
 #   define FLAGS_FMT_UNIT   "H"
-#   define FFLAGS_TYPE      T_UINT
+#   define FFLAGS_TYPE      Py_T_UINT
 #   define FFLAGS_FMT_UNIT  "I"
 #endif
 
@@ -1818,7 +1843,7 @@ static struct PyMemberDef kqueue_event_members[] = {
     {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
     {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
     {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
-    {"fflags",          T_UINT,         KQ_OFF(e.fflags)},
+    {"fflags",          Py_T_UINT,         KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
     {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
@@ -1829,14 +1854,11 @@ static PyObject *
 
 kqueue_event_repr(kqueue_event_Object *s)
 {
-    char buf[1024];
-    PyOS_snprintf(
-        buf, sizeof(buf),
+    return PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
         (size_t)(s->e.ident), (int)s->e.filter, (unsigned int)s->e.flags,
         (unsigned int)s->e.fflags, (long long)(s->e.data), (void *)s->e.udata);
-    return PyUnicode_FromString(buf);
 }
 
 static int
@@ -1954,8 +1976,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         self->kqfd = fd;
     }
     if (self->kqfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -2631,6 +2653,7 @@ _select_exec(PyObject *m)
 
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

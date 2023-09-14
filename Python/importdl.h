@@ -10,6 +10,8 @@ extern const char *_PyImport_DynLoadFiletab[];
 
 extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
+typedef PyObject *(*PyModInitFunction)(void);
+
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
 

@@ -88,7 +88,6 @@ import hashlib
 import http.client
 import io
 import os
-import posixpath
 import re
 import socket
 import string
@@ -137,7 +136,7 @@ __version__ = '%d.%d' % sys.version_info[:2]
 
 _opener = None
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
-            *, cafile=None, capath=None, cadefault=False, context=None):
+            *, context=None):
     '''Open the URL url, which can be either a string or a Request object.
 
     *data* must be an object specifying additional data to be sent to
@@ -154,14 +153,6 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     If *context* is specified, it must be a ssl.SSLContext instance describing
     the various SSL options. See HTTPSConnection for more details.
-
-    The optional *cafile* and *capath* parameters specify a set of trusted CA
-    certificates for HTTPS requests. cafile should point to a single file
-    containing a bundle of CA certificates, whereas capath should point to a
-    directory of hashed certificate files. More information can be found in
-    ssl.SSLContext.load_verify_locations().
-
-    The *cadefault* parameter is ignored.
 
 
     This function always returns an object which can work as a
@@ -188,25 +179,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     '''
     global _opener
-    if cafile or capath or cadefault:
-        import warnings
-        warnings.warn("cafile, capath and cadefault are deprecated, use a "
-                      "custom context instead.", DeprecationWarning, 2)
-        if context is not None:
-            raise ValueError(
-                "You can't pass both context and any of cafile, capath, and "
-                "cadefault"
-            )
-        if not _have_ssl:
-            raise ValueError('SSL support not available')
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH,
-                                             cafile=cafile,
-                                             capath=capath)
-        # send ALPN extension to indicate HTTP/1.1 protocol
-        context.set_alpn_protocols(['http/1.1'])
-        https_handler = HTTPSHandler(context=context)
-        opener = build_opener(https_handler)
-    elif context:
+    if context:
         https_handler = HTTPSHandler(context=context)
         opener = build_opener(https_handler)
     elif _opener is None:
@@ -266,10 +239,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
             if reporthook:
                 reporthook(blocknum, bs, size)
 
-            while True:
-                block = fp.read(bs)
-                if not block:
-                    break
+            while block := fp.read(bs):
                 read += len(block)
                 tfp.write(block)
                 blocknum += 1
@@ -889,10 +859,10 @@ class HTTPPasswordMgr:
             return True
         if base[0] != test[0]:
             return False
-        common = posixpath.commonprefix((base[1], test[1]))
-        if len(common) == len(base[1]):
-            return True
-        return False
+        prefix = base[1]
+        if prefix[-1:] != '/':
+            prefix += '/'
+        return test[1].startswith(prefix)
 
 
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
@@ -1255,8 +1225,8 @@ class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
 class AbstractHTTPHandler(BaseHandler):
 
-    def __init__(self, debuglevel=0):
-        self._debuglevel = debuglevel
+    def __init__(self, debuglevel=None):
+        self._debuglevel = debuglevel if debuglevel is not None else http.client.HTTPConnection.debuglevel
 
     def set_http_debuglevel(self, level):
         self._debuglevel = level
@@ -1382,14 +1352,19 @@ if hasattr(http.client, 'HTTPSConnection'):
 
     class HTTPSHandler(AbstractHTTPHandler):
 
-        def __init__(self, debuglevel=0, context=None, check_hostname=None):
+        def __init__(self, debuglevel=None, context=None, check_hostname=None):
+            debuglevel = debuglevel if debuglevel is not None else http.client.HTTPSConnection.debuglevel
             AbstractHTTPHandler.__init__(self, debuglevel)
+            if context is None:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+            if check_hostname is not None:
+                context.check_hostname = check_hostname
             self._context = context
-            self._check_hostname = check_hostname
 
         def https_open(self, req):
             return self.do_open(http.client.HTTPSConnection, req,
-                context=self._context, check_hostname=self._check_hostname)
+                                context=self._context)
 
         https_request = AbstractHTTPHandler.do_request_
 
@@ -1579,8 +1554,7 @@ class FTPHandler(BaseHandler):
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, req.full_url)
         except ftplib.all_errors as exp:
-            exc = URLError('ftp error: %r' % exp)
-            raise exc.with_traceback(sys.exc_info()[2])
+            raise URLError(exp) from exp
 
     def connect_ftp(self, user, passwd, host, port, dirs, timeout):
         return ftpwrapper(user, passwd, host, port, dirs, timeout,
@@ -1791,7 +1765,7 @@ class URLopener:
         except (HTTPError, URLError):
             raise
         except OSError as msg:
-            raise OSError('socket error', msg).with_traceback(sys.exc_info()[2])
+            raise OSError('socket error', msg) from msg
 
     def open_unknown(self, fullurl, data=None):
         """Overridable interface to open unknown URL type."""
@@ -1845,10 +1819,7 @@ class URLopener:
                     size = int(headers["Content-Length"])
                 if reporthook:
                     reporthook(blocknum, bs, size)
-                while 1:
-                    block = fp.read(bs)
-                    if not block:
-                        break
+                while block := fp.read(bs):
                     read += len(block)
                     tfp.write(block)
                     blocknum += 1
@@ -1988,9 +1959,17 @@ class URLopener:
 
     if _have_ssl:
         def _https_connection(self, host):
-            return http.client.HTTPSConnection(host,
-                                           key_file=self.key_file,
-                                           cert_file=self.cert_file)
+            if self.key_file or self.cert_file:
+                http_version = http.client.HTTPSConnection._http_vsn
+                context = http.client._create_https_context(http_version)
+                context.load_cert_chain(self.cert_file, self.key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
+            else:
+                context = None
+            return http.client.HTTPSConnection(host, context=context)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""
@@ -2093,7 +2072,7 @@ class URLopener:
             headers = email.message_from_string(headers)
             return addinfourl(fp, headers, "ftp:" + url)
         except ftperrors() as exp:
-            raise URLError('ftp error %r' % exp).with_traceback(sys.exc_info()[2])
+            raise URLError(f'ftp error: {exp}') from exp
 
     def open_data(self, url, data=None):
         """Use "data" URL."""
@@ -2443,8 +2422,7 @@ class ftpwrapper:
                 conn, retrlen = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm as reason:
                 if str(reason)[:3] != '550':
-                    raise URLError('ftp error: %r' % reason).with_traceback(
-                        sys.exc_info()[2])
+                    raise URLError(f'ftp error: {reason}') from reason
         if not conn:
             # Set transfer mode to ASCII!
             self.ftp.voidcmd('TYPE A')
@@ -2471,7 +2449,13 @@ class ftpwrapper:
         return (ftpobj, retrlen)
 
     def endtransfer(self):
+        if not self.busy:
+            return
         self.busy = 0
+        try:
+            self.ftp.voidresp()
+        except ftperrors():
+            pass
 
     def close(self):
         self.keepalive = False
@@ -2499,28 +2483,34 @@ def getproxies_environment():
     this seems to be the standard convention.  If you need a
     different way, you can pass a proxies dictionary to the
     [Fancy]URLopener constructor.
-
     """
-    proxies = {}
     # in order to prefer lowercase variables, process environment in
     # two passes: first matches any, second pass matches lowercase only
-    for name, value in os.environ.items():
-        name = name.lower()
-        if value and name[-6:] == '_proxy':
-            proxies[name[:-6]] = value
+
+    # select only environment variables which end in (after making lowercase) _proxy
+    proxies = {}
+    environment = []
+    for name in os.environ.keys():
+        # fast screen underscore position before more expensive case-folding
+        if len(name) > 5 and name[-6] == "_" and name[-5:].lower() == "proxy":
+            value = os.environ[name]
+            proxy_name = name[:-6].lower()
+            environment.append((name, value, proxy_name))
+            if value:
+                proxies[proxy_name] = value
     # CVE-2016-1000110 - If we are running as CGI script, forget HTTP_PROXY
     # (non-all-lowercase) as it may be set from the web server by a "Proxy:"
     # header from the client
     # If "proxy" is lowercase, it will still be used thanks to the next block
     if 'REQUEST_METHOD' in os.environ:
         proxies.pop('http', None)
-    for name, value in os.environ.items():
+    for name, value, proxy_name in environment:
+        # not case-folded, checking here for lower-case env vars only
         if name[-6:] == '_proxy':
-            name = name.lower()
             if value:
-                proxies[name[:-6]] = value
+                proxies[proxy_name] = value
             else:
-                proxies.pop(name[:-6], None)
+                proxies.pop(proxy_name, None)
     return proxies
 
 def proxy_bypass_environment(host, proxies=None):
@@ -2681,22 +2671,26 @@ elif os.name == 'nt':
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-                if '=' in proxyServer:
-                    # Per-protocol settings
-                    for p in proxyServer.split(';'):
-                        protocol, address = p.split('=', 1)
-                        # See if address has a type:// prefix
-                        if not re.match('(?:[^/:]+)://', address):
-                            address = '%s://%s' % (protocol, address)
-                        proxies[protocol] = address
-                else:
-                    # Use one setting for all protocols
-                    if proxyServer[:5] == 'http:':
-                        proxies['http'] = proxyServer
-                    else:
-                        proxies['http'] = 'http://%s' % proxyServer
-                        proxies['https'] = 'https://%s' % proxyServer
-                        proxies['ftp'] = 'ftp://%s' % proxyServer
+                if '=' not in proxyServer and ';' not in proxyServer:
+                    # Use one setting for all protocols.
+                    proxyServer = 'http={0};https={0};ftp={0}'.format(proxyServer)
+                for p in proxyServer.split(';'):
+                    protocol, address = p.split('=', 1)
+                    # See if address has a type:// prefix
+                    if not re.match('(?:[^/:]+)://', address):
+                        # Add type:// prefix to address without specifying type
+                        if protocol in ('http', 'https', 'ftp'):
+                            # The default proxy type of Windows is HTTP
+                            address = 'http://' + address
+                        elif protocol == 'socks':
+                            address = 'socks://' + address
+                    proxies[protocol] = address
+                # Use SOCKS proxy for HTTP(S) protocols
+                if proxies.get('socks'):
+                    # The default SOCKS proxy type of Windows is SOCKS4
+                    address = re.sub(r'^socks://', 'socks4://', proxies['socks'])
+                    proxies['http'] = proxies.get('http') or address
+                    proxies['https'] = proxies.get('https') or address
             internetSettings.Close()
         except (OSError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an

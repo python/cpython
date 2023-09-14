@@ -222,10 +222,9 @@ class SymtableTest(unittest.TestCase):
         checkfilename("def f(x): foo)(", 14)  # parse-time
         checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
-        with self.assertWarns(DeprecationWarning), \
-             self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", bytearray(b"spam"), "exec")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", memoryview(b"spam"), "exec")
         with self.assertRaises(TypeError):
             symtable.symtable("pass", list(b"spam"), "exec")
@@ -251,6 +250,10 @@ class SymtableTest(unittest.TestCase):
     def test_symtable_repr(self):
         self.assertEqual(str(self.top), "<SymbolTable for module ?>")
         self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
+
+    def test_symtable_entry_repr(self):
+        expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
+        self.assertEqual(repr(self.top._table), expected)
 
 
 if __name__ == '__main__':

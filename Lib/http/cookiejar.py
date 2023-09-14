@@ -89,8 +89,7 @@ def _timegm(tt):
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
           "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-MONTHS_LOWER = []
-for month in MONTHS: MONTHS_LOWER.append(month.lower())
+MONTHS_LOWER = [month.lower() for month in MONTHS]
 
 def time2isoz(t=None):
     """Return a string representing time in seconds since epoch, t.
@@ -105,9 +104,9 @@ def time2isoz(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%04d-%02d-%02d %02d:%02d:%02dZ" % (
         dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -123,9 +122,9 @@ def time2netscape(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
         dt.year, dt.hour, dt.minute, dt.second)
@@ -641,7 +640,7 @@ def eff_request_host(request):
 
     """
     erhn = req_host = request_host(request)
-    if req_host.find(".") == -1 and not IPV4_RE.search(req_host):
+    if "." not in req_host:
         erhn = req_host + ".local"
     return req_host, erhn
 
@@ -1044,12 +1043,13 @@ class DefaultCookiePolicy(CookiePolicy):
             else:
                 undotted_domain = domain
             embedded_dots = (undotted_domain.find(".") >= 0)
-            if not embedded_dots and domain != ".local":
+            if not embedded_dots and not erhn.endswith(".local"):
                 _debug("   non-local domain %s contains no embedded dot",
                        domain)
                 return False
             if cookie.version == 0:
-                if (not erhn.endswith(domain) and
+                if (not (erhn.endswith(domain) or
+                         erhn.endswith(f"{undotted_domain}.local")) and
                     (not erhn.startswith(".") and
                      not ("."+erhn).endswith(domain))):
                     _debug("   effective request-host %s (even with added "
@@ -1224,14 +1224,9 @@ class DefaultCookiePolicy(CookiePolicy):
         _debug("  %s does not path-match %s", req_path, path)
         return False
 
-def vals_sorted_by_key(adict):
-    keys = sorted(adict.keys())
-    return map(adict.get, keys)
-
 def deepvalues(mapping):
-    """Iterates over nested mapping, depth-first, in sorted order by key."""
-    values = vals_sorted_by_key(mapping)
-    for obj in values:
+    """Iterates over nested mapping, depth-first"""
+    for obj in list(mapping.values()):
         mapping = False
         try:
             obj.items
@@ -1895,7 +1890,10 @@ class LWPCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with open(filename, "w") as f:
+        with os.fdopen(
+            os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
+            'w',
+        ) as f:
             # There really isn't an LWP Cookies 2.0 format, but this indicates
             # that there is extra information in here (domain_dot and
             # port_spec) while still being compatible with libwww-perl, I hope.
@@ -1920,9 +1918,7 @@ class LWPCookieJar(FileCookieJar):
                        "comment", "commenturl")
 
         try:
-            while 1:
-                line = f.readline()
-                if line == "": break
+            while (line := f.readline()) != "":
                 if not line.startswith(header):
                     continue
                 line = line[len(header):].strip()
@@ -1990,7 +1986,7 @@ class MozillaCookieJar(FileCookieJar):
 
     This class differs from CookieJar only in the format it uses to save and
     load cookies to and from a file.  This class uses the Mozilla/Netscape
-    `cookies.txt' format.  lynx uses this file format, too.
+    `cookies.txt' format.  curl and lynx use this file format, too.
 
     Don't expect cookies saved while the browser is running to be noticed by
     the browser (in fact, Mozilla on unix will overwrite your saved cookies if
@@ -2022,11 +2018,8 @@ class MozillaCookieJar(FileCookieJar):
                 filename)
 
         try:
-            while 1:
-                line = f.readline()
+            while (line := f.readline()) != "":
                 rest = {}
-
-                if line == "": break
 
                 # httponly is a cookie flag as defined in rfc6265
                 # when encoded in a netscape cookie file,
@@ -2091,7 +2084,10 @@ class MozillaCookieJar(FileCookieJar):
             if self.filename is not None: filename = self.filename
             else: raise ValueError(MISSING_FILENAME_TEXT)
 
-        with open(filename, "w") as f:
+        with os.fdopen(
+            os.open(filename, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600),
+            'w',
+        ) as f:
             f.write(NETSCAPE_HEADER_TEXT)
             now = time.time()
             for cookie in self:

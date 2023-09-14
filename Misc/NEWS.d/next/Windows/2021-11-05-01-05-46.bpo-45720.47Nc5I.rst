@@ -1,3 +1,0 @@
-Internal reference to :file:`shlwapi.dll` was dropped to help improve
-startup time. This DLL will no longer be loaded at the start of every Python
-process.
