@@ -1,7 +1,8 @@
 import sys
 import warnings
+from collections.abc import Callable
 from inspect import isabstract
-from typing import Any, Callable
+from typing import Any
 
 from test import support
 from test.support import os_helper
