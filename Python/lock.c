@@ -114,7 +114,7 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
                 return PY_LOCK_ACQUIRED;
             }
         }
-        else if (ret == Py_PARK_INTR && (flags & _PY_LOCK_MAKE_PENDING_CALLS)) {
+        else if (ret == Py_PARK_INTR && (flags & _PY_LOCK_HANDLE_SIGNALS)) {
             if (Py_MakePendingCalls() < 0) {
                 return PY_LOCK_INTR;
             }

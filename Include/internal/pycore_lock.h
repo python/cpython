@@ -36,11 +36,9 @@ typedef struct _PyMutex {
     uint8_t v;
 } PyMutex;
 
-enum {
-    _Py_UNLOCKED = 0,
-    _Py_LOCKED = 1,
-    _Py_HAS_PARKED = 2,
-};
+#define _Py_UNLOCKED    0
+#define _Py_LOCKED      1
+#define _Py_HAS_PARKED  2
 
 // (private) slow path for locking the mutex
 PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
@@ -87,7 +85,7 @@ typedef enum _PyLockFlags {
     _PY_LOCK_DETACH = 1,
 
     // Handle signals if interrupted while waiting on the lock.
-    _PY_LOCK_MAKE_PENDING_CALLS = 2,
+    _PY_LOCK_HANDLE_SIGNALS = 2,
 } _PyLockFlags;
 
 // Lock a mutex with an optional timeout and additional options. See
