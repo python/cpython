@@ -78,7 +78,7 @@ def import_module(name, package=None):
     """
     level = 0
     if name.startswith('.'):
-        if not package:
+        if package is None:
             raise TypeError("the 'package' argument is required to perform a "
                             f"relative import for {name!r}")
         for character in name:
