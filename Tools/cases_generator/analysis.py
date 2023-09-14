@@ -97,10 +97,7 @@ class Analyzer:
         n_instrs = 0
         n_ops = 0
         for instr in self.instrs.values():
-            if instr.kind == "op":
-                n_ops += 1
-            else:
-                n_instrs += 1
+            n_ops += 1
         print(
             f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
@@ -147,9 +144,7 @@ class Analyzer:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
                     if thing.kind == "inst":
-                        # self.note(f"Desugaring {name}", thing)
                         macro = parsing.Macro(name, [parsing.OpName(name)])
-                        thing.kind = "op"
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(

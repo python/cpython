@@ -774,16 +774,12 @@ class Generator(Analyzer):
                         self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
                         pass
-                        # if thing.kind != "op":
-                        #     n_instrs += 1
-                        #     self.write_instr(self.instrs[thing.name])
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
                         stacking.write_macro_instr(
                             mac, self.out, self.families.get(mac.name)
                         )
-                        # self.write_macro(self.macro_instrs[thing.name])
                     case parsing.Pseudo():
                         pass
                     case _:
