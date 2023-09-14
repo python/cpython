@@ -1,0 +1,2 @@
+Document the return type of ``x // y`` when ``x`` and ``y`` have type
+:class:`float`.

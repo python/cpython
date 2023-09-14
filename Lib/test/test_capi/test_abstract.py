@@ -265,6 +265,43 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, getitemstring, [], b'a')
         self.assertRaises(SystemError, getitemstring, NULL, b'a')
 
+    def test_mapping_getoptionalitem(self):
+        getitem = _testcapi.mapping_getoptionalitem
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertEqual(getitem(dct, 'a'), 1)
+        self.assertEqual(getitem(dct, 'b'), KeyError)
+        self.assertEqual(getitem(dct, '\U0001f40d'), 2)
+
+        dct2 = ProxyGetItem(dct)
+        self.assertEqual(getitem(dct2, 'a'), 1)
+        self.assertEqual(getitem(dct2, 'b'), KeyError)
+
+        self.assertEqual(getitem(['a', 'b', 'c'], 1), 'b')
+
+        self.assertRaises(TypeError, getitem, 42, 'a')
+        self.assertRaises(TypeError, getitem, {}, [])  # unhashable
+        self.assertRaises(IndexError, getitem, [], 1)
+        self.assertRaises(TypeError, getitem, [], 'a')
+        # CRASHES getitem({}, NULL)
+        # CRASHES getitem(NULL, 'a')
+
+    def test_mapping_getoptionalitemstring(self):
+        getitemstring = _testcapi.mapping_getoptionalitemstring
+        dct = {'a': 1, '\U0001f40d': 2}
+        self.assertEqual(getitemstring(dct, b'a'), 1)
+        self.assertEqual(getitemstring(dct, b'b'), KeyError)
+        self.assertEqual(getitemstring(dct, '\U0001f40d'.encode()), 2)
+
+        dct2 = ProxyGetItem(dct)
+        self.assertEqual(getitemstring(dct2, b'a'), 1)
+        self.assertEqual(getitemstring(dct2, b'b'), KeyError)
+
+        self.assertRaises(TypeError, getitemstring, 42, b'a')
+        self.assertRaises(UnicodeDecodeError, getitemstring, {}, b'\xff')
+        self.assertRaises(SystemError, getitemstring, {}, NULL)
+        self.assertRaises(TypeError, getitemstring, [], b'a')
+        # CRASHES getitemstring(NULL, b'a')
+
     def test_mapping_haskey(self):
         haskey = _testcapi.mapping_haskey
         dct = {'a': 1, '\U0001f40d': 2}

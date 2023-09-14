@@ -1,7 +1,6 @@
 /* Built-in functions */
 
 #include "Python.h"
-#include <ctype.h>
 #include "pycore_ast.h"           // _PyAST_Validate()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()

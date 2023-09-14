@@ -6,10 +6,17 @@
 
 #include "Python.h"
 
-/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-   is defined, so we define it here. */
+// On QNX 6, struct termio must be declared by including sys/termio.h
+// if TCGETA, TCSETA, TCSETAW, or TCSETAF are used. sys/termio.h must
+// be included before termios.h or it will generate an error.
+#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
+#  include <sys/termio.h>
+#endif
+
+// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
+// is defined, so we define it here.
 #if defined(__sgi)
-#define CTRL(c) ((c)&037)
+#  define CTRL(c) ((c)&037)
 #endif
 
 #if defined(__sun)
@@ -20,6 +27,9 @@
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#if defined(__sun) && defined(__SVR4)
+#  include <unistd.h>             // ioctl()
+#endif
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
  * MDTR, MRI, and MRTS (apparently used internally by some things

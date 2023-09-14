@@ -1,10 +1,6 @@
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
 
-#ifdef LIMITED_API_AVAILABLE
-
-
-
 /* Test Vectorcall in the limited API */
 
 static PyObject *
@@ -175,5 +171,3 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
 
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

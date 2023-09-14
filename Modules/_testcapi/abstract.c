@@ -32,7 +32,7 @@ object_getattrstring(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattr(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -57,7 +57,7 @@ object_getoptionalattr(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattrstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
@@ -207,7 +207,7 @@ mapping_getitemstring(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitem(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -232,7 +232,7 @@ mapping_getoptionalitem(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitemstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
