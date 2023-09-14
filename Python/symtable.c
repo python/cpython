@@ -251,6 +251,101 @@ static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
+/* For debugging purposes only */
+#if 0
+static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
+{
+    const char *blocktype = "";
+    switch(ste->ste_type) {
+        case FunctionBlock: blocktype = "FunctionBlock"; break;
+        case ClassBlock: blocktype = "ClassBlock"; break;
+        case ModuleBlock: blocktype = "ModuleBlock"; break;
+        case AnnotationBlock: blocktype = "AnnotationBlock"; break;
+        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
+        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+    }
+    const char *comptype = "";
+    switch(ste->ste_comprehension) {
+        case ListComprehension: comptype = " ListComprehension"; break;
+        case DictComprehension: comptype = " DictComprehension"; break;
+        case SetComprehension: comptype = " SetComprehension"; break;
+        case GeneratorExpression: comptype = " GeneratorExpression"; break;
+    }
+    PyObject* msg = PyUnicode_FromFormat(
+        (
+            "%U=== Symtable for %U ===\n"
+            "%U%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%Ulineno: %d col_offset: %d\n"
+            "%U--- Symbols ---\n"
+        ),
+        prefix,
+        ste->ste_name,
+        prefix,
+        blocktype,
+        comptype,
+        prefix,
+        ste->ste_nested ? " nested" : "",
+        ste->ste_free ? " free" : "",
+        ste->ste_child_free ? " child_free" : "",
+        ste->ste_generator ? " generator" : "",
+        ste->ste_coroutine ? " coroutine" : "",
+        ste->ste_varargs ? " varargs" : "",
+        ste->ste_varkeywords ? " varkeywords" : "",
+        ste->ste_returns_value ? " returns_value" : "",
+        ste->ste_needs_class_closure ? " needs_class_closure" : "",
+        ste->ste_needs_classdict ? " needs_classdict" : "",
+        ste->ste_comp_inlined ? " comp_inlined" : "",
+        ste->ste_comp_iter_target ? " comp_iter_target" : "",
+        ste->ste_can_see_class_scope ? " can_see_class_scope" : "",
+        prefix,
+        ste->ste_lineno,
+        ste->ste_col_offset,
+        prefix
+    );
+    printf(PyUnicode_AsUTF8(msg));
+    PyObject *name, *value;
+    Py_ssize_t pos = 0;
+    while(PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
+        int scope = _PyST_GetScope(ste, name);
+        long flags = _PyST_GetSymbol(ste, name);
+        printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
+        if (flags & DEF_GLOBAL) printf(" DEF_GLOBAL");
+        if (flags & DEF_LOCAL) printf(" DEF_LOCAL");
+        if (flags & DEF_PARAM) printf(" DEF_PARAM");
+        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
+        if (flags & USE) printf(" USE");
+        if (flags & DEF_FREE) printf(" DEF_FREE");
+        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
+        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
+        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
+        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
+        if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
+        if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
+        switch (scope) {
+            case LOCAL: printf(" LOCAL"); break;
+            case GLOBAL_EXPLICIT: printf(" GLOBAL_EXPLICIT"); break;
+            case GLOBAL_IMPLICIT: printf(" GLOBAL_IMPLICIT"); break;
+            case FREE: printf(" FREE"); break;
+            case CELL: printf(" CELL"); break;
+        }
+        printf("\n");
+    }
+    printf("%s--- Children ---\n", PyUnicode_AsUTF8(prefix));
+    PyObject *new_prefix = PyUnicode_FromFormat("  %U", prefix);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PyObject *child = PyList_GetItem(ste->ste_children, i);
+        assert(PySTEntry_Check(child));
+        _dump_symtable((PySTEntryObject*)child, new_prefix);
+    }
+}
+
+static void dump_symtable(PySTEntryObject* ste)
+{
+    _dump_symtable(ste, PyUnicode_FromString(""));
+}
+#endif
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
