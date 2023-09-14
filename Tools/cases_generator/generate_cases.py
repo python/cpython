@@ -821,26 +821,16 @@ class Generator(Analyzer):
         with open(abstract_interpreter_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
-            for thing in self.everything:
-                match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        pass
-                    case parsing.InstDef():
-                        instr = AbstractInstruction(self.instrs[thing.name].inst)
-                        if (
-                            instr.is_viable_uop()
-                            and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
-                        ):
-                            self.out.emit("")
-                            with self.out.block(f"case {thing.name}:"):
-                                instr.write(self.out, tier=TIER_TWO)
-                                self.out.emit("break;")
-                    case parsing.Macro():
-                        pass
-                    case parsing.Pseudo():
-                        pass
-                    case _:
-                        assert_never(thing)
+            for instr in self.instrs.values():
+                instr = AbstractInstruction(instr.inst)
+                if (
+                    instr.is_viable_uop()
+                    and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
+                ):
+                    self.out.emit("")
+                    with self.out.block(f"case {instr.name}:"):
+                        instr.write(self.out, tier=TIER_TWO)
+                        self.out.emit("break;")
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
