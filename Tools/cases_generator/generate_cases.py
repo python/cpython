@@ -257,8 +257,6 @@ class Generator(Analyzer):
             specialized_ops.update(family.members)
 
         for instr in self.macro_instrs.values():
-            assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
-            assert isinstance(instr, MacroInstruction)
             name = instr.name
             if name in specialized_ops:
                 continue
