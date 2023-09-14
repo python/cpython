@@ -55,6 +55,8 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     stats: TestStats | None
 
     match test_result:
+        # TestResults is imported from test.support, so mypy isn't aware that it's a class
+        # mypy error: 'Expected type in class pattern; found "Any"  [misc]'
         case TestStats():  # type: ignore[misc]
             stats = test_result
         case unittest.TestResult():
