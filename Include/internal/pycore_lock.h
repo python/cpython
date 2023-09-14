@@ -26,8 +26,7 @@ extern "C" {
 // 0b11: locked and has parked threads
 //
 // Typical initialization:
-//   PyMutex m;
-//   memset(&m, 0, sizeof(m));
+//   PyMutex m = (PyMutex){0};
 //
 // Typical usage:
 //   PyMutex_Lock(&m);
@@ -84,7 +83,7 @@ typedef enum _PyLockFlags {
     // Do not detach/release the GIL when waiting on the lock.
     _Py_LOCK_DONT_DETACH = 0,
 
-    // Detach/release the GIL when waiting on the lock.
+    // Detach/release the GIL while waiting on the lock.
     _PY_LOCK_DETACH = 1,
 
     // Handle signals if interrupted while waiting on the lock.
