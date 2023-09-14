@@ -1,0 +1,42 @@
+fix = true
+select = [
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
+]
+extend-exclude = [
+    # Failed to lint
+    "badsyntax_pep3120.py",
+    "encoded_modules/module_iso_8859_1.py",
+    "encoded_modules/module_koi8_r.py",
+    # Failed to parse
+    "badsyntax_3131.py",
+    "support/socket_helper.py",
+    "test_fstring.py",
+    "test_lib2to3/data/bom.py",
+    "test_lib2to3/data/crlf.py",
+    "test_lib2to3/data/different_encoding.py",
+    "test_lib2to3/data/false_encoding.py",
+    "test_lib2to3/data/py2_test_grammar.py",
+    # TODO Fix: F811 Redefinition of unused name
+    "test_buffer.py",
+    "test_capi/test_misc.py",
+    "test_capi/test_unicode.py",
+    "test_ctypes/test_arrays.py",
+    "test_ctypes/test_functions.py",
+    "test_dataclasses.py",
+    "test_descr.py",
+    "test_enum.py",
+    "test_functools.py",
+    "test_genericclass.py",
+    "test_grammar.py",
+    "test_import/__init__.py",
+    "test_keywordonlyarg.py",
+    "test_lib2to3/data/py3_test_grammar.py",
+    "test_pkg.py",
+    "test_subclassinit.py",
+    "test_tokenize.py",
+    "test_typing.py",
+    "test_yield_from.py",
+    "time_hashlib.py",
+    # Pending https://github.com/python/cpython/pull/109139
+    "test_monitoring.py",
+]
