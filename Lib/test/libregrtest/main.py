@@ -112,7 +112,7 @@ class Regrtest:
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: tuple[str, ...] = tuple(ns.use_resources or ())
+        self.use_resources: tuple[str, ...] = tuple(ns.use_resources)
         if ns.python:
             self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
         else:

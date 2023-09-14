@@ -158,7 +158,7 @@ class Namespace(argparse.Namespace):
         self.randomize = False
         self.fromfile = None
         self.fail_env_changed = False
-        self.use_resources: list[str] | None = None
+        self.use_resources = None
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
