@@ -31,7 +31,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list = []
+        self.testsuite_xml: list[str] = []
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
