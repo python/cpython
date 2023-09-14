@@ -88,8 +88,8 @@ class RunTests:
     use_junit: bool
     memory_limit: str | None
     gc_threshold: int | None
-    use_resources: tuple[str]
-    python_cmd: tuple[str] | None
+    use_resources: tuple[str, ...]
+    python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | None
     json_file: JsonFile | None

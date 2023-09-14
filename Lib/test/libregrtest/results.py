@@ -111,7 +111,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.bad_results)
 
-    def prepare_rerun(self) -> (TestTuple, FilterDict):
+    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.bad_results:

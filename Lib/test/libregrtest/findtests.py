@@ -24,7 +24,7 @@ SPLITTESTDIRS: set[TestName] = {
 }
 
 
-def findtestdir(path=None):
+def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
