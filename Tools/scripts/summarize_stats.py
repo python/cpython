@@ -2,6 +2,10 @@
 default stats folders.
 """
 
+# NOTE: Bytecode introspection modules (opcode, dis, etc.) should only
+# happen when loading a single dataset. When comparing datasets, it
+# could get it wrong, leading to subtle errors.
+
 import argparse
 import collections
 import json
