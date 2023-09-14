@@ -677,7 +677,7 @@ def test_pdb_alias_command():
     > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
     -> o.method()
     (Pdb) alias pi
-    *** Unkown alias. To create an alias see 'help alias'
+    *** Unknown alias 'pi'
     (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
     (Pdb) alias ps pi self
     (Pdb) alias ps
