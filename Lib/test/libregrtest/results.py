@@ -31,7 +31,7 @@ class TestResults:
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
-        self.testsuite_xml: list[str] = []
+        self.testsuite_xml: list = []
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -111,7 +111,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.bad_results)
 
-    def prepare_rerun(self) -> (TestTuple, FilterDict):
+    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.bad_results:
