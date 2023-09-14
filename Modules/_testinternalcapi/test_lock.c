@@ -31,8 +31,7 @@ pysleep(int ms)
 static PyObject *
 test_lock_basic(PyObject *self, PyObject *obj)
 {
-    PyMutex m;
-    memset(&m, 0, sizeof(m));
+    PyMutex m = (PyMutex){0};
 
     // uncontended lock and unlock
     PyMutex_Lock(&m);
