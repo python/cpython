@@ -48,11 +48,11 @@ _Py_yield(void)
 void
 _PyMutex_LockSlow(PyMutex *m)
 {
-    _PyMutex_TimedLock(m, -1, _PY_LOCK_DETACH);
+    _PyMutex_LockTimed(m, -1, _PY_LOCK_DETACH);
 }
 
 PyLockStatus
-_PyMutex_TimedLock(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
+_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
 {
     uint8_t v = _Py_atomic_load_uint8_relaxed(&m->v);
     if ((v & _Py_LOCKED) == _Py_UNLOCKED) {
@@ -265,12 +265,12 @@ _PyEvent_Notify(PyEvent *evt)
 void
 PyEvent_Wait(PyEvent *evt)
 {
-    while (!PyEvent_TimedWait(evt, -1))
+    while (!PyEvent_WaitTimed(evt, -1))
         ;
 }
 
 int
-PyEvent_TimedWait(PyEvent *evt, _PyTime_t timeout_ns)
+PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns)
 {
     for (;;) {
         uint8_t v = _Py_atomic_load_uint8(&evt->v);

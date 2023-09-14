@@ -94,7 +94,7 @@ typedef enum _PyLockFlags {
 // Lock a mutex with an optional timeout and additional options. See
 // _PyLockFlags for details.
 extern PyLockStatus
-_PyMutex_TimedLock(PyMutex *m, _PyTime_t timeout_ns, _PyLockFlags flags);
+_PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout_ns, _PyLockFlags flags);
 
 // Unlock a mutex, returns 0 if the mutex is not locked (used for improved
 // error messages).
@@ -117,7 +117,7 @@ PyAPI_FUNC(void) PyEvent_Wait(PyEvent *evt);
 // Wait for the event to be set, or until the timeout expires. If the event is
 // already set, then this returns immediately. Returns 1 if the event was set,
 // and 0 if the timeout expired or thread was interrupted.
-PyAPI_FUNC(int) PyEvent_TimedWait(PyEvent *evt, _PyTime_t timeout_ns);
+PyAPI_FUNC(int) PyEvent_WaitTimed(PyEvent *evt, _PyTime_t timeout_ns);
 
 
 // _PyRawMutex implements a word-sized mutex that that does not depend on the
