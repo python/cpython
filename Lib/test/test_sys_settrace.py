@@ -921,6 +921,35 @@ class TraceTestCase(unittest.TestCase):
              (6, 'line'),
              (6, 'return')])
 
+    def test_finally_with_conditional(self):
+
+        # See gh-105658
+        condition = True
+        def func():
+            try:
+                try:
+                    raise Exception
+                finally:
+                    if condition:
+                        result = 1
+                result = 2
+            except:
+                result = 3
+            return result
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (5, 'line'),
+             (6, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (10, 'line'),
+             (10, 'return')])
+
     def test_break_to_continue1(self):
 
         def func():
@@ -2092,7 +2121,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(11)
         output.append(12)
 
-    @jump_test(5, 11, [2, 4], (ValueError, 'exception'))
+    @jump_test(5, 11, [2, 4], (ValueError, 'comes after the current code block'))
     def test_no_jump_over_return_try_finally_in_finally_block(output):
         try:
             output.append(2)
