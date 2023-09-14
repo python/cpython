@@ -801,8 +801,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            if  (classflag) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -1037,7 +1036,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
-                        ste->ste_type == ClassBlock))
+                        (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
