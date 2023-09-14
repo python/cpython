@@ -252,7 +252,7 @@ class Generator(Analyzer):
         ops: list[tuple[bool, str]] = []  # (has_arg, name) for each opcode
         instrumented_ops: list[str] = []
 
-        specialized_ops = set()
+        specialized_ops: set[str] = set()
         for name, family in self.families.items():
             specialized_ops.update(family.members)
 
