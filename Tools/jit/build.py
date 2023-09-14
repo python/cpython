@@ -221,7 +221,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, reader: str, symbol_prefix: str = "") -> None:
+    def __init__(self, path: pathlib.Path, reader: str, mc: str, symbol_prefix: str = "") -> None:
         self.path = path
         self.body = bytearray()
         self.body_symbols = {}
@@ -232,6 +232,7 @@ class ObjectParser:
         self.relocations_todo = []
         self.symbol_prefix = symbol_prefix
         self.reader = reader
+        self.mc = mc
 
     async def parse(self):
         # subprocess.run([find_llvm_tool("llvm-objdump")[0], self.path, "-dr"], check=True)  # XXX
@@ -254,8 +255,10 @@ class ObjectParser:
         #     entry = self.body_symbols["_jit_trampoline"]
         entry = 0  # XXX
         holes = []
+        padding = 0
         while len(self.body) % 8:
             self.body.append(0)
+            padding += 1
         got = len(self.body)
         for newhole in handle_relocations(self.got_entries, self.body, self.relocations_todo):
             assert newhole.symbol not in self.dupes, newhole.symbol
@@ -263,17 +266,56 @@ class ObjectParser:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                 newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
             holes.append(newhole)
+        stripped = 0
+        # XXX: Just determine during object parsing the difference between instruction and data bytes...
+        while True:
+            process = await asyncio.create_subprocess_exec(self.mc, "--disassemble", "--show-encoding", stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate(" ".join(hex(byte) for byte in self.body[:got - padding - stripped]).encode())
+            if process.returncode:
+                raise RuntimeError(f"{self.mc} exited with {process.returncode}")
+            if not stderr:
+                break
+            stripped += 1
+        disassembly = [line.removeprefix("\t").expandtabs() for line in stdout.decode().splitlines()]
+        assert disassembly[0] == ".text"
+        del disassembly[0]
+        offset = 0
+        size = 0
+        for i, line in enumerate(disassembly):
+            if match := re.search(r"# encoding: \[((?:(0x[0-9a-f]{2}|A),?)+)\]", line):
+                offset += size
+            disassembly[i] = f"{offset:03x}: {line}"
+            if match:
+                size = len(match.group(1).split(","))
+        offset += size
+        stripped = got - padding - offset
+        if stripped:
+            disassembly.append(f"{offset:03x}: " + f"# data\t\t\t\t\t# encoding: [{','.join(hex(byte) for byte in self.body[offset:offset + stripped])}]".expandtabs())
+            offset += stripped
+        if padding:
+            disassembly.append(f"{offset:03x}: " + f"# padding\t\t\t\t# encoding: [{','.join(hex(byte) for byte in self.body[offset:offset + padding])}]".expandtabs())
+            offset += padding
         for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
-                holes.append(Hole("PATCH_ABS_64", "_jit_base", got + 8 * i, self.body_symbols[got_symbol] + addend))
-                continue
+                got_symbol = "_jit_base"
+                addend = self.body_symbols[got_symbol] + addend
             # XXX: PATCH_ABS_32 on 32-bit platforms?
             holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
+            symbol_part = f"# {got_symbol}{f' + {addend}' if addend else ''}"
+            tabs = "\t" * (5 - len(symbol_part) // 8)
+            disassembly.append(f"{offset:03x}: " + f"{symbol_part}{tabs}# encoding: [{','.join(8 * ['0x00'])}]".expandtabs())
+            offset += 8
         self.body.extend([0] * 8 * len(self.got_entries))
+        padding = 0
         while len(self.body) % 16:
             self.body.append(0)
+            padding += 1
+        if padding:
+            disassembly.append(f"{offset:03x}: " + f"# padding\t\t\t\t# encoding: [{','.join(padding * ['0x00'])}]".expandtabs())
+            offset += padding
         holes.sort(key=lambda hole: hole.offset)
-        return Stencil(bytes(self.body)[entry:], tuple(holes))  # XXX
+        assert offset == len(self.body), (self.path, offset, len(self.body))
+        return Stencil(bytes(self.body)[entry:], tuple(holes), tuple(disassembly))  # XXX
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
@@ -286,6 +328,7 @@ class Hole:
 class Stencil:
     body: bytes
     holes: tuple[Hole, ...]
+    disassembly: tuple[str, ...]
     # entry: int
 
 def sign_extend_64(value: int, bits: int) -> int:
@@ -845,7 +888,8 @@ class Compiler:
         self._verbose = verbose
         self._clang, clang_version = find_llvm_tool("clang")
         self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
-        self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
+        self._mc, mc_version = find_llvm_tool("llvm-mc")
+        self._stderr(f"Using {self._clang} ({clang_version}), {self._readobj} ({readobj_version}), and {self._mc} ({mc_version}).")
         self._semaphore = asyncio.BoundedSemaphore(jobs)
         self._ghccc = ghccc
 
@@ -868,7 +912,7 @@ class Compiler:
             ll = pathlib.Path(tempdir, f"{opname}.ll").resolve()
             o = pathlib.Path(tempdir, f"{opname}.o").resolve()
             async with self._semaphore:
-                self._stderr(f"Compiling {opname}...")
+                self._stderr(f"Compiling {opname}")
                 process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
                 stdout, stderr = await process.communicate()
                 assert stdout is None, stdout
@@ -876,16 +920,13 @@ class Compiler:
                 if process.returncode:
                     raise RuntimeError(f"{self._clang} exited with {process.returncode}")
                 self._use_ghccc(ll)
-                self._stderr(f"Recompiling {opname}...")
                 process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
                 stdout, stderr = await process.communicate()
                 assert stdout is None, stdout
                 assert stderr is None, stderr
                 if process.returncode:
                     raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-                self._stderr(f"Parsing {opname}...")
-                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj).parse()
-        self._stderr(f"Built {opname}!")
+                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj, self._mc).parse()
 
     async def build(self) -> None:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -967,6 +1008,8 @@ class Compiler:
             opnames.append(opname)
             lines.append(f"// {opname}")
             assert stencil.body
+            for line in stencil.disassembly:
+                lines.append(f"// {line}")
             lines.append(f"static const unsigned char {opname}_stencil_bytes[] = {{")
             for chunk in batched(stencil.body, 8):
                 lines.append(f"    {', '.join(f'0x{byte:02X}' for byte in chunk)},")
