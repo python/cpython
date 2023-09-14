@@ -1147,7 +1147,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
     frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
-    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + 1;
+    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
 }
 
 

@@ -717,7 +717,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
          * we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         assert (frame->instr_ptr == frame->prev_instr + 1);
-        monitor_throw(tstate, frame, frame->prev_instr);
+        monitor_throw(tstate, frame, frame->instr_ptr - 1);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
     }
