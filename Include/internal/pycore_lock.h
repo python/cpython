@@ -37,11 +37,11 @@ typedef struct _PyMutex {
     uint8_t v;
 } PyMutex;
 
-typedef enum {
+enum {
     _Py_UNLOCKED = 0,
     _Py_LOCKED = 1,
     _Py_HAS_PARKED = 2,
-} _PyMutex_State;
+};
 
 // (private) slow path for locking the mutex
 PyAPI_FUNC(void) _PyMutex_LockSlow(PyMutex *m);
