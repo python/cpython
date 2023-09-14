@@ -38,7 +38,7 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
         mod, ext = os.path.splitext(name)
         if (not mod.startswith("test_")) or (mod in exclude):
             continue
-        if mod in split_test_dirs:
+        if mod in split_test_dirs and os.path.isdir(mod):
             subdir = os.path.join(testdir, mod)
             mod = f"{base_mod or 'test'}.{mod}"
             tests.extend(findtests(testdir=subdir, exclude=exclude,
