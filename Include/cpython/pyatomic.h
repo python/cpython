@@ -83,10 +83,9 @@
 //       # release
 //       ...
 
-#ifndef Py_LIMITED_API
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
-
+#ifndef Py_CPYTHON_ATOMIC_H
+#  error "this header file must not be included directly"
+#endif
 
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
@@ -502,6 +501,3 @@ static inline void _Py_atomic_fence_release(void);
 #else
 #  error "no available pyatomic implementation for this platform/compiler"
 #endif
-
-#endif  /* Py_ATOMIC_H */
-#endif  /* Py_LIMITED_API */

@@ -27793,7 +27793,7 @@ typedef intptr_t Py_ssize_t;
 #  error "unable to define Py_ssize_t"
 #endif
 
-#include "cpython/pyatomic.h"
+#include "pyatomic.h"
 
 int main()
 {

@@ -19,7 +19,6 @@ extern "C" {
 #endif
 
 #include "pycore_time.h"          // _PyTime_t
-#include "cpython/pyatomic.h"
 
 
 enum {
