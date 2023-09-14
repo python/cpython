@@ -510,40 +510,14 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for thing in self.everything:
-                    match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            pass
-                        case parsing.InstDef(name=name):
-                            pass
-                            # instr = self.instrs[name]
-                            # # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
-                            # if instr.kind == "inst" and instr.is_viable_uop():
-                            #     # Construct a dummy Component -- input/output mappings are not used
-                            #     part = Component(instr, instr.active_caches)
-                            #     self.write_macro_expansions(
-                            #         instr.name, [part], instr.cache_offset
-                            #     )
-                            # elif instr.kind == "inst" and variable_used(
-                            #     instr.inst, "oparg1"
-                            # ):
-                            #     assert variable_used(
-                            #         instr.inst, "oparg2"
-                            #     ), "Half super-instr?"
-                            #     self.write_super_expansions(instr.name)
-                        case parsing.Macro():
-                            mac = self.macro_instrs[thing.name]
-                            # Special-case the heck out of super-instructions
-                            if is_super_instruction(mac):
-                                self.write_super_expansions(mac.name)
-                            else:
-                                self.write_macro_expansions(
-                                    mac.name, mac.parts, mac.cache_offset
-                                )
-                        case parsing.Pseudo():
-                            pass
-                        case _:
-                            assert_never(thing)
+                for mac in self.macro_instrs.values():
+                    if is_super_instruction(mac):
+                        # Special-case the heck out of super-instructions
+                        self.write_super_expansions(mac.name)
+                    else:
+                        self.write_macro_expansions(
+                            mac.name, mac.parts, mac.cache_offset
+                        )
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
