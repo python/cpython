@@ -158,7 +158,7 @@ _PyMutex_TryUnlock(PyMutex *m)
                     if (should_be_fair) {
                         v |= _Py_LOCKED;
                     }
-                    if (unpark->more_waiters) {
+                    if (unpark->has_more_waiters) {
                         v |= _Py_HAS_PARKED;
                     }
                 }

@@ -60,7 +60,7 @@ struct _PyUnpark {
     // Are there more threads waiting on the address? May be true in cases
     // where threads are waiting on a different address that maps to the same
     // internal bucket.
-    int more_waiters;
+    int has_more_waiters;
 };
 
 // Unpark a single thread waiting on `address`.
@@ -71,7 +71,7 @@ struct _PyUnpark {
 //  _PyParkingLot_Unpark(address, unpark, {
 //      if (unpark) {
 //          void *arg = unpark->arg;
-//          int more_waiters = unpark->more_waiters;
+//          int has_more_waiters = unpark->has_more_waiters;
 //          ...
 //      }
 //  });

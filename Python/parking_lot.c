@@ -422,7 +422,7 @@ _PyParkingLot_BeginUnpark(const void *addr)
         return NULL;
     }
 
-    waiter->unpark.more_waiters = (bucket->num_waiters > 0);
+    waiter->unpark.has_more_waiters = (bucket->num_waiters > 0);
     return &waiter->unpark;
 }
 
