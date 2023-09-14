@@ -18,6 +18,12 @@ from test.support import threading_helper
 
 MS_WINDOWS = (sys.platform == 'win32')
 
+# All temporary files and temporary directories created by libregrtest should
+# use TMP_PREFIX so cleanup_temp_dir() can remove them all.
+TMP_PREFIX = 'test_python_'
+WORK_DIR_PREFIX = TMP_PREFIX
+WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
+
 # bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
@@ -70,11 +76,20 @@ def strip_py_suffix(names: list[str]):
             names[idx] = basename
 
 
+def plural(n, singular, plural=None):
+    if n == 1:
+        return singular
+    elif plural is not None:
+        return plural
+    else:
+        return singular + 's'
+
+
 def count(n, word):
     if n == 1:
-        return "%d %s" % (n, word)
+        return f"{n} {word}"
     else:
-        return "%d %ss" % (n, word)
+        return f"{n} {word}s"
 
 
 def printlist(x, width=70, indent=4, file=None):
@@ -337,7 +352,7 @@ def get_build_info():
     return build
 
 
-def get_temp_dir(tmp_dir):
+def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     if tmp_dir:
         tmp_dir = os.path.expanduser(tmp_dir)
     else:
@@ -345,14 +360,25 @@ def get_temp_dir(tmp_dir):
         # to keep the test files in a subfolder.  This eases the cleanup of leftover
         # files using the "make distclean" command.
         if sysconfig.is_python_build():
-            tmp_dir = sysconfig.get_config_var('abs_builddir')
-            if tmp_dir is None:
-                # bpo-30284: On Windows, only srcdir is available. Using
-                # abs_builddir mostly matters on UNIX when building Python
-                # out of the source tree, especially when the source tree
-                # is read only.
-                tmp_dir = sysconfig.get_config_var('srcdir')
-            tmp_dir = os.path.join(tmp_dir, 'build')
+            if not support.is_wasi:
+                tmp_dir = sysconfig.get_config_var('abs_builddir')
+                if tmp_dir is None:
+                    # bpo-30284: On Windows, only srcdir is available. Using
+                    # abs_builddir mostly matters on UNIX when building Python
+                    # out of the source tree, especially when the source tree
+                    # is read only.
+                    tmp_dir = sysconfig.get_config_var('srcdir')
+                tmp_dir = os.path.join(tmp_dir, 'build')
+            else:
+                # WASI platform
+                tmp_dir = sysconfig.get_config_var('projectbase')
+                tmp_dir = os.path.join(tmp_dir, 'build')
+
+                # When get_temp_dir() is called in a worker process,
+                # get_temp_dir() path is different than in the parent process
+                # which is not a WASI process. So the parent does not create
+                # the same "tmp_dir" than the test worker process.
+                os.makedirs(tmp_dir, exist_ok=True)
         else:
             tmp_dir = tempfile.gettempdir()
 
@@ -370,24 +396,23 @@ def fix_umask():
             os.umask(old_mask)
 
 
-def get_work_dir(*, parent_dir: StrPath = '', worker: bool = False):
+def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel
     # testing (see the -j option).
     # Emscripten and WASI have stubbed getpid(), Emscripten has only
     # milisecond clock resolution. Use randint() instead.
-    if sys.platform in {"emscripten", "wasi"}:
+    if support.is_emscripten or support.is_wasi:
         nounce = random.randint(0, 1_000_000)
     else:
         nounce = os.getpid()
 
     if worker:
-        work_dir = 'test_python_worker_{}'.format(nounce)
+        work_dir = WORK_DIR_PREFIX + str(nounce)
     else:
-        work_dir = 'test_python_{}'.format(nounce)
+        work_dir = WORKER_WORK_DIR_PREFIX + str(nounce)
     work_dir += os_helper.FS_NONASCII
-    if parent_dir:
-        work_dir = os.path.join(parent_dir, work_dir)
+    work_dir = os.path.join(parent_dir, work_dir)
     return work_dir
 
 
@@ -570,7 +595,7 @@ def display_header():
 def cleanup_temp_dir(tmp_dir: StrPath):
     import glob
 
-    path = os.path.join(glob.escape(tmp_dir), 'test_python_*')
+    path = os.path.join(glob.escape(tmp_dir), TMP_PREFIX + '*')
     print("Cleanup %s directory" % tmp_dir)
     for name in glob.glob(path):
         if os.path.isdir(name):

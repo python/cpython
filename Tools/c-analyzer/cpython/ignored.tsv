@@ -420,6 +420,7 @@ Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
+Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-

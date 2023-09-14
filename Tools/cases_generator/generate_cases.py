@@ -68,7 +68,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SAVE_IP": 7,
+    "OPARG_SET_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -255,12 +255,18 @@ class Generator(Analyzer):
         ops: list[tuple[bool, str]] = []  # (has_arg, name) for each opcode
         instrumented_ops: list[str] = []
 
+        specialized_ops = set()
+        for name, family in self.families.items():
+            specialized_ops.update(family.members)
+
         for instr in itertools.chain(
             [instr for instr in self.instrs.values() if instr.kind != "op"],
             self.macro_instrs.values(),
         ):
             assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
             name = instr.name
+            if name in specialized_ops:
+                continue
             if name.startswith("INSTRUMENTED_"):
                 instrumented_ops.append(name)
             else:
@@ -282,7 +288,7 @@ class Generator(Analyzer):
 
         def map_op(op: int, name: str) -> None:
             assert op < len(opname)
-            assert opname[op] is None
+            assert opname[op] is None, (op, name)
             assert name not in opmap
             opname[op] = name
             opmap[name] = op
@@ -294,25 +300,31 @@ class Generator(Analyzer):
         # This helps catch cases where we attempt to execute a cache.
         map_op(17, "RESERVED")
 
-        # 166 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-        map_op(166, "RESUME")
+        # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+        map_op(149, "RESUME")
+
+        # Specialized ops appear in their own section
+        # Instrumented opcodes are at the end of the valid range
+        min_internal = 150
+        min_instrumented = 254 - (len(instrumented_ops) - 1)
+        assert min_internal + len(specialized_ops) < min_instrumented
 
         next_opcode = 1
-
         for has_arg, name in sorted(ops):
             if name in opmap:
                 continue  # an anchored name, like CACHE
-            while opname[next_opcode] is not None:
-                next_opcode += 1
-            assert next_opcode < 255
             map_op(next_opcode, name)
-
             if has_arg and "HAVE_ARGUMENT" not in markers:
                 markers["HAVE_ARGUMENT"] = next_opcode
 
-        # Instrumented opcodes are at the end of the valid range
-        min_instrumented = 254 - (len(instrumented_ops) - 1)
-        assert next_opcode <= min_instrumented
+            while opname[next_opcode] is not None:
+                next_opcode += 1
+
+        assert next_opcode < min_internal
+
+        for i, op in enumerate(sorted(specialized_ops)):
+            map_op(min_internal + i, op)
+
         markers["MIN_INSTRUMENTED_OPCODE"] = min_instrumented
         for i, op in enumerate(instrumented_ops):
             map_op(min_instrumented + i, op)
@@ -549,10 +561,20 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name, _ in self.families.items():
-                    instr = self.instrs[name]
-                    if instr.cache_offset > 0:
-                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                family_member_names: set[str] = set()
+                for family in self.families.values():
+                    family_member_names.update(family.members)
+                for instr in self.instrs.values():
+                    if (
+                        instr.name not in family_member_names
+                        and instr.cache_offset > 0
+                        and instr.kind == "inst"
+                        and not instr.name.startswith("INSTRUMENTED_")
+                    ):
+                        self.out.emit(f"[{instr.name}] = {instr.cache_offset},")
+                for mac in self.macro_instrs.values():
+                    if mac.name not in family_member_names and mac.cache_offset > 0:
+                        self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
                 # Irregular case:
                 self.out.emit('[JUMP_BACKWARD] = 1,')
 
@@ -648,8 +670,8 @@ class Generator(Analyzer):
             seen.add(name)
 
         # These two are first by convention
-        add("EXIT_TRACE")
-        add("SAVE_IP")
+        add("_EXIT_TRACE")
+        add("_SET_IP")
 
         for instr in self.instrs.values():
             if instr.kind == "op":
@@ -677,8 +699,8 @@ class Generator(Analyzer):
                     )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "SAVE_IP":
-                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    if part.instr.name == "_SET_IP":
+                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
