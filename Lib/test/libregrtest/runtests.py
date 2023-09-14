@@ -26,7 +26,7 @@ class JsonFile:
     file: int | None
     file_type: str
 
-    def configure_subprocess(self, popen_kwargs: dict[str, Any]) -> None:
+    def configure_subprocess(self, popen_kwargs: dict) -> None:
         match self.file_type:
             case JsonFileType.UNIX_FD:
                 # Unix file descriptor

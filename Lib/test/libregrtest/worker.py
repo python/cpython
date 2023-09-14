@@ -18,7 +18,7 @@ USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def create_worker_process(runtests: RunTests, output_fd: int,
-                          tmp_dir: StrPath | None = None) -> subprocess.Popen[str]:
+                          tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
