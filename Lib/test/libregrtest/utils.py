@@ -10,6 +10,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+from collections.abc import Callable
 
 from test import support
 from test.support import os_helper
@@ -67,7 +68,7 @@ def format_duration(seconds):
     return ' '.join(parts)
 
 
-def strip_py_suffix(names: list[str]):
+def strip_py_suffix(names: list[str] | None) -> None:
     if not names:
         return
     for idx, name in enumerate(names):
@@ -441,6 +442,7 @@ def remove_testfn(test_name: TestName, verbose: int) -> None:
     if not os.path.exists(name):
         return
 
+    nuker: Callable[[str], None]
     if os.path.isdir(name):
         import shutil
         kind, nuker = "directory", shutil.rmtree

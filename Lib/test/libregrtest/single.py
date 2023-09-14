@@ -51,6 +51,8 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     if refleak:
         result.state = State.REFLEAK
 
+    stats: TestStats | None
+
     match test_result:
         case TestStats():
             stats = test_result
