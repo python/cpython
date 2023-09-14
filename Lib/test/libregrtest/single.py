@@ -7,7 +7,7 @@ import sys
 import time
 import traceback
 import unittest
-from typing import Protocol, cast
+from typing import cast
 
 from test import support
 from test.support import TestStats
@@ -189,11 +189,6 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.state = State.PASSED
 
 
-class PrintWarningsType(Protocol):
-    orig_stderr: io.TextIOWrapper
-    def __call__(self, msg: str) -> None: ...
-
-
 def _runtest(result: TestResult, runtests: RunTests) -> None:
     # Capture stdout and stderr, set faulthandler timeout,
     # and create JUnit XML report.
@@ -216,7 +211,7 @@ def _runtest(result: TestResult, runtests: RunTests) -> None:
             stream = io.StringIO()
             orig_stdout = sys.stdout
             orig_stderr = sys.stderr
-            print_warning = cast(PrintWarningsType, support.print_warning)
+            print_warning = support.print_warning
             orig_print_warnings_stderr = print_warning.orig_stderr
 
             output = None
