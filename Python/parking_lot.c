@@ -24,6 +24,10 @@ struct wait_entry {
     struct llist_node node;
 };
 
+// Prime number to avoid correlations with memory addresses.
+// We want this to be roughly proportional to the number of CPU cores
+// to minimize contention on the bucket locks, but not too big to avoid
+// wasting memory. The exact choice does not matter much.
 #define NUM_BUCKETS 251
 
 // Table of waiters (hashed by address)
