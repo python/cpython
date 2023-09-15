@@ -497,16 +497,16 @@ class ImportSideEffectTests(unittest.TestCase):
             with open(customize_path, 'w') as f:
                 f.write(f'print("{eyecatcher}")')
 
-            output = subprocess.check_output(f'{sys.executable} -c ""')
+            output = subprocess.check_output([sys.executable, '-c', '""'])
             self.assertIn(eyecatcher, output.decode('utf-8'))
 
             # -S blocks any site-packages
-            output = subprocess.check_output(f'{sys.executable} -S -c ""')
+            output = subprocess.check_output([sys.executable, '-S', '-c', '""'])
             self.assertNotIn(eyecatcher, output.decode('utf-8'))
 
             # -s blocks user site-packages
             if 'usercustomize' == module_name:
-                output = subprocess.check_output(f'{sys.executable} -s -c ""')
+                output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
                 self.assertNotIn(eyecatcher, output.decode('utf-8'))
 
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
