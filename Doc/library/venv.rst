@@ -39,12 +39,12 @@ A virtual environment is:
   the project directory, or under a container directory for lots of virtual
   environments, such as ``~/.virtualenvs``.
 
-* Not checked into source control systems such as Git, Mercurial etc.
+* Not checked into source control systems such as Git.
 
 * Considered as disposable -- it should be simple to delete and recreate it from
   scratch. You don't place any project code in the environment
 
-* Not considered as movable or copyable -- you just create a new environment in
+* Not considered as movable or copyable -- you just recreate the same environment in
   the target location.
 
 See :pep:`405` for more background on Python virtual environments.
