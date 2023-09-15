@@ -156,7 +156,7 @@ class TestResult:
             return None
         return tuple(match_tests)
 
-    def write_json(self, file) -> None:
+    def write_json_into(self, file) -> None:
         json.dump(self, file, cls=_EncodeTestResult)
 
     @staticmethod

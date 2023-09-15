@@ -1,0 +1,1 @@
+Deprecate the ``dis.HAVE_ARGUMENT`` field in favour of ``dis.hasarg``.

@@ -1599,27 +1599,28 @@ class BaseExceptionReportingTests:
         err_msg = "b'please do not show me as numbers'"
         self.assertEqual(self.get_report(e), vanilla + err_msg + '\n')
 
-    def test_exception_with_note_with_multiple_notes(self):
-        e = ValueError(42)
-        vanilla = self.get_report(e)
+    def test_exception_with_multiple_notes(self):
+        for e in [ValueError(42), SyntaxError('bad syntax')]:
+            with self.subTest(e=e):
+                vanilla = self.get_report(e)
 
-        e.add_note('Note 1')
-        e.add_note('Note 2')
-        e.add_note('Note 3')
+                e.add_note('Note 1')
+                e.add_note('Note 2')
+                e.add_note('Note 3')
 
-        self.assertEqual(
-            self.get_report(e),
-            vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
+                self.assertEqual(
+                    self.get_report(e),
+                    vanilla + 'Note 1\n' + 'Note 2\n' + 'Note 3\n')
 
-        del e.__notes__
-        e.add_note('Note 4')
-        del e.__notes__
-        e.add_note('Note 5')
-        e.add_note('Note 6')
+                del e.__notes__
+                e.add_note('Note 4')
+                del e.__notes__
+                e.add_note('Note 5')
+                e.add_note('Note 6')
 
-        self.assertEqual(
-            self.get_report(e),
-            vanilla + 'Note 5\n' + 'Note 6\n')
+                self.assertEqual(
+                    self.get_report(e),
+                    vanilla + 'Note 5\n' + 'Note 6\n')
 
     def test_exception_qualname(self):
         class A:
