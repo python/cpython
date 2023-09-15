@@ -5,7 +5,7 @@ Python on macOS README
 :Authors:
     Jack Jansen (2004-07),
     Ronald Oussoren (2010-04),
-    Ned Deily (2012-06),
+    Ned Deily (2012-06)
 
 This document provides a quick overview of some macOS specific features in
 the Python distribution.
@@ -106,7 +106,7 @@ supports one execution architecture, 64-bit Intel (``x86_64``).
 You can enable universal binaries by specifying the "--enable-universalsdk"
 flag to configure::
 
-  $ ./configure --enable-universalsdk --with-readline=apple
+  $ ./configure --enable-universalsdk
   $ make
   $ make install
 
