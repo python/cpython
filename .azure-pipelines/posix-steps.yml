@@ -2,7 +2,6 @@ parameters:
   sudo_dependencies: sudo
   dependencies: apt
   patchcheck: true
-  xvfb: true
 
 steps:
 - checkout: self
@@ -25,27 +24,9 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- script: $COMMAND buildbottest TESTOPTS="-j4 -uall,-cpu --junit-xml=$(build.binariesDirectory)/test-results.xml"
-  displayName: 'Tests'
-  env:
-    ${{ if eq(parameters.xvfb, 'true') }}:
-      COMMAND: xvfb-run make
-    ${{ if ne(parameters.xvfb, 'true') }}:
-      COMMAND: make
-
 - ${{ if eq(parameters.patchcheck, 'true') }}:
   - script: |
       git fetch origin
       ./python Tools/patchcheck/patchcheck.py --ci true
     displayName: 'Run patchcheck.py'
     condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
-
-
-- task: PublishTestResults@2
-  displayName: 'Publish Test Results'
-  inputs:
-    testResultsFiles: '$(build.binariesDirectory)/test-results.xml'
-    mergeTestResults: true
-    testRunTitle: $(testRunTitle)
-    platform: $(testRunPlatform)
-  condition: succeededOrFailed()
