@@ -26,14 +26,18 @@ jobs:
       - uses: pre-commit/action@v3.0.0
 
   patchcheck:
+    if: "github.repository == 'python/cpython' && github.event_name == 'pull_request'"
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - run: |
+      - name: "Run patchcheck"
+        run: |
           git fetch origin
           python Tools/patchcheck/patchcheck.py --ci true
