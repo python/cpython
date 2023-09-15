@@ -34,13 +34,23 @@ class FutureTest(unittest.TestCase):
             from test.test_future_stmt import future_test2
             self.assertEqual(future_test2.result, 6)
 
-    def test_future3(self):
-        with import_helper.CleanImport('test.test_future_stmt.test_future3'):
-            from test.test_future_stmt import test_future3
+    def test_future_single_import(self):
+        with import_helper.CleanImport(
+            'test.test_future_stmt.test_future_single_import',
+        ):
+            from test.test_future_stmt import test_future_single_import
 
-    def test_future4(self):
-        with import_helper.CleanImport('test.test_future_stmt.test_future4'):
-            from test.test_future_stmt import test_future4
+    def test_future_multiple_imports(self):
+        with import_helper.CleanImport(
+            'test.test_future_stmt.test_future_multiple_imports',
+        ):
+            from test.test_future_stmt import test_future_multiple_imports
+
+    def test_future_multiple_features(self):
+        with import_helper.CleanImport(
+            "test.test_future_stmt.test_future_multiple_features",
+        ):
+            from test.test_future_stmt import test_future_multiple_features
 
     def test_badfuture3(self):
         with self.assertRaises(SyntaxError) as cm:
@@ -116,10 +126,6 @@ class FutureTest(unittest.TestCase):
             pass
         else:
             self.fail("syntax error didn't occur")
-
-    def test_multiple_features(self):
-        with import_helper.CleanImport("test.test_future_stmt.test_future5"):
-            from test.test_future_stmt import test_future5
 
     def test_unicode_literals_exec(self):
         scope = {}
