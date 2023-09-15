@@ -243,14 +243,14 @@ sys_trace_instruction_func(
                         "Missing frame when calling trace function.");
         return NULL;
     }
-    if (!frame->f_trace_opcodes) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (!tstate->c_tracefunc || !frame->f_trace_opcodes) {
         if (_PyEval_SetOpcodeTrace(frame, false) != 0) {
             return NULL;
         }
         Py_RETURN_NONE;
     }
     Py_INCREF(frame);
-    PyThreadState *tstate = _PyThreadState_GET();
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, Py_None);
     frame->f_lineno = 0;
     Py_DECREF(frame);

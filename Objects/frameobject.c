@@ -127,7 +127,6 @@ frame_settrace_opcodes(PyFrameObject *f, PyObject* value, void *Py_UNUSED(ignore
     }
     if (value == Py_True) {
         f->f_trace_opcodes = 1;
-        _PyInterpreterState_GET()->f_opcode_trace_set = true;
         if (f->f_trace) {
             return _PyEval_SetOpcodeTrace(f, true);
         }
