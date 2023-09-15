@@ -99,6 +99,7 @@ def get_git_remote_default_branch(remote_name):
         info=lambda x: x if x is not None else "not a PR branch")
 def get_base_branch():
     if not os.path.exists(os.path.join(SRCDIR, '.git')):
+        print('No', SRCDIR)
         # Not a git checkout, so there's no base branch
         return None
     upstream_remote = get_git_upstream_remote()
@@ -108,6 +109,7 @@ def get_base_branch():
     else:
         base_branch = "{0.major}.{0.minor}".format(version)
     this_branch = get_git_branch()
+    print(locals())
     if this_branch is None or this_branch == base_branch:
         # Not on a git PR branch, so there's no base branch
         return None
