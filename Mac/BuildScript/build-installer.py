@@ -1148,7 +1148,6 @@ def buildPython():
 
     print("Running configure...")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
-               "--with-readline=apple "
                "--with-universal-archs=%s "
                "%s "
                "%s "

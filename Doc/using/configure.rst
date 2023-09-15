@@ -615,17 +615,14 @@ Libraries options
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=readline|editline|apple
+.. cmdoption:: --with-readline=readline|editline
 
    Desinate a backend library of the :mod:`readline` module.
 
    * readline: Use readline as the backend.
    * editline: Use editline as the backend.
-   * apple: Use Apple BSD editline as the backend.
 
    .. versionadded:: 3.10
-   .. versionchanged:: 3.13
-      ``apple`` for Apple BSD editline is added.
 
 .. cmdoption:: --without-readline
 

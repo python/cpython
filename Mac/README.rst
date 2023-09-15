@@ -6,7 +6,6 @@ Python on macOS README
     Jack Jansen (2004-07),
     Ronald Oussoren (2010-04),
     Ned Deily (2012-06),
-    Dong-hee Na (2023-08)
 
 This document provides a quick overview of some macOS specific features in
 the Python distribution.
@@ -38,7 +37,7 @@ macOS specific arguments to configure
   into that directory. This can be used to install a python framework into
   your home directory::
 
-     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks --with-readline=apple
+     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks
      $ make && make install
 
   This will install the framework itself in ``/Users/ronald/Library/Frameworks``,

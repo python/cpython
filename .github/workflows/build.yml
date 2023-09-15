@@ -229,7 +229,6 @@ jobs:
           --config-cache \
           --with-pydebug \
           --prefix=/opt/python-dev \
-          --with-readline=apple \
           --with-openssl="$(brew --prefix openssl@3.0)"
     - name: Build CPython
       run: make -j4
