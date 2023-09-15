@@ -25,7 +25,7 @@ _Package = collections.namedtuple('Package',
 _WHEEL_PKG_DIR = sysconfig.get_config_var('WHEEL_PKG_DIR')
 
 
-def _find_packages(path: str | None) -> _Package:
+def _get_replacement_pip_package(path: str | None) -> _Package:
     if path is None:
         raise LookupError(
             'The compile-time `WHEEL_PKG_DIR` is unset so there is '
@@ -70,8 +70,8 @@ def _get_usable_pip_package() -> _Package:
     pip_pkg = _Package(_PIP_VERSION, wheel_name, None)
 
     with suppress(LookupError):
-        # only use the wheel package directory if all packages are found there
-        pip_pkg = _find_packages(_WHEEL_PKG_DIR)
+        # only use the wheel package directory if pip wheel is found there
+        pip_pkg = _get_replacement_pip_package(_WHEEL_PKG_DIR)
 
     return pip_pkg
 
