@@ -1,6 +1,3 @@
-parameters:
-  patchcheck: true
-
 steps:
 - checkout: self
   clean: true
@@ -22,9 +19,8 @@ steps:
 - script: make pythoninfo
   displayName: 'Display build info'
 
-- ${{ if eq(parameters.patchcheck, 'true') }}:
-  - script: |
-      git fetch origin
-      ./python Tools/patchcheck/patchcheck.py --ci true
-    displayName: 'Run patchcheck.py'
-    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
+- script: |
+    git fetch origin
+    ./python Tools/patchcheck/patchcheck.py --ci true
+  displayName: 'Run patchcheck.py'
+  condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'))
