@@ -1354,6 +1354,7 @@
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            gen_frame->prev_instr = next_instr - 1;
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
@@ -3795,6 +3796,7 @@
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(args[i]);
             }
+
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);

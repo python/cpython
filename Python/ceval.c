@@ -779,7 +779,7 @@ resume_frame:
 #endif
     {
         _Py_CODEUNIT *prev = frame->prev_instr;
-        _Py_CODEUNIT *here = frame->prev_instr = next_instr;
+        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_instr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(
                 tstate, frame, here, prev);
@@ -889,6 +889,7 @@ exception_unwind:
                 Py_XDECREF(v);
             }
             if (lasti) {
+                check_lasti_values(frame, false, __FILE__, __LINE__);
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {

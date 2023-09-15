@@ -1064,6 +1064,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
+            gen_frame->prev_instr = next_instr - 1;
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
@@ -2972,6 +2973,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(args[i]);
             }
+
             ERROR_IF(res == NULL, error);
             CHECK_EVAL_BREAKER();
         }

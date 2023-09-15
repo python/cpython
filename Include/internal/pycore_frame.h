@@ -78,12 +78,26 @@ typedef struct _PyInterpreterFrame {
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
+#define NewPyInterpreterFrame_LASTI(IF) \
+    ((int)((IF)->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(IF))))
+
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     assert(PyCode_Check(f->f_executable));
     return (PyCodeObject *)f->f_executable;
+}
+
+static void
+check_lasti_values(_PyInterpreterFrame *f, bool raise, const char* filename, int line) {
+    int old = _PyInterpreterFrame_LASTI(f);
+    int new = NewPyInterpreterFrame_LASTI(f);
+
+    if (old != new) {
+        //fprintf(stderr, "f=%p old=%d new=%d\n", f, old, new);
+    }
+    if (raise) assert(old == new);
 }
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {

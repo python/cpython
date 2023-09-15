@@ -158,12 +158,14 @@ PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 int
 PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
 {
+    check_lasti_values(frame, false, __FILE__, __LINE__);
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
 int
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
+    check_lasti_values(frame, false, __FILE__, __LINE__);
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }

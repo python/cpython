@@ -64,6 +64,7 @@ frame_getlineno(PyFrameObject *f, void *closure)
 static PyObject *
 frame_getlasti(PyFrameObject *f, void *closure)
 {
+    check_lasti_values(f->f_frame, false, __FILE__, __LINE__);
     int lasti = _PyInterpreterFrame_LASTI(f->f_frame);
     if (lasti < 0) {
         return PyLong_FromLong(-1);
@@ -738,6 +739,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
+    check_lasti_values(f->f_frame, false, __FILE__, __LINE__);
     int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(f->f_frame)];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
@@ -1120,6 +1122,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
     // COPY_FREE_VARS has no quickened forms, so no need to use _PyOpcode_Deopt
     // here:
     PyCodeObject *co = _PyFrame_GetCode(frame);
+    check_lasti_values(frame, false, __FILE__, __LINE__);
     int lasti = _PyInterpreterFrame_LASTI(frame);
     if (!(lasti < 0 && _PyCode_CODE(co)->op.code == COPY_FREE_VARS
           && PyFunction_Check(frame->f_funcobj)))
@@ -1511,6 +1514,7 @@ int
 PyFrame_GetLasti(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    check_lasti_values(frame->f_frame, false, __FILE__, __LINE__);
     int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
     if (lasti < 0) {
         return -1;
