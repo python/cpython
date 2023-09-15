@@ -260,6 +260,8 @@ def _acquireModuleLock():
     try:
         _acquireLock()
         yield
+    except BaseException:
+        raise
     finally:
         _releaseLock()
 
@@ -892,7 +894,7 @@ def _removeHandlerRef(wr):
     # set to None. It can also be called from another thread. So we need to
     # pre-emptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
-    acquire, handlers = _acquireLock, _handlerList
+    acquire, handlers = _acquireModuleLock, _handlerList
     if acquire and handlers:
         with acquire():
             try:
