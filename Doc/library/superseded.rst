@@ -10,4 +10,5 @@ backwards compatibility. They have been superseded by other modules.
 
 .. toctree::
 
+   getopt.rst
    optparse.rst
