@@ -32,13 +32,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - name: "Run patchcheck"
         run: |
           git fetch origin
+          git checkout "${{ github.head_ref }}"
           python Tools/patchcheck/patchcheck.py --ci true
