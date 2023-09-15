@@ -26,8 +26,6 @@ jobs:
 
   steps:
   - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
 
 
 - job: Windows_PR_Tests
