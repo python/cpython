@@ -696,7 +696,7 @@ class MiscReadTestBase(CommonReadTest):
         # Extracting a file as non-root should skip the sticky bit (gh-108948)
         # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
         # we need to take care that any other error is preserved.
-        mode = "-rw-rw-rwt"
+        mode = "-rwxrwxrwt"
         with ArchiveMaker() as arc:
             arc.add("sticky1", mode=mode)
             arc.add("sticky2", mode=mode)
@@ -708,7 +708,7 @@ class MiscReadTestBase(CommonReadTest):
             # this should not raise:
             tar.extract("sticky1", DIR)
             got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
-            expected_mode = "-rw-rw-rw-" if os.geteuid() != 0 else "-rw-rw-rwt"
+            expected_mode = "-rwxrwxrwx" if os.geteuid() != 0 else "-rwxrwxrwt"
             self.assertEqual(got_mode, expected_mode)
 
             # but we can create a situation where it does raise:
