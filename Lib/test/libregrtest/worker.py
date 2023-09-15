@@ -25,7 +25,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     if python_cmd is not None:
         executable = python_cmd
     else:
-        executable = [sys.executable]
+        executable = (sys.executable,)
     cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
