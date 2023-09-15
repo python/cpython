@@ -160,7 +160,7 @@ def addLevelName(level, levelName):
 
     This is used when converting levels to text during message formatting.
     """
-    with _acquireLock():
+    with _acquireModuleLock():
         _levelToName[level] = levelName
         _nameToLevel[levelName] = level
 
@@ -230,19 +230,38 @@ def _checkLevel(level):
 _lock = threading.RLock()
 
 
-@contextmanager
 def _acquireLock():
     """
     Acquire the module-level lock for serializing access to shared data.
+
+    This should be released with _releaseLock().
     """
     if _lock:
         try:
             _lock.acquire()
-            yield
         except BaseException:
-            raise
-        finally:
             _lock.release()
+            raise
+
+
+def _releaseLock():
+    """
+    Release the module-level lock acquired by calling _acquireLock().
+    """
+    if _lock:
+        _lock.release()
+
+
+@contextmanager
+def _acquireModuleLock():
+    """
+    Acquire the module-level lock using a context manager for serializing access to shared data.
+    """
+    try:
+        _acquireLock()
+        yield
+    finally:
+        _releaseLock()
 
 
 # Prevent a held logging lock from blocking a child from logging.
@@ -257,20 +276,20 @@ else:
     _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
     def _register_at_fork_reinit_lock(instance):
-        with _acquireLock():
+        with _acquireModuleLock():
             _at_fork_reinit_lock_weakset.add(instance)
 
     def _after_at_fork_child_reinit_locks():
         for handler in _at_fork_reinit_lock_weakset:
             handler._at_fork_reinit()
 
-        # _lock.acquire() was called in the parent before forking.
+        # _acquireLock() was called in the parent before forking.
         # The lock is reinitialized to unlocked state.
         _lock._at_fork_reinit()
 
-    os.register_at_fork(before=_lock.acquire,
+    os.register_at_fork(before=_acquireLock,
                         after_in_child=_after_at_fork_child_reinit_locks,
-                        after_in_parent=_lock.release)
+                        after_in_parent=_releaseLock)
 
 
 #---------------------------------------------------------------------------
@@ -885,7 +904,7 @@ def _addHandlerRef(handler):
     """
     Add a handler to the internal cleanup list using a weak reference.
     """
-    with _acquireLock():
+    with _acquireModuleLock():
         _handlerList.append(weakref.ref(handler, _removeHandlerRef))
 
 
@@ -931,7 +950,7 @@ class Handler(Filterer):
         return self._name
 
     def set_name(self, name):
-        with _acquireLock():
+        with _acquireModuleLock():
             if self._name in _handlers:
                 del _handlers[self._name]
             self._name = name
@@ -1040,7 +1059,7 @@ class Handler(Filterer):
         methods.
         """
         #get the module data lock, as we're updating a shared structure.
-        with _acquireLock():
+        with _acquireModuleLock():
             self._closed = True
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
@@ -1370,7 +1389,7 @@ class Manager(object):
         rv = None
         if not isinstance(name, str):
             raise TypeError('A logger name must be a string')
-        with _acquireLock():
+        with _acquireModuleLock():
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
                 if isinstance(rv, PlaceHolder):
@@ -1447,7 +1466,7 @@ class Manager(object):
         Called when level changes are made
         """
 
-        with _acquireLock():
+        with _acquireModuleLock():
             for logger in self.loggerDict.values():
                 if isinstance(logger, Logger):
                     logger._cache.clear()
@@ -1676,7 +1695,7 @@ class Logger(Filterer):
         """
         Add the specified handler to this logger.
         """
-        with _acquireLock():
+        with _acquireModuleLock():
             if not (hdlr in self.handlers):
                 self.handlers.append(hdlr)
 
@@ -1684,7 +1703,7 @@ class Logger(Filterer):
         """
         Remove the specified handler from this logger.
         """
-        with _acquireLock():
+        with _acquireModuleLock():
             if hdlr in self.handlers:
                 self.handlers.remove(hdlr)
 
@@ -1764,7 +1783,7 @@ class Logger(Filterer):
         try:
             return self._cache[level]
         except KeyError:
-            with _acquireLock():
+            with _acquireModuleLock():
                 if self.manager.disable >= level:
                     is_enabled = self._cache[level] = False
                 else:
@@ -1800,7 +1819,7 @@ class Logger(Filterer):
             return 1 + logger.name.count('.')
 
         d = self.manager.loggerDict
-        with _acquireLock():
+        with _acquireModuleLock():
             # exclude PlaceHolders - the last check is to ensure that lower-level
             # descendants aren't returned - if there are placeholders, a logger's
             # parent field might point to a grandparent or ancestor thereof.
@@ -2065,7 +2084,7 @@ def basicConfig(**kwargs):
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
-    with _acquireLock():
+    with _acquireModuleLock():
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
         errors = kwargs.pop('errors', 'backslashreplace')

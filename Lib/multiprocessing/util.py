@@ -64,7 +64,7 @@ def get_logger():
     global _logger
     import logging
 
-    with logging._acquireLock():
+    with logging._acquireModuleLock():
         if not _logger:
 
             _logger = logging.getLogger(LOGGER_NAME)
