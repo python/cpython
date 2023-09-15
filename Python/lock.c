@@ -4,6 +4,7 @@
 
 #include "pycore_lock.h"
 #include "pycore_parking_lot.h"
+#include "pycore_semaphore.h"
 
 #ifdef MS_WINDOWS
 #define WIN32_LEAN_AND_MEAN
@@ -185,14 +186,14 @@ _PyMutex_UnlockSlow(PyMutex *m)
 // thread waiting on the mutex, directly in the mutex itself.
 struct raw_mutex_entry {
     struct raw_mutex_entry *next;
-    _PySemaphore *sema;
+    _PySemaphore sema;
 };
 
 void
 _PyRawMutex_LockSlow(_PyRawMutex *m)
 {
     struct raw_mutex_entry waiter;
-    waiter.sema = _PySemaphore_Alloc();
+    _PySemaphore_Init(&waiter.sema);
 
     uintptr_t v = _Py_atomic_load_uintptr(&m->v);
     for (;;) {
@@ -213,10 +214,10 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
         // Wait for us to be woken up. Note that we still have to lock the
         // mutex ourselves: it is NOT handed off to us.
-        _PySemaphore_Wait(waiter.sema, -1, /*detach=*/0);
+        _PySemaphore_Wait(&waiter.sema, -1, /*detach=*/0);
     }
 
-    _PySemaphore_Free(waiter.sema);
+    _PySemaphore_Destroy(&waiter.sema);
 }
 
 void
@@ -232,7 +233,7 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
         if (waiter) {
             uintptr_t next_waiter = (uintptr_t)waiter->next;
             if (_Py_atomic_compare_exchange_uintptr(&m->v, &v, next_waiter)) {
-                _PySemaphore_Wakeup(waiter->sema);
+                _PySemaphore_Wakeup(&waiter->sema);
                 return;
             }
         }

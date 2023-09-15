@@ -1810,6 +1810,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_semaphore.h \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \

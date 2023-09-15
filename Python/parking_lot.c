@@ -5,35 +5,8 @@
 #include "pycore_parking_lot.h"
 #include "pycore_pyerrors.h"    // _Py_FatalErrorFormat
 #include "pycore_pystate.h"     // _PyThreadState_GET
+#include "pycore_semaphore.h"   // _PySemaphore
 
-#ifdef MS_WINDOWS
-#   define WIN32_LEAN_AND_MEAN
-#   include <windows.h>
-#elif (defined(_POSIX_SEMAPHORES) && !defined(HAVE_BROKEN_POSIX_SEMAPHORES) && \
-     defined(HAVE_SEM_TIMEDWAIT))
-#   define USE_SEMAPHORES
-#   include <semaphore.h>
-#elif defined(HAVE_PTHREAD_H)
-#   include <pthread.h>
-#elif defined(HAVE_PTHREAD_STUBS)
-#   include "cpython/pthread_stubs.h"
-#else
-#   error "Require native threads. See https://bugs.python.org/issue31370"
-#endif
-
-// A simple, cross-platform binary semaphore that can be used to implement
-// wakeup/sleep.
-struct _PySemaphore {
-#if defined(MS_WINDOWS)
-    HANDLE platform_sem;
-#elif defined(USE_SEMAPHORES)
-    sem_t platform_sem;
-#else
-    PyMUTEX_T mutex;
-    PyCOND_T cond;
-    int counter;
-#endif
-};
 
 typedef struct {
     // The mutex protects the waiter queue and the num_waiters counter.
@@ -47,31 +20,16 @@ typedef struct {
 struct wait_entry {
     struct _PyUnpark unpark;
     uintptr_t addr;
-    _PySemaphore *sema;
+    _PySemaphore sema;
     struct llist_node node;
 };
-
-#define MAX_SEMA_DEPTH 3
-
-typedef struct {
-    Py_ssize_t refcount;
-
-    int depth;
-    _PySemaphore semas[MAX_SEMA_DEPTH];
-} ThreadData;
 
 #define NUM_BUCKETS 251
 
 // Table of waiters (hashed by address)
 static Bucket buckets[NUM_BUCKETS];
 
-#ifdef HAVE_THREAD_LOCAL
-static _Py_thread_local ThreadData *thread_data = NULL;
-#else
-#error "no supported thread-local variable storage classifier"
-#endif
-
-static void
+void
 _PySemaphore_Init(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
@@ -84,7 +42,7 @@ _PySemaphore_Init(_PySemaphore *sema)
     if (!sema->platform_sem) {
         Py_FatalError("parking_lot: CreateSemaphore failed");
     }
-#elif defined(USE_SEMAPHORES)
+#elif defined(_Py_USE_SEMAPHORES)
     if (sem_init(&sema->platform_sem, /*pshared=*/0, /*value=*/0) < 0) {
         Py_FatalError("parking_lot: sem_init failed");
     }
@@ -95,15 +53,16 @@ _PySemaphore_Init(_PySemaphore *sema)
     if (pthread_cond_init(&sema->cond, NULL)) {
         Py_FatalError("parking_lot: pthread_cond_init failed");
     }
+    sema->counter = 0;
 #endif
 }
 
-static void
+void
 _PySemaphore_Destroy(_PySemaphore *sema)
 {
 #if defined(MS_WINDOWS)
     CloseHandle(sema->platform_sem);
-#elif defined(USE_SEMAPHORES)
+#elif defined(_Py_USE_SEMAPHORES)
     sem_destroy(&sema->platform_sem);
 #else
     pthread_mutex_destroy(&sema->mutex);
@@ -131,7 +90,7 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     else if (wait == WAIT_TIMEOUT) {
         res = Py_PARK_TIMEOUT;
     }
-#elif defined(USE_SEMAPHORES)
+#elif defined(_Py_USE_SEMAPHORES)
     int err;
     if (timeout >= 0) {
         struct timespec ts;
@@ -218,7 +177,7 @@ _PySemaphore_Wakeup(_PySemaphore *sema)
     if (!ReleaseSemaphore(sema->platform_sem, 1, NULL)) {
         Py_FatalError("parking_lot: ReleaseSemaphore failed");
     }
-#elif defined(USE_SEMAPHORES)
+#elif defined(_Py_USE_SEMAPHORES)
     int err = sem_post(&sema->platform_sem);
     if (err != 0) {
         Py_FatalError("parking_lot: sem_post failed");
@@ -229,72 +188,6 @@ _PySemaphore_Wakeup(_PySemaphore *sema)
     pthread_cond_signal(&sema->cond);
     pthread_mutex_unlock(&sema->mutex);
 #endif
-}
-
-_PySemaphore *
-_PySemaphore_Alloc(void)
-{
-    // Make sure we have a valid thread_data. We need to acquire
-    // some locks before we have a fully initialized PyThreadState.
-    _PyParkingLot_InitThread();
-
-    ThreadData *this_thread = thread_data;
-    if (this_thread->depth >= MAX_SEMA_DEPTH) {
-        Py_FatalError("_PySemaphore_Alloc(): too many calls");
-    }
-    return &this_thread->semas[this_thread->depth++];
-}
-
-void
-_PySemaphore_Free(_PySemaphore *sema)
-{
-    ThreadData *this_thread = thread_data;
-    this_thread->depth--;
-    if (&this_thread->semas[this_thread->depth] != sema) {
-        Py_FatalError("_PySemaphore_Free(): mismatch wakeup");
-    }
-    _PyParkingLot_DeinitThread();
-}
-
-void
-_PyParkingLot_InitThread(void)
-{
-    if (thread_data != NULL) {
-        thread_data->refcount++;
-        return;
-    }
-    ThreadData *this_thread = PyMem_RawMalloc(sizeof(ThreadData));
-    if (this_thread == NULL) {
-        Py_FatalError("_PyParkingLot_InitThread: unable to allocate thread data");
-    }
-    memset(this_thread, 0, sizeof(*this_thread));
-    this_thread->refcount = 1;
-    this_thread->depth = 0;
-    for (int i = 0; i < MAX_SEMA_DEPTH; i++) {
-        _PySemaphore_Init(&this_thread->semas[i]);
-    }
-    thread_data = this_thread;
-}
-
-void
-_PyParkingLot_DeinitThread(void)
-{
-    ThreadData *td = thread_data;
-    if (td == NULL) {
-        return;
-    }
-
-    if (--td->refcount != 0) {
-        assert(td->refcount > 0);
-        return;
-    }
-
-    thread_data = NULL;
-    for (int i = 0; i < MAX_SEMA_DEPTH; i++) {
-        _PySemaphore_Destroy(&td->semas[i]);
-    }
-
-    PyMem_RawFree(td);
 }
 
 static void
@@ -379,11 +272,11 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         _PyRawMutex_Unlock(&bucket->mutex);
         return Py_PARK_AGAIN;
     }
-    wait.sema = _PySemaphore_Alloc();
+    _PySemaphore_Init(&wait.sema);
     enqueue(bucket, addr, &wait);
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    int res = _PySemaphore_Wait(wait.sema, timeout_ns, detach);
+    int res = _PySemaphore_Wait(&wait.sema, timeout_ns, detach);
     if (res == Py_PARK_OK) {
         goto done;
     }
@@ -395,7 +288,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
         // We've been removed the waiter queue. Wait until we process the
         // wakeup signal.
         do {
-            res = _PySemaphore_Wait(wait.sema, -1, detach);
+            res = _PySemaphore_Wait(&wait.sema, -1, detach);
         } while (res != Py_PARK_OK);
         goto done;
     }
@@ -406,7 +299,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
     _PyRawMutex_Unlock(&bucket->mutex);
 
 done:
-    _PySemaphore_Free(wait.sema);
+    _PySemaphore_Destroy(&wait.sema);
     return res;
 
 }
@@ -439,7 +332,7 @@ _PyParkingLot_FinishUnpark(const void *addr, struct _PyUnpark *unpark)
         struct wait_entry *waiter;
         waiter = container_of(unpark, struct wait_entry, unpark);
 
-        _PySemaphore_Wakeup(waiter->sema);
+        _PySemaphore_Wakeup(&waiter->sema);
     }
 }
 
@@ -457,7 +350,7 @@ _PyParkingLot_UnparkAll(const void *addr)
     llist_for_each_safe(node, &head) {
         struct wait_entry *waiter = llist_data(node, struct wait_entry, node);
         llist_remove(node);
-        _PySemaphore_Wakeup(waiter->sema);
+        _PySemaphore_Wakeup(&waiter->sema);
     }
 }
 

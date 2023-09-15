@@ -18,7 +18,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_time.h"          // _PyTime_t
+#include "pycore_time.h"        // _PyTime_t
 
 
 enum {
@@ -108,33 +108,8 @@ _PyParkingLot_FinishUnpark(const void *address, struct _PyUnpark *unpark);
 // Unparks all threads waiting on `address`.
 PyAPI_FUNC(void) _PyParkingLot_UnparkAll(const void *address);
 
-// Initialize/deinitialize the thread-local state used by parking lot.
-void _PyParkingLot_InitThread(void);
-void _PyParkingLot_DeinitThread(void);
-
 // Resets the parking lot state after a fork. Forgets all parked threads.
 PyAPI_FUNC(void) _PyParkingLot_AfterFork(void);
-
-
-// The _PySemaphore API a simplified cross-platform semaphore used to implement
-// parking lot. It is not intended to be used directly by other modules.
-typedef struct _PySemaphore _PySemaphore;
-
-// Puts the current thread to sleep until _PySemaphore_Wakeup() is called.
-// If `detach` is true, then the thread will detach/release the GIL while
-// sleeping.
-PyAPI_FUNC(int)
-_PySemaphore_Wait(_PySemaphore *sema, _PyTime_t timeout_ns, int detach);
-
-// Wakes up a single thread waiting on sema. Note that _PySemaphore_Wakeup()
-// can be called before _PySemaphore_Wait().
-PyAPI_FUNC(void)
-_PySemaphore_Wakeup(_PySemaphore *sema);
-
-// Allocates/releases a semaphore from the thread-local pool.
-PyAPI_FUNC(_PySemaphore *) _PySemaphore_Alloc(void);
-PyAPI_FUNC(void) _PySemaphore_Free(_PySemaphore *sema);
-
 
 #ifdef __cplusplus
 }

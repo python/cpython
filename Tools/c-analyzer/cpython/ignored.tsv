@@ -176,7 +176,6 @@ Python/pyfpe.c	-	PyFPE_counter	-
 
 Python/import.c	-	pkgcontext	-
 Python/pystate.c	-	_Py_tss_tstate	-
-Python/parking_lot.c	-	thread_data	-
 
 ##-----------------------
 ## should be const

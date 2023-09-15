@@ -272,6 +272,7 @@
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h" />
+    <ClInclude Include="..\Include\internal\pycore_semaphore.h" />
     <ClInclude Include="..\Include\internal\pycore_setobject.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
