@@ -1041,10 +1041,8 @@ static int
 on_pre_input_hook(void)
 {
 #elif defined(__APPLE__) && defined(WITH_APPLE_EDITLINE)
-on_pre_input_hook(const char *text, int state)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 {
-  (void)text;
-  (void)state;
 #else
 on_pre_input_hook(void)
 {
