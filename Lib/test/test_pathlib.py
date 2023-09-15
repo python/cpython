@@ -2241,6 +2241,7 @@ class DummyPathTest(unittest.TestCase):
         self.assertEqual((P / 'brokenLink').readlink(),
                          self.cls('non-existing'))
         self.assertEqual((P / 'linkB').readlink(), self.cls('dirB'))
+        self.assertEqual((P / 'linkB' / 'linkD').readlink(), self.cls('../dirB'))
         with self.assertRaises(OSError):
             (P / 'fileA').readlink()
 
@@ -2262,11 +2263,18 @@ class DummyPathTest(unittest.TestCase):
         if not self.can_symlink:
             self.skipTest("symlinks required")
         P = self.cls
+        # Non-existent file
         p = P(BASE, 'foo')
-        with self.assertRaises(OSError) as cm:
+        with self.assertRaises(FileNotFoundError) as cm:
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
+        # File treated as directory
+        p = P(BASE, 'fileA', 'fileB')
+        with self.assertRaises(NotADirectoryError) as cm:
+            p.resolve(strict=True)
+        self.assertEqual(cm.exception.errno, errno.ENOTDIR)
         # Non-strict
+        p = P(BASE, 'foo')
         self.assertEqualNormCase(str(p.resolve(strict=False)),
                                  os.path.join(BASE, 'foo'))
         p = P(BASE, 'foo', 'in', 'spam')
@@ -2575,7 +2583,7 @@ class DummyPathTest(unittest.TestCase):
 
 class DummyPathWithSymlinks(DummyPath):
     def readlink(self):
-        path = str(self)
+        path = str(self.parent.resolve() / self.name)
         if path in self._symlinks:
             return self.with_segments(self._symlinks[path])
         elif path in self._files or path in self._directories:

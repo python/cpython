@@ -305,6 +305,11 @@ class PurePath:
         # The `_hash` slot stores the hash of the case-normalized string
         # path. It's set when `__hash__()` is called for the first time.
         '_hash',
+
+        # The '_resolving' slot stores a boolean indicating whether the path
+        # is being processed by `_PathBase.resolve()`. This prevents duplicate
+        # work from occurring when `resolve()` calls `stat()` or `readlink()`.
+        '_resolving',
     )
     pathmod = os.path
 
@@ -344,6 +349,7 @@ class PurePath:
                         f"not {type(path).__name__!r}")
                 paths.append(path)
         self._raw_paths = paths
+        self._resolving = False
 
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -704,7 +710,9 @@ class PurePath:
         tail = self._tail
         if not tail:
             return self
-        return self._from_parsed_parts(drv, root, tail[:-1])
+        path = self._from_parsed_parts(drv, root, tail[:-1])
+        path._resolving = self._resolving
+        return path
 
     @property
     def parents(self):
@@ -1251,63 +1259,64 @@ class _PathBase(PurePath):
         Make the path absolute, resolving all symlinks on the way and also
         normalizing it.
         """
+        if self._resolving:
+            return self
         try:
             path = self.absolute()
-            tail_idx = len(path._tail) - len(self._tail)
         except UnsupportedOperation:
             path = self
-            tail_idx = 0
-        if not path._tail:
-            return path
-        drv = path.drive
-        root = path.root
-        tail = list(path._tail)
-        dirty = False
+
+        def split(path):
+            return path._from_parsed_parts(path.drive, path.root, []), path._tail[::-1]
+
         link_count = 0
-        readlink_supported = True
-        while tail_idx < len(tail):
-            if tail[tail_idx] == '..':
-                if tail_idx == 0:
-                    if root:
-                        # Delete '..' part immediately following root.
-                        del tail[tail_idx]
-                        dirty = True
+        stat_cache = {}
+        target_cache = {}
+        path, parts = split(path)
+        while parts:
+            part = parts.pop()
+            if part == '..':
+                if not path._tail:
+                    if path.root:
+                        # Delete '..' segment immediately following root
                         continue
-                elif tail[tail_idx - 1] != '..':
-                    # Delete '..' part and its predecessor.
-                    tail_idx -= 1
-                    del tail[tail_idx:tail_idx + 2]
-                    dirty = True
+                elif path._tail[-1] != '..':
+                    # Delete '..' segment and its predecessor
+                    path = path.parent
                     continue
-            elif readlink_supported:
-                link = self._from_parsed_parts(drv, root, tail[:tail_idx + 1])
+                path = path._make_child_relpath(part)
+            else:
+                lookup_path = path
+                path = path._make_child_relpath(part)
+                path._resolving = True
+                path_str = str(path)
                 try:
-                    link_target = link.readlink()
-                except UnsupportedOperation:
-                    readlink_supported = False
-                except OSError as e:
-                    if e.errno != EINVAL:
-                        if strict:
-                            raise
-                        else:
-                            break
-                else:
-                    link_count += 1
-                    if link_count >= _MAX_SYMLINKS:
-                        raise OSError(ELOOP, "Too many symbolic links in path", path)
-                    elif link_target.root or link_target.drive:
-                        link_target = link.parent / link_target
-                        drv = link_target.drive
-                        root = link_target.root
-                        tail[:tail_idx + 1] = link_target._tail
-                        tail_idx = 0
+                    st = stat_cache.get(path_str)
+                    if st is None:
+                        st = stat_cache[path_str] = path.stat(follow_symlinks=False)
+                    if S_ISLNK(st.st_mode):
+                        # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
+                        # encountered during resolution.
+                        link_count += 1
+                        if link_count >= _MAX_SYMLINKS:
+                            raise OSError(ELOOP, "Too many symbolic links in path", path_str)
+                        target = target_cache.get(path_str)
+                        if target is None:
+                            target = target_cache[path_str] = path.readlink()
+                        target, target_parts = split(target)
+                        path = target if target.root else lookup_path
+                        parts.extend(target_parts)
+                    elif parts and not S_ISDIR(st.st_mode):
+                        raise NotADirectoryError(ENOTDIR, "Not a directory", path_str)
+                except OSError:
+                    if strict:
+                        raise
                     else:
-                        tail[tail_idx:tail_idx + 1] = link_target._tail
-                    dirty = True
-                    continue
-            tail_idx += 1
-        if dirty:
-            path = self._from_parsed_parts(drv, root, tail)
+                        # Append remaining path segments without further processing.
+                        for part in reversed(parts):
+                            path = path._make_child_relpath(part)
+                        break
+        path._resolving = False
         return path
 
     def symlink_to(self, target, target_is_directory=False):
