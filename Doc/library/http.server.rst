@@ -505,7 +505,7 @@ following command runs an HTTP/1.1 conformant server::
    .. deprecated-removed:: 3.13 3.15
 
       :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
-      been considered a good way to do things for well over a decade, this code
+      been considered a good way to do things for well over a decade. This code
       has been unmaintained for a while now and sees very little practical use.
       Retaining it could lead to further :ref:`security considerations
       <http.server-security>`.
