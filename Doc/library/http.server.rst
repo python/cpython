@@ -515,10 +515,10 @@ the ``--cgi`` option::
 
         python -m http.server --cgi
 
-   .. deprecated-removed:: 3.13 3.15
+.. deprecated-removed:: 3.13 3.15
 
-      :mod:`http.server` command line ``--cgi`` support is being removed
-      because :class:`CGIHTTPRequestHandler` is being removed.
+   :mod:`http.server` command line ``--cgi`` support is being removed
+   because :class:`CGIHTTPRequestHandler` is being removed.
 
 .. _http.server-security:
 
