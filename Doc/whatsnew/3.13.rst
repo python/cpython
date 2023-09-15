@@ -151,6 +151,12 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+ipaddress
+---------
+
+* Add a `ipv6_mapped` property to :class:`ipaddress.IPV4Address` objects.
+  (Contributed by Charles Machalow in :gh:`109466`.)
+
 opcode
 ------
 
