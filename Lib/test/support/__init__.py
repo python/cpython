@@ -18,6 +18,7 @@ import time
 import types
 import unittest
 import warnings
+from collections.abc import Callable
 
 from .testresult import get_test_runner
 
@@ -183,12 +184,12 @@ def get_attribute(obj, name):
     else:
         return attribute
 
-verbose = 1              # Flag set to 0 by regrtest.py
-use_resources = None     # Flag set to [] by regrtest.py
-max_memuse = 0           # Disable bigmem tests (they will still be run with
-                         # small sizes, to make sure they work.)
+verbose = 1                                     # Flag set to 0 by regrtest.py
+use_resources: tuple[str, ...] | None = None    # Flag set to a tuple by regrtest.py
+max_memuse = 0                                  # Disable bigmem tests (they will still be run with
+                                                # small sizes, to make sure they work.)
 real_max_memuse = 0
-junit_xml_list = None    # list of testsuite XML elements
+junit_xml_list: list | None = None              # list of testsuite XML elements
 failfast = False
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
@@ -1325,6 +1326,18 @@ def flush_std_streams():
         sys.stderr.flush()
 
 
+class WarningsPrinter:
+    def __init__(self, func: Callable[[str], None]) -> None:
+        self.func = func
+        # bpo-39983: Store the original sys.stderr at Python startup to be able to
+        # log warnings even if sys.stderr is captured temporarily by a test.
+        self.orig_stderr = sys.stderr
+
+    def __call__(self, msg: str) -> None:
+        return self.func(msg)
+
+
+@WarningsPrinter
 def print_warning(msg):
     # bpo-45410: Explicitly flush stdout to keep logs in order
     flush_std_streams()
@@ -1332,10 +1345,6 @@ def print_warning(msg):
     for line in msg.splitlines():
         print(f"Warning -- {line}", file=stream)
     stream.flush()
-
-# bpo-39983: Store the original sys.stderr at Python startup to be able to
-# log warnings even if sys.stderr is captured temporarily by a test.
-print_warning.orig_stderr = sys.stderr
 
 
 # Flag used by saved_test_environment of test.libregrtest.save_env,
