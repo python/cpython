@@ -2764,7 +2764,7 @@ funny:
 # Perform some verification checks on any modified files.
 .PHONY: patchcheck
 patchcheck: all
-	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/patchcheck.py
+	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/patchcheck.py $(ARGS)
 
 .PHONY: check-limited-abi
 check-limited-abi: all
