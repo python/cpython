@@ -7,6 +7,8 @@
 #include "pycore_pystate.h"     // _PyThreadState_GET
 #include "pycore_semaphore.h"   // _PySemaphore
 
+#include <stdbool.h>
+
 
 typedef struct {
     // The mutex protects the waiter queue and the num_waiters counter.
@@ -22,6 +24,7 @@ struct wait_entry {
     uintptr_t addr;
     _PySemaphore sema;
     struct llist_node node;
+    bool is_unparking;
 };
 
 // Prime number to avoid correlations with memory addresses.
@@ -270,9 +273,11 @@ int
 _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
                    _PyTime_t timeout_ns, void *arg, int detach)
 {
-    struct wait_entry wait;
-    wait.unpark.arg = arg;
-    wait.addr = (uintptr_t)addr;
+    struct wait_entry wait = {
+        .unpark.arg = arg,
+        .addr = (uintptr_t)addr,
+        .is_unparking = false,
+    };
 
     Bucket *bucket = &buckets[((uintptr_t)addr) % NUM_BUCKETS];
 
@@ -292,9 +297,9 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
 
     // timeout or interrupt
     _PyRawMutex_Lock(&bucket->mutex);
-    if (wait.node.next == NULL) {
+    if (wait.is_unparking) {
         _PyRawMutex_Unlock(&bucket->mutex);
-        // We've been removed the waiter queue. Wait until we process the
+        // Another thread has started to unpark us. Wait until we process the
         // wakeup signal.
         do {
             res = _PySemaphore_Wait(&wait.sema, -1, detach);
@@ -324,6 +329,7 @@ _PyParkingLot_BeginUnpark(const void *addr)
         return NULL;
     }
 
+    waiter->is_unparking = true;
     waiter->unpark.has_more_waiters = (bucket->num_waiters > 0);
     return &waiter->unpark;
 }
