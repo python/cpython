@@ -225,7 +225,6 @@ class ObjectParser:
         self.reader = reader
         self.dumper = dumper
         self.data_size = 0
-        self.data = []
         self.code_size = 0
 
     async def parse(self):
@@ -268,8 +267,7 @@ class ObjectParser:
             holes.append(newhole)
         offset = got-self.data_size-padding
         comment = "#"
-        assert self.body[got-self.data_size-padding:got-padding] == bytes(self.data), breakpoint()
-        assert self.data_size == got - padding - offset, breakpoint()
+        assert self.data_size == got - padding - offset, (self.path, self.data_size, got, padding, offset)
         if self.data_size:
             disassembly.append(f"{offset:x}: " + f"{comment} {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}".expandtabs())
             disassembly.append(f"{offset:x}: " + f"{' '.join(f'{byte:02x}' for byte in self.body[offset:offset + self.data_size])}".expandtabs())
@@ -755,18 +753,15 @@ class ObjectParserMachO(ObjectParser):
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         if flags & {"SomeInstructions"}:
             assert not self.data_size
-            assert not self.data
             self.code_size += len(section_data["Bytes"]) + (section["Address"] - len(self.body))
             self.body.extend([0] * (section["Address"] - len(self.body)))
             before = self.body_offsets[section["Index"]] = section["Address"]
             self.body.extend(section_data["Bytes"])
         else:
             self.data_size += section["Address"] - len(self.body)
-            self.data.extend([0] * (section["Address"] - len(self.body)))
             self.body.extend([0] * (section["Address"] - len(self.body)))
             before = self.body_offsets[section["Index"]] = section["Address"]
             self.data_size += len(section_data["Bytes"])
-            self.data.extend(section_data["Bytes"])
             self.body.extend(section_data["Bytes"])
         name = section["Name"]["Value"]
         # assert name.startswith("_")  # XXX
