@@ -465,6 +465,44 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
+    @support.requires_subprocess()
+    def test_customization_modules_on_startup(self):
+        # Check that sitecustomize and or usercustomize are executed on startup
+        mod_info = [
+            # func to get directory, file base name
+            ('getusersitepackages', 'usercustomize'),
+            ('getsitepackages', 'sitecustomize')
+        ]
+
+        for func_name, module_name in mod_info:
+            # getusersitepackages returns a string.. getsitepackages returns a list..
+            # handle either way.
+            base_path = getattr(site, func_name)()
+            if not isinstance(base_path, str):
+                base_path = base_path[0]
+
+            customize_path = os.path.join(base_path, f'{module_name}.py')
+            if os.path.exists(customize_path):
+                # backup old sitecustomize.py
+                oldcustomize_path = customize_path + '.old'
+                if os.path.exists(oldcustomize_path):
+                    os.remove(oldcustomize_path)
+                os.rename(customize_path, oldcustomize_path)
+                self.addCleanup(os.rename, oldcustomize_path, customize_path)
+
+            self.addCleanup(os.remove, customize_path)
+
+            eyecatcher = 'EXECUTED'
+
+            with open(customize_path, 'w') as f:
+                f.write(f'print("{eyecatcher}")')
+
+            output = subprocess.check_output(f'{sys.executable} -c ""')
+            self.assertIn(eyecatcher, output.decode('utf-8'))
+
+            output = subprocess.check_output(f'{sys.executable} -S -c ""')
+            self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
     @test.support.requires_resource('network')
