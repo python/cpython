@@ -212,7 +212,7 @@ class ObjectParser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, reader: str, mc: str | None = None, symbol_prefix: str = "") -> None:
+    def __init__(self, path: pathlib.Path, reader: str, dumper: str, symbol_prefix: str = "") -> None:
         self.path = path
         self.body = bytearray()
         self.body_symbols = {}
@@ -223,11 +223,19 @@ class ObjectParser:
         self.relocations_todo = []
         self.symbol_prefix = symbol_prefix
         self.reader = reader
-        self.mc = mc
+        self.dumper = dumper
         self.data_size = 0
+        self.data = []
+        self.code_size = 0
 
     async def parse(self):
-        # subprocess.run([find_llvm_tool("llvm-objdump")[0], self.path, "-dr"], check=True)  # XXX
+        process = await asyncio.create_subprocess_exec(self.dumper, self.path, "--disassemble", "--reloc", stdout=subprocess.PIPE)
+        stdout, stderr = await process.communicate()
+        assert stderr is None, stderr
+        if process.returncode:
+            raise RuntimeError(f"{self.dumper} exited with {process.returncode}")
+        disassembly = [line.lstrip().expandtabs() for line in stdout.decode().splitlines()]
+        disassembly = [line for line in disassembly if re.match(r"[0-9a-f]+[: ]", line)]
         process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
@@ -258,34 +266,17 @@ class ObjectParser:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
                 newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
             holes.append(newhole)
-        if self.mc is not None:
-            process = await asyncio.create_subprocess_exec(self.mc, "--disassemble", "--show-encoding", stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            stdout, stderr = await process.communicate(" ".join(f'0x{byte:02x}' for byte in self.body[:got - padding - self.data_size]).encode())
-            if process.returncode:
-                raise RuntimeError(f"{self.mc} exited with {process.returncode}")
-            disassembly = [line.removeprefix("\t").expandtabs() for line in stdout.decode().splitlines()]
-            assert disassembly[0].startswith(".")
-            del disassembly[0]
-        else:
-            disassembly = [f"# <code>\t\t\t\t# encoding: [{','.join(f'0x{byte:02x}' for byte in self.body[:got - padding - self.data_size])}]".expandtabs()]
-        offset = 0
-        size = 0
-        comment = None
-        for i, line in enumerate(disassembly):
-            if match := re.search(r"(#|;|//) encoding: \[((?:(0x[0-9a-f]{2}|A),?)+)\]", line):
-                offset += size
-            disassembly[i] = f"{offset:03x}: {line}"
-            if match:
-                comment = match.group(1)
-                size = len(match.group(2).split(","))
-        offset += size
-        assert self.data_size == got - padding - offset, (self.data_size, got, padding, offset)
+        offset = got-self.data_size-padding
+        comment = "#"
+        assert self.body[got-self.data_size-padding:got-padding] == bytes(self.data), breakpoint()
+        assert self.data_size == got - padding - offset, breakpoint()
         if self.data_size:
-            disassembly.append(f"{offset:03x}: " + f"{comment} <data>\t\t\t\t{comment} encoding: [{','.join(f'0x{byte:02x}' for byte in self.body[offset:offset + self.data_size])}]".expandtabs())
-            disassembly.append(f"{offset:03x}: " + f"\t\t\t\t\t{comment} data = {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{comment} {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{' '.join(f'{byte:02x}' for byte in self.body[offset:offset + self.data_size])}".expandtabs())
             offset += self.data_size
         if padding:
-            disassembly.append(f"{offset:03x}: " + f"{comment} <padding>\t\t\t\t{comment} encoding: [{','.join(f'0x{byte:02x}' for byte in self.body[offset:offset + padding])}]".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{comment} <padding>".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{' '.join(padding * ['00'])}".expandtabs())
             offset += padding
         for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
@@ -294,8 +285,8 @@ class ObjectParser:
             # XXX: PATCH_ABS_32 on 32-bit platforms?
             holes.append(Hole("PATCH_ABS_64", got_symbol, got + 8 * i, addend))
             symbol_part = f"{comment} &{got_symbol}{f' + 0x{addend:x}' if addend else ''}"
-            tabs = "\t" * (5 - len(symbol_part) // 8)
-            disassembly.append(f"{offset:03x}: " + f"{symbol_part}{tabs}{comment} encoding: [{','.join(8 * ['0x00'])}]".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{symbol_part}".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{' '.join(8 * ['00'])}".expandtabs())
             offset += 8
         self.body.extend([0] * 8 * len(self.got_entries))
         padding = 0
@@ -303,7 +294,8 @@ class ObjectParser:
             self.body.append(0)
             padding += 1
         if padding:
-            disassembly.append(f"{offset:03x}: " + f"{comment} <padding>\t\t\t\t{comment} encoding: [{','.join(padding * ['0x00'])}]".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{comment} <padding>".expandtabs())
+            disassembly.append(f"{offset:x}: " + f"{' '.join(padding * ['00'])}".expandtabs())
             offset += padding
         holes.sort(key=lambda hole: hole.offset)
         assert offset == len(self.body), (self.path, offset, len(self.body))
@@ -728,21 +720,19 @@ class ObjectParserCOFF(ObjectParser):
         flags = {flag["Name"] for flag in section["Characteristics"]["Flags"]}
         if "SectionData" not in section:
             return
+        section_data = section["SectionData"]
         if flags & {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_EXECUTE", "IMAGE_SCN_MEM_READ", "IMAGE_SCN_MEM_WRITE"} == {"IMAGE_SCN_LINK_COMDAT", "IMAGE_SCN_MEM_READ"}:
             # XXX: Merge these
             self.data_size += len(section_data["Bytes"])
             before = self.body_offsets[section["Number"]] = len(self.body)
-            section_data = section["SectionData"]
             self.body.extend(section_data["Bytes"])
         elif flags & {"IMAGE_SCN_MEM_EXECUTE"}:
             assert not self.data_size, self.data_size
             before = self.body_offsets[section["Number"]] = len(self.body)
-            section_data = section["SectionData"]
             self.body.extend(section_data["Bytes"])
         elif flags & {"IMAGE_SCN_MEM_READ"}:
             self.data_size += len(section_data["Bytes"])
             before = self.body_offsets[section["Number"]] = len(self.body)
-            section_data = section["SectionData"]
             self.body.extend(section_data["Bytes"])
         else:
             return
@@ -765,13 +755,18 @@ class ObjectParserMachO(ObjectParser):
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         if flags & {"SomeInstructions"}:
             assert not self.data_size
+            assert not self.data
+            self.code_size += len(section_data["Bytes"]) + (section["Address"] - len(self.body))
             self.body.extend([0] * (section["Address"] - len(self.body)))
             before = self.body_offsets[section["Index"]] = section["Address"]
             self.body.extend(section_data["Bytes"])
         else:
-            self.data_size += len(section_data["Bytes"]) + (section["Address"] - len(self.body))
+            self.data_size += section["Address"] - len(self.body)
+            self.data.extend([0] * (section["Address"] - len(self.body)))
             self.body.extend([0] * (section["Address"] - len(self.body)))
             before = self.body_offsets[section["Index"]] = section["Address"]
+            self.data_size += len(section_data["Bytes"])
+            self.data.extend(section_data["Bytes"])
             self.body.extend(section_data["Bytes"])
         name = section["Name"]["Value"]
         # assert name.startswith("_")  # XXX
@@ -902,13 +897,8 @@ class Compiler:
         self._verbose = verbose
         self._clang, clang_version = find_llvm_tool("clang")
         self._readobj, readobj_version = find_llvm_tool("llvm-readobj")
-        try:
-            self._mc, mc_version = find_llvm_tool("llvm-mc")
-        except RuntimeError:
-            self._mc = None
-            self._stderr(f"Using {self._clang} ({clang_version}) and {self._readobj} ({readobj_version}).")
-        else:
-            self._stderr(f"Using {self._clang} ({clang_version}), {self._readobj} ({readobj_version}), and {self._mc} ({mc_version}).")
+        self._objdump, objdump_version = find_llvm_tool("llvm-objdump")
+        self._stderr(f"Using {self._clang} ({clang_version}), {self._readobj} ({readobj_version}), and {self._objdump} ({objdump_version}).")
         self._semaphore = asyncio.BoundedSemaphore(jobs)
         self._ghccc = ghccc
 
@@ -945,7 +935,7 @@ class Compiler:
                 assert stderr is None, stderr
                 if process.returncode:
                     raise RuntimeError(f"{self._clang} exited with {process.returncode}")
-                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj, self._mc).parse()
+                self._stencils_built[opname] = await ObjectParserDefault(o, self._readobj, self._objdump).parse()
 
     async def build(self) -> None:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
