@@ -107,6 +107,33 @@ sys_profile_call_or_return(
     Py_RETURN_NONE;
 }
 
+int
+_PyEval_SetOpcodeTrace(
+    PyFrameObject *frame,
+    bool enable
+) {
+    assert(frame != NULL);
+    assert(PyCode_Check(frame->f_frame->f_executable));
+
+    PyCodeObject *code = (PyCodeObject *)frame->f_frame->f_executable;
+    _PyMonitoringEventSet events = 0;
+    if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) == 0) {
+        if (enable) {
+            if (events & (1 << PY_MONITORING_EVENT_INSTRUCTION)) {
+                return 0;
+            }
+            events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
+        } else {
+            if (!(events & (1 << PY_MONITORING_EVENT_INSTRUCTION))) {
+                return 0;
+            }
+            events &= (~(1 << PY_MONITORING_EVENT_INSTRUCTION));
+        }
+        return _PyMonitoring_SetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, events);
+    }
+    return -1;
+}
+
 static PyObject *
 call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
 {
@@ -120,6 +147,12 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
                         "Missing frame when calling trace function.");
         return NULL;
     }
+    if (frame->f_trace_opcodes) {
+        if (_PyEval_SetOpcodeTrace(frame, true) != 0) {
+            return NULL;
+        }
+    }
+
     Py_INCREF(frame);
     int err = tstate->c_tracefunc(tstate->c_traceobj, frame, self->event, arg);
     Py_DECREF(frame);
@@ -211,6 +244,9 @@ sys_trace_instruction_func(
         return NULL;
     }
     if (!frame->f_trace_opcodes) {
+        if (_PyEval_SetOpcodeTrace(frame, false) != 0) {
+            return NULL;
+        }
         Py_RETURN_NONE;
     }
     Py_INCREF(frame);
@@ -505,8 +541,13 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             (1 << PY_MONITORING_EVENT_PY_UNWIND) | (1 << PY_MONITORING_EVENT_PY_THROW) |
             (1 << PY_MONITORING_EVENT_STOP_ITERATION) |
             (1 << PY_MONITORING_EVENT_EXCEPTION_HANDLED);
-        if (tstate->interp->f_opcode_trace_set) {
-            events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
+    }
+
+    PyFrameObject* frame = PyEval_GetFrame();
+    if (frame->f_trace_opcodes) {
+        int ret = _PyEval_SetOpcodeTrace(frame, true);
+        if (ret != 0) {
+            return ret;
         }
     }
     return _PyMonitoring_SetEvents(PY_MONITORING_SYS_TRACE_ID, events);
