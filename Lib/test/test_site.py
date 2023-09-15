@@ -500,8 +500,14 @@ class ImportSideEffectTests(unittest.TestCase):
             output = subprocess.check_output(f'{sys.executable} -c ""')
             self.assertIn(eyecatcher, output.decode('utf-8'))
 
+            # -S blocks any site-packages
             output = subprocess.check_output(f'{sys.executable} -S -c ""')
             self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+            # -s blocks user site-packages
+            if 'usercustomize' == module_name:
+                output = subprocess.check_output(f'{sys.executable} -s -c ""')
+                self.assertNotIn(eyecatcher, output.decode('utf-8'))
 
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
