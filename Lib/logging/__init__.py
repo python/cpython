@@ -229,7 +229,6 @@ def _checkLevel(level):
 #
 _lock = threading.RLock()
 
-
 def _acquireLock():
     """
     Acquire the module-level lock for serializing access to shared data.
@@ -242,7 +241,6 @@ def _acquireLock():
         except BaseException:
             _lock.release()
             raise
-
 
 def _releaseLock():
     """
