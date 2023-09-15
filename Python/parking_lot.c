@@ -77,7 +77,7 @@ _PySemaphore_Destroy(_PySemaphore *sema)
 static int
 _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
 {
-    int res = Py_PARK_INTR;
+    int res;
 #if defined(MS_WINDOWS)
     DWORD wait;
     DWORD millis = 0;
@@ -93,6 +93,9 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     }
     else if (wait == WAIT_TIMEOUT) {
         res = Py_PARK_TIMEOUT;
+    }
+    else {
+        res = Py_PARK_INTR;
     }
 #elif defined(_Py_USE_SEMAPHORES)
     int err;
@@ -126,8 +129,8 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
     }
 #else
     pthread_mutex_lock(&sema->mutex);
+    int err = 0;
     if (sema->counter == 0) {
-        int err;
         if (timeout >= 0) {
             struct timespec ts;
 
@@ -139,13 +142,16 @@ _PySemaphore_PlatformWait(_PySemaphore *sema, _PyTime_t timeout)
         else {
             err = pthread_cond_wait(&sema->cond, &sema->mutex);
         }
-        if (err) {
-            res = Py_PARK_TIMEOUT;
-        }
     }
     if (sema->counter > 0) {
         sema->counter--;
         res = Py_PARK_OK;
+    }
+    else if (err) {
+        res = Py_PARK_TIMEOUT;
+    }
+    else {
+        res = Py_PARK_INTR;
     }
     pthread_mutex_unlock(&sema->mutex);
 #endif
