@@ -9,7 +9,7 @@ It does, however, optionally implement HTTP/1.1 persistent connections.
 Notes on CGIHTTPRequestHandler
 ------------------------------
 
-This class deprecated. It implements GET and POST requests to cgi-bin scripts.
+This class is deprecated. It implements GET and POST requests to cgi-bin scripts.
 
 If the os.fork() function is not present (Windows), subprocess.Popen() is used,
 with slightly altered but never documented semantics.  Use from a threaded
