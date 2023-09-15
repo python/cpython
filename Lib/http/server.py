@@ -13,7 +13,7 @@ This class deprecated. It implements GET and POST requests to cgi-bin scripts.
 
 If the os.fork() function is not present (Windows), subprocess.Popen() is used,
 with slightly altered but never documented semantics.  Use from a threaded
-processes is likely to trigger a warning at os.fork() time.
+process is likely to trigger a warning at os.fork() time.
 
 In all cases, the implementation is intentionally naive -- all
 requests are executed synchronously.
