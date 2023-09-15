@@ -5831,9 +5831,13 @@ AC_ARG_WITH(
   [with_readline=readline]
 )
 
+dnl gh-105323: Need to handle the macOS editline as an alias of readline.
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [Darwin/*], [AX_CHECK_TYPEDEF(Function, readline/readline.h, AC_DEFINE([WITH_APPLE_EDITLINE]))],
+  []
+)
 
 AS_VAR_IF([with_readline], [readline], [
-  AX_CHECK_TYPEDEF(Function, readline/readline.h, [,AC_DEFINE([WITH_APPLE_EDITLINE]),])
   PKG_CHECK_MODULES([LIBREADLINE], [readline], [
     LIBREADLINE=readline
     READLINE_CFLAGS=$LIBREADLINE_CFLAGS

@@ -23773,11 +23773,9 @@ else $as_nop
 fi
 
 
-
-if test "x$with_readline" = xreadline
-then :
-
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Function in readline/readline.h" >&5
+case $ac_sys_system/$ac_sys_release in #(
+  Darwin/*) :
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Function in readline/readline.h" >&5
 printf %s "checking for Function in readline/readline.h... " >&6; }
  ac_lib_var=`echo Function'_'readline/readline.h | sed 'y%./+-%__p_%'`
 if eval test \${ac_cv_lib_$ac_lib_var+y}
@@ -23813,6 +23811,14 @@ printf "%s\n" "yes" >&6; }
   fi
 
 fi
+ ;; #(
+  *) :
+
+ ;;
+esac
+
+if test "x$with_readline" = xreadline
+then :
 
 
 pkg_failed=no
