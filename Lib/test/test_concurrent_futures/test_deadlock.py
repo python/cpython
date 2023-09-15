@@ -257,6 +257,9 @@ class ExecutorDeadlockTest:
                 "Tested platform does not support the alarm signal")
 
         def timeout(_signum, _frame):
+            import faulthandler
+            faulthandler.dump_traceback()
+
             raise RuntimeError("timed out while submitting jobs?")
 
         thread_run = futures.process._ExecutorManagerThread.run
