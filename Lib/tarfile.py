@@ -2570,18 +2570,24 @@ class TarFile(object):
         try:
             try:
                 os.chmod(targetpath, tarinfo.mode)
-            except OSError as e:
-                if not(hasattr(errno, "EFTYPE") and e.errno == errno.EFTYPE):
-                    raise
-
+            except OSError as exc1:
                 # gh-108948: On FreeBSD, chmod() fails when trying to set the
-                # sticky bit on a file as non-root. But it's a noop in most
-                # other platforms, and we try and match that behavior here.
-                try:
-                    # Retry without the sticky bit
-                    os.chmod(targetpath, tarinfo.mode & ~stat.S_ISVTX)
-                except OSError as e2:
-                    raise e2 from e
+                # sticky bit on a file as non-root. On other platforms, the bit
+                # is silently ignored if it cannot be set. We make FreeBSD
+                # behave like other platforms by catching the error and trying
+                # again without the sticky bit.
+                if (hasattr(errno, "EFTYPE") and exc1.errno == errno.EFTYPE
+                    and (tarinfo.mode & stat.S_ISVTX)):
+                    try:
+                        # Retry without the sticky bit
+                        os.chmod(targetpath, tarinfo.mode & ~stat.S_ISVTX)
+                    except OSError as exc2:
+                        # The error from the second attempt is the direct cause
+                        # of the ExtractError, but we keep the original error
+                        # around for good information.
+                        raise exc2 from exc1
+                else:
+                    raise
         except OSError as e:
             raise ExtractError("could not change mode") from e
 

@@ -696,26 +696,30 @@ class MiscReadTestBase(CommonReadTest):
         # Extracting a file as non-root should skip the sticky bit (gh-108948)
         # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
         # we need to take care that any other error is preserved.
+        mode = "-rw-rw-rwt"
         with ArchiveMaker() as arc:
-            arc.add("sticky", mode="?rw-rw-rwt")
+            arc.add("sticky1", mode=mode)
+            arc.add("sticky2", mode=mode)
         tar = arc.open(errorlevel=2)
         DIR = os.path.join(TEMPDIR, "chmod")
         os.mkdir(DIR)
-        try:
+        self.addCleanup(os_helper.rmtree, DIR)
+        with tar:
             # this should not raise:
-            tar.extract("sticky", DIR)
+            tar.extract("sticky1", DIR)
+            got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
+            expected_mode = "-rw-rw-rw-" if os.geteuid() != 0 else "-rw-rw-rwt"
+            self.assertEqual(got_mode, expected_mode)
+
             # but we can create a situation where it does raise:
             with unittest.mock.patch("os.chmod") as mock:
                 eftype_error = OSError(errno.EFTYPE, "EFTYPE")
                 other_error = OSError(errno.EPERM, "different error")
                 mock.side_effect = [eftype_error, other_error]
                 with self.assertRaises(tarfile.ExtractError) as excinfo:
-                    tar.extract("sticky", DIR)
+                    tar.extract("sticky2", DIR)
             self.assertEqual(excinfo.exception.__cause__, other_error)
             self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
-        finally:
-            os_helper.rmtree(DIR)
-            tar.close()
 
     @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
@@ -3848,8 +3852,9 @@ class TestExtractionFilters(unittest.TestCase):
         try:
             os.chmod(tmp_filename, new_mode)
         except OSError as err:
-            # gh-108948: FreeBSD fails with EFTYPE if sticky bit cannot be set,
-            # instead of ignoring it.
+            # gh-108948: While chmod on most platforms silently ignores the
+            # sticky bit if it cannot be set (i.e. setting it on a file as
+            # non-root), chmod on FreeBSD raises EFTYPE to indicate the case.
             if hasattr(errno, "EFTYPE") and err.errno == errno.EFTYPE:
                 # Retry without the sticky bit
                 os.chmod(tmp_filename, new_mode & ~stat.S_ISVTX)
