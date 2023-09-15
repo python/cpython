@@ -11,24 +11,6 @@ jobs:
   - template: ./prebuild-checks.yml
 
 
-- job: macOS_CI_Tests
-  displayName: macOS CI Tests
-  dependsOn: Prebuild
-  #condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
-  # bpo-39837: macOS tests on Azure Pipelines are disabled
-  condition: false
-
-  variables:
-    testRunTitle: '$(build.sourceBranchName)-macos'
-    testRunPlatform: macos
-
-  pool:
-    vmImage: macos-10.15
-
-  steps:
-  - template: ./macos-steps.yml
-
-
 - job: Ubuntu_CI_Tests
   displayName: Ubuntu CI Tests
   dependsOn: Prebuild
