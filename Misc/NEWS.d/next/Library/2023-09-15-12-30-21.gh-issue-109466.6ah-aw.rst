@@ -1,1 +1,1 @@
-Add a ``ipv6_mapped`` property to :class:`ipaddress.IPV4Address` objects.
+Add the :attr:`ipaddress.IPv4Address.ipv6_mapped` property.
