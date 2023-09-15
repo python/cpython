@@ -956,10 +956,10 @@ object::
         >>> asyncio.run(main())
         >>> mock.assert_awaited_once()
         >>> asyncio.run(main())
-        >>> mock.method.assert_awaited_once()
+        >>> mock.assert_awaited_once()
         Traceback (most recent call last):
         ...
-        AssertionError: Expected method to have been awaited once. Awaited 0 times.
+        AssertionError: Expected mock to have been awaited once. Awaited 2 times.
 
   .. method:: assert_awaited_with(*args, **kwargs)
 
