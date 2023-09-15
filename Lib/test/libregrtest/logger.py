@@ -28,13 +28,13 @@ class Logger:
             line = f"load avg: {load_avg:.2f} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
-        test_time = time.perf_counter() - self.start_time
+        log_time = time.perf_counter() - self.start_time
 
-        mins, secs = divmod(int(test_time), 60)
+        mins, secs = divmod(int(log_time), 60)
         hours, mins = divmod(mins, 60)
-        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+        formatted_log_time = "%d:%02d:%02d" % (hours, mins, secs)
 
-        line = f"{test_time} {line}"
+        line = f"{formatted_log_time} {line}"
         if empty:
             line = line[:-1]
 
