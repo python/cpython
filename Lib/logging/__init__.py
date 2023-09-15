@@ -28,6 +28,7 @@ import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 from types import GenericAlias
 from string import Template
 from string import Formatter as StrFormatter
+from contextlib import contextmanager
 
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
@@ -159,12 +160,9 @@ def addLevelName(level, levelName):
 
     This is used when converting levels to text during message formatting.
     """
-    _acquireLock()
-    try:    #unlikely to cause an exception, but you never know...
+    with _acquireLock():
         _levelToName[level] = levelName
         _nameToLevel[levelName] = level
-    finally:
-        _releaseLock()
 
 if hasattr(sys, "_getframe"):
     currentframe = lambda: sys._getframe(1)
@@ -231,25 +229,20 @@ def _checkLevel(level):
 #
 _lock = threading.RLock()
 
+
+@contextmanager
 def _acquireLock():
     """
     Acquire the module-level lock for serializing access to shared data.
-
-    This should be released with _releaseLock().
     """
     if _lock:
         try:
             _lock.acquire()
+            yield
         except BaseException:
-            _lock.release()
             raise
-
-def _releaseLock():
-    """
-    Release the module-level lock acquired by calling _acquireLock().
-    """
-    if _lock:
-        _lock.release()
+        finally:
+            _lock.release()
 
 
 # Prevent a held logging lock from blocking a child from logging.
@@ -264,23 +257,20 @@ else:
     _at_fork_reinit_lock_weakset = weakref.WeakSet()
 
     def _register_at_fork_reinit_lock(instance):
-        _acquireLock()
-        try:
+        with _acquireLock():
             _at_fork_reinit_lock_weakset.add(instance)
-        finally:
-            _releaseLock()
 
     def _after_at_fork_child_reinit_locks():
         for handler in _at_fork_reinit_lock_weakset:
             handler._at_fork_reinit()
 
-        # _acquireLock() was called in the parent before forking.
+        # _lock.acquire() was called in the parent before forking.
         # The lock is reinitialized to unlocked state.
         _lock._at_fork_reinit()
 
-    os.register_at_fork(before=_acquireLock,
+    os.register_at_fork(before=_lock.acquire,
                         after_in_child=_after_at_fork_child_reinit_locks,
-                        after_in_parent=_releaseLock)
+                        after_in_parent=_lock.release)
 
 
 #---------------------------------------------------------------------------
@@ -883,25 +873,20 @@ def _removeHandlerRef(wr):
     # set to None. It can also be called from another thread. So we need to
     # pre-emptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
-    acquire, release, handlers = _acquireLock, _releaseLock, _handlerList
-    if acquire and release and handlers:
-        acquire()
-        try:
-            handlers.remove(wr)
-        except ValueError:
-            pass
-        finally:
-            release()
+    acquire, handlers = _acquireLock, _handlerList
+    if acquire and handlers:
+        with acquire():
+            try:
+                handlers.remove(wr)
+            except ValueError:
+                pass
 
 def _addHandlerRef(handler):
     """
     Add a handler to the internal cleanup list using a weak reference.
     """
-    _acquireLock()
-    try:
+    with _acquireLock():
         _handlerList.append(weakref.ref(handler, _removeHandlerRef))
-    finally:
-        _releaseLock()
 
 
 def getHandlerByName(name):
@@ -946,15 +931,12 @@ class Handler(Filterer):
         return self._name
 
     def set_name(self, name):
-        _acquireLock()
-        try:
+        with _acquireLock():
             if self._name in _handlers:
                 del _handlers[self._name]
             self._name = name
             if name:
                 _handlers[name] = self
-        finally:
-            _releaseLock()
 
     name = property(get_name, set_name)
 
@@ -1058,13 +1040,10 @@ class Handler(Filterer):
         methods.
         """
         #get the module data lock, as we're updating a shared structure.
-        _acquireLock()
-        try:    #unlikely to raise an exception, but you never know...
+        with _acquireLock():
             self._closed = True
             if self._name and self._name in _handlers:
                 del _handlers[self._name]
-        finally:
-            _releaseLock()
 
     def handleError(self, record):
         """
@@ -1391,8 +1370,7 @@ class Manager(object):
         rv = None
         if not isinstance(name, str):
             raise TypeError('A logger name must be a string')
-        _acquireLock()
-        try:
+        with _acquireLock():
             if name in self.loggerDict:
                 rv = self.loggerDict[name]
                 if isinstance(rv, PlaceHolder):
@@ -1407,8 +1385,6 @@ class Manager(object):
                 rv.manager = self
                 self.loggerDict[name] = rv
                 self._fixupParents(rv)
-        finally:
-            _releaseLock()
         return rv
 
     def setLoggerClass(self, klass):
@@ -1471,12 +1447,11 @@ class Manager(object):
         Called when level changes are made
         """
 
-        _acquireLock()
-        for logger in self.loggerDict.values():
-            if isinstance(logger, Logger):
-                logger._cache.clear()
-        self.root._cache.clear()
-        _releaseLock()
+        with _acquireLock():
+            for logger in self.loggerDict.values():
+                if isinstance(logger, Logger):
+                    logger._cache.clear()
+            self.root._cache.clear()
 
 #---------------------------------------------------------------------------
 #   Logger classes and functions
@@ -1701,23 +1676,17 @@ class Logger(Filterer):
         """
         Add the specified handler to this logger.
         """
-        _acquireLock()
-        try:
+        with _acquireLock():
             if not (hdlr in self.handlers):
                 self.handlers.append(hdlr)
-        finally:
-            _releaseLock()
 
     def removeHandler(self, hdlr):
         """
         Remove the specified handler from this logger.
         """
-        _acquireLock()
-        try:
+        with _acquireLock():
             if hdlr in self.handlers:
                 self.handlers.remove(hdlr)
-        finally:
-            _releaseLock()
 
     def hasHandlers(self):
         """
@@ -1795,16 +1764,13 @@ class Logger(Filterer):
         try:
             return self._cache[level]
         except KeyError:
-            _acquireLock()
-            try:
+            with _acquireLock():
                 if self.manager.disable >= level:
                     is_enabled = self._cache[level] = False
                 else:
                     is_enabled = self._cache[level] = (
                         level >= self.getEffectiveLevel()
                     )
-            finally:
-                _releaseLock()
             return is_enabled
 
     def getChild(self, suffix):
@@ -1834,16 +1800,13 @@ class Logger(Filterer):
             return 1 + logger.name.count('.')
 
         d = self.manager.loggerDict
-        _acquireLock()
-        try:
+        with _acquireLock():
             # exclude PlaceHolders - the last check is to ensure that lower-level
             # descendants aren't returned - if there are placeholders, a logger's
             # parent field might point to a grandparent or ancestor thereof.
             return set(item for item in d.values()
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
-        finally:
-            _releaseLock()
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
@@ -2102,8 +2065,7 @@ def basicConfig(**kwargs):
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
-    _acquireLock()
-    try:
+    with _acquireLock():
         force = kwargs.pop('force', False)
         encoding = kwargs.pop('encoding', None)
         errors = kwargs.pop('errors', 'backslashreplace')
@@ -2152,8 +2114,6 @@ def basicConfig(**kwargs):
             if kwargs:
                 keys = ', '.join(kwargs.keys())
                 raise ValueError('Unrecognised argument(s): %s' % keys)
-    finally:
-        _releaseLock()
 
 #---------------------------------------------------------------------------
 # Utility functions at module level.
