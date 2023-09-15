@@ -376,6 +376,8 @@ def write_macro_instr(
         if not parts[-1].instr.always_exits:
             if not next_instr_is_set and mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
+            if parts[-1].instr.check_eval_breaker:
+                out.emit("CHECK_EVAL_BREAKER();")
             out.emit("DISPATCH();")
 
 
