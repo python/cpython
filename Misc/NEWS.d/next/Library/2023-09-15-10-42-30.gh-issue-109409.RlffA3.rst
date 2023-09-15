@@ -1,0 +1,2 @@
+Fix error when it was possible to inherit a frozen dataclass from multiple
+parents some of which were possibly not frozen.

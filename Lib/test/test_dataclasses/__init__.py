@@ -2863,6 +2863,53 @@ class TestFrozen(unittest.TestCase):
             class D(C):
                 j: int
 
+    def test_inherit_frozen_mutliple_inheritance(self):
+        @dataclass
+        class A:
+            pass
+
+        @dataclass(frozen=True)
+        class B:
+            pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class C(A, B):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit non-frozen dataclass from a frozen one'):
+            @dataclass
+            class C(B, A):
+                pass
+
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit frozen dataclass from a non-frozen one'):
+            @dataclass(frozen=True)
+            class C(A, B):
+                pass
+        with self.assertRaisesRegex(TypeError,
+                                    'cannot inherit frozen dataclass from a non-frozen one'):
+            @dataclass(frozen=True)
+            class C(B, A):
+                pass
+
+    def test_inherit_frozen_mutliple_inheritance_regular_mixins(self):
+        @dataclass(frozen=True)
+        class D:
+            pass
+
+        class M:
+            pass
+
+        class C1(D, M):
+            pass
+        self.assertEqual(C1.__mro__, (C1, D, M, object))
+
+        class C2(M, D):
+            pass
+        self.assertEqual(C2.__mro__, (C2, M, D, object))
+
     def test_inherit_nonfrozen_from_empty(self):
         @dataclass
         class C:
