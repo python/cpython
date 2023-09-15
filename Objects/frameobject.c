@@ -843,9 +843,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     }
     if (v != f->f_trace) {
         Py_XSETREF(f->f_trace, Py_XNewRef(v));
-        if (v == NULL) {
-            return _PyEval_SetOpcodeTrace(f, false);
-        } else if (f->f_trace_opcodes) {
+        if (v != NULL && f->f_trace_opcodes) {
             return _PyEval_SetOpcodeTrace(f, true);
         }
     }
