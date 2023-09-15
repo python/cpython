@@ -253,9 +253,9 @@ dequeue_all(Bucket *bucket, const void *address, struct llist_node *dst)
     }
 }
 
-// Checks that `*addr == *expected`
+// Checks that `*addr == *expected` (only works for 1, 2, 4, or 8 bytes)
 static int
-validate_addr(const void *addr, const void *expected, size_t addr_size)
+atomic_memcmp(const void *addr, const void *expected, size_t addr_size)
 {
     switch (addr_size) {
     case 1: return _Py_atomic_load_uint8(addr) == *(const uint8_t *)expected;
@@ -277,7 +277,7 @@ _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
     Bucket *bucket = &buckets[((uintptr_t)addr) % NUM_BUCKETS];
 
     _PyRawMutex_Lock(&bucket->mutex);
-    if (!validate_addr(addr, expected, size)) {
+    if (!atomic_memcmp(addr, expected, size)) {
         _PyRawMutex_Unlock(&bucket->mutex);
         return Py_PARK_AGAIN;
     }
