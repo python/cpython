@@ -706,7 +706,7 @@ class MiscReadTestBase(CommonReadTest):
         self.addCleanup(os_helper.rmtree, DIR)
         with tar:
             # this should not raise:
-            tar.extract("sticky1", DIR)
+            tar.extract("sticky1", DIR, filter="fully_trusted")
             got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
             expected_mode = "-rwxrwxrwx" if os.geteuid() != 0 else "-rwxrwxrwt"
             self.assertEqual(got_mode, expected_mode)
@@ -717,7 +717,7 @@ class MiscReadTestBase(CommonReadTest):
                 other_error = OSError(errno.EPERM, "different error")
                 mock.side_effect = [eftype_error, other_error]
                 with self.assertRaises(tarfile.ExtractError) as excinfo:
-                    tar.extract("sticky2", DIR)
+                    tar.extract("sticky2", DIR, filter="fully_trusted")
             self.assertEqual(excinfo.exception.__cause__, other_error)
             self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
 
