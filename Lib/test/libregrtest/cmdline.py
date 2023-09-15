@@ -161,7 +161,7 @@ class Namespace(argparse.Namespace):
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
-        self.huntrleaks = False
+        self.huntrleaks: tuple[int, int, str] | None = None
         self.rerun = False
         self.verbose3 = False
         self.print_slow = False

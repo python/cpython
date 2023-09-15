@@ -24,6 +24,7 @@ import textwrap
 from io import StringIO
 from collections import namedtuple
 from urllib.request import urlopen, urlcleanup
+from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support.script_helper import (assert_python_ok,
@@ -1236,22 +1237,56 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(dict.__class_getitem__),
             "__class_getitem__(object, /) method of builtins.type instance")
 
+    @support.cpython_only
     def test_module_level_callable_unrepresentable_default(self):
-        self.assertEqual(self._get_summary_line(getattr),
-            "getattr(...)")
+        import _testcapi
+        builtin = _testcapi.func_with_unrepresentable_signature
+        self.assertEqual(self._get_summary_line(builtin),
+            "func_with_unrepresentable_signature(a, b=<x>)")
 
+    @support.cpython_only
     def test_builtin_staticmethod_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(str.maketrans),
             "maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)")
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.staticmeth),
+            "staticmeth(a, b=<x>)")
 
+    @support.cpython_only
     def test_unbound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line(dict.pop),
             "pop(self, key, default=<unrepresentable>, /)")
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.meth),
+            "meth(self, /, a, b=<x>)")
 
+    @support.cpython_only
     def test_bound_builtin_method_unrepresentable_default(self):
         self.assertEqual(self._get_summary_line({}.pop),
             "pop(key, default=<unrepresentable>, /) "
             "method of builtins.dict instance")
+        import _testcapi
+        obj = _testcapi.DocStringUnrepresentableSignatureTest()
+        self.assertEqual(self._get_summary_line(obj.meth),
+            "meth(a, b=<x>) "
+            "method of _testcapi.DocStringUnrepresentableSignatureTest instance")
+
+    @support.cpython_only
+    def test_unbound_builtin_classmethod_unrepresentable_default(self):
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        descr = cls.__dict__['classmeth']
+        self.assertEqual(self._get_summary_line(descr),
+            "classmeth(type, /, a, b=<x>)")
+
+    @support.cpython_only
+    def test_bound_builtin_classmethod_unrepresentable_default(self):
+        import _testcapi
+        cls = _testcapi.DocStringUnrepresentableSignatureTest
+        self.assertEqual(self._get_summary_line(cls.classmeth),
+            "classmeth(a, b=<x>) method of builtins.type instance")
 
     def test_overridden_text_signature(self):
         class C:
