@@ -35,5 +35,5 @@ jobs:
         with:
           python-version: "3.11"
       - run: |
-        git fetch origin
-        python Tools/patchcheck/patchcheck.py --ci true
+          git fetch origin
+          python Tools/patchcheck/patchcheck.py --ci true
