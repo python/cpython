@@ -41,4 +41,5 @@ jobs:
           python-version: "3.11"
       - name: "Run patchcheck"
         run: |
+          git status && git branch
           python Tools/patchcheck/patchcheck.py --ci true
