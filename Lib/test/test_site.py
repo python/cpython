@@ -498,7 +498,7 @@ class ImportSideEffectTests(unittest.TestCase):
 
             self.addCleanup(os.remove, customize_path)
 
-            eyecatcher = 'EXECUTED'
+            eyecatcher = f'EXECUTED_{module_name}'
 
             with open(customize_path, 'w') as f:
                 f.write(f'print("{eyecatcher}")')
