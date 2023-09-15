@@ -220,6 +220,16 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+venv
+----
+
+* Add support for adding source control management (SCM) ignore files to a
+  virtual environment's directory. By default, Git is supported. This is
+  implemented as opt-in via the API which can be extended to support other SCMs
+  (:class:`venv.EnvBuilder` and :func:`venv.create`), and opt-out via the CLI
+  (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
+  :gh:`108125`.)
+
 Optimizations
 =============
 
