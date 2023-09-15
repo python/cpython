@@ -137,6 +137,25 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
     }
 }
 
+static void
+mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
+{
+    uint8_t v = 0;
+    if (entry) {
+        _PyTime_t now = _PyTime_GetMonotonicClock();
+        int should_be_fair = now > entry->time_to_be_fair;
+
+        entry->handoff = should_be_fair;
+        if (should_be_fair) {
+            v |= _Py_LOCKED;
+        }
+        if (has_more_waiters) {
+            v |= _Py_HAS_PARKED;
+        }
+    }
+    _Py_atomic_store_uint8(&m->v, v);
+}
+
 int
 _PyMutex_TryUnlock(PyMutex *m)
 {
@@ -148,23 +167,7 @@ _PyMutex_TryUnlock(PyMutex *m)
         }
         else if ((v & _Py_HAS_PARKED)) {
             // wake up a single thread
-            _PyParkingLot_Unpark(&m->v, unpark, {
-                v = 0;
-                if (unpark) {
-                    struct mutex_entry *entry = unpark->arg;
-                    _PyTime_t now = _PyTime_GetMonotonicClock();
-                    int should_be_fair = now > entry->time_to_be_fair;
-
-                    entry->handoff = should_be_fair;
-                    if (should_be_fair) {
-                        v |= _Py_LOCKED;
-                    }
-                    if (unpark->has_more_waiters) {
-                        v |= _Py_HAS_PARKED;
-                    }
-                }
-                _Py_atomic_store_uint8(&m->v, v);
-            });
+            _PyParkingLot_Unpark(&m->v, (_Py_unpark_fn_t *)mutex_unpark, m);
             return 0;
         }
         else if (_Py_atomic_compare_exchange_uint8(&m->v, &v, _Py_UNLOCKED)) {

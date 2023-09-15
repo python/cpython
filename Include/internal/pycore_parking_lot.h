@@ -37,8 +37,8 @@ enum {
 
 // Checks that `*address == *expected` and puts the thread to sleep until an
 // unpark operation is called on the same `address`. Otherwise, the function
-// returns `Py_PARK_AGAIN`. The comparison is performed atomically
-// with respect to unpark operations.
+// returns `Py_PARK_AGAIN`. The comparison behaves like memcmp, but is
+// performed atomically with respect to unpark operations.
 //
 // The `address_size` argument is the size of the data pointed to by the
 // `address` and `expected` pointers (i.e., sizeof(*address)). It must be
@@ -47,7 +47,7 @@ enum {
 // The `timeout_ns` argument specifies the maximum amount of time to wait, with
 // -1 indicating an infinite wait.
 //
-// `arg`, which can be NULL, is passed to the unpark operation.
+// `park_arg`, which can be NULL, is passed to the unpark operation.
 //
 // If `detach` is true, then the thread will detach/release the GIL while
 // waiting.
@@ -62,48 +62,30 @@ enum {
 PyAPI_FUNC(int)
 _PyParkingLot_Park(const void *address, const void *expected,
                    size_t address_size, _PyTime_t timeout_ns,
-                   void *arg, int detach);
+                   void *park_arg, int detach);
 
-struct _PyUnpark {
-    // The `arg` value passed to _PyParkingLot_Park().
-    void *arg;
-
-    // Are there more threads waiting on the address? May be true in cases
-    // where threads are waiting on a different address that maps to the same
-    // internal bucket.
-    int has_more_waiters;
-};
-
-// Unpark a single thread waiting on `address`.
+// Callback for _PyParkingLot_Unpark:
 //
-// The `unpark` is a pointer to a `struct _PyUnpark`.
+// `arg` is the data of the same name provided to the _PyParkingLot_Unpark()
+//      call.
+// `park_arg` is the data provided to _PyParkingLot_Park() call or NULL if
+//      no waiting thread was found.
+// `has_more_waiters` is true if there are more threads waiting on the same
+//      address. May be true in cases where threads are waiting on a different
+//      address that map to the same internal bucket.
+typedef void _Py_unpark_fn_t(void *arg, void *park_arg, int has_more_waiters);
+
+// Unparks a single thread waiting on `address`.
 //
-// Usage:
-//  _PyParkingLot_Unpark(address, unpark, {
-//      if (unpark) {
-//          void *arg = unpark->arg;
-//          int has_more_waiters = unpark->has_more_waiters;
-//          ...
-//      }
-//  });
-#define _PyParkingLot_Unpark(address, unpark, ...)                          \
-    do {                                                                    \
-        struct _PyUnpark *(unpark);                                         \
-        unpark = _PyParkingLot_BeginUnpark((address));                      \
-        __VA_ARGS__                                                         \
-        _PyParkingLot_FinishUnpark((address), unpark);                      \
-    } while (0);
-
-// Implements half of an unpark operation.
-// Prefer using the _PyParkingLot_Unpark() macro.
-PyAPI_FUNC(struct _PyUnpark *)
-_PyParkingLot_BeginUnpark(const void *address);
-
-// Finishes the unpark operation and wakes up the thread selected by
-// _PyParkingLot_BeginUnpark.
-// Prefer using the _PyParkingLot_Unpark() macro.
+// Note that fn() is called regardless of whether a thread was unparked. If
+// no threads are waiting on `address` then the `park_arg` argument to fn()
+// will be NULL.
+//
+// Example usage:
+//  void callback(void *arg, void *park_arg, int has_more_waiters);
+//  _PyParkingLot_Unpark(address, &callback, arg);
 PyAPI_FUNC(void)
-_PyParkingLot_FinishUnpark(const void *address, struct _PyUnpark *unpark);
+_PyParkingLot_Unpark(const void *address, _Py_unpark_fn_t *fn, void *arg);
 
 // Unparks all threads waiting on `address`.
 PyAPI_FUNC(void) _PyParkingLot_UnparkAll(const void *address);

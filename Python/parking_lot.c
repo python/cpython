@@ -20,7 +20,7 @@ typedef struct {
 } Bucket;
 
 struct wait_entry {
-    struct _PyUnpark unpark;
+    void *park_arg;
     uintptr_t addr;
     _PySemaphore sema;
     struct llist_node node;
@@ -271,10 +271,10 @@ atomic_memcmp(const void *addr, const void *expected, size_t addr_size)
 
 int
 _PyParkingLot_Park(const void *addr, const void *expected, size_t size,
-                   _PyTime_t timeout_ns, void *arg, int detach)
+                   _PyTime_t timeout_ns, void *park_arg, int detach)
 {
     struct wait_entry wait = {
-        .unpark.arg = arg,
+        .park_arg = park_arg,
         .addr = (uintptr_t)addr,
         .is_unparking = false,
     };
@@ -318,35 +318,27 @@ done:
 
 }
 
-struct _PyUnpark *
-_PyParkingLot_BeginUnpark(const void *addr)
-{
-    Bucket *bucket = &buckets[((uintptr_t)addr) % NUM_BUCKETS];
-    _PyRawMutex_Lock(&bucket->mutex);
-
-    struct wait_entry *waiter = dequeue(bucket, addr);
-    if (!waiter) {
-        return NULL;
-    }
-
-    waiter->is_unparking = true;
-    waiter->unpark.has_more_waiters = (bucket->num_waiters > 0);
-    return &waiter->unpark;
-}
-
-#define container_of(ptr, type, member) \
-    ((type *)((char *)(ptr) - offsetof(type, member)))
-
 void
-_PyParkingLot_FinishUnpark(const void *addr, struct _PyUnpark *unpark)
+_PyParkingLot_Unpark(const void *addr, _Py_unpark_fn_t *fn, void *arg)
 {
     Bucket *bucket = &buckets[((uintptr_t)addr) % NUM_BUCKETS];
+
+    // Find the first waiter that is waiting on `addr`
+    _PyRawMutex_Lock(&bucket->mutex);
+    struct wait_entry *waiter = dequeue(bucket, addr);
+    if (waiter) {
+        waiter->is_unparking = true;
+
+        int has_more_waiters = (bucket->num_waiters > 0);
+        fn(arg, waiter->park_arg, has_more_waiters);
+    }
+    else {
+        fn(arg, NULL, 0);
+    }
     _PyRawMutex_Unlock(&bucket->mutex);
 
-    if (unpark) {
-        struct wait_entry *waiter;
-        waiter = container_of(unpark, struct wait_entry, unpark);
-
+    if (waiter) {
+        // Wakeup the waiter outside of the bucket lock
         _PySemaphore_Wakeup(&waiter->sema);
     }
 }
