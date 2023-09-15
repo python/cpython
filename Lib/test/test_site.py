@@ -481,7 +481,11 @@ class ImportSideEffectTests(unittest.TestCase):
             if not isinstance(base_path, str):
                 base_path = base_path[0]
 
-            os.makedirs(base_path, exist_ok=True)
+            try:
+                os.makedirs(base_path, exist_ok=True)
+            except PermissionError:
+                # Can't modify system site packages depending on the system configuration
+                continue
 
             customize_path = os.path.join(base_path, f'{module_name}.py')
             if os.path.exists(customize_path):
