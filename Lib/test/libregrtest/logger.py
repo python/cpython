@@ -32,9 +32,9 @@ class Logger:
 
         mins, secs = divmod(int(test_time), 60)
         hours, mins = divmod(mins, 60)
-        test_time = "%d:%02d:%02d" % (hours, mins, secs)
+        formatted_test_time = "%d:%02d:%02d" % (hours, mins, secs)
 
-        line = f"{test_time} {line}"
+        line = f"{formatted_test_time} {line}"
         if empty:
             line = line[:-1]
 
