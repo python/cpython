@@ -1200,7 +1200,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
     """
 
     def _testFile(self, filename):
-        path = os.path.join(os.path.dirname(__file__), filename)
+        path = os.path.join(os.path.dirname(__file__), 'tokenizedata', filename)
         with open(path, 'rb') as f:
             TestRoundtrip.check_roundtrip(self, f)
 
@@ -1794,7 +1794,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = support.findfile("tokenize_tests.txt", subdir="tokenizedata")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1849,8 +1849,7 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
-        tempdir = os.path.dirname(fn) or os.curdir
+        tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
@@ -1860,7 +1859,7 @@ class TestRoundtrip(TestCase):
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
 
-        # TODO: Remove this once we can unparse PEP 701 syntax
+        # TODO: Remove this once we can untokenize PEP 701 syntax
         testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
 
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):

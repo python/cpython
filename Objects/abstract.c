@@ -9,9 +9,8 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
-#include <ctype.h>
-#include <stddef.h>               // offsetof()
 
+#include <stddef.h>               // offsetof()
 
 
 /* Shorthands to return certain errors */
@@ -2394,11 +2393,13 @@ int
 PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
 {
     if (key == NULL) {
+        *result = NULL;
         null_error();
         return -1;
     }
     PyObject *okey = PyUnicode_FromString(key);
     if (okey == NULL) {
+        *result = NULL;
         return -1;
     }
     int rc = PyMapping_GetOptionalItem(obj, okey, result);

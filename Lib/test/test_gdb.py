@@ -55,10 +55,6 @@ if gdb_major_version < 7:
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
 
-if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
-    raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
-                            " built with LLVM clang")
-
 if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
     (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
     raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
@@ -247,6 +243,17 @@ class DebuggerTests(unittest.TestCase):
         for pattern in (
             '(frame information optimized out)',
             'Unable to read information on python frame',
+            # gh-91960: On Python built with "clang -Og", gdb gets
+            # "frame=<optimized out>" for _PyEval_EvalFrameDefault() parameter
+            '(unable to read python frame information)',
+            # gh-104736: On Python built with "clang -Og" on ppc64le,
+            # "py-bt" displays a truncated or not traceback, but "where"
+            # logs this error message:
+            'Backtrace stopped: frame did not save the PC',
+            # gh-104736: When "bt" command displays something like:
+            # "#1  0x0000000000000000 in ?? ()", the traceback is likely
+            # truncated or wrong.
+            ' ?? ()',
         ):
             if pattern in out:
                 raise unittest.SkipTest(f"{pattern!r} found in gdb output")
@@ -317,6 +324,7 @@ class PrettyPrintTests(DebuggerTests):
                          ('%r did not equal expected %r; full output was:\n%s'
                           % (gdb_repr, exp_repr, gdb_output)))
 
+    @support.requires_resource('cpu')
     def test_int(self):
         'Verify the pretty-printing of various int values'
         self.assertGdbRepr(42)
@@ -343,6 +351,7 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr([])
         self.assertGdbRepr(list(range(5)))
 
+    @support.requires_resource('cpu')
     def test_bytes(self):
         'Verify the pretty-printing of bytes'
         self.assertGdbRepr(b'')
@@ -357,6 +366,7 @@ class PrettyPrintTests(DebuggerTests):
 
         self.assertGdbRepr(bytes([b for b in range(255)]))
 
+    @support.requires_resource('cpu')
     def test_strings(self):
         'Verify the pretty-printing of unicode strings'
         # We cannot simply call locale.getpreferredencoding() here,
@@ -407,6 +417,7 @@ class PrettyPrintTests(DebuggerTests):
         self.assertGdbRepr((1,), '(1,)')
         self.assertGdbRepr(('foo', 'bar', 'baz'))
 
+    @support.requires_resource('cpu')
     def test_sets(self):
         'Verify the pretty-printing of sets'
         if (gdb_major_version, gdb_minor_version) < (7, 3):
@@ -425,6 +436,7 @@ s.remove('a')
 id(s)''')
         self.assertEqual(gdb_repr, "{'b'}")
 
+    @support.requires_resource('cpu')
     def test_frozensets(self):
         'Verify the pretty-printing of frozensets'
         if (gdb_major_version, gdb_minor_version) < (7, 3):
@@ -828,6 +840,7 @@ Traceback \(most recent call first\):
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
+    @support.requires_resource('cpu')
     def test_threads(self):
         'Verify that "py-bt" indicates threads that are waiting for the GIL'
         cmd = '''
@@ -889,6 +902,7 @@ id(42)
 
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
+    @support.requires_resource('cpu')
     # Some older versions of gdb will fail with
     #  "Cannot find new threads: generic error"
     # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround

@@ -226,7 +226,6 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
     assert(entry == NULL);
 #endif
 
-
     entry = ht->alloc.malloc(sizeof(_Py_hashtable_entry_t));
     if (entry == NULL) {
         /* memory allocation failed */

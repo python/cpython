@@ -378,7 +378,7 @@ always available.
 
    This function prints out a given traceback and exception to ``sys.stderr``.
 
-   When an exception is raised and uncaught, the interpreter calls
+   When an exception other than :exc:`SystemExit` is raised and uncaught, the interpreter calls
    ``sys.excepthook`` with three arguments, the exception class, exception
    instance, and a traceback object.  In an interactive session this happens just
    before control is returned to the prompt; in a Python program this happens just
@@ -1952,6 +1952,13 @@ always available.
 
    .. availability:: Windows.
 
+
+.. data:: monitoring
+   :noindex:
+
+   Namespace containing functions and constants for register callbacks
+   and controlling monitoring events.
+   See  :mod:`sys.monitoring` for details.
 
 .. data:: _xoptions
 

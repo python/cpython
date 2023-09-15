@@ -365,8 +365,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "SAVE_IP":
-                        # SAVE_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SET_IP":
+                        # _SET_IP in a macro is a no-op in Tier 1
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
@@ -381,7 +381,7 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert len(fmts) == 1
-        ignored_flags = {'HAS_EVAL_BREAK_FLAG'}
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
