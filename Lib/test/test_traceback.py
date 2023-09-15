@@ -1030,7 +1030,6 @@ class TracebackFormatTests(unittest.TestCase):
         # Make sure that Python and the traceback module format the same thing
         print(traceback_fmt)
         print(python_fmt)
-        breakpoint()
         self.assertEqual(traceback_fmt, python_fmt)
         # Now verify the _tb func output
         self.assertEqual(tbstderr.getvalue(), tbfile.getvalue())
