@@ -28,10 +28,23 @@ struct wait_entry {
 // We want this to be roughly proportional to the number of CPU cores
 // to minimize contention on the bucket locks, but not too big to avoid
 // wasting memory. The exact choice does not matter much.
-#define NUM_BUCKETS 251
+#define NUM_BUCKETS 257
+
+#define BUCKET_INIT(b, i) [i] = { .root = LLIST_INIT(b[i].root) }
+#define BUCKET_INIT_2(b, i)   BUCKET_INIT(b, i),     BUCKET_INIT(b, i+1)
+#define BUCKET_INIT_4(b, i)   BUCKET_INIT_2(b, i),   BUCKET_INIT_2(b, i+2)
+#define BUCKET_INIT_8(b, i)   BUCKET_INIT_4(b, i),   BUCKET_INIT_4(b, i+4)
+#define BUCKET_INIT_16(b, i)  BUCKET_INIT_8(b, i),   BUCKET_INIT_8(b, i+8)
+#define BUCKET_INIT_32(b, i)  BUCKET_INIT_16(b, i),  BUCKET_INIT_16(b, i+16)
+#define BUCKET_INIT_64(b, i)  BUCKET_INIT_32(b, i),  BUCKET_INIT_32(b, i+32)
+#define BUCKET_INIT_128(b, i) BUCKET_INIT_64(b, i),  BUCKET_INIT_64(b, i+64)
+#define BUCKET_INIT_256(b, i) BUCKET_INIT_128(b, i), BUCKET_INIT_128(b, i+128)
 
 // Table of waiters (hashed by address)
-static Bucket buckets[NUM_BUCKETS];
+static Bucket buckets[NUM_BUCKETS] = {
+    BUCKET_INIT_256(buckets, 0),
+    BUCKET_INIT(buckets, 256),
+};
 
 void
 _PySemaphore_Init(_PySemaphore *sema)
@@ -203,10 +216,6 @@ _PySemaphore_Wakeup(_PySemaphore *sema)
 static void
 enqueue(Bucket *bucket, const void *address, struct wait_entry *wait)
 {
-    if (!bucket->root.next) {
-        // initialize bucket
-        llist_init(&bucket->root);
-    }
     llist_insert_tail(&bucket->root, &wait->node);
     ++bucket->num_waiters;
 }
@@ -214,13 +223,8 @@ enqueue(Bucket *bucket, const void *address, struct wait_entry *wait)
 static struct wait_entry *
 dequeue(Bucket *bucket, const void *address)
 {
-    struct llist_node *root = &bucket->root;
-    if (!root->next) {
-        // bucket was not yet initialized
-        return NULL;
-    }
-
     // find the first waiter that is waiting on `address`
+    struct llist_node *root = &bucket->root;
     struct llist_node *node;
     llist_for_each(node, root) {
         struct wait_entry *wait = llist_data(node, struct wait_entry, node);
@@ -236,13 +240,8 @@ dequeue(Bucket *bucket, const void *address)
 static void
 dequeue_all(Bucket *bucket, const void *address, struct llist_node *dst)
 {
-    struct llist_node *root = &bucket->root;
-    if (!root->next) {
-        // bucket was not yet initialized
-        return;
-    }
-
     // remove and append all matching waiters to dst
+    struct llist_node *root = &bucket->root;
     struct llist_node *node;
     llist_for_each_safe(node, root) {
         struct wait_entry *wait = llist_data(node, struct wait_entry, node);
@@ -370,4 +369,7 @@ _PyParkingLot_AfterFork(void)
     // After a fork only one thread remains. That thread cannot be blocked
     // so all entries in the parking lot are for dead threads.
     memset(buckets, 0, sizeof(buckets));
+    for (Py_ssize_t i = 0; i < NUM_BUCKETS; i++) {
+        llist_init(&buckets[i].root);
+    }
 }
