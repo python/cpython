@@ -642,7 +642,8 @@ None     >> PUSH_EXC_INFO
             CALL                     0
             POP_TOP
             RERAISE                  0
-         >> COPY                     3
+
+None     >> COPY                     3
             POP_EXCEPT
             RERAISE                  1
 ExceptionTable:
@@ -674,7 +675,8 @@ None        PUSH_EXC_INFO
             CALL                     0
             POP_TOP
             RERAISE                  0
-         >> COPY                     3
+
+None     >> COPY                     3
             POP_EXCEPT
             RERAISE                  1
 ExceptionTable:
@@ -1822,9 +1824,9 @@ expected_opinfo_jumpy = [
   Instruction(opname='CALL', opcode=53, arg=1, argval=1, argrepr='', offset=414, start_offset=414, starts_line=False, line_number=28, is_jump_target=False, positions=None),
   Instruction(opname='POP_TOP', opcode=32, arg=None, argval=None, argrepr='', offset=422, start_offset=422, starts_line=False, line_number=28, is_jump_target=False, positions=None),
   Instruction(opname='RERAISE', opcode=102, arg=0, argval=0, argrepr='', offset=424, start_offset=424, starts_line=False, line_number=28, is_jump_target=False, positions=None),
-  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=426, start_offset=426, starts_line=False, line_number=28, is_jump_target=False, positions=None),
-  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=428, start_offset=428, starts_line=False, line_number=28, is_jump_target=False, positions=None),
-  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=430, start_offset=430, starts_line=False, line_number=28, is_jump_target=False, positions=None),
+  Instruction(opname='COPY', opcode=61, arg=3, argval=3, argrepr='', offset=426, start_offset=426, starts_line=True, line_number=None, is_jump_target=False, positions=None),
+  Instruction(opname='POP_EXCEPT', opcode=31, arg=None, argval=None, argrepr='', offset=428, start_offset=428, starts_line=False, line_number=None, is_jump_target=False, positions=None),
+  Instruction(opname='RERAISE', opcode=102, arg=1, argval=1, argrepr='', offset=430, start_offset=430, starts_line=False, line_number=None, is_jump_target=False, positions=None),
 ]
 
 # One last piece of inspect fodder to check the default line number handling
