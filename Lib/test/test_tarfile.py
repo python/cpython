@@ -3057,6 +3057,32 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
+_can_chmod_set_sticky = None
+
+
+def can_chmod_set_sticky():
+    def can_chmod_set_sticky_inner():
+        if not os_helper.can_chmod():
+            return False
+        filename = os_helper.TESTFN + "-chmod-sticky"
+        try:
+            with open(filename, "w") as f:
+                os.chmod(f.fileno(), 0o666)
+                try:
+                    os.chmod(f.fileno(), 0o666 | stat.S_ISVTX)
+                except OSError:
+                    return False
+                mode = os.stat(f.fileno()).st_mode
+                return bool(mode & stat.S_ISVTX)
+        finally:
+            os.unlink(filename)
+
+    global _can_chmod_set_sticky
+    if _can_chmod_set_sticky is None:
+        _can_chmod_set_sticky = can_chmod_set_sticky_inner()
+    return _can_chmod_set_sticky
+
+
 @os_helper.skip_unless_working_chmod
 class FileModesTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(errno, "EFTYPE"), "errno.EFTYPE required")
@@ -3076,7 +3102,10 @@ class FileModesTest(unittest.TestCase):
             # this should not raise:
             tar.extract("sticky1", DIR, filter="fully_trusted")
             got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
-            expected_mode = "-rwxrwxrwx" if os.geteuid() != 0 else "-rwxrwxrwt"
+            if can_chmod_set_sticky():
+                expected_mode = "-rwxrwxrwt"
+            else:
+                expected_mode = "-rwxrwxrwx"
             self.assertEqual(got_mode, expected_mode)
 
             # but we can create a situation where it does raise:
