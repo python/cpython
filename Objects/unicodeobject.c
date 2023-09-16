@@ -12405,7 +12405,7 @@ str.split as unicode_split
         character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
-        Maximum number of splits (starting from the left).
+        Maximum number of splits.
         -1 (the default value) means no limit.
 
 Return a list of the substrings in the string, using sep as the separator string.
@@ -12418,7 +12418,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=30914f5690f8954f]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
