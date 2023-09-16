@@ -498,24 +498,25 @@ class ImportSideEffectTests(unittest.TestCase):
                 os.rename(customize_path, oldcustomize_path)
                 self.addCleanup(os.rename, oldcustomize_path, customize_path)
 
-            self.addCleanup(os.remove, customize_path)
-
             eyecatcher = f'EXECUTED_{module_name}'
 
-            with open(customize_path, 'w') as f:
-                f.write(f'print("{eyecatcher}")')
+            try:
+                with open(customize_path, 'w') as f:
+                    f.write(f'print("{eyecatcher}")')
 
-            output = subprocess.check_output([sys.executable, '-c', '""'])
-            self.assertIn(eyecatcher, output.decode('utf-8'))
+                output = subprocess.check_output([sys.executable, '-c', '""'])
+                self.assertIn(eyecatcher, output.decode('utf-8'))
 
-            # -S blocks any site-packages
-            output = subprocess.check_output([sys.executable, '-S', '-c', '""'])
-            self.assertNotIn(eyecatcher, output.decode('utf-8'))
-
-            # -s blocks user site-packages
-            if 'usercustomize' == module_name:
-                output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
+                # -S blocks any site-packages
+                output = subprocess.check_output([sys.executable, '-S', '-c', '""'])
                 self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+                # -s blocks user site-packages
+                if 'usercustomize' == module_name:
+                    output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
+                    self.assertNotIn(eyecatcher, output.decode('utf-8'))
+            finally:
+                os.remove(customize_path)
 
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
