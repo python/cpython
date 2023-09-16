@@ -3879,19 +3879,10 @@ class TestExtractionFilters(unittest.TestCase):
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        new_mode = (os.stat(tmp_filename).st_mode
-                    | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
-        try:
-            os.chmod(tmp_filename, new_mode)
-        except OSError as err:
-            # gh-108948: While chmod on most platforms silently ignores the
-            # sticky bit if it cannot be set (i.e. setting it on a file as
-            # non-root), chmod on FreeBSD raises EFTYPE to indicate the case.
-            if hasattr(errno, "EFTYPE") and err.errno == errno.EFTYPE:
-                # Retry without the sticky bit
-                os.chmod(tmp_filename, new_mode & ~stat.S_ISVTX)
-            else:
-                raise
+        new_mode = os.stat(tmp_filename).st_mode | stat.S_ISGID | stat.S_ISUID
+        if can_chmod_set_sticky():
+            new_mode |= stat.S_ISVTX
+        os.chmod(tmp_filename, new_mode)
         got_mode = os.stat(tmp_filename).st_mode
         _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
         _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
