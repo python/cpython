@@ -3086,35 +3086,63 @@ def can_chmod_set_sticky():
 
 
 @os_helper.skip_unless_working_chmod
-class FileModesTest(unittest.TestCase):
-    @unittest.skipUnless(hasattr(errno, "EFTYPE"), "requires errno.EFTYPE")
-    def test_extract_chmod_eftype(self):
-        # Extracting a file as non-root should skip the sticky bit (gh-108948)
-        # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
-        # we need to take care that any other error is preserved.
-        mode = "-rwxrwxrwt"
-        expected_mode = mode if can_chmod_set_sticky() else "-rwxrwxrwx"
-        with ArchiveMaker() as arc:
-            arc.add("sticky1", mode=mode)
-            arc.add("sticky2", mode=mode)
-        DIR = os.path.join(TEMPDIR, "chmod")
-        os.mkdir(DIR)
-        self.addCleanup(os_helper.rmtree, DIR)
-        with arc.open(errorlevel=2) as tar:
-            # this should not raise:
-            tar.extract("sticky1", DIR, filter="fully_trusted")
-            got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
-            self.assertEqual(got_mode, expected_mode)
+class ExtractStickyFileTest(unittest.TestCase):
 
-            # but we can create a situation where it does raise:
-            with unittest.mock.patch("os.chmod") as mock:
-                eftype_error = OSError(errno.EFTYPE, "EFTYPE")
-                other_error = OSError(errno.EPERM, "different error")
-                mock.side_effect = [eftype_error, other_error]
-                with self.assertRaises(tarfile.ExtractError) as excinfo:
-                    tar.extract("sticky2", DIR, filter="fully_trusted")
-            self.assertEqual(excinfo.exception.__cause__, other_error)
-            self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
+    # to use in mock tests, on platforms that don't have it
+    fake_EFTYPE = getattr(errno, "EFTYPE", max(errno.errorcode) + 100)
+
+    def setUp(self):
+        self.test_dir = os.path.join(TEMPDIR, "chmod")
+        os.mkdir(self.test_dir)
+        self.addCleanup(os_helper.rmtree, self.test_dir)
+        self.sticky_mode = "-rwxrwxrwt"
+        self.non_sticky_mode = "-rwxrwxrwx"
+
+    def extract_sticky_file(self, file_name="sticky"):
+        with ArchiveMaker() as arc:
+            arc.add(file_name, mode=self.sticky_mode)
+        with arc.open(errorlevel=2) as tar:
+            tar.extract(file_name, self.test_dir, filter="fully_trusted")
+        self.extracted_path = os.path.join(self.test_dir, file_name)
+
+    def test_extract_chmod_eftype_success(self):
+        # Extracting a file as non-root should skip the sticky bit (gh-108948)
+        # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD)
+        expected_mode = self.sticky_mode if can_chmod_set_sticky() else self.non_sticky_mode
+        self.extract_sticky_file()
+        got_mode = stat.filemode(os.stat(self.extracted_path).st_mode)
+        self.assertEqual(got_mode, expected_mode)
+
+    @unittest.mock.patch.object(errno, "EFTYPE", fake_EFTYPE, create=True)
+    def test_extract_chmod_eftype_mock(self):
+        # Like test_extract_chmod_eftype_success but mock chmod so we can
+        # explicitly test the case we want, regardless of the OS.
+        with unittest.mock.patch("os.chmod") as mock:
+            eftype_error = OSError(errno.EFTYPE, "EFTYPE")
+            mock.side_effect = [eftype_error, None]
+            self.extract_sticky_file()
+        self.assertTrue(mock.call_count, 2)
+        _, chmod_mode1 = mock.call_args_list[0].args
+        _, chmod_mode2 = mock.call_args_list[1].args
+        self.assertTrue(chmod_mode1 & stat.S_ISVTX)
+        self.assertFalse(chmod_mode2 & stat.S_ISVTX)
+        self.assertEqual(chmod_mode1 | chmod_mode2, chmod_mode1)
+
+    @unittest.mock.patch.object(errno, "EFTYPE", fake_EFTYPE, create=True)
+    def test_extract_chmod_eftype_error(self):
+        # Take care that any other error is preserved in the EFTYPE case.
+        # It's hard to create a situation where chmod() fails with EFTYPE and,
+        # retrying without the sticky bit, it fails with a different error. But
+        # we can mock it, so we can exercise all branches.
+        with unittest.mock.patch("os.chmod") as mock:
+            eftype_error = OSError(errno.EFTYPE, "EFTYPE")
+            other_error = OSError(errno.EPERM, "different error")
+            mock.side_effect = [eftype_error, other_error]
+            with self.assertRaises(tarfile.ExtractError,
+                                   msg="could not change mode") as excinfo:
+                self.extract_sticky_file()
+        self.assertEqual(excinfo.exception.__cause__, other_error)
+        self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
 
 
 class ReplaceTests(ReadTest, unittest.TestCase):
