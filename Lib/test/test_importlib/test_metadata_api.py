@@ -353,8 +353,11 @@ class MetadataAPITests(unittest.TestCase):
             }
           , { ("Brett Cannon"     , "brett@python.org") }
           ) )
-    @hypothesis.settings(max_examples=1000)
-    def test_authors(self, arg):
+    def test_structured_identity(self, arg):
+        """
+        Verify that the unstructured identity metadata is parsed and
+        converted to the expected corresponding structure.
+        """
         metadata_text, expected_authors, expected_maintainers = arg
         md = self.metadata_from_text(metadata_text)
         authors = set(map(tuple, md.authors))
