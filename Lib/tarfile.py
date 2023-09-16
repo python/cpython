@@ -2586,10 +2586,13 @@ class TarFile(object):
                         # of the ExtractError, but we keep the original error
                         # around for good information.
                         raise exc2 from exc1
+                    else:
+                        # The second chmod() without sticky bit succeeded
+                        pass
                 else:
                     raise
-        except OSError as e:
-            raise ExtractError("could not change mode") from e
+        except OSError as exc3:
+            raise ExtractError("could not change mode") from exc3
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.
