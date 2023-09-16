@@ -2141,7 +2141,8 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
-		test/capath \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
 		test/data \
