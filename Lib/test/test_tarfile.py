@@ -691,36 +691,6 @@ class MiscReadTestBase(CommonReadTest):
             tar.close()
             os_helper.rmtree(DIR)
 
-    @unittest.skipUnless(hasattr(errno, "EFTYPE"), "errno.EFTYPE required")
-    def test_extract_chmod_eftype(self):
-        # Extracting a file as non-root should skip the sticky bit (gh-108948)
-        # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
-        # we need to take care that any other error is preserved.
-        mode = "-rwxrwxrwt"
-        with ArchiveMaker() as arc:
-            arc.add("sticky1", mode=mode)
-            arc.add("sticky2", mode=mode)
-        tar = arc.open(errorlevel=2)
-        DIR = os.path.join(TEMPDIR, "chmod")
-        os.mkdir(DIR)
-        self.addCleanup(os_helper.rmtree, DIR)
-        with tar:
-            # this should not raise:
-            tar.extract("sticky1", DIR, filter="fully_trusted")
-            got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
-            expected_mode = "-rwxrwxrwx" if os.geteuid() != 0 else "-rwxrwxrwt"
-            self.assertEqual(got_mode, expected_mode)
-
-            # but we can create a situation where it does raise:
-            with unittest.mock.patch("os.chmod") as mock:
-                eftype_error = OSError(errno.EFTYPE, "EFTYPE")
-                other_error = OSError(errno.EPERM, "different error")
-                mock.side_effect = [eftype_error, other_error]
-                with self.assertRaises(tarfile.ExtractError) as excinfo:
-                    tar.extract("sticky2", DIR, filter="fully_trusted")
-            self.assertEqual(excinfo.exception.__cause__, other_error)
-            self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
-
     @os_helper.skip_unless_working_chmod
     def test_extract_directory(self):
         dirtype = "ustar/dirtype"
@@ -3085,6 +3055,39 @@ class NumericOwnerTest(unittest.TestCase):
         with self._setup_test(mock_geteuid) as (tarfl, filename_1, _, _):
             self.assertRaises(TypeError,
                               tarfl.extract, filename_1, TEMPDIR, False, True)
+
+
+@os_helper.skip_unless_working_chmod
+class FileModesTest(unittest.TestCase):
+    @unittest.skipUnless(hasattr(errno, "EFTYPE"), "errno.EFTYPE required")
+    def test_extract_chmod_eftype(self):
+        # Extracting a file as non-root should skip the sticky bit (gh-108948)
+        # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
+        # we need to take care that any other error is preserved.
+        mode = "-rwxrwxrwt"
+        with ArchiveMaker() as arc:
+            arc.add("sticky1", mode=mode)
+            arc.add("sticky2", mode=mode)
+        tar = arc.open(errorlevel=2)
+        DIR = os.path.join(TEMPDIR, "chmod")
+        os.mkdir(DIR)
+        self.addCleanup(os_helper.rmtree, DIR)
+        with tar:
+            # this should not raise:
+            tar.extract("sticky1", DIR, filter="fully_trusted")
+            got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
+            expected_mode = "-rwxrwxrwx" if os.geteuid() != 0 else "-rwxrwxrwt"
+            self.assertEqual(got_mode, expected_mode)
+
+            # but we can create a situation where it does raise:
+            with unittest.mock.patch("os.chmod") as mock:
+                eftype_error = OSError(errno.EFTYPE, "EFTYPE")
+                other_error = OSError(errno.EPERM, "different error")
+                mock.side_effect = [eftype_error, other_error]
+                with self.assertRaises(tarfile.ExtractError) as excinfo:
+                    tar.extract("sticky2", DIR, filter="fully_trusted")
+            self.assertEqual(excinfo.exception.__cause__, other_error)
+            self.assertEqual(excinfo.exception.__cause__.__cause__, eftype_error)
 
 
 class ReplaceTests(ReadTest, unittest.TestCase):
