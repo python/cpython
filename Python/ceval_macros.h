@@ -311,9 +311,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
     if (Py_REFCNT(left) == 1) { \
@@ -355,8 +352,6 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
 };
-
-#define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
 
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4

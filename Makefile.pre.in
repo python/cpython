@@ -505,7 +505,6 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
-		$(DEEPFREEZE_OBJS) \
 		Modules/getpath.o \
 		Python/frozen.o
 
@@ -2161,6 +2160,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2247,6 +2247,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tkinterdata \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \

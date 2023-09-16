@@ -31,6 +31,7 @@ import asyncio
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
@@ -2764,6 +2765,8 @@ class GetEventLoopTestsMixin:
             # ProcessPoolExecutor is not functional when the
             # multiprocessing.synchronize module cannot be imported.
             support.skip_if_broken_multiprocessing_synchronize()
+
+            self.addCleanup(multiprocessing_cleanup_tests)
 
             async def main():
                 if multiprocessing.get_start_method() == 'fork':

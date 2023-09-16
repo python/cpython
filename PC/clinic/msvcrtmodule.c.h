@@ -201,7 +201,7 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
 "kbhit($module, /)\n"
 "--\n"
 "\n"
-"Return true if a keypress is waiting to be read.");
+"Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.");
 
 #define MSVCRT_KBHIT_METHODDEF    \
     {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
@@ -695,4 +695,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=97e00f191821d4c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=525ec6ac4e3cb4f2 input=a9049054013a1b77]*/

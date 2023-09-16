@@ -253,7 +253,7 @@ extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
 extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
-                                int nargs, PyObject *kwnames);
+                                int nargs);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
@@ -464,8 +464,6 @@ adaptive_counter_backoff(uint16_t counter) {
     unsigned int value = (1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
 }
-
-extern uint32_t _Py_next_func_version;
 
 
 /* Comparison bit masks. */

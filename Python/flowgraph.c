@@ -261,8 +261,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jump);
+    fprintf(stderr, "line: %d, %s (%d)  %s%s\n",
+                    i->i_loc.lineno, _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -1624,8 +1624,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case KW_NAMES:
-                break;
             case LOAD_GLOBAL:
                 if (nextop == PUSH_NULL && (oparg & 1) == 0) {
                     INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
@@ -2663,4 +2661,3 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 
     return SUCCESS;
 }
-
