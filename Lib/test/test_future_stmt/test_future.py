@@ -19,20 +19,37 @@ def get_error_location(msg):
 class FutureTest(unittest.TestCase):
 
     def check_syntax_error(self, err, basename, lineno, offset=1):
-        self.assertIn('%s.py, line %d' % (basename, lineno), str(err))
-        self.assertEqual(os.path.basename(err.filename), basename + '.py')
+        if basename != '<string>':
+            basename += '.py'
+
+        self.assertIn(f'{basename}, line {lineno}', str(err))
+        self.assertEqual(os.path.basename(err.filename), basename)
         self.assertEqual(err.lineno, lineno)
         self.assertEqual(err.offset, offset)
 
-    def test_future1(self):
-        with import_helper.CleanImport('test.test_future_stmt.future_test1'):
-            from test.test_future_stmt import future_test1
-            self.assertEqual(future_test1.result, 6)
+    def assertSyntaxError(self, code, lineno, offset=1, *, parametrize_docstring=True):
+        code = dedent(code)
+        for trim_docstring in ([False, True] if parametrize_docstring else [False]):
+            with self.subTest(trim_docstring=trim_docstring):
+                if trim_docstring:
+                    code = os.linesep.join(code.splitlines()[2:])
+                    lineno -= 2
+                with self.assertRaises(SyntaxError) as cm:
+                    exec(code)
+                self.check_syntax_error(cm.exception, "<string>", lineno, offset=offset)
 
-    def test_future2(self):
-        with import_helper.CleanImport('test.test_future_stmt.future_test2'):
-            from test.test_future_stmt import future_test2
-            self.assertEqual(future_test2.result, 6)
+    def test_import_nested_scope_twice(self):
+        # Import the name nested_scopes twice to trigger SF bug #407394
+        with import_helper.CleanImport(
+            'test.test_future_stmt.import_nested_scope_twice',
+        ):
+            from test.test_future_stmt import import_nested_scope_twice
+        self.assertEqual(import_nested_scope_twice.result, 6)
+
+    def test_nested_scope(self):
+        with import_helper.CleanImport('test.test_future_stmt.nested_scope'):
+            from test.test_future_stmt import nested_scope
+        self.assertEqual(nested_scope.result, 6)
 
     def test_future_single_import(self):
         with import_helper.CleanImport(
@@ -52,45 +69,85 @@ class FutureTest(unittest.TestCase):
         ):
             from test.test_future_stmt import test_future_multiple_features
 
-    def test_badfuture3(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future3
-        self.check_syntax_error(cm.exception, "badsyntax_future3", 3)
+    def test_unknown_future_flag(self):
+        code = """
+        '''Docstring'''
+        from __future__ import nested_scopes
+        from __future__ import rested_snopes  # error here
+        """
+        self.assertSyntaxError(code, 4)
 
-    def test_badfuture4(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future4
-        self.check_syntax_error(cm.exception, "badsyntax_future4", 3)
+    def test_future_import_not_on_top(self):
+        code = """
+        '''Docstring'''
+        import some_module
+        from __future__ import annotations
+        """
+        self.assertSyntaxError(code, 4)
 
-    def test_badfuture5(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future5
-        self.check_syntax_error(cm.exception, "badsyntax_future5", 4)
+        code = """
+        '''Docstring'''
+        import __future__
+        from __future__ import annotations
+        """
+        self.assertSyntaxError(code, 4)
 
-    def test_badfuture6(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future6
-        self.check_syntax_error(cm.exception, "badsyntax_future6", 3)
+        code = """
+        '''Docstring'''
+        from __future__ import absolute_import
+        "spam, bar, blah"
+        from __future__ import print_function
+        """
+        self.assertSyntaxError(code, 5)
 
-    def test_badfuture7(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future7
-        self.check_syntax_error(cm.exception, "badsyntax_future7", 3, 54)
+    def test_future_import_with_extra_string(self):
+        code = """
+        '''Docstring'''
+        "this isn't a doc string"
+        from __future__ import nested_scopes
+        """
+        self.assertSyntaxError(code, 4, parametrize_docstring=False)
 
-    def test_badfuture8(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future8
-        self.check_syntax_error(cm.exception, "badsyntax_future8", 3)
+    def test_multiple_import_statements_on_same_line(self):
+        # With `\`:
+        code = """
+        '''Docstring'''
+        from __future__ import nested_scopes; import string; from __future__ import \
+     nested_scopes
+        """
+        self.assertSyntaxError(code, 3, offset=54)
 
-    def test_badfuture9(self):
-        with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future9
-        self.check_syntax_error(cm.exception, "badsyntax_future9", 3)
+        # Without `\`:
+        code = """
+        '''Docstring'''
+        from __future__ import nested_scopes; import string; from __future__ import  nested_scopes
+        """
+        self.assertSyntaxError(code, 3, offset=54)
 
-    def test_badfuture10(self):
+    def test_future_import_star(self):
+        code = """
+        '''Docstring'''
+        from __future__ import *
+        """
+        self.assertSyntaxError(code, 3)
+
+    def test_future_import_braces(self):
+        code = """
+        '''Docstring'''
+        from __future__ import braces
+        """
+        self.assertSyntaxError(code, 3)
+
+        code = """
+        '''Docstring'''
+        from __future__ import nested_scopes, braces
+        """
+        self.assertSyntaxError(code, 3)
+
+    def test_bad_future_as_module(self):
         with self.assertRaises(SyntaxError) as cm:
-            from test.test_future_stmt import badsyntax_future10
-        self.check_syntax_error(cm.exception, "badsyntax_future10", 3)
+            from test.test_future_stmt import badsyntax_future
+        self.check_syntax_error(cm.exception, "badsyntax_future", 3)
 
     def test_ensure_flags_dont_clash(self):
         # bpo-39562: test that future flags and compiler flags doesn't clash
