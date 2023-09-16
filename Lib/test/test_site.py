@@ -500,8 +500,12 @@ class ImportSideEffectTests(unittest.TestCase):
 
             eyecatcher = f'EXECUTED_{module_name}'
 
-            with open(customize_path, 'w') as f:
-                f.write(f'print("{eyecatcher}")')
+            try:
+                with open(customize_path, 'w') as f:
+                    f.write(f'print("{eyecatcher}")')
+            except PermissionError:
+                # Can't modify system site packages depending on the system configuration
+                continue
 
             output = subprocess.check_output([sys.executable, '-c', '""'])
             self.assertIn(eyecatcher, output.decode('utf-8'))
