@@ -7,12 +7,12 @@ on:
       - main
   pull_request:
     paths:
-      - "Tools/clinic/**"
-      - "Tools/cases_generator/**"
-      - "Tools/peg_generator/**"
-      - "Tools/wasm/**"
-      - "Tools/requirements-dev.txt"
       - ".github/workflows/mypy.yml"
+      - "Tools/cases_generator/**"
+      - "Tools/clinic/**"
+      - "Tools/peg_generator/**"
+      - "Tools/requirements-dev.txt"
+      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
