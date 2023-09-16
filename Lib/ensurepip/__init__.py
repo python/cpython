@@ -1,22 +1,14 @@
-import collections
 import os
 import os.path
 import subprocess
 import sys
 import sysconfig
 import tempfile
-from contextlib import suppress
-from functools import cache
 from importlib import resources
 
 
 __all__ = ["version", "bootstrap"]
 _PIP_VERSION = "23.3.2"
-
-# Packages bundled in ensurepip._bundled have wheel_name set.
-# Packages from WHEEL_PKG_DIR have wheel_path set.
-_Package = collections.namedtuple('Package',
-                                  ('version', 'wheel_name', 'wheel_path'))
 
 # Directory of system wheel packages. Some Linux distribution packaging
 # policies recommend against bundling dependencies. For example, Fedora
@@ -44,22 +36,17 @@ def _find_wheel_pkg_dir_pip():
 
         # Extract '21.2.4' from 'pip-21.2.4-py3-none-any.whl'
         version = filename.removeprefix("pip-").partition("-")[0]
-        wheel_path = os.path.join(_WHEEL_PKG_DIR, filename)
-        return _Package(version, None, wheel_path)
+        return {"version": version, "filename": filename, "bundled": False}
 
     return None
 
 
-@cache
-def _get_usable_pip_package() -> _Package:
-    wheel_name = f"pip-{_PIP_VERSION}-py3-none-any.whl"
-    pip_pkg = _Package(_PIP_VERSION, wheel_name, None)
-
-    with suppress(LookupError):
-        # only use the wheel package directory if pip wheel is found there
-        pip_pkg = _find_wheel_pkg_dir_pip(_WHEEL_PKG_DIR)
-
-    return pip_pkg
+def _get_pip_info():
+    # Prefer pip from the wheel package directory, if present.
+    if (pip_info := _find_wheel_pkg_dir_pip()) is not None:
+        return pip_info
+    filename = f"pip-{_PIP_VERSION}-py3-none-any.whl"
+    return {"version": _PIP_VERSION, "filename": filename, "bundled": True}
 
 
 def _run_pip(args, additional_paths=None):
@@ -92,7 +79,7 @@ def version():
     """
     Returns a string specifying the bundled version of pip.
     """
-    return _get_usable_pip_package().version
+    return _get_pip_info()["version"]
 
 
 def _disable_pip_configuration_settings():
@@ -154,17 +141,16 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     with tempfile.TemporaryDirectory() as tmpdir:
         # Put our bundled wheels into a temporary directory and construct the
         # additional paths that need added to sys.path
-        package = _get_usable_pip_package()
-        if package.wheel_name:
+        package = _get_pip_info()
+        wheel_name = package["filename"]
+        if package["bundled"]:
             # Use bundled wheel package
-            wheel_name = package.wheel_name
             wheel_path = resources.files("ensurepip") / "_bundled" / wheel_name
             whl = wheel_path.read_bytes()
         else:
             # Use the wheel package directory
-            with open(package.wheel_path, "rb") as fp:
+            with open(os.path.join(_WHEEL_PKG_DIR, wheel_name), "rb") as fp:
                 whl = fp.read()
-            wheel_name = os.path.basename(package.wheel_path)
 
         filename = os.path.join(tmpdir, wheel_name)
         with open(filename, "wb") as fp:
@@ -182,6 +168,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
             args += ["-" + "v" * verbosity]
 
         return _run_pip([*args, "pip"], [filename])
+
 
 def _uninstall_helper(*, verbosity=0):
     """Helper to support a clean default uninstall process on Windows
