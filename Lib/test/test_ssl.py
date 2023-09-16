@@ -3309,13 +3309,12 @@ class ThreadedTests(unittest.TestCase):
         # try to connect
         if support.verbose:
             sys.stdout.write('\n')
-        with open(CERTFILE, 'rb') as f:
+        # Get this test file itself:
+        with open(__file__, 'rb') as f:
             d1 = f.read()
         d2 = ''
         # now fetch the same data from the HTTPS server
-        dirname, filename = os.path.split(CERTFILE)
-        basename = os.path.basename(dirname)
-        url = 'https://localhost:%d/%s/%s' % (server.port, basename, filename)
+        url = f'https://localhost:{server.port}/test_ssl.py'
         context = ssl.create_default_context(cafile=SIGNING_CA)
         f = urllib.request.urlopen(url, context=context)
         try:
