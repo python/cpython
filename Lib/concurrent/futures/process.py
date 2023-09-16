@@ -204,7 +204,14 @@ def _process_chunk(fn, chunk):
     This function is run in a separate process.
 
     """
-    return [fn(*args) for args in chunk]
+    results = []
+    for args in chunk:
+        try:
+            result = _base._FutureResult.from_value(fn(*args))
+        except Exception as e:
+            result = _base._FutureResult.from_exception(e)
+        results.append(result)
+    return results
 
 
 def _sendback_result(result_queue, work_id, result=None, exception=None,
@@ -617,6 +624,9 @@ def _chain_from_iterable_of_lists(iterable):
     careful not to keep references to yielded objects.
     """
     for element in iterable:
+        if element.is_exception:
+            raise element.exception
+        element = element.value
         element.reverse()
         while element:
             yield element.pop()
@@ -830,10 +840,11 @@ class ProcessPoolExecutor(_base.Executor):
         if chunksize < 1:
             raise ValueError("chunksize must be >= 1.")
 
-        results = super().map(partial(_process_chunk, fn),
+        results = super()._map(partial(_process_chunk, fn),
                               _get_chunks(*iterables, chunksize=chunksize),
                               timeout=timeout)
-        return _chain_from_iterable_of_lists(results)
+        return _base._MapResultIterator.from_generator(
+            _chain_from_iterable_of_lists(results))
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:

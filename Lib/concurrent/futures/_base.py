@@ -314,7 +314,9 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
 def _result_or_cancel(fut, timeout=None):
     try:
         try:
-            return fut.result(timeout)
+            return _FutureResult.from_value(fut.result(timeout))
+        except Exception as e:
+            return _FutureResult.from_exception(e)
         finally:
             fut.cancel()
     finally:
@@ -566,6 +568,46 @@ class Future(object):
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
+
+class _FutureResult(object):
+    """
+    This is used to record the exception instead of throwing them.
+
+    _FutureResult must contain either the value of future or an exception
+    that was thrown during the computation of future. Use is_exception
+    property to determine which one it is.
+    """
+
+    def __init__(self, exception, value):
+        self._exception = exception
+        self._value = value
+
+    @classmethod
+    def from_exception(cls, exc):
+        return cls(exc, None)
+
+    @classmethod
+    def from_value(cls, value):
+        return cls(None, value)
+
+    @property
+    def exception(self):
+        if not self.is_exception:
+            raise RuntimeError("No exception thrown.")
+        return self._exception
+
+    @property
+    def value(self):
+        if self.is_exception:
+            raise RuntimeError(
+                "Cannot get result value because an exception was thrown.")
+        return self._value
+
+    @property
+    def is_exception(self):
+        return self._exception is not None
+
+
 class Executor(object):
     """This is an abstract base class for concrete asynchronous executors."""
 
@@ -602,6 +644,11 @@ class Executor(object):
                 before the given timeout.
             Exception: If fn(*args) raises for any values.
         """
+        return _MapResultIterator.from_generator(
+            self._map(fn, *iterables, timeout=timeout)
+        )
+
+    def _map(self, fn, *iterables, timeout=None):
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
@@ -646,6 +693,25 @@ class Executor(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown(wait=True)
         return False
+
+
+class _MapResultIterator(object):
+    """The iterator returned by map()."""
+    def __init__(self, gen):
+        self.gen = gen
+
+    @classmethod
+    def from_generator(cls, gen):
+        return cls(gen)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        result = next(self.gen)
+        if result.is_exception:
+            raise result.exception
+        return result.value
 
 
 class BrokenExecutor(RuntimeError):
