@@ -6915,7 +6915,7 @@ error:
 static struct PyModuleDef datetimemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_datetime",
-    .m_doc = "Fast implementation of the datetime type.",
+    .m_doc = PyDoc_STR("Fast implementation of the datetime type."),
     .m_size = -1,
     .m_methods = module_methods,
 };

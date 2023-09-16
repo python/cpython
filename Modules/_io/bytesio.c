@@ -1000,7 +1000,7 @@ bytesio_clear(bytesio *self)
 
 static PyGetSetDef bytesio_getsetlist[] = {
     {"closed",  (getter)bytesio_get_closed, NULL,
-     "True if the file is closed."},
+     PyDoc_STR("True if the file is closed.")},
     {NULL},            /* sentinel */
 };
 

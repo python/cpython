@@ -14,10 +14,10 @@ module grp
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=cade63f2ed1bd9f8]*/
 
 static PyStructSequence_Field struct_group_type_fields[] = {
-   {"gr_name", "group name"},
-   {"gr_passwd", "password"},
-   {"gr_gid", "group id"},
-   {"gr_mem", "group members"},
+   {"gr_name", PyDoc_STR("group name")},
+   {"gr_passwd", PyDoc_STR("password")},
+   {"gr_gid", PyDoc_STR("group id")},
+   {"gr_mem", PyDoc_STR("group members")},
    {0}
 };
 

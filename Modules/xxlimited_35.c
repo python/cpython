@@ -110,7 +110,7 @@ Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
 }
 
 static PyType_Slot Xxo_Type_slots[] = {
-    {Py_tp_doc, "The Xxo type"},
+    {Py_tp_doc, PyDoc_STR("The Xxo type")},
     {Py_tp_traverse, Xxo_traverse},
     {Py_tp_clear, Xxo_clear},
     {Py_tp_finalize, Xxo_finalize},

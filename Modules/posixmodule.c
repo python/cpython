@@ -2133,52 +2133,52 @@ or st_flags, they are available as attributes only.\n\
 See os.stat for more information.");
 
 static PyStructSequence_Field stat_result_fields[] = {
-    {"st_mode",    "protection bits"},
-    {"st_ino",     "inode"},
-    {"st_dev",     "device"},
-    {"st_nlink",   "number of hard links"},
-    {"st_uid",     "user ID of owner"},
-    {"st_gid",     "group ID of owner"},
-    {"st_size",    "total size, in bytes"},
+    {"st_mode",    PyDoc_STR("protection bits")},
+    {"st_ino",     PyDoc_STR("inode")},
+    {"st_dev",     PyDoc_STR("device")},
+    {"st_nlink",   PyDoc_STR("number of hard links")},
+    {"st_uid",     PyDoc_STR("user ID of owner")},
+    {"st_gid",     PyDoc_STR("group ID of owner")},
+    {"st_size",    PyDoc_STR("total size, in bytes")},
     /* The NULL is replaced with PyStructSequence_UnnamedField later. */
-    {NULL,   "integer time of last access"},
-    {NULL,   "integer time of last modification"},
-    {NULL,   "integer time of last change"},
-    {"st_atime",   "time of last access"},
-    {"st_mtime",   "time of last modification"},
-    {"st_ctime",   "time of last change"},
-    {"st_atime_ns",   "time of last access in nanoseconds"},
-    {"st_mtime_ns",   "time of last modification in nanoseconds"},
-    {"st_ctime_ns",   "time of last change in nanoseconds"},
+    {NULL,   PyDoc_STR("integer time of last access")},
+    {NULL,   PyDoc_STR("integer time of last modification")},
+    {NULL,   PyDoc_STR("integer time of last change")},
+    {"st_atime",   PyDoc_STR("time of last access")},
+    {"st_mtime",   PyDoc_STR("time of last modification")},
+    {"st_ctime",   PyDoc_STR("time of last change")},
+    {"st_atime_ns",   PyDoc_STR("time of last access in nanoseconds")},
+    {"st_mtime_ns",   PyDoc_STR("time of last modification in nanoseconds")},
+    {"st_ctime_ns",   PyDoc_STR("time of last change in nanoseconds")},
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    {"st_blksize", "blocksize for filesystem I/O"},
+    {"st_blksize", PyDoc_STR("blocksize for filesystem I/O")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    {"st_blocks",  "number of blocks allocated"},
+    {"st_blocks",  PyDoc_STR("number of blocks allocated")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-    {"st_rdev",    "device type (if inode device)"},
+    {"st_rdev",    PyDoc_STR("device type (if inode device)")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    {"st_flags",   "user defined flags for file"},
+    {"st_flags",   PyDoc_STR("user defined flags for file")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-    {"st_gen",    "generation number"},
+    {"st_gen",    PyDoc_STR("generation number")},
 #endif
 #if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME) || defined(MS_WINDOWS)
-    {"st_birthtime",   "time of creation"},
+    {"st_birthtime",   PyDoc_STR("time of creation")},
 #endif
 #ifdef MS_WINDOWS
-    {"st_birthtime_ns", "time of creation in nanoseconds"},
+    {"st_birthtime_ns", PyDoc_STR("time of creation in nanoseconds")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
-    {"st_file_attributes", "Windows file attribute bits"},
+    {"st_file_attributes", PyDoc_STR("Windows file attribute bits")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-    {"st_fstype",  "Type of filesystem"},
+    {"st_fstype",  PyDoc_STR("Type of filesystem")},
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
-    {"st_reparse_tag", "Windows reparse tag"},
+    {"st_reparse_tag", PyDoc_STR("Windows reparse tag")},
 #endif
     {0}
 };
@@ -5857,11 +5857,11 @@ os_remove_impl(PyObject *module, path_t *path, int dir_fd)
 
 
 static PyStructSequence_Field uname_result_fields[] = {
-    {"sysname",    "operating system name"},
-    {"nodename",   "name of machine on network (implementation-defined)"},
-    {"release",    "operating system release"},
-    {"version",    "operating system version"},
-    {"machine",    "hardware identifier"},
+    {"sysname",    PyDoc_STR("operating system name")},
+    {"nodename",   PyDoc_STR("name of machine on network (implementation-defined)")},
+    {"release",    PyDoc_STR("operating system release")},
+    {"version",    PyDoc_STR("operating system version")},
+    {"machine",    PyDoc_STR("hardware identifier")},
     {NULL}
 };
 
@@ -7820,7 +7820,7 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
 PyDoc_VAR(os_sched_param__doc__);
 
 static PyStructSequence_Field sched_param_fields[] = {
-    {"sched_priority", "the scheduling priority"},
+    {"sched_priority", PyDoc_STR("the scheduling priority")},
     {0}
 };
 
@@ -9928,11 +9928,11 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
 
 
 static PyStructSequence_Field times_result_fields[] = {
-    {"user",    "user time"},
-    {"system",   "system time"},
-    {"children_user",    "user time of children"},
-    {"children_system",    "system time of children"},
-    {"elapsed",    "elapsed time since an arbitrary point in the past"},
+    {"user",    PyDoc_STR("user time")},
+    {"system",   PyDoc_STR("system time")},
+    {"children_user",    PyDoc_STR("user time of children")},
+    {"children_system",    PyDoc_STR("system time of children")},
+    {"elapsed",    PyDoc_STR("elapsed time since an arbitrary point in the past")},
     {NULL}
 };
 
@@ -14227,8 +14227,8 @@ PyDoc_STRVAR(TerminalSize_docstring,
     "A tuple of (columns, lines) for holding terminal window size");
 
 static PyStructSequence_Field TerminalSize_fields[] = {
-    {"columns", "width of the terminal window in characters"},
-    {"lines", "height of the terminal window in characters"},
+    {"columns", PyDoc_STR("width of the terminal window in characters")},
+    {"lines", PyDoc_STR("height of the terminal window in characters")},
     {NULL, NULL}
 };
 
@@ -14882,9 +14882,9 @@ os_DirEntry___fspath___impl(DirEntry *self)
 
 static PyMemberDef DirEntry_members[] = {
     {"name", Py_T_OBJECT_EX, offsetof(DirEntry, name), Py_READONLY,
-     "the entry's base filename, relative to scandir() \"path\" argument"},
+     PyDoc_STR("the entry's base filename, relative to scandir() \"path\" argument")},
     {"path", Py_T_OBJECT_EX, offsetof(DirEntry, path), Py_READONLY,
-     "the entry's full path name; equivalent to os.path.join(scandir_path, entry.name)"},
+     PyDoc_STR("the entry's full path name; equivalent to os.path.join(scandir_path, entry.name)")},
     {NULL}
 };
 

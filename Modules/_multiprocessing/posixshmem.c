@@ -117,7 +117,7 @@ static PyModuleDef_Slot module_slots[] = {
 static struct PyModuleDef _posixshmemmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_posixshmem",
-    .m_doc = "POSIX shared memory module",
+    .m_doc = PyDoc_STR("POSIX shared memory module"),
     .m_size = 0,
     .m_methods = module_methods,
     .m_slots = module_slots,

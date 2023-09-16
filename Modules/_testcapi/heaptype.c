@@ -315,8 +315,8 @@ test_type_from_ephemeral_spec(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyType_Slot repeated_doc_slots[] = {
-    {Py_tp_doc, "A class used for tests·"},
-    {Py_tp_doc, "A class used for tests"},
+    {Py_tp_doc, PyDoc_STR("A class used for tests·")},
+    {Py_tp_doc, PyDoc_STR("A class used for tests")},
     {0, 0},
 };
 

@@ -383,7 +383,7 @@ static PyModuleDef_Slot module_slots[] = {
 static struct PyModuleDef opcodemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_opcode",
-    .m_doc = "Opcode support module.",
+    .m_doc = PyDoc_STR("Opcode support module."),
     .m_size = 0,
     .m_methods = opcode_functions,
     .m_slots = module_slots,

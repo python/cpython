@@ -111,9 +111,9 @@ PyDoc_STRVAR(threadinfo__doc__,
 A named tuple holding information about the thread implementation.");
 
 static PyStructSequence_Field threadinfo_fields[] = {
-    {"name",    "name of the thread implementation"},
-    {"lock",    "name of the lock implementation"},
-    {"version", "name and version of the thread library"},
+    {"name",    PyDoc_STR("name of the thread implementation")},
+    {"lock",    PyDoc_STR("name of the lock implementation")},
+    {"version", PyDoc_STR("name and version of the thread library")},
     {0}
 };
 

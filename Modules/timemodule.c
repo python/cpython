@@ -438,17 +438,17 @@ Delay execution for a given number of seconds.  The argument may be\n\
 a floating point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
-    {"tm_year", "year, for example, 1993"},
-    {"tm_mon", "month of year, range [1, 12]"},
-    {"tm_mday", "day of month, range [1, 31]"},
-    {"tm_hour", "hours, range [0, 23]"},
-    {"tm_min", "minutes, range [0, 59]"},
-    {"tm_sec", "seconds, range [0, 61])"},
-    {"tm_wday", "day of week, range [0, 6], Monday is 0"},
-    {"tm_yday", "day of year, range [1, 366]"},
-    {"tm_isdst", "1 if summer time is in effect, 0 if not, and -1 if unknown"},
-    {"tm_zone", "abbreviation of timezone name"},
-    {"tm_gmtoff", "offset from UTC in seconds"},
+    {"tm_year", PyDoc_STR("year, for example, 1993")},
+    {"tm_mon", PyDoc_STR("month of year, range [1, 12]")},
+    {"tm_mday", PyDoc_STR("day of month, range [1, 31]")},
+    {"tm_hour", PyDoc_STR("hours, range [0, 23]")},
+    {"tm_min", PyDoc_STR("minutes, range [0, 59]")},
+    {"tm_sec", PyDoc_STR("seconds, range [0, 61])")},
+    {"tm_wday", PyDoc_STR("day of week, range [0, 6], Monday is 0")},
+    {"tm_yday", PyDoc_STR("day of year, range [1, 366]")},
+    {"tm_isdst", PyDoc_STR("1 if summer time is in effect, 0 if not, and -1 if unknown")},
+    {"tm_zone", PyDoc_STR("abbreviation of timezone name")},
+    {"tm_gmtoff", PyDoc_STR("offset from UTC in seconds")},
     {0}
 };
 

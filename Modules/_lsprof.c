@@ -419,21 +419,21 @@ pending_exception(ProfilerObject *pObj)
 /************************************************************/
 
 static PyStructSequence_Field profiler_entry_fields[] = {
-    {"code",         "code object or built-in function name"},
-    {"callcount",    "how many times this was called"},
-    {"reccallcount", "how many times called recursively"},
-    {"totaltime",    "total time in this entry"},
-    {"inlinetime",   "inline time in this entry (not in subcalls)"},
-    {"calls",        "details of the calls"},
+    {"code",         PyDoc_STR("code object or built-in function name")},
+    {"callcount",    PyDoc_STR("how many times this was called")},
+    {"reccallcount", PyDoc_STR("how many times called recursively")},
+    {"totaltime",    PyDoc_STR("total time in this entry")},
+    {"inlinetime",   PyDoc_STR("inline time in this entry (not in subcalls)")},
+    {"calls",        PyDoc_STR("details of the calls")},
     {0}
 };
 
 static PyStructSequence_Field profiler_subentry_fields[] = {
-    {"code",         "called code object or built-in function name"},
-    {"callcount",    "how many times this is called"},
-    {"reccallcount", "how many times this is called recursively"},
-    {"totaltime",    "total time spent in this call"},
-    {"inlinetime",   "inline time (not in further subcalls)"},
+    {"code",         PyDoc_STR("called code object or built-in function name")},
+    {"callcount",    PyDoc_STR("how many times this is called")},
+    {"reccallcount", PyDoc_STR("how many times this is called recursively")},
+    {"totaltime",    PyDoc_STR("total time spent in this call")},
+    {"inlinetime",   PyDoc_STR("inline time (not in further subcalls)")},
     {0}
 };
 
@@ -1014,7 +1014,7 @@ static PyModuleDef_Slot _lsprofslots[] = {
 static struct PyModuleDef _lsprofmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_lsprof",
-    .m_doc = "Fast profiler",
+    .m_doc = PyDoc_STR("Fast profiler"),
     .m_size = sizeof(_lsprof_state),
     .m_methods = moduleMethods,
     .m_slots = _lsprofslots,

@@ -2563,7 +2563,7 @@ static PyGetSetDef PyCursesWindow_getsets[] = {
     {"encoding",
      (getter)PyCursesWindow_get_encoding,
      (setter)PyCursesWindow_set_encoding,
-     "the typecode character used to create the array"},
+     PyDoc_STR("the typecode character used to create the array")},
     {NULL, NULL, NULL, NULL }  /* sentinel */
 };
 
@@ -4563,9 +4563,9 @@ PyDoc_STRVAR(ncurses_version__doc__,
 Ncurses version information as a named tuple.");
 
 static PyStructSequence_Field ncurses_version_fields[] = {
-    {"major", "Major release number"},
-    {"minor", "Minor release number"},
-    {"patch", "Patch release number"},
+    {"major", PyDoc_STR("Major release number")},
+    {"minor", PyDoc_STR("Minor release number")},
+    {"patch", PyDoc_STR("Patch release number")},
     {0}
 };
 

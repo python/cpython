@@ -388,11 +388,11 @@ stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef stdprinter_methods[] = {
-    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS, ""},
-    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS, ""},
-    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS, ""},
+    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS, PyDoc_STR("")},
+    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS, PyDoc_STR("")},
+    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS, PyDoc_STR("")},
+    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS, PyDoc_STR("")},
+    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS, PyDoc_STR("")},
     {NULL,              NULL}  /*sentinel */
 };
 
@@ -415,9 +415,9 @@ get_encoding(PyStdPrinter_Object *self, void *closure)
 }
 
 static PyGetSetDef stdprinter_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"encoding", (getter)get_encoding, NULL, "Encoding of the file"},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"closed", (getter)get_closed, NULL, PyDoc_STR("True if the file is closed")},
+    {"encoding", (getter)get_encoding, NULL, PyDoc_STR("Encoding of the file")},
+    {"mode", (getter)get_mode, NULL, PyDoc_STR("String giving the file mode")},
     {0},
 };
 

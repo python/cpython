@@ -3017,18 +3017,18 @@ static PyMethodDef pattern_methods[] = {
 
 static PyGetSetDef pattern_getset[] = {
     {"groupindex", (getter)pattern_groupindex, (setter)NULL,
-      "A dictionary mapping group names to group numbers."},
+      PyDoc_STR("A dictionary mapping group names to group numbers.")},
     {NULL}  /* Sentinel */
 };
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
     {"pattern",    _Py_T_OBJECT,    PAT_OFF(pattern),       Py_READONLY,
-     "The pattern string from which the RE object was compiled."},
+     PyDoc_STR("The pattern string from which the RE object was compiled.")},
     {"flags",      Py_T_INT,       PAT_OFF(flags),         Py_READONLY,
-     "The regex matching flags."},
+     PyDoc_STR("The regex matching flags.")},
     {"groups",     Py_T_PYSSIZET,  PAT_OFF(groups),        Py_READONLY,
-     "The number of capturing groups in the pattern."},
+     PyDoc_STR("The number of capturing groups in the pattern.")},
     {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PatternObject, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
@@ -3073,9 +3073,9 @@ static PyMethodDef match_methods[] = {
 
 static PyGetSetDef match_getset[] = {
     {"lastindex", (getter)match_lastindex_get, (setter)NULL,
-     "The integer index of the last matched capturing group."},
+     PyDoc_STR("The integer index of the last matched capturing group.")},
     {"lastgroup", (getter)match_lastgroup_get, (setter)NULL,
-     "The name of the last matched capturing group."},
+     PyDoc_STR("The name of the last matched capturing group.")},
     {"regs",      (getter)match_regs_get,      (setter)NULL},
     {NULL}
 };
@@ -3083,13 +3083,13 @@ static PyGetSetDef match_getset[] = {
 #define MATCH_OFF(x) offsetof(MatchObject, x)
 static PyMemberDef match_members[] = {
     {"string",  _Py_T_OBJECT,   MATCH_OFF(string),  Py_READONLY,
-     "The string passed to match() or search()."},
+     PyDoc_STR("The string passed to match() or search().")},
     {"re",      _Py_T_OBJECT,   MATCH_OFF(pattern), Py_READONLY,
-     "The regular expression object."},
+     PyDoc_STR("The regular expression object.")},
     {"pos",     Py_T_PYSSIZET, MATCH_OFF(pos),     Py_READONLY,
-     "The index into the string at which the RE engine started looking for a match."},
+     PyDoc_STR("The index into the string at which the RE engine started looking for a match.")},
     {"endpos",  Py_T_PYSSIZET, MATCH_OFF(endpos),  Py_READONLY,
-     "The index into the string beyond which the RE engine will not go."},
+     PyDoc_STR("The index into the string beyond which the RE engine will not go.")},
     {NULL}
 };
 

@@ -2332,9 +2332,9 @@ array_get_itemsize(arrayobject *a, void *closure)
 
 static PyGetSetDef array_getsets [] = {
     {"typecode", (getter) array_get_typecode, NULL,
-     "the typecode character used to create the array"},
+     PyDoc_STR("the typecode character used to create the array")},
     {"itemsize", (getter) array_get_itemsize, NULL,
-     "the size, in bytes, of one array item"},
+     PyDoc_STR("the size, in bytes, of one array item")},
     {NULL}
 };
 

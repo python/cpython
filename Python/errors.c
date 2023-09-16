@@ -1327,11 +1327,11 @@ Type used to pass arguments to sys.unraisablehook.");
 static PyTypeObject UnraisableHookArgsType;
 
 static PyStructSequence_Field UnraisableHookArgs_fields[] = {
-    {"exc_type", "Exception type"},
-    {"exc_value", "Exception value"},
-    {"exc_traceback", "Exception traceback"},
-    {"err_msg", "Error message"},
-    {"object", "Object causing the exception"},
+    {"exc_type", PyDoc_STR("Exception type")},
+    {"exc_value", PyDoc_STR("Exception value")},
+    {"exc_traceback", PyDoc_STR("Exception traceback")},
+    {"err_msg", PyDoc_STR("Error message")},
+    {"object", PyDoc_STR("Object causing the exception")},
     {0}
 };
 

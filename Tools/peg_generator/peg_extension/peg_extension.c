@@ -150,8 +150,8 @@ dump_memo_stats(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef ParseMethods[] = {
-    {"parse_file", _PyCFunction_CAST(parse_file), METH_VARARGS|METH_KEYWORDS, "Parse a file."},
-    {"parse_string", _PyCFunction_CAST(parse_string), METH_VARARGS|METH_KEYWORDS, "Parse a string."},
+    {"parse_file", _PyCFunction_CAST(parse_file), METH_VARARGS|METH_KEYWORDS, PyDoc_STR("Parse a file.")},
+    {"parse_string", _PyCFunction_CAST(parse_string), METH_VARARGS|METH_KEYWORDS, PyDoc_STR("Parse a string.")},
     {"clear_memo_stats", clear_memo_stats, METH_NOARGS},
     {"dump_memo_stats", dump_memo_stats, METH_NOARGS},
     {"get_memo_stats", get_memo_stats, METH_NOARGS},
@@ -161,7 +161,7 @@ static PyMethodDef ParseMethods[] = {
 static struct PyModuleDef parsemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "parse",
-    .m_doc = "A parser.",
+    .m_doc = PyDoc_STR("A parser."),
     .m_methods = ParseMethods,
 };
 

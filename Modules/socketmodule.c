@@ -5206,9 +5206,9 @@ static PyMethodDef sock_methods[] = {
 
 /* SockObject members */
 static PyMemberDef sock_memberlist[] = {
-       {"family", Py_T_INT, offsetof(PySocketSockObject, sock_family), Py_READONLY, "the socket family"},
-       {"type", Py_T_INT, offsetof(PySocketSockObject, sock_type), Py_READONLY, "the socket type"},
-       {"proto", Py_T_INT, offsetof(PySocketSockObject, sock_proto), Py_READONLY, "the socket protocol"},
+       {"family", Py_T_INT, offsetof(PySocketSockObject, sock_family), Py_READONLY, PyDoc_STR("the socket family")},
+       {"type", Py_T_INT, offsetof(PySocketSockObject, sock_type), Py_READONLY, PyDoc_STR("the socket type")},
+       {"proto", Py_T_INT, offsetof(PySocketSockObject, sock_proto), Py_READONLY, PyDoc_STR("the socket protocol")},
        {0},
 };
 

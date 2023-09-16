@@ -105,7 +105,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
 }
 
 static PyType_Slot Example_Type_slots[] = {
-    {Py_tp_doc, "The Example type"},
+    {Py_tp_doc, PyDoc_STR("The Example type")},
     {Py_tp_finalize, Example_finalize},
     {Py_tp_traverse, Example_traverse},
     {Py_tp_getattro, Example_getattro},
@@ -279,7 +279,7 @@ static PyMethodDef StateAccessType_methods[] = {
 };
 
 static PyType_Slot StateAccessType_Type_slots[] = {
-    {Py_tp_doc, "Type for testing per-module state access from methods."},
+    {Py_tp_doc, PyDoc_STR("Type for testing per-module state access from methods.")},
     {Py_tp_methods, StateAccessType_methods},
     {0, NULL}
 };

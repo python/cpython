@@ -1380,9 +1380,9 @@ CharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored)
 
 static PyGetSetDef CharArray_getsets[] = {
     { "raw", (getter)CharArray_get_raw, (setter)CharArray_set_raw,
-      "value", NULL },
+      PyDoc_STR("value"), NULL },
     { "value", (getter)CharArray_get_value, (setter)CharArray_set_value,
-      "string value"},
+      PyDoc_STR("string value")},
     { NULL, NULL }
 };
 
@@ -1432,7 +1432,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value, void *Py_UNUSED(ignored
 
 static PyGetSetDef WCharArray_getsets[] = {
     { "value", (getter)WCharArray_get_value, (setter)WCharArray_set_value,
-      "string value"},
+      PyDoc_STR("string value")},
     { NULL, NULL }
 };
 
@@ -2762,13 +2762,13 @@ PyCData_dealloc(PyObject *self)
 static PyMemberDef PyCData_members[] = {
     { "_b_base_", _Py_T_OBJECT,
       offsetof(CDataObject, b_base), Py_READONLY,
-      "the base object" },
+      PyDoc_STR("the base object") },
     { "_b_needsfree_", Py_T_INT,
       offsetof(CDataObject, b_needsfree), Py_READONLY,
-      "whether the object owns the memory or not" },
+      PyDoc_STR("whether the object owns the memory or not") },
     { "_objects", _Py_T_OBJECT,
       offsetof(CDataObject, b_objects), Py_READONLY,
-      "internal objects tree (NEVER CHANGE THIS OBJECT!)"},
+      PyDoc_STR("internal objects tree (NEVER CHANGE THIS OBJECT!)") },
     { NULL },
 };
 

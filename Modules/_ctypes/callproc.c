@@ -591,7 +591,7 @@ PyCArg_repr(PyCArgObject *self)
 static PyMemberDef PyCArgType_members[] = {
     { "_obj", _Py_T_OBJECT,
       offsetof(PyCArgObject, obj), Py_READONLY,
-      "the wrapped object" },
+      PyDoc_STR("the wrapped object") },
     { NULL },
 };
 
@@ -2036,8 +2036,8 @@ PyMethodDef _ctypes_module_methods[] = {
     CREATE_POINTER_TYPE_METHODDEF
     CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
-    {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
-    {"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
+    {"buffer_info", buffer_info, METH_O, PyDoc_STR("Return buffer interface information")},
+    {"resize", resize, METH_VARARGS, PyDoc_STR("Resize the memory buffer of a ctypes instance")},
 #ifdef MS_WIN32
     {"get_last_error", get_last_error, METH_NOARGS},
     {"set_last_error", set_last_error, METH_VARARGS},
@@ -2048,12 +2048,12 @@ PyMethodDef _ctypes_module_methods[] = {
     {"_check_HRESULT", check_hresult, METH_VARARGS},
 #else
     {"dlopen", py_dl_open, METH_VARARGS,
-     "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
-    {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
-    {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
+     PyDoc_STR("dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library")},
+    {"dlclose", py_dl_close, METH_VARARGS, PyDoc_STR("dlclose a library")},
+    {"dlsym", py_dl_sym, METH_VARARGS, PyDoc_STR("find symbol in shared library")},
 #endif
 #ifdef __APPLE__
-     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
+     {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, PyDoc_STR("check if path is in the shared cache")},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
     {"sizeof", sizeof_func, METH_O, sizeof_doc},

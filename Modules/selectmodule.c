@@ -1089,7 +1089,7 @@ select_devpoll_fileno_impl(devpollObject *self)
 
 static PyGetSetDef devpoll_getsetlist[] = {
     {"closed", (getter)devpoll_get_closed, NULL,
-     "True if the devpoll object is closed"},
+     PyDoc_STR("True if the devpoll object is closed")},
     {0},
 };
 
@@ -1683,7 +1683,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
 
 static PyGetSetDef pyepoll_getsetlist[] = {
     {"closed", (getter)pyepoll_get_closed, NULL,
-     "True if the epoll handler is closed"},
+     PyDoc_STR("True if the epoll handler is closed")},
     {0},
 };
 
@@ -2260,7 +2260,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
 
 static PyGetSetDef kqueue_queue_getsetlist[] = {
     {"closed", (getter)kqueue_queue_get_closed, NULL,
-     "True if the kqueue handler is closed"},
+     PyDoc_STR("True if the kqueue handler is closed")},
     {0},
 };
 

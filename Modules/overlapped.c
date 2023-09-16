@@ -1950,18 +1950,18 @@ static PyMethodDef Overlapped_methods[] = {
 static PyMemberDef Overlapped_members[] = {
     {"error", Py_T_ULONG,
      offsetof(OverlappedObject, error),
-     Py_READONLY, "Error from last operation"},
+     Py_READONLY, PyDoc_STR("Error from last operation")},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     Py_READONLY, "Overlapped event handle"},
+     Py_READONLY, PyDoc_STR("Overlapped event handle")},
     {NULL}
 };
 
 static PyGetSetDef Overlapped_getsets[] = {
     {"address", (getter)Overlapped_getaddress, NULL,
-     "Address of overlapped structure"},
+     PyDoc_STR("Address of overlapped structure")},
     {"pending", (getter)Overlapped_getpending, NULL,
-     "Whether the operation is pending"},
+     PyDoc_STR("Whether the operation is pending")},
     {NULL},
 };
 

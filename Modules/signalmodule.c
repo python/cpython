@@ -1092,13 +1092,13 @@ signal_valid_signals_impl(PyObject *module)
 
 #if defined(HAVE_SIGWAITINFO) || defined(HAVE_SIGTIMEDWAIT)
 static PyStructSequence_Field struct_siginfo_fields[] = {
-    {"si_signo",        "signal number"},
-    {"si_code",         "signal code"},
-    {"si_errno",        "errno associated with this signal"},
-    {"si_pid",          "sending process ID"},
-    {"si_uid",          "real user ID of sending process"},
-    {"si_status",       "exit value or signal"},
-    {"si_band",         "band event for SIGPOLL"},
+    {"si_signo",        PyDoc_STR("signal number")},
+    {"si_code",         PyDoc_STR("signal code")},
+    {"si_errno",        PyDoc_STR("errno associated with this signal")},
+    {"si_pid",          PyDoc_STR("sending process ID")},
+    {"si_uid",          PyDoc_STR("real user ID of sending process")},
+    {"si_status",       PyDoc_STR("exit value or signal")},
+    {"si_band",         PyDoc_STR("band event for SIGPOLL")},
     {0}
 };
 

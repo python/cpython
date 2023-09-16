@@ -1192,10 +1192,10 @@ get_mode(fileio *self, void *closure)
 }
 
 static PyGetSetDef fileio_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
+    {"closed", (getter)get_closed, NULL, PyDoc_STR("True if the file is closed")},
     {"closefd", (getter)get_closefd, NULL,
-        "True if the file descriptor will be closed by close()."},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+        PyDoc_STR("True if the file descriptor will be closed by close().")},
+    {"mode", (getter)get_mode, NULL, PyDoc_STR("String giving the file mode")},
     {NULL},
 };
 

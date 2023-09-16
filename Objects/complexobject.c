@@ -721,9 +721,9 @@ static PyMethodDef complex_methods[] = {
 
 static PyMemberDef complex_members[] = {
     {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
-     "the real part of a complex number"},
+     PyDoc_STR("the real part of a complex number")},
     {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
-     "the imaginary part of a complex number"},
+     PyDoc_STR("the imaginary part of a complex number")},
     {0},
 };
 

@@ -10199,11 +10199,11 @@ typedef struct {
 
 static PyMemberDef super_members[] = {
     {"__thisclass__", _Py_T_OBJECT, offsetof(superobject, type), Py_READONLY,
-     "the class invoking super()"},
+     PyDoc_STR("the class invoking super()")},
     {"__self__",  _Py_T_OBJECT, offsetof(superobject, obj), Py_READONLY,
-     "the instance invoking super(); may be None"},
+     PyDoc_STR("the instance invoking super(); may be None")},
     {"__self_class__", _Py_T_OBJECT, offsetof(superobject, obj_type), Py_READONLY,
-     "the type of the instance invoking super(); may be None"},
+     PyDoc_STR("the type of the instance invoking super(); may be None")},
     {0}
 };
 

@@ -2255,7 +2255,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
 static struct PyModuleDef _hashlibmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "_hashlib",
-    .m_doc = "OpenSSL interface for hashlib module",
+    .m_doc = PyDoc_STR("OpenSSL interface for hashlib module"),
     .m_size = sizeof(_hashlibstate),
     .m_methods = EVP_functions,
     .m_slots = hashlib_slots,

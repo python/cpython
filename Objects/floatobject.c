@@ -63,24 +63,24 @@ information about the precision and internal representation. Please study\n\
 your system's :file:`float.h` for more information.");
 
 static PyStructSequence_Field floatinfo_fields[] = {
-    {"max",             "DBL_MAX -- maximum representable finite float"},
-    {"max_exp",         "DBL_MAX_EXP -- maximum int e such that radix**(e-1) "
-                    "is representable"},
-    {"max_10_exp",      "DBL_MAX_10_EXP -- maximum int e such that 10**e "
-                    "is representable"},
-    {"min",             "DBL_MIN -- Minimum positive normalized float"},
-    {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
-                    "is a normalized float"},
-    {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
-                    "a normalized float"},
-    {"dig",             "DBL_DIG -- maximum number of decimal digits that "
-                    "can be faithfully represented in a float"},
-    {"mant_dig",        "DBL_MANT_DIG -- mantissa digits"},
-    {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
-                    "representable float"},
-    {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- rounding mode used for arithmetic "
-                    "operations"},
+    {"max",             PyDoc_STR("DBL_MAX -- maximum representable finite float")},
+    {"max_exp",         PyDoc_STR("DBL_MAX_EXP -- maximum int e such that radix**(e-1) "
+                    "is representable")},
+    {"max_10_exp",      PyDoc_STR("DBL_MAX_10_EXP -- maximum int e such that 10**e "
+                    "is representable")},
+    {"min",             PyDoc_STR("DBL_MIN -- Minimum positive normalized float")},
+    {"min_exp",         PyDoc_STR("DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
+                    "is a normalized float")},
+    {"min_10_exp",      PyDoc_STR("DBL_MIN_10_EXP -- minimum int e such that 10**e is "
+                    "a normalized float")},
+    {"dig",             PyDoc_STR("DBL_DIG -- maximum number of decimal digits that "
+                    "can be faithfully represented in a float")},
+    {"mant_dig",        PyDoc_STR("DBL_MANT_DIG -- mantissa digits")},
+    {"epsilon",         PyDoc_STR("DBL_EPSILON -- Difference between 1 and the next "
+                    "representable float")},
+    {"radix",           PyDoc_STR("FLT_RADIX -- radix of exponent")},
+    {"rounds",          PyDoc_STR("FLT_ROUNDS -- rounding mode used for arithmetic "
+                    "operations")},
     {0}
 };
 

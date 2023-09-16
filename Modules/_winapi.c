@@ -322,14 +322,14 @@ static PyMethodDef overlapped_methods[] = {
 static PyMemberDef overlapped_members[] = {
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     Py_READONLY, "overlapped event handle"},
+     Py_READONLY, PyDoc_STR("overlapped event handle")},
     {NULL}
 };
 
 static PyType_Slot winapi_overlapped_type_slots[] = {
     {Py_tp_traverse, overlapped_traverse},
     {Py_tp_dealloc, overlapped_dealloc},
-    {Py_tp_doc, "OVERLAPPED structure wrapper"},
+    {Py_tp_doc, PyDoc_STR("OVERLAPPED structure wrapper")},
     {Py_tp_methods, overlapped_methods},
     {Py_tp_members, overlapped_members},
     {0,0}

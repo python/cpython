@@ -1331,8 +1331,8 @@ A named tuple providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {
-    {"firstiter", "Hook to intercept first iteration"},
-    {"finalizer", "Hook to intercept finalization"},
+    {"firstiter", PyDoc_STR("Hook to intercept first iteration")},
+    {"finalizer", PyDoc_STR("Hook to intercept finalization")},
     {0}
 };
 
@@ -1440,17 +1440,17 @@ A named tuple providing parameters used for computing\n\
 hashes. The attributes are read only.");
 
 static PyStructSequence_Field hash_info_fields[] = {
-    {"width", "width of the type used for hashing, in bits"},
-    {"modulus", "prime number giving the modulus on which the hash "
-                "function is based"},
-    {"inf", "value to be used for hash of a positive infinity"},
-    {"nan", "value to be used for hash of a nan"},
-    {"imag", "multiplier used for the imaginary part of a complex number"},
-    {"algorithm", "name of the algorithm for hashing of str, bytes and "
-                  "memoryviews"},
-    {"hash_bits", "internal output size of hash algorithm"},
-    {"seed_bits", "seed size of hash algorithm"},
-    {"cutoff", "small string optimization cutoff"},
+    {"width", PyDoc_STR("width of the type used for hashing, in bits")},
+    {"modulus", PyDoc_STR("prime number giving the modulus on which the hash "
+                "function is based")},
+    {"inf", PyDoc_STR("value to be used for hash of a positive infinity")},
+    {"nan", PyDoc_STR("value to be used for hash of a nan")},
+    {"imag", PyDoc_STR("multiplier used for the imaginary part of a complex number")},
+    {"algorithm", PyDoc_STR("name of the algorithm for hashing of str, bytes and "
+                  "memoryviews")},
+    {"hash_bits", PyDoc_STR("internal output size of hash algorithm")},
+    {"seed_bits", PyDoc_STR("seed size of hash algorithm")},
+    {"cutoff", PyDoc_STR("small string optimization cutoff")},
     {NULL, NULL}
 };
 
@@ -1517,16 +1517,16 @@ sys_getrecursionlimit_impl(PyObject *module)
 static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
 
 static PyStructSequence_Field windows_version_fields[] = {
-    {"major", "Major version number"},
-    {"minor", "Minor version number"},
-    {"build", "Build number"},
-    {"platform", "Operating system platform"},
-    {"service_pack", "Latest Service Pack installed on the system"},
-    {"service_pack_major", "Service Pack major version number"},
-    {"service_pack_minor", "Service Pack minor version number"},
-    {"suite_mask", "Bit mask identifying available product suites"},
-    {"product_type", "System product type"},
-    {"platform_version", "Diagnostic version number"},
+    {"major", PyDoc_STR"Major version number")},
+    {"minor", PyDoc_STR"Minor version number")},
+    {"build", PyDoc_STR"Build number")},
+    {"platform", PyDoc_STR"Operating system platform")},
+    {"service_pack", PyDoc_STR"Latest Service Pack installed on the system")},
+    {"service_pack_major", PyDoc_STR"Service Pack major version number")},
+    {"service_pack_minor", PyDoc_STR"Service Pack minor version number")},
+    {"suite_mask", PyDoc_STR"Bit mask identifying available product suites")},
+    {"product_type", PyDoc_STR"System product type")},
+    {"platform_version", PyDoc_STR"Diagnostic version number")},
     {0}
 };
 
@@ -2917,24 +2917,24 @@ Flags provided through command line arguments or environment vars.");
 static PyTypeObject FlagsType;
 
 static PyStructSequence_Field flags_fields[] = {
-    {"debug",                   "-d"},
-    {"inspect",                 "-i"},
-    {"interactive",             "-i"},
-    {"optimize",                "-O or -OO"},
-    {"dont_write_bytecode",     "-B"},
-    {"no_user_site",            "-s"},
-    {"no_site",                 "-S"},
-    {"ignore_environment",      "-E"},
-    {"verbose",                 "-v"},
-    {"bytes_warning",           "-b"},
-    {"quiet",                   "-q"},
-    {"hash_randomization",      "-R"},
-    {"isolated",                "-I"},
-    {"dev_mode",                "-X dev"},
-    {"utf8_mode",               "-X utf8"},
-    {"warn_default_encoding",   "-X warn_default_encoding"},
-    {"safe_path", "-P"},
-    {"int_max_str_digits",      "-X int_max_str_digits"},
+    {"debug",                   PyDoc_STR("-d")},
+    {"inspect",                 PyDoc_STR("-i")},
+    {"interactive",             PyDoc_STR("-i")},
+    {"optimize",                PyDoc_STR("-O or -OO")},
+    {"dont_write_bytecode",     PyDoc_STR("-B")},
+    {"no_user_site",            PyDoc_STR("-s")},
+    {"no_site",                 PyDoc_STR("-S")},
+    {"ignore_environment",      PyDoc_STR("-E")},
+    {"verbose",                 PyDoc_STR("-v")},
+    {"bytes_warning",           PyDoc_STR("-b")},
+    {"quiet",                   PyDoc_STR("-q")},
+    {"hash_randomization",      PyDoc_STR("-R")},
+    {"isolated",                PyDoc_STR("-I")},
+    {"dev_mode",                PyDoc_STR("-X dev")},
+    {"utf8_mode",               PyDoc_STR("-X utf8")},
+    {"warn_default_encoding",   PyDoc_STR("-X warn_default_encoding")},
+    {"safe_path", PyDoc_STR("-P")},
+    {"int_max_str_digits",      PyDoc_STR("-X int_max_str_digits")},
     {0}
 };
 
@@ -3014,11 +3014,11 @@ Version information as a named tuple.");
 static PyTypeObject VersionInfoType;
 
 static PyStructSequence_Field version_info_fields[] = {
-    {"major", "Major release number"},
-    {"minor", "Minor release number"},
-    {"micro", "Patch release number"},
-    {"releaselevel", "'alpha', 'beta', 'candidate', or 'final'"},
-    {"serial", "Serial release number"},
+    {"major", PyDoc_STR("Major release number")},
+    {"minor", PyDoc_STR("Minor release number")},
+    {"micro", PyDoc_STR("Patch release number")},
+    {"releaselevel", PyDoc_STR("'alpha', 'beta', 'candidate', or 'final'")},
+    {"serial", PyDoc_STR("Serial release number")},
     {0}
 };
 
@@ -3158,10 +3158,10 @@ WebAssembly Emscripten platform information.");
 static PyTypeObject *EmscriptenInfoType;
 
 static PyStructSequence_Field emscripten_info_fields[] = {
-    {"emscripten_version", "Emscripten version (major, minor, micro)"},
-    {"runtime", "Runtime (Node.JS version, browser user agent)"},
-    {"pthreads", "pthread support"},
-    {"shared_memory", "shared memory support"},
+    {"emscripten_version", PyDoc_STR("Emscripten version (major, minor, micro)")},
+    {"runtime", PyDoc_STR("Runtime (Node.JS version, browser user agent)")},
+    {"pthreads", PyDoc_STR("pthread support")},
+    {"shared_memory", PyDoc_STR("shared memory support")},
     {0}
 };
 

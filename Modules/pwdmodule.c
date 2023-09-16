@@ -14,13 +14,13 @@ module pwd
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=60f628ef356b97b6]*/
 
 static PyStructSequence_Field struct_pwd_type_fields[] = {
-    {"pw_name", "user name"},
-    {"pw_passwd", "password"},
-    {"pw_uid", "user id"},
-    {"pw_gid", "group id"},
-    {"pw_gecos", "real name"},
-    {"pw_dir", "home directory"},
-    {"pw_shell", "shell program"},
+    {"pw_name", PyDoc_STR("user name")},
+    {"pw_passwd", PyDoc_STR("password")},
+    {"pw_uid", PyDoc_STR("user id")},
+    {"pw_gid", PyDoc_STR("group id")},
+    {"pw_gecos", PyDoc_STR("real name")},
+    {"pw_dir", PyDoc_STR("home directory")},
+    {"pw_shell", PyDoc_STR("shell program")},
     {0}
 };
 

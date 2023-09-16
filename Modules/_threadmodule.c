@@ -688,7 +688,7 @@ static PyMemberDef local_dummy_type_members[] = {
 
 static PyType_Slot local_dummy_type_slots[] = {
     {Py_tp_dealloc, (destructor)localdummy_dealloc},
-    {Py_tp_doc, "Thread-local dummy"},
+    {Py_tp_doc, PyDoc_STR("Thread-local dummy")},
     {Py_tp_members, local_dummy_type_members},
     {0, 0}
 };
@@ -970,7 +970,7 @@ static PyType_Slot local_type_slots[] = {
     {Py_tp_dealloc, (destructor)local_dealloc},
     {Py_tp_getattro, (getattrofunc)local_getattro},
     {Py_tp_setattro, (setattrofunc)local_setattro},
-    {Py_tp_doc, "Thread-local data"},
+    {Py_tp_doc, PyDoc_STR("Thread-local data")},
     {Py_tp_traverse, (traverseproc)local_traverse},
     {Py_tp_clear, (inquiry)local_clear},
     {Py_tp_new, local_new},
@@ -1513,10 +1513,10 @@ PyDoc_STRVAR(ExceptHookArgs__doc__,
 Type used to pass arguments to threading.excepthook.");
 
 static PyStructSequence_Field ExceptHookArgs_fields[] = {
-    {"exc_type", "Exception type"},
-    {"exc_value", "Exception value"},
-    {"exc_traceback", "Exception traceback"},
-    {"thread", "Thread"},
+    {"exc_type", PyDoc_STR("Exception type")},
+    {"exc_value", PyDoc_STR("Exception value")},
+    {"exc_traceback", PyDoc_STR("Exception traceback")},
+    {"thread", PyDoc_STR("Thread")},
     {0}
 };
 

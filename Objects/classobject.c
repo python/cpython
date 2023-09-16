@@ -154,9 +154,9 @@ static PyMethodDef method_methods[] = {
 
 static PyMemberDef method_memberlist[] = {
     {"__func__", _Py_T_OBJECT, MO_OFF(im_func), Py_READONLY,
-     "the function (or other callable) implementing a method"},
+     PyDoc_STR("the function (or other callable) implementing a method")},
     {"__self__", _Py_T_OBJECT, MO_OFF(im_self), Py_READONLY,
-     "the instance to which a method is bound"},
+     PyDoc_STR("the instance to which a method is bound")},
     {NULL}      /* Sentinel */
 };
 
@@ -376,7 +376,7 @@ PyInstanceMethod_Function(PyObject *im)
 
 static PyMemberDef instancemethod_memberlist[] = {
     {"__func__", _Py_T_OBJECT, IMO_OFF(func), Py_READONLY,
-     "the function (or other callable) implementing a method"},
+     PyDoc_STR("the function (or other callable) implementing a method")},
     {NULL}      /* Sentinel */
 };
 
