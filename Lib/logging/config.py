@@ -83,7 +83,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     formatters = _create_formatters(cp)
 
     # critical section
-    with logging._acquireModuleLock():
+    with logging._get_lock():
         _clearExistingHandlers()
 
         # Handlers add themselves to logging._handlers
@@ -513,7 +513,7 @@ class DictConfigurator(BaseConfigurator):
             raise ValueError("Unsupported version: %s" % config['version'])
         incremental = config.pop('incremental', False)
         EMPTY_DICT = {}
-        with logging._acquireModuleLock():
+        with logging._get_lock():
             if incremental:
                 handlers = config.get('handlers', EMPTY_DICT)
                 for name in handlers:
@@ -982,7 +982,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
-            with logging._acquireModuleLock():
+            with logging._get_lock():
                 self.abort = 0
             self.timeout = 1
             self.ready = ready
@@ -997,7 +997,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                                            self.timeout)
                 if rd:
                     self.handle_request()
-                with logging._acquireModuleLock():
+                with logging._get_lock():
                     abort = self.abort
             self.server_close()
 
@@ -1019,7 +1019,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                 self.port = server.server_address[1]
             self.ready.set()
             global _listener
-            with logging._acquireModuleLock():
+            with logging._get_lock():
                 _listener = server
             server.serve_until_stopped()
 
@@ -1030,7 +1030,7 @@ def stopListening():
     Stop the listening server which was created with a call to listen().
     """
     global _listener
-    with logging._acquireModuleLock():
+    with logging._get_lock():
         if _listener:
             _listener.abort = 1
             _listener = None
