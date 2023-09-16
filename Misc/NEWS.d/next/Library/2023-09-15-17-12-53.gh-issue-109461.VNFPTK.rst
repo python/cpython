@@ -1,1 +1,1 @@
-Updated logging library to acquire its module lock using a context manager so that it is safer and easier to use.
+Updated logging library with function "_get_lock" to acquire its module lock using a context manager so that it is safer and easier to use.
