@@ -146,7 +146,7 @@ jobs:
       - name: Run patchcheck
         if: github.event_name == 'pull_request'
         run: |
-          git fetch origin
+          # git fetch origin
           make ARGS="--ci true" patchcheck
       - name: Check for changes
         run: |
