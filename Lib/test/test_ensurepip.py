@@ -78,7 +78,7 @@ class EnsurepipMixin:
         real_devnull = os.devnull
         os_patch = unittest.mock.patch("ensurepip.os")
         patched_os = os_patch.start()
-        # But expose os.listdir() used by _get_replacement_pip_package()
+        # But expose os.listdir() used by _find_wheel_pkg_dir_pip()
         patched_os.listdir = os.listdir
         self.addCleanup(os_patch.stop)
         patched_os.devnull = real_devnull

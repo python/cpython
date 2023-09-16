@@ -25,43 +25,29 @@ _Package = collections.namedtuple('Package',
 _WHEEL_PKG_DIR = sysconfig.get_config_var('WHEEL_PKG_DIR')
 
 
-def _get_replacement_pip_package(path: str | None) -> _Package:
-    if path is None:
-        raise LookupError(
-            'The compile-time `WHEEL_PKG_DIR` is unset so there is '
-            'no place for looking up the wheels.',
-        )
-
+def _find_wheel_pkg_dir_pip():
+    if _WHEEL_PKG_DIR is None:
+        return None
     try:
-        filenames = os.listdir(path)
+        filenames = os.listdir(_WHEEL_PKG_DIR)
     except OSError:
         # Ignore: path doesn't exist or permission error
-        filenames = ()
+        return None
     # Make the code deterministic if a directory contains multiple wheel files
     # of the same package, but don't attempt to implement correct version
     # comparison since this case should not happen.
-    filenames = sorted(filenames)
-    pip_pkg = None
+    filenames = sorted(filenames, reverse=True)
     for filename in filenames:
         # filename is like 'pip-21.2.4-py3-none-any.whl'
-        if not filename.endswith(".whl"):
-            continue
-        if not filename.startswith('pip-'):
+        if not filename.startswith("pip-") or not filename.endswith(".whl"):
             continue
 
         # Extract '21.2.4' from 'pip-21.2.4-py3-none-any.whl'
-        discovered_pip_pkg_version = filename.removeprefix(
-            'pip-',
-        ).partition('-')[0]
-        wheel_path = os.path.join(path, filename)
-        pip_pkg = _Package(discovered_pip_pkg_version, None, wheel_path)
+        version = filename.removeprefix("pip-").partition("-")[0]
+        wheel_path = os.path.join(_WHEEL_PKG_DIR, filename)
+        return _Package(version, None, wheel_path)
 
-    if pip_pkg is None:
-        raise LookupError(
-            '`WHEEL_PKG_DIR` does not contain any wheel files for `pip`.',
-        )
-
-    return pip_pkg
+    return None
 
 
 @cache
@@ -71,7 +57,7 @@ def _get_usable_pip_package() -> _Package:
 
     with suppress(LookupError):
         # only use the wheel package directory if pip wheel is found there
-        pip_pkg = _get_replacement_pip_package(_WHEEL_PKG_DIR)
+        pip_pkg = _find_wheel_pkg_dir_pip(_WHEEL_PKG_DIR)
 
     return pip_pkg
 
