@@ -254,12 +254,14 @@ def _releaseLock():
 
 def _get_lock() -> ContextManager:
     """
-    Get the module-level lock using a context manager for serializing access to shared data and safely releasing the
-    lock once finished.
+    Get the module-level lock using a context manager for serializing access to
+    shared data and safely releasing the lock once finished.
     """
     if _lock:
         return _lock
-    return nullcontext(enter_result=False)  # threading.RLock returns True from __enter__, so return False here
+
+    # _lock returns True from __enter__, so return False from nullcontext.
+    return nullcontext(enter_result=False)
 
 
 # Prevent a held logging lock from blocking a child from logging.
