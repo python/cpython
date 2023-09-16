@@ -345,7 +345,7 @@ class MetadataAPITests(unittest.TestCase):
             Author: Another person, Yet Another name
             Author-email: Pradyun Gedam <pradyun@example.com>, Tzu-Ping Chung <tzu-ping@example.com>, different.person@example.com
             Maintainer-email: Brett Cannon <brett@python.org>
-            """,
+            """,  # noqa: E501
             {
                 ("Another person", None),
                 ("Yet Another name", None),

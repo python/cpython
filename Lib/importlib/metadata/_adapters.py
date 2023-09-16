@@ -83,8 +83,8 @@ def _name_email_split(string):
     >>> _name_email_split("name local@domain")
     ('name', 'local@domain')
 
-    >>> _name_email_split('@"unlocal@undomain" @    <loc"al@dom\'ain')
-    ('@"unlocal@undomain" @', 'loc"al@dom\'ain')
+    >>> _name_email_split('@"unlocal@undomain" @    <loc"al@dom\\'ain')
+    ('@"unlocal@undomain" @', 'loc"al@dom\\'ain')
 
     >>> _name_email_split('@@ local@domain')
     ('@@', 'local@domain')
