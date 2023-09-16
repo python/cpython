@@ -143,6 +143,11 @@ jobs:
           make regen-deepfreeze
           make -j4 regen-all
           make regen-stdlib-module-names
+      - name: Run patchcheck
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin
+          make ARGS="--ci true" patchcheck
       - name: Check for changes
         run: |
           git add -u
