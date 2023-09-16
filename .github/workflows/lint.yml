@@ -31,8 +31,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
-      - name: "Run patchcheck"
+      - name: "Run patchcheck.py"
         run: python ./Tools/patchcheck/patchcheck.py --ci true
