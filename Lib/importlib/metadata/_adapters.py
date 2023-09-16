@@ -24,6 +24,7 @@ _warn = functools.partial(
 # takeaway from RFC5233 is that special characters such as "," and "@" must be
 # quoted when used as text.
 
+
 def _entries_findall(string):
     """
     Return a list of entries given an RFC5233-inspired string. Entries are
@@ -52,13 +53,16 @@ def _entries_findall(string):
     # 5. ... and capture them.
     # Result:
     #   group 1 (list entry): None or non-empty string.
-    _entries = re.compile(r"""
-    (?: (?<=,\ ) | (?<=^) )                 # 1
-    ( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 2
-      |   (?!,\ ).                          # 3
-      )+                                    # 4
-    )                                       # 5
-    """, re.VERBOSE)
+    _entries = re.compile(
+        r"""
+        (?: (?<=,\ ) | (?<=^) )                 # 1
+        ( (?: (["']) (?:(?!\2|\\).|\\.)* \2     # 2
+          |   (?!,\ ).                          # 3
+          )+                                    # 4
+        )                                       # 5
+        """,
+        re.VERBOSE,
+    )
 
     return [entry[0] for entry in _entries.findall(string)]
 
@@ -146,55 +150,61 @@ def _name_email_split(string):
     # Result:
     #   group 1 (name):  None or non-empty string.
     #   group 5 (email): None or non-empty string.
-    _name_email = re.compile(r"""
-    ^                                                       # 01
-      ( (?:                                                 # 02
-            (?! \ *                                         # 03
-                (?=(                                        # 04
-                   (?: (["']) (?:(?!\3|\\).|\\.)* \3        # 05
-                   |   [^ @]                                # 06
-                   )+                                       # 07
-                ))\2                                        # 08
-                @ .                                         # 09
-            )                                               # 10
-            (?: (["']) (?:(?!\4|\\).|\\.)* \4               # 11
-            |   .                                           # 12
-            )                                               # 13
-        )+                                                  # 14
-      )?                                                    # 15
-      \ * <?                                                # 16
-      ( (?: (["']) (?:(?!\6|\\).|\\.)* \6                   # 17
-        |   [^ @]                                           # 18
-        )+                                                  # 19
-        @ .+?                                               # 20
-      )?                                                    # 21
-      >?                                                    # 22
-    $                                                       # 23
-    """, re.VERBOSE)
+    _name_email = re.compile(
+        r"""
+        ^                                                       # 01
+          ( (?:                                                 # 02
+                (?! \ *                                         # 03
+                    (?=(                                        # 04
+                       (?: (["']) (?:(?!\3|\\).|\\.)* \3        # 05
+                       |   [^ @]                                # 06
+                       )+                                       # 07
+                    ))\2                                        # 08
+                    @ .                                         # 09
+                )                                               # 10
+                (?: (["']) (?:(?!\4|\\).|\\.)* \4               # 11
+                |   .                                           # 12
+                )                                               # 13
+            )+                                                  # 14
+          )?                                                    # 15
+          \ * <?                                                # 16
+          ( (?: (["']) (?:(?!\6|\\).|\\.)* \6                   # 17
+            |   [^ @]                                           # 18
+            )+                                                  # 19
+            @ .+?                                               # 20
+          )?                                                    # 21
+          >?                                                    # 22
+        $                                                       # 23
+        """,
+        re.VERBOSE,
+    )
 
     # Equivalent, simpler, version using possessive quantifiers, for
     # Python >= 3.11.
-    #_name_email = re.compile(r"""
-    #^ ( (?: (?! \ *
-    #            (?: (["']) (?:(?!\2|\\).|\\.)* \2
-    #            |   [^ @]
-    #            )++
-    #            @ .
-    #        )
-    #        (?: (["']) (?:(?!\3|\\).|\\.)* \3
-    #        |   .
-    #        )
-    #    )+
-    #  )?
-    #  \ * <?
-    #  ( (?: (["']) (?:(?!\5|\\).|\\.)* \5
-    #    |   [^ @]
-    #    )+
-    #    @ .+?
-    #  )?
-    #  >?
-    #$
-    #""", re.VERBOSE)
+    # _name_email = re.compile(
+    #     r"""
+    #     ^ ( (?: (?! \ *
+    #                 (?: (["']) (?:(?!\2|\\).|\\.)* \2
+    #                 |   [^ @]
+    #                 )++
+    #                 @ .
+    #             )
+    #             (?: (["']) (?:(?!\3|\\).|\\.)* \3
+    #             |   .
+    #             )
+    #         )+
+    #       )?
+    #       \ * <?
+    #       ( (?: (["']) (?:(?!\5|\\).|\\.)* \5
+    #         |   [^ @]
+    #         )+
+    #         @ .+?
+    #       )?
+    #       >?
+    #     $
+    #     """,
+    #     re.VERBOSE,
+    # )
 
     return _name_email.match(string).groups()[::4]
 
@@ -205,12 +215,12 @@ class Ident:
     A container for identity attributes, used by the author or
     maintainer fields.
     """
-    name: str|None
-    email: str|None
+
+    name: str | None
+    email: str | None
 
     def __iter__(self):
-        return (getattr(self, field.name) for
-                field in dataclasses.fields(self))
+        return (getattr(self, field.name) for field in dataclasses.fields(self))
 
 
 class Message(email.message.Message):

@@ -339,20 +339,23 @@ class MetadataAPITests(unittest.TestCase):
         return md
 
     @hypothesis.given(identity.identities_strategy())
-    @hypothesis.example\
-        ( ( """
+    @hypothesis.example(
+        (
+            """
             Author: Another person, Yet Another name
             Author-email: Pradyun Gedam <pradyun@example.com>, Tzu-Ping Chung <tzu-ping@example.com>, different.person@example.com
             Maintainer-email: Brett Cannon <brett@python.org>
-            """
-          , { ("Another person"   , None)
-            , ("Yet Another name" , None)
-            , ("Pradyun Gedam"    , "pradyun@example.com")
-            , ("Tzu-Ping Chung"   , "tzu-ping@example.com")
-            , (None               , "different.person@example.com")
-            }
-          , { ("Brett Cannon"     , "brett@python.org") }
-          ) )
+            """,
+            {
+                ("Another person", None),
+                ("Yet Another name", None),
+                ("Pradyun Gedam", "pradyun@example.com"),
+                ("Tzu-Ping Chung", "tzu-ping@example.com"),
+                (None, "different.person@example.com"),
+            },
+            {("Brett Cannon", "brett@python.org")},
+        )
+    )
     def test_structured_identity(self, arg):
         """
         Verify that the unstructured identity metadata is parsed and

@@ -18,6 +18,7 @@ class Token:
     Represents a generated identity component. See ``Entry`` for more
     information.
     """
+
     category: typing.Any
     value: str
     delim: bool = False
@@ -31,6 +32,7 @@ class Entry(list):
     entries or name-email components. Tokens with ``delim`` or ``ignore``
     have their value omitted from the structured representation.
     """
+
     @classmethod
     def from_empty(cls, length, category, value=""):
         """
@@ -63,14 +65,15 @@ class Entry(list):
         ``delim`` tokens. Values from ``delim`` and ``ignore`` tokens
         are omitted. Empty components are converted to ``None``.
         """
+
         def keyfunc(token):
             return token.delim
+
         data = []
         for key, group in itertools.groupby(self, key=keyfunc):
             if key:
                 continue
-            text = "".join\
-                (token.value for token in group if not token.ignore)
+            text = "".join(token.value for token in group if not token.ignore)
             data.append(text if text else None)
         return tuple(data)
 
@@ -96,36 +99,37 @@ def identities_strategy(draw, debug=False):
     identity information, empty identities, and so forth.
     """
     strategies = hypothesis.strategies
-    char_opts =\
-        { "blacklist_categories":
-            # if debug, smaller search space and easier visualization
-            ("C",) if debug else ("Cs", "Co", "Cn")
-        , "blacklist_characters":
-            # universal newlines: not compatible with toolchain
-            "\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029"
-            # backspace: side-effects
-            "\x08"
-        }
+    char_opts = {
+        "blacklist_categories":
+        # if debug, smaller search space and easier visualization
+        ("C",) if debug else ("Cs", "Co", "Cn"),
+        "blacklist_characters":
+        # universal newlines: not compatible with toolchain
+        "\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029"
+        # backspace: side-effects
+        "\x08",
+    }
 
     def merge_char_opts(opts1, opts2):
         """
         Merge options to ``hypothesis.strategies.characters``, given as
         dictionaries.
         """
+
         def resolve_sum(iter1, iter2, apply):
             return apply(itertools.chain(iter1 or (), iter2 or ())) or None
 
         def resolve_key(arg1, arg2, apply):
             return apply(arg1, arg2, key=lambda i: 0 if i is None else i)
 
-        conflicts =\
-            [ ("min_codepoint", resolve_key, max)
-            , ("max_codepoint", resolve_key, min)
-            , ("whitelist_categories", resolve_sum, list)
-            , ("blacklist_categories", resolve_sum, list)
-            , ("whitelist_characters", resolve_sum, "".join)
-            , ("blacklist_characters", resolve_sum, "".join)
-            ]
+        conflicts = [
+            ("min_codepoint", resolve_key, max),
+            ("max_codepoint", resolve_key, min),
+            ("whitelist_categories", resolve_sum, list),
+            ("blacklist_categories", resolve_sum, list),
+            ("whitelist_characters", resolve_sum, "".join),
+            ("blacklist_characters", resolve_sum, "".join),
+        ]
 
         opts = opts1 | opts2
         for key, resolver, *args in conflicts:
@@ -143,16 +147,18 @@ def identities_strategy(draw, debug=False):
         return draw(strategies.sampled_from(choices))
 
     def replace(seq, index, item):
-        return seq[:index] + item + seq[index+1:]
+        return seq[:index] + item + seq[index + 1 :]
 
     def generate_chars_strategy(blocked_chars):
-        return strategies.characters(**merge_char_kwargs
-            (char_opts, blacklist_characters=blocked_chars))
+        return strategies.characters(
+            **merge_char_kwargs(char_opts, blacklist_characters=blocked_chars)
+        )
 
     def generate_text(blocked_chars="", min_size=0, max_size=None):
         text_chars = generate_chars_strategy(blocked_chars)
-        text = draw(strategies.text
-            (alphabet=text_chars, min_size=min_size, max_size=max_size))
+        text = draw(
+            strategies.text(alphabet=text_chars, min_size=min_size, max_size=max_size)
+        )
         return text
 
     def generate_draw_function(strategy):
@@ -165,8 +171,10 @@ def identities_strategy(draw, debug=False):
         ``category``, then apply the given substitution function
         ``sub_func`` with ``kwargs``.
         """
+
         def keyfunc(token):
             return dataclasses.replace(token, value=None)
+
         applied = (function() for function in functions)
         merged = []
         for key, group in itertools.groupby(applied, key=keyfunc):
@@ -179,8 +187,8 @@ def identities_strategy(draw, debug=False):
             return merged
 
         for i, token in enumerate(merged):
-            opener = (i == 0)
-            closer = (i == len(merged) - 1)
+            opener = i == 0
+            closer = i == len(merged) - 1
             if token.category is not category:
                 continue
             token.value = sub_func(token.value, opener, closer, **kwargs)
@@ -208,10 +216,13 @@ def identities_strategy(draw, debug=False):
         #
         # The inverse equivalent:
         # [^ ]@.
-        escape_at = re.compile(rf"""
+        escape_at = re.compile(
+            rf"""
             (?: [^ ] {"| ^" if not opener else ""})
             (?= @. {"| @$" if not closer or not name_only else ""})
-            """, re.VERBOSE)
+            """,
+            re.VERBOSE,
+        )
         text = escape_at.sub(" ", text)
         # ", t" -> replace " "
         text = re.sub(r"(?<=,) (?!@)", repl_func, text)
@@ -227,10 +238,13 @@ def identities_strategy(draw, debug=False):
         character indexes for which the text remains valid when the
         index is substituted with a quote character.
         """
-        replace_at = re.compile(rf"""
+        replace_at = re.compile(
+            rf"""
             # Cannot replace " " before "@" if "@" succeeded by anything.
             (?! $ | [ ]@. {"| [ ]@$" if succeeded else ""})
-            """, re.VERBOSE)
+            """,
+            re.VERBOSE,
+        )
         return (m.start() for m in replace_at.finditer(text))
 
     def entries_combined(debug=False):
@@ -248,14 +262,10 @@ def identities_strategy(draw, debug=False):
 
         entry_types = (name_entry, ident_entry)
         entry_targets = (authors, maintainers)
-        entry_prefixes =\
-            ( "Author", "Maintainer"
-            , "Author-email", "Maintainer-email"
-            )
-        combinations = zip\
-            ( ((i,j) for i in entry_types for j in entry_targets)
-            , entry_prefixes
-            )
+        entry_prefixes = ("Author", "Maintainer", "Author-email", "Maintainer-email")
+        combinations = zip(
+            ((i, j) for i in entry_types for j in entry_targets), entry_prefixes
+        )
 
         for (entry_type, entry_target), entry_prefix in combinations:
             entry_list, data_set, data_str = entries(entry_type)
@@ -326,27 +336,27 @@ def identities_strategy(draw, debug=False):
 
     def unbalance_indexes(entries):
         index_candidates = []
-        type_candidates =\
-            [ ident_addr_domain_other
-            , ident_addr_local_other
-            , ident_name_other
-            , name_value_other
-            ]
+        type_candidates = [
+            ident_addr_domain_other,
+            ident_addr_local_other,
+            ident_name_other,
+            name_value_other,
+        ]
         stop = False
         i = len(entries) - 1
         while i >= 0 and not stop:
             j = len(entries[i]) - 1
-            while j >= 0 and not (stop:=entries[i][j].category is quote):
+            while j >= 0 and not (stop := entries[i][j].category is quote):
                 token = entries[i][j]
                 if token.category not in type_candidates:
                     repls = ()
                 elif token.category is ident_name_other:
-                    final = entries[i][j+1] is ident_name_only
+                    final = entries[i][j + 1] is ident_name_only
                     repls = get_name_qchar_idxs(token.value, not final)
                 else:
                     repls = range(len(token.value))
                 for k in repls:
-                    index_candidates.append((i,j,k))
+                    index_candidates.append((i, j, k))
                 j -= 1
             i -= 1
         return index_candidates
@@ -361,8 +371,9 @@ def identities_strategy(draw, debug=False):
         if not qchrs or not index_candidates:
             return False
         for qchr in qchrs:
-            idx_entry, idx_token, idx_char =\
-                draw(strategies.sampled_from(index_candidates))
+            idx_entry, idx_token, idx_char = draw(
+                strategies.sampled_from(index_candidates)
+            )
             token = entries[idx_entry][idx_token]
             token.value = replace(token.value, idx_char, qchr)
         return True
@@ -378,8 +389,9 @@ def identities_strategy(draw, debug=False):
 
     def name_value():
         choices = (name_value_other, quote)
-        functions = draw(strategies.lists
-            (strategies.sampled_from(choices), min_size=1, max_size=10))
+        functions = draw(
+            strategies.lists(strategies.sampled_from(choices), min_size=1, max_size=10)
+        )
         entry = Entry.from_empty(2, name_value)
         entry[:1] = apply_merge(functions, name_value_other, sub_entry)
         return entry
@@ -387,12 +399,7 @@ def identities_strategy(draw, debug=False):
     # Non-leaf rules for "Author-email" and "Maintainer-email" fields:
 
     def ident_entry():
-        choices =\
-            ( ident_empty
-            , ident_name_only
-            , ident_addr_only
-            , ident_name_addr
-            )
+        choices = (ident_empty, ident_name_only, ident_addr_only, ident_name_addr)
         return draw(strategies.sampled_from(choices))()
 
     def ident_empty():
@@ -422,17 +429,16 @@ def identities_strategy(draw, debug=False):
 
     def ident_name_addr_delim(name):
         min_size = 0 if name.endswith("@") else 1
-        delim = draw(strategies.text
-            (alphabet=" ", min_size=min_size, max_size=10))
+        delim = draw(strategies.text(alphabet=" ", min_size=min_size, max_size=10))
         delim = Token(ident_name_addr_delim, delim, True)
         return delim
 
     def ident_name(name_only):
         choices = (ident_name_other, quote)
-        functions = draw(strategies.lists
-            (strategies.sampled_from(choices), min_size=1, max_size=10))
-        return apply_merge\
-            (functions, ident_name_other, sub_name, name_only=name_only)
+        functions = draw(
+            strategies.lists(strategies.sampled_from(choices), min_size=1, max_size=10)
+        )
+        return apply_merge(functions, ident_name_other, sub_name, name_only=name_only)
 
     def ident_addr():
         local = ident_addr_local()
@@ -445,14 +451,12 @@ def identities_strategy(draw, debug=False):
         # split any coupled leading/trailing angle brackets
         value = local[0].value
         if value.startswith("<") and len(value) > 1:
-            split = dataclasses.replace\
-                (local[0], value="<", category=ident_addr)
+            split = dataclasses.replace(local[0], value="<", category=ident_addr)
             local[0].value = value[1:]
             local = [split, *local]
         value = domain[-1].value
         if value.endswith(">") and len(value) > 1:
-            split = dataclasses.replace\
-                (domain[-1], value=">", category=ident_addr)
+            split = dataclasses.replace(domain[-1], value=">", category=ident_addr)
             domain[-1].value = value[:-1]
             domain = [*domain, split]
         # if not solitary, ignore single leading/trailing angle brackets
@@ -466,14 +470,16 @@ def identities_strategy(draw, debug=False):
 
     def ident_addr_local():
         choices = (ident_addr_local_other, quote)
-        functions = draw(strategies.lists
-            (strategies.sampled_from(choices), min_size=1, max_size=10))
+        functions = draw(
+            strategies.lists(strategies.sampled_from(choices), min_size=1, max_size=10)
+        )
         return apply_merge(functions, ident_addr_local_other)
 
     def ident_addr_domain():
         choices = (ident_addr_domain_other, quote)
-        functions = draw(strategies.lists
-            (strategies.sampled_from(choices), min_size=1, max_size=10))
+        functions = draw(
+            strategies.lists(strategies.sampled_from(choices), min_size=1, max_size=10)
+        )
         return apply_merge(functions, ident_addr_domain_other, sub_entry)
 
     # Leaf rules:
