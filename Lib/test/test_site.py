@@ -470,9 +470,11 @@ class ImportSideEffectTests(unittest.TestCase):
         # Check that sitecustomize and or usercustomize are executed on startup
         mod_info = [
             # func to get directory, file base name
-            ('getusersitepackages', 'usercustomize'),
             ('getsitepackages', 'sitecustomize')
         ]
+
+        if not sys.flags.no_user_site:
+            mod_info.append(('getusersitepackages', 'usercustomize'),)
 
         for func_name, module_name in mod_info:
             # getusersitepackages returns a string.. getsitepackages returns a list..
@@ -500,12 +502,8 @@ class ImportSideEffectTests(unittest.TestCase):
 
             eyecatcher = f'EXECUTED_{module_name}'
 
-            try:
-                with open(customize_path, 'w') as f:
-                    f.write(f'print("{eyecatcher}")')
-            except PermissionError:
-                # Can't modify system site packages depending on the system configuration
-                continue
+            with open(customize_path, 'w') as f:
+                f.write(f'print("{eyecatcher}")')
 
             output = subprocess.check_output([sys.executable, '-c', '""'])
             self.assertIn(eyecatcher, output.decode('utf-8'))
