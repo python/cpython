@@ -3061,6 +3061,8 @@ _can_chmod_set_sticky = None
 
 
 def can_chmod_set_sticky():
+    """Can chmod set the sticky bit on a file?"""
+
     def can_chmod_set_sticky_inner():
         if not os_helper.can_chmod():
             return False
@@ -3085,27 +3087,23 @@ def can_chmod_set_sticky():
 
 @os_helper.skip_unless_working_chmod
 class FileModesTest(unittest.TestCase):
-    @unittest.skipUnless(hasattr(errno, "EFTYPE"), "errno.EFTYPE required")
+    @unittest.skipUnless(hasattr(errno, "EFTYPE"), "requires errno.EFTYPE")
     def test_extract_chmod_eftype(self):
         # Extracting a file as non-root should skip the sticky bit (gh-108948)
         # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD). But
         # we need to take care that any other error is preserved.
         mode = "-rwxrwxrwt"
+        expected_mode = mode if can_chmod_set_sticky() else "-rwxrwxrwx"
         with ArchiveMaker() as arc:
             arc.add("sticky1", mode=mode)
             arc.add("sticky2", mode=mode)
-        tar = arc.open(errorlevel=2)
         DIR = os.path.join(TEMPDIR, "chmod")
         os.mkdir(DIR)
         self.addCleanup(os_helper.rmtree, DIR)
-        with tar:
+        with arc.open(errorlevel=2) as tar:
             # this should not raise:
             tar.extract("sticky1", DIR, filter="fully_trusted")
             got_mode = stat.filemode(os.stat(os.path.join(DIR, "sticky1")).st_mode)
-            if can_chmod_set_sticky():
-                expected_mode = "-rwxrwxrwt"
-            else:
-                expected_mode = "-rwxrwxrwx"
             self.assertEqual(got_mode, expected_mode)
 
             # but we can create a situation where it does raise:
