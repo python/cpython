@@ -473,7 +473,7 @@ class ImportSideEffectTests(unittest.TestCase):
             ('getsitepackages', 'sitecustomize')
         ]
 
-        if not sys.flags.no_user_site:
+        if site.check_enableusersite():
             mod_info.append(('getusersitepackages', 'usercustomize'),)
 
         for func_name, module_name in mod_info:
