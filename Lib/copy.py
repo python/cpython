@@ -301,7 +301,7 @@ def replace(obj, /, **changes):
     frozen dataclasses.
     """
     cls = obj.__class__
-    func = getattr(cls, '__replace__', None)
-    if func is None:
+    func = getattr(cls, '__replace__', _NoValue)
+    if func is _NoValue:
         raise TypeError(f"replace() does not support {cls.__name__} objects")
     return func(obj, **changes)

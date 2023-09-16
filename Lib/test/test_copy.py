@@ -981,6 +981,13 @@ class TestReplace(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
             copy.replace(c, x=1, error=2)
 
+    def test_invalid_replace_method(self):
+        class A:
+            __replace__ = None
+        a = A()
+        with self.assertRaises(TypeError):
+            copy.replace(a)
+
 
 def global_foo(x, y): return x+y
 
