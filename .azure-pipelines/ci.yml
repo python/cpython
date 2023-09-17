@@ -11,25 +11,6 @@ jobs:
   - template: ./prebuild-checks.yml
 
 
-- job: Ubuntu_CI_Tests
-  displayName: Ubuntu CI Tests
-  dependsOn: Prebuild
-  condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
-
-  pool:
-    vmImage: ubuntu-22.04
-
-  variables:
-    testRunTitle: '$(build.sourceBranchName)-linux'
-    testRunPlatform: linux
-    openssl_version: 1.1.1u
-
-  steps:
-  - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
-
-
 - job: Windows_CI_Tests
   displayName: Windows CI Tests
   dependsOn: Prebuild
