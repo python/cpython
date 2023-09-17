@@ -812,16 +812,6 @@ class StrTest(string_tests.StringLikeTest,
         self.assertFalse("©".isidentifier())
         self.assertFalse("0".isidentifier())
 
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-    def test_isidentifier_legacy(self):
-        u = '𝖀𝖓𝖎𝖈𝖔𝖉𝖊'
-        self.assertTrue(u.isidentifier())
-        with warnings_helper.check_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            self.assertTrue(_testcapi.unicode_legacy_string(u).isidentifier())
-
     def test_isprintable(self):
         self.assertTrue("".isprintable())
         self.assertTrue(" ".isprintable())
@@ -2488,26 +2478,6 @@ class StrTest(string_tests.StringLikeTest,
         self.assertIsNot(args[0], text)
         self.assertEqual(args[0], text)
         self.assertEqual(len(args), 1)
-
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
-    def test_resize(self):
-        for length in range(1, 100, 7):
-            # generate a fresh string (refcount=1)
-            text = 'a' * length + 'b'
-
-            # fill wstr internal field
-            with self.assertWarns(DeprecationWarning):
-                abc = _testcapi.getargs_u(text)
-            self.assertEqual(abc, text)
-
-            # resize text: wstr field must be cleared and then recomputed
-            text += 'c'
-            with self.assertWarns(DeprecationWarning):
-                abcdef = _testcapi.getargs_u(text)
-            self.assertNotEqual(abc, abcdef)
-            self.assertEqual(abcdef, text)
 
     def test_compare(self):
         # Issue #17615

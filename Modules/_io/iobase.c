@@ -12,6 +12,8 @@
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+
 #include <stddef.h>               // offsetof()
 #include "_iomodule.h"
 
@@ -83,7 +85,9 @@ iobase_unsupported(_PyIO_State *state, const char *message)
 _io._IOBase.seek
     cls: defining_class
     offset: int(unused=True)
+      The stream position, relative to 'whence'.
     whence: int(unused=True, c_default='0') = os.SEEK_SET
+      The relative position to seek from.
     /
 
 Change the stream position to the given byte offset.
@@ -101,7 +105,7 @@ Return the new absolute position.
 static PyObject *
 _io__IOBase_seek_impl(PyObject *self, PyTypeObject *cls,
                       int Py_UNUSED(offset), int Py_UNUSED(whence))
-/*[clinic end generated code: output=8bd74ea6538ded53 input=8d4e6adcd08292f2]*/
+/*[clinic end generated code: output=8bd74ea6538ded53 input=74211232b363363e]*/
 {
     _PyIO_State *state = get_io_state_by_cls(cls);
     return iobase_unsupported(state, "seek");
@@ -144,13 +148,9 @@ _io__IOBase_truncate_impl(PyObject *self, PyTypeObject *cls,
 static int
 iobase_is_closed(PyObject *self)
 {
-    PyObject *res;
-    int ret;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    ret = _PyObject_LookupAttr(self, &_Py_ID(__IOBase_closed), &res);
-    Py_XDECREF(res);
-    return ret;
+    return PyObject_HasAttrWithError(self, &_Py_ID(__IOBase_closed));
 }
 
 /* Flush and close methods */
@@ -196,7 +196,7 @@ iobase_check_closed(PyObject *self)
     int closed;
     /* This gets the derived attribute, which is *not* __IOBase_closed
        in most cases! */
-    closed = _PyObject_LookupAttr(self, &_Py_ID(closed), &res);
+    closed = PyObject_GetOptionalAttr(self, &_Py_ID(closed), &res);
     if (closed > 0) {
         closed = PyObject_IsTrue(res);
         Py_DECREF(res);
@@ -303,7 +303,7 @@ iobase_finalize(PyObject *self)
 
     /* If `closed` doesn't exist or can't be evaluated as bool, then the
        object is probably in an unusable state, so ignore. */
-    if (_PyObject_LookupAttr(self, &_Py_ID(closed), &res) <= 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(closed), &res) <= 0) {
         PyErr_Clear();
         closed = -1;
     }
@@ -571,7 +571,7 @@ _io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
     PyObject *peek, *buffer, *result;
     Py_ssize_t old_size = -1;
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(peek), &peek) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(peek), &peek) < 0) {
         return NULL;
     }
 
@@ -863,8 +863,8 @@ static PyGetSetDef iobase_getset[] = {
 };
 
 static struct PyMemberDef iobase_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(iobase, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(iobase, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(iobase, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(iobase, dict), Py_READONLY},
     {NULL},
 };
 

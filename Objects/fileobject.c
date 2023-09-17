@@ -174,9 +174,9 @@ PyObject_AsFileDescriptor(PyObject *o)
     PyObject *meth;
 
     if (PyLong_Check(o)) {
-        fd = _PyLong_AsInt(o);
+        fd = PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttr(o, &_Py_ID(fileno), &meth) < 0) {
+    else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
@@ -186,7 +186,7 @@ PyObject_AsFileDescriptor(PyObject *o)
             return -1;
 
         if (PyLong_Check(fno)) {
-            fd = _PyLong_AsInt(fno);
+            fd = PyLong_AsInt(fno);
             Py_DECREF(fno);
         }
         else {

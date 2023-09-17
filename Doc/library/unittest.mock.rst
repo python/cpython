@@ -189,7 +189,7 @@ code if they are used incorrectly:
    >>> mock_function('wrong arguments')
    Traceback (most recent call last):
     ...
-   TypeError: <lambda>() takes exactly 3 arguments (1 given)
+   TypeError: missing a required argument: 'b'
 
 :func:`create_autospec` can also be used on classes, where it copies the signature of
 the ``__init__`` method, and on callable objects where it copies the signature of
@@ -315,6 +315,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
             ...
             AssertionError: Expected 'method' to have been called once. Called 2 times.
+            Calls: [call(), call()].
 
         .. versionadded:: 3.6
 
@@ -342,7 +343,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
-
+            Calls: [call('foo', bar='baz'), call('other', bar='values')].
 
     .. method:: assert_any_call(*args, **kwargs)
 
@@ -392,6 +393,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'hello' to not have been called. Called 1 times.
+            Calls: [call()].
 
         .. versionadded:: 3.5
 
@@ -954,7 +956,7 @@ object::
         >>> asyncio.run(main())
         >>> mock.assert_awaited_once()
         >>> asyncio.run(main())
-        >>> mock.method.assert_awaited_once()
+        >>> mock.assert_awaited_once()
         Traceback (most recent call last):
         ...
         AssertionError: Expected mock to have been awaited once. Awaited 2 times.
@@ -972,7 +974,7 @@ object::
         >>> mock.assert_awaited_with('other')
         Traceback (most recent call last):
         ...
-        AssertionError: expected call not found.
+        AssertionError: expected await not found.
         Expected: mock('other')
         Actual: mock('foo', bar='bar')
 
@@ -1126,7 +1128,7 @@ object::
         >>> mock.wait_until_called(timeout=1)
         >>> thread.join()
 
-  .. method:: wait_until_any_call(*args, **kwargs)
+  .. method:: wait_until_any_call_with(*args, **kwargs)
 
       Waits until the the mock is called with the specified arguments.
 
@@ -1136,7 +1138,7 @@ object::
         >>> mock = ThreadingMock()
         >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
         >>> thread.start()
-        >>> mock.wait_until_any_call("arg1", "arg2", arg="thing")
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
         >>> thread.join()
 
   .. attribute:: DEFAULT_TIMEOUT
@@ -2485,7 +2487,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open

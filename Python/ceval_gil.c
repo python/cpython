@@ -2,11 +2,12 @@
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
-#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
+#include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 
 /*
    Notes about the implementation:
@@ -162,16 +163,6 @@ UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
     COMPUTE_EVAL_BREAKER(interp, ceval, ceval2);
 }
 
-#ifndef NDEBUG
-/* Ensure that tstate is valid */
-static int
-is_tstate_valid(PyThreadState *tstate)
-{
-    assert(!_PyMem_IsPtrFreed(tstate));
-    assert(!_PyMem_IsPtrFreed(tstate->interp));
-    return 1;
-}
-#endif
 
 /*
  * Implementation of the Global Interpreter Lock (GIL).
@@ -324,7 +315,7 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
         /* Not switched yet => wait */
         if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
         {
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
             /* NOTE: if COND_WAIT does not atomically start waiting when
                releasing the mutex, another thread can run through, take
@@ -335,28 +326,6 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
         MUTEX_UNLOCK(gil->switch_mutex);
     }
 #endif
-}
-
-
-/* Check if a Python thread must exit immediately, rather than taking the GIL
-   if Py_Finalize() has been called.
-
-   When this function is called by a daemon thread after Py_Finalize() has been
-   called, the GIL does no longer exist.
-
-   tstate must be non-NULL. */
-static inline int
-tstate_must_exit(PyThreadState *tstate)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
-    if (finalizing == NULL) {
-        finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
-    }
-    return (finalizing != NULL && finalizing != tstate);
 }
 
 
@@ -375,7 +344,7 @@ take_gil(PyThreadState *tstate)
     // XXX It may be more correct to check tstate->_status.finalizing.
     // XXX assert(!tstate->_status.cleared);
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
            thread which called Py_Finalize(), exit immediately the thread.
 
@@ -385,7 +354,7 @@ take_gil(PyThreadState *tstate)
         PyThread_exit_thread();
     }
 
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     PyInterpreterState *interp = tstate->interp;
     struct _ceval_state *ceval = &interp->ceval;
     struct _gil_runtime_state *gil = ceval->gil;
@@ -413,7 +382,7 @@ take_gil(PyThreadState *tstate)
             _Py_atomic_load_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
-            if (tstate_must_exit(tstate)) {
+            if (_PyThreadState_MustExit(tstate)) {
                 MUTEX_UNLOCK(gil->mutex);
                 // gh-96387: If the loop requested a drop request in a previous
                 // iteration, reset the request. Otherwise, drop_gil() can
@@ -426,7 +395,7 @@ take_gil(PyThreadState *tstate)
                 }
                 PyThread_exit_thread();
             }
-            assert(is_tstate_valid(tstate));
+            assert(_PyThreadState_CheckConsistency(tstate));
 
             SET_GIL_DROP_REQUEST(interp);
             drop_requested = 1;
@@ -453,7 +422,7 @@ _ready:
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
            the thread which called Py_Finalize(), exit immediately the
            thread.
@@ -465,7 +434,7 @@ _ready:
         drop_gil(ceval, tstate);
         PyThread_exit_thread();
     }
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
         RESET_GIL_DROP_REQUEST(interp);
@@ -678,7 +647,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     PyThreadState *new_tstate = _PyThreadState_SwapNoGIL(NULL);
     if (new_tstate != tstate) {
@@ -876,7 +845,7 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 static int
 handle_signals(PyThreadState *tstate)
 {
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
@@ -982,7 +951,7 @@ void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     if (make_pending_calls(tstate->interp) < 0) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
@@ -1023,7 +992,7 @@ Py_MakePendingCalls(void)
     assert(PyGILState_Check());
 
     PyThreadState *tstate = _PyThreadState_GET();
-    assert(is_tstate_valid(tstate));
+    assert(_PyThreadState_CheckConsistency(tstate));
 
     /* Only execute pending calls on the main thread. */
     if (!_Py_IsMainThread() || !_Py_IsMainInterpreter(tstate->interp)) {
@@ -1052,8 +1021,65 @@ _PyEval_FiniState(struct _ceval_state *ceval)
     }
 }
 
-/* Handle signals, pending calls, GIL drop request
-   and asynchronous exception */
+
+/* Do periodic things, like check for signals and async I/0.
+* We need to do reasonably frequently, but not too frequently.
+* All loops should include a check of the eval breaker.
+* We also check on return from any builtin function.
+*
+* ## More Details ###
+*
+* The eval loop (this function) normally executes the instructions
+* of a code object sequentially.  However, the runtime supports a
+* number of out-of-band execution scenarios that may pause that
+* sequential execution long enough to do that out-of-band work
+* in the current thread using the current PyThreadState.
+*
+* The scenarios include:
+*
+*  - cyclic garbage collection
+*  - GIL drop requests
+*  - "async" exceptions
+*  - "pending calls"  (some only in the main thread)
+*  - signal handling (only in the main thread)
+*
+* When the need for one of the above is detected, the eval loop
+* pauses long enough to handle the detected case.  Then, if doing
+* so didn't trigger an exception, the eval loop resumes executing
+* the sequential instructions.
+*
+* To make this work, the eval loop periodically checks if any
+* of the above needs to happen.  The individual checks can be
+* expensive if computed each time, so a while back we switched
+* to using pre-computed, per-interpreter variables for the checks,
+* and later consolidated that to a single "eval breaker" variable
+* (now a PyInterpreterState field).
+*
+* For the longest time, the eval breaker check would happen
+* frequently, every 5 or so times through the loop, regardless
+* of what instruction ran last or what would run next.  Then, in
+* early 2021 (gh-18334, commit 4958f5d), we switched to checking
+* the eval breaker less frequently, by hard-coding the check to
+* specific places in the eval loop (e.g. certain instructions).
+* The intent then was to check after returning from calls
+* and on the back edges of loops.
+*
+* In addition to being more efficient, that approach keeps
+* the eval loop from running arbitrary code between instructions
+* that don't handle that well.  (See gh-74174.)
+*
+* Currently, the eval breaker check happens on back edges in
+* the control flow graph, which pretty much applies to all loops,
+* and most calls.
+* (See bytecodes.c for exact information.)
+*
+* One consequence of this approach is that it might not be obvious
+* how to force any specific thread to pick up the eval breaker,
+* or for any specific thread to not pick it up.  Mostly this
+* involves judicious uses of locks and careful ordering of code,
+* while avoiding code that might trigger the eval breaker
+* until so desired.
+*/
 int
 _Py_HandlePending(PyThreadState *tstate)
 {

@@ -44,7 +44,7 @@ jobs:
                 // We need to truncate the body size, because the max size for
                 // the whole payload is 16kb. We want to be safe and assume that
                 // body can take up to ~8kb of space.
-                body   : issue.data.body.substring(8000)
+                body   : issue.data.body.substring(0, 8000)
               };
 
               const data = {

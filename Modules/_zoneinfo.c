@@ -4,13 +4,12 @@
 
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
-#include "structmember.h"
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
-#include <ctype.h>
-#include <stddef.h>
+#include "datetime.h"             // PyDateTime_TZInfo
+
+#include <stddef.h>               // offsetof()
 #include <stdint.h>
-
-#include "datetime.h"
 
 #include "clinic/_zoneinfo.c.h"
 /*[clinic input]
@@ -1701,7 +1700,7 @@ error:
 static int
 parse_uint(const char *const p, uint8_t *value)
 {
-    if (!isdigit(*p)) {
+    if (!Py_ISDIGIT(*p)) {
         return -1;
     }
 
@@ -1732,7 +1731,7 @@ parse_abbr(const char *const p, PyObject **abbr)
             //   '+' ) character, or the minus-sign ( '-' ) character. The std
             //   and dst fields in this case shall not include the quoting
             //   characters.
-            if (!isalpha(buff) && !isdigit(buff) && buff != '+' &&
+            if (!Py_ISALPHA(buff) && !Py_ISDIGIT(buff) && buff != '+' &&
                 buff != '-') {
                 return -1;
             }
@@ -1748,7 +1747,7 @@ parse_abbr(const char *const p, PyObject **abbr)
         //   In the unquoted form, all characters in these fields shall be
         //   alphabetic characters from the portable character set in the
         //   current locale.
-        while (isalpha(*ptr)) {
+        while (Py_ISALPHA(*ptr)) {
             ptr++;
         }
         str_end = ptr;
@@ -1802,7 +1801,7 @@ parse_tz_delta(const char *const p, long *total_seconds)
     // The hour can be 1 or 2 numeric characters
     for (size_t i = 0; i < 2; ++i) {
         buff = *ptr;
-        if (!isdigit(buff)) {
+        if (!Py_ISDIGIT(buff)) {
             if (i == 0) {
                 return -1;
             }
@@ -1830,7 +1829,7 @@ parse_tz_delta(const char *const p, long *total_seconds)
 
         for (size_t j = 0; j < 2; ++j) {
             buff = *ptr;
-            if (!isdigit(buff)) {
+            if (!Py_ISDIGIT(buff)) {
                 return -1;
             }
             *(outputs[i]) *= 10;
@@ -1932,7 +1931,7 @@ parse_transition_rule(const char *const p, TransitionRuleType **out)
         }
 
         for (size_t i = 0; i < 3; ++i) {
-            if (!isdigit(*ptr)) {
+            if (!Py_ISDIGIT(*ptr)) {
                 if (i == 0) {
                     return -1;
                 }
@@ -2007,7 +2006,7 @@ parse_transition_time(const char *const p, int8_t *hour, int8_t *minute,
 
         uint8_t buff = 0;
         for (size_t j = 0; j < 2; j++) {
-            if (!isdigit(*ptr)) {
+            if (!Py_ISDIGIT(*ptr)) {
                 if (i == 0 && j > 0) {
                     break;
                 }
@@ -2692,13 +2691,13 @@ static PyMethodDef zoneinfo_methods[] = {
 static PyMemberDef zoneinfo_members[] = {
     {.name = "key",
      .offset = offsetof(PyZoneInfo_ZoneInfo, key),
-     .type = T_OBJECT_EX,
-     .flags = READONLY,
+     .type = Py_T_OBJECT_EX,
+     .flags = Py_READONLY,
      .doc = NULL},
     {.name = "__weaklistoffset__",
      .offset = offsetof(PyZoneInfo_ZoneInfo, weakreflist),
-     .type = T_PYSSIZET,
-     .flags = READONLY},
+     .type = Py_T_PYSSIZET,
+     .flags = Py_READONLY},
     {NULL}, /* Sentinel */
 };
 

@@ -13,6 +13,7 @@
 
 #include "Python.h"
 #include "multibytecodec.h"
+#include "pycore_import.h"        // _PyImport_GetModuleAttrString()
 
 
 /* a unicode "undefined" code point */
@@ -397,11 +398,7 @@ register_maps(PyObject *module)
         strcpy(mhname + sizeof("__map_") - 1, h->charset);
 
         PyObject *capsule = PyCapsule_New((void *)h, MAP_CAPSULE, NULL);
-        if (capsule == NULL) {
-            return -1;
-        }
-        if (PyModule_AddObject(module, mhname, capsule) < 0) {
-            Py_DECREF(capsule);
+        if (PyModule_Add(module, mhname, capsule) < 0) {
             return -1;
         }
     }

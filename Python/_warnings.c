@@ -1,10 +1,13 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -222,7 +225,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
             return NULL;
     }
 
-    (void)_PyObject_LookupAttr(warnings_module, attr, &obj);
+    (void)PyObject_GetOptionalAttr(warnings_module, attr, &obj);
     Py_DECREF(warnings_module);
     return obj;
 }
@@ -1068,7 +1071,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    (void)_PyObject_LookupAttr(loader, &_Py_ID(get_source), &get_source);
+    (void)PyObject_GetOptionalAttr(loader, &_Py_ID(get_source), &get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);

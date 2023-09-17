@@ -1,4 +1,3 @@
-
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
@@ -124,7 +123,7 @@ get_module_from_type(PyTypeObject *cls)
 static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
-    assert(!PyObject_HasAttrString(mod, name));
+    assert(!PyObject_HasAttrStringWithError(mod, name));
     PyObject *exctype = PyErr_NewException(name, base, NULL);
     if (exctype == NULL) {
         return NULL;
@@ -2136,7 +2135,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             goto except;
         }
         if (res) {
-            id_obj = _PyInterpreterState_GetIDObject(interp);
+            id_obj = PyInterpreterState_GetIDObject(interp);
             if (id_obj == NULL) {
                 goto except;
             }
@@ -2403,7 +2402,7 @@ module_exec(PyObject *mod)
 
     // Make sure chnnels drop objects owned by this interpreter
     PyInterpreterState *interp = _get_current_interp();
-    _Py_AtExit(interp, clear_interpreter, (void *)interp);
+    PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 
