@@ -109,6 +109,7 @@ PCbuild/*-pgi
 PCbuild/*-pgo
 PCbuild/*.VC.db
 PCbuild/*.VC.opendb
+PCbuild/deepfreeze_mappings.txt
 PCbuild/amd64/
 PCbuild/arm32/
 PCbuild/arm64/
