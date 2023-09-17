@@ -692,11 +692,16 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
+fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
             frame->prev_instr += frame->return_offset;
-            frame->instr_ptr += frame->return_offset;
+            frame->instr_ptr += frame->new_return_offset;
+            frame->new_return_offset = 0;
+
+fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
+fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -2300,30 +2305,6 @@
             break;
         }
 
-        case _PUSH_FRAME: {
-            _PyInterpreterFrame *new_frame;
-            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
-            STACK_SHRINK(1);
-            // Write it out explicitly because it's subtly different.
-            // Eventually this should be the only occurrence of this code.
-            frame->return_offset = 0;
-            assert(tstate->interp->eval_frame == NULL);
-            STORE_SP();
-            new_frame->previous = frame;
-            CALL_STAT_INC(inlined_py_calls);
-            frame = tstate->current_frame = new_frame;
-            tstate->py_recursion_remaining--;
-            LOAD_SP();
-            LOAD_IP();
-#if LLTRACE && TIER_ONE
-            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-            if (lltrace < 0) {
-                goto exit_unwind;
-            }
-#endif
-            break;
-        }
-
         case CALL_TYPE_1: {
             PyObject **args;
             PyObject *null;
@@ -2991,14 +2972,17 @@
 
         case _SET_IP: {
             frame->prev_instr = ip_offset + oparg;
-            frame->instr_ptr = ip_offset + oparg + 1;
+            frame->instr_ptr = ip_offset + oparg;
             break;
         }
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
+fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
             frame->prev_instr = next_instr - 1;
-            frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr - frame->new_return_offset;
+            frame->new_return_offset = 0;
+fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
             #endif
             #if TIER_TWO
             // Relies on a preceding _SET_IP

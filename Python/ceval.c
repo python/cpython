@@ -695,6 +695,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
+    entry_frame.new_return_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
@@ -730,6 +731,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
+if (!(frame->instr_ptr == frame->prev_instr + 1)) fprintf(stderr, "SET_LOCALS_FROM_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr); \
+    if (0) frame->instr_ptr += 1 + _PyOpcode_Caches[_PyOpcode_Deopt[frame->instr_ptr->op.code]]; \
     assert (frame->instr_ptr == frame->prev_instr + 1); \
     next_instr = frame->instr_ptr; \
     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -865,8 +868,10 @@ exception_unwind:
         {
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
+fprintf(stderr, "exception_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr-1=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr-1);
             int level, handler, lasti;
             if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
+fprintf(stderr, "got_exception_handler: offset=%d lasti=%d  handler=%d\n", offset, lasti, handler);
                 // No handlers, so exit.
                 assert(_PyErr_Occurred(tstate));
 
@@ -879,6 +884,7 @@ exception_unwind:
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
+fprintf(stderr, "goto exit_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                 goto exit_unwind;
             }
 
@@ -926,7 +932,10 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
-    frame->return_offset = 0;
+    frame->instr_ptr += frame->new_return_offset;
+    frame->new_return_offset = 0;
+fprintf(stderr, "exit_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;

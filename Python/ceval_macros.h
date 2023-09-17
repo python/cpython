@@ -71,8 +71,10 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
+fprintf(stderr, "-- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr); \
         frame->instr_ptr = next_instr; \
         frame->prev_instr = next_instr++; \
+fprintf(stderr, "== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr); \
     } while(0)
 #endif
 
@@ -113,7 +115,6 @@
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
-        frame->instr_ptr = next_instr;                  \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \

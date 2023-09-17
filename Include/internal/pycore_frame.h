@@ -67,12 +67,19 @@ typedef struct _PyInterpreterFrame {
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
     /* The return_offset determines where a `RETURN` should go in the caller,
-     * relative to `prev_instr`/`instr_ptr`.
+     * relative to `prev_instr`.
      * It is only meaningful to the callee,
      * so it needs to be set in any CALL (to a Python function)
      * or SEND (to a coroutine or generator).
      * If there is no callee, then it is meaningless. */
     uint16_t return_offset;
+    /* The new_return_offset determines where a `RETURN` should go in the caller,
+     * relative to `instr_ptr`.
+     * It is only meaningful to the callee,
+     * so it needs to be set in any CALL (to a Python function)
+     * or SEND (to a coroutine or generator).
+     * If there is no callee, then it is meaningless. */
+    uint16_t new_return_offset;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
