@@ -27,6 +27,24 @@ Object Protocol
    instead of the :func:`repr`.
 
 
+.. c:function:: int PyObject_HasAttrWithError(PyObject *o, const char *attr_name)
+
+   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.
+   This is equivalent to the Python expression ``hasattr(o, attr_name)``.
+   On failure, return ``-1``.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyObject_HasAttrStringWithError(PyObject *o, const char *attr_name)
+
+   This is the same as :c:func:`PyObject_HasAttrWithError`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyObject_HasAttr(PyObject *o, PyObject *attr_name)
 
    Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
@@ -37,8 +55,8 @@ Object Protocol
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetOptionalAttr` or
-      :c:func:`PyObject_GetAttr` instead.
+      For proper error handling, use :c:func:`PyObject_HasAttrWithError`,
+      :c:func:`PyObject_GetOptionalAttr` or :c:func:`PyObject_GetAttr` instead.
 
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
@@ -52,7 +70,8 @@ Object Protocol
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
       :meth:`~object.__getattribute__` methods or while creating the temporary
       :class:`str` object are silently ignored.
-      For proper error handling, use :c:func:`PyObject_GetOptionalAttrString`
+      For proper error handling, use :c:func:`PyObject_HasAttrStringWithError`,
+      :c:func:`PyObject_GetOptionalAttrString`
       or :c:func:`PyObject_GetAttrString` instead.
 
 
