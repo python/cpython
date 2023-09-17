@@ -3,6 +3,8 @@ import os
 import shutil
 import sys
 import unittest
+from errno import EMFILE
+from unittest import mock
 
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
@@ -348,6 +350,12 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob_too_many_open_files(self):
+        with mock.patch('os.scandir') as mocked_func:
+            mocked_func.side_effect = OSError(EMFILE, os.strerror(EMFILE), '.')
+
+            self.assertRaises(OSError, glob.glob, '*')
 
 
 @skip_unless_symlink

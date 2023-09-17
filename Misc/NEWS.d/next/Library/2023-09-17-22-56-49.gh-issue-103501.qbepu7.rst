@@ -1,0 +1,2 @@
+Raise ``OSError`` instead of return ``[]`` in ``glob.glob`` when max open
+file limit reached.
