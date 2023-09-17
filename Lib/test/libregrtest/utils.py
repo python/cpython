@@ -561,7 +561,7 @@ def display_header():
     print("==", platform.platform(aliased=True),
                   "%s-endian" % sys.byteorder)
     print("== Python build:", ' '.join(get_build_info()))
-    print("== cwd:", os.getcwd())
+    print("== cwd:", os.getcwd().encode('utf-8'))
     cpu_count = os.cpu_count()
     if cpu_count:
         print("== CPU count:", cpu_count)
