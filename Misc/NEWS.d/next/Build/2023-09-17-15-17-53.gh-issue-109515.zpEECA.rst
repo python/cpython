@@ -1,0 +1,1 @@
+on windows, write modules to freeze into a file instead of the command line. Allow deepfreze.py to read module file names from a file with a new -f option
