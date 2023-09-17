@@ -71,76 +71,76 @@ class FutureTest(unittest.TestCase):
 
     def test_unknown_future_flag(self):
         code = """
-        '''Docstring'''
-        from __future__ import nested_scopes
-        from __future__ import rested_snopes  # error here
+            '''Docstring'''
+            from __future__ import nested_scopes
+            from __future__ import rested_snopes  # typo error here: nested => rested
         """
         self.assertSyntaxError(code, 4)
 
     def test_future_import_not_on_top(self):
         code = """
-        '''Docstring'''
-        import some_module
-        from __future__ import annotations
+            '''Docstring'''
+            import some_module
+            from __future__ import annotations
         """
         self.assertSyntaxError(code, 4)
 
         code = """
-        '''Docstring'''
-        import __future__
-        from __future__ import annotations
+            '''Docstring'''
+            import __future__
+            from __future__ import annotations
         """
         self.assertSyntaxError(code, 4)
 
         code = """
-        '''Docstring'''
-        from __future__ import absolute_import
-        "spam, bar, blah"
-        from __future__ import print_function
+            '''Docstring'''
+            from __future__ import absolute_import
+            "spam, bar, blah"
+            from __future__ import print_function
         """
         self.assertSyntaxError(code, 5)
 
     def test_future_import_with_extra_string(self):
         code = """
-        '''Docstring'''
-        "this isn't a doc string"
-        from __future__ import nested_scopes
+            '''Docstring'''
+            "this isn't a doc string"
+            from __future__ import nested_scopes
         """
         self.assertSyntaxError(code, 4, parametrize_docstring=False)
 
     def test_multiple_import_statements_on_same_line(self):
         # With `\`:
         code = """
-        '''Docstring'''
-        from __future__ import nested_scopes; import string; from __future__ import \
-     nested_scopes
+            '''Docstring'''
+            from __future__ import nested_scopes; import string; from __future__ import \
+        nested_scopes
         """
         self.assertSyntaxError(code, 3, offset=54)
 
         # Without `\`:
         code = """
-        '''Docstring'''
-        from __future__ import nested_scopes; import string; from __future__ import  nested_scopes
+            '''Docstring'''
+            from __future__ import nested_scopes; import string; from __future__ import  nested_scopes
         """
         self.assertSyntaxError(code, 3, offset=54)
 
     def test_future_import_star(self):
         code = """
-        '''Docstring'''
-        from __future__ import *
+            '''Docstring'''
+            from __future__ import *
         """
         self.assertSyntaxError(code, 3)
 
     def test_future_import_braces(self):
         code = """
-        '''Docstring'''
-        from __future__ import braces
+            '''Docstring'''
+            from __future__ import braces
         """
         self.assertSyntaxError(code, 3)
 
         code = """
-        '''Docstring'''
-        from __future__ import nested_scopes, braces
+            '''Docstring'''
+            from __future__ import nested_scopes, braces
         """
         self.assertSyntaxError(code, 3)
 
