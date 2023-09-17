@@ -576,7 +576,7 @@ class _pthFileTests(unittest.TestCase):
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:
                 _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-            with open(_pth_file, 'w') as f:
+            with open(_pth_file, 'w', encoding='utf8') as f:
                 for line in lines:
                     print(line, file=f)
             return exe_file
@@ -613,7 +613,7 @@ class _pthFileTests(unittest.TestCase):
             os.path.dirname(exe_file),
             pth_lines)
 
-        output = subprocess.check_output([exe_file, '-c',
+        output = subprocess.check_output([exe_file, '-X', 'utf8', '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')

@@ -55,10 +55,6 @@ if gdb_major_version < 7:
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
 
-if 'Clang' in platform.python_compiler() and sys.platform == 'darwin':
-    raise unittest.SkipTest("test_gdb doesn't work correctly when python is"
-                            " built with LLVM clang")
-
 if ((sysconfig.get_config_var('PGO_PROF_USE_FLAG') or 'xxx') in
     (sysconfig.get_config_var('PY_CORE_CFLAGS') or '')):
     raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
@@ -247,6 +243,17 @@ class DebuggerTests(unittest.TestCase):
         for pattern in (
             '(frame information optimized out)',
             'Unable to read information on python frame',
+            # gh-91960: On Python built with "clang -Og", gdb gets
+            # "frame=<optimized out>" for _PyEval_EvalFrameDefault() parameter
+            '(unable to read python frame information)',
+            # gh-104736: On Python built with "clang -Og" on ppc64le,
+            # "py-bt" displays a truncated or not traceback, but "where"
+            # logs this error message:
+            'Backtrace stopped: frame did not save the PC',
+            # gh-104736: When "bt" command displays something like:
+            # "#1  0x0000000000000000 in ?? ()", the traceback is likely
+            # truncated or wrong.
+            ' ?? ()',
         ):
             if pattern in out:
                 raise unittest.SkipTest(f"{pattern!r} found in gdb output")

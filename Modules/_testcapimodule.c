@@ -217,10 +217,13 @@ test_dict_inner(int count)
         Py_DECREF(v);
     }
 
+    k = v = UNINITIALIZED_PTR;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         PyObject *o;
         iterations++;
 
+        assert(k != UNINITIALIZED_PTR);
+        assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
         if (o == NULL)
@@ -230,7 +233,10 @@ test_dict_inner(int count)
             return -1;
         }
         Py_DECREF(o);
+        k = v = UNINITIALIZED_PTR;
     }
+    assert(k == UNINITIALIZED_PTR);
+    assert(v == UNINITIALIZED_PTR);
 
     Py_DECREF(dict);
 
@@ -3118,7 +3124,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(Py_REFCNT(obj) == refcnt);
 
     // test PyWeakref_GetRef(), reference is alive
-    PyObject *ref = Py_True;  // marker to check that value was set
+    PyObject *ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
     assert(Py_REFCNT(obj) == (refcnt + 1));
@@ -3140,7 +3146,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
-    ref = Py_True;
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 0);
     assert(ref == NULL);
 
@@ -3152,7 +3158,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // test PyWeakref_GetRef(), invalid type
     assert(!PyErr_Occurred());
-    ref = Py_True;
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_TypeError));
     PyErr_Clear();
@@ -3164,7 +3170,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyErr_Clear();
 
     // test PyWeakref_GetRef(NULL)
-    ref = Py_True;  // marker to check that value was set
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(NULL, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     assert(ref == NULL);
@@ -3916,6 +3922,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -3990,18 +3997,12 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_PyAtomic(m) < 0) {
         return NULL;
     }
-
-#ifndef LIMITED_API_AVAILABLE
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
-#else
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
-#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

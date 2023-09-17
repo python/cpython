@@ -23,8 +23,8 @@ except ImportError:
 
 support.requires_working_socket(module=True)
 
-CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 
 class TestImaplib(unittest.TestCase):
@@ -74,6 +74,7 @@ class TestImaplib(unittest.TestCase):
         for t in self.timevalues():
             imaplib.Time2Internaldate(t)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_imap4_host_default_value(self):
         # Check whether the IMAP4_PORT is truly unavailable.
         with socket.socket() as s:

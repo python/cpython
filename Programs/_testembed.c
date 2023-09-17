@@ -708,6 +708,10 @@ static int test_init_from_config(void)
     config.pathconfig_warnings = 0;
 
     config.safe_path = 1;
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=");
+    config._pystats = 1;
+#endif
 
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
@@ -778,6 +782,9 @@ static void set_most_env_vars(void)
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
     putenv("PYTHONINTMAXSTRDIGITS=4567");
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=1");
+#endif
 }
 
 
