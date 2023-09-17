@@ -510,7 +510,7 @@ def main() -> None:
     args = parser.parse_args()
     verbose = args.verbose
     output = args.output
-    
+
     if args.file:
         if verbose:
             print(f"reading rules from {args.file}")
@@ -520,7 +520,7 @@ def main() -> None:
         rules = args.args
     else:
         raise argparse.ArgumentError(None, "no rule(s) specified")
-    
+
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
             generate(rules, file)
