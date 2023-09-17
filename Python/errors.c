@@ -1776,13 +1776,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         }
     }
     if ((PyObject *)Py_TYPE(exc) != PyExc_SyntaxError) {
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(msg), &tmp) < 0) {
+        int rc = PyObject_HasAttrWithError(exc, &_Py_ID(msg));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             tmp = PyObject_Str(exc);
             if (tmp) {
                 if (PyObject_SetAttr(exc, &_Py_ID(msg), tmp)) {
@@ -1795,13 +1793,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             }
         }
 
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(print_file_and_line), &tmp) < 0) {
+        rc = PyObject_HasAttrWithError(exc, &_Py_ID(print_file_and_line));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             if (PyObject_SetAttr(exc, &_Py_ID(print_file_and_line), Py_None)) {
                 _PyErr_Clear(tstate);
             }

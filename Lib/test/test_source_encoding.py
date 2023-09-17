@@ -68,6 +68,7 @@ class MiscSourceEncodingTest(unittest.TestCase):
     def test_20731(self):
         sub = subprocess.Popen([sys.executable,
                         os.path.join(os.path.dirname(__file__),
+                                     'tokenizedata',
                                      'coding20731.py')],
                         stderr=subprocess.PIPE)
         err = sub.communicate()[1]
@@ -100,10 +101,10 @@ class MiscSourceEncodingTest(unittest.TestCase):
         self.verify_bad_module(module_name)
 
     def verify_bad_module(self, module_name):
-        self.assertRaises(SyntaxError, __import__, 'test.' + module_name)
+        self.assertRaises(SyntaxError, __import__, 'test.tokenizedata.' + module_name)
 
         path = os.path.dirname(__file__)
-        filename = os.path.join(path, module_name + '.py')
+        filename = os.path.join(path, 'tokenizedata', module_name + '.py')
         with open(filename, "rb") as fp:
             bytes = fp.read()
         self.assertRaises(SyntaxError, compile, bytes, filename, 'exec')

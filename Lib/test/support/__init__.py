@@ -62,6 +62,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "without_optimizer",
     ]
 
 
@@ -878,26 +879,30 @@ _4G = 4 * _1G
 
 MAX_Py_ssize_t = sys.maxsize
 
-def set_memlimit(limit):
-    global max_memuse
-    global real_max_memuse
+def _parse_memlimit(limit: str) -> int:
     sizes = {
         'k': 1024,
         'm': _1M,
         'g': _1G,
         't': 1024*_1G,
     }
-    m = re.match(r'(\d+(\.\d+)?) (K|M|G|T)b?$', limit,
+    m = re.match(r'(\d+(?:\.\d+)?) (K|M|G|T)b?$', limit,
                  re.IGNORECASE | re.VERBOSE)
     if m is None:
-        raise ValueError('Invalid memory limit %r' % (limit,))
-    memlimit = int(float(m.group(1)) * sizes[m.group(3).lower()])
-    real_max_memuse = memlimit
-    if memlimit > MAX_Py_ssize_t:
-        memlimit = MAX_Py_ssize_t
+        raise ValueError(f'Invalid memory limit: {limit!r}')
+    return int(float(m.group(1)) * sizes[m.group(2).lower()])
+
+def set_memlimit(limit: str) -> None:
+    global max_memuse
+    global real_max_memuse
+    memlimit = _parse_memlimit(limit)
     if memlimit < _2G - 1:
-        raise ValueError('Memory limit %r too low to be useful' % (limit,))
+        raise ValueError('Memory limit {limit!r} too low to be useful')
+
+    real_max_memuse = memlimit
+    memlimit = min(memlimit, MAX_Py_ssize_t)
     max_memuse = memlimit
+
 
 class _MemoryWatchdog:
     """An object which periodically watches the process' memory consumption
@@ -2529,3 +2534,19 @@ skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == '
                                 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
+
+# Decorator to disable optimizer while a function run
+def without_optimizer(func):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return func
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        save_opt = _testinternalcapi.get_optimizer()
+        try:
+            _testinternalcapi.set_optimizer(None)
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(save_opt)
+    return wrapper

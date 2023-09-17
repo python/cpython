@@ -5,6 +5,7 @@
 #include "pycore_ceval.h"
 #include "pycore_code.h"          // stats
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
+#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
@@ -448,6 +449,10 @@ init_runtime(_PyRuntimeState *runtime,
     runtime->main_thread = PyThread_get_thread_ident();
 
     runtime->unicode_state.ids.next_index = unicode_next_index;
+
+#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+    _Py_EmscriptenTrampoline_Init(runtime);
+#endif
 
     runtime->_initialized = 1;
 }
@@ -1907,6 +1912,10 @@ PyThreadState_Swap(PyThreadState *newts)
 void
 _PyThreadState_Bind(PyThreadState *tstate)
 {
+    // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
+    // was called, tstate becomes a dangling pointer.
+    assert(_PyThreadState_CheckConsistency(tstate));
+
     bind_tstate(tstate);
     // This makes sure there's a gilstate tstate bound
     // as soon as possible.
@@ -2906,6 +2915,31 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
     return 1;
 }
 #endif
+
+
+// Check if a Python thread must exit immediately, rather than taking the GIL
+// if Py_Finalize() has been called.
+//
+// When this function is called by a daemon thread after Py_Finalize() has been
+// called, the GIL does no longer exist.
+//
+// tstate can be a dangling pointer (point to freed memory): only tstate value
+// is used, the pointer is not deferenced.
+//
+// tstate must be non-NULL.
+int
+_PyThreadState_MustExit(PyThreadState *tstate)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
+    if (finalizing == NULL) {
+        finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
+    }
+    return (finalizing != NULL && finalizing != tstate);
+}
 
 
 #ifdef __cplusplus
