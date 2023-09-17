@@ -4,11 +4,11 @@ select = [
 ]
 extend-exclude = [
     # Failed to lint
-    "badsyntax_pep3120.py",
+    "tokenizedata/badsyntax_pep3120.py",
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
     # Failed to parse
-    "badsyntax_3131.py",
+    "tokenizedata/badsyntax_3131.py",
     "support/socket_helper.py",
     "test_fstring.py",
     # TODO Fix: F811 Redefinition of unused name
