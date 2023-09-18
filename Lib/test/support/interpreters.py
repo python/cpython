@@ -170,15 +170,25 @@ class RecvChannel(_ChannelEnd):
 
     _end = 'recv'
 
-    def recv(self, *, _sentinel=object(), _delay=10 / 1000):  # 10 milliseconds
+    def recv(self, timeout=None, *,
+             _sentinel=object(),
+             _delay=10 / 1000,  # 10 milliseconds
+             ):
         """Return the next object from the channel.
 
         This blocks until an object has been sent, if none have been
         sent already.
         """
+        if timeout is not None:
+            timeout = int(timeout)
+            if timeout < 0:
+                raise ValueError(f'timeout value must be non-negative')
+            end = time.now() + timeout
         obj = _channels.recv(self._id, _sentinel)
         while obj is _sentinel:
             time.sleep(_delay)
+            if timeout is not None and time.now() >= end:
+                raise TimeoutError
             obj = _channels.recv(self._id, _sentinel)
         return obj
 
