@@ -25,8 +25,6 @@
     }
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
-#undef ASSERT_KWNAMES_IS_NULL
-#define ASSERT_KWNAMES_IS_NULL() (void)0
 
 // Stuff that will be patched at "JIT time":
 extern _PyInterpreterFrame *_jit_branch(_PyInterpreterFrame *frame,
@@ -41,7 +39,6 @@ extern _PyInterpreterFrame *_jit_loop(_PyInterpreterFrame *frame,
 // The address of an extern can't be 0:
 extern void _jit_oparg_plus_one;
 extern void _jit_operand_plus_one;
-extern _Py_CODEUNIT _jit_pc_plus_one;
 
 _PyInterpreterFrame *
 _jit_entry(_PyInterpreterFrame *frame, PyObject **stack_pointer,

@@ -22,6 +22,17 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
   <Target Name="Build" DependsOnTargets="FindPythonForBuild">
-	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" --windows "$(Configuration)|$(Platform)"' WorkingDirectory="$(PySourcePath)"/>
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc'
+          Condition="$(Configuration) != 'Debug' and $(Platform) == 'Win32'"
+          WorkingDirectory="$(PySourcePath)"/>
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" i686-pc-windows-msvc -d'
+          Condition="$(Configuration) == 'Debug' and $(Platform) == 'Win32'"
+          WorkingDirectory="$(PySourcePath)"/>
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc'
+          Condition="$(Configuration) != 'Debug' and $(Platform) == 'x64'"
+          WorkingDirectory="$(PySourcePath)"/>
+	  <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" x86_64-pc-windows-msvc -d'
+          Condition="$(Configuration) == 'Debug' and $(Platform) == 'x64'"
+          WorkingDirectory="$(PySourcePath)"/>
   </Target>
 </Project>

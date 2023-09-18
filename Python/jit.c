@@ -321,7 +321,6 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         patches[HOLE_loop] = (uintptr_t)memory + trampoline_stencil.nbytes;
         patches[HOLE_oparg_plus_one] = instruction->oparg + 1;
         patches[HOLE_operand_plus_one] = instruction->operand + 1;
-        patches[HOLE_pc_plus_one] = i + 1;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
