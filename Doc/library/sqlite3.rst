@@ -2440,7 +2440,6 @@ or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
 .. note::
-
    The context manager neither implicitly opens a new transaction
    nor closes the connection. Using ``contextlib.closing``, the context manager
    can be used for connection management. In this case, the ``sqlite3`` connection
