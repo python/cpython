@@ -411,14 +411,7 @@ clear_module_state(module_state *state)
 static PyTypeObject *
 _get_current_xibufferview_type(void)
 {
-    PyObject *mod = _get_current_module();
-    if (mod == NULL) {
-        // XXX import it?
-        PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME " module not imported yet");
-        return NULL;
-    }
-    module_state *state = get_module_state(mod);
+    module_state *state = _get_current_module_state();
     if (state == NULL) {
         return NULL;
     }
