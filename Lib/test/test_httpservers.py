@@ -699,11 +699,20 @@ print("</pre>")
         "This test can't be run reliably as root (issue #13308).")
 class CGIHTTPServerTestCase(BaseTestCase):
     class request_handler(NoLogRequestHandler, CGIHTTPRequestHandler):
-        pass
+        _test_case_self = None  # populated by each setUp() method call.
+
+        def __init__(self, *args, **kwargs):
+            with self._test_case_self.assertWarnsRegex(
+                    DeprecationWarning,
+                    r'http\.server\.CGIHTTPRequestHandler'):
+                # This context also happens to catch and silence the
+                # threading DeprecationWarning from os.fork().
+                super().__init__(*args, **kwargs)
 
     linesep = os.linesep.encode('ascii')
 
     def setUp(self):
+        self.request_handler._test_case_self = self  # practical, but yuck.
         BaseTestCase.setUp(self)
         self.cwd = os.getcwd()
         self.parent_dir = tempfile.mkdtemp()
@@ -780,6 +789,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         os.chdir(self.parent_dir)
 
     def tearDown(self):
+        self.request_handler._test_case_self = None
         try:
             os.chdir(self.cwd)
             if self._pythonexe_symlink:

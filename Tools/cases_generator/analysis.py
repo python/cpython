@@ -94,13 +94,8 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
-        n_instrs = 0
-        n_ops = 0
-        for instr in self.instrs.values():
-            if instr.kind == "op":
-                n_ops += 1
-            else:
-                n_instrs += 1
+        n_instrs = len(set(self.instrs) & set(self.macros))
+        n_ops = len(self.instrs) - n_instrs
         print(
             f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
@@ -145,6 +140,9 @@ class Analyzer:
 
             match thing:
                 case parsing.InstDef(name=name):
+                    macro: parsing.Macro | None = None
+                    if thing.kind == "inst":
+                        macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -152,9 +150,12 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        self.everything[
-                            instrs_idx[name]
-                        ] = OverriddenInstructionPlaceHolder(name=name)
+                        placeholder = OverriddenInstructionPlaceHolder(name=name)
+                        self.everything[instrs_idx[name]] = placeholder
+                        if macro is not None:
+                            self.warning(
+                                f"Overriding desugared {macro.name} may not work", thing
+                            )
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -164,6 +165,9 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
+                    if macro is not None:
+                        self.macros[macro.name] = macro
+                        self.everything.append(macro)
                 case parsing.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
@@ -197,9 +201,9 @@ class Analyzer:
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
-                elif target_macro := self.macro_instrs.get(target):
+                if target_macro := self.macro_instrs.get(target):
                     target_macro.predicted = True
-                else:
+                if not target_instr and not target_macro:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
                         instr.inst,  # TODO: Use better location
@@ -263,11 +267,7 @@ class Analyzer:
                     )
 
     def effect_counts(self, name: str) -> tuple[int, int, int]:
-        if instr := self.instrs.get(name):
-            cache = instr.cache_offset
-            input = len(instr.input_effects)
-            output = len(instr.output_effects)
-        elif mac := self.macro_instrs.get(name):
+        if mac := self.macro_instrs.get(name):
             cache = mac.cache_offset
             input, output = 0, 0
             for part in mac.parts:
@@ -407,7 +407,8 @@ class Analyzer:
                 case parsing.OpName(name):
                     if name not in self.instrs:
                         self.error(f"Unknown instruction {name!r}", macro)
-                    components.append(self.instrs[name])
+                    else:
+                        components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
