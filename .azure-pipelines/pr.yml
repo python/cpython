@@ -1,4 +1,4 @@
-pr: ['main', '3.11', '3.10', '3.9', '3.8', '3.7']
+pr: ['main', '3.12', '3.11', '3.10', '3.9', '3.8', '3.7']
 
 jobs:
 - job: Prebuild
@@ -11,8 +11,8 @@ jobs:
   - template: ./prebuild-checks.yml
 
 
-- job: Ubuntu_PR_Tests
-  displayName: Ubuntu PR Tests
+- job: Ubuntu_Patchcheck
+  displayName: Ubuntu patchcheck
   dependsOn: Prebuild
   condition: and(succeeded(), eq(dependencies.Prebuild.outputs['tests.run'], 'true'))
 
@@ -26,8 +26,6 @@ jobs:
 
   steps:
   - template: ./posix-steps.yml
-    parameters:
-      dependencies: apt
 
 
 - job: Windows_PR_Tests

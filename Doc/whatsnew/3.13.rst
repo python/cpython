@@ -926,6 +926,18 @@ New Features
   be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
+* Add fixed variants of functions which silently ignore errors:
+
+  - :c:func:`PyObject_HasAttrWithError` replaces :c:func:`PyObject_HasAttr`.
+  - :c:func:`PyObject_HasAttrStringWithError` replaces :c:func:`PyObject_HasAttrString`.
+  - :c:func:`PyMapping_HasKeyWithError` replaces :c:func:`PyMapping_HasKey`.
+  - :c:func:`PyMapping_HasKeyStringWithError` replaces :c:func:`PyMapping_HasKeyString`.
+
+  New functions return not only ``1`` for true and ``0`` for false, but also
+  ``-1`` for error.
+
+  (Contributed by Serhiy Storchaka in :gh:`108511`.)
+
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
