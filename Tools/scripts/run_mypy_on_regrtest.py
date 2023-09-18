@@ -9,30 +9,30 @@ by the modules inside `Lib/`.
 
 import argparse
 import os
-import tempfile
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import TypeAlias
 
 ReturnCode: TypeAlias = int
 
 
-def run_mypy_on_libregrtest(stdlib_dir: Path) -> ReturnCode:
-    stdlib_test_dir = stdlib_dir / "test"
+def run_mypy_on_libregrtest(root_dir: Path) -> ReturnCode:
+    test_dot_support_dir = root_dir / "Lib/" / "test" / "support"
     # Copy `Lib/test/support/` into a tempdir and point MYPYPATH towards the tempdir,
     # so that mypy can see the classes and functions defined in `Lib/test/support/`
     with tempfile.TemporaryDirectory() as td:
         td_path = Path(td)
         (td_path / "test").mkdir()
-        shutil.copytree(stdlib_test_dir / "support", td_path / "test" / "support")
+        shutil.copytree(test_dot_support_dir, td_path / "test" / "support")
         mypy_command = [
             "mypy",
             "--config-file",
-            "libregrtest/mypy.ini",
+            "Lib/test/libregrtest/mypy.ini",
         ]
         result = subprocess.run(
-            mypy_command, cwd=stdlib_test_dir, env=os.environ | {"MYPYPATH": td}
+            mypy_command, cwd=root_dir, env=os.environ | {"MYPYPATH": td}
         )
         return result.returncode
 
@@ -40,19 +40,18 @@ def run_mypy_on_libregrtest(stdlib_dir: Path) -> ReturnCode:
 def main() -> ReturnCode:
     parser = argparse.ArgumentParser("Script to run mypy on Lib/test/regrtest/")
     parser.add_argument(
-        "--stdlib-dir",
-        "-s",
+        "--root-dir",
+        "-r",
         type=Path,
         required=True,
-        help="path to the Lib/ dir where the Python stdlib is located",
+        help="path to the CPython repo root",
     )
     args = parser.parse_args()
-    stdlib_dir = args.stdlib_dir
-    if not (stdlib_dir.exists() and stdlib_dir.is_dir()):
-        parser.error(
-            "--stdlib-dir must point to a directory that exists on your filesystem!"
-        )
-    return run_mypy_on_libregrtest(args.stdlib_dir)
+    root_dir = args.root_dir
+    test_dot_support_dir = root_dir / "Lib" / "test" / "support"
+    if not (test_dot_support_dir.exists() and test_dot_support_dir.is_dir()):
+        parser.error("--root-dir must point to the root of a CPython clone!")
+    return run_mypy_on_libregrtest(root_dir)
 
 
 if __name__ == "__main__":
