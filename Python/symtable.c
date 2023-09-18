@@ -4,6 +4,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
 
+// Set this to 1 to dump all symtables to stdout for debugging
+#define _PY_DUMP_SYMTABLE 0
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -252,7 +254,7 @@ static int symtable_raise_if_annotation_block(struct symtable *st, const char *,
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
 /* For debugging purposes only */
-#if 0
+#if _PY_DUMP_SYMTABLE
 static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 {
     const char *blocktype = "";
@@ -271,6 +273,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         case DictComprehension: comptype = " DictComprehension"; break;
         case SetComprehension: comptype = " SetComprehension"; break;
         case GeneratorExpression: comptype = " GeneratorExpression"; break;
+        case NoComprehension: break;
     }
     PyObject* msg = PyUnicode_FromFormat(
         (
@@ -304,7 +307,8 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         ste->ste_col_offset,
         prefix
     );
-    printf(PyUnicode_AsUTF8(msg));
+    printf("%s", PyUnicode_AsUTF8(msg));
+    Py_DECREF(msg);
     PyObject *name, *value;
     Py_ssize_t pos = 0;
     while (PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
@@ -339,6 +343,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         assert(PySTEntry_Check(child));
         _dump_symtable((PySTEntryObject*)child, new_prefix);
     }
+    Py_DECREF(new_prefix);
 }
 
 static void dump_symtable(PySTEntryObject* ste)
@@ -455,8 +460,12 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Make the second symbol analysis pass */
-    if (symtable_analyze(st))
+    if (symtable_analyze(st)) {
+#if _PY_DUMP_SYMTABLE
+        dump_symtable(st->st_top);
+#endif
         return st;
+    }
     _PySymtable_Free(st);
     return NULL;
  error:
