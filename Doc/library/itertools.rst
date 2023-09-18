@@ -844,6 +844,7 @@ which incur interpreter overhead.
        return next(islice(iterable, n, None), default)
 
    def quantify(iterable, pred=bool):
+       "Given a predicate that returns True or False, count the True results."
        "Count how many times the predicate is True"
        return sum(map(pred, iterable))
 
