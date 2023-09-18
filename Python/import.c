@@ -2887,12 +2887,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        PyObject *path;
-        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        int has_path = PyObject_HasAttrWithError(mod, &_Py_ID(__path__));
+        if (has_path < 0) {
             goto error;
         }
-        if (path) {
-            Py_DECREF(path);
+        if (has_path) {
             final_mod = PyObject_CallMethodObjArgs(
                         IMPORTLIB(interp), &_Py_ID(_handle_fromlist),
                         mod, fromlist, IMPORT_FUNC(interp), NULL);
