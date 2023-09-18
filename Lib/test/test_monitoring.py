@@ -501,6 +501,22 @@ class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
+    def test_with_instruction_event(self):
+        """Test that the second tool can set events with instruction events set by the first tool."""
+        def f():
+            pass
+        code = f.__code__
+
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.set_local_events(TEST_TOOL, code, E.INSTRUCTION | E.LINE)
+            sys.monitoring.set_local_events(TEST_TOOL2, code, E.LINE)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.set_events(TEST_TOOL2, 0)
+            self.assertEqual(sys.monitoring._all_events(), {})
+
+
 class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
     def test_lines_single(self):

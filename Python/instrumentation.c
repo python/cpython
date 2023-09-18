@@ -647,7 +647,7 @@ instrument(PyCodeObject *code, int i)
     if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
-        CHECK(!is_instrumented(opcode));
+        CHECK(opcode != INSTRUMENTED_INSTRUCTION && opcode != INSTRUMENTED_LINE);
         CHECK(opcode == _PyOpcode_Deopt[opcode]);
     }
     CHECK(opcode != 0);
@@ -1251,6 +1251,9 @@ initialize_tools(PyCodeObject *code)
         int opcode = instr->op.code;
         if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
+        }
+        if (opcode == INSTRUMENTED_INSTRUCTION) {
+            opcode = code->_co_monitoring->per_instruction_opcodes[i];
         }
         bool instrumented = is_instrumented(opcode);
         if (instrumented) {
