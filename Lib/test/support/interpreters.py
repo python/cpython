@@ -203,12 +203,12 @@ class SendChannel(_ChannelEnd):
 
     _end = 'send'
 
-    def send(self, obj):
+    def send(self, obj, timeout=None):
         """Send the object (i.e. its data) to the channel's receiving end.
 
         This blocks until the object is received.
         """
-        _channels.send(self._id, obj, blocking=True)
+        _channels.send(self._id, obj, timeout=timeout)
 
     def send_nowait(self, obj):
         """Send the object to the channel's receiving end.
