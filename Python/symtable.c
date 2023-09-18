@@ -307,6 +307,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
         ste->ste_col_offset,
         prefix
     );
+    assert(msg != NULL);
     printf("%s", PyUnicode_AsUTF8(msg));
     Py_DECREF(msg);
     PyObject *name, *value;
@@ -338,17 +339,21 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
     }
     printf("%s--- Children ---\n", PyUnicode_AsUTF8(prefix));
     PyObject *new_prefix = PyUnicode_FromFormat("  %U", prefix);
+    assert(new_prefix != NULL);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
         PyObject *child = PyList_GetItem(ste->ste_children, i);
-        assert(PySTEntry_Check(child));
-        _dump_symtable((PySTEntryObject*)child, new_prefix);
+        assert(child != NULL && PySTEntry_Check(child));
+        _dump_symtable((PySTEntryObject *)child, new_prefix);
     }
     Py_DECREF(new_prefix);
 }
 
 static void dump_symtable(PySTEntryObject* ste)
 {
-    _dump_symtable(ste, PyUnicode_FromString(""));
+    PyObject *empty = PyUnicode_FromString("");
+    assert(empty != NULL);
+    _dump_symtable(ste, empty);
+    Py_DECREF(empty);
 }
 #endif
 
