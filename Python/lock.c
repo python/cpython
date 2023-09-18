@@ -28,12 +28,12 @@ static const int MAX_SPIN_COUNT = 0;
 #endif
 
 struct mutex_entry {
-    // The time at which the thread should be handed off the lock. Written by
-    // the waiting thread.
+    // The time after which the unlocking thread should hand off lock ownership
+    // directly to the waiting thread. Written by the waiting thread.
     _PyTime_t time_to_be_fair;
 
     // Set to 1 if the lock was handed off. Written by the unlocking thread.
-    int handoff;
+    int handed_off;
 };
 
 static void
@@ -56,7 +56,7 @@ PyLockStatus
 _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
 {
     uint8_t v = _Py_atomic_load_uint8_relaxed(&m->v);
-    if ((v & _Py_LOCKED) == _Py_UNLOCKED) {
+    if ((v & _Py_LOCKED) == 0) {
         if (_Py_atomic_compare_exchange_uint8(&m->v, &v, v|_Py_LOCKED)) {
             return PY_LOCK_ACQUIRED;
         }
@@ -73,12 +73,12 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
 
     struct mutex_entry entry = {
         .time_to_be_fair = now + TIME_TO_BE_FAIR_NS,
-        .handoff = 0,
+        .handed_off = 0,
     };
 
     Py_ssize_t spin_count = 0;
     for (;;) {
-        if (!(v & _Py_LOCKED)) {
+        if ((v & _Py_LOCKED) == 0) {
             // The lock is unlocked. Try to grab it.
             if (_Py_atomic_compare_exchange_uint8(&m->v, &v, v|_Py_LOCKED)) {
                 return PY_LOCK_ACQUIRED;
@@ -109,7 +109,7 @@ _PyMutex_LockTimed(PyMutex *m, _PyTime_t timeout, _PyLockFlags flags)
         int ret = _PyParkingLot_Park(&m->v, &newv, sizeof(newv), timeout,
                                      &entry, (flags & _PY_LOCK_DETACH) != 0);
         if (ret == Py_PARK_OK) {
-            if (entry.handoff) {
+            if (entry.handed_off) {
                 // We own the lock now.
                 assert(_Py_atomic_load_uint8_relaxed(&m->v) & _Py_LOCKED);
                 return PY_LOCK_ACQUIRED;
@@ -145,7 +145,7 @@ mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
         _PyTime_t now = _PyTime_GetMonotonicClock();
         int should_be_fair = now > entry->time_to_be_fair;
 
-        entry->handoff = should_be_fair;
+        entry->handed_off = should_be_fair;
         if (should_be_fair) {
             v |= _Py_LOCKED;
         }
@@ -161,7 +161,7 @@ _PyMutex_TryUnlock(PyMutex *m)
 {
     uint8_t v = _Py_atomic_load_uint8(&m->v);
     for (;;) {
-        if ((v & _Py_LOCKED) == _Py_UNLOCKED) {
+        if ((v & _Py_LOCKED) == 0) {
             // error: the mutex is not locked
             return -1;
         }
@@ -200,7 +200,7 @@ _PyRawMutex_LockSlow(_PyRawMutex *m)
 
     uintptr_t v = _Py_atomic_load_uintptr(&m->v);
     for (;;) {
-        if ((v & _Py_LOCKED) == _Py_UNLOCKED) {
+        if ((v & _Py_LOCKED) == 0) {
             // Unlocked: try to grab it (even if it has a waiter).
             if (_Py_atomic_compare_exchange_uintptr(&m->v, &v, v|_Py_LOCKED)) {
                 break;
@@ -228,7 +228,7 @@ _PyRawMutex_UnlockSlow(_PyRawMutex *m)
 {
     uintptr_t v = _Py_atomic_load_uintptr(&m->v);
     for (;;) {
-        if ((v & _Py_LOCKED) == _Py_UNLOCKED) {
+        if ((v & _Py_LOCKED) == 0) {
             Py_FatalError("unlocking mutex that is not locked");
         }
 
