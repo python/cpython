@@ -611,7 +611,7 @@ class TracebackErrorLocationCaretTestBase:
         def f_with_binary_operator():
             a = 1
             b = ""
-            return ( a   )   + b
+            return ( a   )   +b
 
         lineno_f = f_with_binary_operator.__code__.co_firstlineno
         expected_error = (
@@ -620,8 +620,8 @@ class TracebackErrorLocationCaretTestBase:
             '    callable()\n'
             '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
-            '    return ( a   )   + b\n'
-            '           ~~~~~~~~~~^~~\n'
+            '    return ( a   )   +b\n'
+            '           ~~~~~~~~~~^~\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
@@ -677,6 +677,73 @@ class TracebackErrorLocationCaretTestBase:
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
             '    return b     [    a  ] + c\n'
             '           ~~~~~~^^^^^^^^^\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call(self):
+        def f_with_call():
+            def f1(a):
+                def f2(b):
+                    raise RuntimeError("fail")
+                return f2
+            return f1("x")("y")
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
+            '    return f1("x")("y")\n'
+            '           ~~~~~~~^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f2\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_unicode(self):
+        def f_with_call():
+            def f1(a):
+                def f2(b):
+                    raise RuntimeError("fail")
+                return f2
+            return f1("ó")("á")
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+5}, in f_with_call\n'
+            '    return f1("ó")("á")\n'
+            '           ~~~~~~~^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f2\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_with_spaces_and_parenthesis(self):
+        def f_with_binary_operator():
+            def f(a):
+                raise RuntimeError("fail")
+            return f     (    "x"  ) + 2
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    return f     (    "x"  ) + 2\n'
+            '           ~~~~~~^^^^^^^^^^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    raise RuntimeError("fail")\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
