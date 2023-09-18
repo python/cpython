@@ -626,6 +626,97 @@ class TracebackErrorLocationCaretTestBase:
         result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
+    def test_caret_for_binary_operators_multiline(self):
+        def f_with_binary_operator():
+            b = 1
+            c = ""
+            a = b    \
+         +\
+               c  # test
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '       a = b    \\\n'
+            '           ~~~~~~\n'
+            '    +\\\n'
+            '    ^~\n'
+            '          c  # test\n'
+            '          ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_multiline_two_char(self):
+        def f_with_binary_operator():
+            b = 1
+            c = ""
+            a = (
+                (b  # test +
+                    )  \
+                # +
+            << (
+
+                c  # test
+                \
+            )  # test
+            )
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f_with_binary_operator\n'
+            '        (b  # test +\n'
+            '        ~~~~~~~~~~~~\n'
+            '            )  \\\n'
+            '            ~~~~\n'
+            '        # +\n'
+            '        ~~~\n'
+            '    << (\n'
+            '    ^^~~\n'
+            '    \n'
+            '    \n'
+            '        c  # test\n'
+            '        ~~~~~~~~~\n'
+            '        \\\n'
+            '        ~\n'
+            '    )  # test\n'
+            '    ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_binary_operators_multiline_with_unicode(self):
+        def f_with_binary_operator():
+            b = 1
+            a = ("ááá" +
+                "áá") + b
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_binary_operator\n'
+            '    a = ("ááá" +\n'
+            '        ~~~~~~~~\n'
+            '        "áá") + b\n'
+            '        ~~~~~~^~~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
     def test_caret_for_subscript(self):
         def f_with_subscript():
             some_dict = {'x': {'y': None}}
@@ -679,6 +770,42 @@ class TracebackErrorLocationCaretTestBase:
             '           ~~~~~~^^^^^^^^^\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_subscript_multiline(self):
+        def f_with_subscript():
+            bbbbb = {}
+            ccc = 1
+            ddd = 2
+            b = bbbbb \
+                [  ccc # test
+
+                 + ddd  \
+
+                ] # test
+            return b
+
+        lineno_f = f_with_subscript.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f_with_subscript\n'
+            '    b = bbbbb \\\n'
+            '        ~~~~~~~\n'
+            '        [  ccc # test\n'
+            '        ^^^^^^^^^^^^^\n'
+            '    \n'
+            '    \n'
+            '         + ddd  \\\n'
+            '         ^^^^^^^^\n'
+            '    \n'
+            '    \n'
+            '        ] # test\n'
+            '        ^\n'
+        )
+        result_lines = self.get_exception(f_with_subscript)
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_caret_for_call(self):
@@ -746,6 +873,39 @@ class TracebackErrorLocationCaretTestBase:
             '    raise RuntimeError("fail")\n'
         )
         result_lines = self.get_exception(f_with_binary_operator)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_caret_for_call_multiline(self):
+        def f_with_call():
+            class C:
+                def y(self, a):
+                    def f(b):
+                        raise RuntimeError("fail")
+                    return f
+            def g(x):
+                return C()
+            a = (g(1).y)(
+                2
+            )(3)(4)
+            return a
+
+        lineno_f = f_with_call.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+8}, in f_with_call\n'
+            '    a = (g(1).y)(\n'
+            '        ~~~~~~~~~\n'
+            '        2\n'
+            '        ~\n'
+            '    )(3)(4)\n'
+            '    ~^^^\n'
+            f'  File "{__file__}", line {lineno_f+4}, in f\n'
+            '    raise RuntimeError("fail")\n'
+        )
+        result_lines = self.get_exception(f_with_call)
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_traceback_specialization_with_syntax_error(self):

@@ -561,7 +561,9 @@ class StackSummary(list):
                     result.append(all_lines[i] + "\n")
                     if carets is not None:
                         result.append(carets[i] + "\n")
-                row.append(textwrap.indent(textwrap.dedent("".join(result)), '    '))
+                row.append(
+                    textwrap.indent(textwrap.dedent("".join(result)), '    ', lambda line: True)
+                )
 
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
