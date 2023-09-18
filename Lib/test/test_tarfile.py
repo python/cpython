@@ -3057,34 +3057,6 @@ class NumericOwnerTest(unittest.TestCase):
                               tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
-_can_chmod_set_sticky = None
-
-
-def can_chmod_set_sticky():
-    """Can chmod set the sticky bit on a file?"""
-
-    def can_chmod_set_sticky_inner():
-        if not os_helper.can_chmod():
-            return False
-        filename = os_helper.TESTFN + "-chmod-sticky"
-        try:
-            with open(filename, "w") as f:
-                os.chmod(f.fileno(), 0o666)
-                try:
-                    os.chmod(f.fileno(), 0o666 | stat.S_ISVTX)
-                except OSError:
-                    return False
-                mode = os.stat(f.fileno()).st_mode
-                return bool(mode & stat.S_ISVTX)
-        finally:
-            os.unlink(filename)
-
-    global _can_chmod_set_sticky
-    if _can_chmod_set_sticky is None:
-        _can_chmod_set_sticky = can_chmod_set_sticky_inner()
-    return _can_chmod_set_sticky
-
-
 @os_helper.skip_unless_working_chmod
 class ExtractStickyFileTest(unittest.TestCase):
 
@@ -3108,7 +3080,10 @@ class ExtractStickyFileTest(unittest.TestCase):
     def test_extract_chmod_eftype_success(self):
         # Extracting a file as non-root should skip the sticky bit (gh-108948)
         # even on platforms where chmod fails with EFTYPE (i.e. FreeBSD)
-        expected_mode = self.sticky_mode if can_chmod_set_sticky() else self.non_sticky_mode
+        if os_helper.can_chmod_set_sticky_bit():
+            expected_mode = self.sticky_mode
+        else:
+            expected_mode = self.non_sticky_mode
         self.extract_sticky_file()
         got_mode = stat.filemode(os.stat(self.extracted_path).st_mode)
         self.assertEqual(got_mode, expected_mode)
@@ -3906,7 +3881,7 @@ class TestExtractionFilters(unittest.TestCase):
         with open(tmp_filename, 'w'):
             pass
         new_mode = os.stat(tmp_filename).st_mode | stat.S_ISGID | stat.S_ISUID
-        if can_chmod_set_sticky():
+        if os_helper.can_chmod_set_sticky_bit():
             new_mode |= stat.S_ISVTX
         os.chmod(tmp_filename, new_mode)
         got_mode = os.stat(tmp_filename).st_mode

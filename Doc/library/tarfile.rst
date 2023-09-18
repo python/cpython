@@ -942,9 +942,9 @@ reused in custom filters:
    .. note::
 
       Although the filter preserves all permission bits unchanged, the sticky
-      bit (:const:`~stat.S_ISVTX`) will not be set on extracted files when the
-      system does not allow it. For compatibility reasons, no error is raised
-      in this case.
+      bit (:const:`~stat.S_ISVTX`) will not be set on an extracted file if the
+      file system does not allow it. For compatibility reasons, no exception is
+      raised in this case.
 
 .. function:: tar_filter(member, path)
 

@@ -275,6 +275,39 @@ def skip_unless_working_chmod(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_chmod_set_sticky_bit = None
+
+
+def can_chmod_set_sticky_bit():
+    """Return True if chmod allows to set the sticky bit on a regular file.
+
+    Return False if chmod fails with an error, or it succeeds but does not set
+    the sticky bit.
+    """
+
+    def can_chmod_set_sticky_bit_inner():
+        if not can_chmod():
+            return False
+        filename = TESTFN
+        try:
+            with open(filename, "w") as f:
+                # assume it won't fail because can_chmod() returned True:
+                os.chmod(f.fileno(), 0o666)
+                try:
+                    os.chmod(f.fileno(), 0o666 | stat.S_ISVTX)
+                except OSError:
+                    return False
+                mode = os.stat(f.fileno()).st_mode
+                return bool(mode & stat.S_ISVTX)
+        finally:
+            unlink(filename)
+
+    global _can_chmod_set_sticky_bit
+    if _can_chmod_set_sticky_bit is None:
+        _can_chmod_set_sticky_bit = can_chmod_set_sticky_bit_inner()
+    return _can_chmod_set_sticky_bit
+
+
 # Check whether the current effective user has the capability to override
 # DAC (discretionary access control). Typically user root is able to
 # bypass file read, write, and execute permission checks. The capability
