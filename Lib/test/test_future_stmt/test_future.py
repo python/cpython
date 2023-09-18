@@ -37,12 +37,12 @@ class FutureTest(unittest.TestCase):
                           lineno,
                           message=TOP_LEVEL_MSG, offset=1,
                           parametrize_docstring=True):
-        code = dedent(code)
+        code = dedent(code.lstrip('\n'))
         for trim_docstring in ([False, True] if parametrize_docstring else [False]):
             with self.subTest(code=code, trim_docstring=trim_docstring):
                 if trim_docstring:
-                    code = os.linesep.join(code.splitlines()[2:])
-                    lineno -= 2
+                    code = os.linesep.join(code.splitlines()[1:])
+                    lineno -= 1
                 with self.assertRaises(SyntaxError) as cm:
                     exec(code)
                 self.check_syntax_error(cm.exception, "<string>",
@@ -88,7 +88,7 @@ class FutureTest(unittest.TestCase):
             from __future__ import rested_snopes  # typo error here: nested => rested
         """
         self.assertSyntaxError(
-            code, lineno=4,
+            code, lineno=3,
             message='future feature rested_snopes is not defined',
         )
 
@@ -98,14 +98,14 @@ class FutureTest(unittest.TestCase):
             import some_module
             from __future__ import annotations
         """
-        self.assertSyntaxError(code, lineno=4)
+        self.assertSyntaxError(code, lineno=3)
 
         code = """
             '''Docstring'''
             import __future__
             from __future__ import annotations
         """
-        self.assertSyntaxError(code, lineno=4)
+        self.assertSyntaxError(code, lineno=3)
 
         code = """
             '''Docstring'''
@@ -113,7 +113,7 @@ class FutureTest(unittest.TestCase):
             "spam, bar, blah"
             from __future__ import print_function
         """
-        self.assertSyntaxError(code, lineno=5)
+        self.assertSyntaxError(code, lineno=4)
 
     def test_future_import_with_extra_string(self):
         code = """
@@ -121,7 +121,7 @@ class FutureTest(unittest.TestCase):
             "this isn't a doc string"
             from __future__ import nested_scopes
         """
-        self.assertSyntaxError(code, lineno=4, parametrize_docstring=False)
+        self.assertSyntaxError(code, lineno=3, parametrize_docstring=False)
 
     def test_multiple_import_statements_on_same_line(self):
         # With `\`:
@@ -130,14 +130,14 @@ class FutureTest(unittest.TestCase):
             from __future__ import nested_scopes; import string; from __future__ import \
         nested_scopes
         """
-        self.assertSyntaxError(code, lineno=3, offset=54)
+        self.assertSyntaxError(code, lineno=2, offset=54)
 
         # Without `\`:
         code = """
             '''Docstring'''
             from __future__ import nested_scopes; import string; from __future__ import  nested_scopes
         """
-        self.assertSyntaxError(code, lineno=3, offset=54)
+        self.assertSyntaxError(code, lineno=2, offset=54)
 
     def test_future_import_star(self):
         code = """
@@ -145,7 +145,7 @@ class FutureTest(unittest.TestCase):
             from __future__ import *
         """
         self.assertSyntaxError(
-            code, lineno=3,
+            code, lineno=2,
             message='future feature * is not defined',
         )
 
@@ -155,13 +155,13 @@ class FutureTest(unittest.TestCase):
             from __future__ import braces
         """
         # Congrats, you found an easter egg!
-        self.assertSyntaxError(code, lineno=3, message='not a chance')
+        self.assertSyntaxError(code, lineno=2, message='not a chance')
 
         code = """
             '''Docstring'''
             from __future__ import nested_scopes, braces
         """
-        self.assertSyntaxError(code, lineno=3, message='not a chance')
+        self.assertSyntaxError(code, lineno=2, message='not a chance')
 
     def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
