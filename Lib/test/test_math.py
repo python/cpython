@@ -1186,6 +1186,7 @@ class MathTests(unittest.TestCase):
 
     def testLog(self):
         self.assertRaises(TypeError, math.log)
+        self.assertRaises(TypeError, math.log, 1, 2, 3)
         self.ftest('log(1/e)', math.log(1/math.e), -1)
         self.ftest('log(1)', math.log(1), 0)
         self.ftest('log(e)', math.log(math.e), 1)
