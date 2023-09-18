@@ -2474,20 +2474,6 @@ For default ``sqlite`` context management cases which don't use
 ``contextlib.closing``, this is intended to perform multiple transactions
 without fully closing the connection.
 
-A ``contextlib.closing`` example
-
-.. testcode::
-
-   import sqlite3
-   from contextlib import closing
-
-   with closing(sqlite3.connect("workfile.sqlite")) as cx:
-      with cx:
-        cx.execute("CREATE TABLE lang(id INTEGER PRIMARY KEY, name VARCHAR UNIQUE)")
-        cx.execute("INSERT INTO lang(name) VALUES(?)", ("Python",))
-
-
-   # no need to close the connection as contextlib.closing closed it for us
 .. testoutput::
    :hide:
 
