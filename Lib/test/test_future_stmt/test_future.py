@@ -10,6 +10,8 @@ import os
 import re
 import sys
 
+TOP_LEVEL_MSG = 'from __future__ imports must occur at the beginning of the file'
+
 rx = re.compile(r'\((\S+).py, line (\d+)')
 
 def get_error_location(msg):
@@ -18,25 +20,30 @@ def get_error_location(msg):
 
 class FutureTest(unittest.TestCase):
 
-    def check_syntax_error(self, err, basename, lineno, offset=1):
+    def check_syntax_error(self, err, basename, lineno,
+                           message=TOP_LEVEL_MSG, offset=1):
         if basename != '<string>':
             basename += '.py'
 
-        self.assertIn(f'{basename}, line {lineno}', str(err))
+        self.assertEqual(f'{message} ({basename}, line {lineno})', str(err))
         self.assertEqual(os.path.basename(err.filename), basename)
         self.assertEqual(err.lineno, lineno)
         self.assertEqual(err.offset, offset)
 
-    def assertSyntaxError(self, code, lineno, offset=1, *, parametrize_docstring=True):
+    def assertSyntaxError(self, code, lineno,
+                          message=TOP_LEVEL_MSG, offset=1,
+                          *,
+                          parametrize_docstring=True):
         code = dedent(code)
         for trim_docstring in ([False, True] if parametrize_docstring else [False]):
-            with self.subTest(trim_docstring=trim_docstring):
+            with self.subTest(code=code, trim_docstring=trim_docstring):
                 if trim_docstring:
                     code = os.linesep.join(code.splitlines()[2:])
                     lineno -= 2
                 with self.assertRaises(SyntaxError) as cm:
                     exec(code)
-                self.check_syntax_error(cm.exception, "<string>", lineno, offset=offset)
+                self.check_syntax_error(cm.exception, "<string>", lineno,
+                                        message, offset=offset)
 
     def test_import_nested_scope_twice(self):
         # Import the name nested_scopes twice to trigger SF bug #407394
@@ -75,7 +82,10 @@ class FutureTest(unittest.TestCase):
             from __future__ import nested_scopes
             from __future__ import rested_snopes  # typo error here: nested => rested
         """
-        self.assertSyntaxError(code, 4)
+        self.assertSyntaxError(
+            code, 4,
+            message='future feature rested_snopes is not defined',
+        )
 
     def test_future_import_not_on_top(self):
         code = """
@@ -129,22 +139,23 @@ class FutureTest(unittest.TestCase):
             '''Docstring'''
             from __future__ import *
         """
-        self.assertSyntaxError(code, 3)
+        self.assertSyntaxError(code, 3, message='future feature * is not defined')
 
     def test_future_import_braces(self):
         code = """
             '''Docstring'''
             from __future__ import braces
         """
-        self.assertSyntaxError(code, 3)
+        # Congrats, you found an easter egg!
+        self.assertSyntaxError(code, 3, message='not a chance')
 
         code = """
             '''Docstring'''
             from __future__ import nested_scopes, braces
         """
-        self.assertSyntaxError(code, 3)
+        self.assertSyntaxError(code, 3, message='not a chance')
 
-    def test_bad_future_as_module(self):
+    def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
             from test.test_future_stmt import badsyntax_future
         self.check_syntax_error(cm.exception, "badsyntax_future", 3)
