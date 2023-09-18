@@ -394,6 +394,10 @@ PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObjec
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
