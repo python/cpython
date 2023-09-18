@@ -737,8 +737,9 @@ class FormatTestCase(unittest.TestCase):
                 self.assertEqual(fmt % f, rhs)
                 self.assertEqual(fmt % -f, '-' + rhs)
                 if fmt != '%r':
-                    self.assertEqual(format(f, fmt[1:]), rhs)
-                    self.assertEqual(format(-f, fmt[1:]), '-' + rhs)
+                    fmt2 = fmt[1:]
+                    self.assertEqual(format(f, fmt2), rhs)
+                    self.assertEqual(format(-f, fmt2), '-' + rhs)
 
     def test_issue5864(self):
         self.assertEqual(format(123.456, '.4'), '123.5')
