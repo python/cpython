@@ -118,6 +118,8 @@ jobs:
           path: config.cache
           key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
       - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
