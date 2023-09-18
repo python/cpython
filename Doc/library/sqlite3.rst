@@ -2439,8 +2439,6 @@ If there is no open transaction upon leaving the body of the ``with`` statement,
 or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
-
-
 .. note::
 
    The context manager neither implicitly opens a new transaction

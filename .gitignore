@@ -54,7 +54,6 @@ core
 #####
 # Then, rules meant for a specific location relative to the repo root.
 # These must contain a non-trailing slash (and may also have a trailing slash.)
-venv
 Doc/build/
 Doc/venv/
 Doc/.venv/
