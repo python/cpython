@@ -2089,8 +2089,8 @@ def main():
     parser.add_argument('args', nargs="*")
 
     if len(sys.argv) == 1:
-        # If no arguments were given (python -m pdb), print help message
-        # Without this check, argparse would only complain about missing required arguments
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
         parser.print_help()
         sys.exit(2)
 
