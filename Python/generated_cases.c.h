@@ -961,7 +961,7 @@
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
                     monitor_reraise(tstate, frame, next_instr-1);
-fprintf(stderr, "goto exception_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "goto exception_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                     goto exception_unwind;
                 }
                 break;
@@ -979,9 +979,9 @@ fprintf(stderr, "goto exception_unwind: frame=%p frame->prev_instr=%p frame->ins
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
-fprintf(stderr, "INTERPRETER_EXIT1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d frame->previous = %p\n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset, frame->previous);
+if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d frame->previous = %p\n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset, frame->previous);
             tstate->current_frame = frame->previous;
-if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%p tstate->current_frame->prev_instr=%p tstate->current_frame->instr_ptr=%p new_return_offset=%d \n", tstate->current_frame, tstate->current_frame->prev_instr, tstate->current_frame->instr_ptr, tstate->current_frame->new_return_offset);
+if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%p tstate->current_frame->prev_instr=%p tstate->current_frame->instr_ptr=%p new_return_offset=%d \n", tstate->current_frame, tstate->current_frame->prev_instr, tstate->current_frame->instr_ptr, tstate->current_frame->new_return_offset);
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             return retval;
@@ -992,11 +992,11 @@ if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-    fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-    fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1017,16 +1017,16 @@ if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-    fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d \n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d \n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
                 frame->prev_instr += frame->return_offset;
                 frame->instr_ptr += frame->new_return_offset;
                 frame->new_return_offset = 0;
     
-    fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1071,11 +1071,11 @@ if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-    fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-    fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1095,16 +1095,16 @@ if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-    fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d \n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d \n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
                 frame->prev_instr += frame->return_offset;
                 frame->instr_ptr += frame->new_return_offset;
                 frame->new_return_offset = 0;
     
-    fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1386,7 +1386,7 @@ if (frame->previous) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
             frame->prev_instr = frame->instr_ptr - 1;
-fprintf(stderr, "YIELD_VALUE: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+if (VERBOSE) fprintf(stderr, "YIELD_VALUE: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
             goto resume_frame;
         }
 
@@ -3753,7 +3753,7 @@ fprintf(stderr, "YIELD_VALUE: frame=%p frame->prev_instr=%p frame->instr_ptr=%p 
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             // oparg counts all of the args, but *not* self:
-fprintf(stderr, "CALL1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+if (VERBOSE) fprintf(stderr, "CALL1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -3769,7 +3769,7 @@ fprintf(stderr, "CALL1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_i
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-fprintf(stderr, "CALL2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+if (VERBOSE) fprintf(stderr, "CALL2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
             if (self_or_null == NULL && Py_TYPE(callable) == &PyMethod_Type) {
                 args--;
                 total_args++;
@@ -3780,14 +3780,14 @@ fprintf(stderr, "CALL2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_i
                 Py_DECREF(callable);
                 callable = method;
             }
-fprintf(stderr, "CALL3: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+if (VERBOSE) fprintf(stderr, "CALL3: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
 
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
                 ((PyFunctionObject *)callable)->vectorcall == _PyFunction_Vectorcall)
             {
-fprintf(stderr, "CALL4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
@@ -3801,21 +3801,21 @@ fprintf(stderr, "CALL4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_i
                 if (new_frame == NULL) {
                     goto error;
                 }
-fprintf(stderr, "CALL5: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL5: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-fprintf(stderr, "CALL6: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL6: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                 frame->return_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-fprintf(stderr, "CALL-DISPATCH_INLINED: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL-DISPATCH_INLINED: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-fprintf(stderr, "CALL-not normal python func1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL-not normal python func1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
             res = PyObject_Vectorcall(
                 callable, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-fprintf(stderr, "CALL-not normal python func2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL-not normal python func2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : args[0];
@@ -3840,7 +3840,7 @@ fprintf(stderr, "CALL-not normal python func2: frame=%p frame->prev_instr=%p fra
             }
 
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
-fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+if (VERBOSE) fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
             frame->return_offset = 0;
             frame->new_return_offset = 0;
             STACK_SHRINK(oparg);
@@ -3916,11 +3916,11 @@ fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p nex
             next_instr += 3;
             {
                 #if TIER_ONE
-    fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-    fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -3939,7 +3939,7 @@ fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p nex
                 STORE_SP();
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-    fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p\n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p\n", frame, frame->prev_instr, frame->instr_ptr);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
@@ -4000,11 +4000,11 @@ fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p nex
             next_instr += 3;
             {
                 #if TIER_ONE
-    fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-    fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -4023,7 +4023,7 @@ fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p nex
                 STORE_SP();
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-    fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p\n", frame, frame->prev_instr, frame->instr_ptr);
+    if (VERBOSE) fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p\n", frame, frame->prev_instr, frame->instr_ptr);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();

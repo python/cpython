@@ -5,6 +5,7 @@
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
 
+#define VERBOSE 1
 // Since this is a "meta-include" file, "#ifdef __cplusplus / extern "C" {"
 // is not needed.
 
