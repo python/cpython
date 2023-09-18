@@ -125,6 +125,7 @@ consts: ('None',)
 
 """
 
+import copy
 import inspect
 import sys
 import threading
@@ -264,7 +265,7 @@ class CodeTest(unittest.TestCase):
             ("co_posonlyargcount", 0),
             ("co_kwonlyargcount", 0),
             ("co_nlocals", 1),
-            ("co_stacksize", 0),
+            ("co_stacksize", 1),
             ("co_flags", code.co_flags | inspect.CO_COROUTINE),
             ("co_firstlineno", 100),
             ("co_code", code2.co_code),
@@ -280,8 +281,14 @@ class CodeTest(unittest.TestCase):
             with self.subTest(attr=attr, value=value):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
+                new_code = copy.replace(code, **{attr: value})
+                self.assertEqual(getattr(new_code, attr), value)
 
         new_code = code.replace(co_varnames=code2.co_varnames,
+                                co_nlocals=code2.co_nlocals)
+        self.assertEqual(new_code.co_varnames, code2.co_varnames)
+        self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
+        new_code = copy.replace(code, co_varnames=code2.co_varnames,
                                 co_nlocals=code2.co_nlocals)
         self.assertEqual(new_code.co_varnames, code2.co_varnames)
         self.assertEqual(new_code.co_nlocals, code2.co_nlocals)
@@ -356,7 +363,7 @@ class CodeTest(unittest.TestCase):
         foo.__code__ = foo.__code__.replace(
             co_code=b'\xe5' + foo.__code__.co_code[1:])
 
-        msg = f"unknown opcode 229"
+        msg = "unknown opcode 229"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -497,6 +504,25 @@ class CodeTest(unittest.TestCase):
         c1 = c.replace(co_code=d.co_code)
         self.assertNotEqual(c, c1)
         self.assertNotEqual(hash(c), hash(c1))
+
+    @cpython_only
+    def test_code_equal_with_instrumentation(self):
+        """ GH-109052
+
+        Make sure the instrumentation doesn't affect the code equality
+        The validity of this test relies on the fact that "x is x" and
+        "x in x" have only one different instruction and the instructions
+        have the same argument.
+
+        """
+        code1 = compile("x is x", "example.py", "eval")
+        code2 = compile("x in x", "example.py", "eval")
+        sys._getframe().f_trace_opcodes = True
+        sys.settrace(lambda *args: None)
+        exec(code1, {'x': []})
+        exec(code2, {'x': []})
+        self.assertNotEqual(code1, code2)
+        sys.settrace(None)
 
 
 def isinterned(s):

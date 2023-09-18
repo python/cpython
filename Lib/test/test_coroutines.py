@@ -2365,15 +2365,15 @@ class OriginTrackingTest(unittest.TestCase):
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
                 f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
-                f'    return corofn()  # comment in a1',
+                "    return corofn()  # comment in a1",
             ]))
             check(2, "".join([
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
                 f'  File "{a2_filename}", line {a2_lineno}, in a2\n',
-                f'    return a1()  # comment in a2\n',
+                "    return a1()  # comment in a2\n",
                 f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
-                f'    return corofn()  # comment in a1',
+                "    return corofn()  # comment in a1",
             ]))
 
         finally:

@@ -51,18 +51,106 @@ def _new_module(name):
 
 # Module-level locking ########################################################
 
-# A dict mapping module names to weakrefs of _ModuleLock instances
-# Dictionary protected by the global import lock
+# For a list that can have a weakref to it.
+class _List(list):
+    pass
+
+
+# Copied from weakref.py with some simplifications and modifications unique to
+# bootstrapping importlib. Many methods were simply deleting for simplicity, so if they
+# are needed in the future they may work if simply copied back in.
+class _WeakValueDictionary:
+
+    def __init__(self):
+        self_weakref = _weakref.ref(self)
+
+        # Inlined to avoid issues with inheriting from _weakref.ref before _weakref is
+        # set by _setup(). Since there's only one instance of this class, this is
+        # not expensive.
+        class KeyedRef(_weakref.ref):
+
+            __slots__ = "key",
+
+            def __new__(type, ob, key):
+                self = super().__new__(type, ob, type.remove)
+                self.key = key
+                return self
+
+            def __init__(self, ob, key):
+                super().__init__(ob, self.remove)
+
+            @staticmethod
+            def remove(wr):
+                nonlocal self_weakref
+
+                self = self_weakref()
+                if self is not None:
+                    if self._iterating:
+                        self._pending_removals.append(wr.key)
+                    else:
+                        _weakref._remove_dead_weakref(self.data, wr.key)
+
+        self._KeyedRef = KeyedRef
+        self.clear()
+
+    def clear(self):
+        self._pending_removals = []
+        self._iterating = set()
+        self.data = {}
+
+    def _commit_removals(self):
+        pop = self._pending_removals.pop
+        d = self.data
+        while True:
+            try:
+                key = pop()
+            except IndexError:
+                return
+            _weakref._remove_dead_weakref(d, key)
+
+    def get(self, key, default=None):
+        if self._pending_removals:
+            self._commit_removals()
+        try:
+            wr = self.data[key]
+        except KeyError:
+            return default
+        else:
+            if (o := wr()) is None:
+                return default
+            else:
+                return o
+
+    def setdefault(self, key, default=None):
+        try:
+            o = self.data[key]()
+        except KeyError:
+            o = None
+        if o is None:
+            if self._pending_removals:
+                self._commit_removals()
+            self.data[key] = self._KeyedRef(default, key)
+            return default
+        else:
+            return o
+
+
+# A dict mapping module names to weakrefs of _ModuleLock instances.
+# Dictionary protected by the global import lock.
 _module_locks = {}
 
-# A dict mapping thread IDs to lists of _ModuleLock instances.  This maps a
-# thread to the module locks it is blocking on acquiring.  The values are
-# lists because a single thread could perform a re-entrant import and be "in
-# the process" of blocking on locks for more than one module.  A thread can
-# be "in the process" because a thread cannot actually block on acquiring
-# more than one lock but it can have set up bookkeeping that reflects that
-# it intends to block on acquiring more than one lock.
-_blocking_on = {}
+# A dict mapping thread IDs to weakref'ed lists of _ModuleLock instances.
+# This maps a thread to the module locks it is blocking on acquiring.  The
+# values are lists because a single thread could perform a re-entrant import
+# and be "in the process" of blocking on locks for more than one module.  A
+# thread can be "in the process" because a thread cannot actually block on
+# acquiring more than one lock but it can have set up bookkeeping that reflects
+# that it intends to block on acquiring more than one lock.
+#
+# The dictionary uses a WeakValueDictionary to avoid keeping unnecessary
+# lists around, regardless of GC runs. This way there's no memory leak if
+# the list is no longer needed (GH-106176).
+_blocking_on = None
 
 
 class _BlockingOnManager:
@@ -79,7 +167,7 @@ class _BlockingOnManager:
         # re-entrant (i.e., a single thread may take it more than once) so it
         # wouldn't help us be correct in the face of re-entrancy either.
 
-        self.blocked_on = _blocking_on.setdefault(self.thread_id, [])
+        self.blocked_on = _blocking_on.setdefault(self.thread_id, _List())
         self.blocked_on.append(self.lock)
 
     def __exit__(self, *args, **kwargs):
@@ -892,21 +980,6 @@ class BuiltinImporter:
         else:
             return None
 
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find the built-in module.
-
-        If 'path' is ever specified then the search is considered a failure.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("BuiltinImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        spec = cls.find_spec(fullname, path)
-        return spec.loader if spec is not None else None
-
     @staticmethod
     def create_module(spec):
         """Create a built-in module"""
@@ -1076,18 +1149,6 @@ class FrozenImporter:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
 
-    @classmethod
-    def find_module(cls, fullname, path=None):
-        """Find a frozen module.
-
-        This method is deprecated.  Use find_spec() instead.
-
-        """
-        _warnings.warn("FrozenImporter.find_module() is deprecated and "
-                       "slated for removal in Python 3.12; use find_spec() instead",
-                       DeprecationWarning)
-        return cls if _imp.is_frozen(fullname) else None
-
     @staticmethod
     def create_module(spec):
         """Set __file__, if able."""
@@ -1170,16 +1231,6 @@ def _resolve_name(name, package, level):
     return f'{base}.{name}' if name else base
 
 
-def _find_spec_legacy(finder, name, path):
-    msg = (f"{_object_name(finder)}.find_spec() not found; "
-                           "falling back to find_module()")
-    _warnings.warn(msg, ImportWarning)
-    loader = finder.find_module(name, path)
-    if loader is None:
-        return None
-    return spec_from_loader(name, loader)
-
-
 def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
@@ -1200,9 +1251,7 @@ def _find_spec(name, path, target=None):
             try:
                 find_spec = finder.find_spec
             except AttributeError:
-                spec = _find_spec_legacy(finder, name, path)
-                if spec is None:
-                    continue
+                continue
             else:
                 spec = find_spec(name, path, target)
         if spec is not None:
@@ -1260,7 +1309,7 @@ def _find_and_load_unlocked(name, import_):
         try:
             path = parent_module.__path__
         except AttributeError:
-            msg = f'{_ERR_MSG_PREFIX} {name!r}; {parent!r} is not a package'
+            msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
         child = name.rpartition('.')[2]
@@ -1448,7 +1497,7 @@ def _setup(sys_module, _imp_module):
     modules, those two modules must be explicitly passed in.
 
     """
-    global _imp, sys
+    global _imp, sys, _blocking_on
     _imp = _imp_module
     sys = sys_module
 
@@ -1475,6 +1524,9 @@ def _setup(sys_module, _imp_module):
         else:
             builtin_module = sys.modules[builtin_name]
         setattr(self_module, builtin_name, builtin_module)
+
+    # Instantiation requires _weakref to have been set.
+    _blocking_on = _WeakValueDictionary()
 
 
 def _install(sys_module, _imp_module):

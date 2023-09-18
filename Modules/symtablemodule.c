@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_symtable.h"      // struct symtable
 
 #include "clinic/symtablemodule.c.h"
@@ -67,12 +68,6 @@ static PyMethodDef symtable_methods[] = {
 };
 
 static int
-symtable_init_stentry_type(PyObject *m)
-{
-    return PyType_Ready(&PySTEntry_Type);
-}
-
-static int
 symtable_init_constants(PyObject *m)
 {
     if (PyModule_AddIntMacro(m, USE) < 0) return -1;
@@ -105,8 +100,8 @@ symtable_init_constants(PyObject *m)
 }
 
 static PyModuleDef_Slot symtable_slots[] = {
-    {Py_mod_exec, symtable_init_stentry_type},
     {Py_mod_exec, symtable_init_constants},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

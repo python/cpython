@@ -143,13 +143,13 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     # 2822 requires that day and month names be the English abbreviations.
     if timeval is None:
         timeval = time.time()
-    if localtime or usegmt:
-        dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
-    else:
-        dt = datetime.datetime.utcfromtimestamp(timeval)
+    dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
+
     if localtime:
         dt = dt.astimezone()
         usegmt = False
+    elif not usegmt:
+        dt = dt.replace(tzinfo=None)
     return format_datetime(dt, usegmt)
 
 def format_datetime(dt, usegmt=False):

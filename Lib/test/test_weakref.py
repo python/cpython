@@ -116,6 +116,17 @@ class ReferencesTestCase(TestBase):
         del o
         repr(wr)
 
+    def test_repr_failure_gh99184(self):
+        class MyConfig(dict):
+            def __getattr__(self, x):
+                return self[x]
+
+        obj = MyConfig(offset=5)
+        obj_weakref = weakref.ref(obj)
+
+        self.assertIn('MyConfig', repr(obj_weakref))
+        self.assertIn('MyConfig', str(obj_weakref))
+
     def test_basic_callback(self):
         self.check_basic_callback(C)
         self.check_basic_callback(create_function)
@@ -1922,6 +1933,7 @@ class MappingTestCase(TestBase):
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, False)
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
@@ -1934,6 +1946,7 @@ class MappingTestCase(TestBase):
         self.check_threaded_weak_dict_copy(weakref.WeakValueDictionary, False)
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
