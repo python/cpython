@@ -234,15 +234,25 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
     return cls;
 }
 
-static void
+static int
 wait_for_lock(PyThread_type_lock mutex)
 {
-    Py_BEGIN_ALLOW_THREADS
-    // XXX Handle eintr, etc.
-    PyThread_acquire_lock(mutex, WAIT_LOCK);
-    Py_END_ALLOW_THREADS
-
+    PY_TIMEOUT_T timeout = PyThread_UNSET_TIMEOUT;
+    PyLockStatus res = PyThread_acquire_lock_timed_with_retries(mutex, timeout);
+    if (res == PY_LOCK_INTR) {
+        /* KeyboardInterrupt, etc. */
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    else if (res == PY_LOCK_FAILURE) {
+        assert(!PyErr_Occurred());
+        assert(timeout > 0);
+        PyErr_SetString(PyExc_TimeoutError, "timed out");
+        return -1;
+    }
+    assert(res == PY_LOCK_ACQUIRED);
     PyThread_release_lock(mutex);
+    return 0;
 }
 
 
@@ -1658,7 +1668,12 @@ _channel_send_wait(_channels *channels, int64_t cid, PyObject *obj)
     }
 
     /* Wait until the object is received. */
-    wait_for_lock(mutex);
+    if (wait_for_lock(mutex) < 0) {
+        // XXX Remove the item from the queue.
+        assert(PyErr_Occurred());
+        res = -1;
+        goto finally;
+    }
 
     /* success! */
     res = 0;
