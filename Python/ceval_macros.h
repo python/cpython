@@ -71,10 +71,10 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
-fprintf(stderr, "-- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr); \
+fprintf(stderr, "--- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
         frame->instr_ptr = next_instr; \
         frame->prev_instr = next_instr++; \
-fprintf(stderr, "== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr); \
+fprintf(stderr, "=== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
     } while(0)
 #endif
 
@@ -387,6 +387,9 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 #define LOAD_IP() do { \
         assert(frame->prev_instr + 1 == frame->instr_ptr); \
+        frame->instr_ptr += frame->new_return_offset; \
+        frame->new_return_offset = 0; \
+fprintf(stderr, "LOAD_IP: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
         next_instr = frame->instr_ptr; \
     } while (0)
 

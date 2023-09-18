@@ -86,7 +86,7 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define NewPyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(IF))))
+    ((int)(((IF)->instr_ptr - 1) - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
@@ -160,6 +160,7 @@ _PyFrame_Initialize(
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
+    frame->new_return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
@@ -325,6 +326,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code) + prev_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
+    frame->new_return_offset = 0;
     return frame;
 }
 
