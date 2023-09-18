@@ -1890,6 +1890,8 @@ class MathTests(unittest.TestCase):
                 return 23
         class TestNoTrunc:
             pass
+        class TestBadTrunc:
+            __trunc__ = BadDescr()
 
         self.assertEqual(math.trunc(TestTrunc()), 23)
         self.assertEqual(math.trunc(FloatTrunc()), 23)
@@ -1898,6 +1900,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.trunc, 1, 2)
         self.assertRaises(TypeError, math.trunc, FloatLike(23.5))
         self.assertRaises(TypeError, math.trunc, TestNoTrunc())
+        self.assertRaises(ValueError, math.trunc, TestBadTrunc())
 
     def testIsfinite(self):
         self.assertTrue(math.isfinite(0.0))
