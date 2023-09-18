@@ -808,6 +808,8 @@ class MathTests(unittest.TestCase):
         # Test allowable types (those with __float__)
         self.assertEqual(hypot(12.0, 5.0), 13.0)
         self.assertEqual(hypot(12, 5), 13)
+        self.assertEqual(hypot(1, -1), 1.4142135623730951)
+        self.assertEqual(hypot(1, FloatLike(-1.)), 1.4142135623730951)
         self.assertEqual(hypot(Decimal(12), Decimal(5)), 13)
         self.assertEqual(hypot(Fraction(12, 32), Fraction(5, 32)), Fraction(13, 32))
         self.assertEqual(hypot(bool(1), bool(0), bool(1), bool(1)), math.sqrt(3))
