@@ -32,7 +32,7 @@ object_getattrstring(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattr(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -57,7 +57,7 @@ object_getoptionalattr(PyObject *self, PyObject *args)
 static PyObject *
 object_getoptionalattrstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
@@ -103,6 +103,31 @@ object_hasattrstring(PyObject *self, PyObject *args)
     }
     NULLABLE(obj);
     return PyLong_FromLong(PyObject_HasAttrString(obj, attr_name));
+}
+
+static PyObject *
+object_hasattrwitherror(PyObject *self, PyObject *args)
+{
+    PyObject *obj, *attr_name;
+    if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    NULLABLE(attr_name);
+    RETURN_INT(PyObject_HasAttrWithError(obj, attr_name));
+}
+
+static PyObject *
+object_hasattrstringwitherror(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    const char *attr_name;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    RETURN_INT(PyObject_HasAttrStringWithError(obj, attr_name));
 }
 
 static PyObject *
@@ -207,7 +232,7 @@ mapping_getitemstring(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitem(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -232,7 +257,7 @@ mapping_getoptionalitem(PyObject *self, PyObject *args)
 static PyObject *
 mapping_getoptionalitemstring(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
@@ -278,6 +303,31 @@ mapping_haskeystring(PyObject *self, PyObject *args)
     }
     NULLABLE(mapping);
     return PyLong_FromLong(PyMapping_HasKeyString(mapping, key));
+}
+
+static PyObject *
+mapping_haskeywitherror(PyObject *self, PyObject *args)
+{
+    PyObject *mapping, *key;
+    if (!PyArg_ParseTuple(args, "OO", &mapping, &key)) {
+        return NULL;
+    }
+    NULLABLE(mapping);
+    NULLABLE(key);
+    RETURN_INT(PyMapping_HasKeyWithError(mapping, key));
+}
+
+static PyObject *
+mapping_haskeystringwitherror(PyObject *self, PyObject *args)
+{
+    PyObject *mapping;
+    const char *key;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "Oz#", &mapping, &key, &size)) {
+        return NULL;
+    }
+    NULLABLE(mapping);
+    RETURN_INT(PyMapping_HasKeyStringWithError(mapping, key));
 }
 
 static PyObject *
@@ -568,6 +618,8 @@ static PyMethodDef test_methods[] = {
     {"object_getoptionalattrstring", object_getoptionalattrstring, METH_VARARGS},
     {"object_hasattr", object_hasattr, METH_VARARGS},
     {"object_hasattrstring", object_hasattrstring, METH_VARARGS},
+    {"object_hasattrwitherror", object_hasattrwitherror, METH_VARARGS},
+    {"object_hasattrstringwitherror", object_hasattrstringwitherror, METH_VARARGS},
     {"object_setattr", object_setattr, METH_VARARGS},
     {"object_setattrstring", object_setattrstring, METH_VARARGS},
     {"object_delattr", object_delattr, METH_VARARGS},
@@ -582,6 +634,8 @@ static PyMethodDef test_methods[] = {
     {"mapping_getoptionalitemstring", mapping_getoptionalitemstring, METH_VARARGS},
     {"mapping_haskey", mapping_haskey, METH_VARARGS},
     {"mapping_haskeystring", mapping_haskeystring, METH_VARARGS},
+    {"mapping_haskeywitherror", mapping_haskeywitherror, METH_VARARGS},
+    {"mapping_haskeystringwitherror", mapping_haskeystringwitherror, METH_VARARGS},
     {"object_setitem", object_setitem, METH_VARARGS},
     {"mapping_setitemstring", mapping_setitemstring, METH_VARARGS},
     {"object_delitem", object_delitem, METH_VARARGS},

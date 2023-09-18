@@ -979,6 +979,8 @@ field names, the method and attribute names start with an underscore.
         >>> for partnum, record in inventory.items():
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
+    Named tuples are also supported by generic function :func:`copy.replace`.
+
 .. attribute:: somenamedtuple._fields
 
     Tuple of strings listing the field names.  Useful for introspection
