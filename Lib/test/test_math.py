@@ -685,6 +685,8 @@ class MathTests(unittest.TestCase):
             ([], 0.0),
             ([0.0], 0.0),
             ([1e100, 1.0, -1e100, 1e-100, 1e50, -1.0, -1e50], 1e-100),
+            ([1e100, 1.0, -1e100, 1e-100, 1e50, -1, -1e50], 1e-100),
+            ([1e100, FloatLike(1.0), -1e100, 1e-100, 1e50, FloatLike(-1.0), -1e50], 1e-100),
             ([2.0**53, -0.5, -2.0**-54], 2.0**53-1.0),
             ([2.0**53, 1.0, 2.0**-100], 2.0**53+2.0),
             ([2.0**53+10.0, 1.0, 2.0**-100], 2.0**53+12.0),
@@ -733,9 +735,18 @@ class MathTests(unittest.TestCase):
             self.assertEqual(msum(vals), math.fsum(vals))
 
         self.assertEqual(math.fsum([1.0, math.inf]), math.inf)
+        self.assertTrue(math.isnan(math.fsum([math.nan, 1.0])))
         self.assertRaises(OverflowError, math.fsum, [1e+308, 1e+308])
         self.assertRaises(ValueError, math.fsum, [math.inf, -math.inf])
         self.assertRaises(TypeError, math.fsum, ['spam'])
+        self.assertRaises(TypeError, math.fsum, 1)
+        self.assertRaises(OverflowError, math.fsum, [10**1000])
+
+        def bad_iter():
+            yield 1.0
+            raise ZeroDivisionError
+
+        self.assertRaises(ZeroDivisionError, math.fsum, bad_iter())
 
     def testGcd(self):
         gcd = math.gcd
