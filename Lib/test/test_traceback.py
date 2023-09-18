@@ -473,8 +473,6 @@ class TracebackErrorLocationCaretTestBase:
         self.assertEqual(result_lines, expected_f.splitlines())
 
     def test_caret_multiline_expression(self):
-        # Make sure no carets are printed for expressions spanning multiple
-        # lines.
         def f_with_multiline():
             if True: raise ValueError(
                 "error over multiple lines"
@@ -534,8 +532,6 @@ class TracebackErrorLocationCaretTestBase:
         self.assertEqual(result_lines, expected_f.splitlines())
 
     def test_caret_multiline_expression_bin_op(self):
-        # Make sure no carets are printed for expressions spanning multiple
-        # lines.
         def f_with_multiline():
             return (
                 2 + 1 /
@@ -622,6 +618,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
             '    return ( a   )   + b\n'
             '           ~~~~~~~~~~^~~\n'
@@ -676,6 +673,7 @@ class TracebackErrorLocationCaretTestBase:
             'Traceback (most recent call last):\n'
             f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
             '    callable()\n'
+            '    ~~~~~~~~^^\n'
             f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
             '    return b     [    a  ] + c\n'
             '           ~~~~~~^^^^^^^^^\n'
@@ -1040,7 +1038,7 @@ class TracebackFormatTests(unittest.TestCase):
         # Make sure that the traceback is properly indented.
         tb_lines = python_fmt.splitlines()
         banner = tb_lines[0]
-        self.assertEqual(len(tb_lines), 5)
+        self.assertEqual(len(tb_lines), 6)
         location, source_line = tb_lines[-2], tb_lines[-1]
         self.assertTrue(banner.startswith('Traceback'))
         self.assertTrue(location.startswith('  File'))

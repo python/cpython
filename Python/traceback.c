@@ -516,7 +516,7 @@ get_source_lines(PyObject *filename, int lineno, int end_lineno, PyObject **line
         lineobj = PyFile_GetLine(fob, -1);
         if (i >= lineno) {
             if (!lineobj || !PyUnicode_Check(lineobj)) {
-                Py_XSETREF(lineobj, PyUnicode_FromString("\n"));
+                Py_XSETREF(lineobj, PyUnicode_FromString(""));
                 if (!lineobj) {
                     goto cleanup_fob;
                 }
@@ -524,7 +524,7 @@ get_source_lines(PyObject *filename, int lineno, int end_lineno, PyObject **line
             PyList_SET_ITEM(lines_accum, i - lineno, lineobj);
         }
     }
-    *lines = join_string_list("", lines_accum);
+    *lines = join_string_list("\n", lines_accum);
 cleanup_fob:
     Py_XDECREF(lines_accum);
     PyErr_Clear();
@@ -879,10 +879,10 @@ extract_anchors_from_line(PyObject *filename, PyObject *lines,
     // truncate segment
     Py_ssize_t num_lines = PyList_Size(lines);
     PyObject *last_string = PyList_GET_ITEM(lines, num_lines - 1);
-    Py_ssize_t right_end_offset = PyUnicode_GET_LENGTH(last_string) - end_offset;
-    Py_ssize_t end_join_offset = PyUnicode_GET_LENGTH(segment) - right_end_offset;
+    Py_ssize_t offset_from_right = PyUnicode_GET_LENGTH(last_string) - end_offset;
+    Py_ssize_t join_end_offset = PyUnicode_GET_LENGTH(segment) - offset_from_right;
     tmp = PyUnicode_Substring(
-        segment, start_offset, PyUnicode_GET_LENGTH(segment) - end_join_offset
+        segment, start_offset, join_end_offset
     );
     if (!tmp) {
         goto done;
@@ -933,6 +933,10 @@ extract_anchors_from_line(PyObject *filename, PyObject *lines,
     mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
                                             &flags, arena);
     if (!module) {
+        if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            PyErr_Clear();
+            res = 0;
+        }
         goto done;
     }
     if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
@@ -1027,16 +1031,14 @@ compute_error_location_carets(PyObject *lines, Py_ssize_t start_offset, Py_ssize
                     has_non_ws = 1;
                 }
             }
-            if (
-                !has_non_ws ||
-                (lineno == 0 && col < start_offset) ||
-                (lineno == num_lines - 1 && col >= end_offset)
-            ) {
+            if (lineno == num_lines - 1 && col >= end_offset) {
+                break;
+            } else if (!has_non_ws || (lineno == 0 && col < start_offset)) {
                 ch = " ";
             } else if (
                 special_chars &&
-                (lineno > left_end_lineno || col >= left_end_offset) &&
-                (lineno < right_start_lineno || col < right_start_offset)
+                (lineno > left_end_lineno || (lineno == left_end_lineno && col >= left_end_offset)) &&
+                (lineno < right_start_lineno || (lineno == right_start_lineno && col < right_start_offset))
             ) {
                 ch = secondary;
             } // else ch = primary
@@ -1255,17 +1257,24 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // spans the whole line.
 
     // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
+    PyObject *lines_original_split = PyUnicode_Splitlines(lines_original, 0);
+    assert(PyList_Size(lines_original_split) == num_lines);
+    if (!lines_original_split) {
+        goto done;
+    }
     Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(
-        PyList_GET_ITEM(lines, 0), start_col_byte_offset
+        PyList_GET_ITEM(lines_original_split, 0), start_col_byte_offset
     );
     if (start_offset < 0) {
         err = ignore_source_errors() < 0;
+        Py_DECREF(lines_original_split);
         goto done;
     }
 
     Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(
-        PyList_GET_ITEM(lines, num_lines - 1), end_col_byte_offset
+        PyList_GET_ITEM(lines_original_split, num_lines - 1), end_col_byte_offset
     );
+    Py_DECREF(lines_original_split);
     if (end_offset < 0) {
         err = ignore_source_errors() < 0;
         goto done;

@@ -279,6 +279,9 @@ class FrameSummary:
         """
         self.filename = filename
         self.lineno = lineno
+        self.end_lineno = end_lineno
+        self.colno = colno
+        self.end_colno = end_colno
         self.name = name
         self._line = line
         self._line_dedented = None
@@ -286,9 +289,6 @@ class FrameSummary:
             self.line
         self.locals = {k: _safe_string(v, 'local', func=repr)
             for k, v in locals.items()} if locals else None
-        self.end_lineno = end_lineno
-        self.colno = colno
-        self.end_colno = end_colno
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
@@ -539,16 +539,16 @@ class StackSummary(list):
                         num_spaces = len(all_lines[lineno]) - len(all_lines[lineno].lstrip())
                         caret_line = []
                         for col in range(len(all_lines[lineno])):
-                            if col < num_spaces or (
-                                lineno == 0 and col < start_offset
-                            ) or (
-                                lineno == len(all_lines) - 1 and col >= end_offset
-                            ):
+                            if lineno == len(all_lines) - 1 and col >= end_offset:
+                                break
+                            elif col < num_spaces or (lineno == 0 and col < start_offset):
                                 caret_line.append(' ')
                             elif anchors and (
-                                lineno > anchors.left_end_lineno or col >= anchors_left_end_offset
+                                lineno > anchors.left_end_lineno or
+                                (lineno == anchors.left_end_lineno and col >= anchors_left_end_offset)
                             ) and (
-                                lineno < anchors.right_start_lineno or col < anchors_right_start_offset
+                                lineno < anchors.right_start_lineno or
+                                (lineno == anchors.right_start_lineno and col < anchors_right_start_offset)
                             ):
                                 caret_line.append(secondary_char)
                             else:
