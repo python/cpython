@@ -2157,6 +2157,26 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
 #endif
 
 
@@ -3306,6 +3326,7 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
