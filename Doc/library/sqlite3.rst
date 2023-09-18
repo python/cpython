@@ -2448,7 +2448,7 @@ the context manager does nothing.
    closes. For default ``sqlite`` context management cases which don't use 
    ``contextlib.closing``, this is intended to perform multiple transactions without
    fully closing the connection.
-   
+
 .. testcode::
 
    con = sqlite3.connect(":memory:")
@@ -2469,9 +2469,7 @@ the context manager does nothing.
    # Connection object used as context manager only commits or rollbacks transactions,
    # so the connection object should be closed manually
    con.close()
-
-
-
+   
 .. testoutput::
    :hide:
 
