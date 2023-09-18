@@ -89,6 +89,11 @@ def replace(seq, index, item):
 
 
 def characters_exclude(exclude_chars, simple_chars=False):
+    """
+    A characters strategy built on the baseline required by
+    ``identities_strategy``. Excludes ``exclude_chars``, and if
+    ``simple_chars``, all "Other" unicode code points.
+    """
     return st.characters(
         # if simple_chars, smaller search space and easier visualization
         exclude_categories=("C",) if simple_chars else ("Cs", "Co", "Cn"),
@@ -101,6 +106,7 @@ def characters_exclude(exclude_chars, simple_chars=False):
 
 
 def text_exclude(exclude_chars="", min_size=0, max_size=None, simple_chars=False):
+    """A text strategy that uses ``characters_exclude`` as alphabet."""
     return st.text(
         alphabet=characters_exclude(exclude_chars, simple_chars=simple_chars),
         min_size=min_size,
@@ -145,6 +151,7 @@ def merge_sub(draw, state, sample, category, sub_func=None, **kwargs):
 
 @st.composite
 def sub_entry(draw, state, text, opener, closer):
+    """An entry cannot contain ", "."""
     repl_chars = characters_exclude("\"', ", simple_chars=state.simple_chars)
     repl_func = generate_draw_function(draw, repl_chars)
     text = re.sub(r"(?<=,) ", repl_func, text)
@@ -153,6 +160,13 @@ def sub_entry(draw, state, text, opener, closer):
 
 @st.composite
 def sub_name(draw, state, text, opener, closer, name_only):
+    """
+    A name entry cannot:
+
+    * contain [^ ]@.
+    * contain ", "
+    * end with "," or " "
+    """
     repl_chars = characters_exclude("\"', @", simple_chars=state.simple_chars)
     repl_func = generate_draw_function(draw, repl_chars)
     # "@" is legal if:
@@ -303,6 +317,7 @@ def lstrip(entries):
 
 
 def unbalance_indexes(entries):
+    """Return a list of valid replacement indices for quote characters."""
     index_candidates = []
     type_candidates = [
         ident_addr_domain_other,
