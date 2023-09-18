@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 'Show relative speeds of local, nonlocal, global, and built-in access.'
 
 # Please leave this code so that it runs under older versions of

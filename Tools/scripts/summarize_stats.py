@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Print a summary of specialization stats for all files in the
 default stats folders.
 """

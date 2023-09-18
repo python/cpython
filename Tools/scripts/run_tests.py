@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Run Python's test suite in a fast, rigorous way.
 
 The defaults are meant to be reasonably thorough, while skipping certain
