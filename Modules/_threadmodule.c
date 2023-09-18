@@ -88,13 +88,14 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     char *kwlist[] = {"blocking", "timeout", NULL};
     int blocking = 1;
     PyObject *timeout_obj = NULL;
-    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
-
-    *timeout = unset_timeout ;
-
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|pO:acquire", kwlist,
                                      &blocking, &timeout_obj))
         return -1;
+
+    // XXX Use PyThread_ParseTimeoutArg().
+
+    const _PyTime_t unset_timeout = _PyTime_FromSeconds(-1);
+    *timeout = unset_timeout;
 
     if (timeout_obj
         && _PyTime_FromSecondsObject(timeout,
@@ -108,7 +109,7 @@ lock_acquire_parse_args(PyObject *args, PyObject *kwds,
     }
     if (*timeout < 0 && *timeout != unset_timeout) {
         PyErr_SetString(PyExc_ValueError,
-                        "timeout value must be positive");
+                        "timeout value must be a non-negative number");
         return -1;
     }
     if (!blocking)

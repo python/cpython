@@ -89,6 +89,12 @@ extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
 // unset: -1 seconds, in nanoseconds
 #define PyThread_UNSET_TIMEOUT ((_PyTime_t)(-1 * 1000 * 1000 * 1000))
 
+// Exported for the _xxinterpchannels module.
+PyAPI_FUNC(int) PyThread_ParseTimeoutArg(
+    PyObject *arg,
+    int blocking,
+    PY_TIMEOUT_T *timeout);
+
 /* Helper to acquire an interruptible lock with a timeout.  If the lock acquire
  * is interrupted, signal handlers are run, and if they raise an exception,
  * PY_LOCK_INTR is returned.  Otherwise, PY_LOCK_ACQUIRED or PY_LOCK_FAILURE
