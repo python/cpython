@@ -1,4 +1,4 @@
-This is Python version 3.12.0 release candidate 2
+This is Python version 3.12.0 release candidate 3
 =================================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg

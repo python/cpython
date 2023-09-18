@@ -1,2 +1,0 @@
-Fix caret placement for error locations for subscript and binary operations
-that involve non-semantic parentheses and spaces. Patch by Pablo Galindo

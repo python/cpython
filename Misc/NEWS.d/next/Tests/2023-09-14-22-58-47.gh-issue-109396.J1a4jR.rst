@@ -1,3 +1,0 @@
-Fix ``test_socket.test_hmac_sha1()`` in FIPS mode. Use a longer key: FIPS
-mode requires at least of at least 112 bits. The previous key was only 32
-bits. Patch by Victor Stinner.

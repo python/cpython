@@ -1,2 +1,0 @@
-Make iteration variables of module- and class-scoped comprehensions visible
-to pdb and other tools that use ``frame.f_locals`` again.
