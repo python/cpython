@@ -410,6 +410,10 @@ error:
                 failure);
         PyErr_Clear();
     }
+    // XXX Instead, store the rendered traceback on sharedexc,
+    // attach it to the exception when applied,
+    // and teach PyErr_Display() to print it.
+    PyErr_Display(NULL, excval, NULL);
     Py_XDECREF(excval);
     assert(!PyErr_Occurred());
     _PyInterpreterState_SetNotRunningMain(interp);
