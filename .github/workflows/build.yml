@@ -201,6 +201,21 @@ jobs:
     - name: Tests
       run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
+  build_win_arm64:
+    name: 'Windows (arm64)'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    env:
+       IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -d -p arm64
+
   build_macos:
     name: 'macOS'
     runs-on: macos-latest
@@ -530,6 +545,7 @@ jobs:
     - check_generated_files
     - build_win32
     - build_win_amd64
+    - build_win_arm64
     - build_macos
     - build_ubuntu
     - build_ubuntu_ssltests
@@ -546,6 +562,7 @@ jobs:
           build_macos,
           build_ubuntu_ssltests,
           build_win32,
+          build_win_arm64,
           test_hypothesis,
         allowed-skips: >-
           ${{
@@ -561,6 +578,7 @@ jobs:
             check_generated_files,
             build_win32,
             build_win_amd64,
+            build_win_arm64,
             build_macos,
             build_ubuntu,
             build_ubuntu_ssltests,
