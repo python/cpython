@@ -1,2 +1,0 @@
-This change enhances the existing sqlite3 docs on context management by adding a mention of the contextlib.closing.
-This will help guide developers when performing singular transactions.
