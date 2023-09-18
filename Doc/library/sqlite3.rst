@@ -2442,7 +2442,8 @@ the context manager does nothing.
 .. note::
 
    The context manager neither implicitly opens a new transaction
-   nor closes the connection.
+   nor closes the connection. Using ``contextlib.closing``, the context manager
+   can be used for connection management.
 
 .. testcode::
 
