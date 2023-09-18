@@ -34,15 +34,15 @@ class FutureTest(unittest.TestCase):
 
     def assertSyntaxError(self, code,
                           *,
-                          lineno,
+                          lineno=1,
                           message=TOP_LEVEL_MSG, offset=1,
                           parametrize_docstring=True):
         code = dedent(code.lstrip('\n'))
-        for trim_docstring in ([False, True] if parametrize_docstring else [False]):
-            with self.subTest(code=code, trim_docstring=trim_docstring):
-                if trim_docstring:
-                    code = os.linesep.join(code.splitlines()[1:])
-                    lineno -= 1
+        for add_docstring in ([False, True] if parametrize_docstring else [False]):
+            with self.subTest(code=code, add_docstring=add_docstring):
+                if add_docstring:
+                    code = '"""Docstring"""\n' + code
+                    lineno += 1
                 with self.assertRaises(SyntaxError) as cm:
                     exec(code)
                 self.check_syntax_error(cm.exception, "<string>",
@@ -83,37 +83,33 @@ class FutureTest(unittest.TestCase):
 
     def test_unknown_future_flag(self):
         code = """
-            '''Docstring'''
             from __future__ import nested_scopes
             from __future__ import rested_snopes  # typo error here: nested => rested
         """
         self.assertSyntaxError(
-            code, lineno=3,
+            code, lineno=2,
             message='future feature rested_snopes is not defined',
         )
 
     def test_future_import_not_on_top(self):
         code = """
-            '''Docstring'''
             import some_module
             from __future__ import annotations
         """
-        self.assertSyntaxError(code, lineno=3)
+        self.assertSyntaxError(code, lineno=2)
 
         code = """
-            '''Docstring'''
             import __future__
             from __future__ import annotations
         """
-        self.assertSyntaxError(code, lineno=3)
+        self.assertSyntaxError(code, lineno=2)
 
         code = """
-            '''Docstring'''
             from __future__ import absolute_import
             "spam, bar, blah"
             from __future__ import print_function
         """
-        self.assertSyntaxError(code, lineno=4)
+        self.assertSyntaxError(code, lineno=3)
 
     def test_future_import_with_extra_string(self):
         code = """
@@ -126,42 +122,34 @@ class FutureTest(unittest.TestCase):
     def test_multiple_import_statements_on_same_line(self):
         # With `\`:
         code = """
-            '''Docstring'''
             from __future__ import nested_scopes; import string; from __future__ import \
         nested_scopes
         """
-        self.assertSyntaxError(code, lineno=2, offset=54)
+        self.assertSyntaxError(code, offset=54)
 
         # Without `\`:
         code = """
-            '''Docstring'''
             from __future__ import nested_scopes; import string; from __future__ import  nested_scopes
         """
-        self.assertSyntaxError(code, lineno=2, offset=54)
+        self.assertSyntaxError(code, offset=54)
 
     def test_future_import_star(self):
         code = """
-            '''Docstring'''
             from __future__ import *
         """
-        self.assertSyntaxError(
-            code, lineno=2,
-            message='future feature * is not defined',
-        )
+        self.assertSyntaxError(code, message='future feature * is not defined')
 
     def test_future_import_braces(self):
         code = """
-            '''Docstring'''
             from __future__ import braces
         """
         # Congrats, you found an easter egg!
-        self.assertSyntaxError(code, lineno=2, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance')
 
         code = """
-            '''Docstring'''
             from __future__ import nested_scopes, braces
         """
-        self.assertSyntaxError(code, lineno=2, message='not a chance')
+        self.assertSyntaxError(code, message='not a chance')
 
     def test_module_with_future_import_not_on_top(self):
         with self.assertRaises(SyntaxError) as cm:
