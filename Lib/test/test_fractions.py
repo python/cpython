@@ -1220,6 +1220,30 @@ class FractionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
 
+    @requires_IEEE_754
+    def test_float_format_testfile(self):
+        from test.test_float import format_testfile
+        with open(format_testfile, encoding="utf-8") as testfile:
+            for line in testfile:
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                if fmt == '%r':
+                    continue
+                with self.subTest(fmt=fmt, arg=arg):
+                    f = F(float(arg))
+                    self.assertEqual(format(f, fmt[1:]), rhs)
+                    if f:  # skip negative zero
+                        self.assertEqual(format(-f, fmt[1:]), '-' + rhs)
+                    f = F(arg)
+                    self.assertEqual(float(format(f, fmt[1:])), float(rhs))
+                    self.assertEqual(float(format(-f, fmt[1:])), float('-' + rhs))
+
 
 if __name__ == '__main__':
     unittest.main()

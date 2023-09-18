@@ -733,8 +733,12 @@ class FormatTestCase(unittest.TestCase):
 
                 lhs, rhs = map(str.strip, line.split('->'))
                 fmt, arg = lhs.split()
-                self.assertEqual(fmt % float(arg), rhs)
-                self.assertEqual(fmt % -float(arg), '-' + rhs)
+                f = float(arg)
+                self.assertEqual(fmt % f, rhs)
+                self.assertEqual(fmt % -f, '-' + rhs)
+                if fmt != '%r':
+                    self.assertEqual(format(f, fmt[1:]), rhs)
+                    self.assertEqual(format(-f, fmt[1:]), '-' + rhs)
 
     def test_issue5864(self):
         self.assertEqual(format(123.456, '.4'), '123.5')
