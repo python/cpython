@@ -502,10 +502,23 @@ following command runs an HTTP/1.1 conformant server::
    Note that CGI scripts will be run with UID of user nobody, for security
    reasons.  Problems with the CGI script will be translated to error 403.
 
+   .. deprecated-removed:: 3.13 3.15
+
+      :class:`CGIHTTPRequestHandler` is being removed in 3.15.  CGI has not
+      been considered a good way to do things for well over a decade. This code
+      has been unmaintained for a while now and sees very little practical use.
+      Retaining it could lead to further :ref:`security considerations
+      <http.server-security>`.
+
 :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
 the ``--cgi`` option::
 
         python -m http.server --cgi
+
+.. deprecated-removed:: 3.13 3.15
+
+   :mod:`http.server` command line ``--cgi`` support is being removed
+   because :class:`CGIHTTPRequestHandler` is being removed.
 
 .. _http.server-security:
 
