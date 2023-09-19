@@ -1,5 +1,4 @@
-"""Recursively copy a directory but skip undesired files and
-directories (CVS, backup files, pyc files, etc)"""
+# Recursively copy a directory but skip undesired files and directories (CVS, backup files, pyc files, etc)
 
 import sys
 import os
