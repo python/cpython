@@ -1993,9 +1993,21 @@ _get_current_channel_end_type(int end)
         cls = state->recv_channel_type;
     }
     if (cls == NULL) {
-        // XXX Use some other exception type?
-        PyErr_SetString(PyExc_RuntimeError, "interpreters module not imported yet");
-        return NULL;
+        PyObject *highlevel = PyImport_ImportModule("interpreters");
+        if (highlevel == NULL) {
+            PyErr_Clear();
+            highlevel = PyImport_ImportModule("test.support.interpreters");
+            if (highlevel == NULL) {
+                return NULL;
+            }
+        }
+        if (end == CHANNEL_SEND) {
+            cls = state->send_channel_type;
+        }
+        else {
+            cls = state->recv_channel_type;
+        }
+        assert(cls != NULL);
     }
     return cls;
 }
