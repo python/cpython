@@ -1289,7 +1289,7 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 frame->return_offset = oparg;
-                frame->new_return_offset = oparg;
+                frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1336,7 +1336,7 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             frame->return_offset = oparg;
-            frame->new_return_offset = oparg;
+            frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
