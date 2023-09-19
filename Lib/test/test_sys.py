@@ -693,7 +693,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_intern(self):
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(random.randint(10**8, 10**9))
+        s = "never interned before" + str(random.randrange(0, 10**18))
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -711,7 +711,7 @@ class SysModuleTest(unittest.TestCase):
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
-        s = "never interned before" + str(random.randint(10**8, 10**9))
+        s = "never interned before" + str(random.randrange(0, 10**18))
         t = sys.intern(s)
         self.assertIs(t, s)
 
