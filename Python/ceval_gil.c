@@ -763,7 +763,7 @@ _PyEval_SignalReceived(PyInterpreterState *interp)
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
-                   int (*func)(void *), void *arg)
+                   _Py_pending_call_func func, void *arg)
 {
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
@@ -810,7 +810,7 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       int (*func)(void *), void *arg,
+                       _Py_pending_call_func func, void *arg,
                        int mainthreadonly)
 {
     assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
@@ -834,7 +834,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 }
 
 int
-Py_AddPendingCall(int (*func)(void *), void *arg)
+Py_AddPendingCall(_Py_pending_call_func func, void *arg)
 {
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
@@ -878,7 +878,7 @@ _make_pending_calls(struct _pending_calls *pending)
 {
     /* perform a bounded number of calls, in case of recursion */
     for (int i=0; i<NPENDINGCALLS; i++) {
-        int (*func)(void *) = NULL;
+        _Py_pending_call_func func = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
