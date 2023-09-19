@@ -6970,7 +6970,7 @@ fi
 #
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
-# If the check is done after AC_OUTPUT, modifying LIBATOMIC has no effect
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
 # anymore.  <pyport.h> cannot be included alone, it's designed to be included
 # by <Python.h>: it expects other includes and macros to be defined.
 _SAVE_VAR([CPPFLAGS])
@@ -6993,7 +6993,7 @@ typedef intptr_t Py_ssize_t;
 #  error "unable to define Py_ssize_t"
 #endif
 
-#include "cpython/pyatomic.h"
+#include "pyatomic.h"
 
 int main()
 {
@@ -7014,7 +7014,7 @@ int main()
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
-          [LIBATOMIC=${LIBATOMIC-"-latomic"}])
+          [LIBS="${LIBS} -latomic"])
 _RESTORE_VAR([CPPFLAGS])
 
 
@@ -7286,10 +7286,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi],
-    [test "$TEST_MODULES" = yes],  []
-    dnl Modules/_testcapi/pyatomic.c uses <cpython/pyatomic.h> header
-    [], [], [$LIBATOMIC])
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
