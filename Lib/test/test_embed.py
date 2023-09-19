@@ -1132,6 +1132,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 2,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1147,6 +1148,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
             'parse_argv': 2,
             '_init_main': 0,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_main", config,
                                api=API_PYTHON,
