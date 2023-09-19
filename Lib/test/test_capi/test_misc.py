@@ -301,23 +301,39 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount')
-    def test_negative_refcount(self):
+    def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """)
+        code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
 
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
@@ -2390,7 +2406,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("SAVE_IP", uops)
+        self.assertIn("_SET_IP", uops)
         self.assertIn("LOAD_FAST", uops)
 
     def test_extended_arg(self):
@@ -2455,7 +2471,7 @@ class TestUops(unittest.TestCase):
         opt = _testinternalcapi.get_uop_optimizer()
 
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2470,7 +2486,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2485,7 +2501,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(10))
+            testfunc(range(20))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2495,12 +2511,13 @@ class TestUops(unittest.TestCase):
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
             for x in a:
+                x = None
                 if x is not None:
                     x = 0
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(10))
+            testfunc(range(20))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2515,7 +2532,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2530,12 +2547,12 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("JUMP_TO_TOP", uops)
+        self.assertIn("_JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -2550,7 +2567,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2568,8 +2585,8 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            total = testfunc(10)
-            self.assertEqual(total, 45)
+            total = testfunc(20)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2589,9 +2606,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            a = list(range(10))
+            a = list(range(20))
             total = testfunc(a)
-            self.assertEqual(total, 45)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2611,9 +2628,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            a = tuple(range(10))
+            a = tuple(range(20))
             total = testfunc(a)
-            self.assertEqual(total, 45)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2647,7 +2664,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2655,6 +2672,22 @@ class TestUops(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_branch_taken(self):
+        def testfunc(n):
+            for i in range(n):
+                if i < 0:
+                    i = 0
+                else:
+                    i = 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
 
 if __name__ == "__main__":

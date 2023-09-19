@@ -71,6 +71,8 @@ extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
 #endif
 
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
 // Export for most shared extensions, used via _PyThreadState_GET() static
 // inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
