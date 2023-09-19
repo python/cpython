@@ -32,7 +32,7 @@ set pcbuild=%~dp0
 set suffix=
 set qmode=
 set dashO=
-set regrtestargs=
+set regrtestargs--fail-env-changed --fail-rerun
 set exe=
 
 :CheckOpts
