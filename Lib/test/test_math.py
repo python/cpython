@@ -1269,6 +1269,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod(iter([10, 20, 30]), (1, 2, 3)), 140)
         self.assertEqual(sumprod([1.5, 2.5], [3.5, 4.5]), 16.5)
         self.assertEqual(sumprod([], []), 0)
+        self.assertEqual(sumprod([-1], [1.]), -1)
+        self.assertEqual(sumprod([1.], [-1]), -1)
+        self.assertEqual(sumprod([True], [1.0]), 1)
 
         # Type preservation and coercion
         for v in [
@@ -1294,6 +1297,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, sumprod, [], [], [])   # Three args
         self.assertRaises(TypeError, sumprod, None, [10])   # Non-iterable
         self.assertRaises(TypeError, sumprod, [10], None)   # Non-iterable
+        self.assertRaises(TypeError, sumprod, ['x'], [1.0])
 
         # Uneven lengths
         self.assertRaises(ValueError, sumprod, [10, 20], [30])
@@ -1304,6 +1308,8 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod([1], [10**20]), 10**20)
         self.assertEqual(sumprod([10**10], [10**10]), 10**20)
         self.assertEqual(sumprod([10**7]*10**5, [10**7]*10**5), 10**19)
+        self.assertRaises(OverflowError, sumprod, [10**1000], [1.0])
+        self.assertRaises(OverflowError, sumprod, [1.0], [10**1000])
 
         # Error in iterator
         def raise_after(n):
