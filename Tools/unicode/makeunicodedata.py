@@ -1106,11 +1106,15 @@ class UnicodeData:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
 
-        for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+        for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+            if propinfo:
+                # this is not a binary property, ignore it
+                continue
+
             if table[char]:
                 # Some properties (e.g. Default_Ignorable_Code_Point)
                 # apply to unassigned code points; ignore them
-                table[char].binary_properties.add(p)
+                table[char].binary_properties.add(propname)
 
         for char_range, value in UcdFile(LINE_BREAK, version):
             if value not in MANDATORY_LINE_BREAKS:
