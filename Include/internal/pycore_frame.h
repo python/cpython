@@ -86,7 +86,7 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define NewPyInterpreterFrame_LASTI(IF) \
-    ((int)(((IF)->instr_ptr - 1) - _PyCode_CODE(_PyFrame_GetCode(IF))))
+    ((int)(((IF)->instr_ptr) - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
