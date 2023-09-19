@@ -1216,12 +1216,14 @@ SSL sockets also have the following additional methods and attributes:
 
    Returns verified certificate chain provided by the other
    end of the SSL channel as a list of DER-encoded bytes.
+   If certificate verification was disabled method acts the same as
+   :meth:`~SSLSocket.get_unverified_chain`.
 
    .. versionadded:: 3.13
 
 .. method:: SSLSocket.get_unverified_chain()
 
-   Returns unverified certificate chain provided by the other
+   Returns raw certificate chain provided by the other
    end of the SSL channel as a list of DER-encoded bytes.
 
    .. versionadded:: 3.13

@@ -879,6 +879,9 @@ class SSLObject:
     def get_verified_chain(self):
         """Returns verified certificate chain provided by the other
         end of the SSL channel as a list of DER-encoded bytes.
+
+        If certificate verification was disabled method acts the same as
+        ``SSLSocket.get_unverified_chain``.
         """
         chain = self._sslobj.get_verified_chain()
 
@@ -888,7 +891,7 @@ class SSLObject:
         return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     def get_unverified_chain(self):
-        """Returns unverified certificate chain provided by the other
+        """Returns raw certificate chain provided by the other
         end of the SSL channel as a list of DER-encoded bytes.
         """
         chain = self._sslobj.get_unverified_chain()
