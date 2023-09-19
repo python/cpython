@@ -1803,21 +1803,12 @@ done:
     return res;
 }
 
+static PyTypeObject * _get_current_channel_end_type(int end);
+
 static PyObject *
 _channel_from_cid(PyObject *cid, int end)
 {
-    PyObject *highlevel = PyImport_ImportModule("interpreters");
-    if (highlevel == NULL) {
-        PyErr_Clear();
-        highlevel = PyImport_ImportModule("test.support.interpreters");
-        if (highlevel == NULL) {
-            return NULL;
-        }
-    }
-    const char *clsname = (end == CHANNEL_RECV) ? "RecvChannel" :
-                                                  "SendChannel";
-    PyObject *cls = PyObject_GetAttrString(highlevel, clsname);
-    Py_DECREF(highlevel);
+    PyObject *cls = (PyObject *)_get_current_channel_end_type(end);
     if (cls == NULL) {
         return NULL;
     }
