@@ -8,7 +8,6 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "cpython/pyatomic.h"
 #include "parts.h"
 
 // We define atomic bitwise operations on these types
