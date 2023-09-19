@@ -1,4 +1,5 @@
 import contextlib
+import queue
 import signal
 import sys
 import time
@@ -6,7 +7,7 @@ import unittest
 import unittest.mock
 from pickle import PicklingError
 from concurrent import futures
-from concurrent.futures.process import BrokenProcessPool
+from concurrent.futures.process import BrokenProcessPool, _ThreadWakeup
 
 from test import support
 
@@ -265,30 +266,35 @@ class ExecutorDeadlockTest:
         thread_run = futures.process._ExecutorManagerThread.run
         def mock_run(self):
             # Delay thread startup so the wakeup pipe can fill up and block
-            time.sleep(5)
+            time.sleep(3)
             thread_run(self)
 
-        def adjust_and_check_jobs_needed_to_block_pipe(connection):
-            try:
-                # Try to reduce pipe size to speed up test. Only works on Unix systems
-                import fcntl
-                from fcntl import F_SETPIPE_SZ
-                pipe_size = fcntl.fcntl(connection.fileno(), F_SETPIPE_SZ, 1024)
-            except ImportError:
-                # Assume 64k pipe if we fail, makes test take longer
-                pipe_size = 65536
+        class MockWakeup(_ThreadWakeup):
+            """Mock wakeup object to force the wakeup to block"""
+            def __init__(self):
+                super().__init__()
+                self._dummy_queue = queue.Queue(maxsize=1)
 
-            # We send 4 bytes per job (one zero sized bytes object)
-            return pipe_size // 4 + 100  # Add some margin
+            def wakeup(self):
+                self._dummy_queue.put(None, block=True)
+                super().wakeup()
 
-        with unittest.mock.patch.object(futures.process._ExecutorManagerThread, 'run', mock_run):
+            def clear(self):
+                try:
+                    while True:
+                        self._dummy_queue.get_nowait()
+                except queue.Empty:
+                    super().clear()
+
+        with (unittest.mock.patch.object(futures.process._ExecutorManagerThread,
+                                         'run', mock_run),
+              unittest.mock.patch('concurrent.futures.process._ThreadWakeup',
+                                  MockWakeup)):
             with self.executor_type(max_workers=2,
                                     mp_context=self.get_context()) as executor:
                 self.executor = executor  # Allow clean up in fail_on_deadlock
 
-                # Try to speed up the test by reducing the size of the wakeup pipe
-                job_num = adjust_and_check_jobs_needed_to_block_pipe(
-                    executor._executor_manager_thread_wakeup._writer)
+                job_num = 100
                 job_data = range(job_num)
 
                 # Need to use sigalarm for timeout detection because
@@ -299,7 +305,7 @@ class ExecutorDeadlockTest:
                 # the wakeup call that deadlocked on a blocking pipe.
                 old_handler = signal.signal(signal.SIGALRM, timeout)
                 try:
-                    signal.alarm(int(support.LONG_TIMEOUT))
+                    signal.alarm(int(self.TIMEOUT))
                     self.assertEqual(job_num, len(list(executor.map(int, job_data))))
                 finally:
                     signal.alarm(0)
