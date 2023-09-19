@@ -6307,11 +6307,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         _Py_time_t_to_FILE_TIME(utime.mtime_s, utime.mtime_ns, &mtime);
     }
     if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
-        /* Avoid putting the file name into the error here,
-           as that may confuse the user into believing that
-           something is wrong with the file, when it also
-           could be the time stamp that gives a problem. */
-        PyErr_SetFromWindowsErr(0);
+        path_error(path);
         CloseHandle(hFile);
         return NULL;
     }
@@ -6351,8 +6347,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 #endif
 
     if (result < 0) {
-        /* see previous comment about not putting filename in error here */
-        posix_error();
+        path_error(path);
         return NULL;
     }
 
