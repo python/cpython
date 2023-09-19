@@ -1253,14 +1253,16 @@ class TestSSL(test_utils.TestCase):
         client_sslctx = self._create_client_ssl_context()
 
         future = None
+        count = 0
+        filled = threading.Event()
 
         def server(sock):
             sock.starttls(sslctx, server_side=True)
             self.assertEqual(sock.recv_all(4), b'ping')
             sock.send(b'pong')
-            time.sleep(0.5)  # hopefully stuck the TCP buffer
-            data = sock.recv_all(CHUNK * SIZE)
-            self.assertEqual(len(data), CHUNK * SIZE)
+            filled.wait()
+            data = sock.recv_all(CHUNK * count)
+            self.assertEqual(len(data), CHUNK * count)
             sock.close()
 
         def run(meth):
@@ -1274,29 +1276,37 @@ class TestSSL(test_utils.TestCase):
             return wrapper
 
         async def client(addr):
-            nonlocal future
+            nonlocal future, count
             future = self.loop.create_future()
             reader, writer = await asyncio.open_connection(
                 *addr,
                 ssl=client_sslctx,
                 server_hostname='')
-            sslprotocol = writer.transport._ssl_protocol
             writer.write(b'ping')
             data = await reader.readexactly(4)
             self.assertEqual(data, b'pong')
 
-            sslprotocol.pause_writing()
-            for _ in range(SIZE):
+            await writer.drain()
+
+            # Fill the buffer - with a hack to ensure the protocol is
+            # paused without actually waiting on drain
+            count = 0
+            while not writer._protocol._paused:
                 writer.write(b'x' * CHUNK)
+                count += 1
+                await asyncio.sleep(0)
+            # Add more data to ensure we overflow the buffer
+            writer.write(b'x' * CHUNK)
+            count += 1
+            filled.set()
 
             writer.close()
-            sslprotocol.resume_writing()
 
             await self.wait_closed(writer)
             try:
                 data = await reader.read()
                 self.assertEqual(data, b'')
-            except ConnectionResetError:
+            except (ConnectionResetError, BrokenPipeError):
                 pass
             await future
 
