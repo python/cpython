@@ -268,6 +268,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -320,6 +321,7 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
@@ -335,7 +337,8 @@ def collect_os(info_add):
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -500,6 +503,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
@@ -717,24 +721,80 @@ def collect_test_socket(info_add):
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
 
-def collect_test_support(info_add):
+def collect_support(info_add):
     try:
         from test import support
     except ImportError:
         return
 
-    attributes = ('IPV6_ENABLED',)
-    copy_attributes(info_add, support, 'test_support.%s', attributes)
+    attributes = (
+        'has_fork_support',
+        'has_socket_support',
+        'has_strftime_extensions',
+        'has_subprocess_support',
+        'is_android',
+        'is_emscripten',
+        'is_jython',
+        'is_wasi',
+    )
+    copy_attributes(info_add, support, 'support.%s', attributes)
 
-    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
-    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'support.python_is_optimized', support, 'python_is_optimized')
 
-    info_add('test_support.check_sanitizer(address=True)',
+    info_add('support.check_sanitizer(address=True)',
              support.check_sanitizer(address=True))
-    info_add('test_support.check_sanitizer(memory=True)',
+    info_add('support.check_sanitizer(memory=True)',
              support.check_sanitizer(memory=True))
-    info_add('test_support.check_sanitizer(ub=True)',
+    info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+
+
+def collect_support_os_helper(info_add):
+    try:
+        from test.support import os_helper
+    except ImportError:
+        return
+
+    for name in (
+        'can_symlink',
+        'can_xattr',
+        'can_chmod',
+        'can_dac_override',
+    ):
+        func = getattr(os_helper, name)
+        info_add(f'support_os_helper.{name}', func())
+
+
+def collect_support_socket_helper(info_add):
+    try:
+        from test.support import socket_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'IPV6_ENABLED',
+        'has_gethostname',
+    )
+    copy_attributes(info_add, socket_helper, 'support_socket_helper.%s', attributes)
+
+    for name in (
+        'tcp_blackhole',
+    ):
+        func = getattr(socket_helper, name)
+        info_add(f'support_socket_helper.{name}', func())
+
+
+def collect_support_threading_helper(info_add):
+    try:
+        from test.support import threading_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'can_start_thread',
+    )
+    copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
 def collect_cc(info_add):
@@ -938,7 +998,10 @@ def collect_info(info):
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
-        collect_test_support,
+        collect_support,
+        collect_support_os_helper,
+        collect_support_socket_helper,
+        collect_support_threading_helper,
     ):
         try:
             collect_func(info_add)

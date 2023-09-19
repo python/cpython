@@ -111,7 +111,7 @@ class TestResults:
     def need_rerun(self):
         return bool(self.bad_results)
 
-    def prepare_rerun(self) -> (TestTuple, FilterDict):
+    def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
         for result in self.bad_results:
@@ -231,8 +231,7 @@ class TestResults:
             report.append(f'failures={stats.failures:,}')
         if stats.skipped:
             report.append(f'skipped={stats.skipped:,}')
-        report = ' '.join(report)
-        print(f"Total tests: {report}")
+        print(f"Total tests: {' '.join(report)}")
 
         # Total test files
         all_tests = [self.good, self.bad, self.rerun,
@@ -256,5 +255,4 @@ class TestResults:
         ):
             if tests:
                 report.append(f'{name}={len(tests)}')
-        report = ' '.join(report)
-        print(f"Total test files: {report}")
+        print(f"Total test files: {' '.join(report)}")
