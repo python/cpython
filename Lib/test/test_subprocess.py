@@ -830,6 +830,14 @@ class ProcessTestCase(BaseTestCase):
                                if not is_env_var_to_ignore(k)]
             self.assertEqual(child_env_names, [])
 
+    def test_one_env(self):
+        newenv = {'fruit': 'orange'}
+        with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
+                              stdout=subprocess.PIPE,
+                              env=newenv) as p:
+            stdout, stderr = p.communicate()
+            self.assertEqual(stdout, b"fruit=orange\r\n")
+
     def test_invalid_cmd(self):
         # null character in the command name
         cmd = sys.executable + '\0'
