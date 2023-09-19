@@ -279,7 +279,7 @@ class FrameSummary:
         """
         self.filename = filename
         self.lineno = lineno
-        self.end_lineno = end_lineno
+        self.end_lineno = lineno if end_lineno is None else end_lineno
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
@@ -478,15 +478,17 @@ class StackSummary(list):
             frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
             if (
-                frame_summary.end_lineno is None or
                 frame_summary.colno is None or
                 frame_summary.end_colno is None
             ):
-                row.append(textwrap.indent(frame_summary.line, '    ') + "\n")
+                # only output first line
+                row.append(textwrap.indent(frame_summary.line.partition('\n')[0], '    ') + "\n")
             else:
                 all_lines_original = frame_summary._original_line.splitlines()[
                     :frame_summary.end_lineno - frame_summary.lineno + 1
                 ]
+                colno = 0 if frame_summary.colno is None else frame_summary.colno
+                end_colno = len(all_lines_original[-1]) if frame_summary.end_colno is None else frame_summary.end_colno
                 # character index of the start of the instruction
                 start_offset = _byte_offset_to_character_offset(
                     all_lines_original[0], frame_summary.colno
@@ -515,52 +517,76 @@ class StackSummary(list):
                 except AssertionError:
                     pass
 
-                carets = None
+                show_carets = False
                 # only use carets if there are anchors or the carets do not span all lines
                 if anchors or all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
-                    carets = []
-
-                    anchors_left_end_offset = 0
-                    anchors_right_start_offset = 0
-                    primary_char = "^"
-                    secondary_char = "^"
-                    if anchors:
-                        anchors_left_end_offset = anchors.left_end_offset
-                        anchors_right_start_offset = anchors.right_start_offset
-                        # anchor positions do not take start_offset into account
-                        if anchors.left_end_lineno == 0:
-                            anchors_left_end_offset += start_offset
-                        if anchors.right_start_lineno == 0:
-                            anchors_right_start_offset += start_offset
-                        primary_char = anchors.primary_char
-                        secondary_char = anchors.secondary_char
-
-                    for lineno in range(len(all_lines)):
-                        num_spaces = len(all_lines[lineno]) - len(all_lines[lineno].lstrip())
-                        caret_line = []
-                        for col in range(len(all_lines[lineno])):
-                            if lineno == len(all_lines) - 1 and col >= end_offset:
-                                break
-                            elif col < num_spaces or (lineno == 0 and col < start_offset):
-                                caret_line.append(' ')
-                            elif anchors and (
-                                lineno > anchors.left_end_lineno or
-                                (lineno == anchors.left_end_lineno and col >= anchors_left_end_offset)
-                            ) and (
-                                lineno < anchors.right_start_lineno or
-                                (lineno == anchors.right_start_lineno and col < anchors_right_start_offset)
-                            ):
-                                caret_line.append(secondary_char)
-                            else:
-                                caret_line.append(primary_char)
-
-                        carets.append("".join(caret_line))
+                    show_carets = True
 
                 result = []
-                for i in range(len(all_lines)):
-                    result.append(all_lines[i] + "\n")
-                    if carets is not None:
-                        result.append(carets[i] + "\n")
+
+                # only display first line, last line, and lines around anchor start/end
+                significant_lines = {0, len(all_lines) - 1}
+
+                anchors_left_end_offset = 0
+                anchors_right_start_offset = 0
+                primary_char = "^"
+                secondary_char = "^"
+                if anchors:
+                    anchors_left_end_offset = anchors.left_end_offset
+                    anchors_right_start_offset = anchors.right_start_offset
+                    # anchor positions do not take start_offset into account
+                    if anchors.left_end_lineno == 0:
+                        anchors_left_end_offset += start_offset
+                    if anchors.right_start_lineno == 0:
+                        anchors_right_start_offset += start_offset
+                    primary_char = anchors.primary_char
+                    secondary_char = anchors.secondary_char
+                    significant_lines.update(
+                        range(anchors.left_end_lineno - 1, anchors.left_end_lineno + 2)
+                    )
+                    significant_lines.update(
+                        range(anchors.right_start_lineno - 1, anchors.right_start_lineno + 2)
+                    )
+
+                significant_lines.discard(-1)
+                significant_lines.discard(len(all_lines))
+
+                def output_line(lineno):
+                    result.append(all_lines[lineno] + "\n")
+                    if not show_carets:
+                        return
+                    num_spaces = len(all_lines[lineno]) - len(all_lines[lineno].lstrip())
+                    carets = []
+                    for col in range(len(all_lines[lineno])):
+                        if lineno == len(all_lines) - 1 and col >= end_offset:
+                            break
+                        elif col < num_spaces or (lineno == 0 and col < start_offset):
+                            carets.append(' ')
+                        elif anchors and (
+                            lineno > anchors.left_end_lineno or
+                            (lineno == anchors.left_end_lineno and col >= anchors_left_end_offset)
+                        ) and (
+                            lineno < anchors.right_start_lineno or
+                            (lineno == anchors.right_start_lineno and col < anchors_right_start_offset)
+                        ):
+                            carets.append(secondary_char)
+                        else:
+                            carets.append(primary_char)
+                    result.append("".join(carets) + "\n")
+
+                # display significant lines
+                sig_lines_list = sorted(significant_lines)
+                for i, lineno in enumerate(sig_lines_list):
+                    if i:
+                        linediff = lineno - sig_lines_list[i - 1]
+                        if linediff == 2:
+                            # 1 line in between - just output it
+                            output_line(lineno - 1)
+                        elif linediff > 2:
+                            # > 1 line in between - abbreviate
+                            result.append(f"...<{linediff - 1} lines>...\n")
+                    output_line(lineno)
+
                 row.append(
                     textwrap.indent(textwrap.dedent("".join(result)), '    ', lambda line: True)
                 )

@@ -660,9 +660,7 @@ class TracebackErrorLocationCaretTestBase:
                 (b  # test +
                     )  \
                 # +
-            << (
-
-                c  # test
+            << (c  # test
                 \
             )  # test
             )
@@ -681,12 +679,8 @@ class TracebackErrorLocationCaretTestBase:
             '            ~~~~\n'
             '        # +\n'
             '        ~~~\n'
-            '    << (\n'
-            '    ^^~~\n'
-            '    \n'
-            '    \n'
-            '        c  # test\n'
-            '        ~~~~~~~~~\n'
+            '    << (c  # test\n'
+            '    ^^~~~~~~~~~~~\n'
             '        \\\n'
             '        ~\n'
             '    )  # test\n'
@@ -906,6 +900,90 @@ class TracebackErrorLocationCaretTestBase:
             '    raise RuntimeError("fail")\n'
         )
         result_lines = self.get_exception(f_with_call)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines(self):
+        def f():
+            x = 1
+            if True: x += (
+                "a" +
+                "a"
+            )  # test
+
+        lineno_f = f.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    if True: x += (\n'
+            '             ^^^^^^\n'
+            '    ...<2 lines>...\n'
+            '    )  # test\n'
+            '    ^\n'
+        )
+        result_lines = self.get_exception(f)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines_no_caret(self):
+        def f():
+            x = 1
+            x += (
+                "a" +
+                "a"
+            )
+
+        lineno_f = f.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f\n'
+            '    x += (\n'
+            '    ...<2 lines>...\n'
+            '    )\n'
+        )
+        result_lines = self.get_exception(f)
+        self.assertEqual(result_lines, expected_error.splitlines())
+
+    def test_many_lines_binary_op(self):
+        def f_with_binary_operator():
+            b = 1
+            c = "a"
+            a = (
+                b +
+                b
+            ) + (
+                c +
+                c +
+                c
+            )
+            return a
+
+        lineno_f = f_with_binary_operator.__code__.co_firstlineno
+        expected_error = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+3}, in f_with_binary_operator\n'
+            '    a = (\n'
+            '        ~\n'
+            '        b +\n'
+            '        ~~~\n'
+            '        b\n'
+            '        ~\n'
+            '    ) + (\n'
+            '    ~~^~~\n'
+            '        c +\n'
+            '        ~~~\n'
+            '    ...<2 lines>...\n'
+            '    )\n'
+            '    ~\n'
+        )
+        result_lines = self.get_exception(f_with_binary_operator)
         self.assertEqual(result_lines, expected_error.splitlines())
 
     def test_traceback_specialization_with_syntax_error(self):
