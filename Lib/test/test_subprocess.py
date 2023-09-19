@@ -832,10 +832,11 @@ class ProcessTestCase(BaseTestCase):
 
     def test_one_env(self):
         newenv = {'fruit': 'orange'}
-        with subprocess.Popen(["CMD", "/c", "SET", "fruit"],
-                              stdout=subprocess.PIPE,
-                              env=newenv) as p:
-            stdout, stderr = p.communicate()
+        cmd = ["echo", "$fruit"]
+        if sys.platform == "win32":
+            cmd = ["CMD", "/c", "SET", "fruit"]
+        with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
+            stdout, _ = p.communicate()
             self.assertEqual(stdout, b"fruit=orange\r\n")
 
     def test_invalid_cmd(self):
