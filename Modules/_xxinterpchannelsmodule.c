@@ -379,9 +379,8 @@ static void
 _channelitem_clear(_channelitem *item)
 {
     if (item->data != NULL) {
-        (void)_release_xid_data(item->data, XID_IGNORE_EXC);
         // It was allocated in _channel_send().
-        GLOBAL_FREE(item->data);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
         item->data = NULL;
     }
     item->next = NULL;
