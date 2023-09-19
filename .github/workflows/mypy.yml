@@ -8,9 +8,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
-      - "Tools/cases_generator/**"
       - "Tools/clinic/**"
-      - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
   workflow_dispatch:
@@ -32,9 +30,7 @@ jobs:
     strategy:
       matrix:
         target: [
-          "Tools/cases_generator",
           "Tools/clinic",
-          "Tools/peg_generator",
           "Tools/wasm",
         ]
     name: Run mypy on ${{ matrix.target }}
