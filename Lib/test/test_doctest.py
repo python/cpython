@@ -2918,6 +2918,9 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
+            ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                         compileflags, True), test.globs)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
         Exception: clé

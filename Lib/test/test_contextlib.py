@@ -802,11 +802,17 @@ class TestBaseExitStack:
         self.assertIsInstance(exc, ValueError)
         ve_frames = traceback.extract_tb(exc.__traceback__)
         expected = \
-            [('test_exit_exception_traceback', 'with self.exit_stack() as stack:')] + \
+            [(
+                'test_exit_exception_traceback',
+                'with self.exit_stack() as stack:\n'
+                '    stack.callback(raise_exc, ValueError)\n'
+                '    1/0'
+            )] + \
             self.callback_error_internal_frames + \
             [('_exit_wrapper', 'callback(*args, **kwds)'),
              ('raise_exc', 'raise exc')]
 
+        # breakpoint()
         self.assertEqual(
             [(f.name, f.line) for f in ve_frames], expected)
 
