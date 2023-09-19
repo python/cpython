@@ -1303,7 +1303,7 @@ The following recipes have a more mathematical flavor:
     >>> polynomial_eval([], Fraction(2, 3))
     Fraction(0, 1)
     >>> polynomial_eval([], Decimal('1.75'))
-    Decimal('0.00')
+    Decimal('0')
     >>> polynomial_eval([11], 7) == 11
     True
     >>> polynomial_eval([11, 2], 7) == 11 * 7 + 2
