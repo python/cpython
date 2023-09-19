@@ -108,6 +108,7 @@ cjk_ranges = [
     ('2B740', '2B81D'),  # CJK Ideograph Extension D
     ('2B820', '2CEA1'),  # CJK Ideograph Extension E
     ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
+    ('2EBF0', '2EE5D'),  # CJK Ideograph Extension I
     ('30000', '3134A'),  # CJK Ideograph Extension G
     ('31350', '323AF'),  # CJK Ideograph Extension H
 ]
