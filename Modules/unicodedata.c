@@ -1035,9 +1035,9 @@ is_unified_ideograph(Py_UCS4 code)
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
+        (0x2EBF0 <= code && code <= 0x2EE5D) || /* CJK Ideograph Extension I */
         (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
-        (0x31350 <= code && code <= 0x323AF) || /* CJK Ideograph Extension H */
-        (0x2EBF0 <= code && code <= 0x2EE5D);   /* CJK Ideograph Extension I */
+        (0x31350 <= code && code <= 0x323AF);   /* CJK Ideograph Extension H */
 }
 
 /* macros used to determine if the given code point is in the PUA range that
