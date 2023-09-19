@@ -60,10 +60,10 @@ for proto, ver in (
     PROTOCOL_TO_TLS_VERSION[proto] = ver
 
 def data_file(*name):
-    return os.path.join(os.path.dirname(__file__), *name)
+    return os.path.join(os.path.dirname(__file__), "certdata", *name)
 
 # The custom key and certificate files used in test_ssl are generated
-# using Lib/test/make_ssl_certs.py.
+# using Lib/test/certdata/make_ssl_certs.py.
 # Other certificates are simply fetched from the internet servers they
 # are meant to authenticate.
 
@@ -641,7 +641,7 @@ class BasicSocketTests(unittest.TestCase):
     def bad_cert_test(self, certfile):
         """Check that trying to use the given client certificate fails"""
         certfile = os.path.join(os.path.dirname(__file__) or os.curdir,
-                                   certfile)
+                                "certdata", certfile)
         sock = socket.socket()
         self.addCleanup(sock.close)
         with self.assertRaises(ssl.SSLError):
@@ -3309,12 +3309,12 @@ class ThreadedTests(unittest.TestCase):
         # try to connect
         if support.verbose:
             sys.stdout.write('\n')
-        with open(CERTFILE, 'rb') as f:
+        # Get this test file itself:
+        with open(__file__, 'rb') as f:
             d1 = f.read()
         d2 = ''
         # now fetch the same data from the HTTPS server
-        url = 'https://localhost:%d/%s' % (
-            server.port, os.path.split(CERTFILE)[1])
+        url = f'https://localhost:{server.port}/test_ssl.py'
         context = ssl.create_default_context(cafile=SIGNING_CA)
         f = urllib.request.urlopen(url, context=context)
         try:
