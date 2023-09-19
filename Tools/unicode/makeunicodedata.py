@@ -101,15 +101,15 @@ EXTENDED_CASE_MASK = 0x4000
 
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
-    ('3400', '4DBF'),
-    ('4E00', '9FFF'),
-    ('20000', '2A6DF'),
-    ('2A700', '2B739'),
-    ('2B740', '2B81D'),
-    ('2B820', '2CEA1'),
-    ('2CEB0', '2EBE0'),
-    ('30000', '3134A'),
-    ('31350', '323AF'),
+    ('3400', '4DBF'),    # CJK Ideograph Extension A CJK
+    ('4E00', '9FFF'),    # CJK Ideograph
+    ('20000', '2A6DF'),  # CJK Ideograph Extension B
+    ('2A700', '2B739'),  # CJK Ideograph Extension C
+    ('2B740', '2B81D'),  # CJK Ideograph Extension D
+    ('2B820', '2CEA1'),  # CJK Ideograph Extension E
+    ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
+    ('30000', '3134A'),  # CJK Ideograph Extension G
+    ('31350', '323AF'),  # CJK Ideograph Extension H
 ]
 
 
