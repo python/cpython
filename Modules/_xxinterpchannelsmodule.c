@@ -173,10 +173,10 @@ _release_xid_data(_PyCrossInterpreterData *data, int flags)
     }
     int res;
     if (flags & XID_FREE) {
-        res = _PyCrossInterpreterData_Release(data);
+        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
     }
     else {
-        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+        res = _PyCrossInterpreterData_Release(data);
     }
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
