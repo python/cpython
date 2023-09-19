@@ -1,0 +1,5 @@
+When Python is configured to use ASAN, MSAN or UBSAN sanitizer, with
+``./configure --with-address-sanitizer`` for example, compiler and linker
+flags for sanitizers are no longer exported to third party C extensions. Add
+flags to ``CFLAGS_NODIST`` and ``LDFLAGS_NODIST``, instead of ``BASECFLAGS``
+and ``LDFLAGS``.  Patch by Victor Stinner.

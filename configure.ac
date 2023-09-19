@@ -2997,8 +2997,8 @@ AC_ARG_WITH([address_sanitizer],
                            [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
 [
 AC_MSG_RESULT([$withval])
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=address -fno-omit-frame-pointer"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=address"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 ],
@@ -3014,8 +3014,8 @@ AC_ARG_WITH(
 [
 AC_MSG_RESULT([$withval])
 AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=memory -fsanitize-memory-track-origins=2"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
@@ -3031,8 +3031,8 @@ AC_ARG_WITH(
   )],
 [
 AC_MSG_RESULT([$withval])
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=undefined"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=undefined"
 with_ubsan="yes"
 ],
 [

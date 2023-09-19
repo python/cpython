@@ -12357,8 +12357,8 @@ then :
   withval=$with_address_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=address -fno-omit-frame-pointer"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=address"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
@@ -12411,8 +12411,8 @@ printf "%s\n" "$ax_cv_check_cflags___fsanitize_memory" >&6; }
 if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes
 then :
 
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=memory -fsanitize-memory-track-origins=2"
 
 else $as_nop
   as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5
@@ -12436,8 +12436,8 @@ then :
   withval=$with_undefined_behavior_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
+CFLAGS_NODIST="$CFLAGS_NODIST -fsanitize=undefined"
+LDFLAGS_NODIST="$LDFLAGS_NODIST -fsanitize=undefined"
 with_ubsan="yes"
 
 else $as_nop
