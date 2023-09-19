@@ -316,7 +316,7 @@ C compiler options
 
 .. cmdoption:: CPPFLAGS
 
-   C preprocessor flags, e.g. ``-I<include dir>``.
+   C preprocessor flags, e.g. :samp:`-I{include_dir}`.
 
 
 Linker options
