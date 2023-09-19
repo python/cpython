@@ -1,0 +1,1 @@
+Update `unicodedata` for Unicode 15.1
