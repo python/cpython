@@ -1564,6 +1564,7 @@ class MathTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.pow(2, NAN)))
         self.assertTrue(math.isnan(math.pow(0, NAN)))
         self.assertEqual(math.pow(1, NAN), 1)
+        self.assertRaises(OverflowError, math.pow, 1e+100, 1e+100)
 
         # pow(0., x)
         self.assertEqual(math.pow(0., INF), 0.)

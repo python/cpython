@@ -2969,7 +2969,8 @@ math_pow_impl(PyObject *module, double x, double y)
                (A) (+/-0.)**negative (-> divide-by-zero)
                (B) overflow of x**y with x and y finite
             */
-            else if (Py_IS_INFINITY(r)) {
+            else {
+                assert(Py_IS_INFINITY(r));
                 if (x == 0.)
                     errno = EDOM;
                 else
