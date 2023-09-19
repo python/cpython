@@ -1887,7 +1887,7 @@ buildbottest: all
 		-@if which pybuildbot.identify >/dev/null 2>&1; then \
 			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --fail-rerun --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Like testall, but run Python tests with HOSTRUNNER directly.
 .PHONY: hostrunnertest
