@@ -85,7 +85,7 @@ def replace(seq, index, item):
     """Return a new sequence such that ``seq[index] == item``."""
     if not 0 <= index < len(seq):
         raise IndexError
-    return [*seq[:index], item, *seq[index + 1 :]]
+    return seq[:index] + item + seq[index + 1 :]
 
 
 def characters_exclude(exclude_chars, simple_chars=False):
@@ -215,7 +215,7 @@ def get_name_qchar_idxs(text, succeeded):
 
 
 @st.composite
-def identities_strategy(draw, simple_chars=False, debug_entries=False):
+def identities_strategy(draw, simple_chars=True, debug_entries=False):
     """
     For each identity field of the core metadata specification ("Author",
     "Maintainer", "Author-email" and "Maintainer-email"), generate a list
@@ -271,9 +271,7 @@ def identity_entries(draw, state, entry_strategy):
     sample = draw(st.lists(entry_strategy(state), min_size=0, max_size=10))
     for entry in sample[:-1]:
         entry.append(Token(identity_entries, ", ", True))
-    unbalance(sample)
-    lstrip(sample)
-    return process(sample)
+    return process(lstrip(draw(unbalance(sample))))
 
 
 def process(entries):
@@ -303,17 +301,14 @@ def lstrip(entries):
     """
     The PackageMetadata implementation removes leading whitespace
     from the first entry, so we do the same. This should not alter
-    the parsing of the entry.
+    the parsing of the entry. Return possibly-mutated ``entries``.
     """
     entry = entries[0] if entries else []
-    strip = False
     for token in entry:
-        value = token.value.lstrip()
-        strip = strip or token.value != value
-        token.value = value
+        token.value = token.value.lstrip()
         if token.value:
             break
-    return strip
+    return entries
 
 
 def unbalance_indexes(entries):
@@ -349,17 +344,17 @@ def unbalance_indexes(entries):
 def unbalance(draw, entries):
     """
     Unbalance quote characters in the list of entries without altering
-    the parsing of the list.
+    the parsing of the list. Mutate if possible, returning ``entries``.
     """
     qchrs = draw(st.sets(st.sampled_from("\"'")))
     index_candidates = unbalance_indexes(entries)
     if not qchrs or not index_candidates:
-        return False
-    for qchr in qchrs:
+        return entries
+    for qchr in sorted(qchrs):
         idx_entry, idx_token, idx_char = draw(st.sampled_from(index_candidates))
         token = entries[idx_entry][idx_token]
         token.value = replace(token.value, idx_char, qchr)
-    return True
+    return entries
 
 
 # Non-leaf rules for "Author" and "Maintainer" fields:
