@@ -2006,7 +2006,6 @@ look_up_frozen(const char *name)
 struct frozen_info {
     PyObject *nameobj;
     const char *data;
-    PyObject *(*get_code)(void);
     Py_ssize_t size;
     bool is_package;
     bool is_alias;
@@ -2040,7 +2039,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
     if (info != NULL) {
         info->nameobj = nameobj;  // borrowed
         info->data = (const char *)p->code;
-        info->get_code = p->get_code;
         info->size = p->size;
         info->is_package = p->is_package;
         if (p->size < 0) {
@@ -2051,10 +2049,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
         info->origname = name;
         info->is_alias = resolve_module_alias(name, _PyImport_FrozenAliases,
                                               &info->origname);
-    }
-    if (p->code == NULL && p->size == 0 && p->get_code != NULL) {
-        /* It is only deepfrozen. */
-        return FROZEN_OKAY;
     }
     if (p->code == NULL) {
         /* It is frozen but marked as un-importable. */
@@ -2070,11 +2064,6 @@ find_frozen(PyObject *nameobj, struct frozen_info *info)
 static PyObject *
 unmarshal_frozen_code(PyInterpreterState *interp, struct frozen_info *info)
 {
-    if (info->get_code && _Py_IsMainInterpreter(interp)) {
-        PyObject *code = info->get_code();
-        assert(code != NULL);
-        return code;
-    }
     PyObject *co = PyMarshal_ReadObjectFromString(info->data, info->size);
     if (co == NULL) {
         /* Does not contain executable code. */
@@ -2898,12 +2887,11 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        PyObject *path;
-        if (PyObject_GetOptionalAttr(mod, &_Py_ID(__path__), &path) < 0) {
+        int has_path = PyObject_HasAttrWithError(mod, &_Py_ID(__path__));
+        if (has_path < 0) {
             goto error;
         }
-        if (path) {
-            Py_DECREF(path);
+        if (has_path) {
             final_mod = PyObject_CallMethodObjArgs(
                         IMPORTLIB(interp), &_Py_ID(_handle_fromlist),
                         mod, fromlist, IMPORT_FUNC(interp), NULL);
@@ -3567,7 +3555,7 @@ _imp_get_frozen_object_impl(PyObject *module, PyObject *name,
     if (info.nameobj == NULL) {
         info.nameobj = name;
     }
-    if (info.size == 0 && info.get_code == NULL) {
+    if (info.size == 0) {
         /* Does not contain executable code. */
         set_frozen_error(FROZEN_INVALID, name);
         return NULL;

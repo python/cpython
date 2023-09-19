@@ -698,14 +698,6 @@ class GlobalsTest(unittest.TestCase):
                             'missing name "%s" in __all__' % name)
 
 
-class DocTests(unittest.TestCase):
-    @unittest.skipIf(sys.flags.optimize >= 2,
-                     "Docstrings are omitted with -OO and above")
-    def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
-        self.assertGreater(tried, 0)
-        self.assertEqual(failed, 0)
-
 class StatisticsErrorTest(unittest.TestCase):
     def test_has_exception(self):
         errmsg = (
@@ -2145,6 +2137,7 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
+    @support.requires_resource('cpu')
     def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2849,6 +2842,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 
@@ -3143,6 +3137,7 @@ class TestNormalDistC(unittest.TestCase, TestNormalDist):
 def load_tests(loader, tests, ignore):
     """Used for doctest/unittest integration."""
     tests.addTests(doctest.DocTestSuite())
+    tests.addTests(doctest.DocTestSuite(statistics))
     return tests
 
 

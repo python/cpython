@@ -680,6 +680,7 @@ class HandlerTest(BaseTest):
         support.is_emscripten, "Emscripten cannot fstat unlinked files."
     )
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_race(self):
         # Issue #14632 refers.
         def remove_loop(fname, tries):
@@ -2169,7 +2170,7 @@ class HTTPHandlerTest(BaseTest):
                     sslctx = None
                 else:
                     here = os.path.dirname(__file__)
-                    localhost_cert = os.path.join(here, "keycert.pem")
+                    localhost_cert = os.path.join(here, "certdata", "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 

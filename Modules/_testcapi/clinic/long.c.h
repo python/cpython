@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_testcapi_test_long_api__doc__,
 "test_long_api($module, /)\n"
 "--\n"
@@ -171,4 +165,4 @@ PyDoc_STRVAR(_testcapi_PyLong_AsInt__doc__,
 
 #define _TESTCAPI_PYLONG_ASINT_METHODDEF    \
     {"PyLong_AsInt", (PyCFunction)_testcapi_PyLong_AsInt, METH_O, _testcapi_PyLong_AsInt__doc__},
-/*[clinic end generated code: output=1631a18f1193486a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31267ab2dd90aa1d input=a9049054013a1b77]*/

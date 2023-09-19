@@ -116,10 +116,6 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
     const char *func,
     const char *message);

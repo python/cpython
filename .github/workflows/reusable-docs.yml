@@ -23,7 +23,7 @@ jobs:
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: 'Set up Python'
       uses: actions/setup-python@v4
       with:
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: actions/cache@v3
       with:
         path: ~/.cache/pip

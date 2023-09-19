@@ -721,7 +721,7 @@ def main(args=None):
     parser.add_argument(
         "-L", "--locale",
         default=None,
-        help="locale to be used from month and weekday names"
+        help="locale to use for month and weekday names"
     )
     parser.add_argument(
         "-e", "--encoding",
