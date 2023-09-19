@@ -1299,6 +1299,12 @@ class MathTests(unittest.TestCase):
         self.assertRaises(ValueError, sumprod, [10, 20], [30])
         self.assertRaises(ValueError, sumprod, [10], [20, 30])
 
+        # Overflows
+        self.assertEqual(sumprod([10**20], [1]), 10**20)
+        self.assertEqual(sumprod([1], [10**20]), 10**20)
+        self.assertEqual(sumprod([10**10], [10**10]), 10**20)
+        self.assertEqual(sumprod([10**7]*10**5, [10**7]*10**5), 10**19)
+
         # Error in iterator
         def raise_after(n):
             for i in range(n):
@@ -1308,6 +1314,11 @@ class MathTests(unittest.TestCase):
             sumprod(range(10), raise_after(5))
         with self.assertRaises(RuntimeError):
             sumprod(raise_after(5), range(10))
+
+        from test.test_iter import BasicIterClass
+
+        self.assertEqual(sumprod(BasicIterClass(1), [1]), 0)
+        self.assertEqual(sumprod([1], BasicIterClass(1)), 0)
 
         # Error in multiplication
         class BadMultiply:
