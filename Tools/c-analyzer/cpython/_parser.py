@@ -314,6 +314,7 @@ MAX_SIZES = {
     _abs('Objects/stringlib/unicode_format.h'): (10_000, 400),
     _abs('Objects/typeobject.c'): (35_000, 200),
     _abs('Python/compile.c'): (20_000, 500),
+    _abs('Python/parking_lot.c'): (40_000, 1000),
     _abs('Python/pylifecycle.c'): (500_000, 5000),
     _abs('Python/pystate.c'): (500_000, 5000),
 

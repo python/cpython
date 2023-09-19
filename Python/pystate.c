@@ -9,6 +9,7 @@
 #include "pycore_frame.h"
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
@@ -553,6 +554,10 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     }
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    // Clears the parking lot. Any waiting threads are dead. This must be
+    // called before releasing any locks that use the parking lot.
+    _PyParkingLot_AfterFork();
 
     /* bpo-42540: id_mutex is freed by _PyInterpreterState_Delete, which does
      * not force the default allocator. */

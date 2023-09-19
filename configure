@@ -27760,7 +27760,7 @@ fi
 #
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
-# If the check is done after AC_OUTPUT, modifying LIBATOMIC has no effect
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
 # anymore.  <pyport.h> cannot be included alone, it's designed to be included
 # by <Python.h>: it expects other includes and macros to be defined.
 save_CPPFLAGS=$CPPFLAGS
@@ -27793,7 +27793,7 @@ typedef intptr_t Py_ssize_t;
 #  error "unable to define Py_ssize_t"
 #endif
 
-#include "cpython/pyatomic.h"
+#include "pyatomic.h"
 
 int main()
 {
@@ -27825,7 +27825,7 @@ printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
 
 if test "x$ac_cv_libatomic_needed" = xyes
 then :
-  LIBATOMIC=${LIBATOMIC-"-latomic"}
+  LIBS="${LIBS} -latomic"
 fi
 CPPFLAGS=$save_CPPFLAGS
 
@@ -29979,7 +29979,7 @@ fi
 then :
 
 
-    as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
+
 
 fi
    if test "$py_cv_module__testcapi" = yes; then
