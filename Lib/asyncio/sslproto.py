@@ -75,8 +75,7 @@ def add_flowcontrol_defaults(high, low, kb):
     return hi, lo
 
 
-class _SSLProtocolTransport(transports._FlowControlMixin,
-                            transports.Transport):
+class _SSLProtocolTransport(transports.Transport):
 
     _start_tls_compatible = True
     _sendfile_compatible = constants._SendfileMode.FALLBACK
