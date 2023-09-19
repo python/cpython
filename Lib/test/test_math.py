@@ -2132,6 +2132,8 @@ class MathTests(unittest.TestCase):
                       '\n  '.join(failures))
 
     def test_prod(self):
+        from fractions import Fraction as F
+
         prod = math.prod
         self.assertEqual(prod([]), 1)
         self.assertEqual(prod([], start=5), 5)
@@ -2143,6 +2145,14 @@ class MathTests(unittest.TestCase):
         self.assertEqual(prod([1.0, 2.0, 3.0, 4.0, 5.0]), 120.0)
         self.assertEqual(prod([1, 2, 3, 4.0, 5.0]), 120.0)
         self.assertEqual(prod([1.0, 2.0, 3.0, 4, 5]), 120.0)
+        self.assertEqual(prod([1., F(3, 2)]), 1.5)
+
+        # Error in multiplication
+        class BadMultiply:
+            def __rmul__(self, other):
+                raise RuntimeError
+        with self.assertRaises(RuntimeError):
+            prod([10., BadMultiply()])
 
         # Test overflow in fast-path for integers
         self.assertEqual(prod([1, 1, 2**32, 1, 1]), 2**32)
