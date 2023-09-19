@@ -504,6 +504,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'run_command': None,
         'run_module': None,
         'run_filename': None,
+        'sys_path_0': None,
 
         '_install_importlib': 1,
         'check_hash_pycs_mode': 'default',
