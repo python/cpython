@@ -2292,10 +2292,16 @@ _xidata_init(_PyCrossInterpreterData *data)
 static inline void
 _xidata_clear(_PyCrossInterpreterData *data)
 {
-    if (data->free != NULL) {
-        data->free(data->data);
+    // _PyCrossInterpreterData only has two members that need to be
+    // cleaned up, if set: "data" must be freed and "obj" must be decref'ed.
+    // In both cases the original (owning) interpreter must be used,
+    // which is the caller's responsibility to ensure.
+    if (data->data != NULL) {
+        if (data->free != NULL) {
+            data->free(data->data);
+        }
+        data->data = NULL;
     }
-    data->data = NULL;
     Py_CLEAR(data->obj);
 }
 
@@ -2440,40 +2446,32 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
     return data->new_object(data);
 }
 
-typedef void (*releasefunc)(PyInterpreterState *, void *);
-
-static void
-_call_in_interpreter(PyInterpreterState *interp, releasefunc func, void *arg)
+static int
+_release_xidata_pending(void *data)
 {
-    /* We would use Py_AddPendingCall() if it weren't specific to the
-     * main interpreter (see bpo-33608).  In the meantime we take a
-     * naive approach.
-     */
-    _PyRuntimeState *runtime = interp->runtime;
-    PyThreadState *save_tstate = NULL;
-    if (interp != current_fast_get(runtime)->interp) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        // XXX Possible GILState issues?
-        save_tstate = _PyThreadState_Swap(runtime, tstate);
-    }
-
-    // XXX Once the GIL is per-interpreter, this should be called with the
-    // calling interpreter's GIL released and the target interpreter's held.
-    func(interp, arg);
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        _PyThreadState_Swap(runtime, save_tstate);
-    }
+    _xidata_clear((_PyCrossInterpreterData *)data);
+    return 0;
 }
 
-int
-_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+static int
+_xidata_release_and_rawfree_pending(void *data)
 {
-    if (data->free == NULL && data->obj == NULL) {
+    _xidata_clear((_PyCrossInterpreterData *)data);
+    PyMem_RawFree(data);
+    return 0;
+}
+
+static int
+_xidata_release(_PyCrossInterpreterData *data, int rawfree)
+{
+    if ((data->data == NULL || data->free == NULL) && data->obj == NULL) {
         // Nothing to release!
-        data->data = NULL;
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
+        else {
+            data->data = NULL;
+        }
         return 0;
     }
 
@@ -2484,13 +2482,40 @@ _PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
         // This function shouldn't have been called.
         // XXX Someone leaked some memory...
         assert(PyErr_Occurred());
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
         return -1;
     }
 
     // "Release" the data and/or the object.
-    _call_in_interpreter(interp,
-                         (releasefunc)_PyCrossInterpreterData_Clear, data);
+    if (interp == current_fast_get(interp->runtime)->interp) {
+        _xidata_clear(data);
+        if (rawfree) {
+            PyMem_RawFree(data);
+        }
+    }
+    else {
+        _Py_pending_call_func func = _release_xidata_pending;
+        if (rawfree) {
+            func = _xidata_release_and_rawfree_pending;
+        }
+        // XXX Emit a warning if this fails?
+        _PyEval_AddPendingCall(interp, func, data, 0);
+    }
     return 0;
+}
+
+int
+_PyCrossInterpreterData_Release(_PyCrossInterpreterData *data)
+{
+    return _xidata_release(data, 0);
+}
+
+int
+_PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
+{
+    return _xidata_release(data, 1);
 }
 
 /* registry of {type -> crossinterpdatafunc} */
