@@ -634,6 +634,12 @@ class ComplexTest(unittest.TestCase):
         test(complex(-0., 0.),  "(-0+0j)")
         test(complex(-0., -0.), "(-0-0j)")
 
+    def test_pos(self):
+        from test.test_capi.test_getargs import ComplexSubclass
+
+        self.assertEqual(+(1+6j), 1+6j)
+        self.assertEqual(+ComplexSubclass(1, 6), 1+6j)
+
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
 
