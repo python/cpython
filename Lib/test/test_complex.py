@@ -236,12 +236,17 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
         self.assertAlmostEqual(pow(0+0j, 2+0j), 0.0)
         self.assertAlmostEqual(pow(0+0j, 2000+0j), 0.0)
+        self.assertAlmostEqual(pow(0, 0+0j), 1.0)
+        self.assertAlmostEqual(pow(-1, 0+0j), 1.0)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, 1j)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, -1000)
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
         self.assertRaises(OverflowError, pow, 1e200+1j, 1e200+1j)
+        self.assertRaises(TypeError, pow, 1j, None)
+        self.assertRaises(TypeError, pow, None, 1j)
+        self.assertAlmostEqual(pow(1j, 0.5), 0.7071067811865476+0.7071067811865475j)
 
         a = 3.33+4.43j
         self.assertEqual(a ** 0j, 1)
