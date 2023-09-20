@@ -205,28 +205,6 @@ def normalize_c_whitespace(file_paths):
     return fixed
 
 
-ws_re = re.compile(br'\s+(\r?\n)$')
-
-
-@status("Fixing docs whitespace", info=report_modified_files)
-def normalize_docs_whitespace(file_paths):
-    fixed = []
-    for path in file_paths:
-        abspath = os.path.join(SRCDIR, path)
-        try:
-            with open(abspath, 'rb') as f:
-                lines = f.readlines()
-            new_lines = [ws_re.sub(br'\1', line) for line in lines]
-            if new_lines != lines:
-                shutil.copyfile(abspath, abspath + '.bak')
-                with open(abspath, 'wb') as f:
-                    f.writelines(new_lines)
-                fixed.append(path)
-        except Exception as err:
-            print(f'Cannot fix {path}: {err}')
-    return fixed
-
-
 @status("Docs modified", modal=True)
 def docs_modified(file_paths):
     """Report if any file in the Doc directory has been changed."""
@@ -272,12 +250,9 @@ def ci(pull_request):
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
-    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
-                 fn.endswith(('.rst', '.inc'))]
     fixed = []
     fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
-    fixed.extend(normalize_docs_whitespace(doc_files))
     if not fixed:
         print('No whitespace issues found')
     else:
@@ -292,17 +267,11 @@ def main():
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
-    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
-                 fn.endswith(('.rst', '.inc'))]
     misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
     # C rules enforcement.
     normalize_c_whitespace(c_files)
-    # Doc whitespace enforcement.
-    normalize_docs_whitespace(doc_files)
-    # Docs updated.
-    docs_modified(doc_files)
     # Misc/ACKS changed.
     credit_given(misc_files)
     # Misc/NEWS changed.
