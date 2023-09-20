@@ -194,6 +194,13 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, operator.sub, 1j, None)
         self.assertRaises(TypeError, operator.sub, None, 1j)
 
+    def test_mul(self):
+        self.assertAlmostEqual(1j * 2, complex(0, 2))
+        self.assertAlmostEqual(1j * (-1), complex(0, -1))
+        self.assertRaises(OverflowError, operator.mul, 1j, 10**1000)
+        self.assertRaises(TypeError, operator.mul, 1j, None)
+        self.assertRaises(TypeError, operator.mul, None, 1j)
+
     def test_mod(self):
         # % is no longer supported on complex numbers
         with self.assertRaises(TypeError):
