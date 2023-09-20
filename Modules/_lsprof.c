@@ -716,7 +716,7 @@ profiler_enable(ProfilerObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -778,7 +778,7 @@ profiler_disable(ProfilerObject *self, PyObject* noarg)
 {
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PySys_GetAttrString("monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -880,7 +880,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
     Py_XSETREF(pObj->externalTimer, Py_XNewRef(timer));
     pObj->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PySys_GetAttrString("monitoring");
     if (!monitoring) {
         return -1;
     }

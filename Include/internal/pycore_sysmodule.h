@@ -9,9 +9,6 @@ extern "C" {
 #endif
 
 // Export for '_pickle' shared extension
-PyAPI_FUNC(PyObject*) _PySys_GetAttr(PyThreadState *tstate, PyObject *name);
-
-// Export for '_pickle' shared extension
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject *);
 
 extern int _PySys_Audit(

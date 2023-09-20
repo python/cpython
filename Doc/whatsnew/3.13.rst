@@ -988,6 +988,12 @@ New Features
 
   (Contributed by Serhiy Storchaka in :gh:`108511`.)
 
+* Add functions :c:func:`PySys_GetAttr`, :c:func:`PySys_GetAttrString`,
+  :c:func:`PySys_GetOptionalAttr` and :c:func:`PySys_GetOptionalAttrString`.
+  They all are variants of :c:func:`PySys_GetObject` which return a new
+  :term:`strong reference` and can set an exception on failure.
+  (Contributed by Serhiy Storchaka in :gh:`108512`.)
+
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.

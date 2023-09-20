@@ -3,7 +3,6 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #ifdef HAVE_UNISTD_H
@@ -107,14 +106,13 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+        file = PySys_GetAttr(&_Py_ID(stderr));
         if (file == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "unable to get sys.stderr");
             return -1;
         }
         if (file == Py_None) {
             PyErr_SetString(PyExc_RuntimeError, "sys.stderr is None");
+            Py_DECREF(file);
             return -1;
         }
     }
@@ -130,10 +128,15 @@ faulthandler_get_fileno(PyObject **file_ptr)
         *file_ptr = NULL;
         return fd;
     }
+    else {
+        Py_INCREF(file);
+    }
 
     result = PyObject_CallMethodNoArgs(file, &_Py_ID(fileno));
-    if (result == NULL)
+    if (result == NULL) {
+        Py_DECREF(file);
         return -1;
+    }
 
     fd = -1;
     if (PyLong_Check(result)) {
@@ -146,6 +149,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
     if (fd == -1) {
         PyErr_SetString(PyExc_RuntimeError,
                         "file.fileno() is not a valid file descriptor");
+        Py_DECREF(file);
         return -1;
     }
 
@@ -225,19 +229,23 @@ faulthandler_dump_traceback_py(PyObject *self,
         return NULL;
 
     tstate = get_thread_state();
-    if (tstate == NULL)
+    if (tstate == NULL) {
+        Py_XDECREF(file);
         return NULL;
+    }
 
     if (all_threads) {
         errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
+            Py_XDECREF(file);
             return NULL;
         }
     }
     else {
         _Py_DumpTraceback(fd, tstate);
     }
+    Py_XDECREF(file);
 
     if (PyErr_CheckSignals())
         return NULL;
@@ -499,10 +507,11 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
 
     tstate = get_thread_state();
-    if (tstate == NULL)
+    if (tstate == NULL) {
+        Py_XDECREF(file);
         return NULL;
+    }
 
-    Py_XINCREF(file);
     Py_XSETREF(fatal_error.file, file);
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
@@ -692,12 +701,14 @@ faulthandler_dump_traceback_later(PyObject *self,
     if (!thread.running) {
         thread.running = PyThread_allocate_lock();
         if (!thread.running) {
+            Py_XDECREF(file);
             return PyErr_NoMemory();
         }
     }
     if (!thread.cancel_event) {
         thread.cancel_event = PyThread_allocate_lock();
         if (!thread.cancel_event || !thread.running) {
+            Py_XDECREF(file);
             return PyErr_NoMemory();
         }
 
@@ -709,6 +720,7 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* format the timeout */
     header = format_timeout(timeout_us);
     if (header == NULL) {
+        Py_XDECREF(file);
         return PyErr_NoMemory();
     }
     header_len = strlen(header);
@@ -716,7 +728,6 @@ faulthandler_dump_traceback_later(PyObject *self,
     /* Cancel previous thread, if running */
     cancel_dump_traceback_later();
 
-    Py_XINCREF(file);
     Py_XSETREF(thread.file, file);
     thread.fd = fd;
     /* the downcast is safe: we check that 0 < timeout_us < PY_TIMEOUT_MAX */
@@ -878,14 +889,17 @@ faulthandler_register_py(PyObject *self,
 
     if (user_signals == NULL) {
         user_signals = PyMem_Calloc(Py_NSIG, sizeof(user_signal_t));
-        if (user_signals == NULL)
+        if (user_signals == NULL) {
+            Py_XDECREF(file);
             return PyErr_NoMemory();
+        }
     }
     user = &user_signals[signum];
 
     if (!user->enabled) {
 #ifdef FAULTHANDLER_USE_ALT_STACK
         if (faulthandler_allocate_stack() < 0) {
+            Py_XDECREF(file);
             return NULL;
         }
 #endif
@@ -893,13 +907,13 @@ faulthandler_register_py(PyObject *self,
         err = faulthandler_register(signum, chain, &previous);
         if (err) {
             PyErr_SetFromErrno(PyExc_OSError);
+            Py_XDECREF(file);
             return NULL;
         }
 
         user->previous = previous;
     }
 
-    Py_XINCREF(file);
     Py_XSETREF(user->file, file);
     user->fd = fd;
     user->all_threads = all_threads;

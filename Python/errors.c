@@ -1521,14 +1521,15 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *exc_value, PyObject *exc_tb, PyObject *err_msg,
                      PyObject *obj)
 {
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        return -1;
+    }
     if (file == NULL || file == Py_None) {
+        Py_XDECREF(file);
         return 0;
     }
 
-    /* Hold a strong reference to ensure that sys.stderr doesn't go away
-       while we use it */
-    Py_INCREF(file);
     int res = write_unraisable_exc_file(tstate, exc_type, exc_value, exc_tb,
                                         err_msg, obj, file);
     Py_DECREF(file);
@@ -1625,13 +1626,20 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(unraisablehook));
+    PyObject *hook;
+    if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
+        Py_DECREF(hook_args);
+        err_msg_str = NULL;
+        obj = NULL;
+        goto error;
+    }
     if (hook == NULL) {
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1639,11 +1647,13 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
     }
 
     if (hook == Py_None) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
+    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);

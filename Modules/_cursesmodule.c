@@ -3373,17 +3373,19 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        sys_stdout = PySys_GetObject("stdout");
+        sys_stdout = PySys_GetAttrString("stdout");
+        if (sys_stdout == NULL) {
+            return NULL;
+        }
 
-        if (sys_stdout == NULL || sys_stdout == Py_None) {
-            PyErr_SetString(
-                PyCursesError,
-                "lost sys.stdout");
+        if (sys_stdout == Py_None) {
+            PyErr_SetString(PyCursesError, "lost sys.stdout");
+            Py_DECREF(sys_stdout);
             return NULL;
         }
 
         fd = PyObject_AsFileDescriptor(sys_stdout);
-
+        Py_DECREF(sys_stdout);
         if (fd == -1) {
             return NULL;
         }

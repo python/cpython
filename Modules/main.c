@@ -444,16 +444,11 @@ error:
 static int
 pymain_run_interactive_hook(int *exitcode)
 {
-    PyObject *sys, *hook, *result;
-    sys = PyImport_ImportModule("sys");
-    if (sys == NULL) {
+    PyObject *hook, *result;
+    if (PySys_GetOptionalAttrString("__interactivehook__", &hook) < 0) {
         goto error;
     }
-
-    hook = PyObject_GetAttrString(sys, "__interactivehook__");
-    Py_DECREF(sys);
     if (hook == NULL) {
-        PyErr_Clear();
         return 0;
     }
 
