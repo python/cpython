@@ -289,6 +289,136 @@ General Options
 
    .. versionadded:: 3.13
 
+.. cmdoption:: PKG_CONFIG
+
+   Path to ``pkg-config`` utility.
+
+.. cmdoption:: PKG_CONFIG_LIBDIR
+.. cmdoption:: PKG_CONFIG_PATH
+
+   ``pkg-config`` options.
+
+
+C compiler options
+------------------
+
+.. cmdoption:: CC
+
+   C compiler command.
+
+.. cmdoption:: CFLAGS
+
+   C compiler flags.
+
+.. cmdoption:: CPP
+
+   C preprocessor command.
+
+.. cmdoption:: CPPFLAGS
+
+   C preprocessor flags, e.g. :samp:`-I{include_dir}`.
+
+
+Linker options
+--------------
+
+.. cmdoption:: LDFLAGS
+
+   Linker flags, e.g. :samp:`-L{library_directory}`.
+
+.. cmdoption:: LIBS
+
+   Libraries to pass to the linker, e.g. :samp:`-l{library}`.
+
+.. cmdoption:: MACHDEP
+
+   Name for machine-dependent library files.
+
+
+Options for third-party dependencies
+------------------------------------
+
+.. versionadded:: 3.11
+
+.. cmdoption:: BZIP2_CFLAGS
+.. cmdoption:: BZIP2_LIBS
+
+   C compiler and linker flags to link Python to ``libbz2``, used by :mod:`bz2`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: CURSES_CFLAGS
+.. cmdoption:: CURSES_LIBS
+
+   C compiler and linker flags for ``libncurses`` or ``libncursesw``, used by
+   :mod:`curses` module, overriding ``pkg-config``.
+
+.. cmdoption:: GDBM_CFLAGS
+.. cmdoption:: GDBM_LIBS
+
+   C compiler and linker flags for ``gdbm``.
+
+.. cmdoption:: LIBB2_CFLAGS
+.. cmdoption:: LIBB2_LIBS
+
+   C compiler and linker flags for ``libb2`` (:ref:`BLAKE2 <hashlib-blake2>`),
+   used by :mod:`hashlib` module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBEDIT_CFLAGS
+.. cmdoption:: LIBEDIT_LIBS
+
+   C compiler and linker flags for ``libedit``, used by :mod:`readline` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBFFI_CFLAGS
+.. cmdoption:: LIBFFI_LIBS
+
+   C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBLZMA_CFLAGS
+.. cmdoption:: LIBLZMA_LIBS
+
+   C compiler and linker flags for ``liblzma``, used by :mod:`lzma` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBREADLINE_CFLAGS
+.. cmdoption:: LIBREADLINE_LIBS
+
+   C compiler and linker flags for ``libreadline``, used by :mod:`readline`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBSQLITE3_CFLAGS
+.. cmdoption:: LIBSQLITE3_LIBS
+
+   C compiler and linker flags for ``libsqlite3``, used by :mod:`sqlite3`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBUUID_CFLAGS
+.. cmdoption:: LIBUUID_LIBS
+
+   C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: PANEL_CFLAGS
+.. cmdoption:: PANEL_LIBS
+
+   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+
+   C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
+   :mod:`curses.panel` module, overriding ``pkg-config``.
+
+.. cmdoption:: TCLTK_CFLAGS
+.. cmdoption:: TCLTK_LIBS
+
+   C compiler and linker flags for TCLTK, overriding ``pkg-config``.
+
+.. cmdoption:: ZLIB_CFLAGS
+.. cmdoption:: ZLIB_LIBS
+
+   C compiler and linker flags for ``libzlib``, used by :mod:`gzip` module,
+   overriding ``pkg-config``.
+
+
 WebAssembly Options
 -------------------
 
@@ -425,6 +555,19 @@ also be used to improve performance.
    :program:`configure` variables can be defined to override the default set of
    arguments for :program:`llvm-bolt` to instrument and apply BOLT data to
    binaries, respectively.
+
+   .. versionadded:: 3.12
+
+.. cmdoption:: BOLT_APPLY_FLAGS
+
+   Arguments to ``llvm-bolt`` when creating a `BOLT optimized binary
+   <https://github.com/facebookarchive/BOLT>`_.
+
+   .. versionadded:: 3.12
+
+.. cmdoption:: BOLT_INSTRUMENT_FLAGS
+
+   Arguments to ``llvm-bolt`` when instrumenting binaries.
 
    .. versionadded:: 3.12
 
@@ -774,6 +917,12 @@ the version of the cross compiled host Python.
       ac_cv_buggy_getaddrinfo=no
       ac_cv_file__dev_ptmx=yes
       ac_cv_file__dev_ptc=no
+
+.. cmdoption:: HOSTRUNNER
+
+   Program to run CPython for the host platform for cross-compilation.
+
+   .. versionadded:: 3.11
 
 
 Cross compiling example::
