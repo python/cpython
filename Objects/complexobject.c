@@ -940,9 +940,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
                      Py_TYPE(r)->tp_name);
-        if (own_r) {
-            Py_DECREF(r);
-        }
+        assert(!own_r);
         return NULL;
     }
     if (i != NULL) {
@@ -974,20 +972,17 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
            value is (properly) of the builtin complex type. */
         cr = ((PyComplexObject*)r)->cval;
         cr_is_complex = 1;
-        if (own_r) {
-            Py_DECREF(r);
-        }
+        assert(own_r);
+        Py_DECREF(r);
     }
     else {
         /* The "real" part really is entirely real, and contributes
            nothing in the imaginary direction.
            Just treat it as a double. */
         tmp = PyNumber_Float(r);
-        if (own_r) {
-            /* r was a newly created complex number, rather
-               than the original "real" argument. */
-            Py_DECREF(r);
-        }
+        /* r was a newly created complex number, rather
+           than the original "real" argument. */
+        assert(!own_r);
         if (tmp == NULL)
             return NULL;
         assert(PyFloat_Check(tmp));

@@ -338,6 +338,8 @@ class ComplexTest(unittest.TestCase):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
     def test_constructor(self):
+        from test.test_capi.test_getargs import Complex
+
         class NS:
             def __init__(self, value): self.value = value
             def __complex__(self): return self.value
@@ -346,6 +348,8 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, {})
         self.assertRaises(TypeError, complex, NS(1.5))
         self.assertRaises(TypeError, complex, NS(1))
+        self.assertRaises(TypeError, complex, object())
+        self.assertRaises(TypeError, complex, Complex(), object())
 
         self.assertAlmostEqual(complex("1+10j"), 1+10j)
         self.assertAlmostEqual(complex(10), 10+0j)
