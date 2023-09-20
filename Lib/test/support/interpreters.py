@@ -94,7 +94,20 @@ class Interpreter:
     def run(self, src_str, /, *, channels=None):
         """Run the given source code in the interpreter.
 
-        This blocks the current Python thread until done.
+        This is essentially the same as calling the builtin "exec"
+        with this interpreter, using the __dict__ of its __main__
+        module as both globals and locals.
+
+        There is no return value.
+
+        If the code raises an unhandled exception then a RunFailedError
+        is raised, which summarizes the unhandled exception.  The actual
+        exception is discarded because objects cannot be shared between
+        interpreters.
+
+        This blocks the current Python thread until done.  During
+        that time, the previous interpreter is allowed to run
+        in other threads.
         """
         _interpreters.run_string(self._id, src_str, channels)
 
