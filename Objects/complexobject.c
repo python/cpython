@@ -591,7 +591,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     }
 
     assert(PyComplex_Check(v));
-    TO_COMPLEX(v, i);
+    i = ((PyComplexObject*)v)->cval;
 
     if (PyLong_Check(w)) {
         /* Check for 0.0 imaginary part first to avoid the rich
@@ -617,7 +617,7 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
     else if (PyComplex_Check(w)) {
         Py_complex j;
 
-        TO_COMPLEX(w, j);
+        j = ((PyComplexObject*)w)->cval;
         equal = (i.real == j.real && i.imag == j.imag);
     }
     else {
