@@ -180,6 +180,13 @@ class ComplexTest(unittest.TestCase):
             check(2 ** pow, range(1, 101), lambda delta: False, float(i))
         check(2 ** 53, range(-100, 0), lambda delta: True)
 
+    def test_add(self):
+        self.assertAlmostEqual(1j + 1, complex(+1, 1))
+        self.assertAlmostEqual(1j + (-1), complex(-1, 1))
+        self.assertRaises(OverflowError, operator.add, 1j, 10**1000)
+        self.assertRaises(TypeError, operator.add, 1j, None)
+        self.assertRaises(TypeError, operator.add, None, 1j)
+
     def test_mod(self):
         # % is no longer supported on complex numbers
         with self.assertRaises(TypeError):
