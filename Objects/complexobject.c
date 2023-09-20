@@ -153,6 +153,8 @@ _Py_c_pow(Py_complex a, Py_complex b)
     return r;
 }
 
+#define C_EXP_CUTOFF 100
+
 static Py_complex
 c_powu(Py_complex x, long n)
 {
@@ -160,7 +162,9 @@ c_powu(Py_complex x, long n)
     long mask = 1;
     r = c_1;
     p = x;
-    while (mask > 0 && n >= mask) {
+    assert(0 <= n && n <= C_EXP_CUTOFF);
+    while (n >= mask) {
+        assert(mask>0);
         if (n & mask)
             r = _Py_c_prod(r,p);
         mask <<= 1;
@@ -516,7 +520,7 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     errno = 0;
     // Check whether the exponent has a small integer value, and if so use
     // a faster and more accurate algorithm.
-    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= 100.0) {
+    if (b.imag == 0.0 && b.real == floor(b.real) && fabs(b.real) <= C_EXP_CUTOFF) {
         p = c_powi(a, (long)b.real);
     }
     else {
