@@ -396,7 +396,7 @@ Options for third-party dependencies
 .. cmdoption:: LIBUUID_CFLAGS
 .. cmdoption:: LIBUUID_LIBS
 
-   C compiler and linker flags for ``liuuid``, used by :mod:`uuid` module,
+   C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
    overriding ``pkg-config``.
 
 .. cmdoption:: PANEL_CFLAGS
