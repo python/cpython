@@ -23,7 +23,7 @@ SRCDIR = sysconfig.get_config_var('srcdir')
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
-    return "{} file{}".format(count, "s" if count != 1 else "")
+    return f"{count} file{'s' if count != 1 else ''}"
 
 
 def status(message, modal=False, info=None):
@@ -77,7 +77,7 @@ def get_git_remote_default_branch(remote_name):
 
     It is typically called 'main', but may differ
     """
-    cmd = "git remote show {}".format(remote_name).split()
+    cmd = f"git remote show {remote_name}".split()
     env = os.environ.copy()
     env['LANG'] = 'C'
     try:
@@ -164,9 +164,9 @@ def report_modified_files(file_paths):
     if count == 0:
         return n_files_str(count)
     else:
-        lines = ["{}:".format(n_files_str(count))]
+        lines = [f"{n_files_str(count)}:"]
         for path in file_paths:
-            lines.append("  {}".format(path))
+            lines.append(f"  {path}")
         return "\n".join(lines)
 
 
@@ -222,7 +222,7 @@ def normalize_docs_whitespace(file_paths):
                     f.writelines(new_lines)
                 fixed.append(path)
         except Exception as err:
-            print('Cannot fix %s: %s' % (path, err))
+            print(f'Cannot fix {path}: {err}')
     return fixed
 
 
