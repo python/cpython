@@ -1,6 +1,8 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
+
+import _socket
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -329,5 +331,7 @@ UnionType = type(int | str)
 EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
+
+CapsuleType = type(_socket.CAPI)
 
 __all__ = [n for n in globals() if n[:1] != '_']
