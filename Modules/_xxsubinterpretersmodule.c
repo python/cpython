@@ -10,6 +10,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 #include "interpreteridobject.h"
+#include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
 
 #define MODULE_NAME "_xxsubinterpreters"
@@ -332,6 +333,35 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 }
 
 
+/* Python code **************************************************************/
+
+#define RUN_TEXT 1
+
+static const char *
+get_code_str(PyObject *arg, int *flags_p)
+{
+    if (PyUnicode_Check(arg)) {
+        Py_ssize_t size;
+        const char *codestr = PyUnicode_AsUTF8AndSize(arg, &size);
+        if (codestr == NULL) {
+            return NULL;
+        }
+        if (strlen(codestr) != (size_t)size) {
+            PyErr_SetString(PyExc_ValueError,
+                            "source code string cannot contain null bytes");
+            return NULL;
+        }
+        *flags_p = RUN_TEXT;
+        return codestr;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+                        "unsupported code arg");
+        return NULL;
+    }
+}
+
+
 /* interpreter-specific code ************************************************/
 
 static int
@@ -360,7 +390,7 @@ exceptions_init(PyObject *mod)
 
 static int
 _run_script(PyInterpreterState *interp, const char *codestr,
-            _sharedns *shared, _sharedexception *sharedexc)
+            _sharedns *shared, _sharedexception *sharedexc, int flags)
 {
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
         // We skip going through the shared exception.
@@ -387,8 +417,14 @@ _run_script(PyInterpreterState *interp, const char *codestr,
         }
     }
 
-    // Run the string (see PyRun_SimpleStringFlags).
-    PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
+    // Run the script/code/etc.
+    PyObject *result = NULL;
+    if (flags & RUN_TEXT) {
+        result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
+    }
+    else {
+        Py_FatalError("unsupported codestr");
+    }
     Py_DECREF(ns);
     if (result == NULL) {
         goto error;
@@ -417,8 +453,8 @@ error:
 }
 
 static int
-_run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
-                           const char *codestr, PyObject *shareables)
+_run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
+                    const char *codestr, PyObject *shareables, int flags)
 {
     module_state *state = get_module_state(mod);
 
@@ -456,7 +492,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Run the script.
     _sharedexception exc = {NULL, NULL};
-    int result = _run_script(interp, codestr, shared, &exc);
+    int result = _run_script(interp, codestr, shared, &exc, flags);
 
     // Switch back.
     if (save_tstate != NULL) {
@@ -669,12 +705,12 @@ Return the ID of main interpreter.");
 static PyObject *
 interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"id", "script", "shared", NULL};
-    PyObject *id, *code;
+    static char *kwlist[] = {"id", "code", "shared", NULL};
+    PyObject *id, *code_arg;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
                                      "OU|O:" MODULE_NAME ".exec", kwlist,
-                                     &id, &code, &shared)) {
+                                     &id, &code_arg, &shared)) {
         return NULL;
     }
 
@@ -685,19 +721,14 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Extract code.
-    Py_ssize_t size;
-    const char *codestr = PyUnicode_AsUTF8AndSize(code, &size);
+    int flags = 0;
+    const char *codestr = get_code_str(code_arg, &flags);
     if (codestr == NULL) {
-        return NULL;
-    }
-    if (strlen(codestr) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError,
-                        "source code string cannot contain null bytes");
         return NULL;
     }
 
     // Run the code in the interpreter.
-    if (_run_in_interpreter(self, interp, codestr, shared) != 0) {
+    if (_run_in_interpreter(self, interp, codestr, shared, flags) != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
