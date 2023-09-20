@@ -35,7 +35,7 @@ class GrammarVisitor:
 
 class Grammar:
     def __init__(self, rules: Iterable[Rule], metas: Iterable[Tuple[str, Optional[str]]]):
-        # Check of there are repeated rules in "rules"
+        # Check if there are repeated rules in "rules"
         all_rules = {}
         for rule in rules:
             if rule.name in all_rules:
