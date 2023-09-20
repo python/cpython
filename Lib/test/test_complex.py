@@ -212,7 +212,9 @@ class ComplexTest(unittest.TestCase):
     def test_pow(self):
         self.assertAlmostEqual(pow(1+1j, 0+0j), 1.0)
         self.assertAlmostEqual(pow(0+0j, 2+0j), 0.0)
+        self.assertAlmostEqual(pow(0+0j, 2000+0j), 0.0)
         self.assertRaises(ZeroDivisionError, pow, 0+0j, 1j)
+        self.assertRaises(ZeroDivisionError, pow, 0+0j, -1000)
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
