@@ -651,7 +651,8 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
  */
 
 // helper functions for anchor extraction
-const char *_get_segment_str(PyObject *segment_lines, Py_ssize_t lineno, Py_ssize_t *size)
+static const char
+*_get_segment_str(PyObject *segment_lines, Py_ssize_t lineno, Py_ssize_t *size)
 {
     return PyUnicode_AsUTF8AndSize(PyList_GET_ITEM(segment_lines, lineno), size);
 }
