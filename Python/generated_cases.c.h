@@ -4835,12 +4835,7 @@ if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p 
             Py_DECREF(callargs);
             Py_XDECREF(kwargs);
             assert(PEEK(2 + (oparg & 1)) == NULL);
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
-            //ERROR_IF(result == NULL, error);
-            if (result == NULL) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
-                goto error;
-            }
+            if (result == NULL) { STACK_SHRINK(((oparg & 1) ? 1 : 0)); goto pop_3_error; }
             STACK_SHRINK(((oparg & 1) ? 1 : 0));
             STACK_SHRINK(2);
             stack_pointer[-1] = result;

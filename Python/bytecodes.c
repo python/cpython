@@ -3701,12 +3701,7 @@ if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p 
             }
             DECREF_INPUTS();
             assert(PEEK(2 + (oparg & 1)) == NULL);
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
-            //ERROR_IF(result == NULL, error);
-            if (result == NULL) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
-                goto error;
-            }
+            ERROR_IF(result == NULL, error);
             CHECK_EVAL_BREAKER();
         }
 
