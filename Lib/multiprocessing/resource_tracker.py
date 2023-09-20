@@ -15,6 +15,7 @@
 # this resource tracker process, "killall python" would probably leave unlinked
 # resources.
 
+import gc
 import os
 import signal
 import sys
@@ -80,6 +81,13 @@ class ResourceTracker(object):
 
         This can be run from any process.  Usually a child process will use
         the resource created by its parent.'''
+
+        # gh-109593: Reduce the risk of reentrant calls to ensure_running() by
+        # running explicitly a garbage collection. Otherwise, finalizers like
+        # SemLock._cleanup() can make indirectly a reentrant call to
+        # ensure_running().
+        gc.collect()
+
         with self._lock:
             if self._fd is not None:
                 # resource tracker was launched before, is it still running?

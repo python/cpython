@@ -1,0 +1,4 @@
+:mod:`multiprocessing`: Reduce the risk of reentrant calls to
+``ResourceTracker.ensure_running()`` by running explicitly a garbage
+collection, to call pending finalizers, before acquiring the
+``ResourceTracker`` lock.  Patch by Victor Stinner.
