@@ -17,7 +17,7 @@ repos:
         types: [python]
         exclude: Lib/test/tokenizedata/coding20731.py
       - id: trailing-whitespace
-        types_or: [c, python, rst]
+        types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
