@@ -335,30 +335,96 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 
 /* Python code **************************************************************/
 
+static int
+validate_code_object(PyCodeObject *code)
+{
+    if (code->co_argcount > 0
+        || code->co_posonlyargcount > 0
+        || code->co_kwonlyargcount > 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "arguments not supported");
+        return -1;
+    }
+    if (code->co_ncellvars > 0) {
+        PyErr_SetString(PyExc_ValueError, "closures not supported");
+        return -1;
+    }
+    // We trust that no code objects under co_consts have unbound cell vars.
+
+    if (code->co_executors != NULL
+        || code->_co_instrumentation_version > 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "only basic functions are supported");
+        return -1;
+    }
+    if (code->_co_monitoring != NULL) {
+        PyErr_SetString(PyExc_ValueError, "only basic functions are supported");
+        return -1;
+    }
+    if (code->co_extra != NULL) {
+        PyErr_SetString(PyExc_ValueError, "only basic functions are supported");
+        return -1;
+    }
+
+    return 0;
+}
+
 #define RUN_TEXT 1
+#define RUN_CODE 2
 
 static const char *
-get_code_str(PyObject *arg, int *flags_p)
+get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
 {
+    const char *codestr = NULL;
+    Py_ssize_t len = -1;
+    PyObject *bytes_obj = NULL;
+    int flags = 0;
+
     if (PyUnicode_Check(arg)) {
-        Py_ssize_t size;
-        const char *codestr = PyUnicode_AsUTF8AndSize(arg, &size);
+        // XXX Validate that it parses?
+        codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
             return NULL;
         }
-        if (strlen(codestr) != (size_t)size) {
+        if (strlen(codestr) != (size_t)len) {
             PyErr_SetString(PyExc_ValueError,
                             "source code string cannot contain null bytes");
             return NULL;
         }
-        *flags_p = RUN_TEXT;
-        return codestr;
+        flags = RUN_TEXT;
     }
     else {
-        PyErr_SetString(PyExc_TypeError,
-                        "unsupported code arg");
-        return NULL;
+        PyObject *code = arg;
+        if (PyFunction_Check(arg)) {
+            if (PyFunction_GetClosure(arg)) {
+                PyErr_SetString(PyExc_ValueError, "closures not supported");
+                return NULL;
+            }
+            code = PyFunction_GetCode(arg);
+        }
+        else if (!PyCode_Check(arg)) {
+            PyErr_SetString(PyExc_TypeError, "unsupported type");
+            return NULL;
+        }
+        flags = RUN_CODE;
+
+        if (validate_code_object((PyCodeObject *)code) < 0) {
+            return NULL;
+        }
+
+        // Serialize the code object.
+        bytes_obj = PyMarshal_WriteObjectToString(code, Py_MARSHAL_VERSION);
+        if (bytes_obj == NULL) {
+            return NULL;
+        }
+        codestr = PyBytes_AS_STRING(bytes_obj);
+        len = PyBytes_GET_SIZE(bytes_obj);
     }
+
+    *flags_p = flags;
+    *bytes_p = bytes_obj;
+    *len_p = len;
+    return codestr;
 }
 
 
@@ -389,7 +455,8 @@ exceptions_init(PyObject *mod)
 }
 
 static int
-_run_script(PyInterpreterState *interp, const char *codestr,
+_run_script(PyInterpreterState *interp,
+            const char *codestr, Py_ssize_t codestrlen,
             _sharedns *shared, _sharedexception *sharedexc, int flags)
 {
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
@@ -422,8 +489,14 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     if (flags & RUN_TEXT) {
         result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
     }
+    else if (flags & RUN_CODE) {
+        PyObject *code = PyMarshal_ReadObjectFromString(codestr, codestrlen);
+        if (code != NULL) {
+            result = PyEval_EvalCode(code, ns, ns);
+        }
+    }
     else {
-        Py_FatalError("unsupported codestr");
+        Py_UNREACHABLE();
     }
     Py_DECREF(ns);
     if (result == NULL) {
@@ -454,7 +527,8 @@ error:
 
 static int
 _run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
-                    const char *codestr, PyObject *shareables, int flags)
+                    const char *codestr, Py_ssize_t codestrlen,
+                    PyObject *shareables, int flags)
 {
     module_state *state = get_module_state(mod);
 
@@ -492,7 +566,7 @@ _run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Run the script.
     _sharedexception exc = {NULL, NULL};
-    int result = _run_script(interp, codestr, shared, &exc, flags);
+    int result = _run_script(interp, codestr, codestrlen, shared, &exc, flags);
 
     // Switch back.
     if (save_tstate != NULL) {
@@ -709,7 +783,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *id, *code_arg;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O:" MODULE_NAME ".exec", kwlist,
+                                     "OO|O:" MODULE_NAME ".exec", kwlist,
                                      &id, &code_arg, &shared)) {
         return NULL;
     }
@@ -721,26 +795,41 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Extract code.
+    Py_ssize_t codestrlen = -1;
+    PyObject *bytes_obj = NULL;
     int flags = 0;
-    const char *codestr = get_code_str(code_arg, &flags);
+    const char *codestr = get_code_str(code_arg,
+                                       &codestrlen, &bytes_obj, &flags);
     if (codestr == NULL) {
         return NULL;
     }
 
     // Run the code in the interpreter.
-    if (_run_in_interpreter(self, interp, codestr, shared, flags) != 0) {
+    int res = _run_in_interpreter(self, interp, codestr, codestrlen,
+                                  shared, flags);
+    Py_XDECREF(bytes_obj);
+    if (res != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(exec_doc,
-"exec(id, script, shared)\n\
+"exec(id, code, shared)\n\
 \n\
-Execute the provided string in the identified interpreter.\n\
+Execute the provided code in the identified interpreter.\n\
 This is equivalent to running the builtin exec() under the target\n\
 interpreter, using the __dict__ of its __main__ module as both\n\
-globals and locals.");
+globals and locals.\n\
+\n\
+\"code\" may be a string containing the text of a Python script.\n\
+\n\
+Functions (and code objects) are also supported, with some restrictions.\n\
+The code/function must not take any arguments or be a closure\n\
+(i.e. have cell vars).\n\
+\n\
+If a function is provided, its code object is used and all its state\n\
+is ignored, including its __globals__ dict.");
 
 
 static PyObject *
