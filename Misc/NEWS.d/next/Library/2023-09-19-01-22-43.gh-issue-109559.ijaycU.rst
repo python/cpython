@@ -1,1 +1,1 @@
-Update ``unicodedata`` for Unicode 15.1
+Update :mod:`unicodedata` database to Unicode 15.1.0.
