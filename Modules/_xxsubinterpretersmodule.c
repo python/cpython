@@ -667,13 +667,13 @@ Return the ID of main interpreter.");
 
 
 static PyObject *
-interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
+interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "script", "shared", NULL};
     PyObject *id, *code;
     PyObject *shared = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OU|O:run_string", kwlist,
+                                     "OU|O:" MODULE_NAME ".exec", kwlist,
                                      &id, &code, &shared)) {
         return NULL;
     }
@@ -697,18 +697,19 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Run the code in the interpreter.
-    if (_run_script_in_interpreter(self, interp, codestr, shared) != 0) {
+    if (_run_in_interpreter(self, interp, codestr, shared) != 0) {
         return NULL;
     }
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(run_string_doc,
-"run_string(id, script, shared)\n\
+PyDoc_STRVAR(exec_doc,
+"exec(id, script, shared)\n\
 \n\
 Execute the provided string in the identified interpreter.\n\
-\n\
-See PyRun_SimpleStrings.");
+This is equivalent to running the builtin exec() under the target\n\
+interpreter, using the __dict__ of its __main__ module as both\n\
+globals and locals.");
 
 
 static PyObject *
@@ -775,8 +776,8 @@ static PyMethodDef module_functions[] = {
 
     {"is_running",                _PyCFunction_CAST(interp_is_running),
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
-    {"run_string",                _PyCFunction_CAST(interp_run_string),
-     METH_VARARGS | METH_KEYWORDS, run_string_doc},
+    {"exec",                      _PyCFunction_CAST(interp_exec),
+     METH_VARARGS | METH_KEYWORDS, exec_doc},
 
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},

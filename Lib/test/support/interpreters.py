@@ -91,6 +91,7 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
+    # XXX Rename "run" to "exec"?
     def run(self, src_str, /, *, channels=None):
         """Run the given source code in the interpreter.
 
@@ -109,7 +110,7 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.run_string(self._id, src_str, channels)
+        _interpreters.exec(self._id, src_str, channels)
 
 
 def create_channel():
