@@ -207,6 +207,7 @@ def normalize_c_whitespace(file_paths):
 
 ws_re = re.compile(br'\s+(\r?\n)$')
 
+
 @status("Fixing docs whitespace", info=report_modified_files)
 def normalize_docs_whitespace(file_paths):
     fixed = []
@@ -244,6 +245,7 @@ def reported_news(file_paths):
     return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
                for p in file_paths)
 
+
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
     """Check if configure has been regenerated."""
@@ -252,6 +254,7 @@ def regenerated_configure(file_paths):
     else:
         return "not needed"
 
+
 @status("pyconfig.h.in regenerated", modal=True, info=str)
 def regenerated_pyconfig_h_in(file_paths):
     """Check if pyconfig.h.in has been regenerated."""
@@ -259,6 +262,7 @@ def regenerated_pyconfig_h_in(file_paths):
         return "yes" if 'pyconfig.h.in' in file_paths else "no"
     else:
         return "not needed"
+
 
 def ci(pull_request):
     if pull_request == 'false':
@@ -280,6 +284,7 @@ def ci(pull_request):
         print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
         print('(on UNIX you can run `make patchcheck` to make the fixes)')
         sys.exit(1)
+
 
 def main():
     base_branch = get_base_branch()
