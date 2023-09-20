@@ -54,12 +54,14 @@ if os.name == 'posix':
 class ResourceTracker(object):
 
     def __init__(self):
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._fd = None
         self._pid = None
 
     def _stop(self):
         with self._lock:
+            if self._lock._recursion_count() > 1:
+                return
             if self._fd is None:
                 # not running
                 return
@@ -81,6 +83,8 @@ class ResourceTracker(object):
         This can be run from any process.  Usually a child process will use
         the resource created by its parent.'''
         with self._lock:
+            if self._lock._recursion_count() > 1:
+                return
             if self._fd is not None:
                 # resource tracker was launched before, is it still running?
                 if self._check_alive():
