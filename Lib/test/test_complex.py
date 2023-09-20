@@ -109,6 +109,8 @@ class ComplexTest(unittest.TestCase):
                            complex(random(), random()))
 
         self.assertAlmostEqual(complex.__truediv__(2+0j, 1+1j), 1-1j)
+        self.assertRaises(TypeError, operator.truediv, 1j, None)
+        self.assertRaises(TypeError, operator.truediv, None, 1j)
 
         for denom_real, denom_imag in [(0, NAN), (NAN, 0), (NAN, NAN)]:
             z = complex(0, 0) / complex(denom_real, denom_imag)
