@@ -856,22 +856,15 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     PyObject *s_buffer = NULL, *result = NULL;
     Py_ssize_t len;
 
-    if (PyUnicode_Check(v)) {
-        s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
-        if (s_buffer == NULL) {
-            return NULL;
-        }
-        assert(PyUnicode_IS_ASCII(s_buffer));
-        /* Simply get a pointer to existing ASCII characters. */
-        s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        assert(s != NULL);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-            "complex() argument must be a string or a number, not '%.200s'",
-            Py_TYPE(v)->tp_name);
+    assert(PyUnicode_Check(v));
+    s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
+    if (s_buffer == NULL) {
         return NULL;
     }
+    assert(PyUnicode_IS_ASCII(s_buffer));
+    /* Simply get a pointer to existing ASCII characters. */
+    s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
+    assert(s != NULL);
 
     result = _Py_string_to_number_with_underscores(s, len, "complex", v, type,
                                                    complex_from_string_inner);
