@@ -474,7 +474,7 @@ Standard names are defined for the following types:
 
 .. class:: CapsuleType
 
-   The type of :ref:`capsule objects<capsules>`.
+   The type of :ref:`capsule objects <capsules>`.
 
    .. versionadded:: 3.13
 
