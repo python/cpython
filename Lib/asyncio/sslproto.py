@@ -266,6 +266,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
     def __init__(self, loop, app_protocol, sslcontext, waiter,
                  server_side=False, server_hostname=None,
+                 writing_paused=False,
                  call_connection_made=True,
                  ssl_handshake_timeout=None,
                  ssl_shutdown_timeout=None):
@@ -331,7 +332,7 @@ class SSLProtocol(protocols.BufferedProtocol):
 
         # Flow Control
 
-        self._ssl_writing_paused = False
+        self._ssl_writing_paused = writing_paused
 
         self._app_reading_paused = False
 
@@ -341,7 +342,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._set_read_buffer_limits()
         self._eof_received = False
 
-        self._app_writing_paused = False
+        self._app_writing_paused = writing_paused
         self._outgoing_high_water = 0
         self._outgoing_low_water = 0
         self._set_write_buffer_limits()
