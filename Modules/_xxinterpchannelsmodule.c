@@ -42,7 +42,7 @@ _globals (static struct globals):
                     numsendopen (int64_t)
                     numrecvopen (int64_t)
                     send (struct _channelend *):
-                        interp (int64_t)
+                        interpid (int64_t)
                         open (int)
                         next (struct _channelend *)
                     recv (struct _channelend *):
@@ -55,7 +55,7 @@ _globals (static struct globals):
                         data (_PyCrossInterpreterData *):
                             data (void *)
                             obj (PyObject *)
-                            interp (int64_t)
+                            interpid (int64_t)
                             new_object (xid_newobjectfunc)
                             free (xid_freefunc)
                     last (struct _channelitem *):
@@ -269,7 +269,7 @@ wait_for_lock(PyThread_type_lock mutex, PY_TIMEOUT_T timeout)
 typedef struct {
     PyObject_HEAD
     Py_buffer *view;
-    int64_t interp;
+    int64_t interpid;
 } XIBufferViewObject;
 
 static PyObject *
@@ -277,21 +277,21 @@ xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
 {
     assert(data->data != NULL);
     assert(data->obj == NULL);
-    assert(data->interp >= 0);
+    assert(data->interpid >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
     self->view = (Py_buffer *)data->data;
-    self->interp = data->interp;
+    self->interpid = data->interpid;
     return (PyObject *)self;
 }
 
 static void
 xibufferview_dealloc(XIBufferViewObject *self)
 {
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interp);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
     /* If the interpreter is no longer alive then we have problems,
        since other objects may be using the buffer still. */
     assert(interp != NULL);
@@ -913,14 +913,14 @@ _channelqueue_remove(_channelqueue *queue, _channelitem_id_t itemid,
 }
 
 static void
-_channelqueue_drop_interpreter(_channelqueue *queue, int64_t interp)
+_channelqueue_drop_interpreter(_channelqueue *queue, int64_t interpid)
 {
     _channelitem *prev = NULL;
     _channelitem *next = queue->first;
     while (next != NULL) {
         _channelitem *item = next;
         next = item->next;
-        if (item->data->interp == interp) {
+        if (item->data->interpid == interpid) {
             if (prev == NULL) {
                 queue->first = item->next;
             }
@@ -943,12 +943,12 @@ struct _channelend;
 
 typedef struct _channelend {
     struct _channelend *next;
-    int64_t interp;
+    int64_t interpid;
     int open;
 } _channelend;
 
 static _channelend *
-_channelend_new(int64_t interp)
+_channelend_new(int64_t interpid)
 {
     _channelend *end = GLOBAL_MALLOC(_channelend);
     if (end == NULL) {
@@ -956,7 +956,7 @@ _channelend_new(int64_t interp)
         return NULL;
     }
     end->next = NULL;
-    end->interp = interp;
+    end->interpid = interpid;
     end->open = 1;
     return end;
 }
@@ -978,12 +978,12 @@ _channelend_free_all(_channelend *end)
 }
 
 static _channelend *
-_channelend_find(_channelend *first, int64_t interp, _channelend **pprev)
+_channelend_find(_channelend *first, int64_t interpid, _channelend **pprev)
 {
     _channelend *prev = NULL;
     _channelend *end = first;
     while (end != NULL) {
-        if (end->interp == interp) {
+        if (end->interpid == interpid) {
             break;
         }
         prev = end;
@@ -1040,10 +1040,10 @@ _channelends_free(_channelends *ends)
 }
 
 static _channelend *
-_channelends_add(_channelends *ends, _channelend *prev, int64_t interp,
+_channelends_add(_channelends *ends, _channelend *prev, int64_t interpid,
                  int send)
 {
-    _channelend *end = _channelend_new(interp);
+    _channelend *end = _channelend_new(interpid);
     if (end == NULL) {
         return NULL;
     }
@@ -1069,11 +1069,11 @@ _channelends_add(_channelends *ends, _channelend *prev, int64_t interp,
 }
 
 static int
-_channelends_associate(_channelends *ends, int64_t interp, int send)
+_channelends_associate(_channelends *ends, int64_t interpid, int send)
 {
     _channelend *prev;
     _channelend *end = _channelend_find(send ? ends->send : ends->recv,
-                                        interp, &prev);
+                                        interpid, &prev);
     if (end != NULL) {
         if (!end->open) {
             return ERR_CHANNEL_CLOSED;
@@ -1081,7 +1081,7 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
         // already associated
         return 0;
     }
-    if (_channelends_add(ends, prev, interp, send) == NULL) {
+    if (_channelends_add(ends, prev, interpid, send) == NULL) {
         return -1;
     }
     return 0;
@@ -1112,15 +1112,15 @@ _channelends_close_end(_channelends *ends, _channelend *end, int send)
 }
 
 static int
-_channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
+_channelends_close_interpreter(_channelends *ends, int64_t interpid, int which)
 {
     _channelend *prev;
     _channelend *end;
     if (which >= 0) {  // send/both
-        end = _channelend_find(ends->send, interp, &prev);
+        end = _channelend_find(ends->send, interpid, &prev);
         if (end == NULL) {
             // never associated so add it
-            end = _channelends_add(ends, prev, interp, 1);
+            end = _channelends_add(ends, prev, interpid, 1);
             if (end == NULL) {
                 return -1;
             }
@@ -1128,10 +1128,10 @@ _channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
         _channelends_close_end(ends, end, 1);
     }
     if (which <= 0) {  // recv/both
-        end = _channelend_find(ends->recv, interp, &prev);
+        end = _channelend_find(ends->recv, interpid, &prev);
         if (end == NULL) {
             // never associated so add it
-            end = _channelends_add(ends, prev, interp, 0);
+            end = _channelends_add(ends, prev, interpid, 0);
             if (end == NULL) {
                 return -1;
             }
@@ -1142,14 +1142,14 @@ _channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
 }
 
 static void
-_channelends_release_interpreter(_channelends *ends, int64_t interp)
+_channelends_release_interpreter(_channelends *ends, int64_t interpid)
 {
     _channelend *end;
-    end = _channelend_find(ends->send, interp, NULL);
+    end = _channelend_find(ends->send, interpid, NULL);
     if (end != NULL) {
         _channelends_close_end(ends, end, 1);
     }
-    end = _channelend_find(ends->recv, interp, NULL);
+    end = _channelend_find(ends->recv, interpid, NULL);
     if (end != NULL) {
         _channelends_close_end(ends, end, 0);
     }
@@ -1227,7 +1227,7 @@ _channel_free(_PyChannelState *chan)
 }
 
 static int
-_channel_add(_PyChannelState *chan, int64_t interp,
+_channel_add(_PyChannelState *chan, int64_t interpid,
              _PyCrossInterpreterData *data, _waiting_t *waiting)
 {
     int res = -1;
@@ -1237,7 +1237,7 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         res = ERR_CHANNEL_CLOSED;
         goto done;
     }
-    if (_channelends_associate(chan->ends, interp, 1) != 0) {
+    if (_channelends_associate(chan->ends, interpid, 1) != 0) {
         res = ERR_CHANNEL_INTERP_CLOSED;
         goto done;
     }
@@ -1254,7 +1254,7 @@ done:
 }
 
 static int
-_channel_next(_PyChannelState *chan, int64_t interp,
+_channel_next(_PyChannelState *chan, int64_t interpid,
               _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
 {
     int err = 0;
@@ -1264,7 +1264,7 @@ _channel_next(_PyChannelState *chan, int64_t interp,
         err = ERR_CHANNEL_CLOSED;
         goto done;
     }
-    if (_channelends_associate(chan->ends, interp, 0) != 0) {
+    if (_channelends_associate(chan->ends, interpid, 0) != 0) {
         err = ERR_CHANNEL_INTERP_CLOSED;
         goto done;
     }
@@ -1305,7 +1305,7 @@ _channel_remove(_PyChannelState *chan, _channelitem_id_t itemid)
 }
 
 static int
-_channel_close_interpreter(_PyChannelState *chan, int64_t interp, int end)
+_channel_close_interpreter(_PyChannelState *chan, int64_t interpid, int end)
 {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
 
@@ -1315,7 +1315,7 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int end)
         goto done;
     }
 
-    if (_channelends_close_interpreter(chan->ends, interp, end) != 0) {
+    if (_channelends_close_interpreter(chan->ends, interpid, end) != 0) {
         goto done;
     }
     chan->open = _channelends_is_open(chan->ends);
@@ -1328,12 +1328,12 @@ done:
 }
 
 static void
-_channel_release_interpreter(_PyChannelState *chan, int64_t interp)
+_channel_release_interpreter(_PyChannelState *chan, int64_t interpid)
 {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
 
-    _channelqueue_drop_interpreter(chan->queue, interp);
-    _channelends_release_interpreter(chan->ends, interp);
+    _channelqueue_drop_interpreter(chan->queue, interpid);
+    _channelends_release_interpreter(chan->ends, interpid);
     chan->open = _channelends_is_open(chan->ends);
 
     PyThread_release_lock(chan->mutex);
@@ -1714,14 +1714,14 @@ done:
 }
 
 static void
-_channels_release_interpreter(_channels *channels, int64_t interp)
+_channels_release_interpreter(_channels *channels, int64_t interpid)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
     _channelref *ref = channels->head;
     for (; ref != NULL; ref = ref->next) {
         if (ref->chan != NULL) {
-            _channel_release_interpreter(ref->chan, interp);
+            _channel_release_interpreter(ref->chan, interpid);
         }
     }
 
@@ -2061,7 +2061,7 @@ channel_close(_channels *channels, int64_t cid, int end, int force)
 // Return true if the identified interpreter is associated
 // with the given end of the channel.
 static int
-channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
+channel_is_associated(_channels *channels, int64_t cid, int64_t interpid,
                        int send)
 {
     _PyChannelState *chan = NULL;
@@ -2074,7 +2074,7 @@ channel_is_associated(_channels *channels, int64_t cid, int64_t interp,
     }
 
     _channelend *end = _channelend_find(send ? chan->ends->send : chan->ends->recv,
-                                        interp, NULL);
+                                        interpid, NULL);
 
     return (end != NULL && end->open);
 }
