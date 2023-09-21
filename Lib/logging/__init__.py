@@ -956,15 +956,13 @@ class Handler(Filterer):
         """
         Acquire the I/O thread lock.
         """
-        if self.lock:
-            self.lock.acquire()
+        self.lock.acquire()
 
     def release(self):
         """
         Release the I/O thread lock.
         """
-        if self.lock:
-            self.lock.release()
+        self.lock.release()
 
     def setLevel(self, level):
         """
@@ -1010,11 +1008,8 @@ class Handler(Filterer):
         if isinstance(rv, LogRecord):
             record = rv
         if rv:
-            self.acquire()
-            try:
+            with self.lock:
                 self.emit(record)
-            finally:
-                self.release()
         return rv
 
     def setFormatter(self, fmt):
@@ -1122,12 +1117,9 @@ class StreamHandler(Handler):
         """
         Flushes the stream.
         """
-        self.acquire()
-        try:
+        with self.lock:
             if self.stream and hasattr(self.stream, "flush"):
                 self.stream.flush()
-        finally:
-            self.release()
 
     def emit(self, record):
         """
@@ -1163,12 +1155,9 @@ class StreamHandler(Handler):
             result = None
         else:
             result = self.stream
-            self.acquire()
-            try:
+            with self.lock:
                 self.flush()
                 self.stream = stream
-            finally:
-                self.release()
         return result
 
     def __repr__(self):
@@ -1218,8 +1207,7 @@ class FileHandler(StreamHandler):
         """
         Closes the stream.
         """
-        self.acquire()
-        try:
+        with self.lock:
             try:
                 if self.stream:
                     try:
@@ -1235,8 +1223,6 @@ class FileHandler(StreamHandler):
                 # Also see Issue #42378: we also rely on
                 # self._closed being set to True there
                 StreamHandler.close(self)
-        finally:
-            self.release()
 
     def _open(self):
         """
