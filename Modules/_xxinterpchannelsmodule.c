@@ -1431,6 +1431,7 @@ _channelref_find(_channelref *first, int64_t cid, _channelref **pprev)
     return ref;
 }
 
+
 typedef struct _channels {
     PyThread_type_lock mutex;
     _channelref *head;
