@@ -1700,6 +1700,7 @@ config_init_cpu_count(PyConfig *config)
             config->cpu_count = cpu_count;
         }
     }
+
     const wchar_t *xoption = config_get_xoption(config, L"cpu_count");
     if (xoption) {
         int cpu_count = -1;
