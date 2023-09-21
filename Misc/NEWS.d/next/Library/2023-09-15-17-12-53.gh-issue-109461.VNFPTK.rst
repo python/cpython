@@ -1,1 +1,1 @@
-logging: Use a context manager for lock acquisition.
+:mod:`logging`: Use a context manager for lock acquisition.
