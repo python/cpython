@@ -168,7 +168,7 @@ os
 
 * :func:`cpu_count` can be overrided  through the new
   environment variable :envvar:`PYTHONCPUCOUNT`, the new command-line option
-  :option:`-X cpu_count={n}`. This option is useful for users who need to limit 
+  :option:`-X cpu_count={n}`. This option is useful for users who need to limit
   CPU resources of a container system.(Contributed by Donghee Na in :gh:`109595`)
 
 pathlib
