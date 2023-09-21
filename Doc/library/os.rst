@@ -5166,7 +5166,7 @@ Miscellaneous System Information
 
    .. versionchanged:: 3.13
       If :samp:`-X cpu_count={n}` is given or :envvar:`PYTHONCPUCOUNT` is set,
-      :func:`cpu_count` will return the overrided value *n*.
+      :func:`cpu_count` returns the overrided value *n*.
 
 
 .. function:: getloadavg()
