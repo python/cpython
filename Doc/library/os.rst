@@ -5165,7 +5165,7 @@ Miscellaneous System Information
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.13
-      if :samp:`-X cpu_count={n}` is given or :envvar:`PYTHONCPUCOUNT` is set,
+      If :samp:`-X cpu_count={n}` is given or :envvar:`PYTHONCPUCOUNT` is set,
       :func:`cpu_count` will return the overrided value *n*.
 
 
