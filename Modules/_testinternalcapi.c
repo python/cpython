@@ -10,7 +10,6 @@
 #undef NDEBUG
 
 #include "Python.h"
-#include "pycore_atomic_funcs.h"  // _Py_atomic_int_get()
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_bytesobject.h"   // _PyBytes_Find()
 #include "pycore_ceval.h"         // _PyEval_AddPendingCall()
@@ -345,17 +344,6 @@ static PyObject *
 test_reset_path_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(arg))
 {
     _PyPathConfig_ClearGlobal();
-    Py_RETURN_NONE;
-}
-
-
-static PyObject*
-test_atomic_funcs(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    // Test _Py_atomic_size_get() and _Py_atomic_size_set()
-    Py_ssize_t var = 1;
-    _Py_atomic_size_set(&var, 2);
-    assert(_Py_atomic_size_get(&var) == 2);
     Py_RETURN_NONE;
 }
 
@@ -1488,7 +1476,6 @@ static PyMethodDef module_functions[] = {
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
-    {"test_atomic_funcs", test_atomic_funcs, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"test_bytes_find", test_bytes_find, METH_NOARGS},
     {"normalize_path", normalize_path, METH_O, NULL},
