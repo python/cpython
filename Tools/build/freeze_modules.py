@@ -28,7 +28,6 @@ MAKEFILE = os.path.join(ROOT_DIR, 'Makefile.pre.in')
 PCBUILD_PROJECT = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj')
 PCBUILD_FILTERS = os.path.join(ROOT_DIR, 'PCbuild', '_freeze_module.vcxproj.filters')
 PCBUILD_PYTHONCORE = os.path.join(ROOT_DIR, 'PCbuild', 'pythoncore.vcxproj')
-PCBUILD_MAPPINGS = os.path.join(ROOT_DIR, 'PCbuild', DEEPFREEZE_MAPPING_FNAME)
 
 
 OS_PATH = 'ntpath' if os.name == 'nt' else 'posixpath'
@@ -647,7 +646,8 @@ def regen_pcbuild(modules):
     projlines = []
     filterlines = []
     corelines = []
-    deepfreezerules = [f'\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "$(PySourcePath)PCbuild\\{DEEPFREEZE_MAPPING_FNAME}" -o "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\' />']
+    deepfreezemappingsfile = f'$(PySourcePath)PCbuild\\{DEEPFREEZE_MAPPING_FNAME}'
+    deepfreezerules = [f'\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "{deepfreezemappingsfile}" -o "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\' />']
     deepfreezemappings = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
@@ -662,7 +662,7 @@ def regen_pcbuild(modules):
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
         filterlines.append('    </None>')
-        deepfreezemappings.append(f'{src.frozenfile}:{src.frozenid}\n')
+        deepfreezemappings.append(f'$(PySourcePath)\\{header}:{src.frozenid}\n')
 
     corelines.append(f'    <ClCompile Include="..\\Python\\deepfreeze\\deepfreeze.c" />')
 
@@ -681,15 +681,32 @@ def regen_pcbuild(modules):
         lines = infile.readlines()
         lines = replace_block(
             lines,
+            '<!-- BEGIN freeze mappings -->',
+            '<!-- END freeze mappings -->',
+            deepfreezemappings,
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
+            '<!-- BEGIN freeze mapping file -->',
+            '<!-- END freeze mapping file -->',
+            [deepfreezemappingsfile, ],
+            PCBUILD_PROJECT,
+        )
+        outfile.writelines(lines)
+    with updating_file_with_tmpfile(PCBUILD_PROJECT) as (infile, outfile):
+        lines = infile.readlines()
+        lines = replace_block(
+            lines,
             '<!-- BEGIN deepfreeze rule -->',
             '<!-- END deepfreeze rule -->',
             deepfreezerules,
             PCBUILD_PROJECT,
         )
         outfile.writelines(lines)
-    print(f'# Updating {os.path.relpath(PCBUILD_MAPPINGS)}')
-    with open(PCBUILD_MAPPINGS, "wt") as outfile:
-        outfile.writelines(deepfreezemappings)
     print(f'# Updating {os.path.relpath(PCBUILD_FILTERS)}')
     with updating_file_with_tmpfile(PCBUILD_FILTERS) as (infile, outfile):
         lines = infile.readlines()
