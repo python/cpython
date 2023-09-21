@@ -110,6 +110,9 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *);
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable);
+
 #define Py_BEGIN_ALLOW_THREADS { \
                         PyThreadState *_save; \
                         _save = PyEval_SaveThread();
