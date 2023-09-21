@@ -2099,6 +2099,16 @@ struct channel_info {
         // 1: closed; -1: closing
         int closed;
         struct {
+            Py_ssize_t nsend_only;  // not released
+            Py_ssize_t nsend_only_released;
+            Py_ssize_t nrecv_only;  // not released
+            Py_ssize_t nrecv_only_released;
+            Py_ssize_t nboth;  // not released
+            Py_ssize_t nboth_released;
+            Py_ssize_t nboth_send_released;
+            Py_ssize_t nboth_recv_released;
+        } all;
+        struct {
             // 1: associated; -1: released
             int send;
             int recv;
@@ -2152,20 +2162,68 @@ _channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
     // Get the number of queued objects.
     info->count = chan->queue->count;
 
-    // Get the current ends status.
-    _channelend *send = _channelend_find(chan->ends->send, interpid, NULL);
-    if (send == NULL) {
-        info->status.cur.send = 0;
+    // Get the ends statuses.
+    assert(info->status.cur.send == 0);
+    assert(info->status.cur.recv == 0);
+    _channelend *send = chan->ends->send;
+    while (send != NULL) {
+        if (send->interpid == interpid) {
+            info->status.cur.send = send->open ? 1 : -1;
+        }
+
+        if (send->open) {
+            info->status.all.nsend_only += 1;
+        }
+        else {
+            info->status.all.nsend_only_released += 1;
+        }
+        send = send->next;
     }
-    else {
-        info->status.cur.send = send->open ? 1 : -1;
-    }
-    _channelend *recv = _channelend_find(chan->ends->recv, interpid, NULL);
-    if (recv == NULL) {
-        info->status.cur.recv = 0;
-    }
-    else {
-        info->status.cur.recv = recv->open ? 1 : -1;
+    _channelend *recv = chan->ends->recv;
+    while (recv != NULL) {
+        if (recv->interpid == interpid) {
+            info->status.cur.recv = recv->open ? 1 : -1;
+        }
+
+        // XXX This is O(n*n).  Why do we have 2 linked lists?
+        _channelend *send = chan->ends->send;
+        while (send != NULL) {
+            if (send->interpid == recv->interpid) {
+                break;
+            }
+            send = send->next;
+        }
+        if (send == NULL) {
+            if (recv->open) {
+                info->status.all.nrecv_only += 1;
+            }
+            else {
+                info->status.all.nrecv_only_released += 1;
+            }
+        }
+        else {
+            if (recv->open) {
+                if (send->open) {
+                    info->status.all.nboth += 1;
+                    info->status.all.nsend_only -= 1;
+                }
+                else {
+                    info->status.all.nboth_recv_released += 1;
+                    info->status.all.nsend_only_released -= 1;
+                }
+            }
+            else {
+                if (send->open) {
+                    info->status.all.nboth_send_released += 1;
+                    info->status.all.nsend_only -= 1;
+                }
+                else {
+                    info->status.all.nboth_released += 1;
+                    info->status.all.nsend_only_released -= 1;
+                }
+            }
+        }
+        recv = recv->next;
     }
 
 finally:
@@ -2183,6 +2241,23 @@ static PyStructSequence_Field channel_info_fields[] = {
     {"closing", "send is closed, recv is non-empty"},
     {"closed", "both ends are closed"},
     {"count", "queued objects"},
+
+    {"num_interp_send", "interpreters bound to the send end"},
+    {"num_interp_send_released",
+     "interpreters bound to the send end and released"},
+
+    {"num_interp_recv", "interpreters bound to the send end"},
+    {"num_interp_recv_released",
+     "interpreters bound to the send end and released"},
+
+    {"num_interp_both", "interpreters bound to both ends"},
+    {"num_interp_both_released",
+     "interpreters bound to both ends and released_from_both"},
+    {"num_interp_both_send_released",
+     "interpreters bound to both ends and released_from_the send end"},
+    {"num_interp_both_recv_released",
+     "interpreters bound to both ends and released_from_the recv end"},
+
     {"send_associated", "current interpreter is bound to the send end"},
     {"send_released", "current interpreter *was* bound to the send end"},
     {"recv_associated", "current interpreter is bound to the recv end"},
@@ -2228,6 +2303,14 @@ new_channel_info(PyObject *mod, struct channel_info *info)
     SET_BOOL(info->status.closed == -1);
     SET_BOOL(info->status.closed == 1);
     SET_COUNT(info->count);
+    SET_COUNT(info->status.all.nsend_only);
+    SET_COUNT(info->status.all.nsend_only_released);
+    SET_COUNT(info->status.all.nrecv_only);
+    SET_COUNT(info->status.all.nrecv_only_released);
+    SET_COUNT(info->status.all.nboth);
+    SET_COUNT(info->status.all.nboth_released);
+    SET_COUNT(info->status.all.nboth_send_released);
+    SET_COUNT(info->status.all.nboth_recv_released);
     SET_BOOL(info->status.cur.send == 1);
     SET_BOOL(info->status.cur.send == -1);
     SET_BOOL(info->status.cur.recv == 1);
