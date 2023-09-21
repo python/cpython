@@ -2328,7 +2328,7 @@ done:
 static PyTypeObject * _get_current_channelend_type(int end);
 
 static PyObject *
-_channel_from_cid(PyObject *cid, int end)
+_channelobj_from_cid(PyObject *cid, int end)
 {
     PyObject *cls = (PyObject *)_get_current_channelend_type(end);
     if (cls == NULL) {
@@ -2383,7 +2383,7 @@ _channelid_from_xid(_PyCrossInterpreterData *data)
     }
 
     /* Try returning a high-level channel end but fall back to the ID. */
-    PyObject *chan = _channel_from_cid(cid, xid->end);
+    PyObject *chan = _channelobj_from_cid(cid, xid->end);
     if (chan == NULL) {
         PyErr_Clear();
         goto done;
