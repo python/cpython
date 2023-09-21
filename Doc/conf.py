@@ -66,7 +66,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '4.2'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
