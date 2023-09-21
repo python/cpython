@@ -277,13 +277,36 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
-In addition, if ``M.__test__`` exists and "is true", it must be a dict, and each
+In addition, there are cases when you want tests to be part of a module but, not part
+of the help text which requires that the tests should not be placed in the docstring.
+Doctest looks for a module level variable called ``__test__`` and uses it to locate other
+tests. If ``M.__test__`` exists and "is true", it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
 ``M.__test__`` appears with name ::
 
    <name of M>.__test__.K
+
+Simple example is to place this block of code inside at the top :file:`example.py`.
+
+.. code-block:: none
+
+   __test__ = {
+       'numbers': """
+   >>> factorial(6)
+   720
+
+   >>> [factorial(n) for n in range(6)]
+   [1, 1, 2, 6, 24, 120]
+   """
+   }
+
+The value of ``example.__test__["numbers"]`` value will also be treated as
+docstring and all the tests inside it will be run. It is also
+important to note that the value can also be mapped to a Function,
+class object or module. If the value is a class, Function or module, doctest
+searches them recursively for docstrings, which are then scanned for tests.
 
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
