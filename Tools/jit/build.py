@@ -225,14 +225,14 @@ class ObjectParser:
         self.code_size = 0
 
     async def parse(self):
-        process = await asyncio.create_subprocess_exec(self.dumper, self.path, "--disassemble", "--reloc", stdout=subprocess.PIPE)
+        process = await asyncio.create_subprocess_exec(self.dumper, self.path, "--disassemble", "--reloc", stdout=subprocess.PIPE, cwd=ROOT)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
         if process.returncode:
             raise RuntimeError(f"{self.dumper} exited with {process.returncode}")
         disassembly = [line.lstrip().expandtabs() for line in stdout.decode().splitlines()]
         disassembly = [line for line in disassembly if re.match(r"[0-9a-f]+[: ]", line)]
-        process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE)
+        process = await asyncio.create_subprocess_exec(self.reader, *self._ARGS, self.path, stdout=subprocess.PIPE, cwd=ROOT)
         stdout, stderr = await process.communicate()
         assert stderr is None, stderr
         if process.returncode:
@@ -824,10 +824,9 @@ class ObjectParserELF(ObjectParser):
 CFLAGS = [
     f"-DPy_BUILD_CORE",
     f"-D_PyJIT_ACTIVE",
-    f"-I{ROOT}",  # XXX
     f"-I{INCLUDE}",
     f"-I{INCLUDE_INTERNAL}",
-    f"-I{PC}",  # XXX
+    f"-I{PYTHON}",
     f"-O3",
     f"-Wno-unreachable-code",
     f"-Wno-unused-but-set-variable",
@@ -892,14 +891,14 @@ class Compiler:
             o = pathlib.Path(tempdir, f"{opname}.o").resolve()
             async with self._semaphore:
                 self._stderr(f"Compiling {opname}")
-                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c, cwd=ROOT)
                 stdout, stderr = await process.communicate()
                 assert stdout is None, stdout
                 assert stderr is None, stderr
                 if process.returncode:
                     raise RuntimeError(f"{self._clang} exited with {process.returncode}")
                 self._use_ghccc(ll)
-                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll)
+                process = await asyncio.create_subprocess_exec(self._clang, *CFLAGS, "-c", "-o", o, ll, cwd=ROOT)
                 stdout, stderr = await process.communicate()
                 assert stdout is None, stdout
                 assert stderr is None, stderr
@@ -1046,34 +1045,24 @@ class Compiler:
         lines.append(f"")
         return "\n".join(lines)
 
+PLATFORMS = [
+    (r"aarch64-.*-linux-gnu", (False, ObjectParserELF, "", [f"-I{ROOT}"])),
+    (r"aarch64-apple-darwin.*", (False, ObjectParserMachO, "_", [f"-I{ROOT}"])),
+    (r"i686-pc-windows-msvc", (True, ObjectParserCOFF, "_", [f"-I{PC}"])),
+    (r"x86_64-.*-linux-gnu", (True, ObjectParserELF, "", [f"-I{ROOT}"])),
+    (r"x86_64-apple-darwin.*", (True, ObjectParserMachO, "_", [f"-I{ROOT}"])),
+    (r"x86_64-pc-windows-msvc", (True, ObjectParserCOFF, "", [f"-I{PC}"])),
+]
+
 if __name__ == "__main__":
     host = sys.argv[1]
-    if re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        ghccc = False
-        parser = ObjectParserELF
-        symbol_prefix = ""
-    elif re.fullmatch(r"aarch64-apple-darwin.*", host):
-        ghccc = False
-        parser = ObjectParserMachO
-        symbol_prefix = "_"
-    elif re.fullmatch(r"i686-pc-windows-msvc", host):
-        ghccc = True
-        parser = ObjectParserCOFF
-        symbol_prefix = "_"
-    elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        ghccc = True
-        parser = ObjectParserELF
-        symbol_prefix = ""
-    elif re.fullmatch(r"x86_64-apple-darwin.*", host):
-        ghccc = True
-        parser = ObjectParserMachO
-        symbol_prefix = "_"
-    elif re.fullmatch(r"x86_64-pc-windows-msvc", host):
-        ghccc = True
-        parser = ObjectParserCOFF
-        symbol_prefix = ""
+    for pattern, configuration in PLATFORMS:
+        if re.fullmatch(pattern, host):
+            ghccc, parser, symbol_prefix, cflags = configuration
+            break
     else:
         raise NotImplementedError(host)
+    CFLAGS.extend(cflags)
     CFLAGS.append("-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG")
     CFLAGS.append(f"--target={host}")
     engine = Compiler(verbose=True, ghccc=ghccc, parser=parser, symbol_prefix=symbol_prefix)

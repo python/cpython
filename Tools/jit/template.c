@@ -16,7 +16,9 @@
 #include "pycore_uops.h"
 
 #define TIER_TWO 2
-#include "Python/ceval_macros.h"
+#include "ceval_macros.h"
+
+#include "opcode.h"
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
@@ -51,7 +53,7 @@ _jit_entry(_PyInterpreterFrame *frame, PyObject **stack_pointer,
     int pc = -1;  // XXX
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
-#include "Python/executor_cases.c.h"
+#include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
