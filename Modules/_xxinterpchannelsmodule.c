@@ -1156,7 +1156,7 @@ _channelends_release_interpreter(_channelends *ends, int64_t interpid)
 }
 
 static void
-_channelends_close_all(_channelends *ends, int which, int force)
+_channelends_release_all(_channelends *ends, int which, int force)
 {
     // XXX Handle the ends.
     // XXX Handle force is True.
@@ -1340,7 +1340,7 @@ _channel_release_interpreter(_PyChannelState *chan, int64_t interpid)
 }
 
 static int
-_channel_close_all(_PyChannelState *chan, int end, int force)
+_channel_release_all(_PyChannelState *chan, int end, int force)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1359,7 +1359,7 @@ _channel_close_all(_PyChannelState *chan, int end, int force)
 
     // We *could* also just leave these in place, since we've marked
     // the channel as closed already.
-    _channelends_close_all(chan->ends, end, force);
+    _channelends_release_all(chan->ends, end, force);
 
     res = 0;
 done:
@@ -1565,7 +1565,7 @@ _channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan,
         goto done;
     }
     else {
-        int err = _channel_close_all(ref->chan, end, force);
+        int err = _channel_release_all(ref->chan, end, force);
         if (err != 0) {
             if (end == CHANNEL_SEND && err == ERR_CHANNEL_NOT_EMPTY) {
                 if (ref->chan->closing != NULL) {
