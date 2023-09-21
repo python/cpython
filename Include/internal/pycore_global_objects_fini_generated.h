@@ -784,6 +784,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(aclose));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(add_done_callback));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(affinity));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(after_in_child));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(after_in_parent));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(aggregate_class));

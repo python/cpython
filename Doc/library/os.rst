@@ -5153,14 +5153,21 @@ Miscellaneous System Information
    .. availability:: Unix.
 
 
-.. function:: cpu_count()
+.. function:: cpu_count(*, affinity=False)
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the system. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
+   If *affinity* is true, return the number of logical CPUs the current process
+   can use. If the :func:`sched_getaffinity` function is available,
+   return ``len(os.sched_getaffinity(0))``. Otherwise, return
+   ``cpu_count(affinity=False)``.
 
+   Linux control groups, *cgroups*, are not taken in account to get the number
+   of logical CPUs.
+
+   .. versionchanged:: 3.13
+      Add *affinity* parameter.
 
    .. versionadded:: 3.4
 

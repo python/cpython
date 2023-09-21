@@ -10422,25 +10422,68 @@ exit:
 #endif /* (defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL)) */
 
 PyDoc_STRVAR(os_cpu_count__doc__,
-"cpu_count($module, /)\n"
+"cpu_count($module, /, *, affinity=False)\n"
 "--\n"
 "\n"
 "Return the number of CPUs in the system; return None if indeterminable.\n"
 "\n"
-"This number is not equivalent to the number of CPUs the current process can\n"
-"use.  The number of usable CPUs can be obtained with\n"
-"``len(os.sched_getaffinity(0))``");
+"If \'affinity\' is true, return the number of CPUs the current process can use.");
 
 #define OS_CPU_COUNT_METHODDEF    \
-    {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
+    {"cpu_count", _PyCFunction_CAST(os_cpu_count), METH_FASTCALL|METH_KEYWORDS, os_cpu_count__doc__},
 
 static PyObject *
-os_cpu_count_impl(PyObject *module);
+os_cpu_count_impl(PyObject *module, int affinity);
 
 static PyObject *
-os_cpu_count(PyObject *module, PyObject *Py_UNUSED(ignored))
+os_cpu_count(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    return os_cpu_count_impl(module);
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(affinity), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"affinity", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "cpu_count",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int affinity = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    affinity = PyObject_IsTrue(args[0]);
+    if (affinity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = os_cpu_count_impl(module, affinity);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(os_get_inheritable__doc__,
@@ -11988,4 +12031,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1dd5aa7495cd6e3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c176e219ae3343de input=a9049054013a1b77]*/

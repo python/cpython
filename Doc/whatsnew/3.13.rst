@@ -163,6 +163,13 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
+os
+--
+
+* Add *affinity* parameter to :func:`os.cpu_count` to get the number of CPUs
+  the current process can use.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 pathlib
 -------
 

@@ -782,6 +782,7 @@ extern "C" {
     INIT_ID(aclose), \
     INIT_ID(add), \
     INIT_ID(add_done_callback), \
+    INIT_ID(affinity), \
     INIT_ID(after_in_child), \
     INIT_ID(after_in_parent), \
     INIT_ID(aggregate_class), \

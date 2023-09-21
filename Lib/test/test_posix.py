@@ -1205,6 +1205,7 @@ class PosixTester(unittest.TestCase):
     @requires_sched_affinity
     def test_sched_setaffinity(self):
         mask = posix.sched_getaffinity(0)
+        self.addCleanup(posix.sched_setaffinity, 0, list(mask))
         if len(mask) > 1:
             # Empty masks are forbidden
             mask.pop()
