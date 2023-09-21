@@ -345,10 +345,10 @@ The following error handlers can be used with all Python
 +-------------------------+-----------------------------------------------+
 | ``'backslashreplace'``  | Replace with backslashed escape sequences.    |
 |                         | On encoding, use hexadecimal form of Unicode  |
-|                         | code point with formats :samp:`\x{hh}`        |
-|                         | :samp:`\u{xxxx}` :samp:`\U{xxxxxxxx}`.        |
+|                         | code point with formats :samp:`\\x{hh}`       |
+|                         | :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.      |
 |                         | On decoding, use hexadecimal form of byte     |
-|                         | value with format :samp:`\x{hh}`.             |
+|                         | value with format :samp:`\\x{hh}`.            |
 |                         | Implemented in                                |
 |                         | :func:`backslashreplace_errors`.              |
 +-------------------------+-----------------------------------------------+
@@ -480,8 +480,9 @@ functions:
 
    Malformed data is replaced by a backslashed escape sequence.
    On encoding, use the hexadecimal form of Unicode code point with formats
-   :samp:`\x{hh}` :samp:`\u{xxxx}` :samp:`\U{xxxxxxxx}`. On decoding, use the hexadecimal form of
-   byte value with format :samp:`\x{hh}`.
+   :samp:`\\x{hh}` :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.
+   On decoding, use the hexadecimal form of
+   byte value with format :samp:`\\x{hh}`.
 
    .. versionchanged:: 3.5
       Works with decoding and translating.
@@ -1348,9 +1349,9 @@ encodings.
 |                    |         | supported.                |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
-|                    |         | :samp:`\u{XXXX}` and      |
-|                    |         | :samp:`\U{XXXXXXXX}`` for |
-|                    |         | other code points.        |
+|                    |         | :samp:`\\u{XXXX}` and     |
+|                    |         | :samp:`\\U{XXXXXXXX}``    |
+|                    |         | for other code points.    |
 |                    |         | Existing                  |
 |                    |         | backslashes are not       |
 |                    |         | escaped in any way.       |
