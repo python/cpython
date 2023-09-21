@@ -339,7 +339,7 @@ int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
             return 0;
         }
         trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                   code_arena->code_size, co);
+                                   perf_code_arena->code_size, co);
         return _PyCode_SetExtra((PyObject *)co, extra_code_index,
                          (void *)new_trampoline);
     }
