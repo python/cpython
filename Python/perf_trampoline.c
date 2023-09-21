@@ -465,7 +465,7 @@ _PyPerfTrampoline_Fini(void)
 #endif
     return 0;
 }
-	
+
 int
 PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable){
 #ifdef PY_HAVE_PERF_TRAMPOLINE
