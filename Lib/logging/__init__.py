@@ -233,7 +233,6 @@ def _acquireLock():
     Acquire the module-level lock for serializing access to shared data.
 
     This should be released with _releaseLock().
-    This should be released with _releaseLock().
     """
     try:
         _lock.acquire()
