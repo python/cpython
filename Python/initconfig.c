@@ -1716,7 +1716,8 @@ config_init_cpu_count(PyConfig *config)
     return _PyStatus_OK();
 
 error:
-    return _PyStatus_ERR("-X cpu_count=n option: n is missing or an invalid number");
+    return _PyStatus_ERR("-X cpu_count=n option: n is missing or an invalid number, ");
+                         "n must be greater than 0");    
 }
 
 static PyStatus
