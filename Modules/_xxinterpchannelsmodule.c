@@ -1142,7 +1142,7 @@ _channelends_close_interpreter(_channelends *ends, int64_t interp, int which)
 }
 
 static void
-_channelends_drop_interpreter(_channelends *ends, int64_t interp)
+_channelends_release_interpreter(_channelends *ends, int64_t interp)
 {
     _channelend *end;
     end = _channelend_find(ends->send, interp, NULL);
@@ -1328,12 +1328,12 @@ done:
 }
 
 static void
-_channel_drop_interpreter(_PyChannelState *chan, int64_t interp)
+_channel_release_interpreter(_PyChannelState *chan, int64_t interp)
 {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
 
     _channelqueue_drop_interpreter(chan->queue, interp);
-    _channelends_drop_interpreter(chan->ends, interp);
+    _channelends_release_interpreter(chan->ends, interp);
     chan->open = _channelends_is_open(chan->ends);
 
     PyThread_release_lock(chan->mutex);
@@ -1667,7 +1667,7 @@ done:
 }
 
 static void
-_channels_drop_id_object(_channels *channels, int64_t cid)
+_channels_release_cid_object(_channels *channels, int64_t cid)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
@@ -1714,14 +1714,14 @@ done:
 }
 
 static void
-_channels_drop_interpreter(_channels *channels, int64_t interp)
+_channels_release_interpreter(_channels *channels, int64_t interp)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
     _channelref *ref = channels->head;
     for (; ref != NULL; ref = ref->next) {
         if (ref->chan != NULL) {
-            _channel_drop_interpreter(ref->chan, interp);
+            _channel_release_interpreter(ref->chan, interp);
         }
     }
 
@@ -2233,7 +2233,7 @@ channelid_dealloc(PyObject *self)
     // like we do for _abc._abc_data?
     Py_DECREF(tp);
 
-    _channels_drop_id_object(channels, cid);
+    _channels_release_cid_object(channels, cid);
 }
 
 static PyObject *
@@ -2666,7 +2666,7 @@ clear_interpreter(void *data)
     PyInterpreterState *interp = (PyInterpreterState *)data;
     assert(interp == _get_current_interp());
     int64_t interpid = PyInterpreterState_GetID(interp);
-    _channels_drop_interpreter(&_globals.channels, interpid);
+    _channels_release_interpreter(&_globals.channels, interpid);
 }
 
 
