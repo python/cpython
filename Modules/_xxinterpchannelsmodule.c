@@ -1319,6 +1319,7 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interp, int end)
         goto done;
     }
     chan->open = _channelends_is_open(chan->ends);
+    // XXX Activate the "closing" mechanism?
 
     res = 0;
 done:
@@ -1947,6 +1948,7 @@ finally:
 }
 
 // Pop the next object off the channel.  Fail if empty.
+// XXX Support a "wait" mutex?
 static int
 channel_recv(_channels *channels, int64_t id, PyObject **res)
 {
