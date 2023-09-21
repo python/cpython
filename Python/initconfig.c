@@ -636,6 +636,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
     assert(config->int_max_str_digits >= 0);
+    // cpu_count can be -1 if the user doesn't override it.
+    assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
 #ifdef Py_STATS
@@ -1074,6 +1076,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
     SET_ITEM_INT(int_max_str_digits);
+    SET_ITEM_INT(cpu_count);
 #ifdef Py_STATS
     SET_ITEM_INT(_pystats);
 #endif
@@ -1384,6 +1387,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
     GET_INT(int_max_str_digits);
+    GET_INT(cpu_count);
 #ifdef Py_STATS
     GET_UINT(_pystats);
 #endif
