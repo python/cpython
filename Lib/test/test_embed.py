@@ -895,7 +895,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
             'int_max_str_digits': 31337,
-            'cpu_count': 4,
+            'cpu_count': 4321,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
