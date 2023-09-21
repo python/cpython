@@ -130,7 +130,10 @@ The following implementation-specific options are available:\n\
 \n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
-    The default is sys.int_info.default_max_str_digits.  0 disables."
+    The default is sys.int_info.default_max_str_digits.  0 disables.\n\
+\n\
+-X cpu_count=number: limit cpu count of os.cpu_count.\n\
+    This helps for users who need to limit cpu resource of the container system."
 
 #ifdef Py_STATS
 "\n\
