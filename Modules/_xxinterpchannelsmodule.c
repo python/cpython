@@ -223,8 +223,8 @@ static PyTypeObject *
 add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
              struct xid_class_registry *classes)
 {
-    PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
-                NULL, mod, spec, NULL);
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
+                mod, spec, NULL);
     if (cls == NULL) {
         return NULL;
     }
@@ -2266,7 +2266,7 @@ static PyStructSequence_Field channel_info_fields[] = {
 };
 
 static PyStructSequence_Desc channel_info_desc = {
-    .name = "ChannelInfo",
+    .name = MODULE_NAME ".ChannelInfo",
     .doc = channel_info_doc,
     .fields = channel_info_fields,
     .n_in_sequence = 8,
