@@ -448,6 +448,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_hash_seed': 0,
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
+        'cpu_count': -1,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -894,6 +895,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
             'int_max_str_digits': 31337,
+            'cpu_count': -1,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
@@ -966,6 +968,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
             'int_max_str_digits': 4567,
+            'cpu_count': -1,
         }
         if Py_STATS:
             config['_pystats'] = 1
