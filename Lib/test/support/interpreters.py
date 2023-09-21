@@ -161,6 +161,10 @@ class _ChannelEnd:
     def id(self):
         return self._id
 
+    @property
+    def _info(self):
+        return _channels.get_info(self._id)
+
 
 _NOT_SET = object()
 

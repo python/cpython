@@ -402,6 +402,7 @@ typedef struct {
     PyTypeObject *recv_channel_type;
 
     /* heap types */
+    PyTypeObject *ChannelInfoType;
     PyTypeObject *ChannelIDType;
     PyTypeObject *XIBufferViewType;
 
@@ -441,6 +442,7 @@ static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
     /* heap types */
+    Py_VISIT(state->ChannelInfoType);
     Py_VISIT(state->ChannelIDType);
     Py_VISIT(state->XIBufferViewType);
 
@@ -457,10 +459,12 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static int
 clear_module_state(module_state *state)
 {
+    /* external types */
     Py_CLEAR(state->send_channel_type);
     Py_CLEAR(state->recv_channel_type);
 
     /* heap types */
+    Py_CLEAR(state->ChannelInfoType);
     if (state->ChannelIDType != NULL) {
         (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     }
@@ -2088,6 +2092,117 @@ channel_is_associated(_channels *channels, int64_t cid, int64_t interpid,
 }
 
 
+/* channel info */
+
+struct channel_info {
+    struct {
+        // 1: closed; -1: closing
+        int closed;
+    } status;
+    Py_ssize_t count;
+};
+
+static int
+_channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
+{
+    int err = 0;
+    *info = (struct channel_info){0};
+
+    // Hold the global lock until we're done.
+    PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
+
+    // Find the channel.
+    _channelref *ref = _channelref_find(channels->head, cid, NULL);
+    if (ref == NULL) {
+        err = ERR_CHANNEL_NOT_FOUND;
+        goto finally;
+    }
+    _channel_state *chan = ref->chan;
+
+    // Check if open.
+    if (chan == NULL) {
+        info->status.closed = 1;
+        goto finally;
+    }
+    if (!chan->open) {
+        assert(chan->queue->count == 0);
+        info->status.closed = 1;
+        goto finally;
+    }
+    if (chan->closing != NULL) {
+        assert(chan->queue->count > 0);
+        info->status.closed = -1;
+    }
+    else {
+        info->status.closed = 0;
+    }
+
+    // Get the number of queued objects.
+    info->count = chan->queue->count;
+
+finally:
+    PyThread_release_lock(channels->mutex);
+    return err;
+}
+
+PyDoc_STRVAR(channel_info_doc,
+"ChannelInfo\n\
+\n\
+A named tuple of a channel's state.");
+
+static PyStructSequence_Field channel_info_fields[] = {
+    {"open", "both ends are open"},
+    {"closing", "send is closed, recv is non-empty"},
+    {"closed", "both ends are closed"},
+    {"count", "queued objects"},
+    {0}
+};
+
+static PyStructSequence_Desc channel_info_desc = {
+    .name = "ChannelInfo",
+    .doc = channel_info_doc,
+    .fields = channel_info_fields,
+    .n_in_sequence = 4,
+};
+
+static PyObject *
+new_channel_info(PyObject *mod, struct channel_info *info)
+{
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    assert(state->ChannelInfoType != NULL);
+    PyObject *self = PyStructSequence_New(state->ChannelInfoType);
+    if (self == NULL) {
+        return NULL;
+    }
+
+    int pos = 0;
+#define SET_BOOL(val) \
+    PyStructSequence_SET_ITEM(self, pos++, \
+                              Py_NewRef(val ? Py_True : Py_False))
+#define SET_COUNT(val) \
+    do { \
+        PyObject *obj = PyLong_FromLongLong(val); \
+        if (obj == NULL) { \
+            Py_CLEAR(info); \
+            return NULL; \
+        } \
+        PyStructSequence_SET_ITEM(self, pos++, obj); \
+    } while(0)
+    SET_BOOL(info->status.closed == 0);
+    SET_BOOL(info->status.closed == -1);
+    SET_BOOL(info->status.closed == 1);
+    SET_COUNT(info->count);
+#undef SET_COUNT
+#undef SET_BOOL
+    assert(!PyErr_Occurred());
+    return self;
+}
+
+
 /* ChannelID class */
 
 typedef struct channelid {
@@ -3080,6 +3195,33 @@ Close the channel for the current interpreter.  'send' and 'recv'\n\
 ends are closed.  Closing an already closed end is a noop.");
 
 static PyObject *
+channelsmod_get_info(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", NULL};
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&:_get_info", kwlist,
+                                     channel_id_converter, &cid_data)) {
+        return NULL;
+    }
+    int64_t cid = cid_data.cid;
+
+    struct channel_info info;
+    int err = _channel_get_info(&_globals.channels, cid, &info);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    return new_channel_info(self, &info);
+}
+
+PyDoc_STRVAR(channelsmod_get_info_doc,
+"get_info(cid)\n\
+\n\
+Return details about the channel.");
+
+static PyObject *
 channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     module_state *state = get_module_state(self);
@@ -3143,6 +3285,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channelsmod_close_doc},
     {"release",                    _PyCFunction_CAST(channelsmod_release),
      METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
+    {"get_info",                   _PyCFunction_CAST(channelsmod_get_info),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_get_info_doc},
     {"_channel_id",                _PyCFunction_CAST(channelsmod__channel_id),
      METH_VARARGS | METH_KEYWORDS, NULL},
     {"_register_end_types",        _PyCFunction_CAST(channelsmod__register_end_types),
@@ -3179,6 +3323,15 @@ module_exec(PyObject *mod)
 
     /* Add other types */
 
+    // ChannelInfo
+    state->ChannelInfoType = PyStructSequence_NewType(&channel_info_desc);
+    if (state->ChannelInfoType == NULL) {
+        goto error;
+    }
+    if (PyModule_AddType(mod, state->ChannelInfoType) < 0) {
+        goto error;
+    }
+
     // ChannelID
     state->ChannelIDType = add_new_type(
             mod, &channelid_typespec, _channelid_shared, xid_classes);
@@ -3186,12 +3339,14 @@ module_exec(PyObject *mod)
         goto error;
     }
 
+    // XIBufferView
     state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL,
                                            xid_classes);
     if (state->XIBufferViewType == NULL) {
         goto error;
     }
 
+    // Register external types.
     if (register_builtin_xid_types(xid_classes) < 0) {
         goto error;
     }
