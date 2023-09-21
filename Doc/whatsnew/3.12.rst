@@ -98,7 +98,7 @@ Improved Error Messages
 
 * Modules from the standard library are now potentially suggested as part of
   the error messages displayed by the interpreter when a :exc:`NameError` is
-  raised to the top level. Contributed by Pablo Galindo in :gh:`98254`.
+  raised to the top level. (Contributed by Pablo Galindo in :gh:`98254`.)
 
     >>> sys.version_info
     Traceback (most recent call last):
@@ -109,7 +109,7 @@ Improved Error Messages
   Now if a :exc:`NameError` is raised in a method and the instance has an
   attribute that's exactly equal to the name in the exception, the suggestion
   will include ``self.<NAME>`` instead of the closest match in the method
-  scope. Contributed by Pablo Galindo in :gh:`99139`.
+  scope. (Contributed by Pablo Galindo in :gh:`99139`.)
 
     >>> class A:
     ...    def __init__(self):
@@ -117,7 +117,7 @@ Improved Error Messages
     ...
     ...    def foo(self):
     ...        somethin = blech
-
+    ...
     >>> A().foo()
     Traceback (most recent call last):
       File "<stdin>", line 1
@@ -125,9 +125,8 @@ Improved Error Messages
                    ^^^^^
     NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
 
-
 * Improve the :exc:`SyntaxError` error message when the user types ``import x
-  from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
+  from y`` instead of ``from y import x``. (Contributed by Pablo Galindo in :gh:`98931`.)
 
     >>> import a.y.z from b.y.z
     Traceback (most recent call last):
@@ -138,7 +137,7 @@ Improved Error Messages
 
 * :exc:`ImportError` exceptions raised from failed ``from <module> import
   <name>`` statements now include suggestions for the value of ``<name>`` based on the
-  available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
+  available names in ``<module>``. (Contributed by Pablo Galindo in :gh:`91058`.)
 
     >>> from collections import chainmap
     Traceback (most recent call last):
@@ -154,12 +153,13 @@ New Features
 PEP 701: Syntactic formalization of f-strings
 ---------------------------------------------
 
-:pep:`701` lifts some restrictions on the usage of f-strings. Expression components
-inside f-strings can now be any valid Python expression including backslashes,
-unicode escaped sequences, multi-line expressions, comments and strings reusing the
-same quote as the containing f-string. Let's cover these in detail:
+:pep:`701` lifts some restrictions on the usage of :term:`f-strings <f-string>`.
+Expression components inside f-strings can now be any valid Python expression,
+including strings reusing the same quote as the containing f-string,
+multi-line expressions, comments, backslashes, and unicode escape sequences.
+Let's cover these in detail:
 
-* Quote reuse: in Python 3.11, reusing the same quotes as the containing f-string
+* Quote reuse: in Python 3.11, reusing the same quotes as the enclosing f-string
   raises a :exc:`SyntaxError`, forcing the user to either use other available
   quotes (like using double quotes or triple quotes if the f-string uses single
   quotes). In Python 3.12, you can now do things like this:
@@ -182,11 +182,12 @@ same quote as the containing f-string. Let's cover these in detail:
     >>> f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"
     '2'
 
-* Multi-line expressions and comments: In Python 3.11, f-strings expressions
-  must be defined in a single line even if outside f-strings expressions could
-  span multiple lines (like literal lists being defined over multiple lines),
-  making them harder to read. In Python 3.12 you can now define expressions
-  spanning multiple lines and include comments on them:
+* Multi-line expressions and comments: In Python 3.11, f-string expressions
+  must be defined in a single line, even if the expression within the f-string
+  could normally span multiple lines
+  (like literal lists being defined over multiple lines),
+  making them harder to read. In Python 3.12 you can now define f-strings
+  spanning multiple lines, and add inline comments:
 
     >>> f"This is the playlist: {", ".join([
     ...     'Take me back to Eden',  # My, my, those eyes like fire
@@ -196,10 +197,10 @@ same quote as the containing f-string. Let's cover these in detail:
     'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
 
 * Backslashes and unicode characters: before Python 3.12 f-string expressions
-  couldn't contain any ``\`` character. This also affected unicode escaped
-  sequences (such as ``\N{snowman}``) as these contain the ``\N`` part that
-  previously could not be part of expression components of f-strings. Now, you
-  can define expressions like this:
+  couldn't contain any ``\`` character. This also affected unicode :ref:`escape
+  sequences <escape-sequences>` (such as ``\N{snowman}``) as these contain
+  the ``\N`` part that previously could not be part of expression components of
+  f-strings. Now, you can define expressions like this:
 
     >>> print(f"This is the playlist: {"\n".join(songs)}")
     This is the playlist: Take me back to Eden
@@ -211,7 +212,7 @@ same quote as the containing f-string. Let's cover these in detail:
 See :pep:`701` for more details.
 
 As a positive side-effect of how this feature has been implemented (by parsing f-strings
-with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+with :pep:`the PEG parser <617>`, now error messages for f-strings are more precise
 and include the exact location of the error. For example, in Python 3.11, the following
 f-string raises a :exc:`SyntaxError`:
 
@@ -246,14 +247,12 @@ PEP 709: Comprehension inlining
 
 Dictionary, list, and set comprehensions are now inlined, rather than creating a
 new single-use function object for each execution of the comprehension. This
-speeds up execution of a comprehension by up to 2x.
+speeds up execution of a comprehension by up to two times.
+See :pep:`709` for further details.
 
-Comprehension iteration variables remain isolated; they don't overwrite a
+Comprehension iteration variables remain isolated and don't overwrite a
 variable of the same name in the outer scope, nor are they visible after the
-comprehension. This isolation is now maintained via stack/locals manipulation,
-not via separate function scope.
-
-Inlining does result in a few visible behavior changes:
+comprehension. Inlining does result in a few visible behavior changes:
 
 * There is no longer a separate frame for the comprehension in tracebacks,
   and tracing/profiling no longer shows the comprehension as a function call.
@@ -270,7 +269,7 @@ Inlining does result in a few visible behavior changes:
   create a list of keys to iterate over: ``keys = list(locals()); [k for k in
   keys]``.
 
-Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.
+(Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.)
 
 .. _whatsnew312-pep688:
 
@@ -333,7 +332,7 @@ See  :mod:`sys.monitoring` for details.
 New Features Related to Type Hints
 ==================================
 
-This section covers major changes affecting :pep:`484` type hints and
+This section covers major changes affecting :pep:`type hints <484>` and
 the :mod:`typing` module.
 
 .. _whatsnew312-pep692:
@@ -345,7 +344,7 @@ Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
 for valid annotations only in cases where all of the ``**kwargs`` were of the
 same type.
 
-This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+:pep:`692` specifies a more precise way of typing ``**kwargs`` by relying on
 typed dictionaries::
 
    from typing import TypedDict, Unpack
@@ -388,6 +387,8 @@ Example::
      @override  # type checker error: does not override Base.get_color
      def get_colour(self) -> str:
        return "red"
+
+See :pep:`698` for more details.
 
 (Contributed by Steven Troxler in :gh:`101561`.)
 
@@ -434,8 +435,8 @@ parameters with bounds or constraints::
 
 The value of type aliases and the bound and constraints of type variables
 created through this syntax are evaluated only on demand (see
-:ref:`lazy-evaluation`). This means type aliases are able to refer to other
-types defined later in the file.
+:ref:`lazy evaluation <lazy-evaluation>`). This means type aliases are able to
+refer to other types defined later in the file.
 
 Type parameters declared through a type parameter list are visible within the
 scope of the declaration and any nested scopes, but not in the outer scope. For
