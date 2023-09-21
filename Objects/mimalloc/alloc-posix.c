@@ -10,7 +10,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // for convenience and used when overriding these functions.
 // ------------------------------------------------------------------------
 #include "mimalloc.h"
-#include "mimalloc-internal.h"
+#include "mimalloc/internal.h"
 
 // ------------------------------------------------------
 // Posix & Unix functions definitions
@@ -56,7 +56,8 @@ int mi_posix_memalign(void** p, size_t alignment, size_t size) mi_attr_noexcept 
   // Note: The spec dictates we should not modify `*p` on an error. (issue#27)
   // <http://man7.org/linux/man-pages/man3/posix_memalign.3.html>
   if (p == NULL) return EINVAL;
-  if (alignment % sizeof(void*) != 0) return EINVAL;                   // natural alignment
+  if ((alignment % sizeof(void*)) != 0) return EINVAL;                 // natural alignment
+  // it is also required that alignment is a power of 2 and > 0; this is checked in `mi_malloc_aligned`
   if (alignment==0 || !_mi_is_power_of_two(alignment)) return EINVAL;  // not a power of 2
   void* q = mi_malloc_aligned(size, alignment);
   if (q==NULL && size != 0) return ENOMEM;
@@ -149,7 +150,7 @@ int mi_dupenv_s(char** buf, size_t* size, const char* name) mi_attr_noexcept {
   else {
     *buf = mi_strdup(p);
     if (*buf==NULL) return ENOMEM;
-    if (size != NULL) *size = strlen(p);
+    if (size != NULL) *size = _mi_strlen(p);
   }
   return 0;
 }

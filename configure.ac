@@ -6593,6 +6593,7 @@ SRCDIRS="\
   Modules/expat \
   Objects \
   Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
   Parser/tokenizer \
   Parser/lexer \

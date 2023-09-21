@@ -860,8 +860,8 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
-MIMALLOC_OBJS
 WITH_MIMALLOC
+MIMALLOC_OBJS
 MIMALLOC_HEADERS
 GDBM_LIBS
 GDBM_CFLAGS
@@ -16887,7 +16887,7 @@ printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
-  MIMALLOC_HEADERS='$(MIMALLOC_OBJS)'
+  MIMALLOC_OBJS='$(MIMALLOC_OBJS)'
 
 fi
 
@@ -26809,6 +26809,7 @@ SRCDIRS="\
   Modules/expat \
   Objects \
   Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
   Parser/tokenizer \
   Parser/lexer \

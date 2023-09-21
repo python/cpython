@@ -156,9 +156,10 @@
     <ClCompile Include="..\Objects\mimalloc\options.c" />
     <ClCompile Include="..\Objects\mimalloc\os.c" />
     <ClCompile Include="..\Objects\mimalloc\page.c" />
+    <ClCompile Include="..\Objects\mimalloc\prim\prim.c" />
     <ClCompile Include="..\Objects\mimalloc\random.c" />
     <ClCompile Include="..\Objects\mimalloc\segment.c" />
-    <ClCompile Include="..\Objects\mimalloc\segment-cache.c" />
+    <ClCompile Include="..\Objects\mimalloc\segment-map.c" />
     <ClCompile Include="..\Objects\mimalloc\stats.c" />
     <ClCompile Include="..\Objects\moduleobject.c" />
     <ClCompile Include="..\Objects\namespaceobject.c" />

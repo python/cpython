@@ -798,16 +798,19 @@
     <ClInclude Include="..\Include\mimalloc\mimalloc.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc-atomic.h">
+    <ClInclude Include="..\Include\mimalloc\mimalloc\atomic.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc-internal.h">
+    <ClInclude Include="..\Include\mimalloc\mimalloc\internal.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc-track.h">
+    <ClInclude Include="..\Include\mimalloc\mimalloc\prim.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc-types.h">
+    <ClInclude Include="..\Include\mimalloc\mimalloc\track.h">
+      <Filter>Include\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\mimalloc\mimalloc\types.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
@@ -1157,13 +1160,16 @@
     <ClCompile Include="..\Objects\mimalloc\page.c">
       <Filter>Objects\mimalloc</Filter>
     </ClCompile>
+    <ClCompile Include="..\Objects\mimalloc\prim\prim.c">
+      <Filter>Objects\mimalloc</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\mimalloc\random.c">
       <Filter>Objects\mimalloc</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\mimalloc\segment.c">
       <Filter>Objects\mimalloc</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment-cache.c">
+    <ClCompile Include="..\Objects\mimalloc\segment-map.c">
       <Filter>Objects\mimalloc</Filter>
     </ClCompile>
     <ClCompile Include="..\Objects\mimalloc\stats.c">

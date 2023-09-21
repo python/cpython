@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2021, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2023, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -8,9 +8,20 @@ terms of the MIT license. A copy of the license can be found in the file
 #ifndef MIMALLOC_TYPES_H
 #define MIMALLOC_TYPES_H
 
+// --------------------------------------------------------------------------
+// This file contains the main type definitions for mimalloc:
+// mi_heap_t      : all data for a thread-local heap, contains
+//                  lists of all managed heap pages.
+// mi_segment_t   : a larger chunk of memory (32GiB) from where pages
+//                  are allocated.
+// mi_page_t      : a mimalloc page (usually 64KiB or 512KiB) from
+//                  where objects are allocated.
+// --------------------------------------------------------------------------
+
+
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
-#include "mimalloc-atomic.h"  // _Atomic
+#include "mimalloc/atomic.h"  // _Atomic
 
 #ifdef _MSC_VER
 #pragma warning(disable:4214) // bitfield is not int
@@ -29,8 +40,10 @@ terms of the MIT license. A copy of the license can be found in the file
 // Define NDEBUG in the release version to disable assertions.
 // #define NDEBUG
 
-// Define MI_VALGRIND to enable valgrind support
-// #define MI_VALGRIND 1
+// Define MI_TRACK_<tool> to enable tracking support
+// #define MI_TRACK_VALGRIND 1
+// #define MI_TRACK_ASAN     1
+// #define MI_TRACK_ETW      1
 
 // Define MI_STAT as 1 to maintain statistics; set it to 2 to have detailed statistics (but costs some performance).
 // #define MI_STAT 1
@@ -58,9 +71,14 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 // Reserve extra padding at the end of each block to be more resilient against heap block overflows.
-// The padding can detect byte-precise buffer overflow on free.
-#if !defined(MI_PADDING) && (MI_DEBUG>=1 || MI_VALGRIND)
+// The padding can detect buffer overflow on free.
+#if !defined(MI_PADDING) && (MI_SECURE>=3 || MI_DEBUG>=1 || (MI_TRACK_VALGRIND || MI_TRACK_ASAN || MI_TRACK_ETW))
 #define MI_PADDING  1
+#endif
+
+// Check padding bytes; allows byte-precise buffer overflow detection
+#if !defined(MI_PADDING_CHECK) && MI_PADDING && (MI_SECURE>=3 || MI_DEBUG>=1)
+#define MI_PADDING_CHECK 1
 #endif
 
 
@@ -154,7 +172,7 @@ typedef int32_t  mi_ssize_t;
 // Derived constants
 #define MI_SEGMENT_SIZE                   (MI_ZU(1)<<MI_SEGMENT_SHIFT)
 #define MI_SEGMENT_ALIGN                  MI_SEGMENT_SIZE
-#define MI_SEGMENT_MASK                   (MI_SEGMENT_ALIGN - 1)
+#define MI_SEGMENT_MASK                   ((uintptr_t)(MI_SEGMENT_ALIGN - 1))
 #define MI_SEGMENT_SLICE_SIZE             (MI_ZU(1)<< MI_SEGMENT_SLICE_SHIFT)
 #define MI_SLICES_PER_SEGMENT             (MI_SEGMENT_SIZE / MI_SEGMENT_SLICE_SIZE) // 1024
 
@@ -273,16 +291,15 @@ typedef uintptr_t mi_thread_free_t;
 typedef struct mi_page_s {
   // "owned" by the segment
   uint32_t              slice_count;       // slices in this page (0 if not a page)
-  uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)
-  uint8_t               is_reset : 1;      // `true` if the page memory was reset
+  uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)  
   uint8_t               is_committed : 1;  // `true` if the page virtual memory is committed
-  uint8_t               is_zero_init : 1;  // `true` if the page was zero initialized
+  uint8_t               is_zero_init : 1;  // `true` if the page was initially zero initialized
 
   // layout like this to optimize access in `mi_malloc` and `mi_free`
   uint16_t              capacity;          // number of blocks committed, must be the first field, see `segment.c:page_clear`
   uint16_t              reserved;          // number of blocks reserved in memory
   mi_page_flags_t       flags;             // `in_full` and `has_aligned` flags (8 bits)
-  uint8_t               is_zero : 1;       // `true` if the blocks in the free list are zero initialized
+  uint8_t               free_is_zero : 1;  // `true` if the blocks in the free list are zero initialized
   uint8_t               retire_expire : 7; // expiration count for retired blocks
 
   mi_block_t*           free;              // list of available free blocks (`malloc` allocates from this list)
@@ -290,8 +307,8 @@ typedef struct mi_page_s {
   uint32_t              xblock_size;       // size available in each block (always `>0`)
   mi_block_t*           local_free;        // list of deferred free blocks by this thread (migrates to `free`)
 
-  #ifdef MI_ENCODE_FREELIST
-  uintptr_t             keys[2];           // two random keys to encode the free lists (see `_mi_block_next`)
+  #if (MI_ENCODE_FREELIST || MI_PADDING)
+  uintptr_t             keys[2];           // two random keys to encode the free lists (see `_mi_block_next`) or padding canary
   #endif
 
   _Atomic(mi_thread_free_t) xthread_free;  // list of deferred free blocks freed by other threads
@@ -307,6 +324,10 @@ typedef struct mi_page_s {
 } mi_page_t;
 
 
+
+// ------------------------------------------------------
+// Mimalloc segments contain mimalloc pages
+// ------------------------------------------------------
 
 typedef enum mi_page_kind_e {
   MI_PAGE_SMALL,    // small blocks go into 64KiB pages inside a segment
@@ -332,7 +353,7 @@ typedef enum mi_segment_kind_e {
 // is still tracked in fine-grained MI_COMMIT_SIZE chunks)
 // ------------------------------------------------------
 
-#define MI_MINIMAL_COMMIT_SIZE      (16*MI_SEGMENT_SLICE_SIZE)           // 1MiB
+#define MI_MINIMAL_COMMIT_SIZE      (1*MI_SEGMENT_SLICE_SIZE)            
 #define MI_COMMIT_SIZE              (MI_SEGMENT_SLICE_SIZE)              // 64KiB
 #define MI_COMMIT_MASK_BITS         (MI_SEGMENT_SIZE / MI_COMMIT_SIZE)  
 #define MI_COMMIT_MASK_FIELD_BITS    MI_SIZE_BITS
@@ -350,20 +371,57 @@ typedef mi_page_t  mi_slice_t;
 typedef int64_t    mi_msecs_t;
 
 
+// Memory can reside in arena's, direct OS allocated, or statically allocated. The memid keeps track of this.
+typedef enum mi_memkind_e {
+  MI_MEM_NONE,      // not allocated
+  MI_MEM_EXTERNAL,  // not owned by mimalloc but provided externally (via `mi_manage_os_memory` for example)
+  MI_MEM_STATIC,    // allocated in a static area and should not be freed (for arena meta data for example)
+  MI_MEM_OS,        // allocated from the OS
+  MI_MEM_OS_HUGE,   // allocated as huge os pages
+  MI_MEM_OS_REMAP,  // allocated in a remapable area (i.e. using `mremap`)
+  MI_MEM_ARENA      // allocated from an arena (the usual case)
+} mi_memkind_t;
+
+static inline bool mi_memkind_is_os(mi_memkind_t memkind) {
+  return (memkind >= MI_MEM_OS && memkind <= MI_MEM_OS_REMAP);
+}
+
+typedef struct mi_memid_os_info {
+  void*         base;               // actual base address of the block (used for offset aligned allocations)
+  size_t        alignment;          // alignment at allocation
+} mi_memid_os_info_t;
+
+typedef struct mi_memid_arena_info {
+  size_t        block_index;        // index in the arena
+  mi_arena_id_t id;                 // arena id (>= 1)
+  bool          is_exclusive;       // the arena can only be used for specific arena allocations
+} mi_memid_arena_info_t;
+
+typedef struct mi_memid_s {
+  union {
+    mi_memid_os_info_t    os;       // only used for MI_MEM_OS
+    mi_memid_arena_info_t arena;    // only used for MI_MEM_ARENA
+  } mem;
+  bool          is_pinned;          // `true` if we cannot decommit/reset/protect in this memory (e.g. when allocated using large OS pages)
+  bool          initially_committed;// `true` if the memory was originally allocated as committed
+  bool          initially_zero;     // `true` if the memory was originally zero initialized
+  mi_memkind_t  memkind;
+} mi_memid_t;
+
+
 // Segments are large allocated memory blocks (8mb on 64 bit) from
 // the OS. Inside segments we allocated fixed size _pages_ that
 // contain blocks.
 typedef struct mi_segment_s {
-  size_t            memid;              // memory id for arena allocation
-  bool              mem_is_pinned;      // `true` if we cannot decommit/reset/protect in this memory (i.e. when allocated using large OS pages)    
-  bool              mem_is_large;       // in large/huge os pages?
-  bool              mem_is_committed;   // `true` if the whole segment is eagerly committed
-  size_t            mem_alignment;      // page alignment for huge pages (only used for alignment > MI_ALIGNMENT_MAX)
-  size_t            mem_align_offset;   // offset for huge page alignment (only used for alignment > MI_ALIGNMENT_MAX)
+  // constant fields
+  mi_memid_t        memid;              // memory id for arena allocation
+  bool              allow_decommit;
+  bool              allow_purge;
+  size_t            segment_size;
 
-  bool              allow_decommit;     
-  mi_msecs_t        decommit_expire;
-  mi_commit_mask_t  decommit_mask;
+  // segment fields
+  mi_msecs_t        purge_expire;
+  mi_commit_mask_t  purge_mask;
   mi_commit_mask_t  commit_mask;
 
   _Atomic(struct mi_segment_s*) abandoned_next;
@@ -522,6 +580,7 @@ typedef struct mi_stats_s {
   mi_stat_count_t reserved;
   mi_stat_count_t committed;
   mi_stat_count_t reset;
+  mi_stat_count_t purged;
   mi_stat_count_t page_committed;
   mi_stat_count_t segments_abandoned;
   mi_stat_count_t pages_abandoned;
@@ -534,6 +593,8 @@ typedef struct mi_stats_s {
   mi_stat_counter_t pages_extended;
   mi_stat_counter_t mmap_calls;
   mi_stat_counter_t commit_calls;
+  mi_stat_counter_t reset_calls;
+  mi_stat_counter_t purge_calls;
   mi_stat_counter_t page_no_retire;
   mi_stat_counter_t searches;
   mi_stat_counter_t normal_count;

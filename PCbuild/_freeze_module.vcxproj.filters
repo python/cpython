@@ -277,13 +277,16 @@
     <ClCompile Include="..\Objects\mimalloc\page.c">
       <Filter>Source Files</Filter>
     </CLCompile>
+    <ClCompile Include="..\Objects\mimalloc\prim\prim.c">
+      <Filter>Source Files</Filter>
+    </CLCompile>
     <ClCompile Include="..\Objects\mimalloc\random.c">
       <Filter>Source Files</Filter>
     </CLCompile>
     <ClCompile Include="..\Objects\mimalloc\segment.c">
       <Filter>Source Files</Filter>
     </CLCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment-cache.c">
+    <ClCompile Include="..\Objects\mimalloc\segment-map.c">
       <Filter>Source Files</Filter>
     </CLCompile>
     <ClCompile Include="..\Objects\mimalloc\stats.c">

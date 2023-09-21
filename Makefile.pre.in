@@ -341,11 +341,12 @@ IO_OBJS=	\
 # mimalloc
 
 MIMALLOC_HEADERS= \
-		$(srcdir)/Include/internal/pycore_mimalloc.h \
-		$(srcdir)/Include/internal/mimalloc/mimalloc-atomic.h \
-		$(srcdir)/Include/internal/mimalloc/mimalloc.h \
-		$(srcdir)/Include/internal/mimalloc/mimalloc-internal.h \
-		$(srcdir)/Include/internal/mimalloc/mimalloc-types.h
+		$(srcdir)/Include/mimalloc/mimalloc.h \
+		$(srcdir)/Include/mimalloc/mimalloc/atomic.h \
+		$(srcdir)/Include/mimalloc/mimalloc/internal.h \
+		$(srcdir)/Include/mimalloc/mimalloc/prim.h \
+		$(srcdir)/Include/mimalloc/mimalloc/track.h \
+		$(srcdir)/Include/mimalloc/mimalloc/types.h
 
 MIMALLOC_OBJS= \
 		Objects/mimalloc/alloc-aligned.o \
@@ -360,8 +361,9 @@ MIMALLOC_OBJS= \
 		Objects/mimalloc/page.o \
 		Objects/mimalloc/random.o \
 		Objects/mimalloc/segment.o \
-		Objects/mimalloc/segment-cache.o \
-		Objects/mimalloc/stats.o
+		Objects/mimalloc/segment-map.o \
+		Objects/mimalloc/stats.o \
+		Objects/mimalloc/prim/prim.o
 
 
 ##########################################################################

@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018-2021 Microsoft Research, Daan Leijen
+Copyright (c) 2018-2023 Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -39,7 +39,11 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <stdatomic.h>
 #define  mi_atomic(name)        atomic_##name
 #define  mi_memory_order(name)  memory_order_##name
-#define  MI_ATOMIC_VAR_INIT(x)  ATOMIC_VAR_INIT(x)
+#if !defined(ATOMIC_VAR_INIT) || (__STDC_VERSION__ >= 201710L) // c17, see issue #735
+ #define MI_ATOMIC_VAR_INIT(x) x
+#else
+ #define MI_ATOMIC_VAR_INIT(x) ATOMIC_VAR_INIT(x)
+#endif
 #endif
 
 // Various defines for all used memory orders in mimalloc
@@ -113,11 +117,13 @@ static inline void mi_atomic_maxi64_relaxed(volatile int64_t* p, int64_t x) {
 }
 
 // Used by timers
-#define mi_atomic_loadi64_acquire(p)    mi_atomic(load_explicit)(p,mi_memory_order(acquire))
-#define mi_atomic_loadi64_relaxed(p)    mi_atomic(load_explicit)(p,mi_memory_order(relaxed))
-#define mi_atomic_storei64_release(p,x) mi_atomic(store_explicit)(p,x,mi_memory_order(release))
-#define mi_atomic_storei64_relaxed(p,x) mi_atomic(store_explicit)(p,x,mi_memory_order(relaxed))
+#define mi_atomic_loadi64_acquire(p)            mi_atomic(load_explicit)(p,mi_memory_order(acquire))
+#define mi_atomic_loadi64_relaxed(p)            mi_atomic(load_explicit)(p,mi_memory_order(relaxed))
+#define mi_atomic_storei64_release(p,x)         mi_atomic(store_explicit)(p,x,mi_memory_order(release))
+#define mi_atomic_storei64_relaxed(p,x)         mi_atomic(store_explicit)(p,x,mi_memory_order(relaxed))
 
+#define mi_atomic_casi64_strong_acq_rel(p,e,d)  mi_atomic_cas_strong_acq_rel(p,e,d)
+#define mi_atomic_addi64_acq_rel(p,i)           mi_atomic_add_acq_rel(p,i)
 
 
 #elif defined(_MSC_VER)
@@ -245,6 +251,21 @@ static inline void mi_atomic_maxi64_relaxed(volatile _Atomic(int64_t)*p, int64_t
   } while (current < x && _InterlockedCompareExchange64(p, x, current) != current);
 }
 
+static inline void mi_atomic_addi64_acq_rel(volatile _Atomic(int64_t*)p, int64_t i) {
+  mi_atomic_addi64_relaxed(p, i);
+}
+
+static inline bool mi_atomic_casi64_strong_acq_rel(volatile _Atomic(int64_t*)p, int64_t* exp, int64_t des) {
+  int64_t read = _InterlockedCompareExchange64(p, des, *exp);
+  if (read == *exp) {
+    return true;
+  }
+  else {
+    *exp = read;
+    return false;
+  }
+}
+
 // The pointer macros cast to `uintptr_t`.
 #define mi_atomic_load_ptr_acquire(tp,p)                (tp*)mi_atomic_load_acquire((_Atomic(uintptr_t)*)(p))
 #define mi_atomic_load_ptr_relaxed(tp,p)                (tp*)mi_atomic_load_relaxed((_Atomic(uintptr_t)*)(p))
@@ -275,6 +296,26 @@ static inline intptr_t mi_atomic_subi(_Atomic(intptr_t)*p, intptr_t sub) {
   return (intptr_t)mi_atomic_addi(p, -sub);
 }
 
+typedef _Atomic(uintptr_t) mi_atomic_once_t;
+
+// Returns true only on the first invocation
+static inline bool mi_atomic_once( mi_atomic_once_t* once ) {
+  if (mi_atomic_load_relaxed(once) != 0) return false;     // quick test 
+  uintptr_t expected = 0;
+  return mi_atomic_cas_strong_acq_rel(once, &expected, (uintptr_t)1); // try to set to 1
+}
+
+typedef _Atomic(uintptr_t) mi_atomic_guard_t;
+
+// Allows only one thread to execute at a time
+#define mi_atomic_guard(guard) \
+  uintptr_t _mi_guard_expected = 0; \
+  for(bool _mi_guard_once = true; \
+      _mi_guard_once && mi_atomic_cas_strong_acq_rel(guard,&_mi_guard_expected,(uintptr_t)1); \
+      (mi_atomic_store_release(guard,(uintptr_t)0), _mi_guard_once = false) )
+
+
+
 // Yield
 #if defined(__cplusplus)
 #include <thread>
@@ -294,7 +335,7 @@ static inline void mi_atomic_yield(void) {
 }
 #elif (defined(__GNUC__) || defined(__clang__)) && \
       (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__armel__) || defined(__ARMEL__) || \
-       defined(__aarch64__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__))
+       defined(__aarch64__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)) || defined(__POWERPC__)
 #if defined(__x86_64__) || defined(__i386__)
 static inline void mi_atomic_yield(void) {
   __asm__ volatile ("pause" ::: "memory");
@@ -307,10 +348,16 @@ static inline void mi_atomic_yield(void) {
 static inline void mi_atomic_yield(void) {
   __asm__ volatile("yield" ::: "memory");
 }
-#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)
+#elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || defined(__POWERPC__)
+#ifdef __APPLE__
+static inline void mi_atomic_yield(void) {
+  __asm__ volatile ("or r27,r27,r27" ::: "memory");
+}
+#else
 static inline void mi_atomic_yield(void) {
   __asm__ __volatile__ ("or 27,27,27" ::: "memory");
 }
+#endif
 #elif defined(__armel__) || defined(__ARMEL__)
 static inline void mi_atomic_yield(void) {
   __asm__ volatile ("nop" ::: "memory");
