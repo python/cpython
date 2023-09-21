@@ -331,7 +331,7 @@ See  :mod:`sys.monitoring` for details.
 New Features Related to Type Hints
 ==================================
 
-This section covers major changes affecting :pep:`484` type hints and
+This section covers major changes affecting :pep:`type hints <484>` and
 the :mod:`typing` module.
 
 .. _whatsnew312-pep692:
@@ -343,7 +343,7 @@ Typing ``**kwargs`` in a function signature as introduced by :pep:`484` allowed
 for valid annotations only in cases where all of the ``**kwargs`` were of the
 same type.
 
-This PEP specifies a more precise way of typing ``**kwargs`` by relying on
+:pep:`692` specifies a more precise way of typing ``**kwargs`` by relying on
 typed dictionaries::
 
    from typing import TypedDict, Unpack
@@ -386,6 +386,8 @@ Example::
      @override  # type checker error: does not override Base.get_color
      def get_colour(self) -> str:
        return "red"
+
+See :pep:`698` for more details.
 
 (Contributed by Steven Troxler in :gh:`101561`.)
 
@@ -432,8 +434,8 @@ parameters with bounds or constraints::
 
 The value of type aliases and the bound and constraints of type variables
 created through this syntax are evaluated only on demand (see
-:ref:`lazy-evaluation`). This means type aliases are able to refer to other
-types defined later in the file.
+:ref:`lazy evaluation <lazy-evaluation>`). This means type aliases are able to
+refer to other types defined later in the file.
 
 Type parameters declared through a type parameter list are visible within the
 scope of the declaration and any nested scopes, but not in the outer scope. For
