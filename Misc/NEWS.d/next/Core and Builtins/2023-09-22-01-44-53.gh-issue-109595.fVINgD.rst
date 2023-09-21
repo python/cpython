@@ -1,2 +1,2 @@
-Add ``-Xcpu_count=<n>`` cmdline option for limiting system cpu resources from
+Add :samp:`-Xcpu_count={n}` command line option for limiting system CPU resources from
 Python program. Patch by Donghee Na.

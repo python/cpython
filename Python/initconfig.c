@@ -132,7 +132,7 @@ The following implementation-specific options are available:\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
     The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
--X cpu_count=number: limit cpu count of os.cpu_count.\n\
+-X cpu_count=n: limit CPU count of os.cpu_count().\n\
     This helps for users who need to limit CPU resources of a container system."
 
 #ifdef Py_STATS

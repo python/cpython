@@ -548,7 +548,7 @@ Miscellaneous options
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
    * :samp:`-X cpu_count={n}` will override the number of CPU count from system.
      If this option is provided, :func:`os.cpu_count` will return the overrided value.
-     This option will be useful for users who need to limit cpu resource of the container system.
+     This option will be useful for users who need to limit CPU resources of a container system.
 
 
    It also allows passing arbitrary values and retrieving them through the
