@@ -64,7 +64,7 @@ def get_logger():
     global _logger
     import logging
 
-    with logging._get_lock():
+    with logging._lock:
         if not _logger:
 
             _logger = logging.getLogger(LOGGER_NAME)
