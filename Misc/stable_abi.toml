@@ -2452,3 +2452,11 @@
     added = '3.13'
 [function.PyLong_AsInt]
     added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
+    added = '3.13'

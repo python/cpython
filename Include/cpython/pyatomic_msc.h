@@ -906,7 +906,7 @@ _Py_atomic_store_ptr_release(void *obj, void *value)
 #if defined(_M_X64) || defined(_M_IX86)
     *(void * volatile *)obj = value;
 #elif defined(_M_ARM64)
-    __stlr64(obj, (uintptr_t)value);
+    __stlr64((unsigned __int64 volatile *)obj, (uintptr_t)value);
 #else
 #  error "no implementation of _Py_atomic_store_ptr_release"
 #endif

@@ -261,8 +261,8 @@ dump_instr(cfg_instr *i)
     if (HAS_TARGET(i->i_opcode)) {
         sprintf(arg, "target: %p [%d] ", i->i_target, i->i_oparg);
     }
-    fprintf(stderr, "line: %d, opcode: %d %s%s\n",
-                    i->i_loc.lineno, i->i_opcode, arg, jump);
+    fprintf(stderr, "line: %d, %s (%d)  %s%s\n",
+                    i->i_loc.lineno, _PyOpcode_OpName[i->i_opcode], i->i_opcode, arg, jump);
 }
 
 static inline int
@@ -575,16 +575,23 @@ check_cfg(cfg_builder *g) {
     return SUCCESS;
 }
 
+static int
+get_max_label(basicblock *entryblock)
+{
+    int lbl = -1;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+        if (b->b_label.id > lbl) {
+            lbl = b->b_label.id;
+        }
+    }
+    return lbl;
+}
+
 /* Calculate the actual jump target from the target_label */
 static int
 translate_jump_labels_to_targets(basicblock *entryblock)
 {
-    int max_label = -1;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
-        if (b->b_label.id > max_label) {
-            max_label = b->b_label.id;
-        }
-    }
+    int max_label = get_max_label(entryblock);
     size_t mapsize = sizeof(basicblock *) * (max_label + 1);
     basicblock **label2block = (basicblock **)PyMem_Malloc(mapsize);
     if (!label2block) {
@@ -1624,8 +1631,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP0(inst, NOP);
                 }
                 break;
-            case KW_NAMES:
-                break;
             case LOAD_GLOBAL:
                 if (nextop == PUSH_NULL && (oparg & 1) == 0) {
                     INSTR_SET_OP1(inst, LOAD_GLOBAL, oparg | 1);
@@ -2231,6 +2236,7 @@ is_exit_without_lineno(basicblock *b) {
     return true;
 }
 
+
 /* PEP 626 mandates that the f_lineno of a frame is correct
  * after a frame terminates. It would be prohibitively expensive
  * to continuously update the f_lineno field at runtime,
@@ -2244,6 +2250,9 @@ static int
 duplicate_exits_without_lineno(cfg_builder *g)
 {
     assert(no_empty_basic_blocks(g));
+
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* Copy all exit blocks without line number that are targets of a jump.
      */
     basicblock *entryblock = g->g_entryblock;
@@ -2262,6 +2271,7 @@ duplicate_exits_without_lineno(cfg_builder *g)
                 target->b_predecessors--;
                 new_target->b_predecessors = 1;
                 new_target->b_next = target->b_next;
+                new_target->b_label.id = next_lbl++;
                 target->b_next = new_target;
             }
         }
@@ -2663,4 +2673,3 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 
     return SUCCESS;
 }
-
