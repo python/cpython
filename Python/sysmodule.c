@@ -2370,6 +2370,40 @@ PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
 #endif
 }
 
+PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
+#ifndef MS_WINDOWS
+    FILE* from = fopen(parent_filename, "r");
+    if (!from) {
+        return -1;
+    }
+    if (perf_map_state.perf_map == NULL) {
+        int ret = PyUnstable_PerfMapState_Init();
+        if(ret != 0){
+            return ret;
+        }
+    }
+    char buf[4096];
+    PyThread_acquire_lock(perf_map_state.map_lock, 1);
+    while (1) {
+        size_t bytes_read = fread(buf, 1, sizeof(buf), from);
+        size_t bytes_written = fwrite(buf, 1, bytes_read, perf_map_state.perf_map);
+        fflush(perf_map_state.perf_map);
+
+        if (bytes_read < sizeof(buf) && feof(from)) {
+            fclose(from);
+            PyThread_release_lock(perf_map_state.map_lock);
+            return 0;
+        }
+        if (bytes_read == 0 || bytes_written < bytes_read) {
+            fclose(from);
+            PyThread_release_lock(perf_map_state.map_lock);
+            return -1;
+        }
+    }
+#endif
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif
