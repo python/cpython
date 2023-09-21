@@ -549,6 +549,7 @@ Miscellaneous options
    * :samp:`-X cpu_count={n}` will override :func:`os.cpu_count`.
      And *n* must be greater equal then 1.
      This option will be useful for users who need to limit CPU resources of a container system.
+     See also :envar:`PYTHONCPUCOUNT`.
 
 
    It also allows passing arbitrary values and retrieving them through the
@@ -1069,6 +1070,15 @@ conflict.
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.12
+
+.. envvar:: PYTHONCPUCOUNT
+
+   If this variable is set to a positive integer, it will override
+   override :func:`os.cpu_count`
+
+   See also the :samp:`-X cpu_count={n}` command-line option.
+
+   .. versionadded:: 3.13
 
 
 Debug-mode variables
