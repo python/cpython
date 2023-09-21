@@ -163,7 +163,6 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
-
 os
 --
 
