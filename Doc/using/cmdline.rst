@@ -548,7 +548,7 @@ Miscellaneous options
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
    * :samp:`-X cpu_count={n}` will override :func:`os.cpu_count`.
      And *n* must be greater equal then 1.
-     This option will be useful for users who need to limit CPU resources of a container system.
+     This option is useful for users who need to limit CPU resources of a container system.
      See also :envar:`PYTHONCPUCOUNT`.
 
 

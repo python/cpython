@@ -1,2 +1,3 @@
-Add :samp:`-Xcpu_count={n}` command line option for overriding system CPU resources from
-Python program. Patch by Donghee Na.
+Add :samp:`-Xcpu_count={n}` command line option to override CPU count of :func:`os.cpu_count`.
+This option is useful for users who need to limit CPU resources of a container system.
+Patch by Donghee Na.
