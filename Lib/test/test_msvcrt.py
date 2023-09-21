@@ -75,13 +75,8 @@ class TestConsoleIO(unittest.TestCase):
             h = msvcrt.get_osfhandle(stdin.fileno())
             flush_console_input_buffer(h)
 
-            old_stdin = sys.stdin
-            try:
-                sys.stdin = stdin
-                write_input(stdin, c_encoded)
-                self.assertEqual(msvcrt.getwch(), c)
-            finally:
-                sys.stdin = old_stdin
+            write_input(stdin, c_encoded)
+            self.assertEqual(msvcrt.getwch(), c)
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
@@ -92,13 +87,8 @@ class TestConsoleIO(unittest.TestCase):
             h = msvcrt.get_osfhandle(stdin.fileno())
             flush_console_input_buffer(h)
 
-            old_stdin = sys.stdin
-            try:
-                sys.stdin = stdin
-                write_input(stdin, c_encoded)
-                self.assertEqual(msvcrt.getwche(), c)
-            finally:
-                sys.stdin = old_stdin
+            write_input(stdin, c_encoded)
+            self.assertEqual(msvcrt.getwche(), c)
 
     def test_putch(self):
         msvcrt.putch(b'c')
