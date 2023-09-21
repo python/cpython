@@ -98,7 +98,7 @@ Improved Error Messages
 
 * Modules from the standard library are now potentially suggested as part of
   the error messages displayed by the interpreter when a :exc:`NameError` is
-  raised to the top level. Contributed by Pablo Galindo in :gh:`98254`.
+  raised to the top level. (Contributed by Pablo Galindo in :gh:`98254`.)
 
     >>> sys.version_info
     Traceback (most recent call last):
@@ -109,7 +109,7 @@ Improved Error Messages
   Now if a :exc:`NameError` is raised in a method and the instance has an
   attribute that's exactly equal to the name in the exception, the suggestion
   will include ``self.<NAME>`` instead of the closest match in the method
-  scope. Contributed by Pablo Galindo in :gh:`99139`.
+  scope. (Contributed by Pablo Galindo in :gh:`99139`.)
 
     >>> class A:
     ...    def __init__(self):
@@ -117,7 +117,7 @@ Improved Error Messages
     ...
     ...    def foo(self):
     ...        somethin = blech
-
+    ...
     >>> A().foo()
     Traceback (most recent call last):
       File "<stdin>", line 1
@@ -125,9 +125,8 @@ Improved Error Messages
                    ^^^^^
     NameError: name 'blech' is not defined. Did you mean: 'self.blech'?
 
-
 * Improve the :exc:`SyntaxError` error message when the user types ``import x
-  from y`` instead of ``from y import x``. Contributed by Pablo Galindo in :gh:`98931`.
+  from y`` instead of ``from y import x``. (Contributed by Pablo Galindo in :gh:`98931`.)
 
     >>> import a.y.z from b.y.z
     Traceback (most recent call last):
@@ -138,7 +137,7 @@ Improved Error Messages
 
 * :exc:`ImportError` exceptions raised from failed ``from <module> import
   <name>`` statements now include suggestions for the value of ``<name>`` based on the
-  available names in ``<module>``. Contributed by Pablo Galindo in :gh:`91058`.
+  available names in ``<module>``. (Contributed by Pablo Galindo in :gh:`91058`.)
 
     >>> from collections import chainmap
     Traceback (most recent call last):
