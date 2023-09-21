@@ -179,6 +179,8 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+
+    // Python 3.13
     int cpu_count;
 
     /* --- Path configuration inputs ------------ */

@@ -133,7 +133,7 @@ The following implementation-specific options are available:\n\
     The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
 -X cpu_count=number: limit cpu count of os.cpu_count.\n\
-    This helps for users who need to limit cpu resource of the container system."
+    This helps for users who need to limit CPU resources of a container system."
 
 #ifdef Py_STATS
 "\n\
@@ -1702,8 +1702,9 @@ config_init_cpu_count(PyConfig *config)
         config->cpu_count = cpu_count;
     }
     return _PyStatus_OK();
+    
 error:
-    return _PyStatus_ERR("-X cpu_count=<n> invalid cpu_count format");
+    return _PyStatus_ERR("-X cpu_count=n option: n is missing or an invalid number");
 }
 
 static PyStatus

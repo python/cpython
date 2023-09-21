@@ -546,7 +546,7 @@ Miscellaneous options
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
-   * ``-X cpu_count=<n>`` will override the number of cpu count from system.
+   * :samp:`-X cpu_count={n}` will override the number of CPU count from system.
      If this option is provided, :func:`os.cpu_count` will return the overrided value.
      This option will be useful for users who need to limit cpu resource of the container system.
 
@@ -598,7 +598,7 @@ Miscellaneous options
       The ``-X perf`` option.
 
    .. versionadded:: 3.13
-      The ``-X cpu_count`` option
+      The ``-X cpu_count`` option.
 
 
 Options you shouldn't use
