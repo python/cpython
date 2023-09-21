@@ -956,13 +956,15 @@ class Handler(Filterer):
         """
         Acquire the I/O thread lock.
         """
-        self.lock.acquire()
+        if self.lock:
+            self.lock.acquire()
 
     def release(self):
         """
         Release the I/O thread lock.
         """
-        self.lock.release()
+        if self.lock:
+            self.lock.release()
 
     def setLevel(self, level):
         """
