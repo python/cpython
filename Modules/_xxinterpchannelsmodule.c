@@ -913,7 +913,7 @@ _channelqueue_remove(_channelqueue *queue, _channelitem_id_t itemid,
 }
 
 static void
-_channelqueue_drop_interpreter(_channelqueue *queue, int64_t interpid)
+_channelqueue_clear_interpreter(_channelqueue *queue, int64_t interpid)
 {
     _channelitem *prev = NULL;
     _channelitem *next = queue->first;
@@ -1112,7 +1112,7 @@ _channelends_close_end(_channelends *ends, _channelend *end, int send)
 }
 
 static int
-_channelends_close_interpreter(_channelends *ends, int64_t interpid, int which)
+_channelends_release_interpreter(_channelends *ends, int64_t interpid, int which)
 {
     _channelend *prev;
     _channelend *end;
@@ -1142,20 +1142,6 @@ _channelends_close_interpreter(_channelends *ends, int64_t interpid, int which)
 }
 
 static void
-_channelends_release_interpreter(_channelends *ends, int64_t interpid)
-{
-    _channelend *end;
-    end = _channelend_find(ends->send, interpid, NULL);
-    if (end != NULL) {
-        _channelends_close_end(ends, end, 1);
-    }
-    end = _channelend_find(ends->recv, interpid, NULL);
-    if (end != NULL) {
-        _channelends_close_end(ends, end, 0);
-    }
-}
-
-static void
 _channelends_release_all(_channelends *ends, int which, int force)
 {
     // XXX Handle the ends.
@@ -1169,6 +1155,21 @@ _channelends_release_all(_channelends *ends, int which, int force)
 
     // Ensure all the "recv"-associated interpreters are closed.
     for (end = ends->recv; end != NULL; end = end->next) {
+        _channelends_close_end(ends, end, 0);
+    }
+}
+
+static void
+_channelends_clear_interpreter(_channelends *ends, int64_t interpid)
+{
+    // XXX Actually remove the entries?
+    _channelend *end;
+    end = _channelend_find(ends->send, interpid, NULL);
+    if (end != NULL) {
+        _channelends_close_end(ends, end, 1);
+    }
+    end = _channelend_find(ends->recv, interpid, NULL);
+    if (end != NULL) {
         _channelends_close_end(ends, end, 0);
     }
 }
@@ -1305,7 +1306,7 @@ _channel_remove(_PyChannelState *chan, _channelitem_id_t itemid)
 }
 
 static int
-_channel_close_interpreter(_PyChannelState *chan, int64_t interpid, int end)
+_channel_release_interpreter(_PyChannelState *chan, int64_t interpid, int end)
 {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
 
@@ -1315,28 +1316,17 @@ _channel_close_interpreter(_PyChannelState *chan, int64_t interpid, int end)
         goto done;
     }
 
-    if (_channelends_close_interpreter(chan->ends, interpid, end) != 0) {
+    if (_channelends_release_interpreter(chan->ends, interpid, end) != 0) {
         goto done;
     }
     chan->open = _channelends_is_open(chan->ends);
+    // XXX Clear the queue if not empty?
     // XXX Activate the "closing" mechanism?
 
     res = 0;
 done:
     PyThread_release_lock(chan->mutex);
     return res;
-}
-
-static void
-_channel_release_interpreter(_PyChannelState *chan, int64_t interpid)
-{
-    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
-
-    _channelqueue_drop_interpreter(chan->queue, interpid);
-    _channelends_release_interpreter(chan->ends, interpid);
-    chan->open = _channelends_is_open(chan->ends);
-
-    PyThread_release_lock(chan->mutex);
 }
 
 static int
@@ -1354,6 +1344,7 @@ _channel_release_all(_PyChannelState *chan, int end, int force)
         res = ERR_CHANNEL_NOT_EMPTY;
         goto done;
     }
+    // XXX Clear the queue?
 
     chan->open = 0;
 
@@ -1365,6 +1356,18 @@ _channel_release_all(_PyChannelState *chan, int end, int force)
 done:
     PyThread_release_lock(chan->mutex);
     return res;
+}
+
+static void
+_channel_clear_interpreter(_PyChannelState *chan, int64_t interpid)
+{
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+
+    _channelqueue_clear_interpreter(chan->queue, interpid);
+    _channelends_clear_interpreter(chan->ends, interpid);
+    chan->open = _channelends_is_open(chan->ends);
+
+    PyThread_release_lock(chan->mutex);
 }
 
 
@@ -1715,14 +1718,14 @@ done:
 }
 
 static void
-_channels_release_interpreter(_channels *channels, int64_t interpid)
+_channels_clear_interpreter(_channels *channels, int64_t interpid)
 {
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
 
     _channelref *ref = channels->head;
     for (; ref != NULL; ref = ref->next) {
         if (ref->chan != NULL) {
-            _channel_release_interpreter(ref->chan, interpid);
+            _channel_clear_interpreter(ref->chan, interpid);
         }
     }
 
@@ -2045,7 +2048,7 @@ channel_release(_channels *channels, int64_t cid, int send, int recv)
     // Past this point we are responsible for releasing the mutex.
 
     // Close one or both of the two ends.
-    int res = _channel_close_interpreter(chan, interpid, send-recv);
+    int res = _channel_release_interpreter(chan, interpid, send-recv);
     PyThread_release_lock(mutex);
     return res;
 }
@@ -2667,7 +2670,7 @@ clear_interpreter(void *data)
     PyInterpreterState *interp = (PyInterpreterState *)data;
     assert(interp == _get_current_interp());
     int64_t interpid = PyInterpreterState_GetID(interp);
-    _channels_release_interpreter(&_globals.channels, interpid);
+    _channels_clear_interpreter(&_globals.channels, interpid);
 }
 
 
