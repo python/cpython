@@ -153,12 +153,13 @@ New Features
 PEP 701: Syntactic formalization of f-strings
 ---------------------------------------------
 
-:pep:`701` lifts some restrictions on the usage of f-strings. Expression components
-inside f-strings can now be any valid Python expression including backslashes,
-unicode escaped sequences, multi-line expressions, comments and strings reusing the
-same quote as the containing f-string. Let's cover these in detail:
+:pep:`701` lifts some restrictions on the usage of :term:`f-strings <f-string>`.
+Expression components inside f-strings can now be any valid Python expression,
+including strings reusing the same quote as the containing f-string,
+multi-line expressions, comments, backslashes, and unicode escape sequences.
+Let's cover these in detail:
 
-* Quote reuse: in Python 3.11, reusing the same quotes as the containing f-string
+* Quote reuse: in Python 3.11, reusing the same quotes as the enclosing f-string
   raises a :exc:`SyntaxError`, forcing the user to either use other available
   quotes (like using double quotes or triple quotes if the f-string uses single
   quotes). In Python 3.12, you can now do things like this:
@@ -181,11 +182,12 @@ same quote as the containing f-string. Let's cover these in detail:
     >>> f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"
     '2'
 
-* Multi-line expressions and comments: In Python 3.11, f-strings expressions
-  must be defined in a single line even if outside f-strings expressions could
-  span multiple lines (like literal lists being defined over multiple lines),
-  making them harder to read. In Python 3.12 you can now define expressions
-  spanning multiple lines and include comments on them:
+* Multi-line expressions and comments: In Python 3.11, f-string expressions
+  must be defined in a single line, even if the expression within the f-string
+  could normally span multiple lines
+  (like literal lists being defined over multiple lines),
+  making them harder to read. In Python 3.12 you can now define f-strings
+  spanning multiple lines, and add inline comments:
 
     >>> f"This is the playlist: {", ".join([
     ...     'Take me back to Eden',  # My, my, those eyes like fire
@@ -195,10 +197,10 @@ same quote as the containing f-string. Let's cover these in detail:
     'This is the playlist: Take me back to Eden, Alkaline, Ascensionism'
 
 * Backslashes and unicode characters: before Python 3.12 f-string expressions
-  couldn't contain any ``\`` character. This also affected unicode escaped
-  sequences (such as ``\N{snowman}``) as these contain the ``\N`` part that
-  previously could not be part of expression components of f-strings. Now, you
-  can define expressions like this:
+  couldn't contain any ``\`` character. This also affected unicode :ref:`escape
+  sequences <escape-sequences>` (such as ``\N{snowman}``) as these contain
+  the ``\N`` part that previously could not be part of expression components of
+  f-strings. Now, you can define expressions like this:
 
     >>> print(f"This is the playlist: {"\n".join(songs)}")
     This is the playlist: Take me back to Eden
@@ -210,7 +212,7 @@ same quote as the containing f-string. Let's cover these in detail:
 See :pep:`701` for more details.
 
 As a positive side-effect of how this feature has been implemented (by parsing f-strings
-with the PEG parser (see :pep:`617`), now error messages for f-strings are more precise
+with :pep:`the PEG parser <617>`, now error messages for f-strings are more precise
 and include the exact location of the error. For example, in Python 3.11, the following
 f-string raises a :exc:`SyntaxError`:
 
