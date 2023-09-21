@@ -51,6 +51,9 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
 /* module state *************************************************************/
 
 typedef struct {
+    /* heap types */
+    PyTypeObject *ExceptionSnapshotType;
+
     /* exceptions */
     PyObject *RunFailedError;
 } module_state;
@@ -67,6 +70,9 @@ get_module_state(PyObject *mod)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* heap types */
+    Py_VISIT(state->ExceptionSnapshotType);
+
     /* exceptions */
     Py_VISIT(state->RunFailedError);
 
@@ -76,6 +82,9 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 static int
 clear_module_state(module_state *state)
 {
+    /* heap types */
+    Py_CLEAR(state->ExceptionSnapshotType);
+
     /* exceptions */
     Py_CLEAR(state->RunFailedError);
 
@@ -759,6 +768,11 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        goto error;
+    }
+
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
         goto error;
@@ -766,6 +780,15 @@ module_exec(PyObject *mod)
 
     // PyInterpreterID
     if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
+        goto error;
+    }
+
+    // ExceptionSnapshot
+    state->ExceptionSnapshotType = PyStructSequence_NewType(&exc_snapshot_desc);
+    if (state->ExceptionSnapshotType == NULL) {
+        goto error;
+    }
+    if (PyModule_AddType(mod, state->ExceptionSnapshotType) < 0) {
         goto error;
     }
 
