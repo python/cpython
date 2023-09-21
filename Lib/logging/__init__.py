@@ -233,6 +233,7 @@ def _acquireLock():
     Acquire the module-level lock for serializing access to shared data.
 
     This should be released with _releaseLock().
+    This should be released with _releaseLock().
     """
     try:
         _lock.acquire()
@@ -875,9 +876,9 @@ def _removeHandlerRef(wr):
     # set to None. It can also be called from another thread. So we need to
     # pre-emptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
-    handlers = _handlerList
-    if _lock and handlers:
-        with _lock:
+    handlers, lock = _handlerList, _lock
+    if lock and handlers:
+        with lock:
             try:
                 handlers.remove(wr)
             except ValueError:
