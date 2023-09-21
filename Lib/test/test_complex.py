@@ -334,6 +334,9 @@ class ComplexTest(unittest.TestCase):
             self.assertTrue(complex(random() + 1e-6, random() + 1e-6))
         self.assertTrue(not complex(0.0, 0.0))
 
+    def test_bool(self):
+        self.assertTrue(1j)
+
     def test_conjugate(self):
         self.assertClose(complex(5.3, 9.8).conjugate(), 5.3-9.8j)
 
