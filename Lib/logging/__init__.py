@@ -876,7 +876,7 @@ def _removeHandlerRef(wr):
     # pre-emptively grab the necessary globals and check if they're None,
     # to prevent race conditions and failures during interpreter shutdown.
     handlers = _handlerList
-    if handlers:
+    if _lock and handlers:
         with _lock:
             try:
                 handlers.remove(wr)
