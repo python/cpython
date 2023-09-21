@@ -14349,6 +14349,11 @@ static PyObject *
 os_cpu_count_impl(PyObject *module)
 /*[clinic end generated code: output=5fc29463c3936a9c input=e7c8f4ba6dbbadd3]*/
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->cpu_count > 0) {
+        return PyLong_FromLong(config->cpu_count);
+    }
     int ncpu = 0;
 #ifdef MS_WINDOWS
 #ifdef MS_WINDOWS_DESKTOP

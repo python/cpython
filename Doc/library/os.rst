@@ -5164,6 +5164,10 @@ Miscellaneous System Information
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      if ``-X cpu_count=<n>`` is given, :func:`cpu_count` will return the overrided
+      value.
+
 
 .. function:: getloadavg()
 

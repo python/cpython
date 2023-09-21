@@ -179,6 +179,7 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
+    int cpu_count;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;

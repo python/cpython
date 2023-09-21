@@ -901,6 +901,14 @@ class CmdLineTest(unittest.TestCase):
         )
         self.assertEqual(res2int(res), (6000, 6000))
 
+    def test_cpu_count(self):
+        def res2int(res):
+            out = res.out.strip().decode("utf-8")
+            return tuple(int(i) for i in out.split())
+        code = "import os; print(os.cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(res2int(res), (4321,))
+
 
 @unittest.skipIf(interpreter_requires_environment(),
                  'Cannot run -I tests when PYTHON env vars are required.')

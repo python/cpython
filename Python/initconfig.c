@@ -732,6 +732,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
+    config->cpu_count = -1;
 }
 
 
@@ -789,6 +790,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
+    config->cpu_count = -1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
@@ -959,6 +961,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
     COPY_ATTR(int_max_str_digits);
+    COPY_ATTR(cpu_count);
 #ifdef Py_STATS
     COPY_ATTR(_pystats);
 #endif
@@ -1679,6 +1682,28 @@ config_read_env_vars(PyConfig *config)
 }
 
 static PyStatus
+config_init_cpu_count(PyConfig *config)
+{
+    int cpu_count = -1;
+    const wchar_t *xoption = config_get_xoption(config, L"cpu_count");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (config_wstr_to_int(sep + 1, &cpu_count) < 0 || cpu_count < 1) {
+                goto error;
+            }
+        }
+        else {
+            goto error;
+        }
+        config->cpu_count = cpu_count;
+    }
+    return _PyStatus_OK();
+error:
+    return _PyStatus_ERR("-X cpu_count=<n> invalid cpu_count format");
+}
+
+static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
     int active = 0;
@@ -1855,6 +1880,13 @@ config_read_complex_options(PyConfig *config)
 
     if (config->int_max_str_digits < 0) {
         status = config_init_int_max_str_digits(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->cpu_count < 0) {
+        status = config_init_cpu_count(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

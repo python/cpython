@@ -1,0 +1,2 @@
+Add `-Xcpu_count=<n>` cmdline option for limiting system cpu resources from
+Python program. Patch by Donghee Na.
