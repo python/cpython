@@ -2098,6 +2098,11 @@ struct channel_info {
     struct {
         // 1: closed; -1: closing
         int closed;
+        struct {
+            // 1: associated; -1: released
+            int send;
+            int recv;
+        } cur;
     } status;
     Py_ssize_t count;
 };
@@ -2107,6 +2112,13 @@ _channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
 {
     int err = 0;
     *info = (struct channel_info){0};
+
+    // Get the current interpreter.
+    PyInterpreterState *interp = _get_current_interp();
+    if (interp == NULL) {
+        return -1;
+    }
+    Py_ssize_t interpid = PyInterpreterState_GetID(interp);
 
     // Hold the global lock until we're done.
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
@@ -2140,6 +2152,22 @@ _channel_get_info(_channels *channels, int64_t cid, struct channel_info *info)
     // Get the number of queued objects.
     info->count = chan->queue->count;
 
+    // Get the current ends status.
+    _channelend *send = _channelend_find(chan->ends->send, interpid, NULL);
+    if (send == NULL) {
+        info->status.cur.send = 0;
+    }
+    else {
+        info->status.cur.send = send->open ? 1 : -1;
+    }
+    _channelend *recv = _channelend_find(chan->ends->recv, interpid, NULL);
+    if (recv == NULL) {
+        info->status.cur.recv = 0;
+    }
+    else {
+        info->status.cur.recv = recv->open ? 1 : -1;
+    }
+
 finally:
     PyThread_release_lock(channels->mutex);
     return err;
@@ -2155,6 +2183,10 @@ static PyStructSequence_Field channel_info_fields[] = {
     {"closing", "send is closed, recv is non-empty"},
     {"closed", "both ends are closed"},
     {"count", "queued objects"},
+    {"send_associated", "current interpreter is bound to the send end"},
+    {"send_released", "current interpreter *was* bound to the send end"},
+    {"recv_associated", "current interpreter is bound to the recv end"},
+    {"recv_released", "current interpreter *was* bound to the recv end"},
     {0}
 };
 
@@ -2162,7 +2194,7 @@ static PyStructSequence_Desc channel_info_desc = {
     .name = "ChannelInfo",
     .doc = channel_info_doc,
     .fields = channel_info_fields,
-    .n_in_sequence = 4,
+    .n_in_sequence = 8,
 };
 
 static PyObject *
@@ -2196,6 +2228,10 @@ new_channel_info(PyObject *mod, struct channel_info *info)
     SET_BOOL(info->status.closed == -1);
     SET_BOOL(info->status.closed == 1);
     SET_COUNT(info->count);
+    SET_BOOL(info->status.cur.send == 1);
+    SET_BOOL(info->status.cur.send == -1);
+    SET_BOOL(info->status.cur.recv == 1);
+    SET_BOOL(info->status.cur.recv == -1);
 #undef SET_COUNT
 #undef SET_BOOL
     assert(!PyErr_Occurred());
