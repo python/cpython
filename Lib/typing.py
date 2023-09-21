@@ -3433,6 +3433,6 @@ def __getattr__(attr):
         import contextlib
         obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
     else:
-        raise AttributeError(f"Module 'typing' has no attribute {attr!r}")
+        raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
     globals()[attr] = obj
     return obj
