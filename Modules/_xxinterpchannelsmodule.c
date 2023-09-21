@@ -1541,7 +1541,7 @@ done:
 }
 
 /* forward */
-static int _channel_set_closing(struct _channelref *, PyThread_type_lock);
+static int _channel_set_closing(_channelref *, PyThread_type_lock);
 
 static int
 _channels_close(_channels *channels, int64_t cid, _PyChannelState **pchan,
@@ -1736,12 +1736,12 @@ _channels_clear_interpreter(_channels *channels, int64_t interpid)
 /* support for closing non-empty channels */
 
 struct _channel_closing {
-    struct _channelref *ref;
+    _channelref *ref;
 };
 
 static int
-_channel_set_closing(struct _channelref *ref, PyThread_type_lock mutex) {
-    struct _channel *chan = ref->chan;
+_channel_set_closing(_channelref *ref, PyThread_type_lock mutex) {
+    _PyChannelState *chan = ref->chan;
     if (chan == NULL) {
         // already closed
         return 0;
@@ -1765,7 +1765,7 @@ done:
 }
 
 static void
-_channel_clear_closing(struct _channel *chan) {
+_channel_clear_closing(_PyChannelState *chan) {
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
     if (chan->closing != NULL) {
         GLOBAL_FREE(chan->closing);
@@ -1775,7 +1775,7 @@ _channel_clear_closing(struct _channel *chan) {
 }
 
 static void
-_channel_finish_closing(struct _channel *chan) {
+_channel_finish_closing(_PyChannelState *chan) {
     struct _channel_closing *closing = chan->closing;
     if (closing == NULL) {
         return;
