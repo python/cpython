@@ -793,7 +793,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
-    config->cpu_count = -1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
