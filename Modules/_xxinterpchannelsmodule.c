@@ -1091,9 +1091,13 @@ static int
 _channelends_is_open(_channelends *ends)
 {
     if (ends->numsendopen != 0 || ends->numrecvopen != 0) {
+        // At least one interpreter is still associated with the channel
+        // (and hasn't been released).
         return 1;
     }
+    // XXX This is wrong if an end can ever be removed.
     if (ends->send == NULL && ends->recv == NULL) {
+        // The channel has never had any interpreters associated with it.
         return 1;
     }
     return 0;
