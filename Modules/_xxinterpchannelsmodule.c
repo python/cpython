@@ -2463,7 +2463,7 @@ static PyGetSetDef channelid_getsets[] = {
 PyDoc_STRVAR(channelid_doc,
 "A channel ID identifies a channel and may be used as an int.");
 
-static PyType_Slot ChannelIDType_slots[] = {
+static PyType_Slot channelid_typeslots[] = {
     {Py_tp_dealloc, (destructor)channelid_dealloc},
     {Py_tp_doc, (void *)channelid_doc},
     {Py_tp_repr, (reprfunc)channelid_repr},
@@ -2477,12 +2477,12 @@ static PyType_Slot ChannelIDType_slots[] = {
     {0, NULL},
 };
 
-static PyType_Spec ChannelIDType_spec = {
+static PyType_Spec channelid_typespec = {
     .name = MODULE_NAME ".ChannelID",
     .basicsize = sizeof(channelid),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = ChannelIDType_slots,
+    .slots = channelid_typeslots,
 };
 
 
@@ -3152,7 +3152,7 @@ module_exec(PyObject *mod)
 
     // ChannelID
     state->ChannelIDType = add_new_type(
-            mod, &ChannelIDType_spec, _channelid_shared, xid_classes);
+            mod, &channelid_typespec, _channelid_shared, xid_classes);
     if (state->ChannelIDType == NULL) {
         goto error;
     }
