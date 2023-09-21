@@ -2641,7 +2641,7 @@ clear_interpreter(void *data)
 
 
 static PyObject *
-channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
+channelsmod_create(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t cid = _channel_create(&_globals.channels);
     if (cid < 0) {
@@ -2669,13 +2669,13 @@ channel_create(PyObject *self, PyObject *Py_UNUSED(ignored))
     return id;
 }
 
-PyDoc_STRVAR(channel_create_doc,
+PyDoc_STRVAR(channelsmod_create_doc,
 "channel_create() -> cid\n\
 \n\
 Create a new cross-interpreter channel and return a unique generated ID.");
 
 static PyObject *
-channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
     int64_t cid;
@@ -2695,14 +2695,14 @@ channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_destroy_doc,
+PyDoc_STRVAR(channelsmod_destroy_doc,
 "channel_destroy(cid)\n\
 \n\
 Close and finalize the channel.  Afterward attempts to use the channel\n\
 will behave as though it never existed.");
 
 static PyObject *
-channel_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
+channelsmod_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     int64_t count = 0;
     int64_t *cids = _channels_list_all(&_globals.channels, &count);
@@ -2742,13 +2742,13 @@ finally:
     return ids;
 }
 
-PyDoc_STRVAR(channel_list_all_doc,
+PyDoc_STRVAR(channelsmod_list_all_doc,
 "channel_list_all() -> [cid]\n\
 \n\
 Return the list of all IDs for active channels.");
 
 static PyObject *
-channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", NULL};
     int64_t cid;            /* Channel ID */
@@ -2804,7 +2804,7 @@ finally:
     return ids;
 }
 
-PyDoc_STRVAR(channel_list_interpreters_doc,
+PyDoc_STRVAR(channelsmod_list_interpreters_doc,
 "channel_list_interpreters(cid, *, send) -> [id]\n\
 \n\
 Return the list of all interpreter IDs associated with an end of the channel.\n\
@@ -2814,7 +2814,7 @@ receive end.");
 
 
 static PyObject *
-channel_send(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", "blocking", "timeout", NULL};
     struct channel_id_converter_data cid_data = {
@@ -2850,14 +2850,14 @@ channel_send(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_send_doc,
+PyDoc_STRVAR(channelsmod_send_doc,
 "channel_send(cid, obj, blocking=True)\n\
 \n\
 Add the object's data to the channel's queue.\n\
 By default this waits for the object to be received.");
 
 static PyObject *
-channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", "blocking", "timeout", NULL};
     struct channel_id_converter_data cid_data = {
@@ -2900,14 +2900,14 @@ channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_send_buffer_doc,
+PyDoc_STRVAR(channelsmod_send_buffer_doc,
 "channel_send_buffer(cid, obj, blocking=True)\n\
 \n\
 Add the object's buffer to the channel's queue.\n\
 By default this waits for the object to be received.");
 
 static PyObject *
-channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "default", NULL};
     int64_t cid;
@@ -2939,7 +2939,7 @@ channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
     return obj;
 }
 
-PyDoc_STRVAR(channel_recv_doc,
+PyDoc_STRVAR(channelsmod_recv_doc,
 "channel_recv(cid, [default]) -> obj\n\
 \n\
 Return a new object from the data at the front of the channel's queue.\n\
@@ -2948,7 +2948,7 @@ If there is nothing to receive then raise ChannelEmptyError, unless\n\
 a default value is provided.  In that case return it.");
 
 static PyObject *
-channel_close(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
     int64_t cid;
@@ -2973,7 +2973,7 @@ channel_close(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_close_doc,
+PyDoc_STRVAR(channelsmod_close_doc,
 "channel_close(cid, *, send=None, recv=None, force=False)\n\
 \n\
 Close the channel for all interpreters.\n\
@@ -3001,7 +3001,7 @@ Once the channel's ID has no more ref counts in any interpreter\n\
 the channel will be destroyed.");
 
 static PyObject *
-channel_release(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
@@ -3034,7 +3034,7 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(channel_release_doc,
+PyDoc_STRVAR(channelsmod_release_doc,
 "channel_release(cid, *, send=None, recv=None, force=True)\n\
 \n\
 Close the channel for the current interpreter.  'send' and 'recv'\n\
@@ -3042,7 +3042,7 @@ Close the channel for the current interpreter.  'send' and 'recv'\n\
 ends are closed.  Closing an already closed end is a noop.");
 
 static PyObject *
-channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 {
     module_state *state = get_module_state(self);
     if (state == NULL) {
@@ -3058,7 +3058,7 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-channel__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
+channelsmod__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"send", "recv", NULL};
     PyObject *send;
@@ -3087,27 +3087,27 @@ channel__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMethodDef module_functions[] = {
-    {"create",                    channel_create,
-     METH_NOARGS, channel_create_doc},
-    {"destroy",                   _PyCFunction_CAST(channel_destroy),
-     METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
-    {"list_all",                  channel_list_all,
-     METH_NOARGS, channel_list_all_doc},
-    {"list_interpreters",         _PyCFunction_CAST(channel_list_interpreters),
-     METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
-    {"send",                      _PyCFunction_CAST(channel_send),
-     METH_VARARGS | METH_KEYWORDS, channel_send_doc},
-    {"send_buffer",               _PyCFunction_CAST(channel_send_buffer),
-     METH_VARARGS | METH_KEYWORDS, channel_send_buffer_doc},
-    {"recv",                      _PyCFunction_CAST(channel_recv),
-     METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
-    {"close",                     _PyCFunction_CAST(channel_close),
-     METH_VARARGS | METH_KEYWORDS, channel_close_doc},
-    {"release",                   _PyCFunction_CAST(channel_release),
-     METH_VARARGS | METH_KEYWORDS, channel_release_doc},
-    {"_channel_id",               _PyCFunction_CAST(channel__channel_id),
+    {"create",                     channelsmod_create,
+     METH_NOARGS,                  channelsmod_create_doc},
+    {"destroy",                    _PyCFunction_CAST(channelsmod_destroy),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_destroy_doc},
+    {"list_all",                   channelsmod_list_all,
+     METH_NOARGS,                  channelsmod_list_all_doc},
+    {"list_interpreters",          _PyCFunction_CAST(channelsmod_list_interpreters),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_list_interpreters_doc},
+    {"send",                       _PyCFunction_CAST(channelsmod_send),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_send_doc},
+    {"send_buffer",                _PyCFunction_CAST(channelsmod_send_buffer),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_send_buffer_doc},
+    {"recv",                       _PyCFunction_CAST(channelsmod_recv),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_recv_doc},
+    {"close",                      _PyCFunction_CAST(channelsmod_close),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_close_doc},
+    {"release",                    _PyCFunction_CAST(channelsmod_release),
+     METH_VARARGS | METH_KEYWORDS, channelsmod_release_doc},
+    {"_channel_id",                _PyCFunction_CAST(channelsmod__channel_id),
      METH_VARARGS | METH_KEYWORDS, NULL},
-    {"_register_end_types",       _PyCFunction_CAST(channel__register_end_types),
+    {"_register_end_types",        _PyCFunction_CAST(channelsmod__register_end_types),
      METH_VARARGS | METH_KEYWORDS, NULL},
 
     {NULL,                        NULL}           /* sentinel */
