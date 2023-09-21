@@ -113,7 +113,7 @@ Entry points
 
 The ``entry_points()`` function returns a collection of entry points.
 Entry points are represented by ``EntryPoint`` instances;
-each ``EntryPoint`` has a ``.name``, ``.group``, and ``.value`` attributes and
+each ``EntryPoint`` has ``.name``, ``.dist``, ``.group``, and ``.value`` attributes and
 a ``.load()`` method to resolve the value.  There are also ``.module``,
 ``.attr``, and ``.extras`` attributes for getting the components of the
 ``.value`` attribute.
@@ -139,6 +139,14 @@ Equivalently, since ``entry_points`` passes keyword arguments
 through to select::
 
     >>> scripts = entry_points(group='console_scripts')  # doctest: +SKIP
+
+Since comparing ``Distribution`` objects for equality is not trivial,
+``dist`` should currently not be used in ``EntryPoints.select()`` or
+``entry_points()`` since the comparison for equality will always result in
+``False`` and result in empty result sets. Filter by distribution manually
+instead, for example like this::
+
+    >>> eps = EntryPoints(ep for ep in entry_points() if ep.dist.name == 'pip')
 
 Pick out a specific script named "wheel" (found in the wheel project)::
 
