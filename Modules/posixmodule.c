@@ -14353,6 +14353,7 @@ os_cpu_count_impl(PyObject *module)
     if (config->cpu_count > 0) {
         return PyLong_FromLong(config->cpu_count);
     }
+
     int ncpu = 0;
 #ifdef MS_WINDOWS
 #ifdef MS_WINDOWS_DESKTOP

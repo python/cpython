@@ -547,7 +547,7 @@ Miscellaneous options
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`.
-     And *n* must be greater than 0.
+     *n* must be greater than or equal to 1.
      This option is useful for users who need to limit CPU resources of a container system.
      See also :envvar:`PYTHONCPUCOUNT`.
 

@@ -1690,9 +1690,9 @@ config_read_env_vars(PyConfig *config)
 static PyStatus
 config_init_cpu_count(PyConfig *config)
 {
-    int cpu_count = -1;
     const char *env = config_get_env(config, "PYTHONCPUCOUNT");
     if (env) {
+        int cpu_count = -1;
         if (_Py_str_to_int(env, &cpu_count) != 0) {
             cpu_count = -1;
         }
@@ -1702,6 +1702,7 @@ config_init_cpu_count(PyConfig *config)
     }
     const wchar_t *xoption = config_get_xoption(config, L"cpu_count");
     if (xoption) {
+        int cpu_count = -1;
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
             if (config_wstr_to_int(sep + 1, &cpu_count) < 0 || cpu_count < 1) {
