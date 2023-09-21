@@ -1192,7 +1192,7 @@ non-standard paths in the registry and user site-packages.
 
       * Adds ``._pth`` file support and removes ``applocal`` option from
         ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
+      * Adds :file:`python{XX}.zip` as a potential landmark when directly adjacent
         to the executable.
 
 .. deprecated::
