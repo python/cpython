@@ -141,6 +141,7 @@ PROGRESS_MIN_TIME = 30.0   # seconds
 
 SPLITTESTDIRS = {
     "test_asyncio",
+    "test_future_stmt",
 }
 
 # Storage of uncollectable objects
