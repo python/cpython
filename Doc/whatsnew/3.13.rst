@@ -119,7 +119,7 @@ copy
 ----
 
 * Add :func:`copy.replace` function which allows to create a modified copy of
-  an object, which is especially usefule for immutable objects.
+  an object, which is especially useful for immutable objects.
   It supports named tuples created with the factory function
   :func:`collections.namedtuple`, :class:`~dataclasses.dataclass` instances,
   various :mod:`datetime` objects, :class:`~inspect.Signature` objects,
@@ -208,7 +208,7 @@ tkinter
 traceback
 ---------
 
-* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+* Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 

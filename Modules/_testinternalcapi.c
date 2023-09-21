@@ -1543,6 +1543,9 @@ static PyMethodDef module_functions[] = {
 static int
 module_exec(PyObject *module)
 {
+    if (_PyTestInternalCapi_Init_Lock(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
         return 1;
     }

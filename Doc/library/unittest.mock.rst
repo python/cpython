@@ -1130,7 +1130,7 @@ object::
 
   .. method:: wait_until_any_call_with(*args, **kwargs)
 
-      Waits until the the mock is called with the specified arguments.
+      Waits until the mock is called with the specified arguments.
 
       If a timeout was passed at the creation of the mock
       the function raises an :exc:`AssertionError` if the call is not performed in time.
