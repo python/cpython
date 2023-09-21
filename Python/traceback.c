@@ -650,13 +650,16 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
  *  TypeError: 'NoneType' object is not subscriptable
  */
 
-// helper functions for anchor extraction
+// The below functions are helper functions for anchor extraction
+
+// Get segment_lines[lineno] in C string form
 static const char
 *_get_segment_str(PyObject *segment_lines, Py_ssize_t lineno, Py_ssize_t *size)
 {
     return PyUnicode_AsUTF8AndSize(PyList_GET_ITEM(segment_lines, lineno), size);
 }
 
+// Gets the next valid offset in segment_lines[lineno], if the current offset is not valid
 static int
 _next_valid_offset(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offset)
 {
@@ -679,6 +682,7 @@ _next_valid_offset(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offs
     return 0;
 }
 
+// Get the next valid offset
 static int
 _increment_offset(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offset)
 {
@@ -686,6 +690,7 @@ _increment_offset(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offse
     return _next_valid_offset(segment_lines, lineno, offset);
 }
 
+// Get the next valid offset at least on the next line
 static int
 _nextline(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offset)
 {
@@ -694,6 +699,7 @@ _nextline(PyObject *segment_lines, Py_ssize_t *lineno, Py_ssize_t *offset)
     return _next_valid_offset(segment_lines, lineno, offset);
 }
 
+// Get the next valid non-"\#" character that satisfies the stop predicate
 static int
 _increment_until(PyObject *segment_lines, Py_ssize_t *lineno,
                  Py_ssize_t *offset, int (*stop)(char))
@@ -721,6 +727,7 @@ _increment_until(PyObject *segment_lines, Py_ssize_t *lineno,
     return 0;
 }
 
+// is the character a binary op character? (not whitespace or closing paren)
 static int
 _is_op_char(char ch)
 {
@@ -750,6 +757,8 @@ extract_anchors_from_expr(PyObject *segment_lines, expr_ty expr,
 {
     switch (expr->kind) {
         case BinOp_kind: {
+            // anchor begin: first binary op char after left subexpression
+            // anchor end: 1 or 2 characters after anchor begin
             expr_ty left = expr->v.BinOp.left;
             expr_ty right = expr->v.BinOp.right;
             *left_anchor_lineno = left->end_lineno - 2;
@@ -786,7 +795,7 @@ extract_anchors_from_expr(PyObject *segment_lines, expr_ty expr,
                 )
             ) {
                 char ch = segment_str[*right_anchor_col];
-                if (!IS_WHITESPACE(ch) && ch != '\\' && ch != '#') {
+                if (_is_op_char(ch) && ch != '\\' && ch != '#') {
                     ++*right_anchor_col;
                 }
             }
@@ -796,6 +805,8 @@ extract_anchors_from_expr(PyObject *segment_lines, expr_ty expr,
             return 1;
         }
         case Subscript_kind: {
+            // anchor begin: first "[" after the value subexpression
+            // anchor end: end of the entire subscript expression
             *left_anchor_lineno = expr->v.Subscript.value->end_lineno - 2;
             *left_anchor_col = expr->v.Subscript.value->end_col_offset;
             if (_next_valid_offset(
@@ -817,6 +828,7 @@ extract_anchors_from_expr(PyObject *segment_lines, expr_ty expr,
             return 1;
         }
         case Call_kind:
+            // anchor positions determined similarly to Subscript
             *left_anchor_lineno = expr->v.Call.func->end_lineno - 2;
             *left_anchor_col = expr->v.Call.func->end_col_offset;
             if (_next_valid_offset(
@@ -859,6 +871,10 @@ extract_anchors_from_stmt(PyObject *segment_lines, stmt_ty statement,
     }
 }
 
+// Returns:
+// 1 if anchors were found
+// 0 if anchors could not be computed
+// -1 on error
 static int
 extract_anchors_from_line(PyObject *filename, PyObject *lines,
                           Py_ssize_t start_offset, Py_ssize_t end_offset,
@@ -935,6 +951,7 @@ extract_anchors_from_line(PyObject *filename, PyObject *lines,
                                             &flags, arena);
     if (!module) {
         if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_SyntaxError)) {
+            // AST parsing failed due to SyntaxError - ignore it
             PyErr_Clear();
             res = 0;
         }
@@ -1020,7 +1037,7 @@ static void significant_lines_append(SignificantLines* sl, Py_ssize_t line, Py_s
 
 static int significant_lines_compare(const void *a, const void *b)
 {
-    return *(Py_ssize_t *)a - *(Py_ssize_t *)b;
+    return (int)(*(Py_ssize_t *)a - *(Py_ssize_t *)b);
 }
 
 // sort lines and remove duplicate lines
@@ -1039,13 +1056,14 @@ static void significant_lines_process(SignificantLines *sl)
     sl->size = idx;
 }
 
+// output lines[lineno] along with carets
 static int
 print_error_location_carets(PyObject *lines, Py_ssize_t lineno,
-                              Py_ssize_t start_offset, Py_ssize_t end_offset,
-                              Py_ssize_t left_end_lineno, Py_ssize_t right_start_lineno,
-                              Py_ssize_t left_end_offset, Py_ssize_t right_start_offset,
-                              const char *primary, const char *secondary,
-                              PyObject *f, int indent, int margin_indent, const char *margin)
+                            Py_ssize_t start_offset, Py_ssize_t end_offset,
+                            Py_ssize_t left_end_lineno, Py_ssize_t right_start_lineno,
+                            Py_ssize_t left_end_offset, Py_ssize_t right_start_offset,
+                            const char *primary, const char *secondary,
+                            PyObject *f, int indent, int margin_indent, const char *margin)
 {
     Py_ssize_t num_lines = PyList_Size(lines);
     PyObject *line = PyList_GET_ITEM(lines, lineno);
@@ -1069,15 +1087,15 @@ print_error_location_carets(PyObject *lines, Py_ssize_t lineno,
                 has_non_ws = 1;
             }
         }
-        if (lineno == num_lines - 1 && col >= end_offset) {
-            break;
-        } else if (!has_non_ws || (lineno == 0 && col < start_offset)) {
+        if (!has_non_ws || (lineno == 0 && col < start_offset)) {
+            // before first non-ws char of the line, or before start of instruction
             ch = " ";
         } else if (
             special_chars &&
             (lineno > left_end_lineno || (lineno == left_end_lineno && col >= left_end_offset)) &&
             (lineno < right_start_lineno || (lineno == right_start_lineno && col < right_start_offset))
         ) {
+            // within anchors
             ch = secondary;
         } // else ch = primary
 
@@ -1248,6 +1266,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     if (start_line < 0) {
+        // in case something went wrong
         start_line = lineno;
     }
     // only fetch first line if location information is missing
@@ -1285,7 +1304,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // When displaying errors, we will use the following generic structure:
     //
     //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
-    //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
+    //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
     //        |              |-> left_end_offset     |                  |-> end_offset
     //        |-> start_offset                       |-> right_start_offset
     //
@@ -1296,8 +1315,11 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     // AST information or we cannot identify special ranges within it, then left_end_offset and
     // right_end_offset will be set to -1.
     //
+    // To support displaying errors that span multiple lines, *left_end_lineno* and
+    // *right_start_lineno* contain the line numbers of the special ranges.
+    //
     // To keep the column indicators pertinent, they are not shown when the primary character
-    // spans the whole line.
+    // spans all of the error lines.
 
     PyObject *lines_original_split = PyUnicode_Splitlines(lines_original, 0);
     assert(PyList_Size(lines_original_split) == num_lines);
@@ -1398,7 +1420,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
                 }
             } else if (linediff > 2) {
                 // more than 1 line in between - abbreviate
-                PyObject *abbrv_str = PyUnicode_FromFormat("...<%d lines>...", linediff - 1);
+                PyObject *abbrv_str = PyUnicode_FromFormat("...<%d lines>...", (int)linediff - 1);
                 if (!abbrv_str) {
                     goto error;
                 }

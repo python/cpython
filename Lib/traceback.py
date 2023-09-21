@@ -320,6 +320,15 @@ class FrameSummary:
         return self._line
 
     @property
+    def _dedented_lines(self):
+        # Returns _original_line, but dedented
+        self.line
+        if self._line_dedented is None:
+            if self._line is not None:
+                self._line_dedented = textwrap.dedent(self._line).rstrip()
+        return self._line_dedented
+
+    @property
     def line(self):
         if self._line is None:
             if self.lineno is None:
@@ -329,10 +338,8 @@ class FrameSummary:
             for lineno in range(self.lineno, end_lineno + 1):
                 # treat errors and empty lines as the same
                 self._line += linecache.getline(self.filename, lineno).rstrip() + "\n"
-        if self._line_dedented is None:
-            if self._line is not None:
-                self._line_dedented = textwrap.dedent(self._line).rstrip()
-        return self._line_dedented
+        # return only the first line
+        return self._line.partition("\n")[0].strip()
 
 def walk_stack(f):
     """Walk a stack yielding the frame and line number for each frame.
@@ -476,49 +483,47 @@ class StackSummary(list):
         row = []
         row.append('  File "{}", line {}, in {}\n'.format(
             frame_summary.filename, frame_summary.lineno, frame_summary.name))
-        if frame_summary.line:
+        if frame_summary._dedented_lines:
             if (
                 frame_summary.colno is None or
                 frame_summary.end_colno is None
             ):
-                # only output first line
-                row.append(textwrap.indent(frame_summary.line.partition('\n')[0], '    ') + "\n")
+                # only output first line if column information is missing
+                row.append(textwrap.indent(frame_summary.line, '    ') + "\n")
             else:
-                all_lines_original = frame_summary._original_line.splitlines()[
-                    :frame_summary.end_lineno - frame_summary.lineno + 1
-                ]
-                colno = 0 if frame_summary.colno is None else frame_summary.colno
-                end_colno = len(all_lines_original[-1]) if frame_summary.end_colno is None else frame_summary.end_colno
-                # character index of the start of the instruction
-                start_offset = _byte_offset_to_character_offset(
-                    all_lines_original[0], frame_summary.colno
-                )
-                # character index of the end of the instruction
-                end_offset = _byte_offset_to_character_offset(
-                    all_lines_original[-1], frame_summary.end_colno
-                )
+                # get first and last line
+                all_lines_original = frame_summary._original_line.splitlines()
+                first_line = all_lines_original[0]
+                last_line = all_lines_original[frame_summary.end_lineno - frame_summary.lineno]
 
-                all_lines = frame_summary.line.splitlines()[
+                # character index of the start/end of the instruction
+                start_offset = _byte_offset_to_character_offset(first_line, frame_summary.colno)
+                end_offset = _byte_offset_to_character_offset(last_line, frame_summary.end_colno)
+
+                all_lines = frame_summary._dedented_lines.splitlines()[
                     :frame_summary.end_lineno - frame_summary.lineno + 1
                 ]
+
                 # adjust start/end offset based on dedent
-                dedent_characters = len(all_lines_original[0]) - len(all_lines[0])
+                dedent_characters = len(first_line) - len(all_lines[0])
                 start_offset -= dedent_characters
                 end_offset -= dedent_characters
                 start_offset = max(0, start_offset)
                 end_offset = max(0, end_offset)
 
+                # get exact code segment corresponding to the instruction
                 segment = "\n".join(all_lines)
                 segment = segment[start_offset:len(segment) - (len(all_lines[-1]) - end_offset)]
 
+                # attempt to parse for anchors
                 anchors: Optional[_Anchors] = None
                 try:
                     anchors = _extract_caret_anchors_from_line_segment(segment)
                 except AssertionError:
                     pass
 
-                show_carets = False
                 # only use carets if there are anchors or the carets do not span all lines
+                show_carets = False
                 if anchors or all_lines[0][:start_offset].lstrip() or all_lines[-1][end_offset:].rstrip():
                     show_carets = True
 
@@ -534,7 +539,8 @@ class StackSummary(list):
                 if anchors:
                     anchors_left_end_offset = anchors.left_end_offset
                     anchors_right_start_offset = anchors.right_start_offset
-                    # anchor positions do not take start_offset into account
+                    # computed anchor positions do not take start_offset into account,
+                    # so account for it here
                     if anchors.left_end_lineno == 0:
                         anchors_left_end_offset += start_offset
                     if anchors.right_start_lineno == 0:
@@ -548,19 +554,22 @@ class StackSummary(list):
                         range(anchors.right_start_lineno - 1, anchors.right_start_lineno + 2)
                     )
 
+                # remove bad line numbers
                 significant_lines.discard(-1)
                 significant_lines.discard(len(all_lines))
 
+                # output all_lines[lineno] along with carets
                 def output_line(lineno):
                     result.append(all_lines[lineno] + "\n")
                     if not show_carets:
                         return
                     num_spaces = len(all_lines[lineno]) - len(all_lines[lineno].lstrip())
                     carets = []
-                    for col in range(len(all_lines[lineno])):
-                        if lineno == len(all_lines) - 1 and col >= end_offset:
-                            break
-                        elif col < num_spaces or (lineno == 0 and col < start_offset):
+                    num_carets = end_offset if lineno == len(all_lines) - 1 else len(all_lines[lineno])
+                    # compute caret character for each position
+                    for col in range(num_carets):
+                        if col < num_spaces or (lineno == 0 and col < start_offset):
+                            # before first non-ws char of the line, or before start of instruction
                             carets.append(' ')
                         elif anchors and (
                             lineno > anchors.left_end_lineno or
@@ -569,6 +578,7 @@ class StackSummary(list):
                             lineno < anchors.right_start_lineno or
                             (lineno == anchors.right_start_lineno and col < anchors_right_start_offset)
                         ):
+                            # within anchors
                             carets.append(secondary_char)
                         else:
                             carets.append(primary_char)
@@ -673,9 +683,10 @@ def _extract_caret_anchors_from_line_segment(segment):
     import ast
 
     try:
-        # Without brackets, `segment` is parsed as a statement.
-        # We expect an expression, so wrap `segment` in
-        # brackets to handle multi-line expressions.
+        # Without parentheses, `segment` is parsed as a statement.
+        # Binary ops, subscripts, and calls are expressions, so
+        # we can wrap them with parentheses to parse them as
+        # (possibly multi-line) expressions.
         tree = ast.parse("(\n" + segment + "\n)")
     except SyntaxError:
         return None
