@@ -2317,12 +2317,12 @@ done:
     return res;
 }
 
-static PyTypeObject * _get_current_channel_end_type(int end);
+static PyTypeObject * _get_current_channelend_type(int end);
 
 static PyObject *
 _channel_from_cid(PyObject *cid, int end)
 {
-    PyObject *cls = (PyObject *)_get_current_channel_end_type(end);
+    PyObject *cls = (PyObject *)_get_current_channelend_type(end);
     if (cls == NULL) {
         return NULL;
     }
@@ -2483,7 +2483,7 @@ static PyType_Spec ChannelIDType_spec = {
 // XXX Use a new __xid__ protocol instead?
 
 static PyTypeObject *
-_get_current_channel_end_type(int end)
+_get_current_channelend_type(int end)
 {
     module_state *state = _get_current_module_state();
     if (state == NULL) {
@@ -2519,13 +2519,13 @@ _get_current_channel_end_type(int end)
 }
 
 static PyObject *
-_channel_end_from_xid(_PyCrossInterpreterData *data)
+_channelend_from_xid(_PyCrossInterpreterData *data)
 {
     channelid *cid = (channelid *)_channelid_from_xid(data);
     if (cid == NULL) {
         return NULL;
     }
-    PyTypeObject *cls = _get_current_channel_end_type(cid->end);
+    PyTypeObject *cls = _get_current_channelend_type(cid->end);
     if (cls == NULL) {
         Py_DECREF(cid);
         return NULL;
@@ -2536,7 +2536,7 @@ _channel_end_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_channel_end_shared(PyThreadState *tstate, PyObject *obj,
+_channelend_shared(PyThreadState *tstate, PyObject *obj,
                     _PyCrossInterpreterData *data)
 {
     PyObject *cidobj = PyObject_GetAttrString(obj, "_id");
@@ -2548,12 +2548,12 @@ _channel_end_shared(PyThreadState *tstate, PyObject *obj,
     if (res < 0) {
         return -1;
     }
-    data->new_object = _channel_end_from_xid;
+    data->new_object = _channelend_from_xid;
     return 0;
 }
 
 static int
-set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
+set_channelend_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
 {
     module_state *state = get_module_state(mod);
     if (state == NULL) {
@@ -2570,15 +2570,16 @@ set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
 
-    if (register_xid_class(send, _channel_end_shared, xid_classes)) {
+    if (register_xid_class(send, _channelend_shared, xid_classes)) {
         return -1;
     }
-    if (register_xid_class(recv, _channel_end_shared, xid_classes)) {
+    if (register_xid_class(recv, _channelend_shared, xid_classes)) {
         return -1;
     }
 
     return 0;
 }
+
 
 /* module level code ********************************************************/
 
@@ -3079,7 +3080,7 @@ channelsmod__register_end_types(PyObject *self, PyObject *args, PyObject *kwds)
     PyTypeObject *cls_send = (PyTypeObject *)send;
     PyTypeObject *cls_recv = (PyTypeObject *)recv;
 
-    if (set_channel_end_types(self, cls_send, cls_recv) < 0) {
+    if (set_channelend_types(self, cls_send, cls_recv) < 0) {
         return NULL;
     }
 
