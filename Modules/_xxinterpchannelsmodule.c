@@ -1100,7 +1100,7 @@ _channelends_is_open(_channelends *ends)
 }
 
 static void
-_channelends_close_end(_channelends *ends, _channelend *end, int send)
+_channelends_release_end(_channelends *ends, _channelend *end, int send)
 {
     end->open = 0;
     if (send) {
@@ -1125,7 +1125,7 @@ _channelends_release_interpreter(_channelends *ends, int64_t interpid, int which
                 return -1;
             }
         }
-        _channelends_close_end(ends, end, 1);
+        _channelends_release_end(ends, end, 1);
     }
     if (which <= 0) {  // recv/both
         end = _channelend_find(ends->recv, interpid, &prev);
@@ -1136,7 +1136,7 @@ _channelends_release_interpreter(_channelends *ends, int64_t interpid, int which
                 return -1;
             }
         }
-        _channelends_close_end(ends, end, 0);
+        _channelends_release_end(ends, end, 0);
     }
     return 0;
 }
@@ -1150,12 +1150,12 @@ _channelends_release_all(_channelends *ends, int which, int force)
     // Ensure all the "send"-associated interpreters are closed.
     _channelend *end;
     for (end = ends->send; end != NULL; end = end->next) {
-        _channelends_close_end(ends, end, 1);
+        _channelends_release_end(ends, end, 1);
     }
 
     // Ensure all the "recv"-associated interpreters are closed.
     for (end = ends->recv; end != NULL; end = end->next) {
-        _channelends_close_end(ends, end, 0);
+        _channelends_release_end(ends, end, 0);
     }
 }
 
@@ -1166,11 +1166,11 @@ _channelends_clear_interpreter(_channelends *ends, int64_t interpid)
     _channelend *end;
     end = _channelend_find(ends->send, interpid, NULL);
     if (end != NULL) {
-        _channelends_close_end(ends, end, 1);
+        _channelends_release_end(ends, end, 1);
     }
     end = _channelend_find(ends->recv, interpid, NULL);
     if (end != NULL) {
-        _channelends_close_end(ends, end, 0);
+        _channelends_release_end(ends, end, 0);
     }
 }
 
