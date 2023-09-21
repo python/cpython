@@ -278,13 +278,12 @@ def mock_register_at_fork(func):
 
 @contextlib.contextmanager
 def ready_to_import(name=None, source=""):
-    # To fix import cycles:
     from test.support import script_helper
 
-    # sets up a temporary directory and removes it
-    # creates the module file
-    # temporarily clears the module from sys.modules (if any)
-    # reverts or removes the module when cleaning up
+    # 1. Sets up a temporary directory and removes it afterwards
+    # 2. Creates the module file
+    # 3. Temporarily clears the module from sys.modules (if any)
+    # 4. Reverts or removes the module when cleaning up
     name = name or "spam"
     with temp_dir() as tempdir:
         path = script_helper.make_script(tempdir, name, source)
@@ -296,5 +295,5 @@ def ready_to_import(name=None, source=""):
         finally:
             if old_module is not None:
                 sys.modules[name] = old_module
-            elif name in sys.modules:
-                del sys.modules[name]
+            else:
+                sys.modules.pop(name, None)
