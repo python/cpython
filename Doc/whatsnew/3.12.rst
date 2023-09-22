@@ -330,7 +330,7 @@ This means that you only pay for what you use, providing support
 for near-zero overhead debuggers and coverage tools.
 See  :mod:`sys.monitoring` for details.
 
-(Contributed by Mark Shannon in :gh:`103083`)
+(Contributed by Mark Shannon in :gh:`103083`.)
 
 New Features Related to Type Hints
 ==================================
