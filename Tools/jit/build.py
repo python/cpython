@@ -3,6 +3,7 @@
 import asyncio
 import dataclasses
 import enum
+import hashlib
 import json
 import os
 import pathlib
@@ -12,15 +13,16 @@ import sys
 import tempfile
 import typing
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
+TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
+TOOLS_JIT = TOOLS_JIT_BUILD.parent
+TOOLS = TOOLS_JIT.parent
+ROOT = TOOLS.parent
 INCLUDE = ROOT / "Include"
 INCLUDE_INTERNAL = INCLUDE / "internal"
 PC = ROOT / "PC"
 PYTHON = ROOT / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
-TOOLS = ROOT / "Tools"
-TOOLS_JIT = TOOLS / "jit"
 TOOLS_JIT_TEMPLATE = TOOLS_JIT / "template.c"
 TOOLS_JIT_TRAMPOLINE = TOOLS_JIT / "trampoline.c"
 
@@ -278,8 +280,8 @@ class ObjectParser:
             if got_symbol in self.body_symbols:
                 addend = self.body_symbols[got_symbol] + addend
                 got_symbol = "_JIT_BASE"
-            # XXX: PATCH_ABS_32 on 32-bit platforms?
-            holes.append(Hole(HoleKind.PATCH_ABS_64, got_symbol, got + 8 * i, addend))
+            # XXX: ABS_32 on 32-bit platforms?
+            holes.append(Hole(HoleKind.ABS_64, got_symbol, got + 8 * i, addend))
             symbol_part = f"{comment} &{got_symbol}{f' + 0x{addend:x}' if addend else ''}"
             disassembly.append(f"{offset:x}: " + f"{symbol_part}".expandtabs())
             disassembly.append(f"{offset:x}: " + f"{' '.join(8 * ['00'])}".expandtabs())
@@ -297,31 +299,34 @@ class ObjectParser:
         assert offset == len(self.body), (self.path, offset, len(self.body))
         return Stencil(bytes(self.body)[entry:], tuple(holes), tuple(disassembly))  # XXX
 
-class BasicStrEnum(enum.StrEnum):
+class BasicStrEnum(enum.Enum):
+    @staticmethod
     def _generate_next_value_(name: str, start, count, last_values) -> str:
         return name
+    def __str__(self):
+        return f"{self.__class__.__name__}_{self.value}"
 
 @enum.unique
 class HoleKind(BasicStrEnum):
-    PATCH_ABS_12 = enum.auto()
-    PATCH_ABS_16_A = enum.auto()
-    PATCH_ABS_16_B = enum.auto()
-    PATCH_ABS_16_C = enum.auto()
-    PATCH_ABS_16_D = enum.auto()
-    PATCH_ABS_32 = enum.auto()
-    PATCH_ABS_64 = enum.auto()
-    PATCH_REL_21 = enum.auto()
-    PATCH_REL_26 = enum.auto()
-    PATCH_REL_32 = enum.auto()
-    PATCH_REL_64 = enum.auto()
+    ABS_12 = enum.auto()
+    ABS_16_A = enum.auto()
+    ABS_16_B = enum.auto()
+    ABS_16_C = enum.auto()
+    ABS_16_D = enum.auto()
+    ABS_32 = enum.auto()
+    ABS_64 = enum.auto()
+    REL_21 = enum.auto()
+    REL_26 = enum.auto()
+    REL_32 = enum.auto()
+    REL_64 = enum.auto()
 
 @enum.unique
 class HoleValue(BasicStrEnum):
-    HOLE_BASE = enum.auto()
-    HOLE_CONTINUE = enum.auto()
-    HOLE_JUMP = enum.auto()
-    HOLE_OPARG_PLUS_ONE = enum.auto()
-    HOLE_OPERAND_PLUS_ONE = enum.auto()
+    BASE = enum.auto()
+    CONTINUE = enum.auto()
+    JUMP = enum.auto()
+    OPARG_PLUS_ONE = enum.auto()
+    OPERAND_PLUS_ONE = enum.auto()
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
@@ -366,7 +371,7 @@ def handle_relocations(
                 addend = sign_extend_64(addend, 28)
                 assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_REL_26, symbol, offset, addend)
+                yield Hole(HoleKind.REL_26, symbol, offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -386,7 +391,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_REL_21, "_JIT_BASE", offset, addend)
+                yield Hole(HoleKind.REL_21, "_JIT_BASE", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -412,7 +417,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_ABS_12, "_JIT_BASE", offset, addend)
+                yield Hole(HoleKind.ABS_12, "_JIT_BASE", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -429,7 +434,7 @@ def handle_relocations(
                 addend = sign_extend_64(addend, 33)
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_REL_21, symbol, offset, addend)
+                yield Hole(HoleKind.REL_21, symbol, offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -452,7 +457,7 @@ def handle_relocations(
                 addend <<= implicit_shift
                 # assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_12, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_12, symbol, offset, addend)
             case {
                 "Length": 3 as length,
                 "Offset": int(offset),
@@ -466,7 +471,7 @@ def handle_relocations(
                 addend = what
                 assert section.startswith("_"), section
                 section = section.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_64, section, offset, addend)
+                yield Hole(HoleKind.ABS_64, section, offset, addend)
             case {
                 "Length": 3 as length,
                 "Offset": int(offset),
@@ -480,7 +485,7 @@ def handle_relocations(
                 addend = what
                 assert symbol.startswith("_"), symbol
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_64, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_64, symbol, offset, addend)
             # x86_64-pc-windows-msvc:
             case {
                 "Offset": int(offset),
@@ -493,7 +498,7 @@ def handle_relocations(
                 # assert not what, what
                 addend = what
                 body[where] = [0] * 8
-                yield Hole(HoleKind.PATCH_ABS_64, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_64, symbol, offset, addend)
             # i686-pc-windows-msvc:
             case {
                 "Offset": int(offset),
@@ -508,7 +513,7 @@ def handle_relocations(
                 body[where] = [0] * 4
                 # assert symbol.startswith("_")
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_32, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_32, symbol, offset, addend)
             # aarch64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),
@@ -520,7 +525,7 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                yield Hole(HoleKind.PATCH_ABS_64, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_64, symbol, offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -537,7 +542,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_REL_21, "_JIT_BASE", offset, addend)
+                yield Hole(HoleKind.REL_21, "_JIT_BASE", offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -551,7 +556,7 @@ def handle_relocations(
                 assert what & 0xFC000000 == 0x14000000 or what & 0xFC000000 == 0x94000000, what
                 addend = (what & 0x03FFFFFF) << 2
                 addend = sign_extend_64(addend, 28)
-                yield Hole(HoleKind.PATCH_REL_26, symbol, offset, addend)
+                yield Hole(HoleKind.REL_26, symbol, offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -574,7 +579,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_ABS_12, "_JIT_BASE", offset, addend)
+                yield Hole(HoleKind.ABS_12, "_JIT_BASE", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -585,7 +590,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole(HoleKind.PATCH_ABS_16_A, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_16_A, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -596,7 +601,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole(HoleKind.PATCH_ABS_16_B, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_16_B, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -607,7 +612,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole(HoleKind.PATCH_ABS_16_C, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_16_C, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -618,7 +623,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], "little", signed=False)
                 assert ((what >> 5) & 0xFFFF) == 0, what
-                yield Hole(HoleKind.PATCH_ABS_16_D, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_16_D, symbol, offset, addend)
             # x86_64-unknown-linux-gnu:
             case {
                 "Addend": int(addend),
@@ -630,7 +635,7 @@ def handle_relocations(
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                yield Hole(HoleKind.PATCH_ABS_64, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_64, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -656,7 +661,7 @@ def handle_relocations(
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
                 addend += offset - len(body)
-                yield Hole(HoleKind.PATCH_REL_64, symbol, offset, addend)
+                yield Hole(HoleKind.REL_64, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -679,7 +684,7 @@ def handle_relocations(
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(body[where], sys.byteorder)
                 assert not what, what
-                yield Hole(HoleKind.PATCH_REL_32, symbol, offset, addend)
+                yield Hole(HoleKind.REL_32, symbol, offset, addend)
             # x86_64-apple-darwin:
             case {
                 "Length": 2,
@@ -715,7 +720,7 @@ def handle_relocations(
                 body[where] = [0] * 8
                 assert section.startswith("_")
                 section = section.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_64, section, offset, addend)
+                yield Hole(HoleKind.ABS_64, section, offset, addend)
             case {
                 "Length": 3,
                 "Offset": int(offset),
@@ -731,7 +736,7 @@ def handle_relocations(
                 body[where] = [0] * 8
                 assert symbol.startswith("_")
                 symbol = symbol.removeprefix("_")
-                yield Hole(HoleKind.PATCH_ABS_64, symbol, offset, addend)
+                yield Hole(HoleKind.ABS_64, symbol, offset, addend)
             case _:
                 raise NotImplementedError(relocation)
 
@@ -949,7 +954,8 @@ class Compiler:
 
     def dump(self) -> str:
         lines = []
-        lines.append(f"// Don't be scared... this entire file is generated by {__file__}!")
+        lines.append(f"// Don't be scared... this entire file is generated by {TOOLS_JIT_BUILD}!")
+        lines.append(f"// Host: {sys.argv[1]}")  # XXX
         lines.append(f"")
         lines.extend(self.declare_enum(HoleKind))
         lines.append(f"")
@@ -997,19 +1003,19 @@ class Compiler:
             loads = []
             for hole in stencil.holes:
                 if hole.symbol.startswith("_JIT_"):
-                    value = HoleValue(f"HOLE_{hole.symbol.removeprefix('_JIT_')}")
+                    value = HoleValue(hole.symbol.removeprefix('_JIT_'))
                     holes.append(f"    {{.kind = {hole.kind}, .offset = 0x{hole.offset:03x}, .addend = 0x{hole.addend % (1 << 64):03x}, .value = {value}}},")
                 else:
                     loads.append(f"    {{.kind = {hole.kind}, .offset = 0x{hole.offset:03x}, .addend = 0x{hole.addend % (1 << 64):03x}, .symbol = {symbols.index(hole.symbol):3}}},  // {hole.symbol}")
             lines.append(f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{")
             for hole in holes:
                 lines.append(hole)
-            lines.append(f"    {{.kind =            0, .offset = 0x000, .addend = 0x000, .value = 0}},")
+            lines.append(f"    {{.kind =               0, .offset = 0x000, .addend = 0x000, .value = 0}},")
             lines.append(f"}};")
             lines.append(f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}] = {{")
             for  load in loads:
                 lines.append(load)
-            lines.append(f"    {{.kind =            0, .offset = 0x000, .addend = 0x000, .symbol =   0}},")
+            lines.append(f"    {{.kind =               0, .offset = 0x000, .addend = 0x000, .symbol =   0}},")
             lines.append(f"}};")
             lines.append(f"")
         lines.append(f"")
@@ -1037,13 +1043,11 @@ class Compiler:
             lines.append(f"    [{opname}] = INIT_STENCIL({opname}),")
         lines.append(f"}};")
         lines.append(f"")
-        lines.append(f"#define INIT_HOLE(NAME) [HOLE_##NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0")
+        lines.append(f"#define INIT_HOLE(NAME) [NAME] = (uintptr_t)0xBAD0BAD0BAD0BAD0")
         lines.append(f"")
         lines.append(f"#define GET_PATCHES() {{ \\")
         for value in HoleValue:
-            if value.startswith("HOLE_"):
-                name = value.removeprefix("HOLE_")
-                lines.append(f"    INIT_HOLE({name}), \\")
+            lines.append(f"    INIT_HOLE({value}), \\")
         lines.append(f"}}")
         lines.append(f"")
         return "\n".join(lines)
@@ -1057,18 +1061,30 @@ PLATFORMS = [
     (r"x86_64-pc-windows-msvc", (True, ObjectParserCOFF, "", [f"-I{PC}"])),
 ]
 
-if __name__ == "__main__":
-    host = sys.argv[1]
+def main(host: str) -> None:
     for pattern, configuration in PLATFORMS:
         if re.fullmatch(pattern, host):
             ghccc, parser, symbol_prefix, cflags = configuration
             break
     else:
         raise NotImplementedError(host)
-    CFLAGS.extend(cflags)
+    CFLAGS.extend(cflags)  # XXX
     CFLAGS.append("-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG")
     CFLAGS.append(f"--target={host}")
+    hasher = hashlib.sha256(host.encode())
+    hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+    for file in sorted(TOOLS_JIT.iterdir()):
+        hasher.update(file.read_bytes())
+    digest = hasher.hexdigest()
+    if PYTHON_JIT_STENCILS_H.exists():
+        with PYTHON_JIT_STENCILS_H.open() as file:
+            if file.readline().removeprefix("// ").removesuffix("\n") == digest:
+                return
     engine = Compiler(verbose=True, ghccc=ghccc, parser=parser, symbol_prefix=symbol_prefix)
     asyncio.run(engine.build())
     with PYTHON_JIT_STENCILS_H.open("w") as file:
+        file.write(f"// {digest}\n")
         file.write(engine.dump())
+
+if __name__ == "__main__":
+    main(sys.argv[1])

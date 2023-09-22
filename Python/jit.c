@@ -60,7 +60,7 @@ static void
 patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t addend)
 {
     switch (kind) {
-        case PATCH_ABS_12: {
+        case HoleKind_ABS_12: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction & 0x3B000000) == 0x39000000) ||
@@ -111,7 +111,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_16_A: {
+        case HoleKind_ABS_16_A: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 0);
@@ -119,7 +119,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_16_B: {
+        case HoleKind_ABS_16_B: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 1);
@@ -127,7 +127,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_16_C: {
+        case HoleKind_ABS_16_C: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 2);
@@ -135,7 +135,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_16_D: {
+        case HoleKind_ABS_16_D: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 3);
@@ -143,21 +143,21 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_32: {
+        case HoleKind_ABS_32: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             instruction = value + addend;
             *addr = instruction;
             break;
         }
-        case PATCH_ABS_64: {
+        case HoleKind_ABS_64: {
             uint64_t *addr = (uint64_t *)location;
             uint64_t instruction = *addr;
             instruction = value + addend;
             *addr = instruction;
             break;
         }
-        case PATCH_REL_21: {
+        case HoleKind_REL_21: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert((instruction & 0x9F000000) == 0x90000000);
@@ -171,7 +171,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_REL_26: {
+        case HoleKind_REL_26: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction & 0xFC000000) == 0x14000000) ||
@@ -185,14 +185,14 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case PATCH_REL_32: {
+        case HoleKind_REL_32: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             instruction = value + addend - (uintptr_t)location;
             *addr = instruction;
             break;
         }
-        case PATCH_REL_64: {
+        case HoleKind_REL_64: {
             uint64_t *addr = (uint64_t *)location;
             uint64_t instruction = *addr;
             instruction = value + addend - (uintptr_t)location;
@@ -307,19 +307,19 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
     const Stencil *stencil = &trampoline_stencil;
-    patches[HOLE_BASE] = (uintptr_t)head;
-    patches[HOLE_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+    patches[HoleValue_BASE] = (uintptr_t)head;
+    patches[HoleValue_CONTINUE] = (uintptr_t)head + stencil->nbytes;
     copy_and_patch(head, stencil, patches);
     head += stencil->nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
-        patches[HOLE_BASE] = (uintptr_t)head;
-        patches[HOLE_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
-        patches[HOLE_CONTINUE] = (uintptr_t)head + stencil->nbytes;
-        patches[HOLE_OPARG_PLUS_ONE] = instruction->oparg + 1;
-        patches[HOLE_OPERAND_PLUS_ONE] = instruction->operand + 1;
+        patches[HoleValue_BASE] = (uintptr_t)head;
+        patches[HoleValue_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
+        patches[HoleValue_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+        patches[HoleValue_OPARG_PLUS_ONE] = instruction->oparg + 1;
+        patches[HoleValue_OPERAND_PLUS_ONE] = instruction->operand + 1;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
