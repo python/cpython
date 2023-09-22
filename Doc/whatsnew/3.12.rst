@@ -324,7 +324,7 @@ PEP 669: Low impact monitoring for CPython
 
 :pep:`669` defines a new :mod:`API <sys.monitoring>` for profilers,
 debuggers, and other tools to monitor events in CPython.
-This instrumentation covers a wide range of events, including calls,
+It covers a wide range of events, including calls,
 returns, lines, exceptions, jumps, and more.
 This means that you only pay for what you use, providing support
 for near-zero overhead debuggers and coverage tools.
