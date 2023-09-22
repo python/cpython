@@ -2149,7 +2149,6 @@ push_cold_blocks_to_end(cfg_builder *g) {
             basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
             explicit_jump->b_next = b->b_next;
-            explicit_jump->b_label.id = next_lbl++;
             b->b_next = explicit_jump;
 
             /* set target */
