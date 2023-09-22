@@ -228,11 +228,11 @@ def _checkLevel(level):
 #
 _lock = threading.RLock()
 
-def _acquireLock():
+def _prepareFork():
     """
-    Acquire the module-level lock for serializing access to shared data.
+    Prepare to fork a new child process by acquiring the module-level lock.
 
-    This should be released with _releaseLock().
+    This should be used in conjunction with _afterFork().
     """
     # Wrap the lock acquisition in a try-except to prevent the lock from being
     # abandoned in the event of an asynchronous exception. See gh-106238.
@@ -242,9 +242,11 @@ def _acquireLock():
         _lock.release()
         raise
 
-def _releaseLock():
+def _afterFork():
     """
-    Release the module-level lock acquired by calling _acquireLock().
+    After a new child process has been forked, release the module-level lock.
+
+    This should be used in conjunction with _prepareFork().
     """
     _lock.release()
 
@@ -268,13 +270,13 @@ else:
         for handler in _at_fork_reinit_lock_weakset:
             handler._at_fork_reinit()
 
-        # _acquireLock() was called in the parent before forking.
+        # _prepareFork() was called in the parent before forking.
         # The lock is reinitialized to unlocked state.
         _lock._at_fork_reinit()
 
-    os.register_at_fork(before=_acquireLock,
+    os.register_at_fork(before=_prepareFork,
                         after_in_child=_after_at_fork_child_reinit_locks,
-                        after_in_parent=_releaseLock)
+                        after_in_parent=_afterFork)
 
 
 #---------------------------------------------------------------------------
