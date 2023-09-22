@@ -1000,9 +1000,9 @@ Optimizations
 CPython bytecode changes
 ========================
 
-* Remove the :opcode:`LOAD_METHOD` instruction. It has been merged into
+* Remove the :opcode:`!LOAD_METHOD` instruction. It has been merged into
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
-  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  :opcode:`!LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
