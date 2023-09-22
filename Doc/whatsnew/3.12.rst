@@ -607,7 +607,8 @@ asyncio
 calendar
 --------
 
-* Add enums :data:`calendar.Month` and :data:`calendar.Day`.
+* Add enums :data:`calendar.Month` and :data:`calendar.Day`
+  defining months of the year and days of the week.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 csv
