@@ -103,14 +103,12 @@ jobs:
           echo "::endgroup::"
           echo "::group::Configure Python (Host)"
           export HOST=${{ matrix.architecture }}-linux-gnu
-          sudo apt update
-          sudo apt install --yes gcc-$HOST pkg-config-$HOST qemu-user
+          sudo apt install --yes gcc-$HOST qemu-user
           export CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}"
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
-          export PKG_CONFIG=$HOST-pkg-config
           export QEMU_LD_PREFIX="/usr/$HOST"
-          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes 
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes 
           echo "::endgroup::"
           echo "::group::Build Python (Host)"
           make clean
