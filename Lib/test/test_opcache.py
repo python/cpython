@@ -4,13 +4,17 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper
+from test.support import threading_helper, check_impl_detail
+
+# Skip this module on other interpreters, it is cpython specific:
+if check_impl_detail(cpython=False):
+    raise unittest.SkipTest('implementation detail specific to cpython')
+
 import _testinternalcapi
 
 
 def disabling_optimizer(func):
     def wrapper(*args, **kwargs):
-        import _testinternalcapi
         old_opt = _testinternalcapi.get_optimizer()
         _testinternalcapi.set_optimizer(None)
         try:
