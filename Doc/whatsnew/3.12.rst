@@ -593,7 +593,7 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
-  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+  (Contributed by Itamar Oren and Pranav Thulasiram Bhat in :gh:`100344`.)
 
 * :func:`asyncio.iscoroutine` now returns ``False`` for generators as
   :mod:`asyncio` does not support legacy generator-based coroutines.
@@ -1836,7 +1836,7 @@ New Features
 * Added :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
   APIs to register callbacks to receive notification on creation and
   destruction of code objects.
-  (Contributed by Itamar Ostricher in :gh:`91054`.)
+  (Contributed by Itamar Oren in :gh:`91054`.)
 
 * Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
   get a frame variable by its name.
