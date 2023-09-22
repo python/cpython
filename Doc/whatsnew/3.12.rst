@@ -291,9 +291,11 @@ can be used to customize buffer creation.
 PEP 684: A Per-Interpreter GIL
 ------------------------------
 
-Sub-interpreters may now be created with a unique GIL per interpreter.
+:pep:`684` introduces a per-interpreter :term:`GIL <global interpreter lock>`,
+so that sub-interpreters may now be created with a unique GIL per interpreter.
 This allows Python programs to take full advantage of multiple CPU
-cores.
+cores. This is currently only available through the C-API,
+though a Python API is :pep:`anticipated for 3.13 <554>`.
 
 Use the new :c:func:`Py_NewInterpreterFromConfig` function to
 create an interpreter with its own GIL::
@@ -311,8 +313,6 @@ create an interpreter with its own GIL::
 
 For further examples how to use the C-API for sub-interpreters with a
 per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
-
-A Python API is anticipated for 3.13.  (See :pep:`554`.)
 
 (Contributed by Eric Snow in :gh:`104210`, etc.)
 
