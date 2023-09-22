@@ -1713,10 +1713,10 @@ Build Changes
   if the Clang compiler accepts the flag.
   (Contributed by Dong-hee Na in :gh:`89536`.)
 
-* Add ``COMPILEALL_OPTS`` variable in the :file:`Makefile` to override
-  :mod:`compileall` options (default: ``-j0``) in ``make install``.
-  Also merged the 3 ``compileall`` commands into a single command to
-  build .pyc files for all optimization levels (0, 1, 2) at once.
+* Add ``COMPILEALL_OPTS`` variable in :file:`Makefile` to override :mod:`compileall`
+  options (default: ``-j0``) in ``make install``. Also merged the 3
+  ``compileall`` commands into a single command to build .pyc files for all
+  optimization levels (0, 1, 2) at once.
   (Contributed by Victor Stinner in :gh:`99289`.)
 
 * Add platform triplets for 64-bit LoongArch:
