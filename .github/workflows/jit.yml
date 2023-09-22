@@ -104,7 +104,7 @@ jobs:
           echo "::group::Configure Python (Host)"
           export HOST=${{ matrix.architecture }}-linux-gnu
           sudo apt install --yes gcc-$HOST pkg-config-$HOST qemu-user
-          export CC=${{ matrix.compiler == 'clang' && "clang --target=$HOST" || "$HOST-gcc" }}
+          export CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}"
           export CPP="$CC --preprocess"
           export HOSTRUNNER=qemu-${{ matrix.architecture }}
           export PKG_CONFIG=$HOST-pkg-config
