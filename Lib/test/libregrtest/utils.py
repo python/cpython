@@ -310,16 +310,8 @@ def get_build_info():
     elif '-flto' in ldflags_nodist:
         optimizations.append('LTO')
 
-    # --enable-optimizations
-    pgo_options = (
-        # GCC
-        '-fprofile-use',
-        # clang: -fprofile-instr-use=code.profclangd
-        '-fprofile-instr-use',
-        # ICC
-        "-prof-use",
-    )
-    if any(option in cflags_nodist for option in pgo_options):
+    if support.check_cflags_pgo():
+        # PGO (--enable-optimizations)
         optimizations.append('PGO')
     if optimizations:
         build.append('+'.join(optimizations))
@@ -556,12 +548,21 @@ def adjust_rlimit_nofile():
 
 
 def display_header():
+    encoding = sys.stdout.encoding
+
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
                   "%s-endian" % sys.byteorder)
     print("== Python build:", ' '.join(get_build_info()))
-    print("== cwd:", os.getcwd())
+
+    cwd = os.getcwd()
+    # gh-109508: support.os_helper.FS_NONASCII, used by get_work_dir(), cannot
+    # be encoded to the filesystem encoding on purpose, escape non-encodable
+    # characters with backslashreplace error handler.
+    formatted_cwd = cwd.encode(encoding, "backslashreplace").decode(encoding)
+    print("== cwd:", formatted_cwd)
+
     cpu_count = os.cpu_count()
     if cpu_count:
         print("== CPU count:", cpu_count)

@@ -495,7 +495,7 @@ class _ExecutorManagerThread(threading.Thread):
                 # set_exception() fails if the future is cancelled: ignore it.
                 # Trying to check if the future is cancelled before calling
                 # set_exception() would leave a race condition if the future is
-                # cancelled betwen the check and set_exception().
+                # cancelled between the check and set_exception().
                 pass
             # Delete references to object. See issue16284
             del work_item

@@ -3,13 +3,18 @@ import re
 
 from . import common as _common
 
-# The following C files must not be built with Py_BUILD_CORE,
-# because they use the limited C API.
+# The following C files define the Py_LIMITED_API macro, and so must not be
+# built with the Py_BUILD_CORE macro defined.
 USE_LIMITED_C_API = frozenset((
+    # Modules/
     '_testcapimodule.c',
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',
+
+    # Modules/_testcapi/
+    'heaptype_relative.c',
+    'vectorcall_limited.c',
 ))
 
 TOOL = 'gcc'
