@@ -288,11 +288,12 @@ exit:
 }
 
 PyDoc_STRVAR(_io_BytesIO_peek__doc__,
-"peek($self, size=-1, /)\n"
+"peek($self, size=1, /)\n"
 "--\n"
 "\n"
 "Return bytes from the stream without advancing the position.\n"
 "\n"
+"If the size argument is zero or negative, read until EOF is reached.\n"
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_PEEK_METHODDEF    \
@@ -305,7 +306,7 @@ static PyObject *
 _io_BytesIO_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_ssize_t size = -1;
+    Py_ssize_t size = 1;
 
     if (!_PyArg_CheckPositional("peek", nargs, 0, 1)) {
         goto exit;
@@ -313,8 +314,17 @@ _io_BytesIO_peek(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    if (!_Py_convert_optional_to_ssize_t(args[0], &size)) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = _PyNumber_Index(args[0]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        size = ival;
     }
 skip_optional:
     return_value = _io_BytesIO_peek_impl((bytesio *)self, size);
@@ -673,4 +683,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c21a2170e9f7efa5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02299ed558ba722f input=a9049054013a1b77]*/
