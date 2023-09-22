@@ -484,7 +484,7 @@ Other Language Changes
   (Contributed by Serhiy Storchaka in :gh:`87995`.)
 
 * :class:`memoryview` now supports the half-float type (the "e" format code).
-  (Contributed by Dong-hee Na and Antoine Pitrou in :gh:`90751`.)
+  (Contributed by Donghee Na and Antoine Pitrou in :gh:`90751`.)
 
 * The parser now raises :exc:`SyntaxError` when parsing source code containing
   null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
@@ -979,7 +979,7 @@ Optimizations
 
 * Added experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
-  (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Dong-hee Na in :gh:`101525`)
+  (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Donghee Na in :gh:`101525`)
 
 * Speed up the regular expression substitution (functions :func:`re.sub` and
   :func:`re.subn` and corresponding :class:`!re.Pattern` methods) for
@@ -1637,7 +1637,7 @@ Changes in the Python API
   so only a very small set of users might be affected.
   This change helps with interpreter isolation.  Furthermore, :mod:`syslog` is a wrapper
   around process-global resources, which are best managed from the main interpreter.
-  (Contributed by Dong-hee Na in :gh:`99127`.)
+  (Contributed by Donghee Na in :gh:`99127`.)
 
 * The undocumented locking behavior of :func:`~functools.cached_property`
   is removed, because it locked across all instances of the class, leading to high
@@ -1711,7 +1711,7 @@ Build Changes
 
 * CPython now uses the ThinLTO option as the default link time optimization policy
   if the Clang compiler accepts the flag.
-  (Contributed by Dong-hee Na in :gh:`89536`.)
+  (Contributed by Donghee Na in :gh:`89536`.)
 
 * Add ``COMPILEALL_OPTS`` variable in Makefile to override :mod:`compileall`
   options (default: ``-j0``) in ``make install``. Also merged the 3
