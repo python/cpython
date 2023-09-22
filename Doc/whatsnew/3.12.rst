@@ -321,13 +321,15 @@ per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
 PEP 669: Low impact monitoring for CPython
 ------------------------------------------
 
-CPython 3.12 now supports the ability to monitor calls,
-returns, lines, exceptions and other events using instrumentation.
+:pep:`669` defines a new :mod:`API <sys.monitoring>` for profilers,
+debuggers, and other tools to monitor events in CPython.
+It covers a wide range of events, including calls,
+returns, lines, exceptions, jumps, and more.
 This means that you only pay for what you use, providing support
 for near-zero overhead debuggers and coverage tools.
-
 See  :mod:`sys.monitoring` for details.
 
+(Contributed by Mark Shannon in :gh:`103083`.)
 
 New Features Related to Type Hints
 ==================================
