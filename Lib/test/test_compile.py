@@ -1225,6 +1225,17 @@ class TestSpecifics(unittest.TestCase):
                 except:
                     pass
 
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
