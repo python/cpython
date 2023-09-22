@@ -2187,6 +2187,7 @@ although there is currently no date scheduled for their removal.
 * :c:func:`!PyUnicode_AsEncodedObject`
 * :c:func:`!PyUnicode_AsEncodedUnicode`
 * :c:func:`PyUnicode_READY`: unneeded since Python 3.12
+* :c:func:`!PyErr_Display`: use :c:func:`PyErr_DisplayException`
 * :c:func:`!_PyErr_ChainExceptions`
 * :c:member:`!PyBytesObject.ob_shash` member:
   call :c:func:`PyObject_Hash` instead
