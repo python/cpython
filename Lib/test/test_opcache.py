@@ -4,13 +4,14 @@ import dis
 import threading
 import types
 import unittest
-from test.support import threading_helper
-import _testinternalcapi
+from test.support import threading_helper, import_helper
+
+# Skip this module on other interpreters, it is cpython specific:
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 
 def disabling_optimizer(func):
     def wrapper(*args, **kwargs):
-        import _testinternalcapi
         old_opt = _testinternalcapi.get_optimizer()
         _testinternalcapi.set_optimizer(None)
         try:
