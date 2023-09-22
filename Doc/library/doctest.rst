@@ -288,7 +288,7 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 
    <name of M>.__test__.K
 
-Simple example is to place this block of code inside at the top :file:`example.py`.
+A Simple example is to place this block of code at the top :file:`example.py`.
 
 .. code-block:: none
 
@@ -302,7 +302,7 @@ Simple example is to place this block of code inside at the top :file:`example.p
    """
    }
 
-The value of ``example.__test__["numbers"]`` value will also be treated as
+The value of ``example.__test__["numbers"]`` value will be treated as
 docstring and all the tests inside it will be run. It is also
 important to note that the value can also be mapped to a Function,
 class object or module. If the value is a class, Function or module, doctest
