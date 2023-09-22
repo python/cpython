@@ -394,8 +394,9 @@ _io_BytesIO_tell_impl(bytesio *self)
     return PyLong_FromSsize_t(self->pos);
 }
 
+// Read without advancing position
 static PyObject *
-read_bytes(bytesio *self, Py_ssize_t size)
+peek_bytes(bytesio *self, Py_ssize_t size)
 {
     const char *output;
 
@@ -404,13 +405,18 @@ read_bytes(bytesio *self, Py_ssize_t size)
     if (size > 1 &&
         self->pos == 0 && size == PyBytes_GET_SIZE(self->buf) &&
         self->exports == 0) {
-        self->pos += size;
         return Py_NewRef(self->buf);
     }
 
     output = PyBytes_AS_STRING(self->buf) + self->pos;
-    self->pos += size;
     return PyBytes_FromStringAndSize(output, size);
+}
+
+static PyObject *
+read_bytes(bytesio *self, Py_ssize_t size) {
+    PyObject *bytes = peek_bytes(self, size);
+    self->pos += size;
+    return bytes;
 }
 
 /*[clinic input]
@@ -465,17 +471,18 @@ _io_BytesIO_read1_impl(bytesio *self, Py_ssize_t size)
 
 /*[clinic input]
 _io.BytesIO.peek
-    size: Py_ssize_t(accept={int, NoneType}) = -1
+    size: Py_ssize_t = 1
     /
 
 Return bytes from the stream without advancing the position.
 
+If the size argument is zero or negative, read until EOF is reached.
 Return an empty bytes object at EOF.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=fa4d8ce28b35db9b input=afc80e71b37e7c59]*/
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=cb06614a3ed0496e]*/
 {
     Py_ssize_t n;
 
@@ -488,11 +495,7 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
         if (size < 0)
             size = 0;
     }
-    Py_ssize_t prev_pos = self->pos;
-    PyObject* result = read_bytes(self, size);
-    self->pos = prev_pos;
-
-    return result;
+    return peek_bytes(self, size);
 }
 
 
