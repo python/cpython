@@ -566,7 +566,7 @@ asyncio
 * Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
   functions to allow opting an event loop in to eager task execution,
   making some use-cases 2x to 5x faster.
-  (Contributed by Jacob Bower & Itamar Ostricher in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
+  (Contributed by Jacob Bower & Itamar Oren in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
 
 * On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
@@ -983,7 +983,7 @@ Optimizations
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
-  (Contributed by Itamar Ostricher in :gh:`103793`.)
+  (Contributed by Itamar Oren in :gh:`103793`.)
 
 * The :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens` functions are
   up to 64% faster as a side effect of the changes required to cover :pep:`701` in
