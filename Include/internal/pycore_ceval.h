@@ -197,8 +197,9 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define _PY_GIL_DROP_REQUEST_BIT 0
 #define _PY_SIGNALS_PENDING_BIT 1
 #define _PY_CALLS_TO_DO_BIT 2
-#define _PY_ASYNC_EXCEPTION_BIT 3
-#define _PY_GC_SCHEDULED_BIT 4
+#define _PY_CALLS_ON_MAIN_TO_DO_BIT 3
+#define _PY_ASYNC_EXCEPTION_BIT 4
+#define _PY_GC_SCHEDULED_BIT 5
 
 
 static inline void
