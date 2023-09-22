@@ -3,16 +3,16 @@
 #include "pycore_frame.h"
 
 // Stuff that will be patched at "JIT time":
-extern _PyInterpreterFrame *_jit_continue(_PyInterpreterFrame *frame,
+extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
                                           PyThreadState *tstate);
 
 _PyInterpreterFrame *
-_jit_trampoline(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
+_JIT_TRAMPOLINE(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
                 PyObject **stack_pointer)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    frame = _jit_continue(frame, stack_pointer, tstate);
+    frame = _JIT_CONTINUE(frame, stack_pointer, tstate);
     Py_DECREF(executor);
     return frame;
 }

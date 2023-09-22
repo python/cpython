@@ -246,10 +246,10 @@ class ObjectParser:
         self._data = json.loads(output[start:end])
         for section in unwrap(self._data, "Section"):
             self._handle_section(section)
-        if "_jit_entry" in self.body_symbols:
-            entry = self.body_symbols["_jit_entry"]
+        if "_JIT_ENTRY" in self.body_symbols:
+            entry = self.body_symbols["_JIT_ENTRY"]
         else:
-            entry = self.body_symbols["_jit_trampoline"]
+            entry = self.body_symbols["_JIT_TRAMPOLINE"]
         assert entry == 0, entry
         holes = []
         padding = 0
@@ -261,7 +261,7 @@ class ObjectParser:
             assert newhole.symbol not in self.dupes, newhole.symbol
             if newhole.symbol in self.body_symbols:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                newhole = Hole(newhole.kind, "_jit_base", newhole.offset, addend)
+                newhole = Hole(newhole.kind, "_JIT_BASE", newhole.offset, addend)
             holes.append(newhole)
         offset = got-self.data_size-padding
         comment = "#"
@@ -277,7 +277,7 @@ class ObjectParser:
         for i, (got_symbol, addend) in enumerate(self.got_entries):
             if got_symbol in self.body_symbols:
                 addend = self.body_symbols[got_symbol] + addend
-                got_symbol = "_jit_base"
+                got_symbol = "_JIT_BASE"
             # XXX: PATCH_ABS_32 on 32-bit platforms?
             holes.append(Hole(HoleKind.PATCH_ABS_64, got_symbol, got + 8 * i, addend))
             symbol_part = f"{comment} &{got_symbol}{f' + 0x{addend:x}' if addend else ''}"
@@ -301,6 +301,7 @@ class BasicStrEnum(enum.StrEnum):
     def _generate_next_value_(name: str, start, count, last_values) -> str:
         return name
 
+@enum.unique
 class HoleKind(BasicStrEnum):
     PATCH_ABS_12 = enum.auto()
     PATCH_ABS_16_A = enum.auto()
@@ -314,13 +315,13 @@ class HoleKind(BasicStrEnum):
     PATCH_REL_32 = enum.auto()
     PATCH_REL_64 = enum.auto()
 
+@enum.unique
 class HoleValue(BasicStrEnum):
-    HOLE_base = enum.auto()
-    HOLE_branch = enum.auto()
-    HOLE_continue = enum.auto()
-    HOLE_loop = enum.auto()
-    HOLE_oparg_plus_one = enum.auto()
-    HOLE_operand_plus_one = enum.auto()
+    HOLE_BASE = enum.auto()
+    HOLE_CONTINUE = enum.auto()
+    HOLE_JUMP = enum.auto()
+    HOLE_OPARG_PLUS_ONE = enum.auto()
+    HOLE_OPERAND_PLUS_ONE = enum.auto()
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
@@ -385,7 +386,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_REL_21, "_jit_base", offset, addend)
+                yield Hole(HoleKind.PATCH_REL_21, "_JIT_BASE", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -411,7 +412,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_ABS_12, "_jit_base", offset, addend)
+                yield Hole(HoleKind.PATCH_ABS_12, "_JIT_BASE", offset, addend)
             case {
                 "Length": 2 as length,
                 "Offset": int(offset),
@@ -536,7 +537,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_REL_21, "_jit_base", offset, addend)
+                yield Hole(HoleKind.PATCH_REL_21, "_JIT_BASE", offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
@@ -573,7 +574,7 @@ def handle_relocations(
                 if (symbol, addend) not in got_entries:
                     got_entries.append((symbol, addend))
                 addend = len(body) + got_entries.index((symbol, addend)) * 8
-                yield Hole(HoleKind.PATCH_ABS_12, "_jit_base", offset, addend)
+                yield Hole(HoleKind.PATCH_ABS_12, "_JIT_BASE", offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
@@ -904,7 +905,7 @@ class Compiler:
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         if self._ghccc:
             ir = before = ll.read_text()
-            for name in ["_jit_branch", "_jit_continue", "_jit_entry", "_jit_loop"]:
+            for name in ["_JIT_CONTINUE", "_JIT_ENTRY", "_JIT_JUMP"]:
                 for ptr in ["ptr", "%struct._PyInterpreterFrame*"]:
                     ir = ir.replace(f"{ptr} @{name}", f"ghccc {ptr} @{name}")
             assert ir != before, ir
@@ -981,7 +982,7 @@ class Compiler:
         symbols = set()
         for stencil in self._stencils_built.values():
             for hole in stencil.holes:
-                if not hole.symbol.startswith("_jit_"):
+                if not hole.symbol.startswith("_JIT_"):
                     symbols.add(hole.symbol)
         symbols = sorted(symbols)
         for opname, stencil in sorted(self._stencils_built.items()):
@@ -995,10 +996,8 @@ class Compiler:
             holes = []
             loads = []
             for hole in stencil.holes:
-                assert hole.kind in HoleKind, hole.kind
-                if hole.symbol.startswith("_jit_"):
-                    value = f"HOLE_{hole.symbol.removeprefix('_jit_')}"
-                    assert value in HoleValue, value
+                if hole.symbol.startswith("_JIT_"):
+                    value = HoleValue(f"HOLE_{hole.symbol.removeprefix('_JIT_')}")
                     holes.append(f"    {{.kind = {hole.kind}, .offset = 0x{hole.offset:03x}, .addend = 0x{hole.addend % (1 << 64):03x}, .value = {value}}},")
                 else:
                     loads.append(f"    {{.kind = {hole.kind}, .offset = 0x{hole.offset:03x}, .addend = 0x{hole.addend % (1 << 64):03x}, .symbol = {symbols.index(hole.symbol):3}}},  // {hole.symbol}")
