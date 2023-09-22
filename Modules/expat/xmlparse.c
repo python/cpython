@@ -32,7 +32,7 @@
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Copyright (c) 2019-2020 Ben Wagner <bungeman@chromium.org>
    Copyright (c) 2019      Vadim Zeitlin <vadim@zeitlins.org>
-   Copyright (c) 2021      Dong-hee Na <donghee.na@python.org>
+   Copyright (c) 2021      Donghee Na <donghee.na@python.org>
    Copyright (c) 2022      Samanta Navarro <ferivoz@riseup.net>
    Copyright (c) 2022      Jeffrey Walton <noloader@gmail.com>
    Copyright (c) 2022      Jann Horn <jannh@google.com>
