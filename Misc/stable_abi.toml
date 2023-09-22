@@ -2460,3 +2460,7 @@
     added = '3.13'
 [function.PyMapping_HasKeyStringWithError]
     added = '3.13'
+[function.PyUnstable_PerfTrampoline_CompileCode]
+    added = '3.13'
+[function.PyUnstable_PerfTrampoline_SetPersistAfterFork]
+    added = '3.13'
