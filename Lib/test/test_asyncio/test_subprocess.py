@@ -270,26 +270,28 @@ class SubprocessMixin:
         finally:
             signal.signal(signal.SIGHUP, old_handler)
 
-    def prepare_broken_pipe_test(self):
+    def test_stdin_broken_pipe(self):
         # buffer large enough to feed the whole pipe buffer
         large_data = b'x' * support.PIPE_MAX_SIZE
+
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
+        self.addCleanup(os.close, wfd)
+        code = f'import os; fd = {rfd}; os.read(fd, 1)'
 
         # the program ends before the stdin can be fed
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_exec(
-                sys.executable, '-c', 'pass',
+                sys.executable, '-c', code,
                 stdin=subprocess.PIPE,
+                pass_fds=(rfd,),
             )
         )
 
-        return (proc, large_data)
-
-    def test_stdin_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
-
         async def write_stdin(proc, data):
-            await asyncio.sleep(0.5)
             proc.stdin.write(data)
+            # Only exit the child process once the write buffer is filled
+            os.write(wfd, b'go')
             await proc.stdin.drain()
 
         coro = write_stdin(proc, large_data)
@@ -300,7 +302,16 @@ class SubprocessMixin:
         self.loop.run_until_complete(proc.wait())
 
     def test_communicate_ignore_broken_pipe(self):
-        proc, large_data = self.prepare_broken_pipe_test()
+        # buffer large enough to feed the whole pipe buffer
+        large_data = b'x' * support.PIPE_MAX_SIZE
+
+        # the program ends before the stdin can be fed
+        proc = self.loop.run_until_complete(
+            asyncio.create_subprocess_exec(
+                sys.executable, '-c', 'pass',
+                stdin=subprocess.PIPE,
+            )
+        )
 
         # communicate() must ignore BrokenPipeError when feeding stdin
         self.loop.set_exception_handler(lambda loop, msg: None)
