@@ -23775,14 +23775,10 @@ fi
 
 case $ac_sys_system/$ac_sys_release in #(
   Darwin/*) :
-    ac_fn_c_check_type "$LINENO" "Function" "ac_cv_type_Function" "$ac_includes_default"
+    ac_fn_c_check_type "$LINENO" "Function" "ac_cv_type_Function" "#include <readline/readline.h>
+"
 if test "x$ac_cv_type_Function" = xyes
 then :
-
-printf "%s\n" "#define HAVE_FUNCTION 1" >>confdefs.h
-
-readline/readline.h
-else $as_nop
   printf "%s\n" "#define WITH_APPLE_EDITLINE 1" >>confdefs.h
 
 fi
