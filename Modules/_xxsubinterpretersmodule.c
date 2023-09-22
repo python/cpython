@@ -28,34 +28,12 @@ _get_current_interp(void)
     return PyInterpreterState_Get();
 }
 
-static PyObject *
-add_new_exception(PyObject *mod, const char *name, PyObject *base)
-{
-    assert(!PyObject_HasAttrStringWithError(mod, name));
-    PyObject *exctype = PyErr_NewException(name, base, NULL);
-    if (exctype == NULL) {
-        return NULL;
-    }
-    int res = PyModule_AddType(mod, (PyTypeObject *)exctype);
-    if (res < 0) {
-        Py_DECREF(exctype);
-        return NULL;
-    }
-    return exctype;
-}
-
-#define ADD_NEW_EXCEPTION(MOD, NAME, BASE) \
-    add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
-
 
 /* module state *************************************************************/
 
 typedef struct {
     /* heap types */
     PyTypeObject *ExceptionSnapshotType;
-
-    /* exceptions */
-    PyObject *RunFailedError;
 } module_state;
 
 static inline module_state *
@@ -73,9 +51,6 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
     /* heap types */
     Py_VISIT(state->ExceptionSnapshotType);
 
-    /* exceptions */
-    Py_VISIT(state->RunFailedError);
-
     return 0;
 }
 
@@ -84,9 +59,6 @@ clear_module_state(module_state *state)
 {
     /* heap types */
     Py_CLEAR(state->ExceptionSnapshotType);
-
-    /* exceptions */
-    Py_CLEAR(state->RunFailedError);
 
     return 0;
 }
@@ -185,30 +157,6 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
 
 
 /* interpreter-specific code ************************************************/
-
-static int
-exceptions_init(PyObject *mod)
-{
-    module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        return -1;
-    }
-
-#define ADD(NAME, BASE) \
-    do { \
-        assert(state->NAME == NULL); \
-        state->NAME = ADD_NEW_EXCEPTION(mod, NAME, BASE); \
-        if (state->NAME == NULL) { \
-            return -1; \
-        } \
-    } while (0)
-
-    // An uncaught exception came out of interp_run_string().
-    ADD(RunFailedError, PyExc_RuntimeError);
-#undef ADD
-
-    return 0;
-}
 
 static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
@@ -769,11 +717,6 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
     if (state == NULL) {
-        goto error;
-    }
-
-    /* Add exception types */
-    if (exceptions_init(mod) != 0) {
         goto error;
     }
 

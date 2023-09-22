@@ -14,11 +14,23 @@ from _xxinterpchannels import (
 
 __all__ = [
     'Interpreter', 'get_current', 'get_main', 'create', 'list_all',
+    'RunFailedError',
     'SendChannel', 'RecvChannel',
     'create_channel', 'list_all_channels', 'is_shareable',
     'ChannelError', 'ChannelNotFoundError',
     'ChannelEmptyError',
     ]
+
+
+class RunFailedError(RuntimeError):
+
+    def __init__(self, snapshot):
+        if snapshot.type and snapshot.msg:
+            msg = f'{snapshot.type}: {snapshot.msg}'
+        else:
+            msg = snapshot.type or snapshot.msg
+        super().__init__(msg)
+        self.snapshot = snapshot
 
 
 def create(*, isolated=True):
@@ -118,16 +130,7 @@ class Interpreter:
         """
         err = _interpreters.exec(self._id, src_str, init)
         if err is not None:
-            if err.name is not None:
-                if err.msg is not None:
-                    msg = f'{err.name}: {err.msg}'
-                else:
-                    msg = err.name
-            elif err.msg is not None:
-                msg = err.msg
-            else:
-                msg = None
-            raise RunFailedError(msg)
+            raise RunFailedError(err)
 
 
 def create_channel():
