@@ -3,13 +3,13 @@ select = [
     "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
 extend-exclude = [
+    # Excluded (these aren't actually executed, they're just "data files")
+    "tokenizedata/*.py",
     # Failed to lint
-    "badsyntax_pep3120.py",
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
     "test_source_encoding.py",
     # Failed to parse
-    "badsyntax_3131.py",
     "test_fstring.py",
     # TODO Fix: F811 Redefinition of unused name
     "test_buffer.py",
