@@ -61,13 +61,13 @@ jobs:
             runner: ubuntu-latest
             compiler: clang
             tier: 2
-            exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
+            exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
-          #   exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
+          #   exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: x86_64-unknown-linux-gnu/clang
             architecture: x86_64
             runner: ubuntu-latest
