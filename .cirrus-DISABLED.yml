@@ -1,3 +1,6 @@
+# gh-91960: Job disabled since Python is out of free credit (September 2023):
+# https://discuss.python.org/t/freebsd-gets-a-new-cirrus-ci-github-action-job-and-a-new-buildbot/33122/26
+
 freebsd_task:
   freebsd_instance:
     matrix:

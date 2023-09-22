@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from test import support
 from test.support import os_helper
@@ -25,7 +25,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     if python_cmd is not None:
         executable = python_cmd
     else:
-        executable = [sys.executable]
+        executable = (sys.executable,)
     cmd = [*executable, *support.args_from_interpreter_flags(),
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
@@ -45,7 +45,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         env=env,
         stdout=output_fd,
         # bpo-45410: Write stderr into stdout to keep messages order

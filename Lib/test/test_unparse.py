@@ -635,6 +635,20 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("[a, b] = [c, d] = [e, f] = g")
         self.check_src_roundtrip("a, b = [c, d] = e, f = g")
 
+    def test_multiquote_joined_string(self):
+        self.check_ast_roundtrip("f\"'''{1}\\\"\\\"\\\"\" ")
+        self.check_ast_roundtrip("""f"'''{1}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{1}''' """)
+        self.check_ast_roundtrip("""f'""\"{1}""\\"' """)
+
+        self.check_ast_roundtrip("""f"'''{"\\n"}""\\"" """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'""\"{"\\n"}""\\"' """)
+
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{"\\n\\"'"}''' """)
+        self.check_ast_roundtrip("""f'''""\"''\\'{""\"\\n\\"'''""\" '''\\n'''}''' """)
+
 
 class ManualASTCreationTestCase(unittest.TestCase):
     """Test that AST nodes created without a type_params field unparse correctly."""

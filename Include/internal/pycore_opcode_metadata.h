@@ -170,6 +170,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 2;
         case BINARY_OP_ADD_UNICODE:
             return 2;
+        case _BINARY_OP_INPLACE_ADD_UNICODE:
+            return 2;
         case BINARY_OP_INPLACE_ADD_UNICODE:
             return 2;
         case BINARY_SUBSCR:
@@ -430,6 +432,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case _ITER_CHECK_LIST:
             return 1;
+        case _ITER_JUMP_LIST:
+            return 1;
         case _IS_ITER_EXHAUSTED_LIST:
             return 1;
         case _ITER_NEXT_LIST:
@@ -438,6 +442,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 1;
         case _ITER_CHECK_TUPLE:
             return 1;
+        case _ITER_JUMP_TUPLE:
+            return 1;
         case _IS_ITER_EXHAUSTED_TUPLE:
             return 1;
         case _ITER_NEXT_TUPLE:
@@ -445,6 +451,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case FOR_ITER_TUPLE:
             return 1;
         case _ITER_CHECK_RANGE:
+            return 1;
+        case _ITER_JUMP_RANGE:
             return 1;
         case _IS_ITER_EXHAUSTED_RANGE:
             return 1;
@@ -702,6 +710,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 1;
         case BINARY_OP_ADD_UNICODE:
             return 1;
+        case _BINARY_OP_INPLACE_ADD_UNICODE:
+            return 0;
         case BINARY_OP_INPLACE_ADD_UNICODE:
             return 0;
         case BINARY_SUBSCR:
@@ -962,6 +972,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case _ITER_CHECK_LIST:
             return 1;
+        case _ITER_JUMP_LIST:
+            return 1;
         case _IS_ITER_EXHAUSTED_LIST:
             return 2;
         case _ITER_NEXT_LIST:
@@ -970,6 +982,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 2;
         case _ITER_CHECK_TUPLE:
             return 1;
+        case _ITER_JUMP_TUPLE:
+            return 1;
         case _IS_ITER_EXHAUSTED_TUPLE:
             return 2;
         case _ITER_NEXT_TUPLE:
@@ -977,6 +991,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case FOR_ITER_TUPLE:
             return 2;
         case _ITER_CHECK_RANGE:
+            return 1;
+        case _ITER_JUMP_RANGE:
             return 1;
         case _IS_ITER_EXHAUSTED_RANGE:
             return 2;
@@ -1905,11 +1921,11 @@ const uint8_t _PyOpcode_Caches[256] = {
     [COMPARE_OP] = 1,
     [POP_JUMP_IF_FALSE] = 1,
     [POP_JUMP_IF_TRUE] = 1,
+    [POP_JUMP_IF_NONE] = 1,
+    [POP_JUMP_IF_NOT_NONE] = 1,
     [FOR_ITER] = 1,
     [CALL] = 3,
     [BINARY_OP] = 1,
-    [POP_JUMP_IF_NONE] = 1,
-    [POP_JUMP_IF_NOT_NONE] = 1,
     [JUMP_BACKWARD] = 1,
 };
 #endif // NEED_OPCODE_METADATA

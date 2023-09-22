@@ -51,6 +51,8 @@ def regrtest_runner(result: TestResult, test_func, runtests: RunTests) -> None:
     if refleak:
         result.state = State.REFLEAK
 
+    stats: TestStats | None
+
     match test_result:
         case TestStats():
             stats = test_result
@@ -134,14 +136,14 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         with saved_test_environment(test_name,
                                     runtests.verbose, quiet, pgo=pgo):
             _load_run_test(result, runtests)
-    except support.ResourceDenied as msg:
+    except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {msg}", flush=True)
+            print(f"{test_name} skipped -- {exc}", flush=True)
         result.state = State.RESOURCE_DENIED
         return
-    except unittest.SkipTest as msg:
+    except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {msg}", flush=True)
+            print(f"{test_name} skipped -- {exc}", flush=True)
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
