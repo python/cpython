@@ -318,7 +318,7 @@ PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
 // Export for test_peg_generator
 PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
 
-PyAPI_FUNC(int) _PyFile_Flush(PyObject *);
+extern int _PyFile_Flush(PyObject *);
 
 #ifdef __cplusplus
 }
