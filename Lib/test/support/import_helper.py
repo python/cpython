@@ -8,7 +8,7 @@ import sys
 import unittest
 import warnings
 
-from .os_helper import unlink
+from .os_helper import unlink, temp_dir
 
 
 @contextlib.contextmanager
@@ -246,3 +246,26 @@ def modules_cleanup(oldmodules):
     # do currently). Implicitly imported *real* modules should be left alone
     # (see issue 10556).
     sys.modules.update(oldmodules)
+
+
+@contextlib.contextmanager
+def ready_to_import(name=None, source=""):
+    from test.support import script_helper
+
+    # 1. Sets up a temporary directory and removes it afterwards
+    # 2. Creates the module file
+    # 3. Temporarily clears the module from sys.modules (if any)
+    # 4. Reverts or removes the module when cleaning up
+    name = name or "spam"
+    with temp_dir() as tempdir:
+        path = script_helper.make_script(tempdir, name, source)
+        old_module = sys.modules.pop(name, None)
+        try:
+            sys.path.insert(0, tempdir)
+            yield name, path
+            sys.path.remove(tempdir)
+        finally:
+            if old_module is not None:
+                sys.modules[name] = old_module
+            else:
+                sys.modules.pop(name, None)
