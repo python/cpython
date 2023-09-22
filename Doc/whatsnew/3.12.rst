@@ -2062,6 +2062,9 @@ Deprecated
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
 
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14. (:gh:`95388`)
+
 * The ``structmember.h`` header is deprecated, though it continues to be
   available and there are no plans to remove it.
 
@@ -2092,9 +2095,6 @@ Deprecated
 
   (Contributed in :gh:`47146` by Petr Viktorin, based on
   earlier work by Alexander Belopolsky and Matthias Braun.)
-
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases is deprecated and will be disabled in Python 3.14. (:gh:`95388`)
 
 * :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore` are deprecated.
   Use :c:func:`PyErr_GetRaisedException` and
@@ -2146,7 +2146,7 @@ Pending Removal in Python 3.14
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
 
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases (:gh:`95388`).
 
 Pending Removal in Python 3.15
