@@ -662,8 +662,6 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return _PyStatus_ERR("can't make first thread");
     }
     _PyThreadState_Bind(tstate);
-    // XXX For now we do this before the GIL is created.
-    (void) _PyThreadState_SwapNoGIL(tstate);
 
     status = init_interp_create_gil(tstate, config.gil);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2035,8 +2033,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     _PyThreadState_Bind(tstate);
 
-    // XXX For now we do this before the GIL is created.
-    PyThreadState *save_tstate = _PyThreadState_SwapNoGIL(tstate);
+    PyThreadState *save_tstate = _PyThreadState_GET();
     int has_gil = 0;
 
     /* From this point until the init_interp_create_gil() call,
@@ -2048,7 +2045,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     const PyConfig *src_config;
     if (save_tstate != NULL) {
         // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
+        _PyThreadState_Detach(save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2095,12 +2092,11 @@ error:
     *tstate_p = NULL;
 
     /* Oops, it didn't work.  Undo it all. */
-    PyErr_PrintEx(0);
     if (has_gil) {
-        PyThreadState_Swap(save_tstate);
+        _PyThreadState_Detach(tstate);
     }
-    else {
-        _PyThreadState_SwapNoGIL(save_tstate);
+    if (save_tstate != NULL) {
+        _PyThreadState_Attach(save_tstate);
     }
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);

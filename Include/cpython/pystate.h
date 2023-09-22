@@ -93,6 +93,10 @@ struct _ts {
         unsigned int :24;
     } _status;
 
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+       See Include/internal/pycore_pystate.h for more details. */
+    int state;
+
     int py_recursion_remaining;
     int py_recursion_limit;
 
