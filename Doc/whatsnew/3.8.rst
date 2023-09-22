@@ -947,7 +947,7 @@ This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
 notebook.
 
-(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+(Suggested by Raymond Hettinger, implemented by Donghee Na, and
 reviewed by Vinay Sajip in :issue:`33897`.)
 
 
@@ -1714,7 +1714,7 @@ Deprecated
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
   has been deprecated.
-  (Contributed by Dong-hee Na in :issue:`35283`.)
+  (Contributed by Donghee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
   now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
