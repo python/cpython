@@ -1108,11 +1108,6 @@ Deprecated
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
 
-* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
-  is deprecated for extension modules. Accessing this field will generate a compiler
-  warning at compile time. This field will be removed in Python 3.14.
-  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
-
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
   error in Python 3.14. Use ``not`` for logical negation of bools instead.
   In the rare case that you really need the bitwise inversion of the underlying
@@ -1243,9 +1238,6 @@ Pending Removal in Python 3.14
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`
   is deprecated and will raise an exception in Python 3.14.
 
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API (:gh:`95388`).
-
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
@@ -1254,9 +1246,6 @@ Pending Removal in Python 3.14
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
-
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases using the C API (:gh:`95388`)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -2039,6 +2028,11 @@ Porting to Python 3.12
 Deprecated
 ----------
 
+* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.14.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
 * Deprecate global configuration variable:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
@@ -2067,9 +2061,6 @@ Deprecated
   The :c:func:`Py_InitializeFromConfig` API should be used with
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
-
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases is deprecated and will be disabled in Python 3.14.
 
 * The ``structmember.h`` header is deprecated, though it continues to be
   available and there are no plans to remove it.
@@ -2102,6 +2093,9 @@ Deprecated
   (Contributed in :gh:`47146` by Petr Viktorin, based on
   earlier work by Alexander Belopolsky and Matthias Braun.)
 
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+  bases is deprecated and will be disabled in Python 3.14. (:gh:`95388`)
+
 * :c:func:`PyErr_Fetch` and :c:func:`PyErr_Restore` are deprecated.
   Use :c:func:`PyErr_GetRaisedException` and
   :c:func:`PyErr_SetRaisedException` instead.
@@ -2117,6 +2111,15 @@ Deprecated
   or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
   overrides :c:member:`~PyTypeObject.tp_new` is deprecated.
   Call the metaclass instead.
+
+Pending Removal in Python 3.14
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* The ``ma_version_tag`` field in :c:type:`PyDictObject` for extension modules
+  (:pep:`699`; :gh:`101193`).
+
+* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
+  bases (:gh:`95388`).
 
 Removed
 -------
