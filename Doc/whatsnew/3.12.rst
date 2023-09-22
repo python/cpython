@@ -2121,6 +2121,37 @@ Pending Removal in Python 3.14
 * Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
   bases (:gh:`95388`).
 
+Pending Removal in Future Versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following APIs are deprecated and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :c:macro:`Py_TPFLAGS_HAVE_FINALIZE`: unneeded since Python 3.8
+* :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`
+* :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`
+* :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`
+* :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`
+* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child()`
+* :c:func:`PySlice_GetIndicesEx`
+* :c:func:`!PyUnicode_AsDecodedObject`
+* :c:func:`!PyUnicode_AsDecodedUnicode`
+* :c:func:`!PyUnicode_AsEncodedObject`
+* :c:func:`!PyUnicode_AsEncodedUnicode`
+* :c:func:`PyUnicode_READY`: unneeded since Python 3.12
+* :c:func:`!_PyErr_ChainExceptions`
+* :c:member:`!PyBytesObject.ob_shash` member:
+  call :c:func:`PyObject_Hash` instead
+* :c:member:`!PyDictObject.ma_version_tag` member
+* Thread Local Storage (TLS) API:
+
+  * :c:func:`PyThread_create_key`: use :c:func:`PyThread_tss_alloc`
+  * :c:func:`PyThread_delete_key`: use :c:func:`PyThread_tss_free`
+  * :c:func:`PyThread_set_key_value`: use :c:func:`PyThread_tss_set`
+  * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`
+  * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`
+  * :c:func:`PyThread_ReInitTLS`: unneeded since Python 3.7
+
 Removed
 -------
 
