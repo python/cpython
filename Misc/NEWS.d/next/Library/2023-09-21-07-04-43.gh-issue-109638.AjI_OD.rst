@@ -1,1 +1,0 @@
-Fix csv.Sniffer() having very long execution time for invalid strings.
