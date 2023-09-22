@@ -3,8 +3,7 @@
   What's New In Python 3.12
 ****************************
 
-:Release: |release|
-:Date: |today|
+:Editor: TBD
 
 .. Rules for maintenance:
 
