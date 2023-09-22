@@ -1216,6 +1216,15 @@ class TestSpecifics(unittest.TestCase):
             return a
         self.assertEqual(f("x", "y", "z"), "y")
 
+    def test_duplicated_small_exit_block(self):
+        # See gh-109627
+        def f():
+            while element and something:
+                try:
+                    return something
+                except:
+                    pass
+
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
