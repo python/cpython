@@ -89,7 +89,7 @@ problem. Define :c:macro:`PY_CALL_TRAMPOLINE` to enable call trampolines.
 .. section: Core and Builtins
 
 Some Windows system error codes(>= 10000) are now mapped into the correct
-errno and may now raise a subclass of :exc:`OSError`. Patch by Dong-hee Na.
+errno and may now raise a subclass of :exc:`OSError`. Patch by Donghee Na.
 
 ..
 
@@ -1599,7 +1599,7 @@ Call the public :func:`sys.get_asyncgen_hooks` and
 .. section: C API
 
 Remove private functions ``_PySys_GetObjectId()`` and
-``_PySys_SetObjectId()``. Patch by Dong-hee Na.
+``_PySys_SetObjectId()``. Patch by Donghee Na.
 
 ..
 
