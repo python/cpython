@@ -234,6 +234,8 @@ def _acquireLock():
 
     This should be released with _releaseLock().
     """
+    # Wrap the lock acquisition in a try-except to prevent the lock from being
+    # abandoned in the event of an asynchronous exception. See gh-106238.
     try:
         _lock.acquire()
     except BaseException:
