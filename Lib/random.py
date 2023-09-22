@@ -496,6 +496,7 @@ class Random(_random.Random):
 
         E[X] = (a + b) / 2
         Var[X] = (b - a) ** 2 / 12
+
         """
         return a + (b - a) * self.random()
 
@@ -668,7 +669,6 @@ class Random(_random.Random):
         Var[X] = alpha * beta ** 2
 
         """
-        # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
 
         # Warning: a few older sources define the gamma distribution in terms
         # of alpha > -1.0
