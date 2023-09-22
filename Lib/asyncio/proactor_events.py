@@ -6,6 +6,7 @@ proactor is only implemented on Windows with IOCP.
 
 __all__ = 'BaseProactorEventLoop',
 
+import errno
 import io
 import os
 import socket
@@ -452,7 +453,7 @@ class _ProactorWritePipeTransport(_ProactorBaseWritePipeTransport):
         assert fut is self._read_fut, (fut, self._read_fut)
         self._read_fut = None
         if self._write_fut is not None:
-            self._force_close(BrokenPipeError())
+            self._force_close(BrokenPipeError(errno.EPIPE, os.strerror(errno.EPIPE)))
         else:
             self.close()
 

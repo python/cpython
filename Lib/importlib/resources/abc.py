@@ -1,4 +1,5 @@
 import abc
+import errno
 import io
 import itertools
 import os
@@ -164,7 +165,7 @@ class TraversableResources(ResourceReader):
         return self.files().joinpath(resource).open('rb')
 
     def resource_path(self, resource: Any) -> NoReturn:
-        raise FileNotFoundError(resource)
+        raise FileNotFoundError(errno.ENOENT, 'No such resource', resource)
 
     def is_resource(self, path: StrPath) -> bool:
         return self.files().joinpath(path).is_file()

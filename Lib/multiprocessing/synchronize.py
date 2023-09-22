@@ -11,6 +11,7 @@ __all__ = [
     'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Condition', 'Event'
     ]
 
+import errno
 import threading
 import sys
 import tempfile
@@ -62,7 +63,7 @@ class SemLock(object):
             else:
                 break
         else:
-            raise FileExistsError('cannot find name for semaphore')
+            raise FileExistsError(errno.EEXIST, 'cannot find name for semaphore')
 
         util.debug('created semlock with handle %s' % sl.handle)
         self._make_methods()

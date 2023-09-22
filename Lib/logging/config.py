@@ -63,7 +63,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
 
     if isinstance(fname, str):
         if not os.path.exists(fname):
-            raise FileNotFoundError(f"{fname} doesn't exist")
+            raise FileNotFoundError(errno.ENOENT, 'No such file', fname)
         elif not os.path.getsize(fname):
             raise RuntimeError(f'{fname} is an empty file')
 

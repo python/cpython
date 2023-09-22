@@ -1,3 +1,4 @@
+import errno
 from contextlib import suppress
 from io import TextIOWrapper
 
@@ -136,7 +137,7 @@ class CompatibilityFiles:
             return self._path[-1]
 
         def open(self, mode='r', *args, **kwargs):
-            raise FileNotFoundError("Can't open orphan path")
+            raise FileNotFoundError(errno.ENOENT, "Can't open orphan path")
 
     def __init__(self, spec):
         self.spec = spec
