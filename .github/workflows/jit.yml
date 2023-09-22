@@ -55,19 +55,19 @@ jobs:
             runner: ubuntu-latest
             compiler: gcc
             tier: 2
-            exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
+            exclude: test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
             tier: 2
-            exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
+            exclude: test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
           #   compiler: gcc
           #   tier: 2
-          #   exclude: test_cmd_line test_concurrent_futures test_eintr test_faulthandler test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_tools
+          #   exclude: test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: x86_64-unknown-linux-gnu/clang
             architecture: x86_64
             runner: ubuntu-latest
@@ -88,37 +88,42 @@ jobs:
           python-version: '3.10'
       - name: Emulated Linux
         if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
-        uses: uraimo/run-on-arch-action@v2
-        with:
-          arch: ${{ matrix.architecture }}
-          distro: ubuntu_latest
-          env: |
-            CC: ${{ matrix.compiler }}
-            PYTHON_LLVM_VERSION: ${{ matrix.llvm }}
-          install: |
-            echo "::group::Install LLVM"
-            apt update --yes
-            apt install --yes build-essential gnupg lsb-release sudo software-properties-common wget zlib1g-dev
-            bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-            ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'apt install --yes libclang-rt-14-dev' || '' }}
-            echo "::endgroup::"
-          run: |
-            echo "::group::Configure Python"
-            export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-            ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
-            echo "::endgroup::"
-            echo "::group::Build Python"
-            make --jobs 2
-            echo "::endgroup::"
-            echo "::group::Test Python"
-            ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
-            ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3 
-            echo "::endgroup::"
+        run: |
+          echo "::group::Install LLVM"
+          sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
+          echo "::endgroup::"
+          echo "::group::Configure Python (Build)"
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          ./configure --prefix="$(pwd)/../build"
+          echo "::endgroup::"
+          echo "::group::Build Python (Build)"
+          make install --jobs 2
+          echo "::endgroup::"
+          echo "::group::Configure Python (Host)"
+          export HOST=${{ matrix.architecture }}-linux-gnu
+          sudo apt install --yes gcc-$HOST pkg-config-$HOST qemu-user
+          export CC=${{ matrix.compiler == 'clang' && "clang --target=$HOST" || "$HOST-gcc" }}
+          export CPP="$CC --preprocess"
+          export HOSTRUNNER=qemu-${{ matrix.architecture }}
+          export PKG_CONFIG=$HOST-pkg-config
+          export QEMU_LD_PREFIX="/usr/$HOST"
+          ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }} --build=x86_64-linux-gnu --host=$HOST --with-build-python=../build/bin/python3 ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes 
+          echo "::endgroup::"
+          echo "::group::Build Python (Host)"
+          make clean
+          make all --jobs 2
+          echo "::endgroup::"
+          echo "::group::Test Python"
+          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
+          ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
+          echo "::endgroup::"
       - name: Native Linux
         if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
         run: |
           echo "::group::Install LLVM"
-          sudo apt-get purge --auto-remove llvm python3-lldb-14 llvm-14
+          sudo apt purge --auto-remove llvm python3-lldb-14 llvm-14
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           ${{ matrix.debug == false && matrix.llvm == 14 && matrix.compiler == 'clang' && 'sudo apt install --yes libclang-rt-14-dev' || '' }}
           echo "::endgroup::"
@@ -127,7 +132,7 @@ jobs:
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          make --jobs 2
+          make all --jobs 2
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
@@ -144,7 +149,7 @@ jobs:
           ./configure ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
           echo "::endgroup::"
           echo "::group::Build Python"
-          make --jobs 3
+          make all --jobs 3
           echo "::endgroup::"
           echo "::group::Test Python"
           ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
