@@ -419,6 +419,9 @@
 /* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
 
+/* Define to 1 if the system has the type `Function'. */
+#undef HAVE_FUNCTION
+
 /* Define to 1 if you have the `futimens' function. */
 #undef HAVE_FUTIMENS
 

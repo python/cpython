@@ -23775,40 +23775,15 @@ fi
 
 case $ac_sys_system/$ac_sys_release in #(
   Darwin/*) :
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Function in readline/readline.h" >&5
-printf %s "checking for Function in readline/readline.h... " >&6; }
- ac_lib_var=`echo Function'_'readline/readline.h | sed 'y%./+-%__p_%'`
-if eval test \${ac_cv_lib_$ac_lib_var+y}
+    ac_fn_c_check_type "$LINENO" "Function" "ac_cv_type_Function" "$ac_includes_default"
+if test "x$ac_cv_type_Function" = xyes
 then :
-  printf %s "(cached) " >&6
+
+printf "%s\n" "#define HAVE_FUNCTION 1" >>confdefs.h
+
+readline/readline.h
 else $as_nop
-   eval "ac_cv_type_$ac_lib_var='not-found'"
-  ac_cv_check_typedef_header=`echo readline/readline.h`
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <$ac_cv_check_typedef_header>
-int
-main (void)
-{
-int x = sizeof(Function); x = x;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  eval "ac_cv_type_$ac_lib_var=yes"
-else $as_nop
-  eval "ac_cv_type_$ac_lib_var=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  if test `eval echo '$ac_cv_type_'$ac_lib_var` = "no" ; then
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-  else
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-  fi
+  printf "%s\n" "#define WITH_APPLE_EDITLINE 1" >>confdefs.h
 
 fi
  ;; #(
