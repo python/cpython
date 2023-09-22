@@ -459,6 +459,10 @@ Other Language Changes
   :class:`collections.OrderedDict`, :class:`collections.deque`,
   :class:`weakref.WeakSet`, and :class:`datetime.tzinfo` now copies and
   pickles instance attributes implemented as :term:`slots <__slots__>`.
+  This change has an unintended side effect: It trips up a small minority
+  of existing Python projects not expecting :meth:`object.__getstate__` to
+  exist. See the later comments on :gh:`70766` for discussions of what
+  workarounds such code may need.
   (Contributed by Serhiy Storchaka in :issue:`26579`.)
 
 .. _whatsnew311-pythonsafepath:
@@ -2216,7 +2220,7 @@ New Features
   * :c:func:`PyBuffer_SizeFromFormat`
   * :c:func:`PyBuffer_ToContiguous`
   * :c:func:`PyBuffer_FromContiguous`
-  * :c:func:`PyBuffer_CopyData`
+  * :c:func:`PyObject_CopyData`
   * :c:func:`PyBuffer_IsContiguous`
   * :c:func:`PyBuffer_FillContiguousStrides`
   * :c:func:`PyBuffer_FillInfo`
@@ -2562,18 +2566,18 @@ Deprecated
 
 * Deprecate the following functions to configure the Python initialization:
 
-  * :c:func:`PySys_AddWarnOptionUnicode`
-  * :c:func:`PySys_AddWarnOption`
-  * :c:func:`PySys_AddXOption`
-  * :c:func:`PySys_HasWarnOptions`
-  * :c:func:`PySys_SetArgvEx`
-  * :c:func:`PySys_SetArgv`
-  * :c:func:`PySys_SetPath`
-  * :c:func:`Py_SetPath`
-  * :c:func:`Py_SetProgramName`
-  * :c:func:`Py_SetPythonHome`
-  * :c:func:`Py_SetStandardStreamEncoding`
-  * :c:func:`_Py_SetProgramFullPath`
+  * :c:func:`!PySys_AddWarnOptionUnicode`
+  * :c:func:`!PySys_AddWarnOption`
+  * :c:func:`!PySys_AddXOption`
+  * :c:func:`!PySys_HasWarnOptions`
+  * :c:func:`!PySys_SetArgvEx`
+  * :c:func:`!PySys_SetArgv`
+  * :c:func:`!PySys_SetPath`
+  * :c:func:`!Py_SetPath`
+  * :c:func:`!Py_SetProgramName`
+  * :c:func:`!Py_SetPythonHome`
+  * :c:func:`!Py_SetStandardStreamEncoding`
+  * :c:func:`!_Py_SetProgramFullPath`
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization Configuration
   <init-config>` instead (:pep:`587`).
@@ -2591,22 +2595,22 @@ Pending Removal in Python 3.12
 The following C APIs have been deprecated in earlier Python releases,
 and will be removed in Python 3.12.
 
-* :c:func:`PyUnicode_AS_DATA`
-* :c:func:`PyUnicode_AS_UNICODE`
-* :c:func:`PyUnicode_AsUnicodeAndSize`
-* :c:func:`PyUnicode_AsUnicode`
-* :c:func:`PyUnicode_FromUnicode`
-* :c:func:`PyUnicode_GET_DATA_SIZE`
-* :c:func:`PyUnicode_GET_SIZE`
-* :c:func:`PyUnicode_GetSize`
+* :c:func:`!PyUnicode_AS_DATA`
+* :c:func:`!PyUnicode_AS_UNICODE`
+* :c:func:`!PyUnicode_AsUnicodeAndSize`
+* :c:func:`!PyUnicode_AsUnicode`
+* :c:func:`!PyUnicode_FromUnicode`
+* :c:func:`!PyUnicode_GET_DATA_SIZE`
+* :c:func:`!PyUnicode_GET_SIZE`
+* :c:func:`!PyUnicode_GetSize`
 * :c:func:`PyUnicode_IS_COMPACT`
 * :c:func:`PyUnicode_IS_READY`
 * :c:func:`PyUnicode_READY`
-* :c:func:`Py_UNICODE_WSTR_LENGTH`
-* :c:func:`_PyUnicode_AsUnicode`
-* :c:macro:`PyUnicode_WCHAR_KIND`
+* :c:func:`!PyUnicode_WSTR_LENGTH`
+* :c:func:`!_PyUnicode_AsUnicode`
+* :c:macro:`!PyUnicode_WCHAR_KIND`
 * :c:type:`PyUnicodeObject`
-* :c:func:`PyUnicode_InternImmortal()`
+* :c:func:`!PyUnicode_InternImmortal`
 
 
 .. _whatsnew311-c-api-removed:
@@ -2614,7 +2618,7 @@ and will be removed in Python 3.12.
 Removed
 -------
 
-* :c:func:`PyFrame_BlockSetup` and :c:func:`PyFrame_BlockPop` have been
+* :c:func:`!PyFrame_BlockSetup` and :c:func:`!PyFrame_BlockPop` have been
   removed.
   (Contributed by Mark Shannon in :issue:`40222`.)
 

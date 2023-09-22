@@ -462,7 +462,7 @@ contrast, a variable annotated with ``type[C]`` (or
 themselves -- specifically, it will accept the *class object* of ``C``. For
 example::
 
-   a = 3         # Has type ``int```
+   a = 3         # Has type ``int``
    b = int       # Has type ``type[int]``
    c = type(a)   # Also has type ``type[int]``
 

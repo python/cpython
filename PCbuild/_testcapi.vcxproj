@@ -99,7 +99,9 @@
     <ClCompile Include="..\Modules\_testcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testcapi\abstract.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
+    <ClCompile Include="..\Modules\_testcapi\dict.c" />
     <ClCompile Include="..\Modules\_testcapi\pytime.c" />
     <ClCompile Include="..\Modules\_testcapi\datetime.c" />
     <ClCompile Include="..\Modules\_testcapi\docstring.c" />

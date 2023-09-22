@@ -9,6 +9,7 @@ backwards compatibility. They have been superseded by other modules.
 
 
 .. toctree::
+   :maxdepth: 1
 
    aifc.rst
    audioop.rst

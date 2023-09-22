@@ -281,7 +281,7 @@ Fix bugs in :mod:`zoneinfo` where exceptions could be overwritten.
 .. nonce: bTcqS9
 .. section: Library
 
-Fix bugs in :mod:`pickle` where exceptions could be overwritten.
+Fix bugs in :mod:`errno` where exceptions could be overwritten.
 
 ..
 

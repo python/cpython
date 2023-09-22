@@ -4,6 +4,7 @@ if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
 import contextlib
+import dataclasses
 import functools
 import getpass
 import opcode
@@ -20,11 +21,6 @@ import warnings
 
 from .testresult import get_test_runner
 
-
-try:
-    from _testcapi import unicode_legacy_string
-except ImportError:
-    unicode_legacy_string = None
 
 __all__ = [
     # globals
@@ -123,17 +119,20 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
-
-class TestFailedWithDetails(TestFailed):
-    """Test failed."""
-    def __init__(self, msg, errors, failures):
+    def __init__(self, msg, *args, stats=None):
         self.msg = msg
-        self.errors = errors
-        self.failures = failures
-        super().__init__(msg, errors, failures)
+        self.stats = stats
+        super().__init__(msg, *args)
 
     def __str__(self):
         return self.msg
+
+class TestFailedWithDetails(TestFailed):
+    """Test failed."""
+    def __init__(self, msg, errors, failures, stats):
+        self.errors = errors
+        self.failures = failures
+        super().__init__(msg, errors, failures, stats=stats)
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -507,8 +506,14 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-requires_legacy_unicode_capi = unittest.skipUnless(unicode_legacy_string,
-                        'requires legacy Unicode C API')
+def requires_legacy_unicode_capi():
+    try:
+        from _testcapi import unicode_legacy_string
+    except ImportError:
+        unicode_legacy_string = None
+
+    return unittest.skipUnless(unicode_legacy_string,
+                               'requires legacy Unicode C API')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
@@ -1107,6 +1112,29 @@ def _filter_suite(suite, pred):
                 newtests.append(test)
     suite._tests = newtests
 
+@dataclasses.dataclass(slots=True)
+class TestStats:
+    tests_run: int = 0
+    failures: int = 0
+    skipped: int = 0
+
+    @staticmethod
+    def from_unittest(result):
+        return TestStats(result.testsRun,
+                         len(result.failures),
+                         len(result.skipped))
+
+    @staticmethod
+    def from_doctest(results):
+        return TestStats(results.attempted,
+                         results.failed)
+
+    def accumulate(self, stats):
+        self.tests_run += stats.tests_run
+        self.failures += stats.failures
+        self.skipped += stats.skipped
+
+
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
     runner = get_test_runner(sys.stdout,
@@ -1121,6 +1149,7 @@ def _run_suite(suite):
     if not result.testsRun and not result.skipped and not result.errors:
         raise TestDidNotRun
     if not result.wasSuccessful():
+        stats = TestStats.from_unittest(result)
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
         elif len(result.failures) == 1 and not result.errors:
@@ -1130,7 +1159,8 @@ def _run_suite(suite):
             if not verbose: err += "; run in verbose mode for details"
         errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
         failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures)
+        raise TestFailedWithDetails(err, errors, failures, stats=stats)
+    return result
 
 
 # By default, don't filter tests
@@ -1160,7 +1190,6 @@ def _is_full_match_test(pattern):
 
 def set_match_tests(accept_patterns=None, ignore_patterns=None):
     global _match_test_func, _accept_test_patterns, _ignore_test_patterns
-
 
     if accept_patterns is None:
         accept_patterns = ()
@@ -1239,7 +1268,7 @@ def run_unittest(*classes):
         else:
             suite.addTest(loader.loadTestsFromTestCase(cls))
     _filter_suite(suite, match_test)
-    _run_suite(suite)
+    return _run_suite(suite)
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1279,13 +1308,18 @@ def run_doctest(module, verbosity=None, optionflags=0):
     else:
         verbosity = None
 
-    f, t = doctest.testmod(module, verbose=verbosity, optionflags=optionflags)
-    if f:
-        raise TestFailed("%d of %d doctests failed" % (f, t))
+    results = doctest.testmod(module,
+                             verbose=verbosity,
+                             optionflags=optionflags)
+    if results.failed:
+        stats = TestStats.from_doctest(results)
+        raise TestFailed(f"{results.failed} of {results.attempted} "
+                         f"doctests failed",
+                         stats=stats)
     if verbose:
         print('doctest (%s) ... %d tests with zero failures' %
-              (module.__name__, t))
-    return f, t
+              (module.__name__, results.attempted))
+    return results
 
 
 #=======================================================================
@@ -2209,6 +2243,39 @@ def check_disallow_instantiation(testcase, tp, *args, **kwds):
     msg = f"cannot create '{re.escape(qualname)}' instances"
     testcase.assertRaisesRegex(TypeError, msg, tp, *args, **kwds)
 
+def get_recursion_depth():
+    """Get the recursion depth of the caller function.
+
+    In the __main__ module, at the module level, it should be 1.
+    """
+    try:
+        import _testinternalcapi
+        depth = _testinternalcapi.get_recursion_depth()
+    except (ImportError, RecursionError) as exc:
+        # sys._getframe() + frame.f_back implementation.
+        try:
+            depth = 0
+            frame = sys._getframe()
+            while frame is not None:
+                depth += 1
+                frame = frame.f_back
+        finally:
+            # Break any reference cycles.
+            frame = None
+
+    # Ignore get_recursion_depth() frame.
+    return max(depth - 1, 1)
+
+def get_recursion_available():
+    """Get the number of available frames before RecursionError.
+
+    It depends on the current recursion depth of the caller function and
+    sys.getrecursionlimit().
+    """
+    limit = sys.getrecursionlimit()
+    depth = get_recursion_depth()
+    return limit - depth
+
 @contextlib.contextmanager
 def set_recursion_limit(limit):
     """Temporarily change the recursion limit."""
@@ -2219,14 +2286,18 @@ def set_recursion_limit(limit):
     finally:
         sys.setrecursionlimit(original_limit)
 
-def infinite_recursion(max_depth=75):
+def infinite_recursion(max_depth=100):
     """Set a lower limit for tests that interact with infinite recursions
     (e.g test_ast.ASTHelpers_Test.test_recursion_direct) since on some
     debug windows builds, due to not enough functions being inlined the
     stack size might not handle the default recursion limit (1000). See
     bpo-11105 for details."""
-    return set_recursion_limit(max_depth)
-
+    if max_depth < 3:
+        raise ValueError("max_depth must be at least 3, got {max_depth}")
+    depth = get_recursion_depth()
+    depth = max(depth - 1, 1)  # Ignore infinite_recursion() frame.
+    limit = depth + max_depth
+    return set_recursion_limit(limit)
 
 def ignore_deprecations_from(module: str, *, like: str) -> object:
     token = object()

@@ -856,18 +856,17 @@ Functions
 .. function:: search(pattern, string, flags=0)
 
    Scan through *string* looking for the first location where the regular expression
-   *pattern* produces a match, and return a corresponding :ref:`match object
-   <match-objects>`.  Return ``None`` if no position in the string matches the
-   pattern; note that this is different from finding a zero-length match at some
-   point in the string.
+   *pattern* produces a match, and return a corresponding :class:`~re.Match`. Return
+   ``None`` if no position in the string matches the pattern; note that this is
+   different from finding a zero-length match at some point in the string.
 
 
 .. function:: match(pattern, string, flags=0)
 
    If zero or more characters at the beginning of *string* match the regular
-   expression *pattern*, return a corresponding :ref:`match object
-   <match-objects>`.  Return ``None`` if the string does not match the pattern;
-   note that this is different from a zero-length match.
+   expression *pattern*, return a corresponding :class:`~re.Match`.  Return
+   ``None`` if the string does not match the pattern; note that this is
+   different from a zero-length match.
 
    Note that even in :const:`MULTILINE` mode, :func:`re.match` will only match
    at the beginning of the string and not at the beginning of each line.
@@ -879,9 +878,8 @@ Functions
 .. function:: fullmatch(pattern, string, flags=0)
 
    If the whole *string* matches the regular expression *pattern*, return a
-   corresponding :ref:`match object <match-objects>`.  Return ``None`` if the
-   string does not match the pattern; note that this is different from a
-   zero-length match.
+   corresponding :class:`~re.Match`.  Return ``None`` if the string does not match
+   the pattern; note that this is different from a zero-length match.
 
    .. versionadded:: 3.4
 
@@ -954,7 +952,7 @@ Functions
 
 .. function:: finditer(pattern, string, flags=0)
 
-   Return an :term:`iterator` yielding :ref:`match objects <match-objects>` over
+   Return an :term:`iterator` yielding :class:`~re.Match` objects over
    all non-overlapping matches for the RE *pattern* in *string*.  The *string*
    is scanned left-to-right, and matches are returned in the order found.  Empty
    matches are included in the result.
@@ -982,8 +980,8 @@ Functions
       'static PyObject*\npy_myfunc(void)\n{'
 
    If *repl* is a function, it is called for every non-overlapping occurrence of
-   *pattern*.  The function takes a single :ref:`match object <match-objects>`
-   argument, and returns the replacement string.  For example::
+   *pattern*.  The function takes a single :class:`~re.Match` argument, and returns
+   the replacement string.  For example::
 
       >>> def dashrepl(matchobj):
       ...     if matchobj.group(0) == '-': return ' '
@@ -994,7 +992,7 @@ Functions
       >>> re.sub(r'\sAND\s', ' & ', 'Baked Beans And Spam', flags=re.IGNORECASE)
       'Baked Beans & Spam'
 
-   The pattern may be a string or a :ref:`pattern object <re-objects>`.
+   The pattern may be a string or a :class:`~re.Pattern`.
 
    The optional argument *count* is the maximum number of pattern occurrences to be
    replaced; *count* must be a non-negative integer.  If omitted or zero, all
@@ -1129,16 +1127,20 @@ Exceptions
 Regular Expression Objects
 --------------------------
 
-Compiled regular expression objects support the following methods and
-attributes:
+.. class:: Pattern
+
+   Compiled regular expression object returned by :func:`re.compile`.
+
+   .. versionchanged:: 3.9
+      :py:class:`re.Pattern` supports ``[]`` to indicate a Unicode (str) or bytes pattern.
+      See :ref:`types-genericalias`.
 
 .. method:: Pattern.search(string[, pos[, endpos]])
 
    Scan through *string* looking for the first location where this regular
-   expression produces a match, and return a corresponding :ref:`match object
-   <match-objects>`.  Return ``None`` if no position in the string matches the
-   pattern; note that this is different from finding a zero-length match at some
-   point in the string.
+   expression produces a match, and return a corresponding :class:`~re.Match`.
+   Return ``None`` if no position in the string matches the pattern; note that
+   this is different from finding a zero-length match at some point in the string.
 
    The optional second parameter *pos* gives an index in the string where the
    search is to start; it defaults to ``0``.  This is not completely equivalent to
@@ -1162,9 +1164,9 @@ attributes:
 .. method:: Pattern.match(string[, pos[, endpos]])
 
    If zero or more characters at the *beginning* of *string* match this regular
-   expression, return a corresponding :ref:`match object <match-objects>`.
-   Return ``None`` if the string does not match the pattern; note that this is
-   different from a zero-length match.
+   expression, return a corresponding :class:`~re.Match`. Return ``None`` if the
+   string does not match the pattern; note that this is different from a
+   zero-length match.
 
    The optional *pos* and *endpos* parameters have the same meaning as for the
    :meth:`~Pattern.search` method. ::
@@ -1181,8 +1183,8 @@ attributes:
 .. method:: Pattern.fullmatch(string[, pos[, endpos]])
 
    If the whole *string* matches this regular expression, return a corresponding
-   :ref:`match object <match-objects>`.  Return ``None`` if the string does not
-   match the pattern; note that this is different from a zero-length match.
+   :class:`~re.Match`.  Return ``None`` if the string does not match the pattern;
+   note that this is different from a zero-length match.
 
    The optional *pos* and *endpos* parameters have the same meaning as for the
    :meth:`~Pattern.search` method. ::
@@ -1268,8 +1270,13 @@ when there is no match, you can test whether there was a match with a simple
    if match:
        process(match)
 
-Match objects support the following methods and attributes:
+.. class:: Match
 
+   Match object returned by successful ``match``\ es and ``search``\ es.
+
+   .. versionchanged:: 3.9
+      :py:class:`re.Match` supports ``[]`` to indicate a Unicode (str) or bytes match.
+      See :ref:`types-genericalias`.
 
 .. method:: Match.expand(template)
 
@@ -1713,10 +1720,10 @@ Finding all Adverbs and their Positions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If one wants more information about all matches of a pattern than the matched
-text, :func:`finditer` is useful as it provides :ref:`match objects
-<match-objects>` instead of strings.  Continuing with the previous example, if
-a writer wanted to find all of the adverbs *and their positions* in
-some text, they would use :func:`finditer` in the following manner::
+text, :func:`finditer` is useful as it provides :class:`~re.Match` objects
+instead of strings.  Continuing with the previous example, if a writer wanted
+to find all of the adverbs *and their positions* in some text, they would use
+:func:`finditer` in the following manner::
 
    >>> text = "He was carefully disguised but captured quickly by police."
    >>> for m in re.finditer(r"\w+ly\b", text):

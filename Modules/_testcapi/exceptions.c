@@ -1,5 +1,8 @@
+#define PY_SSIZE_T_CLEAN
 #include "parts.h"
+#include "util.h"
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 module _testcapi
@@ -118,15 +121,55 @@ _testcapi_exc_set_object_fetch_impl(PyObject *module, PyObject *exc,
                                     PyObject *obj)
 /*[clinic end generated code: output=7a5ff5f6d3cf687f input=77ec686f1f95fa38]*/
 {
-    PyObject *type;
-    PyObject *value;
-    PyObject *tb;
+    PyObject *type = UNINITIALIZED_PTR;
+    PyObject *value = UNINITIALIZED_PTR;
+    PyObject *tb = UNINITIALIZED_PTR;
 
     PyErr_SetObject(exc, obj);
     PyErr_Fetch(&type, &value, &tb);
+    assert(type != UNINITIALIZED_PTR);
+    assert(value != UNINITIALIZED_PTR);
+    assert(tb != UNINITIALIZED_PTR);
     Py_XDECREF(type);
     Py_XDECREF(tb);
     return value;
+}
+
+/*[clinic input]
+_testcapi.err_setstring
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setstring_impl(PyObject *module, PyObject *exc,
+                             const char *value, Py_ssize_t value_length)
+/*[clinic end generated code: output=fba8705e5703dd3f input=e8a95fad66d9004b]*/
+{
+    NULLABLE(exc);
+    PyErr_SetString(exc, value);
+    return NULL;
+}
+
+/*[clinic input]
+_testcapi.err_setfromerrnowithfilename
+    error: int
+    exc: object
+    value: str(zeroes=True, accept={robuffer, str, NoneType})
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_err_setfromerrnowithfilename_impl(PyObject *module, int error,
+                                            PyObject *exc, const char *value,
+                                            Py_ssize_t value_length)
+/*[clinic end generated code: output=d02df5749a01850e input=ff7c384234bf097f]*/
+{
+    NULLABLE(exc);
+    errno = error;
+    PyErr_SetFromErrnoWithFilename(exc, value);
+    return NULL;
 }
 
 /*[clinic input]
@@ -205,7 +248,7 @@ _testcapi_set_exc_info_impl(PyObject *module, PyObject *new_type,
                             PyObject *new_value, PyObject *new_tb)
 /*[clinic end generated code: output=b55fa35dec31300e input=ea9f19e0f55fe5b3]*/
 {
-    PyObject *type, *value, *tb;
+    PyObject *type = UNINITIALIZED_PTR, *value = UNINITIALIZED_PTR, *tb = UNINITIALIZED_PTR;
     PyErr_GetExcInfo(&type, &value, &tb);
 
     Py_INCREF(new_type);
@@ -338,6 +381,8 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_MAKE_EXCEPTION_WITH_DOC_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_METHODDEF
     _TESTCAPI_EXC_SET_OBJECT_FETCH_METHODDEF
+    _TESTCAPI_ERR_SETSTRING_METHODDEF
+    _TESTCAPI_ERR_SETFROMERRNOWITHFILENAME_METHODDEF
     _TESTCAPI_RAISE_EXCEPTION_METHODDEF
     _TESTCAPI_RAISE_MEMORYERROR_METHODDEF
     _TESTCAPI_SET_EXC_INFO_METHODDEF

@@ -146,7 +146,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self);
 static void free_callback_context(callback_context *ctx);
 static void set_callback_context(callback_context **ctx_pp,
                                  callback_context *ctx);
-static void connection_close(pysqlite_Connection *self);
+static int connection_close(pysqlite_Connection *self);
 PyObject *_pysqlite_query_execute(pysqlite_Cursor *, int, PyObject *, PyObject *);
 
 static PyObject *
@@ -244,10 +244,13 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     }
 
     if (self->initialized) {
+        self->initialized = 0;
+
         PyTypeObject *tp = Py_TYPE(self);
         tp->tp_clear((PyObject *)self);
-        connection_close(self);
-        self->initialized = 0;
+        if (connection_close(self) < 0) {
+            return -1;
+        }
     }
 
     // Create and configure SQLite database object.
@@ -331,7 +334,9 @@ pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
     self->initialized = 1;
 
     if (autocommit == AUTOCOMMIT_DISABLED) {
-        (void)connection_exec_stmt(self, "BEGIN");
+        if (connection_exec_stmt(self, "BEGIN") < 0) {
+            return -1;
+        }
     }
     return 0;
 
@@ -401,52 +406,88 @@ free_callback_contexts(pysqlite_Connection *self)
 static void
 remove_callbacks(sqlite3 *db)
 {
+    assert(db != NULL);
+    /* None of these APIs can fail, as long as they are given a valid
+     * database pointer. */
+    int rc;
 #ifdef HAVE_TRACE_V2
-    sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    rc = sqlite3_trace_v2(db, SQLITE_TRACE_STMT, 0, 0);
+    assert(rc == SQLITE_OK), (void)rc;
 #else
     sqlite3_trace(db, 0, (void*)0);
 #endif
+
     sqlite3_progress_handler(db, 0, 0, (void *)0);
-    (void)sqlite3_set_authorizer(db, NULL, NULL);
+
+    rc = sqlite3_set_authorizer(db, NULL, NULL);
+    assert(rc == SQLITE_OK), (void)rc;
 }
 
-static void
+static int
 connection_close(pysqlite_Connection *self)
 {
-    if (self->db) {
-        if (self->autocommit == AUTOCOMMIT_DISABLED &&
-            !sqlite3_get_autocommit(self->db))
-        {
-            /* If close is implicitly called as a result of interpreter
-             * tear-down, we must not call back into Python. */
-            if (_Py_IsInterpreterFinalizing(PyInterpreterState_Get())) {
-                remove_callbacks(self->db);
-            }
-            (void)connection_exec_stmt(self, "ROLLBACK");
-        }
-
-        free_callback_contexts(self);
-
-        sqlite3 *db = self->db;
-        self->db = NULL;
-
-        Py_BEGIN_ALLOW_THREADS
-        int rc = sqlite3_close_v2(db);
-        assert(rc == SQLITE_OK), (void)rc;
-        Py_END_ALLOW_THREADS
+    if (self->db == NULL) {
+        return 0;
     }
+
+    int rc = 0;
+    if (self->autocommit == AUTOCOMMIT_DISABLED &&
+        !sqlite3_get_autocommit(self->db))
+    {
+        if (connection_exec_stmt(self, "ROLLBACK") < 0) {
+            rc = -1;
+        }
+    }
+
+    sqlite3 *db = self->db;
+    self->db = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    /* The v2 close call always returns SQLITE_OK if given a valid database
+     * pointer (which we do), so we can safely ignore the return value */
+    (void)sqlite3_close_v2(db);
+    Py_END_ALLOW_THREADS
+
+    free_callback_contexts(self);
+    return rc;
 }
 
 static void
-connection_dealloc(pysqlite_Connection *self)
+connection_finalize(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    pysqlite_Connection *con = (pysqlite_Connection *)self;
+    PyObject *exc = PyErr_GetRaisedException();
+
+    /* If close is implicitly called as a result of interpreter
+     * tear-down, we must not call back into Python. */
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    int teardown = _Py_IsInterpreterFinalizing(interp);
+    if (teardown && con->db) {
+        remove_callbacks(con->db);
+    }
 
     /* Clean up if user has not called .close() explicitly. */
-    connection_close(self);
+    if (connection_close(con) < 0) {
+        if (teardown) {
+            PyErr_Clear();
+        }
+        else {
+            PyErr_WriteUnraisable((PyObject *)self);
+        }
+    }
 
+    PyErr_SetRaisedException(exc);
+}
+
+static void
+connection_dealloc(PyObject *self)
+{
+    if (PyObject_CallFinalizerFromDealloc(self) < 0) {
+        return;
+    }
+    PyTypeObject *tp = Py_TYPE(self);
+    PyObject_GC_UnTrack(self);
+    tp->tp_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -594,7 +635,9 @@ pysqlite_connection_close_impl(pysqlite_Connection *self)
 
     pysqlite_close_all_blobs(self);
     Py_CLEAR(self->statement_cache);
-    connection_close(self);
+    if (connection_close(self) < 0) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -2582,6 +2625,7 @@ static struct PyMemberDef connection_members[] =
 };
 
 static PyType_Slot connection_slots[] = {
+    {Py_tp_finalize, connection_finalize},
     {Py_tp_dealloc, connection_dealloc},
     {Py_tp_doc, (void *)connection_doc},
     {Py_tp_methods, connection_methods},

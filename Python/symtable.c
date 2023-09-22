@@ -801,8 +801,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            if  (classflag) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -1037,7 +1036,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
-                        ste->ste_type == ClassBlock))
+                        (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
@@ -1969,6 +1968,17 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
+        if (st->st_cur->ste_can_see_class_scope) {
+            // gh-109118
+            PyErr_Format(PyExc_SyntaxError,
+                         "Cannot use lambda in annotation scope within class scope");
+            PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                              e->lineno,
+                                              e->col_offset + 1,
+                                              e->end_lineno,
+                                              e->end_col_offset + 1);
+            VISIT_QUIT(st, 0);
+        }
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
@@ -2418,6 +2428,18 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
+    if (st->st_cur->ste_can_see_class_scope) {
+        // gh-109118
+        PyErr_Format(PyExc_SyntaxError,
+                     "Cannot use comprehension in annotation scope within class scope");
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                         e->lineno,
+                                         e->col_offset + 1,
+                                         e->end_lineno,
+                                         e->end_col_offset + 1);
+        VISIT_QUIT(st, 0);
+    }
+
     int is_generator = (e->kind == GeneratorExp_kind);
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));

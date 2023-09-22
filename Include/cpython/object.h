@@ -227,7 +227,7 @@ struct _typeobject {
     vectorcallfunc tp_vectorcall;
 
     /* bitset of which type-watchers care about this type */
-    char tp_watched;
+    unsigned char tp_watched;
 };
 
 /* This struct is used by the specializer

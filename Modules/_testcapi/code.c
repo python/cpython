@@ -1,4 +1,5 @@
 #include "parts.h"
+#include "util.h"
 
 static Py_ssize_t
 get_code_extra_index(PyInterpreterState* interp) {
@@ -74,7 +75,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
     }
 
     // Check the value is initially NULL
-    void *extra;
+    void *extra = UNINITIALIZED_PTR;
     int res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;
@@ -87,6 +88,7 @@ test_code_extra(PyObject* self, PyObject *Py_UNUSED(callable))
         goto finally;
     }
     // Assert it was set correctly
+    extra = UNINITIALIZED_PTR;
     res = PyUnstable_Code_GetExtra(test_func_code, code_extra_index, &extra);
     if (res < 0) {
         goto finally;

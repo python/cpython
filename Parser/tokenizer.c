@@ -1544,6 +1544,9 @@ error:
 static int
 warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
+    if (!tok->report_warnings) {
+        return 0;
+    }
 
     PyObject *msg = PyUnicode_FromFormat(
         "invalid escape sequence '\\%c'",

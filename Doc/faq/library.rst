@@ -111,7 +111,7 @@ Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
 
 The :mod:`atexit` module provides a register function that is similar to C's
-:c:func:`onexit`.
+:c:func:`!onexit`.
 
 
 Why don't my signal handlers work?
@@ -397,7 +397,7 @@ These aren't::
    D[x] = D[x] + 1
 
 Operations that replace other objects may invoke those other objects'
-:meth:`__del__` method when their reference count reaches zero, and that can
+:meth:`~object.__del__` method when their reference count reaches zero, and that can
 affect things.  This is especially true for the mass updates to dictionaries and
 lists.  When in doubt, use a mutex!
 
@@ -765,14 +765,17 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the :meth:`socket.connect`, you will either connect immediately
+mode.  Then when you do the :meth:`~socket.socket.connect`,
+you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the :meth:`socket.connect_ex` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call :meth:`socket.connect_ex` again later
+You can use the :meth:`~socket.socket.connect_ex` method
+to avoid creating an exception.
+It will just return the errno value.
+To poll, you can call :meth:`~socket.socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to :meth:`select.select` to check if it's writable.
 

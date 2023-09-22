@@ -2365,6 +2365,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(template_re1.match('ahoy'))
         self.assertFalse(template_re1.match('nope'))
 
+    def test_bug_gh106052(self):
+        # gh-100061
+        self.assertEqual(re.match('(?>(?:.(?!D))+)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))++', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))*)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))*+', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))?)', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?:.(?!D))?+', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?>(?:.(?!D)){1,3})', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D)){1,3}+', 'ABCDE').span(), (0, 2))
+        # gh-106052
+        self.assertEqual(re.match("(?>(?:ab?c)+)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)++", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)*)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)*+", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)?)", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
