@@ -913,6 +913,13 @@ class UtimeTests(unittest.TestCase):
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
 
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
+
     def get_file_system(self, path):
         if sys.platform == 'win32':
             root = os.path.splitdrive(os.path.abspath(path))[0] + '\\'

@@ -2236,7 +2236,7 @@ class TestNonConformant(TestEmailBase):
                     "\nContent-Transfer-Encoding: {}".format(cte)))
             self.assertEqual(len(msg.defects), 0)
 
-    # test_headerregistry.TestContentTyopeHeader invalid_1 and invalid_2.
+    # test_headerregistry.TestContentTypeHeader invalid_1 and invalid_2.
     def test_invalid_content_type(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual

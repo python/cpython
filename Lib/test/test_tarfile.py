@@ -1,3 +1,4 @@
+import errno
 import sys
 import os
 import io
@@ -3823,14 +3824,26 @@ class TestExtractionFilters(unittest.TestCase):
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        new_mode = (os.stat(tmp_filename).st_mode
-                    | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
-        os.chmod(tmp_filename, new_mode)
-        got_mode = os.stat(tmp_filename).st_mode
-        _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
-        _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
-        _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
-        os.unlink(tmp_filename)
+        try:
+            new_mode = (os.stat(tmp_filename).st_mode
+                        | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
+            try:
+                os.chmod(tmp_filename, new_mode)
+            except OSError as exc:
+                if exc.errno == getattr(errno, "EFTYPE", 0):
+                    # gh-108948: On FreeBSD, regular users cannot set
+                    # the sticky bit.
+                    self.skipTest("chmod() failed with EFTYPE: "
+                                  "regular users cannot set sticky bit")
+                else:
+                    raise
+
+            got_mode = os.stat(tmp_filename).st_mode
+            _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
+            _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
+            _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
+        finally:
+            os.unlink(tmp_filename)
 
         os.mkdir(tmp_filename)
         new_mode = (os.stat(tmp_filename).st_mode

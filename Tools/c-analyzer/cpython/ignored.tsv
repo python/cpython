@@ -50,6 +50,9 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
+## thread-safe hashtable (internal locks)
+Python/parking_lot.c	-	buckets	-
+
 
 ##################################
 ## state tied to Py_Main()

@@ -111,7 +111,7 @@ back to alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").
 .. section: Core and Builtins
 
 Update :mod:`faulthandler` to emit an error message with the proper
-unexpected signal number. Patch by Dong-hee Na.
+unexpected signal number. Patch by Donghee Na.
 
 ..
 
