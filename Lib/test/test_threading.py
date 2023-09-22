@@ -1045,6 +1045,26 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_start_new_thread_failed(self):
+        # gh-109746: if Python fails to start newly created thread
+        # due to failure of underlying PyThread_start_new_thread() call,
+        # its state should be removed from interpreter' thread states list
+        # to avoid its double cleanup
+        code = """if 1:
+            import resource
+            import threading
+
+            resource.setrlimit(resource.RLIMIT_NPROC, (150, 150))
+
+            while True:
+                t = threading.Thread()
+                t.start()
+                t.join()
+        """
+        _, out, err = assert_python_failure("-c", code)
+        self.assertEqual(out, b'')
+        self.assertIn(b"can't start new thread", err)
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
