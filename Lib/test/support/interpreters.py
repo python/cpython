@@ -116,7 +116,18 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.exec(self._id, src_str, init)
+        err = _interpreters.exec(self._id, src_str, init)
+        if err is not None:
+            if err.name is not None:
+                if err.msg is not None:
+                    msg = f'{err.name}: {err.msg}'
+                else:
+                    msg = err.name
+            elif err.msg is not None:
+                msg = err.msg
+            else:
+                msg = None
+            raise RunFailedError(msg)
 
 
 def create_channel():

@@ -743,30 +743,33 @@ class RunStringTests(TestBase):
                              "{}: {}".format(exctype.__name__, msg))
 
     def test_invalid_syntax(self):
-        with self.assert_run_failed(SyntaxError):
-            # missing close paren
-            interpreters.run_string(self.id, 'print("spam"')
+        # missing close paren
+        exc = interpreters.run_string(self.id, 'print("spam"')
+        self.assertEqual(exc.type, 'SyntaxError')
 
     def test_failure(self):
-        with self.assert_run_failed(Exception, 'spam'):
-            interpreters.run_string(self.id, 'raise Exception("spam")')
+        exc = interpreters.run_string(self.id, 'raise Exception("spam")')
+        self.assertEqual(exc.type, 'Exception')
+        self.assertEqual(exc.msg, 'spam')
 
     def test_SystemExit(self):
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, 'raise SystemExit(42)')
+        exc = interpreters.run_string(self.id, 'raise SystemExit(42)')
+        self.assertEqual(exc.type, 'SystemExit')
+        self.assertEqual(exc.msg, '42')
 
     def test_sys_exit(self):
-        with self.assert_run_failed(SystemExit):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit()
-                """))
+        exc = interpreters.run_string(self.id, dedent("""
+            import sys
+            sys.exit()
+            """))
+        self.assertEqual(exc.type, 'SystemExit')
 
-        with self.assert_run_failed(SystemExit, '42'):
-            interpreters.run_string(self.id, dedent("""
-                import sys
-                sys.exit(42)
-                """))
+        exc = interpreters.run_string(self.id, dedent("""
+            import sys
+            sys.exit(42)
+            """))
+        self.assertEqual(exc.type, 'SystemExit')
+        self.assertEqual(exc.msg, '42')
 
     def test_with_shared(self):
         r, w = os.pipe()

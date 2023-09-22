@@ -237,8 +237,7 @@ _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 static int
 _run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
-                    PyObject *shareables, int flags,
-                    PyObject *excwrapper)
+                    PyObject *shareables, int flags, PyObject **excsnap)
 {
     assert(!PyErr_Occurred());
     _PyXI_session session = {0};
@@ -246,9 +245,9 @@ _run_in_interpreter(PyInterpreterState *interp,
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
         assert(!PyErr_Occurred());
-        _PyXI_ApplyExceptionInfo(session.exc, excwrapper);
-        assert(PyErr_Occurred());
-        return -1;
+        *excsnap = _PyXI_ResolveCapturedException(&session, NULL);
+        assert((PyErr_Occurred() == NULL) != (*excsnap == NULL));
+        return PyErr_Occurred() ? -1 : 0;
     }
 
     // Run the script.
@@ -258,9 +257,12 @@ _run_in_interpreter(PyInterpreterState *interp,
     _PyXI_Exit(&session);
 
     // Propagate any exception out to the caller.
-    assert(!PyErr_Occurred());
     if (res < 0) {
-        _PyXI_ApplyCapturedException(&session, excwrapper);
+        *excsnap = _PyXI_ResolveCapturedException(&session, NULL);
+        assert((PyErr_Occurred() == NULL) != (*excsnap == NULL));
+        if (!PyErr_Occurred()) {
+            res = 0;
+        }
     }
     else {
         assert(!_PyXI_HasCapturedException(&session));
@@ -528,14 +530,15 @@ convert_code_arg(PyObject *arg, const char *fname, const char *displayname,
     return code;
 }
 
-static int
+static PyObject *
 _interp_exec(PyObject *self,
              PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg)
 {
     // Look up the interpreter.
     PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
     if (interp == NULL) {
-        return -1;
+        assert(PyErr_Occurred());
+        return NULL;
     }
 
     // Extract code.
@@ -545,20 +548,24 @@ _interp_exec(PyObject *self,
     const char *codestr = get_code_str(code_arg,
                                        &codestrlen, &bytes_obj, &flags);
     if (codestr == NULL) {
-        return -1;
+        assert(PyErr_Occurred());
+        return NULL;
     }
 
     // Run the code in the interpreter.
-    module_state *state = get_module_state(self);
-    assert(state != NULL);
+    PyObject *excsnap = NULL;
     int res = _run_in_interpreter(interp, codestr, codestrlen,
-                                  shared_arg, flags, state->RunFailedError);
+                                  shared_arg, flags, &excsnap);
     Py_XDECREF(bytes_obj);
     if (res < 0) {
-        return -1;
+        assert(PyErr_Occurred());
+        assert(excsnap == NULL);
+        return NULL;
     }
-
-    return 0;
+    else if (excsnap != NULL) {
+        return excsnap;
+    }
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -586,12 +593,9 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, code, shared);
+    PyObject *res = _interp_exec(self, id, code, shared);
     Py_DECREF(code);
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
+    return res;
 }
 
 PyDoc_STRVAR(exec_doc,
@@ -629,12 +633,9 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, script, shared);
+    PyObject *res = _interp_exec(self, id, script, shared);
     Py_DECREF(script);
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
+    return res;
 }
 
 PyDoc_STRVAR(run_string_doc,
@@ -663,12 +664,9 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, (PyObject *)code, shared);
+    PyObject *res = _interp_exec(self, id, (PyObject *)code, shared);
     Py_DECREF(code);
-    if (res < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
+    return res;
 }
 
 PyDoc_STRVAR(run_func_doc,
