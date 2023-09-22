@@ -291,9 +291,11 @@ can be used to customize buffer creation.
 PEP 684: A Per-Interpreter GIL
 ------------------------------
 
-Sub-interpreters may now be created with a unique GIL per interpreter.
+:pep:`684` introduces a per-interpreter :term:`GIL <global interpreter lock>`,
+so that sub-interpreters may now be created with a unique GIL per interpreter.
 This allows Python programs to take full advantage of multiple CPU
-cores.
+cores. This is currently only available through the C-API,
+though a Python API is :pep:`anticipated for 3.13 <554>`.
 
 Use the new :c:func:`Py_NewInterpreterFromConfig` function to
 create an interpreter with its own GIL::
@@ -312,8 +314,6 @@ create an interpreter with its own GIL::
 For further examples how to use the C-API for sub-interpreters with a
 per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
 
-A Python API is anticipated for 3.13.  (See :pep:`554`.)
-
 (Contributed by Eric Snow in :gh:`104210`, etc.)
 
 .. _whatsnew312-pep669:
@@ -321,13 +321,15 @@ A Python API is anticipated for 3.13.  (See :pep:`554`.)
 PEP 669: Low impact monitoring for CPython
 ------------------------------------------
 
-CPython 3.12 now supports the ability to monitor calls,
-returns, lines, exceptions and other events using instrumentation.
+:pep:`669` defines a new :mod:`API <sys.monitoring>` for profilers,
+debuggers, and other tools to monitor events in CPython.
+It covers a wide range of events, including calls,
+returns, lines, exceptions, jumps, and more.
 This means that you only pay for what you use, providing support
 for near-zero overhead debuggers and coverage tools.
-
 See  :mod:`sys.monitoring` for details.
 
+(Contributed by Mark Shannon in :gh:`103083`.)
 
 New Features Related to Type Hints
 ==================================
@@ -459,12 +461,12 @@ and others in :gh:`103764`.)
 Other Language Changes
 ======================
 
-* Add :ref:`perf_profiling` through the new
-  environment variable :envvar:`PYTHONPERFSUPPORT`,
-  the new command-line option :option:`-X perf <-X>`,
+* Add :ref:`support for the perf profiler <perf_profiling>` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`
+  and command-line option :option:`-X perf <-X>`,
   as well as the new :func:`sys.activate_stack_trampoline`,
   :func:`sys.deactivate_stack_trampoline`,
-  and :func:`sys.is_stack_trampoline_active` APIs.
+  and :func:`sys.is_stack_trampoline_active` functions.
   (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
   with contributions from Gregory P. Smith [Google] and Mark Shannon
   in :gh:`96123`.)
@@ -473,7 +475,7 @@ Other Language Changes
   have a new a *filter* argument that allows limiting tar features than may be
   surprising or dangerous, such as creating files outside the destination
   directory.
-  See :ref:`tarfile-extraction-filter` for details.
+  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
   In Python 3.14, the default will switch to ``'data'``.
   (Contributed by Petr Viktorin in :pep:`706`.)
 
@@ -501,8 +503,8 @@ Other Language Changes
 * A backslash-character pair that is not a valid escape sequence now generates
   a :exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.
   For example, ``re.compile("\d+\.\d+")`` now emits a :exc:`SyntaxWarning`
-  (``"\d"`` is an invalid escape sequence), use raw strings for regular
-  expression: ``re.compile(r"\d+\.\d+")``.
+  (``"\d"`` is an invalid escape sequence, use raw strings for regular
+  expression: ``re.compile(r"\d+\.\d+")``).
   In a future Python version, :exc:`SyntaxError` will eventually be raised,
   instead of :exc:`SyntaxWarning`.
   (Contributed by Victor Stinner in :gh:`98401`.)
@@ -531,7 +533,7 @@ Other Language Changes
   when summing floats or mixed ints and floats.
   (Contributed by Raymond Hettinger in :gh:`100425`.)
 
-* Exceptions raised in a typeobject's ``__set_name__`` method are no longer
+* Exceptions raised in a class or type's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
   exception as a :pep:`678` note. (Contributed by Irit Katriel in :gh:`77757`.)
 
@@ -567,20 +569,20 @@ asyncio
 * Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
   functions to allow opting an event loop in to eager task execution,
   making some use-cases 2x to 5x faster.
-  (Contributed by Jacob Bower & Itamar O in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
+  (Contributed by Jacob Bower & Itamar Oren in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
 
-* On Linux, :mod:`asyncio` uses :class:`~asyncio.PidfdChildWatcher` by default
+* On Linux, :mod:`asyncio` uses :class:`asyncio.PidfdChildWatcher` by default
   if :func:`os.pidfd_open` is available and functional instead of
-  :class:`~asyncio.ThreadedChildWatcher`.
+  :class:`asyncio.ThreadedChildWatcher`.
   (Contributed by Kumar Aditya in :gh:`98024`.)
 
-* The child watcher classes :class:`~asyncio.MultiLoopChildWatcher`,
-  :class:`~asyncio.FastChildWatcher`, :class:`~asyncio.AbstractChildWatcher`
-  and :class:`~asyncio.SafeChildWatcher` are deprecated and
+* The child watcher classes :class:`asyncio.MultiLoopChildWatcher`,
+  :class:`asyncio.FastChildWatcher`, :class:`asyncio.AbstractChildWatcher`
+  and :class:`asyncio.SafeChildWatcher` are deprecated and
   will be removed in Python 3.14. It is recommended to not manually
   configure a child watcher as the event loop now uses the best available
-  child watcher for each platform (:class:`~asyncio.PidfdChildWatcher`
-  if supported and :class:`~asyncio.ThreadedChildWatcher` otherwise).
+  child watcher for each platform (:class:`asyncio.PidfdChildWatcher`
+  if supported and :class:`asyncio.ThreadedChildWatcher` otherwise).
   (Contributed by Kumar Aditya in :gh:`94597`.)
 
 * :func:`asyncio.set_child_watcher`, :func:`asyncio.get_child_watcher`,
@@ -594,7 +596,7 @@ asyncio
   (Contributed by Kumar Aditya in :gh:`99388`.)
 
 * Add C implementation of :func:`asyncio.current_task` for 4x-6x speedup.
-  (Contributed by Itamar Ostricher and Pranav Thulasiram Bhat in :gh:`100344`.)
+  (Contributed by Itamar Oren and Pranav Thulasiram Bhat in :gh:`100344`.)
 
 * :func:`asyncio.iscoroutine` now returns ``False`` for generators as
   :mod:`asyncio` does not support legacy generator-based coroutines.
@@ -607,15 +609,16 @@ asyncio
 calendar
 --------
 
-* Add enums :data:`~calendar.Month` and :data:`~calendar.Day`.
+* Add enums :data:`calendar.Month` and :data:`calendar.Day`
+  defining months of the year and days of the week.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 csv
 ---
 
-* Add :const:`~csv.QUOTE_NOTNULL` and :const:`~csv.QUOTE_STRINGS` flags to
+* Add :const:`csv.QUOTE_NOTNULL` and :const:`csv.QUOTE_STRINGS` flags to
   provide finer grained control of ``None`` and empty strings by
-  :class:`~csv.writer` objects.
+  :class:`csv.writer` objects.
 
 dis
 ---
@@ -625,7 +628,7 @@ dis
   :mod:`dis` module.
   :opcode:`HAVE_ARGUMENT` is still relevant to real opcodes,
   but it is not useful for pseudo instructions. Use the new
-  :data:`~dis.hasarg` collection instead.
+  :data:`dis.hasarg` collection instead.
   (Contributed by Irit Katriel in :gh:`94216`.)
 
 fractions
@@ -711,11 +714,11 @@ pathlib
 -------
 
 * Add support for subclassing :class:`pathlib.PurePath` and
-  :class:`~pathlib.Path`, plus their Posix- and Windows-specific variants.
-  Subclasses may override the :meth:`~pathlib.PurePath.with_segments` method
+  :class:`pathlib.Path`, plus their Posix- and Windows-specific variants.
+  Subclasses may override the :meth:`pathlib.PurePath.with_segments` method
   to pass information between path instances.
 
-* Add :meth:`~pathlib.Path.walk` for walking the directory trees and generating
+* Add :meth:`pathlib.Path.walk` for walking the directory trees and generating
   all file or directory names within them, similar to :func:`os.walk`.
   (Contributed by Stanislav Zmiev in :gh:`90385`.)
 
@@ -784,20 +787,20 @@ sqlite3
 * Add a :ref:`command-line interface <sqlite3-cli>`.
   (Contributed by Erlend E. Aasland in :gh:`77617`.)
 
-* Add the :attr:`~sqlite3.Connection.autocommit` attribute
-  to :class:`~sqlite3.Connection`
-  and the *autocommit* parameter to :func:`~sqlite3.connect`
+* Add the :attr:`sqlite3.Connection.autocommit` attribute
+  to :class:`sqlite3.Connection`
+  and the *autocommit* parameter to :func:`sqlite3.connect`
   to control :pep:`249`-compliant
   :ref:`transaction handling <sqlite3-transaction-control-autocommit>`.
   (Contributed by Erlend E. Aasland in :gh:`83638`.)
 
 * Add *entrypoint* keyword-only parameter to
-  :meth:`~sqlite3.Connection.load_extension`,
+  :meth:`sqlite3.Connection.load_extension`,
   for overriding the SQLite extension entry point.
   (Contributed by Erlend E. Aasland in :gh:`103015`.)
 
-* Add :meth:`~sqlite3.Connection.getconfig` and
-  :meth:`~sqlite3.Connection.setconfig` to :class:`~sqlite3.Connection`
+* Add :meth:`sqlite3.Connection.getconfig` and
+  :meth:`sqlite3.Connection.setconfig` to :class:`sqlite3.Connection`
   to make configuration changes to a database connection.
   (Contributed by Erlend E. Aasland in :gh:`103489`.)
 
@@ -867,8 +870,8 @@ tkinter
 tokenize
 --------
 
-* The :mod:`tokenize` module includes the changes introduced in :pep:`701`. (
-  Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
+* The :mod:`tokenize` module includes the changes introduced in :pep:`701`.
+  (Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
   See :ref:`whatsnew312-porting-to-python312` for more information on the
   changes to the :mod:`tokenize` module.
 
@@ -984,7 +987,7 @@ Optimizations
   (Contributed by Serhiy Storchaka in :gh:`91524`.)
 
 * Speed up :class:`asyncio.Task` creation by deferring expensive string formatting.
-  (Contributed by Itamar O in :gh:`103793`.)
+  (Contributed by Itamar Oren in :gh:`103793`.)
 
 * The :func:`tokenize.tokenize` and :func:`tokenize.generate_tokens` functions are
   up to 64% faster as a side effect of the changes required to cover :pep:`701` in
@@ -999,9 +1002,9 @@ Optimizations
 CPython bytecode changes
 ========================
 
-* Remove the :opcode:`LOAD_METHOD` instruction. It has been merged into
+* Remove the :opcode:`!LOAD_METHOD` instruction. It has been merged into
   :opcode:`LOAD_ATTR`. :opcode:`LOAD_ATTR` will now behave like the old
-  :opcode:`LOAD_METHOD` instruction if the low bit of its oparg is set.
+  :opcode:`!LOAD_METHOD` instruction if the low bit of its oparg is set.
   (Contributed by Ken Jin in :gh:`93429`.)
 
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
@@ -1837,7 +1840,7 @@ New Features
 * Added :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
   APIs to register callbacks to receive notification on creation and
   destruction of code objects.
-  (Contributed by Itamar Ostricher in :gh:`91054`.)
+  (Contributed by Itamar Oren in :gh:`91054`.)
 
 * Add :c:func:`PyFrame_GetVar` and :c:func:`PyFrame_GetVarString` functions to
   get a frame variable by its name.
