@@ -110,8 +110,6 @@ PyAPI_FUNC(void) PyEval_RestoreThread(PyThreadState *);
 PyAPI_FUNC(void) PyEval_AcquireThread(PyThreadState *tstate);
 PyAPI_FUNC(void) PyEval_ReleaseThread(PyThreadState *tstate);
 
-PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *);
-PyAPI_FUNC(int) PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable);
 
 #define Py_BEGIN_ALLOW_THREADS { \
                         PyThreadState *_save; \
@@ -134,6 +132,8 @@ PyAPI_FUNC(int) PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable);
 #  define Py_CPYTHON_CEVAL_H
 #  include "cpython/ceval.h"
 #  undef Py_CPYTHON_CEVAL_H
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *);
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_SetPersistAfterFork(int enable);
 #endif
 
 #ifdef __cplusplus
