@@ -867,8 +867,8 @@ tkinter
 tokenize
 --------
 
-* The :mod:`tokenize` module includes the changes introduced in :pep:`701`. (
-  Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
+* The :mod:`tokenize` module includes the changes introduced in :pep:`701`.
+  (Contributed by Marta Gómez Macías and Pablo Galindo in :gh:`102856`.)
   See :ref:`whatsnew312-porting-to-python312` for more information on the
   changes to the :mod:`tokenize` module.
 
