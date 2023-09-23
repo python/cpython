@@ -6,7 +6,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 #include "clinic/_functoolsmodule.c.h"
 /*[clinic input]
@@ -340,18 +340,18 @@ PyDoc_STRVAR(partial_doc,
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
-    {"func",            T_OBJECT,       OFF(fn),        READONLY,
+    {"func",            _Py_T_OBJECT,       OFF(fn),        Py_READONLY,
      "function object to use in future partial calls"},
-    {"args",            T_OBJECT,       OFF(args),      READONLY,
+    {"args",            _Py_T_OBJECT,       OFF(args),      Py_READONLY,
      "tuple of arguments to future partial calls"},
-    {"keywords",        T_OBJECT,       OFF(kw),        READONLY,
+    {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(partialobject, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(partialobject, dict), READONLY},
-    {"__vectorcalloffset__", T_PYSSIZET,
-     offsetof(partialobject, vectorcall), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, dict), Py_READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, vectorcall), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -540,7 +540,7 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 }
 
 static PyMemberDef keyobject_members[] = {
-    {"obj", T_OBJECT,
+    {"obj", _Py_T_OBJECT,
      offsetof(keyobject, object), 0,
      PyDoc_STR("Value wrapped by a key function.")},
     {NULL}
@@ -725,7 +725,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial]) -> value\n\
+"reduce(function, iterable[, initial], /) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\
@@ -1394,10 +1394,10 @@ static PyGetSetDef lru_cache_getsetlist[] = {
 };
 
 static PyMemberDef lru_cache_memberlist[] = {
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, dict), READONLY},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, weakreflist), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, dict), Py_READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 

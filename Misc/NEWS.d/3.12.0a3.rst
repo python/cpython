@@ -9,7 +9,7 @@ within a garbage request to be printed to the stderr server log.
 
 This is done by changing the :mod:`http.server`
 :class:`BaseHTTPRequestHandler` ``.log_message`` method to replace control
-characters with a ``\xHH`` hex escape before printing.
+characters with a :samp:`\\x{HH}` hex escape before printing.
 
 ..
 
@@ -153,7 +153,7 @@ to specialize attribute accesses on types that haven't had
 .. section: Core and Builtins
 
 Allow some features of :mod:`syslog` to the main interpreter only. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -505,7 +505,7 @@ return True from this method; now they correctly return False.
 .. nonce: ZoOY5G
 .. section: Library
 
-Add an :data:`~ssl.OP_ENABLE_KTLS` option for enabling the use of the kernel
+Add an :const:`~ssl.OP_ENABLE_KTLS` option for enabling the use of the kernel
 TLS (kTLS). Patch by Illia Volochii.
 
 ..

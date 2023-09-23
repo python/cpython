@@ -81,7 +81,7 @@ Effects of the Python Development Mode:
   ignored for empty strings.
 
 * The :class:`io.IOBase` destructor logs ``close()`` exceptions.
-* Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
+* Set the :attr:`~sys.flags.dev_mode` attribute of :data:`sys.flags` to
   ``True``.
 
 The Python Development Mode does not enable the :mod:`tracemalloc` module by

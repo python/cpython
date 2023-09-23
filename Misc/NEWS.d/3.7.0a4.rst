@@ -842,5 +842,5 @@ Moved the pygetopt.h header into internal/, since it has no public APIs.
 .. nonce: LbyQt6
 .. section: C API
 
-:c:func:`Py_SetProgramName` and :c:func:`Py_SetPythonHome` now take the
+:c:func:`!Py_SetProgramName` and :c:func:`!Py_SetPythonHome` now take the
 ``const wchar *`` arguments instead of ``wchar *``.

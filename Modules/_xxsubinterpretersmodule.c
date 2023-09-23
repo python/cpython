@@ -6,7 +6,8 @@
 #endif
 
 #include "Python.h"
-#include "pycore_interp.h"        // _PyInterpreterState_GetMainModule()
+#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "interpreteridobject.h"
 
 
@@ -40,7 +41,7 @@ _get_current_interp(void)
 static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
-    assert(!PyObject_HasAttrString(mod, name));
+    assert(!PyObject_HasAttrStringWithError(mod, name));
     PyObject *exctype = PyErr_NewException(name, base, NULL);
     if (exctype == NULL) {
         return NULL;
@@ -57,24 +58,17 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+_release_xid_data(_PyCrossInterpreterData *data)
 {
-    PyObject *exc;
-    if (ignoreexc) {
-        exc = PyErr_GetRaisedException();
-    }
+    PyObject *exc = PyErr_GetRaisedException();
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
-        if (ignoreexc) {
-            // XXX Emit a warning?
-            PyErr_Clear();
-        }
+        // XXX Emit a warning?
+        PyErr_Clear();
     }
-    if (ignoreexc) {
-        PyErr_SetRaisedException(exc);
-    }
+    PyErr_SetRaisedException(exc);
     return res;
 }
 
@@ -144,7 +138,7 @@ _sharednsitem_clear(struct _sharednsitem *item)
         PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
-    (void)_release_xid_data(&item->data, 1);
+    (void)_release_xid_data(&item->data);
 }
 
 static int
@@ -173,16 +167,16 @@ typedef struct _sharedns {
 static _sharedns *
 _sharedns_new(Py_ssize_t len)
 {
-    _sharedns *shared = PyMem_NEW(_sharedns, 1);
+    _sharedns *shared = PyMem_RawCalloc(sizeof(_sharedns), 1);
     if (shared == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     shared->len = len;
-    shared->items = PyMem_NEW(struct _sharednsitem, len);
+    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
     if (shared->items == NULL) {
         PyErr_NoMemory();
-        PyMem_Free(shared);
+        PyMem_RawFree(shared);
         return NULL;
     }
     return shared;
@@ -194,8 +188,8 @@ _sharedns_free(_sharedns *shared)
     for (Py_ssize_t i=0; i < shared->len; i++) {
         _sharednsitem_clear(&shared->items[i]);
     }
-    PyMem_Free(shared->items);
-    PyMem_Free(shared);
+    PyMem_RawFree(shared->items);
+    PyMem_RawFree(shared);
 }
 
 static _sharedns *
@@ -374,7 +368,7 @@ _is_running(PyInterpreterState *interp)
     }
 
     assert(!PyErr_Occurred());
-    struct _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    struct _PyInterpreterFrame *frame = tstate->current_frame;
     if (frame == NULL) {
         return 0;
     }
@@ -400,7 +394,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
     PyObject *excval = NULL;
-    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }
@@ -531,7 +525,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     }
     assert(tstate != NULL);
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -561,7 +555,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -616,7 +610,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = _PyInterpreterState_GetIDObject(interp);
+        id = PyInterpreterState_GetIDObject(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -648,7 +642,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetIDObject(interp);
+    return PyInterpreterState_GetIDObject(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -662,7 +656,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return _PyInterpreterID_New(id);
+    return PyInterpreterID_New(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
@@ -684,7 +678,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -750,7 +744,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -808,7 +802,7 @@ module_exec(PyObject *mod)
     }
 
     // PyInterpreterID
-    if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
+    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
         goto error;
     }
 

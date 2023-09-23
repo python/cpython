@@ -1015,13 +1015,9 @@ class date:
     def __repr__(self):
         """Convert to formal string, for repr().
 
-        >>> dt = datetime(2010, 1, 1)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0)'
-
-        >>> dt = datetime(2010, 1, 1, tzinfo=timezone.utc)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)'
+        >>> d = date(2010, 1, 1)
+        >>> repr(d)
+        'datetime.date(2010, 1, 1)'
         """
         return "%s.%s(%d, %d, %d)" % (_get_class_module(self),
                                       self.__class__.__qualname__,
@@ -1111,6 +1107,8 @@ class date:
         if day is None:
             day = self._day
         return type(self)(year, month, day)
+
+    __replace__ = replace
 
     # Comparisons of date objects with other.
 
@@ -1236,7 +1234,7 @@ date.resolution = timedelta(days=1)
 class tzinfo:
     """Abstract base class for time zone info classes.
 
-    Subclasses must override the name(), utcoffset() and dst() methods.
+    Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
     __slots__ = ()
 
@@ -1637,6 +1635,8 @@ class time:
             fold = self._fold
         return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
 
+    __replace__ = replace
+
     # Pickle support.
 
     def _getstate(self, protocol=3):
@@ -1812,7 +1812,7 @@ class datetime(date):
         warnings.warn("datetime.utcfromtimestamp() is deprecated and scheduled "
                       "for removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
-                      "datetime.fromtimestamp(t, datetime.UTC).",
+                      "datetime.datetime.fromtimestamp(t, datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         return cls._fromtimestamp(t, True, None)
@@ -1830,7 +1830,7 @@ class datetime(date):
         warnings.warn("datetime.utcnow() is deprecated and scheduled for "
                       "removal in a future version. Instead, Use timezone-aware "
                       "objects to represent datetimes in UTC: "
-                      "datetime.now(datetime.UTC).",
+                      "datetime.datetime.now(datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         t = _time.time()
@@ -1982,6 +1982,8 @@ class datetime(date):
             fold = self.fold
         return type(self)(year, month, day, hour, minute, second,
                           microsecond, tzinfo, fold=fold)
+
+    __replace__ = replace
 
     def _local_timezone(self):
         if self.tzinfo is None:

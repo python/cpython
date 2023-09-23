@@ -9,11 +9,11 @@
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "structmember.h"         // PyMemberDef
+
 
 
 static PyMemberDef module_members[] = {
-    {"__dict__", T_OBJECT, offsetof(PyModuleObject, md_dict), READONLY},
+    {"__dict__", _Py_T_OBJECT, offsetof(PyModuleObject, md_dict), Py_READONLY},
     {0}
 };
 
@@ -510,25 +510,31 @@ PyModule_GetDict(PyObject *m)
 }
 
 PyObject*
-PyModule_GetNameObject(PyObject *m)
+PyModule_GetNameObject(PyObject *mod)
 {
-    PyObject *d;
-    PyObject *name;
-    if (!PyModule_Check(m)) {
+    if (!PyModule_Check(mod)) {
         PyErr_BadArgument();
         return NULL;
     }
-    d = ((PyModuleObject *)m)->md_dict;
-    if (d == NULL || !PyDict_Check(d) ||
-        (name = PyDict_GetItemWithError(d, &_Py_ID(__name__))) == NULL ||
-        !PyUnicode_Check(name))
-    {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_SystemError, "nameless module");
-        }
-        return NULL;
+    PyObject *dict = ((PyModuleObject *)mod)->md_dict;  // borrowed reference
+    if (dict == NULL || !PyDict_Check(dict)) {
+        goto error;
     }
-    return Py_NewRef(name);
+    PyObject *name;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__name__), &name) <= 0) {
+        goto error;
+    }
+    if (!PyUnicode_Check(name)) {
+        Py_DECREF(name);
+        goto error;
+    }
+    return name;
+
+error:
+    if (!PyErr_Occurred()) {
+        PyErr_SetString(PyExc_SystemError, "nameless module");
+    }
+    return NULL;
 }
 
 const char *
@@ -544,25 +550,31 @@ PyModule_GetName(PyObject *m)
 }
 
 PyObject*
-PyModule_GetFilenameObject(PyObject *m)
+PyModule_GetFilenameObject(PyObject *mod)
 {
-    PyObject *d;
-    PyObject *fileobj;
-    if (!PyModule_Check(m)) {
+    if (!PyModule_Check(mod)) {
         PyErr_BadArgument();
         return NULL;
     }
-    d = ((PyModuleObject *)m)->md_dict;
-    if (d == NULL ||
-        (fileobj = PyDict_GetItemWithError(d, &_Py_ID(__file__))) == NULL ||
-        !PyUnicode_Check(fileobj))
-    {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_SystemError, "module filename missing");
-        }
-        return NULL;
+    PyObject *dict = ((PyModuleObject *)mod)->md_dict;  // borrowed reference
+    if (dict == NULL) {
+        goto error;
     }
-    return Py_NewRef(fileobj);
+    PyObject *fileobj;
+    if (PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj) <= 0) {
+        goto error;
+    }
+    if (!PyUnicode_Check(fileobj)) {
+        Py_DECREF(fileobj);
+        goto error;
+    }
+    return fileobj;
+
+error:
+    if (!PyErr_Occurred()) {
+        PyErr_SetString(PyExc_SystemError, "module filename missing");
+    }
+    return NULL;
 }
 
 const char *
