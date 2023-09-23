@@ -3784,7 +3784,7 @@ features:
 Timer File Descriptors
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 3.3
+.. versionadded:: 3.13
 
 These functions provide support for Linux's *timer file descriptor* API.
 Naturally, they are all only available on Linux.
