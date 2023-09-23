@@ -15,7 +15,7 @@ a reference leak in that function.
 .. section: Core and Builtins
 
 Fix wrong lineno in exception message on :keyword:`continue` or
-:keyword:`break` which are not in a loop. Patch by Dong-hee Na.
+:keyword:`break` which are not in a loop. Patch by Donghee Na.
 
 ..
 
@@ -25,7 +25,7 @@ Fix wrong lineno in exception message on :keyword:`continue` or
 .. section: Core and Builtins
 
 Fix :func:`~unicodedata.is_normalized` to properly handle the UCD 3.2.0
-cases. Patch by Dong-hee Na.
+cases. Patch by Donghee Na.
 
 ..
 
@@ -362,7 +362,7 @@ Fix ``tuple`` subclasses being cast to ``tuple`` when used as enum values.
 .. section: Library
 
 Update :exc:`~urllib.error.HTTPError` to be initialized properly, even if
-the ``fp`` is ``None``. Patch by Dong-hee Na.
+the ``fp`` is ``None``. Patch by Donghee Na.
 
 ..
 

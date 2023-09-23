@@ -161,7 +161,7 @@ pure Python version did the set up in ``__init__``.
 .. section: Library
 
 Fix :func:`multiprocessing.set_forkserver_preload` to check the given list
-of modules names. Patch by Dong-hee Na.
+of modules names. Patch by Donghee Na.
 
 ..
 
