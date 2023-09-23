@@ -2968,7 +2968,17 @@ _PyThreadState_MustExit(PyThreadState *tstate)
     if (finalizing == NULL) {
         finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
     }
-    return (finalizing != NULL && finalizing != tstate);
+    if (finalizing == NULL) {
+        return 0;
+    }
+    else if (finalizing == tstate) {
+        return 0;
+    }
+    else if (finalizing->thread_id == tstate->thread_id) {
+        /* gh-109793: we must have switched interpreters. */
+        return 0;
+    }
+    return 1;
 }
 
 
