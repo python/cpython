@@ -1160,7 +1160,7 @@ class TestBasicOps(unittest.TestCase):
                     return self
                 def __next__(self):
                     self.count +=1
-                    if self.count == reenter_at:
+                    if self.count in reenter_at:
                         return next(it)
                     return [self.count]  # new object
 
@@ -1168,19 +1168,37 @@ class TestBasicOps(unittest.TestCase):
             for item in expected:
                 self.assertEqual(next(it), item)
 
-        check(1, [
+        check({1}, [
             (([2], [3]), [4]),
             ([4], [5]),
         ])
-        check(2, [
+        check({2}, [
             ([1], ([1], [3])),
             (([1], [3]), [4]),
             ([4], [5]),
         ])
-        check(3, [
+        check({3}, [
             ([1], [2]),
             ([2], ([2], [4])),
             (([2], [4]), [5]),
+            ([5], [6]),
+        ])
+        check({1, 2}, [
+            ((([3], [4]), [5]), [6]),
+            ([6], [7]),
+        ])
+        check({1, 3}, [
+            (([2], ([2], [4])), [5]),
+            ([5], [6]),
+        ])
+        check({1, 4}, [
+            (([2], [3]), ([3], [5])),
+            (([3], [5]), [6]),
+            ([6], [7]),
+        ])
+        check({2, 3}, [
+            ([1], ([1], ([1], [4]))),
+            (([1], ([1], [4])), [5]),
             ([5], [6]),
         ])
 
