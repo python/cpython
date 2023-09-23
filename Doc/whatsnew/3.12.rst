@@ -1071,7 +1071,9 @@ Deprecated
   with the POSIX platform when doing so. Even if such code *appeared* to work.
   We added the warning to to raise awareness as issues encounted by code doing
   this are becoming more frequent. See the :func:`os.fork` documentation for
-  more details.
+  more details along with `this discussion on fork being incompatible with threads
+  <https://discuss.python.org/t/33555>`_ for *why* we're now surfacing this
+  longstanding platform compatibility problem to developers.
 
   When this warning appears due to usage of :mod:`multiprocessing` or
   :mod:`concurrent.futures` the fix is to use a different
