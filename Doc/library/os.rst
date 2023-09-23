@@ -4185,7 +4185,7 @@ written in Python, such as a mail server's external command delivery program.
 
       See `this discussion on fork being incompatible with threads
       <https://discuss.python.org/t/33555>`_
-      for technical details of why we're surfacing this long standing
+      for technical details of why we're surfacing this longstanding
       platform compatibility problem to developers.
 
    .. availability:: POSIX, not Emscripten, not WASI.
