@@ -1728,7 +1728,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That's because the __ notation is just syntax sugar for a constructor
-call to one of the XXXMessage classes.
+call to one of the :samp:`{XXX}Message` classes.
 
 If you prefer, you can use a :class:`LoggerAdapter` to achieve a similar effect
 to the above, as in the following example::
@@ -2644,7 +2644,7 @@ when (and if) the logged message is actually about to be output to a log by a
 handler. So the only slightly unusual thing which might trip you up is that the
 parentheses go around the format string and the arguments, not just the format
 string. That’s because the __ notation is just syntax sugar for a constructor
-call to one of the ``XXXMessage`` classes shown above.
+call to one of the :samp:`{XXX}Message` classes shown above.
 
 
 .. _filters-dictconfig:
