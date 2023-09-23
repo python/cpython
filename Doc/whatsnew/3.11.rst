@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.11, compared to 3.10.
-
+Python 3.11 was released on October 24, 2022.
 For full details, see the :ref:`changelog <changelog>`.
 
 
