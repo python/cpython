@@ -3914,9 +3914,6 @@ descriptors to wait until the file descriptor is ready for reading:
    :func:`~select.select` and :func:`~select.poll` can be used to wait until
    timer expires and the file descriptor is readable.
 
-   The file descriptor must be closed with :func:`os.close` when it is no longer needed.
-   Unless it is closed, the file descriptor will be leaked.
-
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module:
 
@@ -3946,6 +3943,9 @@ descriptors to wait until the file descriptor is ready for reading:
    :func:`read` raises :class:`OSError` with ``errno`` is set to :const:`errno.EAGAIN`.
 
    If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
+
+   The file descriptor must be closed with :func:`os.close` when it is no
+   longer needed, or else the file descriptor will be leaked.
 
    .. seealso:: The :manpage:`timerfd_create(2)` man page.
 
