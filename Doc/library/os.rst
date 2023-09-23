@@ -3781,6 +3781,120 @@ features:
    .. versionadded:: 3.10
 
 
+Timer File Descriptors
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.3
+
+These functions provide support for Linux's *timer file descriptor* API.
+Naturally, they are all only available on Linux.
+
+The following example shows how to use a timer file descriptor
+to execute a function twice a second:
+
+.. code-block:: python
+
+   # Practical scripts should use really use a non-blocking timer,
+   # we use a blocking timer here for simplicity.
+   import os, time
+
+   # Create the timer file descriptor
+   fd = os.timerfd_create(time.CLOCK_REALTIME)
+
+   # Start the timer in 1 second, with an interval of half a second
+   os.timerfd_settime(fd, initial=1, interval=0.5)
+
+   try:
+       # Process timer events four times.
+       for _ in range(4):
+          # read() will block until the timer expires
+          _ = os.read(fd, 8)
+          print("Timer expired")
+   finally:
+       # Remember to close the timer file descriptor!
+       os.close(fd)
+
+To avoid the precision loss caused by the :class:`float` type,
+timer file descriptors allow specifying initial expiration and interval
+in integer nanoseconds with ``_ns`` variants of the functions.
+
+This example shows how :func:`~select.epoll` can be used with timer file
+descriptors to wait until the file descriptor is ready for reading:
+
+.. code-block:: python
+
+   import os, time, select, sys
+
+   # Create an epoll object
+   ep = select.epoll()
+
+   # Create timer file descriptors in non-blocking mode.
+   num = 3
+   fds = []
+   for _ in range(num):
+       fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+       fds.append(fd)
+       # Register the timer file descriptor for read events
+       ep.register(fd, select.EPOLLIN)
+
+   # Start the timer with os.timerfd_settime_ns() in nanoseconds.
+   for i, fd in enumerate(fds, start=1):
+       i = i * 10**9
+       os.timerfd_settime_ns(fd, initial=i//4, interval=i//4)
+
+   timeout=3
+   try:
+       # For simplicity, process a fixed number of timer events.
+       # Practical applications should use an infinite loop to process
+       # timer events, and use some trigger to break & stop the timer.
+       for _ in range(num*3):
+           # Wait for the timer to expire for 3 seconds.
+           events = ep.poll(timeout)
+           # XXX?: signaled events may be more than one at once.
+           print(f"Signaled events={events}")
+           for fd, event in events:
+               count = int.from_bytes(os.read(fd, 8), byteorder=sys.byteorder)
+               print(f"Timer {fds.index(fd) + 1} expired {count} times")
+   finally:
+       for fd in fds:
+           ep.unregister(fd)
+           os.close(fd)
+       ep.close()
+
+This example shows how :func:`~select.select` can be used with timer file
+descriptors to wait until the file descriptor is ready for reading:
+
+.. code-block:: python
+
+   import os, time, select, sys
+
+   # Create timer file descriptors in non-blocking mode.
+   num = 3
+   fds = [os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+          for _ in range(num)]
+
+   # Start the timers with os.timerfd_settime() in seconds.
+   # Timer 1 fires every 0.25 seconds; timer 2 every 0.5 seconds; etc
+   for i, fd in enumerate(fds, start=1):
+       os.timerfd_settime(fd, initial=i/4, interval=i/4)
+
+   timeout = 3
+   try:
+       # For simplicity, process a fixed number of timer events.
+       # Practical applications should use an infinite loop to process
+       # timer events, and use some trigger to break & stop the timer.
+       for _ in range(num*3):
+           # Wait for the timer to expire for 3 seconds.
+           rfd, wfd, xfd = select.select(fds, fds, fds, timeout)
+           for fd in rfd:
+               count = int.from_bytes(os.read(fd, 8), byteorder=sys.byteorder)
+               print(f"Timer {fds.index(fd)+1} expired {count} times")
+   finally:
+       for fd in fds:
+           os.close(fd)
+
+--------------
+
 .. function:: timerfd_create(clockid, /, *, flags=0)
 
    Create and return a timer file descriptor (*timerfd*).
@@ -3802,90 +3916,6 @@ features:
 
    The file descriptor must be closed with :func:`os.close` when it is no longer needed.
    Unless it is closed, the file descriptor will be leaked.
-
-   Example::
-
-      import os, time, select, sys
-
-      # Create an epoll object
-      ep = select.epoll()
-
-      num = 3
-      # Create timer file descriptors in non-blocking mode.
-      fds = []
-      for _ in range(num):
-         fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
-         fds.append(fd)
-
-         # Register the timer file descriptor for read events
-         ep.register(fd, select.EPOLLIN)
-
-      # Start the timer with os.timerfd_settime_ns() in nanoseconds.
-      for i, fd in enumerate(fds):
-         initial_expiration = (i + 1) * 10**9 // 4
-         interval = (i + 1) * 10**9 // 4
-         os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)
-
-      try:
-          # process timer events in fixed count for simplicity.
-          # Pratical applications should use an infinite loop to process events for timer
-          # and use other stop trigger
-          for _ in range(num*3):
-              # Wait for the timer to expire for 3 seconds.
-              timeout=3
-              events = ep.poll(timeout)
-              # signaled events may be more than one at once.
-              print(f"signaled events={events}")
-              for fd, event in events:
-                  n = os.read(fd, 8)
-                  count = int.from_bytes(n, byteorder=sys.byteorder)
-
-                  index = fds.index(fd)
-                  print(f"Timer{index + 1} expired : {count} times")
-      finally:
-          for fd in fds:
-              ep.unregister(fd)
-              os.close(fd)
-          ep.close()
-
-
-   Example::
-
-      import os, time, select, sys
-
-      # Create timer file descriptors in non-blocking mode.
-      num = 3
-      fds = []
-      for _ in range(num):
-         fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
-         fds.append(fd)
-
-      # Start the timer with os.timerfd_settime() in seconds.
-      for i, fd in enumerate(fds):
-         initial_expiration = (i + 1) * 0.25
-         interval = (i + 1) * 0.25
-         os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
-
-      try:
-          # process timer events in fixed count for simplicity.
-          # Pratical applications should use an infinite loop to process events for timer
-          # and use other stop trigger
-          for _ in range(num*3):
-              timeout=3
-
-              # Wait for the timer to expire for 3 seconds.
-              rfd, wfd, xfd = select.select(fds, fds, fds, timeout)
-              print(rfd, wfd, xfd)
-
-              for fd in rfd:
-                  n = os.read(fd, 8)
-                  count = int.from_bytes(n, byteorder=sys.byteorder)
-
-                  index = fds.index(fd)
-                  print(f"Timer{index + 1} expired : {count} times")
-      finally:
-          for fd in fds:
-              os.close(fd)
 
    *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
    as defined in the :py:mod:`time` module:
@@ -3968,29 +3998,6 @@ features:
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
 
-   The following example shows how to use a timer file descriptor
-   to execute a function twice a second:
-
-   Example::
-
-      # This example uses blocking timer descriptor, but pratical script should use non-blocking timer.
-      # See Example at os.timerfd_create().
-      import os, time
-
-      fd = os.timerfd_create(time.CLOCK_REALTIME)
-      initial_expiration = 1  # Start the timer in 1 second
-      interval = 0.5  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime(fd, initial=initial_expiration, interval=interval)  # Start the timer
-
-      try:
-         # process timer events four times.
-         for _ in range(4):
-            # read() will block until the timer expires
-            _ = os.read(fd, 8)
-            print("Timer expired")
-      finally:
-         os.close(fd)
-
    .. seealso::  The :manpage:`timerfd_settime(2)` man page.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
@@ -4002,29 +4009,6 @@ features:
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
    This function operates the same interval timer as :func:`timerfd_settime`.
-
-   The following example shows how to use a timer file descriptor
-   to execute a function twice a second:
-
-   Example::
-
-      # This example uses blocking timer descriptor, but pratical script should use non-blocking timer.
-      # See Example at os.timerfd_create().
-      import os, time
-
-      fd = os.timerfd_create(time.CLOCK_REALTIME)
-      initial_expiration = 10**9  # Start the timer in 1 second
-      interval = 10**9 // 2  # Set the timer interval to 0.5 seconds
-      os.timerfd_settime_ns(fd, initial=initial_expiration, interval=interval)  # Start the timer
-
-      try:
-         # process timer events four times.
-         for _ in range(4):
-            # read() will block until the timer expires
-            _ = os.read(fd, 8)
-            print("Timer expired")
-      finally:
-         os.close(fd)
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
