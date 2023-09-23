@@ -1,5 +1,7 @@
 import contextlib
+import json
 import os
+import os.path
 import sys
 import threading
 from textwrap import dedent
@@ -9,6 +11,7 @@ import time
 from test import support
 from test.support import import_helper
 from test.support import threading_helper
+from test.support import os_helper
 _interpreters = import_helper.import_module('_xxsubinterpreters')
 _channels = import_helper.import_module('_xxinterpchannels')
 from test.support import interpreters
@@ -486,6 +489,103 @@ class StressTests(TestBase):
         threads = (threading.Thread(target=task) for _ in range(200))
         with threading_helper.start_threads(threads):
             pass
+
+
+class StartupTests(TestBase):
+
+    # We want to ensure the initial state of subinterpreters
+    # matches expectations.
+
+    def create_temp_dir(self):
+        import tempfile
+        tmp = tempfile.mkdtemp(prefix='test_interpreters_')
+        tmp = os.path.realpath(tmp)
+        self.addCleanup(os_helper.rmtree, tmp)
+        return tmp
+
+    def write_script(self, *path, text):
+        filename = os.path.join(*path)
+        dirname = os.path.dirname(filename)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
+        with open(filename, 'w', encoding='utf-8') as outfile:
+            outfile.write(dedent(text))
+        return filename
+
+    def run_cmd(self, cmd, *, cwd=None):
+        # This method is inspired by
+        # EmbeddingTestsMixin.run_embedded_interpreter() in test_embed.py.
+        import shlex
+        import subprocess
+        assert cmd.startswith('python3 '), repr(cmd)
+        if cmd.startswith('python3 '):
+            cmd = cmd.replace('python3', sys.executable, 1)
+        argv = shlex.split(cmd)
+        proc = subprocess.run(
+            argv,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        )
+        if proc.stderr != '':
+            # This is a hack until _PyThreadState_MustExit() is fixed.
+            proc.returncode = 1
+        if proc.returncode != 0 and support.verbose:
+            print(f'--- {cmd} failed ---')
+            print(f'stdout:\n{proc.stdout}')
+            print(f'stderr:\n{proc.stderr}')
+            print('------')
+        self.assertEqual(proc.returncode, 0)
+        self.assertEqual(proc.stderr, '')
+        return proc.stdout
+
+    def test_sys_path_0(self):
+        # The main interpreter's sys.path[0] should be used by subinterpreters.
+
+        script = '''
+            import sys
+            from test.support import interpreters
+
+            orig = sys.path[0]
+
+            interp = interpreters.create()
+            interp.run(f"""if True:
+                import json
+                import sys
+                print(json.dumps({{
+                    'main': {orig!r},
+                    'sub': sys.path[0],
+                }}, indent=4), flush=True)
+                """)
+            '''
+
+        # <tmp>/
+        #   pkg/
+        #     __init__.py
+        #     __main__.py
+        #     script.py
+        #   script.py
+        cwd = self.create_temp_dir()
+        self.write_script(cwd, 'pkg', '__init__.py', text='')
+        self.write_script(cwd, 'pkg', '__main__.py', text=script)
+        self.write_script(cwd, 'pkg', 'script.py', text=script)
+        self.write_script(cwd, 'script.py', text=script)
+
+        cases = [
+            ('python3 script.py', cwd),
+            ('python3 -m script', cwd),
+            ('python3 -m pkg', cwd),
+            ('python3 -m pkg.script', cwd),
+            ('python3 -c "import script"', ''),
+        ]
+        for cmd, expected in cases:
+            with self.subTest(cmd):
+                out = self.run_cmd(cmd, cwd=cwd)
+                data = json.loads(out)
+                sp0_main, sp0_sub = data['main'], data['sub']
+                self.assertEqual(sp0_sub, sp0_main)
+                self.assertEqual(sp0_sub, expected)
+        # XXX Also check them all with the -P cmdline flag?
 
 
 class FinalizationTests(TestBase):
