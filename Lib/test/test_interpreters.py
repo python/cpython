@@ -1,5 +1,6 @@
 import contextlib
 import os
+import sys
 import threading
 from textwrap import dedent
 import unittest
@@ -485,6 +486,20 @@ class StressTests(TestBase):
         threads = (threading.Thread(target=task) for _ in range(200))
         with threading_helper.start_threads(threads):
             pass
+
+
+class FinalizationTests(TestBase):
+
+    def test_gh_109793(self):
+        import subprocess
+        argv = [sys.executable, '-c', '''if True:
+            import _xxsubinterpreters as _interpreters
+            interpid = _interpreters.create()
+            raise Exception
+            ''']
+        proc = subprocess.run(argv, capture_output=True, text=True)
+        self.assertIn('Traceback', proc.stderr)
+        self.assertEqual(proc.returncode, 1)
 
 
 class TestIsShareable(TestBase):
