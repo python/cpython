@@ -4,7 +4,6 @@ import io
 import re
 import sqlite3
 import test.support
-import unittest
 
 
 # Helper for temporary memory databases
