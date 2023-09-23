@@ -1065,6 +1065,18 @@ Deprecated
   contain the creation time, which is also available in the new ``st_birthtime``
   field. (Contributed by Steve Dower in :gh:`99726`.)
 
+* :mod:`os`: On POSIX platforms, :func:`os.fork` can now raise a
+  :exc:`DeprecationWarning` when it can detect being called from a
+  multithreaded process. There has always been a fundamental incompatibility
+  with the POSIX platform when doing so. Even if such code *appeared* to work.
+  We added the warning to to raise awareness as issues encounted by code doing
+  this are becoming more frequent. See the :func:`os.fork` documentation for
+  more details.
+
+  When this warning appears due to usage of :mod:`multiprocessing` or
+  :mod:`concurrent.futures` the fix is to use a different
+  :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
+
 * :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
