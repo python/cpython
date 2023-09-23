@@ -4076,8 +4076,8 @@ features:
 .. data:: TFD_TIMER_ABSTIME
 
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
-   If this flag is set, the functions use as an absolute value on the timer's clock
-   in UTC not in local time.
+   If this flag is set, *initial* is interpreted as an absolute value on the timer's clock
+   (in UTC seconds or nanoseconds since the Unix Epoch).
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
