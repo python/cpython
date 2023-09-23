@@ -1065,6 +1065,18 @@ Deprecated
   contain the creation time, which is also available in the new ``st_birthtime``
   field. (Contributed by Steve Dower in :gh:`99726`.)
 
+* :mod:`os`: On POSIX platforms, :func:`os.fork` can now raise a
+  :exc:`DeprecationWarning` when it can detect being called from a
+  multithreaded process. There has always been a fundamental incompatibility
+  with the POSIX platform when doing so. Even if such code *appeared* to work.
+  We added the warning to to raise awareness as issues encounted by code doing
+  this are becoming more frequent. See the :func:`os.fork` documentation for
+  more details.
+
+  When this warning appears due to usage of :mod:`multiprocessing` or
+  :mod:`concurrent.futures` the fix is to use a different
+  :mod:`multiprocessing` start method such as ``"spawn"`` or ``"forkserver"``.
+
 * :mod:`shutil`: The *onerror* argument of :func:`shutil.rmtree` is deprecated as will be removed
   in Python 3.14. Use *onexc* instead. (Contributed by Irit Katriel in :gh:`102828`.)
 
@@ -1224,19 +1236,6 @@ Pending Removal in Python 3.14
   :func:`~multiprocessing.get_context` or
   :func:`~multiprocessing.set_start_method` APIs to explicitly specify when
   your code *requires* ``'fork'``.  See :ref:`multiprocessing-start-methods`.
-
-* :func:`os.fork` now raises a :exc:`DeprecationWarning` on POSIX when
-  it can detect that it is being called from a multithreaded process.
-  There has always been a fundamental incompatibility with the POSIX
-  platform when doing so.  Even if such code *appeared* to work. We
-  added the warning to to raise awareness as issues encounted by code
-  doing this are becoming more frequent. See the :func:`os.fork`
-  documentation for more details.
-
-  When this warning appears to come from within :mod:`multiprocessing`
-  while using that or :mod:`concurrent.futures` the safe fix is to use a
-  different start method such as ``spawn`` (anywhere) or ``forkserver``
-  (not on macOS).
 
 * :mod:`pkgutil`: :func:`pkgutil.find_loader` and :func:`pkgutil.get_loader`
   now raise :exc:`DeprecationWarning`;
