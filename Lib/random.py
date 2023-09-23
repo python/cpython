@@ -494,8 +494,9 @@ class Random(_random.Random):
     def uniform(self, a, b):
         """Get a random number in the range [a, b) or [a, b] depending on rounding.
 
-        E[X] = (a + b) / 2
-        Var[X] = (b - a) ** 2 / 12
+        The expected value (mean) and variance of the random variable are:
+            E[X] = (a + b) / 2
+            Var[X] = (b - a) ** 2 / 12
 
         """
         return a + (b - a) * self.random()
@@ -508,8 +509,9 @@ class Random(_random.Random):
 
         http://en.wikipedia.org/wiki/Triangular_distribution
 
-        E[X] = (low + high + mode) / 3
-        Var[X] = (low**2 + high**2 + mode**2 - low*high - low*mode - high*mode) / 18
+        The expected value (mean) and variance of the random variable are:
+            E[X] = (low + high + mode) / 3
+            Var[X] = (low**2 + high**2 + mode**2 - low*high - low*mode - high*mode) / 18
 
         """
         u = self.random()
@@ -601,8 +603,9 @@ class Random(_random.Random):
         positive infinity if lambd is positive, and from negative
         infinity to 0 if lambd is negative.
 
-        E[X] = 1 / lambd
-        Var[X] = 1 / lambd ** 2
+        The expected value (mean) and variance of the random variable are:
+            E[X] = 1 / lambd
+            Var[X] = 1 / lambd ** 2
 
         """
         # lambd: rate lambd = 1/mean
@@ -665,8 +668,9 @@ class Random(_random.Random):
           pdf(x) =  --------------------------------------
                       math.gamma(alpha) * beta ** alpha
 
-        E[X] = alpha * beta
-        Var[X] = alpha * beta ** 2
+        The expected value (mean) and variance of the random variable are:
+            E[X] = alpha * beta
+            Var[X] = alpha * beta ** 2
 
         """
 
@@ -727,8 +731,9 @@ class Random(_random.Random):
         Conditions on the parameters are alpha > 0 and beta > 0.
         Returned values range between 0 and 1.
 
-        E[X] = alpha / (alpha + beta)
-        Var[X] = alpha * beta / ((alpha + beta)**2 * (alpha + beta + 1))
+        The expected value (mean) and variance of the random variable are:
+            E[X] = alpha / (alpha + beta)
+            Var[X] = alpha * beta / ((alpha + beta)**2 * (alpha + beta + 1))
 
         """
         ## See
@@ -782,8 +787,9 @@ class Random(_random.Random):
 
         Returns an integer in the range:   0 <= X <= n
 
-        E[X] = n * p
-        Var[x] = n * p * (1 - p)
+        The expected value (mean) and variance of the random variable are:
+            E[X] = n * p
+            Var[x] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases
