@@ -371,6 +371,51 @@ are parsed with the PEG parser, error messages can be more precise and show the 
 Maureira-Fredes and Marta Gómez in :gh:`102856`. PEP written by Pablo Galindo,
 Batuhan Taskaya, Lysandros Nikolaou and Marta Gómez).
 
+.. _whatsnew312-pep684:
+
+PEP 684: A Per-Interpreter GIL
+------------------------------
+
+:pep:`684` introduces a per-interpreter :term:`GIL <global interpreter lock>`,
+so that sub-interpreters may now be created with a unique GIL per interpreter.
+This allows Python programs to take full advantage of multiple CPU
+cores. This is currently only available through the C-API,
+though a Python API is :pep:`anticipated for 3.13 <554>`.
+
+Use the new :c:func:`Py_NewInterpreterFromConfig` function to
+create an interpreter with its own GIL::
+
+   PyInterpreterConfig config = {
+       .check_multi_interp_extensions = 1,
+       .gil = PyInterpreterConfig_OWN_GIL,
+   };
+   PyThreadState *tstate = NULL;
+   PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+   if (PyStatus_Exception(status)) {
+       return -1;
+   }
+   /* The new interpreter is now active in the current thread. */
+
+For further examples how to use the C-API for sub-interpreters with a
+per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
+
+(Contributed by Eric Snow in :gh:`104210`, etc.)
+
+.. _whatsnew312-pep669:
+
+PEP 669: Low impact monitoring for CPython
+------------------------------------------
+
+:pep:`669` defines a new :mod:`API <sys.monitoring>` for profilers,
+debuggers, and other tools to monitor events in CPython.
+It covers a wide range of events, including calls,
+returns, lines, exceptions, jumps, and more.
+This means that you only pay for what you use, providing support
+for near-zero overhead debuggers and coverage tools.
+See  :mod:`sys.monitoring` for details.
+
+(Contributed by Mark Shannon in :gh:`103083`.)
+
 .. _whatsnew312-pep709:
 
 PEP 709: Comprehension inlining
@@ -416,51 +461,6 @@ way to represent buffer objects, for example in type annotations.
 The new :class:`inspect.BufferFlags` enum represents the flags that
 can be used to customize buffer creation.
 (Contributed by Jelle Zijlstra in :gh:`102500`.)
-
-.. _whatsnew312-pep684:
-
-PEP 684: A Per-Interpreter GIL
-------------------------------
-
-:pep:`684` introduces a per-interpreter :term:`GIL <global interpreter lock>`,
-so that sub-interpreters may now be created with a unique GIL per interpreter.
-This allows Python programs to take full advantage of multiple CPU
-cores. This is currently only available through the C-API,
-though a Python API is :pep:`anticipated for 3.13 <554>`.
-
-Use the new :c:func:`Py_NewInterpreterFromConfig` function to
-create an interpreter with its own GIL::
-
-   PyInterpreterConfig config = {
-       .check_multi_interp_extensions = 1,
-       .gil = PyInterpreterConfig_OWN_GIL,
-   };
-   PyThreadState *tstate = NULL;
-   PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
-   if (PyStatus_Exception(status)) {
-       return -1;
-   }
-   /* The new interpreter is now active in the current thread. */
-
-For further examples how to use the C-API for sub-interpreters with a
-per-interpreter GIL, see :source:`Modules/_xxsubinterpretersmodule.c`.
-
-(Contributed by Eric Snow in :gh:`104210`, etc.)
-
-.. _whatsnew312-pep669:
-
-PEP 669: Low impact monitoring for CPython
-------------------------------------------
-
-:pep:`669` defines a new :mod:`API <sys.monitoring>` for profilers,
-debuggers, and other tools to monitor events in CPython.
-It covers a wide range of events, including calls,
-returns, lines, exceptions, jumps, and more.
-This means that you only pay for what you use, providing support
-for near-zero overhead debuggers and coverage tools.
-See  :mod:`sys.monitoring` for details.
-
-(Contributed by Mark Shannon in :gh:`103083`.)
 
 New Features Related to Type Hints
 ==================================
