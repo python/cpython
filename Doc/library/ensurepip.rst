@@ -61,7 +61,7 @@ By default, ``pip`` is installed into the current virtual environment
 active virtual environment). The installation location can be controlled
 through two additional command line options:
 
-* ``--root <dir>``: Installs ``pip`` relative to the given root directory
+* :samp:`--root {dir}`: Installs ``pip`` relative to the given root directory
   rather than the root of the currently active virtual environment (if any)
   or the default root for the current Python installation.
 * ``--user``: Installs ``pip`` into the user site packages directory rather
