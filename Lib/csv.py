@@ -270,9 +270,8 @@ class Sniffer:
 
         # if we see an extra quote between delimiters, we've got a
         # double quoted format
-        # in future Python versions this zero width look-ahead assert can be replaced with atomic groups
         dq_regexp = re.compile(
-                               r"((%(delim)s)|^)\W*%(quote)s(?=(?P<zero>[^%(delim)s%(quote)s\n]*))(?P=zero)%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
+                               r"((%(delim)s)|^)\W*%(quote)s(?>[^%(delim)s\n]*)%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" % \
                                {'delim':re.escape(delim), 'quote':quotechar}, re.MULTILINE)
 
 
