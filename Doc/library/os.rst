@@ -4172,7 +4172,7 @@ written in Python, such as a mail server's external command delivery program.
 
       We chose to surface this as a warning, when detectable, to better
       inform developers of a design problem that the POSIX platform
-      specificly calls this out as not supported. Even in code that
+      specifically notes as not supported. Even in code that
       *appears* to work, it has never been safe to mix threading with
       :func:`os.fork` on POSIX platforms. The CPython runtime itself has
       always made API calls that are not safe for use in the child
@@ -4184,7 +4184,7 @@ written in Python, such as a mail server's external command delivery program.
       already more likely to experience deadlocks running such code.
 
       See `this discussion on fork being incompatible with threads
-      <https://discuss.python.org/t/concerns-regarding-deprecation-of-fork-with-alive-threads/33555>`_
+      <https://discuss.python.org/t/33555>`_
       for technical details of why we're surfacing this long standing
       platform compatibility problem to developers.
 
