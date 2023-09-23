@@ -148,8 +148,7 @@ def compile_c_extension(
     cmd.include_dirs = include_dirs
     if build_dir:
         cmd.build_temp = build_dir
-    # A deficiency in typeshed's stubs means we have to type: ignore:
-    cmd.ensure_finalized()  # type: ignore[attr-defined]
+    cmd.ensure_finalized()
 
     compiler = new_compiler()
     customize_compiler(compiler)
@@ -160,8 +159,8 @@ def compile_c_extension(
         library_filename = compiler.library_filename(extension_name, output_dir=library_dir)
         if newer_group(common_sources, library_filename, "newer"):
             if sys.platform == "win32":
-                # A deficiency in typeshed's stubs means we have to type: ignore:
-                pdb = compiler.static_lib_format % (extension_name, ".pdb")  # type: ignore[attr-defined]
+                assert compiler.static_lib_format
+                pdb = compiler.static_lib_format % (extension_name, ".pdb")
                 compile_opts = [f"/Fd{library_dir}\\{pdb}"]
                 compile_opts.extend(extra_compile_args)
             else:
@@ -213,7 +212,7 @@ def compile_c_extension(
         ext_path,
         libraries=cmd.get_libraries(extension),
         extra_postargs=extra_link_args,
-        export_symbols=cmd.get_export_symbols(extension),
+        export_symbols=cmd.get_export_symbols(extension),  # type: ignore[no-untyped-call]
         debug=cmd.debug,
         build_temp=cmd.build_temp,
     )

@@ -16,6 +16,7 @@ import shutil
 import sys
 import sysconfig
 import zipfile
+from typing import Dict
 
 # source directory
 SRCDIR = pathlib.Path(__file__).parent.parent.parent.absolute()
@@ -110,7 +111,8 @@ def get_builddir(args: argparse.Namespace) -> pathlib.Path:
 
 def get_sysconfigdata(args: argparse.Namespace) -> pathlib.Path:
     """Get path to sysconfigdata relative to build root"""
-    data_name = sysconfig._get_sysconfigdata_name()
+    assert isinstance(args.builddir, pathlib.Path)
+    data_name: str = sysconfig._get_sysconfigdata_name()  # type: ignore[attr-defined]
     if not data_name.startswith(SYSCONFIG_NAMES):
         raise ValueError(
             f"Invalid sysconfig data name '{data_name}'.", SYSCONFIG_NAMES
@@ -146,7 +148,7 @@ def create_stdlib_zip(
                 pzf.writepy(entry, filterfunc=filterfunc)
 
 
-def detect_extension_modules(args: argparse.Namespace):
+def detect_extension_modules(args: argparse.Namespace) -> Dict[str, bool]:
     modules = {}
 
     # disabled by Modules/Setup.local ?
@@ -161,7 +163,7 @@ def detect_extension_modules(args: argparse.Namespace):
     # disabled by configure?
     with open(args.sysconfig_data) as f:
         data = f.read()
-    loc = {}
+    loc: Dict[str, Dict[str, str]] = {}
     exec(data, globals(), loc)
 
     for key, value in loc["build_time_vars"].items():
@@ -195,7 +197,7 @@ parser.add_argument(
 )
 
 
-def main():
+def main() -> None:
     args = parser.parse_args()
 
     relative_prefix = args.prefix.relative_to(pathlib.Path("/"))
