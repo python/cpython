@@ -146,10 +146,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (result != NULL)
-        Py_DECREF(result);
-    else {
+    if (_PyFile_Flush(file) < 0) {
         /* ignore flush() error */
         PyErr_Clear();
     }
