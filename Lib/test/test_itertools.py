@@ -1152,6 +1152,38 @@ class TestBasicOps(unittest.TestCase):
         with self.assertRaises(TypeError):
             pairwise(None)                                  # non-iterable argument
 
+    def test_pairwise_reenter(self):
+        def check(reenter_at, expected):
+            class I:
+                count = 0
+                def __iter__(self):
+                    return self
+                def __next__(self):
+                    self.count +=1
+                    if self.count == reenter_at:
+                        return next(it)
+                    return [self.count]  # new object
+
+            it = pairwise(I())
+            for item in expected:
+                self.assertEqual(next(it), item)
+
+        check(1, [
+            (([2], [3]), [4]),
+            ([4], [5]),
+        ])
+        check(2, [
+            ([1], ([3], [4])),
+            (([3], [4]), [5]),
+            ([5], [6]),
+        ])
+        check(3, [
+            ([1], [2]),
+            ([2], ([2], [4])),
+            (([2], [4]), [5]),
+            ([5], [6]),
+        ])
+
     def test_product(self):
         for args, result in [
             ([], [()]),                     # zero iterables
