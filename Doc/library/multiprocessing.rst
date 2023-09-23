@@ -135,7 +135,7 @@ to start a process.  These *start methods* are
        If Python is able to detect that your process has multiple threads, the
        :func:`os.fork` function that this start method calls internally will
        raise a :exc:`DeprecationWarning`. Use a different start method.
-       See the :func:`os.fork` documentation further explanation.
+       See the :func:`os.fork` documentation for further explanation.
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
