@@ -125,7 +125,7 @@ and to C extension code as :c:data:`Py_Py3kWarningFlag`.
 
 .. seealso::
 
-   The 3xxx series of PEPs, which contains proposals for Python 3.0.
+   The 3\ *xxx* series of PEPs, which contains proposals for Python 3.0.
    :pep:`3000` describes the development process for Python 3.0.
    Start with :pep:`3100` that describes the general goals for Python
    3.0, and then explore the higher-numbered PEPS that propose

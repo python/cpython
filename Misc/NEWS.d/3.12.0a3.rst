@@ -9,7 +9,7 @@ within a garbage request to be printed to the stderr server log.
 
 This is done by changing the :mod:`http.server`
 :class:`BaseHTTPRequestHandler` ``.log_message`` method to replace control
-characters with a ``\xHH`` hex escape before printing.
+characters with a :samp:`\\x{HH}` hex escape before printing.
 
 ..
 

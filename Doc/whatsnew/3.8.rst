@@ -404,7 +404,7 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+* Added support of :samp:`\\N\\{{name}\\}` escapes in :mod:`regular expressions <re>`::
 
     >>> notice = 'Copyright © 2019'
     >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
