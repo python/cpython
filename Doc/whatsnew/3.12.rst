@@ -416,6 +416,21 @@ See  :mod:`sys.monitoring` for details.
 
 (Contributed by Mark Shannon in :gh:`103083`.)
 
+.. _whatsnew312-pep688:
+
+PEP 688: Making the buffer protocol accessible in Python
+--------------------------------------------------------
+
+:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
+from Python code. Classes that implement the :meth:`~object.__buffer__` method
+are now usable as buffer types.
+
+The new :class:`collections.abc.Buffer` ABC provides a standard
+way to represent buffer objects, for example in type annotations.
+The new :class:`inspect.BufferFlags` enum represents the flags that
+can be used to customize buffer creation.
+(Contributed by Jelle Zijlstra in :gh:`102500`.)
+
 .. _whatsnew312-pep709:
 
 PEP 709: Comprehension inlining
@@ -446,21 +461,6 @@ comprehension. Inlining does result in a few visible behavior changes:
   keys]``.
 
 (Contributed by Carl Meyer and Vladimir Matveev in :pep:`709`.)
-
-.. _whatsnew312-pep688:
-
-PEP 688: Making the buffer protocol accessible in Python
---------------------------------------------------------
-
-:pep:`688` introduces a way to use the :ref:`buffer protocol <bufferobjects>`
-from Python code. Classes that implement the :meth:`~object.__buffer__` method
-are now usable as buffer types.
-
-The new :class:`collections.abc.Buffer` ABC provides a standard
-way to represent buffer objects, for example in type annotations.
-The new :class:`inspect.BufferFlags` enum represents the flags that
-can be used to customize buffer creation.
-(Contributed by Jelle Zijlstra in :gh:`102500`.)
 
 New Features Related to Type Hints
 ==================================
