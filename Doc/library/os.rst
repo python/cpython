@@ -3781,7 +3781,7 @@ features:
    .. versionadded:: 3.10
 
 
-.. function:: timerfd_create(clockid, /, *, flags)
+.. function:: timerfd_create(clockid, /, *, flags=0)
 
    Create and return a timer file descriptor (*timerfd*).
 
@@ -3924,7 +3924,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime(fd, flags=0, /, *, initial=0.0, interval=0.0)
+.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
 
    Alter a timer file descriptor's internal timer.
    This function operates the same interval timer as :func:`timerfd_settime_ns`.
@@ -3998,7 +3998,7 @@ features:
    .. versionadded:: 3.13
 
 
-.. function:: timerfd_settime_ns(fd, flags=0, /, *, initial=0, interval=0)
+.. function:: timerfd_settime_ns(fd, /, *, flags=0, initial=0, interval=0)
 
    Similar to :func:`timerfd_settime`, but use time as nanoseconds.
    This function operates the same interval timer as :func:`timerfd_settime`.
