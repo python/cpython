@@ -62,36 +62,103 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.12.
    Brevity is key.
 
+Python 3.12 is a medium-sized release with a mix of changes
+to the language and the standard library.
+The library changes focus on cleaning up deprecated APIs, usability, and correctness.
+Of note, the :mod:`!distutils` package has been removed from the standard library.
+Filesystem support in :mod:`os` and :mod:`pathlib` has seen a number of improvements,
+and several modules have better performance.
+
+The language changes focus on usability,
+as :term:`f-strings <f-string>` have had many limitations removed
+and 'Did you mean ...' suggestions continue to improve.
+The new :ref:`type parameter syntax <whatsnew312-pep695>`
+and :keyword:`type` statement improve ergonomics for using :term:`generic types
+<generic type>` and :term:`type aliases <type alias>` with static type checkers.
+
+This article doesn't attempt to provide a complete specification of all new features,
+but instead tries to give a convenient overview.
+For full details, you should refer to the documentation,
+such as the  :ref:`Library Reference <library-index>`
+and :ref:`Language Reference <reference-index>`.
+If you want to understand the complete implementation and design rationale for a change,
+refer to the PEP for a particular new feature;
+but note that PEPs usually are not kept up-to-date
+once a feature has been fully implemented.
+
+--------------
 
 .. PEP-sized items next.
 
+New syntax features:
+
+* :ref:`PEP 695 <whatsnew312-pep695>`, type parameter syntax and the :keyword:`type` statement
+
 New grammar features:
 
-* :ref:`whatsnew312-pep701`
+* :ref:`PEP 701 <whatsnew312-pep701>`, :term:`f-strings <f-string>` in the grammar
 
 Interpreter improvements:
 
-* :ref:`whatsnew312-pep684`
+* :ref:`PEP 684 <whatsnew312-pep684>`, a unique per-interpreter :term:`GIL
+  <global interpreter lock>`
+* :ref:`PEP 669 <whatsnew312-pep669>`, low impact monitoring
+* `Improved 'Did you mean ...' suggestions <improved error messages_>`_
+  for :exc:`NameError`, :exc:`ImportError`, and :exc:`SyntaxError` exceptions
 
-* :ref:`whatsnew312-pep669`
+Python data model improvements:
+
+* :ref:`PEP 688 <whatsnew312-pep688>`, using the :ref:`buffer protocol
+  <bufferobjects>` from Python
+
+Significant improvements in the standard library:
+
+* The :class:`pathlib.Path` class now supports subclassing
+* The :mod:`os` module received several improvements for Windows support
+* A :ref:`command-line interface <sqlite3-cli>` has been added to the
+  :mod:`sqlite3` module
+* :func:`isinstance` checks against :func:`runtime-checkable protocols
+  <typing.runtime_checkable>` enjoy a speed up of between two and 20 times
+* A :ref:`command-line interface <uuid-cli>` has been added to the
+  :mod:`uuid` module
+
+Security improvements:
+
+* Replace the builtin :mod:`hashlib` implementations of
+  SHA1, SHA3, SHA2-384, SHA2-512, and MD5 with formally verified code from the
+  `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+
+C API improvements:
+
+* :ref:`PEP 697 <whatsnew312-pep697>`, unstable C API tier
+* :ref:`PEP 683 <whatsnew312-pep683>`, immortal objects
+
+CPython implementation improvements:
+
+* :ref:`PEP 709 <whatsnew312-pep709>`, comprehension inlining
+* :ref:`CPython support <perf_profiling>` for the Linux ``perf`` profiler
+* Implement stack overflow protection on supported platforms
 
 New typing features:
 
-* :ref:`whatsnew312-pep688`
-
-* :ref:`whatsnew312-pep692`
-
-* :ref:`whatsnew312-pep695`
-
-* :ref:`whatsnew312-pep698`
+* :ref:`PEP 692 <whatsnew312-pep692>`, using ``TypedDict`` to annotate ``**kwargs``
+* :ref:`PEP 698 <whatsnew312-pep698>`, :func:`typing.override` decorator
 
 Important deprecations, removals or restrictions:
 
-* :pep:`623`: Remove wstr from Unicode
+* :pep:`623`: Remove ``wstr`` from Unicode objects in Python's C API,
+  reducing the size of every :class:`str` object by at least 8 bytes.
 
-* :pep:`632`: Remove the ``distutils`` package. See
-  `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
-  for advice on its replacement.
+* :pep:`632`: Remove the :mod:`!distutils` package.
+  See `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
+  for advice replacing the APIs it provided.
+  The third-party `Setuptools <https://setuptools.pypa.io/en/latest/deprecated/distutils-legacy.html>`__
+  package continues to provide :mod:`!distutils`,
+  if you still require it in Python 3.12 and beyond.
+
+* The :mod:`!asynchat`, :mod:`!asyncore`, and :mod:`!imp` modules have been
+  removed, along with several :class:`unittest.TestCase`
+  `method aliases <unittest-TestCase-removed-aliases_>`_.
 
 Improved Error Messages
 =======================
@@ -1507,6 +1574,8 @@ unittest
 
 * Removed many old deprecated :mod:`unittest` features:
 
+  .. _unittest-TestCase-removed-aliases:
+
   * A number of :class:`~unittest.TestCase` method aliases:
 
     ============================ =============================== ===============
@@ -1740,6 +1809,7 @@ C API Changes
 New Features
 ------------
 
+.. _whatsnew312-pep697:
 
 * :pep:`697`: Introduced the :ref:`Unstable C API tier <unstable-c-api>`,
   intended for low-level tools like debuggers and JIT compilers.
@@ -1866,6 +1936,8 @@ New Features
 * Add :c:func:`PyErr_DisplayException`, which takes an exception instance,
   to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
+
+.. _whatsnew312-pep683:
 
 * :pep:`683`: Introduced Immortal Objects to Python which allows objects
   to bypass reference counts and introduced changes to the C-API:
