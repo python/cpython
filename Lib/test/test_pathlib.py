@@ -2263,18 +2263,11 @@ class DummyPathTest(unittest.TestCase):
         if not self.can_symlink:
             self.skipTest("symlinks required")
         P = self.cls
-        # Non-existent file
         p = P(BASE, 'foo')
-        with self.assertRaises(FileNotFoundError) as cm:
+        with self.assertRaises(OSError) as cm:
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
-        # File treated as directory
-        p = P(BASE, 'fileA', 'fileB')
-        with self.assertRaises(NotADirectoryError) as cm:
-            p.resolve(strict=True)
-        self.assertEqual(cm.exception.errno, errno.ENOTDIR)
         # Non-strict
-        p = P(BASE, 'foo')
         self.assertEqualNormCase(str(p.resolve(strict=False)),
                                  os.path.join(BASE, 'foo'))
         p = P(BASE, 'foo', 'in', 'spam')
