@@ -1,8 +1,6 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_
-from functools import reduce
 
 
 __all__ = [
@@ -1884,7 +1882,8 @@ class verify:
                     missed = [v for v in values if v not in member_values]
                     if missed:
                         missing_names.append(name)
-                        missing_value |= reduce(_or_, missed)
+                        for val in missed:
+                            missing_value |= val
                 if missing_names:
                     if len(missing_names) == 1:
                         alias = 'alias %s is missing' % missing_names[0]
