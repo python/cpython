@@ -168,7 +168,7 @@ class Generator(Analyzer):
                 popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
-                # Calculate stack effect, and check that it's the the same
+                # Calculate stack effect, and check that it's the same
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)

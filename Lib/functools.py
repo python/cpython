@@ -236,7 +236,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
     Apply a function of two arguments cumulatively to the items of a sequence
     or iterable, from left to right, so as to reduce the iterable to a single

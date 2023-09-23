@@ -48,6 +48,7 @@
 #include "pytypedefs.h"
 #include "pybuffer.h"
 #include "pystats.h"
+#include "pyatomic.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
