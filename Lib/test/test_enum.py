@@ -497,7 +497,6 @@ class _EnumTests:
             self.assertTrue(member)
 
     def test_changing_member_fails(self):
-        MainEnum = self.MainEnum
         with self.assertRaises(AttributeError):
             self.MainEnum.second = 'really first'
 
@@ -505,7 +504,7 @@ class _EnumTests:
         MainEnum = self.MainEnum
         self.assertIn(MainEnum.first, MainEnum)
         self.assertTrue(self.values[0] in MainEnum)
-        if type(self) not in (TestStrEnumClass, TestStrEnumFunction):
+        if type(self) is not TestStrEnumClass:
             self.assertFalse('first' in MainEnum)
         val = MainEnum.dupe
         self.assertIn(val, MainEnum)
@@ -1035,15 +1034,7 @@ class TestPlainEnumClass(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
 
 
-class TestPlainEnumFunction(_EnumTests, _PlainOutputTests, unittest.TestCase):
-    enum_type = Enum
-
-
 class TestPlainFlagClass(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
-    enum_type = Flag
-
-
-class TestPlainFlagFunction(_EnumTests, _PlainOutputTests, _FlagTests, unittest.TestCase):
     enum_type = Flag
 
 
@@ -1057,12 +1048,8 @@ class TestIntEnumClass(_EnumTests, _MinimalOutputTests, unittest.TestCase):
         #
         self.assertEqual(Number.divisor.numerator, 1)
         self.assertIs(Number.numerator.divisor, Number.divisor)
-
-
-class TestIntEnumFunction(_EnumTests, _MinimalOutputTests, unittest.TestCase):
-    enum_type = IntEnum
     #
-    def test_shadowed_attr(self):
+    def test_shadowed_attr_func(self):
         Number = IntEnum('Number', ('divisor', 'numerator'))
         #
         self.assertEqual(Number.divisor.numerator, 1)
@@ -1080,12 +1067,8 @@ class TestStrEnumClass(_EnumTests, _MinimalOutputTests, unittest.TestCase):
         self.assertEqual(Book.author.title(), 'Author')
         self.assertEqual(Book.title.title(), 'Title')
         self.assertIs(Book.title.author, Book.author)
-
-
-class TestStrEnumFunction(_EnumTests, _MinimalOutputTests, unittest.TestCase):
-    enum_type = StrEnum
     #
-    def test_shadowed_attr(self):
+    def test_shadowed_attr_func(self):
         Book = StrEnum('Book', ('author', 'title'))
         #
         self.assertEqual(Book.author.title(), 'Author')
@@ -1094,10 +1077,6 @@ class TestStrEnumFunction(_EnumTests, _MinimalOutputTests, unittest.TestCase):
 
 
 class TestIntFlagClass(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
-    enum_type = IntFlag
-
-
-class TestIntFlagFunction(_EnumTests, _MinimalOutputTests, _FlagTests, unittest.TestCase):
     enum_type = IntFlag
 
 
