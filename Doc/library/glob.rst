@@ -146,7 +146,7 @@ default. For example, consider a directory containing :file:`card.gif` and
    ['.card.gif']
 
 
-.. function:: translate(pathname, *, recursive=False, seps=None)
+.. function:: translate(pathname, *, recursive=False, include_hidden=False, seps=None)
 
    Convert the given path specification to a regular expression for use with
    :func:`re.match`. The path specification can contain shell-style wildcards.
@@ -155,7 +155,7 @@ default. For example, consider a directory containing :file:`card.gif` and
 
       >>> import glob, re
       >>>
-      >>> regex = glob.translate('**/*.txt', recursive=True)
+      >>> regex = glob.translate('**/*.txt', recursive=True, include_hidden=True)
       >>> regex
       '(?s:(?:.*/)?[^/]*\\.txt)\\Z'
       >>> reobj = re.compile(regex)
@@ -170,13 +170,11 @@ default. For example, consider a directory containing :file:`card.gif` and
    of path segments. If "``**``" occurs in any position other than a full
    pattern segment, :exc:`ValueError` is raised.
 
+   If *include_hidden* is true, wildcards can match path segments that start
+   with a dot (``.``).
+
    A sequence of path separators may be supplied to the *seps* argument. If
    not given, :data:`os.sep` and :data:`~os.altsep` (if available) are used.
-
-   .. note::
-
-      Filenames that begin with a dot (``.``) are matched by wildcards, unlike
-      :func:`glob`.
 
    .. seealso::
 

@@ -251,19 +251,19 @@ def escape(pathname):
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 
 
-def translate(pat, *, recursive=False, seps=None):
+def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
 
     If `recursive` is true, the pattern segment '**' will match any number of
     path segments; if '**' appears outside its own segment, ValueError will be
     raised.
 
+    If `include_hidden` is true, wildcards can match path segments beginning
+    with a dot ('.').
+
     If a sequence of separator characters is given to `seps`, they will be
     used to split the pattern into segments and match path separators. If not
     given, os.path.sep and os.path.altsep (where available) are used.
-
-    Filenames beginning with a dot ('.') are NOT special in this method; they
-    are matched by wildcards, unlike in glob().
     """
     if not seps:
         if os.path.altsep:
@@ -273,9 +273,12 @@ def translate(pat, *, recursive=False, seps=None):
     escaped_seps = ''.join(re.escape(sep) for sep in seps)
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
+    not_dot = r'(?!\.)'
     res = []
     add = res.append
     i, n = 0, len(pat)
+    if pat[:1] != '.' and not include_hidden:
+        add(not_dot)
     while i < n:
         c = pat[i]
         i = i+1
@@ -292,14 +295,25 @@ def translate(pat, *, recursive=False, seps=None):
                     add(f'{not_sep}*')
             elif star_count == 2 and is_segment:
                 if i == n:
-                    add('.*')
+                    if include_hidden:
+                        add('.*')
+                    else:
+                        add(fr'(?:{not_dot}{not_sep}+{any_sep})*{not_dot}{not_sep}*')
                 else:
-                    add(f'(?:.*{any_sep})?')
-                    i = i+1
+                    if include_hidden:
+                        add(f'(?:.+{any_sep})?')
+                        i = i+1
+                    else:
+                        add(fr'(?:{not_dot}{not_sep}+{any_sep})*')
+                        i = i+1
+                        if i < n and pat[i] != '.':
+                            add(not_dot)
             else:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
         elif c in seps:
             add(any_sep)
+            if i < n and pat[i] != '.' and not include_hidden:
+                add(not_dot)
         elif c == '?':
             add(not_sep)
         elif c == '[':

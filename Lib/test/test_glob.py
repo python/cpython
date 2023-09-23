@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 import shutil
 import sys
 import unittest
@@ -349,9 +350,43 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
+
     def test_translate(self):
+        match = re.compile(glob.translate('*')).match
+        self.assertIsNotNone(match('foo'))
+        self.assertIsNotNone(match('foo.bar'))
+        self.assertIsNone(match('.foo'))
+        match = re.compile(glob.translate('.*')).match
+        self.assertIsNotNone(match('.foo'))
+        match = re.compile(glob.translate('**', recursive=True)).match
+        self.assertIsNotNone(match('foo'))
+        self.assertIsNone(match('.foo'))
+        self.assertIsNotNone(match(os.path.join('foo', 'bar')))
+        self.assertIsNone(match(os.path.join('foo', '.bar')))
+        self.assertIsNone(match(os.path.join('.foo', 'bar')))
+        self.assertIsNone(match(os.path.join('.foo', '.bar')))
+        match = re.compile(glob.translate('**/*', recursive=True)).match
+        self.assertIsNotNone(match(os.path.join('foo', 'bar')))
+        self.assertIsNone(match(os.path.join('foo', '.bar')))
+        self.assertIsNone(match(os.path.join('.foo', 'bar')))
+        self.assertIsNone(match(os.path.join('.foo', '.bar')))
+        match = re.compile(glob.translate('*/**', recursive=True)).match
+        self.assertIsNotNone(match(os.path.join('foo', 'bar')))
+        self.assertIsNone(match(os.path.join('foo', '.bar')))
+        self.assertIsNone(match(os.path.join('.foo', 'bar')))
+        self.assertIsNone(match(os.path.join('.foo', '.bar')))
+        match = re.compile(glob.translate('**/.bar', recursive=True)).match
+        self.assertIsNotNone(match(os.path.join('foo', '.bar')))
+        self.assertIsNone(match(os.path.join('.foo', '.bar')))
+        match = re.compile(glob.translate('**/*.*', recursive=True)).match
+        self.assertIsNone(match(os.path.join('foo', 'bar')))
+        self.assertIsNone(match(os.path.join('foo', '.bar')))
+        self.assertIsNotNone(match(os.path.join('foo', 'bar.txt')))
+        self.assertIsNone(match(os.path.join('foo', '.bar.txt')))
+
+    def test_translate_include_hidden(self):
         def fn(pat):
-            return glob.translate(pat, seps='/')
+            return glob.translate(pat, include_hidden=True, seps='/')
         self.assertEqual(fn('foo'), r'(?s:foo)\Z')
         self.assertEqual(fn('foo/bar'), r'(?s:foo/bar)\Z')
         self.assertEqual(fn('*'), r'(?s:[^/]+)\Z')
@@ -370,20 +405,21 @@ class GlobTests(unittest.TestCase):
 
     def test_translate_recursive(self):
         def fn(pat):
-            return glob.translate(pat, recursive=True, seps='/')
+            return glob.translate(pat, recursive=True, include_hidden=True, seps='/')
         self.assertEqual(fn('*'), r'(?s:[^/]+)\Z')
         self.assertEqual(fn('?'), r'(?s:[^/])\Z')
         self.assertEqual(fn('**'), r'(?s:.*)\Z')
         self.assertRaises(ValueError, fn, '***')
         self.assertRaises(ValueError, fn, 'a**')
         self.assertRaises(ValueError, fn, '**b')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.*/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/(?:.+/)?[^/]+/[^/]*\.[^/]*/.*)\Z')
 
     def test_translate_seps(self):
         def fn(pat):
-            return glob.translate(pat, recursive=True, seps=['/', '\\'])
+            return glob.translate(pat, recursive=True, include_hidden=True, seps=['/', '\\'])
         self.assertEqual(fn('foo/bar\\baz'), r'(?s:foo[/\\]bar[/\\]baz)\Z')
-        self.assertEqual(fn('**/**'), r'(?s:(?:.*[/\\])?.*)\Z')
+        self.assertEqual(fn('**/**'), r'(?s:(?:.+[/\\])?.*)\Z')
+
 
 @skip_unless_symlink
 class SymlinkLoopGlobTests(unittest.TestCase):
