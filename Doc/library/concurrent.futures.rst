@@ -294,7 +294,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       control the lifetime of workers in the pool.
 
    .. versionchanged:: 3.12
-      On POSIX systems if your application has multiple threads and the
+      On POSIX systems, if your application has multiple threads and the
       :mod:`multiprocessing` context uses the ``"fork"`` start method:
       The :func:`os.fork` called internally to spawn workers may raise a
       :exc:`DeprecationWarning`. Pass a *mp_context* configured to use a
