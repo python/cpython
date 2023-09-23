@@ -8,7 +8,6 @@ import sys
 import textwrap
 import types
 import unittest
-import asyncio
 
 PAIR = (0,1)
 
