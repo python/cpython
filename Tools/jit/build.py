@@ -377,9 +377,11 @@ class HoleKind(CEnum):
 class HoleValue(CEnum):
     BASE = enum.auto()
     CONTINUE = enum.auto()
+    CONTINUE_OPARG = enum.auto()
+    CONTINUE_OPERAND = enum.auto()
     JUMP = enum.auto()
-    OPARG_PLUS_ONE = enum.auto()
-    OPERAND_PLUS_ONE = enum.auto()
+    JUMP_OPARG = enum.auto()
+    JUMP_OPERAND = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True)

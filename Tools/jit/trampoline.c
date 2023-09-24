@@ -5,14 +5,19 @@
 // Stuff that will be patched at "JIT time":
 extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate);
+                                          PyThreadState *tstate, int32_t oparg,
+                                          uint64_t operand);
+extern void _JIT_CONTINUE_OPARG;
+extern void _JIT_CONTINUE_OPERAND;
 
 _PyInterpreterFrame *
 _JIT_TRAMPOLINE(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-                PyObject **stack_pointer)
+                PyObject **stack_pointer, int32_t oparg, uint64_t operand)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    frame = _JIT_CONTINUE(frame, stack_pointer, tstate);
+    oparg = (uintptr_t)&_JIT_CONTINUE_OPARG;
+    operand = (uintptr_t)&_JIT_CONTINUE_OPERAND;
+    frame = _JIT_CONTINUE(frame, stack_pointer, tstate, oparg, operand);
     Py_DECREF(executor);
     return frame;
 }

@@ -31,22 +31,23 @@
 // Stuff that will be patched at "JIT time":
 extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame,
                                           PyObject **stack_pointer,
-                                          PyThreadState *tstate);
+                                          PyThreadState *tstate,
+                                          int32_t oparg, uint64_t operand);
+extern void _JIT_CONTINUE_OPARG;
+extern void _JIT_CONTINUE_OPERAND;
 extern _PyInterpreterFrame *_JIT_JUMP(_PyInterpreterFrame *frame,
                                       PyObject **stack_pointer,
-                                      PyThreadState *tstate);
-// The address of an extern can't be 0:
-extern void _JIT_OPARG_PLUS_ONE;
-extern void _JIT_OPERAND_PLUS_ONE;
+                                      PyThreadState *tstate,
+                                      int32_t oparg, uint64_t operand);
+extern void _JIT_JUMP_OPARG;
+extern void _JIT_JUMP_OPERAND;
 
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
-           PyThreadState *tstate)
+           PyThreadState *tstate, int32_t oparg, uint64_t operand)
 {
     // Locals that the instruction implementations expect to exist:
     uint32_t opcode = _JIT_OPCODE;
-    int32_t oparg = (uintptr_t)&_JIT_OPARG_PLUS_ONE - 1;
-    uint64_t operand = (uintptr_t)&_JIT_OPERAND_PLUS_ONE - 1;
     int pc = -1;  // XXX
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
@@ -60,11 +61,15 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
         assert(opcode == _JUMP_TO_TOP ||
                opcode == _POP_JUMP_IF_FALSE ||
                opcode == _POP_JUMP_IF_TRUE);
+        oparg = (uintptr_t)&_JIT_JUMP_OPARG;
+        operand = (uintptr_t)&_JIT_JUMP_OPERAND;
         __attribute__((musttail))
-        return _JIT_JUMP(frame, stack_pointer, tstate);
+        return _JIT_JUMP(frame, stack_pointer, tstate, oparg, operand);
     }
+    oparg = (uintptr_t)&_JIT_CONTINUE_OPARG;
+    operand = (uintptr_t)&_JIT_CONTINUE_OPERAND;
     __attribute__((musttail))
-    return _JIT_CONTINUE(frame, stack_pointer, tstate);
+    return _JIT_CONTINUE(frame, stack_pointer, tstate, oparg, operand);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,

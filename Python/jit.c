@@ -306,20 +306,27 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     unsigned char *head = memory;
     uintptr_t patches[] = GET_PATCHES();
     // First, the trampoline:
+    _PyUOpInstruction *instruction_continue = &trace[0];
     const Stencil *stencil = &trampoline_stencil;
     patches[HoleValue_BASE] = (uintptr_t)head;
-    patches[HoleValue_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+    patches[HoleValue_CONTINUE] = (uintptr_t)head + offsets[0];
+    patches[HoleValue_CONTINUE_OPARG] = instruction_continue->oparg;
+    patches[HoleValue_CONTINUE_OPERAND] = instruction_continue->operand;
     copy_and_patch(head, stencil, patches);
     head += stencil->nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
+        _PyUOpInstruction *instruction_continue = &trace[(i + 1) % size];
+        _PyUOpInstruction *instruction_jump = &trace[instruction->oparg % size];
         const Stencil *stencil = &stencils[instruction->opcode];
-        patches[HoleValue_BASE] = (uintptr_t)head;
+        patches[HoleValue_BASE] = (uintptr_t)memory + offsets[i];
+        patches[HoleValue_CONTINUE] = (uintptr_t)memory + offsets[(i + 1) % size];
+        patches[HoleValue_CONTINUE_OPARG] = instruction_continue->oparg;
+        patches[HoleValue_CONTINUE_OPERAND] = instruction_continue->operand;
         patches[HoleValue_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
-        patches[HoleValue_CONTINUE] = (uintptr_t)head + stencil->nbytes;
-        patches[HoleValue_OPARG_PLUS_ONE] = instruction->oparg + 1;
-        patches[HoleValue_OPERAND_PLUS_ONE] = instruction->operand + 1;
+        patches[HoleValue_JUMP_OPARG] = instruction_jump->oparg;
+        patches[HoleValue_JUMP_OPERAND] = instruction_jump->operand;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
