@@ -889,7 +889,7 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -1192,7 +1192,7 @@ non-standard paths in the registry and user site-packages.
 
       * Adds ``._pth`` file support and removes ``applocal`` option from
         ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
+      * Adds :file:`python{XX}.zip` as a potential landmark when directly adjacent
         to the executable.
 
 .. deprecated::
