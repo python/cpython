@@ -922,6 +922,17 @@ class x86_64_unknown_linux_gnu(ELF):
                 "Addend": int(addend),
                 "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_32" | "R_X86_64_32S"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                return Hole(HoleKind.ABS_32, symbol, offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
                 "Type": {"Value": "R_X86_64_64"},
             }:
                 offset += base
@@ -972,8 +983,36 @@ class x86_64_unknown_linux_gnu(ELF):
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
+                "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
+                "Type": {"Value": "R_X86_64_GOTPC32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                addend += len(self.body) - offset
+                self.body[where] = (addend % (1 << 32)).to_bytes(4, sys.byteorder)
+                return None
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_PC32"},
+                "Type": {"Value": "R_X86_64_REX_GOTPCRELX"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                if (symbol, 0) not in self.got_entries:
+                    self.got_entries.append((symbol, 0))
+                addend += len(self.body) + self.got_entries.index((symbol, 0)) * 8 - offset
+                self.body[where] = (addend % (1 << 32)).to_bytes(4, sys.byteorder)
+                return None
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "R_X86_64_PC32" | "R_X86_64_PLT32"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
@@ -1000,16 +1039,12 @@ CFLAGS = [
     f"-ffreestanding",  # XXX
     # We don't need this (and it causes weird relocations):
     f"-fno-asynchronous-unwind-tables",  # XXX
-    # Position-independent code adds overhead and complicates things:
-    f"-fno-pic",
     # # Disable stack-smashing canaries, which use magic symbols:
     # f"-fno-stack-protector",  # XXX
     # The GHC calling convention uses %rbp as an argument-passing register:
     f"-fomit-frame-pointer",  # XXX
     # # Disable debug info:
     # f"-g0",  # XXX
-    # Need this to leave room for patching our 64-bit pointers:
-    f"-mcmodel=large",  # XXX
 ]
 
 
@@ -1185,12 +1220,16 @@ class Compiler:
 
 def main(host: str) -> None:
     for engine, ghccc, cflags in [
-        (aarch64_apple_darwin, False, [f"-I{ROOT}"]),
-        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}"]),
-        (i686_pc_windows_msvc, True, [f"-I{PC}"]),
-        (x86_64_apple_darwin, True, [f"-I{ROOT}"]),
-        (x86_64_pc_windows_msvc, True, [f"-I{PC}"]),
-        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"]),
+        (aarch64_apple_darwin, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (i686_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
+        (x86_64_apple_darwin, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (x86_64_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
+        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=large"]),  # XXX
+        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),  # XXX
+        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=medium"]),  # XXX
+        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=medium"]),  # XXX
+        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=small"]),  # XXX
     ]:
         if engine.pattern.fullmatch(host):
             break
