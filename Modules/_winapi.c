@@ -788,8 +788,7 @@ static PyMethodDef sortenvironmentkey_def = {
 static PyObject *
 normalize_environment(PyObject* environment)
 {
-    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *sort = NULL,
-             *args = NULL, *kwargs = NULL;
+    PyObject *result = NULL, *keys = NULL, *keyfunc = NULL, *kwnames = NULL;
 
     keys = PyMapping_Keys(environment);
     if (keys == NULL) {
@@ -800,22 +799,13 @@ normalize_environment(PyObject* environment)
     if (keyfunc == NULL) {
         goto error;
     }
-    sort = PyObject_GetAttrString(keys, "sort");
-    if (sort == NULL) {
+    kwnames = PyTuple_New(1);
+    if (kwnames == NULL) {
         goto error;
     }
-    args = PyTuple_New(0);
-    if (args == NULL) {
-        goto error;
-    }
-    kwargs = PyDict_New();
-    if (kwargs == NULL) {
-        goto error;
-    }
-    if (PyDict_SetItemString(kwargs, "key", keyfunc) < 0) {
-        goto error;
-    }
-    if (PyObject_Call(sort, args, kwargs) == NULL) {
+    assert(PyTuple_SetItem(kwnames, 0, PyUnicode_FromString("key")) == 0);
+    PyObject *args[] = { keys, keyfunc };
+    if (PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames) == NULL) {
         goto error;
     }
 
@@ -898,12 +888,11 @@ normalize_environment(PyObject* environment)
         prev_key_string = key_string;
     }
 
+cleanup:
 error:
     Py_XDECREF(keys);
     Py_XDECREF(keyfunc);
-    Py_XDECREF(sort);
-    Py_XDECREF(args);
-    Py_XDECREF(kwargs);
+    Py_XDECREF(kwnames);
     if (prev_key_string != NULL) {
         PyMem_Free(prev_key_string);
     }
