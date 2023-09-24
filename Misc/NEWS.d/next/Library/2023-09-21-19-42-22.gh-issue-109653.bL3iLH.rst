@@ -1,0 +1,2 @@
+Reduce the import time of :mod:`typing` by around a third.
+Patch by Alex Waygood.
