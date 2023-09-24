@@ -154,7 +154,6 @@ Doc/library/xdrlib.rst
 Doc/library/xml.dom.minidom.rst
 Doc/library/xml.dom.pulldom.rst
 Doc/library/xml.dom.rst
-Doc/library/xml.etree.elementtree.rst
 Doc/library/xml.rst
 Doc/library/xml.sax.handler.rst
 Doc/library/xml.sax.reader.rst
