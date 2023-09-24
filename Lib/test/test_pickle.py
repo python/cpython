@@ -539,6 +539,7 @@ class CompatPickleTests(unittest.TestCase):
                 if exc in (BlockingIOError,
                            ResourceWarning,
                            StopAsyncIteration,
+                           PythonFinalizationError,
                            RecursionError,
                            EncodingWarning,
                            BaseExceptionGroup,

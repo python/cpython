@@ -91,6 +91,12 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* Add :exc:`PythonFinalizationError`. This exception derived from
+  :exc:`RuntimeError` is raised when an operation is blocked during
+  the :term:`Python finalization <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`109047`.)
+
+
 New Modules
 ===========
 

@@ -2190,6 +2190,10 @@ SimpleExtendsException(PyExc_Exception, RuntimeError,
 SimpleExtendsException(PyExc_RuntimeError, RecursionError,
                        "Recursion limit exceeded.");
 
+// PythonFinalizationError extends RuntimeError
+SimpleExtendsException(PyExc_RuntimeError, PythonFinalizationError,
+                       "Operation blocked during Python finalization.");
+
 /*
  *    NotImplementedError extends RuntimeError
  */
@@ -3652,6 +3656,7 @@ static struct static_exception static_exceptions[] = {
     ITEM(KeyError),  // base: LookupError(Exception)
     ITEM(ModuleNotFoundError), // base: ImportError(Exception)
     ITEM(NotImplementedError),  // base: RuntimeError(Exception)
+    ITEM(PythonFinalizationError),  // base: RuntimeError(Exception)
     ITEM(RecursionError),  // base: RuntimeError(Exception)
     ITEM(UnboundLocalError), // base: NameError(Exception)
     ITEM(UnicodeError),  // base: ValueError(Exception)

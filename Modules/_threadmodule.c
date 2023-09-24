@@ -1179,7 +1179,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
     if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
+        PyErr_SetString(PyExc_PythonFinalizationError,
                         "can't create new thread at interpreter shutdown");
         return NULL;
     }

@@ -1185,6 +1185,8 @@ always available.
    Return :const:`True` if the main Python interpreter is
    :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
 
+   See also the :exc:`PythonFinalizationError` exception.
+
    .. versionadded:: 3.5
 
 .. data:: last_exc
