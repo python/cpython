@@ -1571,8 +1571,8 @@ zipimport
 Others
 ------
 
-* Removed the ``suspicious`` rule from the documentation :file:`Makefile`,
-  and removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
+* Removed the ``suspicious`` rule from the documentation :file:`Makefile`, and
+  removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
