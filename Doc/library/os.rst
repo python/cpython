@@ -3850,7 +3850,22 @@ descriptors to wait until the file descriptor is ready for reading:
        for _ in range(num*3):
            # Wait for the timer to expire for 3 seconds.
            events = ep.poll(timeout)
-           # XXX?: signaled events may be more than one at once.
+           # If more than one timer file descriptors are ready for reading at once,
+           # epoll.poll() returns a list of (fd, event) pairs.
+           #
+           # In this example settings,
+           #   1st timer fires every 0.25 seconds in 0.25 seconds. (0.25, 0.5, 0.75, 1.0, ...)
+           #   2nd timer every 0.5 seconds in 0.5 seconds. (0.5, 1.0, 1.5, 2.0, ...)
+           #   3rd timer every 0.75 seconds in 0.75 seconds. (0.75, 1.5, 2.25, 3.0, ...)
+           #
+           #   In 0.25 seconds, only 1st timer fires.
+           #   In 0.5 seconds, 1st timer and 2nd timer fires at once.
+           #   In 0.75 seconds, 1st timer and 3rd timer fires at once.
+           #   In 1.5 seconds, 1st timer, 2nd timer and 3rd timer fires at once.
+           #
+           # If a timer file descriptor is signaled more than once since
+           # the last os.read() call, os.read() returns the nubmer of signaled
+           # as host order of class bytes.
            print(f"Signaled events={events}")
            for fd, event in events:
                count = int.from_bytes(os.read(fd, 8), byteorder=sys.byteorder)
