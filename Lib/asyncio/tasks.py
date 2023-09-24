@@ -17,7 +17,6 @@ import inspect
 import itertools
 import math
 import types
-import warnings
 import weakref
 from types import GenericAlias
 
