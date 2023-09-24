@@ -241,7 +241,6 @@ async def run(*args: str | os.PathLike, capture: bool = False) -> bytes | None:
 
 
 class Engine:
-
     SYMBOL_PREFIX = ""
 
     _ARGS = [
@@ -1193,7 +1192,6 @@ def main(host: str) -> None:
         (x86_64_pc_windows_msvc, True, [f"-I{PC}"]),
         (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"]),
     ]:
-
         if engine.pattern.fullmatch(host):
             break
     else:
