@@ -3938,8 +3938,9 @@ descriptors to wait until the file descriptor is ready for reading:
    - :const:`TFD_CLOEXEC`
 
    If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until the timer expires.
-   If it is set as a flag, :func:`read` doesn't block, but if there is no timer expiration,
-   :func:`read` raises :class:`OSError` with ``errno`` is set to :const:`errno.EAGAIN`.
+   If it is set as a flag, :func:`read` doesn't block, but If there hasn't been an expiration
+   since the last call to read, :func:`read` raises :class:`OSError` with ``errno`` is set
+   to :const:`errno.EAGAIN`.
 
    If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
 
