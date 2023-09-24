@@ -250,6 +250,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 

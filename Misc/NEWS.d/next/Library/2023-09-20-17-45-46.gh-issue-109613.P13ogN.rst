@@ -1,0 +1,4 @@
+Fix :func:`os.stat` and :meth:`os.DirEntry.stat`: check for exceptions.
+Previously, on Python built in debug mode, these functions could trigger a
+fatal Python error (and abort the process) when a function succeeded with an
+exception set. Patch by Victor Stinner.
