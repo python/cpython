@@ -1032,12 +1032,14 @@ class Compiler:
 
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         if self._ghccc:
-            ir = before = ll.read_text()
-            for name in ["_JIT_CONTINUE", "_JIT_ENTRY", "_JIT_JUMP"]:
-                for ptr in ["ptr", "%struct._PyInterpreterFrame*"]:
-                    ir = ir.replace(f"{ptr} @{name}", f"ghccc {ptr} @{name}")
-            assert ir != before, ir
-            ll.write_text(ir)
+            before = ll.read_text()
+            after = re.sub(
+                r"((?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|ENTRY|JUMP)\b)",
+                r"ghccc \1",
+                before,
+            )
+            assert before != after, after
+            ll.write_text(after)
 
     async def _compile(self, opname, c, tempdir) -> None:
         defines = [f"-D_JIT_OPCODE={opname}"]
