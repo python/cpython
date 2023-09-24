@@ -19,8 +19,9 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
