@@ -1706,6 +1706,10 @@ config_init_cpu_count(PyConfig *config)
         int cpu_count = -1;
         const wchar_t *sep = wcschr(xoption, L'=');
         if (sep) {
+            if (wcscmp(sep + 1, L"default") == 0) {
+                config->cpu_count = -1;
+                return _PyStatus_OK();
+            }
             if (config_wstr_to_int(sep + 1, &cpu_count) < 0 || cpu_count < 1) {
                 goto error;
             }

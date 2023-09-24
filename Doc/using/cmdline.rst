@@ -550,6 +550,8 @@ Miscellaneous options
      *n* must be greater than or equal to 1.
      This option is useful for users who need to limit CPU resources of a container system.
      See also :envvar:`PYTHONCPUCOUNT`.
+     If *n* is "default", it follows default :func:`os.cpu_count` even if :envvar:`PYTHONCPUCOUNT`
+     is set.
 
 
    It also allows passing arbitrary values and retrieving them through the
