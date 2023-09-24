@@ -331,19 +331,13 @@ pairwise_next(pairwiseobject *po)
     }
     if (old == NULL) {
         old = (*Py_TYPE(it)->tp_iternext)(it);
+        Py_XSETREF(po->old, old);
         if (old == NULL) {
             Py_CLEAR(po->it);
-            Py_CLEAR(po->old);
             return NULL;
         }
-        if (po->old == NULL) {
-            po->old = old;
-            Py_INCREF(old);
-        }
     }
-    else {
-        Py_INCREF(old);
-    }
+    Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
     if (new == NULL) {
         Py_CLEAR(po->it);
