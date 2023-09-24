@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
