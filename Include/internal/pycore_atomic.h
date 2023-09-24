@@ -46,6 +46,10 @@ typedef struct _Py_atomic_address {
     atomic_uintptr_t _value;
 } _Py_atomic_address;
 
+typedef struct _Py_atomic_ulong {
+    atomic_ulong _value;
+} _Py_atomic_ulong;
+
 typedef struct _Py_atomic_int {
     atomic_int _value;
 } _Py_atomic_int;
@@ -76,6 +80,10 @@ typedef enum _Py_memory_order {
 typedef struct _Py_atomic_address {
     uintptr_t _value;
 } _Py_atomic_address;
+
+typedef struct _Py_atomic_ulong {
+    unsigned long _value;
+} _Py_atomic_ulong;
 
 typedef struct _Py_atomic_int {
     int _value;
@@ -114,6 +122,10 @@ typedef enum _Py_memory_order {
 typedef struct _Py_atomic_address {
     uintptr_t _value;
 } _Py_atomic_address;
+
+typedef struct _Py_atomic_ulong {
+    unsigned long _value;
+} _Py_atomic_ulong;
 
 typedef struct _Py_atomic_int {
     int _value;
@@ -251,6 +263,10 @@ typedef struct _Py_atomic_address {
     volatile uintptr_t _value;
 } _Py_atomic_address;
 
+typedef struct _Py_atomic_ulong {
+    volatile unsigned long _value;
+} _Py_atomic_ulong;
+
 typedef struct _Py_atomic_int {
     volatile int _value;
 } _Py_atomic_int;
@@ -386,6 +402,10 @@ typedef enum _Py_memory_order {
 typedef struct _Py_atomic_address {
     volatile uintptr_t _value;
 } _Py_atomic_address;
+
+typedef struct _Py_atomic_ulong {
+    volatile unsigned long _value;
+} _Py_atomic_ulong;
 
 typedef struct _Py_atomic_int {
     volatile int _value;
@@ -523,6 +543,10 @@ typedef enum _Py_memory_order {
 typedef struct _Py_atomic_address {
     uintptr_t _value;
 } _Py_atomic_address;
+
+typedef struct _Py_atomic_ulong {
+    unsigned long _value;
+} _Py_atomic_ulong;
 
 typedef struct _Py_atomic_int {
     int _value;
