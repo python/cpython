@@ -806,8 +806,8 @@ paramspec_kwargs(PyObject *self, void *unused)
 }
 
 static PyGetSetDef paramspec_getset[] = {
-    {"args", (getter)paramspec_args, NULL, "Represents positional arguments.", NULL},
-    {"kwargs", (getter)paramspec_kwargs, NULL, "Represents keyword arguments.", NULL},
+    {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
+    {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
     {0},
 };
 

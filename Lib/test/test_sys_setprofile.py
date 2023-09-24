@@ -439,7 +439,6 @@ class TestEdgeCases(unittest.TestCase):
         sys.setprofile(foo)
         self.assertEqual(sys.getprofile(), bar)
 
-
     def test_same_object(self):
         def foo(*args):
             ...
@@ -447,6 +446,18 @@ class TestEdgeCases(unittest.TestCase):
         sys.setprofile(foo)
         del foo
         sys.setprofile(sys.getprofile())
+
+    def test_profile_after_trace_opcodes(self):
+        def f():
+            ...
+
+        sys._getframe().f_trace_opcodes = True
+        prev_trace = sys.gettrace()
+        sys.settrace(lambda *args: None)
+        f()
+        sys.settrace(prev_trace)
+        sys.setprofile(lambda *args: None)
+        f()
 
 
 if __name__ == "__main__":

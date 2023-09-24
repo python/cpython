@@ -194,17 +194,16 @@ struct _ts {
 
 };
 
-/* WASI has limited call stack. Python's recursion limit depends on code
-   layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   recursions, sometimes less. 500 is a more conservative limit. */
-#ifndef C_RECURSION_LIMIT
-#  ifdef __wasi__
-#    define C_RECURSION_LIMIT 500
-#  else
-    // This value is duplicated in Lib/test/support/__init__.py
-#    define C_RECURSION_LIMIT 1500
-#  endif
+#ifdef __wasi__
+   // WASI has limited call stack. Python's recursion limit depends on code
+   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   // recursions, sometimes less. 500 is a more conservative limit.
+#  define Py_C_RECURSION_LIMIT 500
+#else
+   // This value is duplicated in Lib/test/support/__init__.py
+#  define Py_C_RECURSION_LIMIT 1500
 #endif
+
 
 /* other API */
 
@@ -310,6 +309,7 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
