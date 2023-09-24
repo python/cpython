@@ -1,0 +1,1 @@
+:func:`shutil.which` will only match extension-less files on win32 if '.' is in ``PATHEXT``.
