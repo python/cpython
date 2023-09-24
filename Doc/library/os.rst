@@ -3994,10 +3994,19 @@ descriptors to wait until the file descriptor is ready for reading:
    Linux manages system clock as UTC. A daylight-savings time transition is done
    by changing time offset only and doesn't cause discontinuous system clock change.
 
+   Discontinuous system clock change will be caused by the following events:
+
+      - ``settimeofday``
+      - ``clock_settime``
+      - set the system date and time by ``date`` command
+
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
 
-   .. seealso::  The :manpage:`timerfd_settime(2)` man page.
+   .. seealso::
+
+      :manpage:`timerfd_create(2)`, :manpage:`timerfd_settime(2)`, :manpage:`settimeofday(2)`, 
+      :manpage:`clock_settime(2)`, and :manpage:`date(1)`.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
