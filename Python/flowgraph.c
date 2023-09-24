@@ -1945,6 +1945,8 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
     }
     RETURN_IF_ERROR(mark_cold(entryblock));
 
+    int next_lbl = get_max_label(g->g_entryblock) + 1;
+
     /* If we have a cold block with fallthrough to a warm block, add */
     /* an explicit jump instead of fallthrough */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -1952,6 +1954,9 @@ push_cold_blocks_to_end(cfg_builder *g, int code_flags) {
             basicblock *explicit_jump = cfg_builder_new_block(g);
             if (explicit_jump == NULL) {
                 return ERROR;
+            }
+            if (!IS_LABEL(b->b_next->b_label)) {
+                b->b_next->b_label.id = next_lbl++;
             }
             basicblock_addop(explicit_jump, JUMP, b->b_next->b_label.id, NO_LOCATION);
             explicit_jump->b_cold = 1;
