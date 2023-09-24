@@ -1228,8 +1228,8 @@ def main(host: str) -> None:
         # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=large"]),  # XXX
         # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),  # XXX
         # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=medium"]),  # XXX
-        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=medium"]),  # XXX
-        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=small"]),  # XXX
+        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=medium"]),  # XXX
+        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=small"]),  # XXX
     ]:
         if engine.pattern.fullmatch(host):
             break
