@@ -1,0 +1,1 @@
+:func:`_thread.start_new_thread` now uses raw memory allocator to allocate new thread bootstate. This helps to avoid crashes in case when new thread gets started at interpreter finalization.
