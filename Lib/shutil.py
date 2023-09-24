@@ -1551,11 +1551,17 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
         pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
 
+        dot = '.'
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
+            dot = b'.'
 
-        # Always try checking the originally given cmd, if it doesn't match, try pathext
-        files = [cmd] + [cmd + ext for ext in pathext]
+        # Attempt to match CMD behavior:
+        # Only try the given cmd if it has an extension (therefore has a dot)
+        # or a dot is a pathext in PATHEXT.
+        # Otherwise use PATHEXT to formulate paths to check.
+        files = (([cmd] if (dot in cmd or dot in pathext) else []) +
+                 [cmd + ext for ext in pathext])
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.

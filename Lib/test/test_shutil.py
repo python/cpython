@@ -2067,6 +2067,14 @@ class TestWhich(BaseTest, unittest.TestCase):
         self.curdir = os.curdir
         self.ext = ".EXE"
 
+    def to_text_type(self, s):
+        '''
+        In this class we're testing with str, so convert s to a str
+        '''
+        if isinstance(s, bytes):
+            return s.decode()
+        return s
+
     def test_basic(self):
         # Given an EXE in a directory, it should be returned.
         rv = shutil.which(self.file, path=self.dir)
@@ -2254,9 +2262,9 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext(self):
-        ext = ".xyz"
+        ext = self.to_text_type(".xyz")
         temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
-                                                   prefix="Tmp2", suffix=ext)
+                                                   prefix=self.to_text_type("Tmp2"), suffix=ext)
         os.chmod(temp_filexyz.name, stat.S_IXUSR)
         self.addCleanup(temp_filexyz.close)
 
@@ -2265,16 +2273,16 @@ class TestWhich(BaseTest, unittest.TestCase):
         program = os.path.splitext(program)[0]
 
         with os_helper.EnvironmentVarGuard() as env:
-            env['PATHEXT'] = ext
+            env['PATHEXT'] = ext if isinstance(ext, str) else ext.decode()
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 
     # Issue 40592: See https://bugs.python.org/issue40592
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_with_empty_str(self):
-        ext = ".xyz"
+        ext = self.to_text_type(".xyz")
         temp_filexyz = tempfile.NamedTemporaryFile(dir=self.temp_dir,
-                                                   prefix="Tmp2", suffix=ext)
+                                                   prefix=self.to_text_type("Tmp2"), suffix=ext)
         self.addCleanup(temp_filexyz.close)
 
         # strip path and extension
@@ -2282,7 +2290,7 @@ class TestWhich(BaseTest, unittest.TestCase):
         program = os.path.splitext(program)[0]
 
         with os_helper.EnvironmentVarGuard() as env:
-            env['PATHEXT'] = f"{ext};"  # note the ;
+            env['PATHEXT'] = f"{ext if isinstance(ext, str) else ext.decode()};"  # note the ;
             rv = shutil.which(program, path=self.temp_dir)
             self.assertEqual(rv, temp_filexyz.name)
 
@@ -2290,13 +2298,14 @@ class TestWhich(BaseTest, unittest.TestCase):
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
     def test_pathext_applied_on_files_in_path(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env["PATH"] = self.temp_dir
+            env["PATH"] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
             env["PATHEXT"] = ".test"
 
-            test_path = pathlib.Path(self.temp_dir) / "test_program.test"
-            test_path.touch(mode=0o755)
+            test_path = os.path.join(self.temp_dir, self.to_text_type("test_program.test"))
+            open(test_path, 'w').close()
+            os.chmod(test_path, 0o755)
 
-            self.assertEqual(shutil.which("test_program"), str(test_path))
+            self.assertEqual(shutil.which(self.to_text_type("test_program")), test_path)
 
     # See GH-75586
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
@@ -2312,6 +2321,37 @@ class TestWhich(BaseTest, unittest.TestCase):
             self.assertFalse(shutil._win_path_needs_curdir('dontcare', os.X_OK))
             need_curdir_mock.assert_called_once_with('dontcare')
 
+    # See GH-109590
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_extensionless_file_resolution_no_dot_in_pathext(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = ".test;"
+            env['PATH'] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+
+            extensionless_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file"))
+            open(extensionless_file_in_path, 'w').close()
+
+            extensioned_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file.test"))
+            open(extensioned_file_in_path, 'w').close()
+
+
+            self.assertEqual(shutil.which(self.to_text_type('file'), os.F_OK), extensioned_file_in_path)
+
+    # See GH-109590
+    @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
+    def test_extensionless_file_resolution_dot_in_pathext(self):
+        with os_helper.EnvironmentVarGuard() as env:
+            env['PATHEXT'] = ".test;.;"
+            env['PATH'] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+
+            extensionless_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file"))
+            open(extensionless_file_in_path, 'w').close()
+
+            extensioned_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file.test"))
+            open(extensioned_file_in_path, 'w').close()
+
+            self.assertEqual(shutil.which(self.to_text_type('file')), extensionless_file_in_path)
+
 
 class TestWhichBytes(TestWhich):
     def setUp(self):
@@ -2319,8 +2359,17 @@ class TestWhichBytes(TestWhich):
         self.dir = os.fsencode(self.dir)
         self.file = os.fsencode(self.file)
         self.temp_file.name = os.fsencode(self.temp_file.name)
+        self.temp_dir = os.fsencode(self.temp_dir)
         self.curdir = os.fsencode(self.curdir)
         self.ext = os.fsencode(self.ext)
+
+    def to_text_type(self, s):
+        '''
+        In this class we're testing with bytes, so convert s to a bytes
+        '''
+        if isinstance(s, str):
+            return s.encode()
+        return s
 
 
 class TestMove(BaseTest, unittest.TestCase):
