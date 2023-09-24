@@ -3832,7 +3832,7 @@ descriptors to wait until the file descriptor is ready for reading:
    num = 3
    fds = []
    for _ in range(num):
-       fd = os.timerfd_create(time.CLOCK_REALTIME, os.TFD_NONBLOCK)
+       fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
        fds.append(fd)
        # Register the timer file descriptor for read events
        ep.register(fd, select.EPOLLIN)
