@@ -608,11 +608,9 @@ class Random(_random.Random):
             Var[X] = 1 / lambd ** 2
 
         """
-        # lambd: rate lambd = 1/mean
-        # ('lambda' is a Python reserved word)
-
         # we use 1-random() instead of random() to preclude the
         # possibility of taking the log of zero.
+
         return -_log(1.0 - self.random()) / lambd
 
     def vonmisesvariate(self, mu, kappa):
