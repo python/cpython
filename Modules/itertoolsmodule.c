@@ -336,6 +336,11 @@ pairwise_next(pairwiseobject *po)
             Py_CLEAR(po->it);
             return NULL;
         }
+        it = po->it;
+        if (it == NULL) {
+            Py_CLEAR(po->old);
+            return NULL;
+        }
     }
     Py_INCREF(old);
     new = (*Py_TYPE(it)->tp_iternext)(it);
