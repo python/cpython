@@ -12,11 +12,11 @@ extern void _JIT_CONTINUE_OPERAND;
 
 _PyInterpreterFrame *
 _JIT_TRAMPOLINE(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
-                PyObject **stack_pointer, int32_t oparg, uint64_t operand)
+                PyObject **stack_pointer)
 {
     PyThreadState *tstate = PyThreadState_Get();
-    oparg = (uintptr_t)&_JIT_CONTINUE_OPARG;
-    operand = (uintptr_t)&_JIT_CONTINUE_OPERAND;
+    int32_t oparg = (uintptr_t)&_JIT_CONTINUE_OPARG;
+    uint64_t operand = (uintptr_t)&_JIT_CONTINUE_OPERAND;
     frame = _JIT_CONTINUE(frame, stack_pointer, tstate, oparg, operand);
     Py_DECREF(executor);
     return frame;
