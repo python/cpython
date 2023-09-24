@@ -33,8 +33,8 @@ if __name__ == '__main__':
 else:
     file = __file__
 test_dir = os.path.dirname(file) or os.curdir
-math_testcases = os.path.join(test_dir, 'math_testcases.txt')
-test_file = os.path.join(test_dir, 'cmath_testcases.txt')
+math_testcases = os.path.join(test_dir, 'mathdata', 'math_testcases.txt')
+test_file = os.path.join(test_dir, 'mathdata', 'cmath_testcases.txt')
 
 
 def to_ulps(x):
@@ -2559,7 +2559,7 @@ class IsCloseTests(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from doctest import DocFileSuite
-    tests.addTest(DocFileSuite("ieee754.txt"))
+    tests.addTest(DocFileSuite(os.path.join("mathdata", "ieee754.txt")))
     return tests
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 """Tests for events.py."""
 
-import collections.abc
 import concurrent.futures
 import functools
 import io
@@ -31,6 +30,7 @@ import asyncio
 from asyncio import coroutines
 from asyncio import events
 from asyncio import selector_events
+from multiprocessing.util import _cleanup_tests as multiprocessing_cleanup_tests
 from test.test_asyncio import utils as test_utils
 from test import support
 from test.support import socket_helper
@@ -2334,8 +2334,6 @@ class HandleTests(test_utils.TestCase):
         h = loop.call_later(0, noop)
         check_source_traceback(h)
 
-    @unittest.skipUnless(hasattr(collections.abc, 'Coroutine'),
-                         'No collections.abc.Coroutine')
     def test_coroutine_like_object_debug_formatting(self):
         # Test that asyncio can format coroutines that are instances of
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes
@@ -2764,6 +2762,8 @@ class GetEventLoopTestsMixin:
             # ProcessPoolExecutor is not functional when the
             # multiprocessing.synchronize module cannot be imported.
             support.skip_if_broken_multiprocessing_synchronize()
+
+            self.addCleanup(multiprocessing_cleanup_tests)
 
             async def main():
                 if multiprocessing.get_start_method() == 'fork':

@@ -1,0 +1,2 @@
+Fix crash that occurs after de-instrumenting a code object in a monitoring
+callback.
