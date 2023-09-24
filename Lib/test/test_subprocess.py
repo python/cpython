@@ -832,7 +832,7 @@ class ProcessTestCase(BaseTestCase):
 
     def test_one_env(self):
         newenv = {'fruit': 'orange'}
-        cmd = ["echo", "fruite=$fruit"]
+        cmd = ["echo", "fruit=$fruit"]
         if sys.platform == "win32":
             cmd = ["CMD", "/c", "SET", "fruit"]
         with subprocess.Popen(cmd, stdout=subprocess.PIPE, env=newenv) as p:
