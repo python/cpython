@@ -119,6 +119,8 @@ Significant improvements in the standard library:
   :mod:`sqlite3` module
 * :func:`isinstance` checks against :func:`runtime-checkable protocols
   <typing.runtime_checkable>` enjoy a speed up of between two and 20 times
+* The :mod:`asyncio` package has had a number of performance improvements,
+  with some benchmarks showing a 75% speed up.
 * A :ref:`command-line interface <uuid-cli>` has been added to the
   :mod:`uuid` module
 
