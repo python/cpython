@@ -463,7 +463,7 @@ class BaseTestCase(unittest.TestCase):
             randomize = True
 
         rerun_failed = []
-        if rerun is not None:
+        if rerun is not None and not env_changed:
             failed = [rerun.name]
             if not rerun.success:
                 rerun_failed.append(rerun.name)
@@ -500,7 +500,8 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if env_changed:
-            regex = list_regex('%s test%s altered the execution environment',
+            regex = list_regex(r'%s test%s altered the execution environment '
+                               r'\(env changed\)',
                                env_changed)
             self.check_line(output, regex)
 
@@ -590,7 +591,7 @@ class BaseTestCase(unittest.TestCase):
         state = ', '.join(state)
         if rerun is not None:
             new_state = 'SUCCESS' if rerun.success else 'FAILURE'
-            state = 'FAILURE then ' + new_state
+            state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output):
@@ -1227,6 +1228,15 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True, stats=1)
+
+        # rerun
+        output = self.run_tests("--rerun", testname)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=testname,
+                                  rerun=Rerun(testname,
+                                              match=None,
+                                              success=True),
+                                  stats=2)
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
