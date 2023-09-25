@@ -33,6 +33,11 @@ class TestResults:
         # used by --junit-xml
         self.testsuite_xml: list[str] = []
 
+    def is_all_good(self):
+        return (not self.bad
+                and not self.skipped
+                and not self.interrupted)
+
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
                 | set(self.resource_denied) | set(self.env_changed)
@@ -164,23 +169,11 @@ class TestResults:
                 f.write(s)
 
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
-        if self.interrupted:
-            print("Test suite interrupted by signal SIGINT.")
-
         omitted = set(tests) - self.get_executed()
         if omitted:
             print()
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
-
-        if self.good and not quiet:
-            print()
-            if (not self.bad
-                and not self.skipped
-                and not self.interrupted
-                and len(self.good) > 1):
-                print("All", end=' ')
-            print(count(len(self.good), "test"), "OK.")
 
         if print_slowest:
             self.test_times.sort(reverse=True)
@@ -189,36 +182,34 @@ class TestResults:
             for test_time, test in self.test_times[:10]:
                 print("- %s: %s" % (test, format_duration(test_time)))
 
-        if self.bad:
-            print()
-            print(count(len(self.bad), "test"), "failed:")
-            printlist(self.bad)
+        all_tests = [
+            (self.bad, "test", "{} failed:"),
+            (self.env_changed, "test", "{} altered the execution environment (env changed):"),
+        ]
+        if not quiet:
+            all_tests.append((self.skipped, "test", "{} skipped:"))
+            all_tests.append((self.resource_denied, "test", "{} skipped (resource denied):"))
+        all_tests.append((self.rerun, "re-run test", "{}:"))
+        all_tests.append((self.run_no_tests, "test", "{} run no tests:"))
 
-        if self.env_changed:
-            print()
-            print("{} altered the execution environment:".format(
-                     count(len(self.env_changed), "test")))
-            printlist(self.env_changed)
+        for tests_list, count_text, title_format in all_tests:
+            if tests_list:
+                print()
+                count_text = count(len(tests_list), count_text)
+                print(title_format.format(count_text))
+                printlist(tests_list)
 
-        if self.skipped and not quiet:
+        if self.good and not quiet:
             print()
-            print(count(len(self.skipped), "test"), "skipped:")
-            printlist(self.skipped)
+            text = count(len(self.good), "test")
+            text = f"{text} OK."
+            if (self.is_all_good() and len(self.good) > 1):
+                text = f"All {text}"
+            print(text)
 
-        if self.resource_denied and not quiet:
+        if self.interrupted:
             print()
-            print(count(len(self.resource_denied), "test"), "skipped (resource denied):")
-            printlist(self.resource_denied)
-
-        if self.rerun:
-            print()
-            print("%s:" % count(len(self.rerun), "re-run test"))
-            printlist(self.rerun)
-
-        if self.run_no_tests:
-            print()
-            print(count(len(self.run_no_tests), "test"), "run no tests:")
-            printlist(self.run_no_tests)
+            print("Test suite interrupted by signal SIGINT.")
 
     def display_summary(self, first_runtests: RunTests, filtered: bool):
         # Total tests
