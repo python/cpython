@@ -131,6 +131,12 @@ to start a process.  These *start methods* are
        Code that requires *fork* should explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
+    .. versionchanged:: 3.12
+       If Python is able to detect that your process has multiple threads, the
+       :func:`os.fork` function that this start method calls internally will
+       raise a :exc:`DeprecationWarning`. Use a different start method.
+       See the :func:`os.fork` documentation for further explanation.
+
   *forkserver*
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
@@ -2707,7 +2713,7 @@ handler type) for messages from different processes to get mixed up.
    Returns the logger used by :mod:`multiprocessing`.  If necessary, a new one
    will be created.
 
-   When first created the logger has level :data:`logging.NOTSET` and no
+   When first created the logger has level :const:`logging.NOTSET` and no
    default handler. Messages sent to this logger will not by default propagate
    to the root logger.
 
@@ -2988,7 +2994,7 @@ Global variables
 Safe importing of main module
 
     Make sure that the main module can be safely imported by a new Python
-    interpreter without causing unintended side effects (such a starting a new
+    interpreter without causing unintended side effects (such as starting a new
     process).
 
     For example, using the *spawn* or *forkserver* start method

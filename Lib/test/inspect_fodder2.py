@@ -290,3 +290,23 @@ post_line_parenthesized_lambda1 = (lambda: ()
 nested_lambda = (
     lambda right: [].map(
         lambda length: ()))
+
+# line 294
+if True:
+    class cls296:
+        def f():
+            pass
+else:
+    class cls296:
+        def g():
+            pass
+
+# line 304
+if False:
+    class cls310:
+        def f():
+            pass
+else:
+    class cls310:
+        def g():
+            pass

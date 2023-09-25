@@ -251,6 +251,14 @@ class ThreadTests(BaseTestCase):
         #Issue 29376
         self.assertTrue(threading._active[tid].is_alive())
         self.assertRegex(repr(threading._active[tid]), '_DummyThread')
+
+        # Issue gh-106236:
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].join()
+        threading._active[tid]._started.clear()
+        with self.assertRaises(RuntimeError):
+            threading._active[tid].is_alive()
+
         del threading._active[tid]
 
     # PyThreadState_SetAsyncExc() is a CPython-only gimmick, not (currently)
@@ -564,6 +572,10 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b'')
 
     @support.requires_fork()
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
+    # work around a libasan race condition: dead lock in pthread_create().
+    @support.skip_if_sanitizer("libasan has a pthread_create() dead lock",
+                               address=True)
     def test_is_alive_after_fork(self):
         # Try hard to trigger #18418: is_alive() could sometimes be True on
         # threads that vanished after a fork.
@@ -1739,6 +1751,30 @@ class PyRLockTests(lock_tests.RLockTests):
 @unittest.skipIf(threading._CRLock is None, 'RLock not implemented in C')
 class CRLockTests(lock_tests.RLockTests):
     locktype = staticmethod(threading._CRLock)
+
+    def test_signature(self):  # gh-102029
+        with warnings.catch_warnings(record=True) as warnings_log:
+            threading.RLock()
+        self.assertEqual(warnings_log, [])
+
+        arg_types = [
+            ((1,), {}),
+            ((), {'a': 1}),
+            ((1, 2), {'a': 1}),
+        ]
+        for args, kwargs in arg_types:
+            with self.subTest(args=args, kwargs=kwargs):
+                with self.assertWarns(DeprecationWarning):
+                    threading.RLock(*args, **kwargs)
+
+        # Subtypes with custom `__init__` are allowed (but, not recommended):
+        class CustomRLock(self.locktype):
+            def __init__(self, a, *, b) -> None:
+                super().__init__()
+
+        with warnings.catch_warnings(record=True) as warnings_log:
+            CustomRLock(1, b=2)
+        self.assertEqual(warnings_log, [])
 
 class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)

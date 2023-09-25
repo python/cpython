@@ -213,7 +213,7 @@ attribute.
 .. section: Core and Builtins
 
 Reduce object creation while calling callback function from gc. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -464,7 +464,7 @@ unpickled.
 .. section: Core and Builtins
 
 Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
-OpenSSL APIs. Patch by Dong-hee Na.
+OpenSSL APIs. Patch by Donghee Na.
 
 ..
 
@@ -842,7 +842,7 @@ filesystem case.
 .. section: Library
 
 Improve performance of :meth:`pathlib.Path.glob` by using
-:data:`re.IGNORECASE` to implement case-insensitive matching.
+:const:`re.IGNORECASE` to implement case-insensitive matching.
 
 ..
 
@@ -1205,7 +1205,7 @@ the future, it will raise a ``KeyError``.
 
 Fixed a bug where :mod:`pdb` crashes when reading source file with different
 encoding by replacing :func:`io.open` with :func:`io.open_code`. The new
-method would also call into the hook set by :func:`PyFile_SetOpenCodeHook`.
+method would also call into the hook set by :c:func:`PyFile_SetOpenCodeHook`.
 
 ..
 
@@ -1882,7 +1882,7 @@ both cases.
 .. nonce: 564i32
 .. section: Library
 
-Add :data:`~csv.QUOTE_STRINGS` and :data:`~csv.QUOTE_NOTNULL` to the suite
+Add :const:`~csv.QUOTE_STRINGS` and :const:`~csv.QUOTE_NOTNULL` to the suite
 of :mod:`csv` module quoting styles.
 
 ..
@@ -1955,7 +1955,7 @@ introduced in :pep:`692`.
 .. section: Documentation
 
 Clarifying documentation about the url parameter to urllib.request.urlopen
-and urllib.request.Requst needing to be encoded properly.
+and urllib.request.Request needing to be encoded properly.
 
 ..
 
@@ -2073,7 +2073,7 @@ Define ``.PHONY`` / virtual make targets consistently and properly.
 .. nonce: -W9BJS
 .. section: Build
 
-Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Dong-hee Na.
+Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Donghee Na.
 
 ..
 
@@ -2372,7 +2372,7 @@ Add a new C-API function to eagerly assign a version tag to a PyTypeObject:
 .. section: C API
 
 :c:func:`PyObject_GC_Resize` should calculate preheader size if needed.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -2382,7 +2382,7 @@ Patch by Dong-hee Na.
 .. section: C API
 
 Add support of more formatting options (left aligning, octals, uppercase
-hexadecimals, :c:expr:`intmax_t`, :c:expr:`ptrdiff_t`, :c:expr:`wchar_t` C
+hexadecimals, :c:type:`intmax_t`, :c:type:`ptrdiff_t`, :c:type:`wchar_t` C
 strings, variable width and precision) in :c:func:`PyUnicode_FromFormat` and
 :c:func:`PyUnicode_FromFormatV`.
 

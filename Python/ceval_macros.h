@@ -1,4 +1,4 @@
-// Macros and other things needed by ceval.c and bytecodes.c
+// Macros and other things needed by ceval.c, executor.c, and bytecodes.c
 
 /* Computed GOTOs, or
        the-optimization-commonly-but-improperly-known-as-"threaded code"
@@ -64,7 +64,7 @@
     do { \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -109,7 +109,7 @@
         _PyFrame_SetStackPointer(frame, stack_pointer); \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
-        frame = cframe.current_frame = (NEW_FRAME);     \
+        frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
@@ -234,6 +234,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 
 /* Local variable macros */
 
+#define LOCALS_ARRAY    (frame->localsplus)
 #define GETLOCAL(i)     (frame->localsplus[i])
 
 /* The SETLOCAL() macro must not DECREF the local variable in-place and
@@ -303,10 +304,12 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         (COUNTER) += (1 << ADAPTIVE_BACKOFF_BITS);   \
     } while (0);
 
+#define UNBOUNDLOCAL_ERROR_MSG \
+    "cannot access local variable '%s' where it is not associated with a value"
+#define UNBOUNDFREE_ERROR_MSG \
+    "cannot access free variable '%s' where it is not associated with a value" \
+    " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
-
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
 
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
@@ -349,3 +352,57 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_REPR] = PyObject_Repr,
     [FVC_ASCII] = PyObject_ASCII
 };
+
+// GH-89279: Force inlining by using a macro.
+#if defined(_MSC_VER) && SIZEOF_INT == 4
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
+#else
+#define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
+#endif
+
+static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
+    return (tstate->py_recursion_remaining-- <= 0) &&
+        _Py_CheckRecursiveCallPy(tstate);
+}
+
+static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
+    tstate->py_recursion_remaining++;
+}
+
+/* Marker to specify tier 1 only instructions */
+#define TIER_ONE_ONLY
+
+/* Implementation of "macros" that modify the instruction pointer,
+ * stack pointer, or frame pointer.
+ * These need to treated differently by tier 1 and 2. */
+
+#if TIER_ONE
+
+#define LOAD_IP() \
+do { next_instr = frame->prev_instr+1; } while (0)
+
+#define STORE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
+
+#define LOAD_SP() \
+stack_pointer = _PyFrame_GetStackPointer(frame);
+
+#endif
+
+
+#if TIER_TWO
+
+#define LOAD_IP() \
+do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+
+#define STORE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
+
+#define LOAD_SP() \
+stack_pointer = _PyFrame_GetStackPointer(frame);
+
+#endif
+
+
+
+

@@ -3,18 +3,20 @@ import unittest
 import concurrent.futures
 
 from test.support import threading_helper
-from unittest.mock import patch, ThreadingMock, call
+from unittest.mock import patch, ThreadingMock
 
 
 threading_helper.requires_working_threading(module=True)
 
+VERY_SHORT_TIMEOUT = 0.1
+
 
 class Something:
     def method_1(self):
-        pass
+        pass  # pragma: no cover
 
     def method_2(self):
-        pass
+        pass  # pragma: no cover
 
 
 class TestThreadingMock(unittest.TestCase):
@@ -93,167 +95,86 @@ class TestThreadingMock(unittest.TestCase):
         waitable_mock.wait_until_called()
         waitable_mock.wait_until_any_call_with("works")
 
-    def test_wait_success(self):
+    def test_patch(self):
         waitable_mock = self._make_mock(spec=Something)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, delay=0.01)
-            something.method_1.wait_until_called()
-            something.method_1.wait_until_any_call_with()
-            something.method_1.assert_called()
-
-    def test_wait_success_with_instance_timeout(self):
-        waitable_mock = self._make_mock(timeout=1)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, delay=0.01)
-            something.method_1.wait_until_called()
-            something.method_1.wait_until_any_call_with()
-            something.method_1.assert_called()
-
-    def test_wait_failed_with_instance_timeout(self):
-        waitable_mock = self._make_mock(timeout=0.01)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, delay=0.5)
-            self.assertRaises(AssertionError, waitable_mock.method_1.wait_until_called)
-            self.assertRaises(
-                AssertionError, waitable_mock.method_1.wait_until_any_call_with
-            )
-
-    def test_wait_success_with_timeout_override(self):
-        waitable_mock = self._make_mock(timeout=0.01)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, delay=0.05)
-            something.method_1.wait_until_called(timeout=1)
-
-    def test_wait_failed_with_timeout_override(self):
-        waitable_mock = self._make_mock(timeout=1)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, delay=0.5)
-            with self.assertRaises(AssertionError):
-                something.method_1.wait_until_called(timeout=0.05)
-
-    def test_wait_success_called_before(self):
-        waitable_mock = self._make_mock()
 
         with patch(f"{__name__}.Something", waitable_mock):
             something = Something()
             something.method_1()
             something.method_1.wait_until_called()
-            something.method_1.wait_until_any_call_with()
-            something.method_1.assert_called()
 
-    def test_wait_magic_method(self):
+    def test_wait_already_called_success(self):
+        waitable_mock = self._make_mock(spec=Something)
+        waitable_mock.method_1()
+        waitable_mock.method_1.wait_until_called()
+        waitable_mock.method_1.wait_until_any_call_with()
+        waitable_mock.method_1.assert_called()
+
+    def test_wait_until_called_success(self):
+        waitable_mock = self._make_mock(spec=Something)
+        self.run_async(waitable_mock.method_1, delay=VERY_SHORT_TIMEOUT)
+        waitable_mock.method_1.wait_until_called()
+
+    def test_wait_until_called_method_timeout(self):
+        waitable_mock = self._make_mock(spec=Something)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_called(timeout=VERY_SHORT_TIMEOUT)
+
+    def test_wait_until_called_instance_timeout(self):
+        waitable_mock = self._make_mock(spec=Something, timeout=VERY_SHORT_TIMEOUT)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_called()
+
+    def test_wait_until_called_global_timeout(self):
+        with patch.object(ThreadingMock, "DEFAULT_TIMEOUT"):
+            ThreadingMock.DEFAULT_TIMEOUT = VERY_SHORT_TIMEOUT
+            waitable_mock = self._make_mock(spec=Something)
+            with self.assertRaises(AssertionError):
+                waitable_mock.method_1.wait_until_called()
+
+    def test_wait_until_any_call_with_success(self):
         waitable_mock = self._make_mock()
+        self.run_async(waitable_mock, delay=VERY_SHORT_TIMEOUT)
+        waitable_mock.wait_until_any_call_with()
 
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1.__str__, delay=0.01)
-            something.method_1.__str__.wait_until_called()
-            something.method_1.__str__.assert_called()
+    def test_wait_until_any_call_with_instance_timeout(self):
+        waitable_mock = self._make_mock(timeout=VERY_SHORT_TIMEOUT)
+        with self.assertRaises(AssertionError):
+            waitable_mock.wait_until_any_call_with()
 
-    def test_wait_until_any_call_with_positional(self):
-        waitable_mock = self._make_mock(spec=Something)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, 1, delay=0.2)
-            self.assertNotIn(call(1), something.method_1.mock_calls)
-            self.run_async(something.method_1, 2, delay=0.5)
-            self.run_async(something.method_1, 3, delay=0.6)
-
-            something.method_1.wait_until_any_call_with(1)
-            something.method_1.assert_called_with(1)
-            self.assertNotIn(call(2), something.method_1.mock_calls)
-            self.assertNotIn(call(3), something.method_1.mock_calls)
-
-            something.method_1.wait_until_any_call_with(3)
-            self.assertIn(call(2), something.method_1.mock_calls)
-            something.method_1.wait_until_any_call_with(2)
-
-    def test_wait_until_any_call_with_keywords(self):
-        waitable_mock = self._make_mock(spec=Something)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            self.run_async(something.method_1, a=1, delay=0.2)
-            self.assertNotIn(call(a=1), something.method_1.mock_calls)
-            self.run_async(something.method_1, b=2, delay=0.5)
-            self.run_async(something.method_1, c=3, delay=0.6)
-
-            something.method_1.wait_until_any_call_with(a=1)
-            something.method_1.assert_called_with(a=1)
-            self.assertNotIn(call(b=2), something.method_1.mock_calls)
-            self.assertNotIn(call(c=3), something.method_1.mock_calls)
-
-            something.method_1.wait_until_any_call_with(c=3)
-            self.assertIn(call(b=2), something.method_1.mock_calls)
-            something.method_1.wait_until_any_call_with(b=2)
-
-    def test_wait_until_any_call_with_no_argument_fails_when_called_with_arg(self):
-        waitable_mock = self._make_mock(timeout=0.01)
-
-        with patch(f"{__name__}.Something", waitable_mock):
-            something = Something()
-            something.method_1(1)
-
-            something.method_1.assert_called_with(1)
-            with self.assertRaises(AssertionError):
-                something.method_1.wait_until_any_call_with()
-
-            something.method_1()
-            something.method_1.wait_until_any_call_with()
-
-    def test_wait_until_any_call_with_global_default(self):
+    def test_wait_until_any_call_global_timeout(self):
         with patch.object(ThreadingMock, "DEFAULT_TIMEOUT"):
-            ThreadingMock.DEFAULT_TIMEOUT = 0.01
-            m = self._make_mock()
+            ThreadingMock.DEFAULT_TIMEOUT = VERY_SHORT_TIMEOUT
+            waitable_mock = self._make_mock()
             with self.assertRaises(AssertionError):
-                m.wait_until_any_call_with()
-            with self.assertRaises(AssertionError):
-                m.wait_until_called()
+                waitable_mock.wait_until_any_call_with()
 
-            m()
-            m.wait_until_any_call_with()
-        assert ThreadingMock.DEFAULT_TIMEOUT != 0.01
+    def test_wait_until_any_call_positional(self):
+        waitable_mock = self._make_mock(timeout=VERY_SHORT_TIMEOUT)
+        waitable_mock.method_1(1, 2, 3)
+        waitable_mock.method_1.wait_until_any_call_with(1, 2, 3)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_any_call_with(2, 3, 1)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_any_call_with()
 
-    def test_wait_until_any_call_with_change_global_and_override(self):
-        with patch.object(ThreadingMock, "DEFAULT_TIMEOUT"):
-            ThreadingMock.DEFAULT_TIMEOUT = 0.01
+    def test_wait_until_any_call_kw(self):
+        waitable_mock = self._make_mock(timeout=VERY_SHORT_TIMEOUT)
+        waitable_mock.method_1(a=1, b=2)
+        waitable_mock.method_1.wait_until_any_call_with(a=1, b=2)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_any_call_with(a=2, b=1)
+        with self.assertRaises(AssertionError):
+            waitable_mock.method_1.wait_until_any_call_with()
 
-            m1 = self._make_mock()
-            self.run_async(m1, delay=0.1)
-            with self.assertRaises(AssertionError):
-                m1.wait_until_called()
-
-            m2 = self._make_mock(timeout=1)
-            self.run_async(m2, delay=0.1)
-            m2.wait_until_called()
-
-            m3 = self._make_mock()
-            self.run_async(m3, delay=0.1)
-            m3.wait_until_called(timeout=1)
-
-            m4 = self._make_mock()
-            self.run_async(m4, delay=0.1)
-            m4.wait_until_called(timeout=None)
-
-            m5 = self._make_mock(timeout=None)
-            self.run_async(m5, delay=0.1)
-            m5.wait_until_called()
-
-        assert ThreadingMock.DEFAULT_TIMEOUT != 0.01
+    def test_magic_methods_success(self):
+        waitable_mock = self._make_mock()
+        str(waitable_mock)
+        waitable_mock.__str__.wait_until_called()
+        waitable_mock.__str__.assert_called()
 
     def test_reset_mock_resets_wait(self):
-        m = self._make_mock(timeout=0.01)
+        m = self._make_mock(timeout=VERY_SHORT_TIMEOUT)
 
         with self.assertRaises(AssertionError):
             m.wait_until_called()

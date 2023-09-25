@@ -83,7 +83,7 @@ The module provides the following classes:
 
    .. versionchanged:: 3.2
       This class now supports HTTPS virtual hosts if possible (that is,
-      if :data:`ssl.HAS_SNI` is true).
+      if :const:`ssl.HAS_SNI` is true).
 
    .. versionchanged:: 3.4
       The *strict* parameter was removed. HTTP 0.9-style "Simple Responses" are
@@ -390,7 +390,7 @@ HTTPConnection Objects
    Returns a dictionary with the headers of the response received from
    the proxy server to the CONNECT request.
 
-   If the CONNECT request was not sent, the method returns an empty dictionary.
+   If the CONNECT request was not sent, the method returns ``None``.
 
    .. versionadded:: 3.12
 

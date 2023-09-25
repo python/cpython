@@ -34,14 +34,13 @@ import numbers
 import locale
 from test.support import (is_resource_enabled,
                           requires_IEEE_754, requires_docstrings,
-                          requires_legacy_unicode_capi, check_sanitizer,
+                          check_sanitizer,
                           check_disallow_instantiation)
 from test.support import (TestFailed,
                           run_with_locale, cpython_only,
                           darwin_malloc_err_warning, is_emscripten)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
-from test.support import warnings_helper
 import random
 import inspect
 import threading
@@ -586,18 +585,6 @@ class ExplicitConstructionTest:
 
             # underscores don't prevent errors
             self.assertRaises(InvalidOperation, Decimal, "1_2_\u00003")
-
-    @cpython_only
-    @requires_legacy_unicode_capi
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_from_legacy_strings(self):
-        import _testcapi
-        Decimal = self.decimal.Decimal
-        context = self.decimal.Context()
-
-        s = _testcapi.unicode_legacy_string('9.999999')
-        self.assertEqual(str(Decimal(s)), '9.999999')
-        self.assertEqual(str(context.create_decimal(s)), '9.999999')
 
     def test_explicit_from_tuples(self):
         Decimal = self.decimal.Decimal
@@ -2918,23 +2905,6 @@ class ContextAPItests:
             assert_signals(self, c, 'flags', [])
             assert_signals(self, c, 'traps', [InvalidOperation, DivisionByZero,
                                               Overflow])
-
-    @cpython_only
-    @requires_legacy_unicode_capi
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_from_legacy_strings(self):
-        import _testcapi
-        c = self.decimal.Context()
-
-        for rnd in RoundingModes:
-            c.rounding = _testcapi.unicode_legacy_string(rnd)
-            self.assertEqual(c.rounding, rnd)
-
-        s = _testcapi.unicode_legacy_string('')
-        self.assertRaises(TypeError, setattr, c, 'rounding', s)
-
-        s = _testcapi.unicode_legacy_string('ROUND_\x00UP')
-        self.assertRaises(TypeError, setattr, c, 'rounding', s)
 
     def test_pickle(self):
 
@@ -5700,6 +5670,36 @@ class CWhitebox(unittest.TestCase):
     def test_c_disallow_instantiation(self):
         ContextManager = type(C.localcontext())
         check_disallow_instantiation(self, ContextManager)
+
+    def test_c_signaldict_segfault(self):
+        # See gh-106263 for details.
+        SignalDict = type(C.Context().flags)
+        sd = SignalDict()
+        err_msg = "invalid signal dict"
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            len(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            iter(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            repr(sd)
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation] = True
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd[C.InvalidOperation]
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd == C.Context().flags
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            C.Context().flags == sd
+
+        with self.assertRaisesRegex(ValueError, err_msg):
+            sd.copy()
 
 @requires_docstrings
 @requires_cdecimal

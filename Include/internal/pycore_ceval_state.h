@@ -8,10 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-#include "pycore_atomic.h"          /* _Py_atomic_address */
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
+
+typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_calls {
     int busy;
@@ -24,7 +24,7 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct _pending_call {
-        int (*func)(void *);
+        _Py_pending_call_func func;
         void *arg;
     } calls[NPENDINGCALLS];
     int first;
@@ -84,7 +84,9 @@ struct _ceval_runtime_state {
 
 struct _ceval_state {
     /* This single variable consolidates all requests to break out of
-       the fast path in the eval loop. */
+     * the fast path in the eval loop.
+     * It is by far the hottest field in this struct and
+     * should be placed at the beginning. */
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
