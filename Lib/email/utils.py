@@ -327,8 +327,8 @@ def localtime(dt=None, isdst=None):
 
 
 def __getattr__(attr):
-    # lazy import, to speedup module import time
+    # lazy import, to speed up module import time
     if attr == "make_msgid":
-        from ._msgid import make_msgid
+        from email._msgid import make_msgid
         return make_msgid
     raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
