@@ -1184,6 +1184,10 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
+    // gh-109795: Use PyMem_RawMalloc() to allocate new thread bootstate.
+    // If new thread is started at Python finalization,
+    // i.e. thread_run() routine is invoked in newly created OS thread,
+    // it should be able to free bootstate without holding the GIL.
     struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         return PyErr_NoMemory();
