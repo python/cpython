@@ -18,10 +18,6 @@ struct _pending_calls {
     PyThread_type_lock lock;
     /* Request for running pending calls. */
     int32_t calls_to_do;
-    /* Request for looking at the `async_exc` field of the current
-       thread state.
-       Guarded by the GIL. */
-    int async_exc;
 #define NPENDINGCALLS 32
     struct _pending_call {
         _Py_pending_call_func func;

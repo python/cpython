@@ -57,6 +57,33 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
+
+static inline void
+update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstate)
+{
+    if (tstate == NULL) {
+        return;
+    }
+    int32_t calls_to_do;
+    if (_Py_ThreadCanHandleSignals(interp)) {
+        calls_to_do = _Py_atomic_load_int32_relaxed(
+            &_PyRuntime.ceval.pending_mainthread.calls_to_do);
+        if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+            _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
+        }
+    }
+    else {
+        calls_to_do = _Py_atomic_load_int32_relaxed(
+            &interp->ceval.pending.calls_to_do);
+    }
+    if (calls_to_do) {
+        _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
+    }
+    if (tstate->async_exc != NULL) {
+        _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 1);
+    }
+}
+
 static inline void
 SET_GIL_DROP_REQUEST(PyInterpreterState *interp)
 {
@@ -83,39 +110,6 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 {
     _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 0);
 }
-
-
-static inline void
-SIGNAL_PENDING_SIGNALS(PyInterpreterState *interp, int force)
-{
-    _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
-}
-
-
-static inline void
-UNSIGNAL_PENDING_SIGNALS(PyInterpreterState *interp)
-{
-    _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 0);
-}
-
-
-static inline void
-SIGNAL_ASYNC_EXC(PyInterpreterState *interp)
-{
-    struct _ceval_state *ceval2 = &interp->ceval;
-    ceval2->pending.async_exc = 1;
-    _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 1);
-}
-
-
-static inline void
-UNSIGNAL_ASYNC_EXC(PyInterpreterState *interp)
-{
-    struct _ceval_state *ceval2 = &interp->ceval;
-    ceval2->pending.async_exc = 0;
-    _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 0);
-}
-
 
 /*
  * Implementation of the Global Interpreter Lock (GIL).
@@ -390,11 +384,7 @@ _ready:
     assert(_PyThreadState_CheckConsistency(tstate));
 
     RESET_GIL_DROP_REQUEST(interp);
-
-    /* Don't access tstate if the thread must exit */
-    if (tstate->async_exc != NULL) {
-        _PyEval_SignalAsyncExc(tstate->interp);
-    }
+    update_eval_breaker_from_thread(interp, tstate);
 
     MUTEX_UNLOCK(gil->mutex);
 
@@ -634,7 +624,7 @@ _PyEval_ReInitThreads(PyThreadState *tstate)
 void
 _PyEval_SignalAsyncExc(PyInterpreterState *interp)
 {
-    SIGNAL_ASYNC_EXC(interp);
+    _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 1);
 }
 
 PyThreadState *
@@ -685,22 +675,9 @@ PyEval_RestoreThread(PyThreadState *tstate)
 void
 _PyEval_SignalReceived(PyInterpreterState *interp)
 {
-#ifdef MS_WINDOWS
-    // bpo-42296: On Windows, _PyEval_SignalReceived() is called from a signal
-    // handler which can run in a thread different than the Python thread, in
-    // which case _Py_ThreadCanHandleSignals() is wrong. Ignore
-    // _Py_ThreadCanHandleSignals() and always set eval_breaker to 1.
-    //
-    // The next eval_frame_handle_pending() call will call
-    // _Py_ThreadCanHandleSignals() to recompute eval_breaker.
-    int force = 1;
-#else
-    int force = 0;
-#endif
-    /* bpo-30703: Function called when the C signal handler of Python gets a
-       signal. We cannot queue a callback using _PyEval_AddPendingCall() since
-       that function is not async-signal-safe. */
-    SIGNAL_PENDING_SIGNALS(interp, force);
+    if (_Py_ThreadCanHandleSignals(interp)) {
+        _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
+    }
 }
 
 /* Push one item onto the queue while holding the lock. */
@@ -793,14 +770,13 @@ static int
 handle_signals(PyThreadState *tstate)
 {
     assert(_PyThreadState_CheckConsistency(tstate));
+    _Py_set_eval_breaker_bit(tstate->interp, _PY_SIGNALS_PENDING_BIT, 0);
     if (!_Py_ThreadCanHandleSignals(tstate->interp)) {
         return 0;
     }
-
-    UNSIGNAL_PENDING_SIGNALS(tstate->interp);
     if (_PyErr_CheckSignalsTstate(tstate) < 0) {
         /* On failure, re-schedule a call to handle_signals(). */
-        SIGNAL_PENDING_SIGNALS(tstate->interp, 0);
+        _Py_set_eval_breaker_bit(tstate->interp, _PY_SIGNALS_PENDING_BIT, 1);
         return -1;
     }
     return 0;
@@ -880,9 +856,6 @@ make_pending_calls(PyInterpreterState *interp)
             SIGNAL_PENDING_CALLS(interp);
             return -1;
         }
-    }
-    else if (_Py_atomic_load_int32_relaxed(&pending_main->calls_to_do)) {
-        SIGNAL_PENDING_CALLS(interp);
     }
 
     pending->busy = 0;
@@ -1069,7 +1042,7 @@ _Py_HandlePending(PyThreadState *tstate)
     if (tstate->async_exc != NULL) {
         PyObject *exc = tstate->async_exc;
         tstate->async_exc = NULL;
-        UNSIGNAL_ASYNC_EXC(tstate->interp);
+        _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 0);
         _PyErr_SetNone(tstate, exc);
         Py_DECREF(exc);
         return -1;
