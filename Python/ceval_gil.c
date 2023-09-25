@@ -1,7 +1,6 @@
 
 #include "Python.h"
 #include "pycore_atomic.h"        // _Py_atomic_int
-#include "cpython/pyatomic.h"     // _Py_atomic_load_int32
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()

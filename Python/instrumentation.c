@@ -1,7 +1,6 @@
 #include "Python.h"
 
 #include "opcode_ids.h"
-#include "cpython/pyatomic.h"
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_call.h"

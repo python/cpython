@@ -10,7 +10,6 @@ extern "C" {
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "cpython/pyatomic.h"
 
 /* Forward declarations */
 struct pyruntimestate;
