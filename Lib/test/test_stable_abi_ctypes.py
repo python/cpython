@@ -805,8 +805,6 @@ SYMBOL_NAMES = (
     "PyUnicode_Translate",
     "PyUnicode_Type",
     "PyUnicode_WriteChar",
-    "PyUnstable_PerfTrampoline_CompileCode",
-    "PyUnstable_PerfTrampoline_SetPersistAfterFork",
     "PyVectorcall_Call",
     "PyVectorcall_NARGS",
     "PyWeakref_GetObject",
