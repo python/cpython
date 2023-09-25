@@ -139,7 +139,7 @@ dummy_func(
         inst(RESUME, (--)) {
             TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
-            uint32_t global_version = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker2) & ~0xff;
+            uint32_t global_version = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker) & ~0xff;
             uint32_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((code_version & 255) == 0);
             if (code_version != global_version) {
@@ -160,14 +160,14 @@ dummy_func(
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
-            uint32_t eval_breaker = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker2);
+            uint32_t eval_breaker = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker);
             uint32_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & 255) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
-            uint32_t global_version = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker2) & ~0xff;
+            uint32_t global_version = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker) & ~0xff;
             uint32_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {

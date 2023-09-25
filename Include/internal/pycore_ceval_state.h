@@ -80,7 +80,7 @@ struct _ceval_state {
      * the fast path in the eval loop.
      * It is by far the hottest field in this struct and
      * should be placed at the beginning. */
-    uint32_t eval_breaker2;
+    uint32_t eval_breaker;
     /* Avoid false sharing */
     int64_t padding[7];
     int recursion_limit;

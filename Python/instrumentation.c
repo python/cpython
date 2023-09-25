@@ -894,21 +894,21 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return interp->ceval.eval_breaker2 & ~255;
+    return interp->ceval.eval_breaker & ~255;
 }
 
 static void
 set_global_version(PyInterpreterState *interp, uint32_t version)
 {
     assert((version & 255) == 0);
-    uint32_t old = _Py_atomic_load_uint32(&interp->ceval.eval_breaker2);
+    uint32_t old = _Py_atomic_load_uint32(&interp->ceval.eval_breaker);
     if (old  == version) {
         return;
     }
     int32_t new;
     do {
         new = (old & 255) | version;
-    } while (!_Py_atomic_compare_exchange_uint32(&interp->ceval.eval_breaker2, &old, new));
+    } while (!_Py_atomic_compare_exchange_uint32(&interp->ceval.eval_breaker, &old, new));
 }
 
 static bool
@@ -1569,7 +1569,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     if (is_version_up_to_date(code, interp)) {
         assert(
-            (interp->ceval.eval_breaker2 & ~0xff) == 0 ||
+            (interp->ceval.eval_breaker & ~0xff) == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;
