@@ -144,7 +144,8 @@ CPython implementation improvements:
 
 New typing features:
 
-* :ref:`PEP 692 <whatsnew312-pep692>`, using ``TypedDict`` to annotate ``**kwargs``
+* :ref:`PEP 692 <whatsnew312-pep692>`, using :class:`~typing.TypedDict` to
+  annotate :term:`**kwargs <argument>`
 * :ref:`PEP 698 <whatsnew312-pep698>`, :func:`typing.override` decorator
 
 Important deprecations, removals or restrictions:
