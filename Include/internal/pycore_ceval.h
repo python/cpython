@@ -212,7 +212,7 @@ _Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
     }
     uintptr_t new;
     do {
-        new = (old & ~mask) | (set << bit);
+        new = (old & ~mask) | to_set;
     } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
 }
 

@@ -881,7 +881,7 @@ make_pending_calls(PyInterpreterState *interp)
             return -1;
         }
     }
-    else if (pending_main->calls_to_do) {
+    else if (_Py_atomic_load_int32_relaxed(&pending_main->calls_to_do)) {
         SIGNAL_PENDING_CALLS(interp);
     }
 
@@ -1036,20 +1036,20 @@ _Py_HandlePending(PyThreadState *tstate)
     }
 
     /* Pending calls */
-    if (maybe_has_pending_calls(tstate->interp)) {
-        if (make_pending_calls(tstate->interp) != 0) {
+    if (maybe_has_pending_calls(interp)) {
+        if (make_pending_calls(interp) != 0) {
             return -1;
         }
     }
 
     /* GC scheduled to run */
-    if (_Py_eval_breaker_bit_is_set(tstate->interp, _PY_GC_SCHEDULED_BIT)) {
-        _Py_set_eval_breaker_bit(tstate->interp, _PY_GC_SCHEDULED_BIT, 0);
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_GC_SCHEDULED_BIT)) {
+        _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 0);
         _Py_RunGC(tstate);
     }
 
     /* GIL drop request */
-    if (_Py_eval_breaker_bit_is_set(tstate->interp, _PY_GIL_DROP_REQUEST_BIT)) {
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_GIL_DROP_REQUEST_BIT)) {
         /* Give another thread a chance */
         if (_PyThreadState_SwapNoGIL(NULL) != tstate) {
             Py_FatalError("tstate mix-up");
