@@ -1,0 +1,2 @@
+Fix :func:`repllib.recursive_repl` not copying ``__type_params__`` from
+decorated function.
