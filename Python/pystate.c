@@ -1170,6 +1170,10 @@ _PyInterpreterState_IDIncref(PyInterpreterState *interp)
 }
 
 
+static void PyThreadState_Init(PyThreadState *tstate,
+                               PyInterpreterState *interp, int whence);
+static void PyThreadState_Fini(PyThreadState *tstate);
+
 void
 _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 {
@@ -1183,11 +1187,13 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0 && interp->requires_idref) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        PyThreadState tstate;
+        PyThreadState_Init(&tstate, interp, _PyThreadState_WHENCE_INTERP);
+        _PyThreadState_Bind(&tstate);
+
         // XXX Possible GILState issues?
-        PyThreadState *save_tstate = _PyThreadState_Swap(runtime, tstate);
-        Py_EndInterpreter(tstate);
+        PyThreadState *save_tstate = _PyThreadState_Swap(runtime, &tstate);
+        Py_EndInterpreter(&tstate);
         _PyThreadState_Swap(runtime, save_tstate);
     }
 }
@@ -1725,6 +1731,33 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
+}
+
+static void
+PyThreadState_Init(PyThreadState *tstate,
+                   PyInterpreterState *interp, int whence)
+{
+    HEAD_LOCK(interp->runtime);
+
+    interp->threads.next_unique_id += 1;
+    uint64_t id = interp->threads.next_unique_id;
+
+    // Set to _PyThreadState_INIT.
+    memcpy(tstate,
+           &initial._main_interpreter._initial_thread,
+           sizeof(*tstate));
+
+    init_threadstate(tstate, interp, id, whence);
+    add_threadstate(interp, tstate, interp->threads.head);
+
+    HEAD_UNLOCK(interp->runtime);
+}
+
+static void
+PyThreadState_Fini(PyThreadState *tstate)
+{
+    PyThreadState_Clear(tstate);
+    tstate_delete_common(tstate);
 }
 
 
