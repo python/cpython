@@ -1713,10 +1713,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Added support for pipes on Windows.
 
 
-.. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
+.. function:: splice(src, dst, count, offset_src=None, offset_dst=None, flags=0)
 
    Transfer *count* bytes from file descriptor *src*, starting from offset
-   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*,
+   which can use *flags* to modify the semantics of the call.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
    is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
