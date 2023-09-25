@@ -28,7 +28,6 @@ Doc/howto/enum.rst
 Doc/howto/isolating-extensions.rst
 Doc/howto/logging.rst
 Doc/howto/urllib2.rst
-Doc/library/__future__.rst
 Doc/library/abc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-dev.rst
