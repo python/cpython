@@ -139,7 +139,9 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
+extern PyThreadState * _PyThreadState_New(
+    PyInterpreterState *interp,
+    int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
