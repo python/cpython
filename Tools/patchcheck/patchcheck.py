@@ -23,7 +23,8 @@ SRCDIR = sysconfig.get_config_var('srcdir')
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
-    return f"{count} file{'s' if count != 1 else ''}"
+    s = "s" if count != 1 else ""
+    return f"{count} file{s}"
 
 
 def status(message, modal=False, info=None):
