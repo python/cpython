@@ -1411,7 +1411,7 @@ imp
 * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
   :gh:`98040`.)
 
-* Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
+  To migrate, consult the following correspondence table:
 
     =================================  =======================================
        imp                                importlib
@@ -1426,9 +1426,10 @@ imp
     ``imp.new_module(name)``           ``types.ModuleType(name)``
     ``imp.reload()``                   :func:`importlib.reload`
     ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
+    ``imp.load_source()``              *See below*
     =================================  =======================================
 
-* Replace ``imp.load_source()`` with::
+  Replace ``imp.load_source()`` with::
 
         import importlib.util
         import importlib.machinery
