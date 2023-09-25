@@ -160,6 +160,11 @@ following table:
 
 If the first character is not one of these, ``'@'`` is assumed.
 
+The number ``1023``, or ``0x3ff`` in hex, is represented as follows in bytes:
+
+* ``0x03 0xff`` in big-endian (``>``)
+* ``0xff 0x03`` in little-endian (``<``)
+
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
 little-endian; IBM z and many legacy architectures are big-endian.
