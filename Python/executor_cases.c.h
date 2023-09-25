@@ -12,8 +12,8 @@
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
-            uint32_t eval_breaker = _Py_atomic_load_uint32_relaxed(&tstate->interp->ceval.eval_breaker);
-            uint32_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
+            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & 255) == 0);
             DEOPT_IF(eval_breaker != version, RESUME);
             break;

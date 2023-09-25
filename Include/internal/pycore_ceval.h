@@ -205,22 +205,22 @@ static inline void
 _Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
 {
     assert(set == 0 || set == 1);
-    uint32_t to_set = set << bit;
-    uint32_t mask = ((uint32_t)1) << bit;
-    uint32_t old = _Py_atomic_load_uint32(&interp->ceval.eval_breaker);
+    uintptr_t to_set = set << bit;
+    uintptr_t mask = ((uintptr_t)1) << bit;
+    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
     if ((old & mask) == to_set) {
         return;
     }
-    uint32_t new;
+    uintptr_t new;
     do {
         new = (old & ~mask) | (set << bit);
-    } while (!_Py_atomic_compare_exchange_uint32(&interp->ceval.eval_breaker, &old, new));
+    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
 }
 
 static inline bool
 _Py_eval_breaker_bit_is_set(PyInterpreterState *interp, int32_t bit)
 {
-    return _Py_atomic_load_uint32(&interp->ceval.eval_breaker) & (((uint32_t)1) << bit);
+    return _Py_atomic_load_uintptr(&interp->ceval.eval_breaker) & (((uintptr_t)1) << bit);
 }
 
 

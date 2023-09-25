@@ -901,14 +901,11 @@ static void
 set_global_version(PyInterpreterState *interp, uint32_t version)
 {
     assert((version & 255) == 0);
-    uint32_t old = _Py_atomic_load_uint32(&interp->ceval.eval_breaker);
-    if (old  == version) {
-        return;
-    }
-    int32_t new;
+    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
+    intptr_t new;
     do {
         new = (old & 255) | version;
-    } while (!_Py_atomic_compare_exchange_uint32(&interp->ceval.eval_breaker, &old, new));
+    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
 }
 
 static bool
