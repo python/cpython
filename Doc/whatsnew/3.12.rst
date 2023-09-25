@@ -1030,10 +1030,10 @@ CPython bytecode changes
 * Add the :opcode:`BINARY_SLICE` and :opcode:`STORE_SLICE` instructions.
   (Contributed by Mark Shannon in :gh:`94163`.)
 
-* Add the :opcode:`!CALL_INSTRINSIC_1` instructions.
+* Add the :opcode:`CALL_INTRINSIC_1` instructions.
   (Contributed by Mark Shannon in :gh:`99005`.)
 
-* Add the :opcode:`!CALL_INSTRINSIC_2` instruction.
+* Add the :opcode:`CALL_INTRINSIC_2` instruction.
   (Contributed by Irit Katriel in :gh:`101799`.)
 
 * Add the :opcode:`CLEANUP_THROW` instruction.
