@@ -1026,8 +1026,6 @@ _PyEval_FiniState(struct _ceval_state *ceval)
 int
 _Py_HandlePending(PyThreadState *tstate)
 {
-    _PyRuntimeState * const runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval = &runtime->ceval;
     struct _ceval_state *interp_ceval_state = &tstate->interp->ceval;
     PyInterpreterState *interp = tstate->interp;
 

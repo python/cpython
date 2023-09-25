@@ -197,31 +197,30 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define _PY_GIL_DROP_REQUEST_BIT 0
 #define _PY_SIGNALS_PENDING_BIT 1
 #define _PY_CALLS_TO_DO_BIT 2
-#define _PY_CALLS_ON_MAIN_TO_DO_BIT 3
-#define _PY_ASYNC_EXCEPTION_BIT 4
-#define _PY_GC_SCHEDULED_BIT 5
+#define _PY_ASYNC_EXCEPTION_BIT 3
+#define _PY_GC_SCHEDULED_BIT 4
 
 
 static inline void
-_Py_set_eval_breaker_bit(PyInterpreterState *interp, int32_t bit, int32_t set)
+_Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
 {
     assert(set == 0 || set == 1);
-    int32_t to_set = set << bit;
-    int32_t mask = 1 << bit;
-    int32_t old = _Py_atomic_load_int32(&interp->ceval.eval_breaker2);
+    uint32_t to_set = set << bit;
+    uint32_t mask = ((uint32_t)1) << bit;
+    uint32_t old = _Py_atomic_load_uint32(&interp->ceval.eval_breaker2);
     if ((old & mask) == to_set) {
         return;
     }
-    int32_t new;
+    uint32_t new;
     do {
         new = (old & ~mask) | (set << bit);
-    } while (!_Py_atomic_compare_exchange_int32(&interp->ceval.eval_breaker2, &old, new));
+    } while (!_Py_atomic_compare_exchange_uint32(&interp->ceval.eval_breaker2, &old, new));
 }
 
 static inline bool
 _Py_eval_breaker_bit_is_set(PyInterpreterState *interp, int32_t bit)
 {
-    return _Py_atomic_load_int32(&interp->ceval.eval_breaker2) & (1 << bit);
+    return _Py_atomic_load_uint32(&interp->ceval.eval_breaker2) & (((uint32_t)1) << bit);
 }
 
 
