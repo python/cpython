@@ -1,8 +1,5 @@
 import unittest
-import sys
 from collections import OrderedDict
-from test import support
-from test.support import import_helper
 import _testcapi
 
 

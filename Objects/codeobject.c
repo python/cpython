@@ -1505,7 +1505,7 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         int opcode = _Py_GetBaseOpcode(code, i);
         if (opcode == ENTER_EXECUTOR) {
             _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
-            opcode = exec->vm_data.opcode;
+            opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
             instructions[i].op.arg = exec->vm_data.oparg;
         }
         assert(opcode != ENTER_EXECUTOR);
