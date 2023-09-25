@@ -1198,6 +1198,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             return converterr("read-write bytes-like object",
                               arg, msgbuf, bufsize);
         }
+        assert(PyBuffer_IsContiguous((Py_buffer *)p, 'C'));
         if (addcleanup(p, freelist, cleanup_buffer)) {
             return converterr(
                 "(cleanup problem)",
@@ -1247,6 +1248,7 @@ getbuffer(PyObject *arg, Py_buffer *view, const char **errmsg)
         *errmsg = "bytes-like object";
         return -1;
     }
+    assert(PyBuffer_IsContiguous(view, 'C'));
     return 0;
 }
 
