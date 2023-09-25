@@ -15,7 +15,7 @@ import posixpath
 import collections
 import inspect
 
-from . import _adapters, _meta
+from . import _meta
 from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
@@ -439,6 +439,8 @@ class Distribution(DeprecatedNonAbstract):
         The returned object will have keys that name the various bits of
         metadata.  See PEP 566 for details.
         """
+        from . import _adapters
+
         opt_text = (
             self.read_text('METADATA')
             or self.read_text('PKG-INFO')
