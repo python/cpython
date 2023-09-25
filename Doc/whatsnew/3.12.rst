@@ -120,6 +120,8 @@ Significant improvements in the standard library:
   with some benchmarks showing a 75% speed up.
 * A :ref:`command-line interface <uuid-cli>` has been added to the
   :mod:`uuid` module
+* Due to the changes in :ref:`PEP 701 <whatsnew312-pep701>`,
+  producing tokens via the :mod:`tokenize` module is up to up to 64% faster.
 
 Security improvements:
 
