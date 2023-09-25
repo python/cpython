@@ -4,10 +4,9 @@ import copy
 import types
 import inspect
 import keyword
-import functools
 import itertools
 import abc
-import _thread
+from reprlib import recursive_repr
 from types import FunctionType, GenericAlias
 
 
@@ -245,25 +244,6 @@ _ATOMIC_TYPES = frozenset({
     property,
 })
 
-# This function's logic is copied from "recursive_repr" function in
-# reprlib module to avoid dependency.
-def _recursive_repr(user_function):
-    # Decorator to make a repr function return "..." for a recursive
-    # call.
-    repr_running = set()
-
-    @functools.wraps(user_function)
-    def wrapper(self):
-        key = id(self), _thread.get_ident()
-        if key in repr_running:
-            return '...'
-        repr_running.add(key)
-        try:
-            result = user_function(self)
-        finally:
-            repr_running.discard(key)
-        return result
-    return wrapper
 
 class InitVar:
     __slots__ = ('type', )
@@ -322,7 +302,7 @@ class Field:
         self.kw_only = kw_only
         self._field_type = None
 
-    @_recursive_repr
+    @recursive_repr()
     def __repr__(self):
         return ('Field('
                 f'name={self.name!r},'
@@ -632,7 +612,7 @@ def _repr_fn(fields, globals):
                                 for f in fields]) +
                      ')"'],
                      globals=globals)
-    return _recursive_repr(fn)
+    return recursive_repr()(fn)
 
 
 def _frozen_get_del_attr(cls, fields, globals):
