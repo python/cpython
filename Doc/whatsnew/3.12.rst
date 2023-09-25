@@ -659,7 +659,7 @@ inspect
 
 * Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
   for determining the current state of asynchronous generators.
-  (Contributed by Thomas Krennwallner in :issue:`35759`.)
+  (Contributed by Thomas Krennwallner in :gh:`79940`.)
 
 * The performance of :func:`inspect.getattr_static` has been considerably
   improved. Most calls to the function should be at least 2x faster than they
@@ -732,7 +732,7 @@ pathlib
 * Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
   to allow the insertion of ``..`` entries in the result; this behavior is
   more consistent with :func:`os.path.relpath`.
-  (Contributed by Domenico Ragusa in :issue:`40358`.)
+  (Contributed by Domenico Ragusa in :gh:`84538`.)
 
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
@@ -968,7 +968,7 @@ Added ``--durations`` command line option, showing the N slowest test cases::
 
   OK (skipped=3)
 
-(Contributed by Giampaolo Rodola in :issue:`4080`)
+(Contributed by Giampaolo Rodola in :gh:`48330`)
 
 uuid
 ----
@@ -1564,7 +1564,7 @@ unittest
   * An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
 
-  (Contributed by Serhiy Storchaka in :issue:`45162`.)
+  (Contributed by Serhiy Storchaka in :gh:`89325`.)
 
 webbrowser
 ----------
