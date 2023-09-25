@@ -273,6 +273,8 @@ def main():
     normalize_whitespace(python_files)
     # C rules enforcement.
     normalize_c_whitespace(c_files)
+    # Docs updated.
+    docs_modified(doc_files)
     # Misc/ACKS changed.
     credit_given(misc_files)
     # Misc/NEWS changed.
