@@ -1,4 +1,5 @@
 import faulthandler
+import gc
 import os
 import random
 import signal
@@ -6,10 +7,6 @@ import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
-try:
-    import gc
-except ImportError:
-    gc = None
 
 from .runtests import RunTests
 from .utils import (

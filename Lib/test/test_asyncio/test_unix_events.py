@@ -11,9 +11,11 @@ import socket
 import stat
 import sys
 import threading
+import time
 import unittest
 from unittest import mock
 import warnings
+from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import wait_process
@@ -1911,8 +1913,14 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         parent_handled = manager.Event()
 
         def child_main():
-            signal.signal(signal.SIGTERM, lambda *args: child_handled.set())
+            def on_sigterm(*args):
+                child_handled.set()
+                sys.exit()
+
+            signal.signal(signal.SIGTERM, on_sigterm)
             child_started.set()
+            while True:
+                time.sleep(1)
 
         async def main():
             loop = asyncio.get_running_loop()
@@ -1922,7 +1930,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
             process.start()
             child_started.wait()
             os.kill(process.pid, signal.SIGTERM)
-            process.join()
+            process.join(timeout=support.SHORT_TIMEOUT)
 
             async def func():
                 await asyncio.sleep(0.1)
@@ -1933,6 +1941,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
 
         asyncio.run(main())
 
+        child_handled.wait(timeout=support.SHORT_TIMEOUT)
         self.assertFalse(parent_handled.is_set())
         self.assertTrue(child_handled.is_set())
 

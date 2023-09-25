@@ -11,6 +11,8 @@ extern "C" {
 #include "pycore_gil.h"             // struct _gil_runtime_state
 
 
+typedef int (*_Py_pending_call_func)(void *);
+
 struct _pending_calls {
     int busy;
     PyThread_type_lock lock;
@@ -22,7 +24,7 @@ struct _pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct _pending_call {
-        int (*func)(void *);
+        _Py_pending_call_func func;
         void *arg;
     } calls[NPENDINGCALLS];
     int first;

@@ -13,6 +13,7 @@ import os.path
 import platform
 import random
 import re
+import shlex
 import subprocess
 import sys
 import sysconfig
@@ -420,10 +421,12 @@ class BaseTestCase(unittest.TestCase):
             self.fail("%r not found in %r" % (regex, output))
         return match
 
-    def check_line(self, output, regex, full=False):
+    def check_line(self, output, pattern, full=False, regex=True):
+        if not regex:
+            pattern = re.escape(pattern)
         if full:
-            regex += '\n'
-        regex = re.compile(r'^' + regex, re.MULTILINE)
+            pattern += '\n'
+        regex = re.compile(r'^' + pattern, re.MULTILINE)
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
@@ -432,13 +435,14 @@ class BaseTestCase(unittest.TestCase):
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
-    def check_executed_tests(self, output, tests, skipped=(), failed=(),
+    def check_executed_tests(self, output, tests, *, stats,
+                             skipped=(), failed=(),
                              env_changed=(), omitted=(),
                              rerun=None, run_no_tests=(),
                              resource_denied=(),
-                             randomize=False, interrupted=False,
+                             randomize=False, parallel=False, interrupted=False,
                              fail_env_changed=False,
-                             *, stats, forever=False, filtered=False):
+                             forever=False, filtered=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
@@ -455,9 +459,11 @@ class BaseTestCase(unittest.TestCase):
             run_no_tests = [run_no_tests]
         if isinstance(stats, int):
             stats = TestStats(stats)
+        if parallel:
+            randomize = True
 
         rerun_failed = []
-        if rerun is not None:
+        if rerun is not None and not env_changed:
             failed = [rerun.name]
             if not rerun.success:
                 rerun_failed.append(rerun.name)
@@ -494,7 +500,8 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if env_changed:
-            regex = list_regex('%s test%s altered the execution environment',
+            regex = list_regex(r'%s test%s altered the execution environment '
+                               r'\(env changed\)',
                                env_changed)
             self.check_line(output, regex)
 
@@ -584,7 +591,7 @@ class BaseTestCase(unittest.TestCase):
         state = ', '.join(state)
         if rerun is not None:
             new_state = 'SUCCESS' if rerun.success else 'FAILURE'
-            state = 'FAILURE then ' + new_state
+            state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output):
@@ -1120,7 +1127,7 @@ class ArgsTestCase(BaseTestCase):
         tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, tests, failed=crash_test,
-                                  randomize=True, stats=0)
+                                  parallel=True, stats=0)
 
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
@@ -1221,6 +1228,15 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True, stats=1)
+
+        # rerun
+        output = self.run_tests("--rerun", testname)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=testname,
+                                  rerun=Rerun(testname,
+                                              match=None,
+                                              success=True),
+                                  stats=2)
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
@@ -1744,16 +1760,15 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testnames,
                                   env_changed=testnames,
                                   fail_env_changed=True,
-                                  randomize=True,
+                                  parallel=True,
                                   stats=len(testnames))
         for testname in testnames:
             self.assertIn(f"Warning -- {testname} leaked temporary "
                           f"files (1): mytmpfile",
                           output)
 
-    def test_mp_decode_error(self):
-        # gh-101634: If a worker stdout cannot be decoded, report a failed test
-        # and a non-zero exit code.
+    def test_worker_decode_error(self):
+        # gh-109425: Use "backslashreplace" error handler to decode stdout.
         if sys.platform == 'win32':
             encoding = locale.getencoding()
         else:
@@ -1763,29 +1778,41 @@ class ArgsTestCase(BaseTestCase):
                 if encoding is None:
                     self.skipTest("cannot get regrtest worker encoding")
 
-        nonascii = b"byte:\xa0\xa9\xff\n"
+        nonascii = bytes(ch for ch in range(128, 256))
+        corrupted_output = b"nonascii:%s\n" % (nonascii,)
+        # gh-108989: On Windows, assertion errors are written in UTF-16: when
+        # decoded each letter is follow by a NUL character.
+        assertion_failed = 'Assertion failed: tstate_is_alive(tstate)\n'
+        corrupted_output += assertion_failed.encode('utf-16-le')
         try:
-            nonascii.decode(encoding)
+            corrupted_output.decode(encoding)
         except UnicodeDecodeError:
             pass
         else:
-            self.skipTest(f"{encoding} can decode non-ASCII bytes {nonascii!a}")
+            self.skipTest(f"{encoding} can decode non-ASCII bytes")
+
+        expected_line = corrupted_output.decode(encoding, 'backslashreplace')
 
         code = textwrap.dedent(fr"""
             import sys
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_pass(self):
+                    pass
+
             # bytes which cannot be decoded from UTF-8
-            nonascii = {nonascii!a}
-            sys.stdout.buffer.write(nonascii)
+            corrupted_output = {corrupted_output!a}
+            sys.stdout.buffer.write(corrupted_output)
             sys.stdout.buffer.flush()
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
-                                exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname)
         self.check_executed_tests(output, [testname],
-                                  failed=[testname],
-                                  randomize=True,
-                                  stats=0)
+                                  parallel=True,
+                                  stats=1)
+        self.check_line(output, expected_line, regex=False)
 
     def test_doctest(self):
         code = textwrap.dedent(r'''
@@ -1823,7 +1850,7 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  randomize=True,
+                                  parallel=True,
                                   stats=TestStats(1, 1, 0))
 
     def _check_random_seed(self, run_workers: bool):
@@ -1865,6 +1892,27 @@ class ArgsTestCase(BaseTestCase):
 
     def test_random_seed_workers(self):
         self._check_random_seed(run_workers=True)
+
+    def test_python_command(self):
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+
+            class WorkerTests(unittest.TestCase):
+                def test_dev_mode(self):
+                    self.assertTrue(sys.flags.dev_mode)
+        """)
+        tests = [self.create_test(code=code) for _ in range(3)]
+
+        # Custom Python command: "python -X dev"
+        python_cmd = [sys.executable, '-X', 'dev']
+        # test.libregrtest.cmdline uses shlex.split() to parse the Python
+        # command line string
+        python_cmd = shlex.join(python_cmd)
+
+        output = self.run_tests("--python", python_cmd, "-j0", *tests)
+        self.check_executed_tests(output, tests,
+                                  stats=len(tests), parallel=True)
 
 
 class TestUtils(unittest.TestCase):

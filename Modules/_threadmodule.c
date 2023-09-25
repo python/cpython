@@ -1066,7 +1066,7 @@ thread_bootstate_free(struct bootstate *boot, int decref)
         Py_DECREF(boot->args);
         Py_XDECREF(boot->kwargs);
     }
-    PyMem_Free(boot);
+    PyMem_RawFree(boot);
 }
 
 
@@ -1184,13 +1184,16 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
     boot->tstate = _PyThreadState_New(interp);
     if (boot->tstate == NULL) {
-        PyMem_Free(boot);
+        PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
             return PyErr_NoMemory();
         }
@@ -1497,11 +1500,9 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }

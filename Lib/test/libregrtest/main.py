@@ -71,11 +71,11 @@ class Regrtest:
 
         # Select tests
         if ns.match_tests:
-            self.match_tests: FilterTuple = tuple(ns.match_tests)
+            self.match_tests: FilterTuple | None = tuple(ns.match_tests)
         else:
             self.match_tests = None
         if ns.ignore_tests:
-            self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
+            self.ignore_tests: FilterTuple | None = tuple(ns.ignore_tests)
         else:
             self.ignore_tests = None
         self.exclude: bool = ns.exclude
@@ -105,16 +105,16 @@ class Regrtest:
         if ns.huntrleaks:
             warmups, runs, filename = ns.huntrleaks
             filename = os.path.abspath(filename)
-            self.hunt_refleak: HuntRefleak = HuntRefleak(warmups, runs, filename)
+            self.hunt_refleak: HuntRefleak | None = HuntRefleak(warmups, runs, filename)
         else:
             self.hunt_refleak = None
         self.test_dir: StrPath | None = ns.testdir
         self.junit_filename: StrPath | None = ns.xmlpath
         self.memory_limit: str | None = ns.memlimit
         self.gc_threshold: int | None = ns.threshold
-        self.use_resources: tuple[str] = tuple(ns.use_resources)
+        self.use_resources: tuple[str, ...] = tuple(ns.use_resources)
         if ns.python:
-            self.python_cmd: tuple[str] = tuple(ns.python)
+            self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
         else:
             self.python_cmd = None
         self.coverage: bool = ns.trace
@@ -297,7 +297,7 @@ class Regrtest:
 
         jobs = runtests.get_jobs()
         if jobs is not None:
-            tests = f'{jobs} tests'
+            tests = count(jobs, 'test')
         else:
             tests = 'tests'
         msg = f"Run {tests} sequentially"
@@ -389,7 +389,7 @@ class Regrtest:
             match_tests=self.match_tests,
             ignore_tests=self.ignore_tests,
             match_tests_dict=None,
-            rerun=None,
+            rerun=False,
             forever=self.forever,
             pgo=self.pgo,
             pgo_extended=self.pgo_extended,
@@ -406,7 +406,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
-            json_fd=None,
+            json_file=None,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
@@ -458,7 +458,7 @@ class Regrtest:
 
     def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
         os.makedirs(self.tmp_dir, exist_ok=True)
-        work_dir = get_work_dir(parent_dir=self.tmp_dir)
+        work_dir = get_work_dir(self.tmp_dir)
 
         # Put a timeout on Python exit
         with exit_timeout():
