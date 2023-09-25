@@ -772,7 +772,7 @@ coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
-	$(TESTRUNNER) $(TESTOPTS) || true
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) || true
 	@ # build lcov report
 	$(MAKE) coverage-lcov
 
@@ -1846,7 +1846,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
 TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
-TESTTIMEOUT=	1200
+TESTTIMEOUT=
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
@@ -1856,9 +1856,10 @@ cleantest: all
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
+# Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
-		$(TESTRUNNER) $(TESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the full test suite twice - once without .pyc files, and once with.
 # In the past, we've had problems where bugs in the marshalling or
@@ -1869,43 +1870,43 @@ test: all
 # sample data.
 .PHONY: testall
 testall: all
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTRUNNER) -u all $(TESTOPTS)
-		$(TESTRUNNER) -u all $(TESTOPTS)
+	-find $(srcdir)/Lib -name '*.py[co]' -exec rm -f {} ';' || true
+	$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
+	-find $(srcdir)/Lib -name '*.py[co]' -exec rm -f {} ';' || true
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
 testuniversal: all
-		@if [ `arch` != 'i386' ]; then \
-			echo "This can only be used on OSX/i386" ;\
-			exit 1 ;\
-		fi
-		$(TESTRUNNER) -u all $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate \
-			./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
+	@if [ `arch` != 'i386' ]; then \
+		echo "This can only be used on OSX/i386" ;\
+		exit 1 ;\
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	$(RUNSHARED) /usr/libexec/oah/translate \
+		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
 # Like testall, but with only one pass and without multiple processes.
 # Run an optional script to include information about the build environment.
 .PHONY: buildbottest
 buildbottest: all
-		-@if which pybuildbot.identify >/dev/null 2>&1; then \
-			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
-		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --fail-rerun --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	-@if which pybuildbot.identify >/dev/null 2>&1; then \
+		pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Like testall, but run Python tests with HOSTRUNNER directly.
 .PHONY: hostrunnertest
 hostrunnertest: all
-	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 .PHONY: pythoninfo
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
-QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
+QUICKTESTOPTS=	-x test_subprocess test_io \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
@@ -1914,7 +1915,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
 
 .PHONY: quicktest
 quicktest: all
-		$(TESTRUNNER) $(QUICKTESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) $(QUICKTESTOPTS)
 
 # SSL tests
 .PHONY: multisslcompile

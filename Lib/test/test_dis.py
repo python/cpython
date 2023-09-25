@@ -524,10 +524,8 @@ async def _asyncwith(c):
 
 dis_asyncwith = """\
 %4d        RETURN_GENERATOR
-
-None        POP_TOP
-
-%4d        RESUME                   0
+            POP_TOP
+            RESUME                   0
 
 %4d        LOAD_FAST                0 (c)
             BEFORE_ASYNC_WITH
@@ -598,7 +596,6 @@ None     >> COPY                     3
 ExceptionTable:
 12 rows
 """ % (_asyncwith.__code__.co_firstlineno,
-       _asyncwith.__code__.co_firstlineno,
        _asyncwith.__code__.co_firstlineno + 1,
        _asyncwith.__code__.co_firstlineno + 2,
        _asyncwith.__code__.co_firstlineno + 1,
@@ -757,10 +754,8 @@ Disassembly of <code object <genexpr> at 0x..., file "%s", line %d>:
 None        COPY_FREE_VARS           1
 
 %4d        RETURN_GENERATOR
-
-None        POP_TOP
-
-%4d        RESUME                   0
+            POP_TOP
+            RESUME                   0
             LOAD_FAST                0 (.0)
          >> FOR_ITER                10 (to 34)
             STORE_FAST               1 (z)
@@ -780,7 +775,6 @@ ExceptionTable:
 1 row
 """ % (dis_nested_1,
        __file__,
-       _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
        _h.__code__.co_firstlineno + 3,
 )

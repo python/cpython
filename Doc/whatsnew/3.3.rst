@@ -2067,7 +2067,7 @@ The :pep:`418` added new functions to the :mod:`time` module:
 Other new functions:
 
 * :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
-  :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
+  :func:`~time.clock_settime` functions with :samp:`CLOCK_{xxx}` constants.
   (Contributed by Victor Stinner in :issue:`10278`.)
 
 To improve cross platform consistency, :func:`~time.sleep` now raises a

@@ -5350,7 +5350,7 @@ in a virtual environment.
 .. nonce: FbHZuS
 .. section: Windows
 
-Fix :file:`py.exe` launcher handling of ``-V:<company>/`` option when
+Fix :file:`py.exe` launcher handling of :samp:`-V:{<company>}/` option when
 default preferences have been set in environment variables or configuration
 files.
 
