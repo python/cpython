@@ -1028,25 +1028,25 @@ CPython bytecode changes
   :gh:`92925`.)
 
 * Add the :opcode:`BINARY_SLICE` and :opcode:`STORE_SLICE` instructions.
-  (Contributed by Mark Shannon in :gh`94163`.)
+  (Contributed by Mark Shannon in :gh:`94163`.)
 
 * Add the :opcode:`CALL_INSTRINSIC_1` and :opcode:`CALL_INSTRINSIC_2` instructions.
-  (Contributed by Mark Shannon in :gh`99005`.)
+  (Contributed by Mark Shannon in :gh:`99005`.)
 
 * Add the :opcode:`CALL_INSTRINSIC_2` instruction.
-  (Contributed by Irit Katriel in :gh`101799`.)
+  (Contributed by Irit Katriel in :gh:`101799`.)
 
 * Add the :opcode:`CLEANUP_THROW` instruction.
-  (Contributed by Brandt Bucher in :gh`90997`.)
+  (Contributed by Brandt Bucher in :gh:`90997`.)
 
 * Add the :opcode:`END_SEND` instruction.
-  (Contributed by Mark Shannon in :gh`103082`.)
+  (Contributed by Mark Shannon in :gh:`103082`.)
 
 * Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
   implementation of :pep:`709`. (Contributed by Carl Meyer in :gh:`101441`.)
 
 * Add the :opcode:`LOAD_FAST_CHECK` instruction.
-  (Contributed by Dennis Sweeney in :gh`93143`.)
+  (Contributed by Dennis Sweeney in :gh:`93143`.)
 
 * Add the :opcode:`LOAD_FROM_DICT_OR_DEREF`, :opcode:`LOAD_FROM_DICT_OR_GLOBALS`,
   and :opcode:`LOAD_LOCALS` opcodes as part of the implementation of :pep:`695`.
@@ -1057,7 +1057,7 @@ CPython bytecode changes
 * Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
   Vladimir Matveev in :gh:`103497`.)
 
-* Add the :opcode:`RETURN_CONST` instruction. (:gh`101632`.)
+* Add the :opcode:`RETURN_CONST` instruction. (:gh:`101632`.)
 
 Demos and Tools
 ===============
