@@ -374,7 +374,7 @@ This means that you only pay for what you use, providing support
 for near-zero overhead debuggers and coverage tools.
 See  :mod:`sys.monitoring` for details.
 
-(Contributed by Mark Shannon in :gh:`103083`.)
+(Contributed by Mark Shannon in :gh:`103082`.)
 
 .. _whatsnew312-pep688:
 
@@ -1103,6 +1103,13 @@ CPython bytecode changes
 
 * Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
   Vladimir Matveev in :gh:`103497`.)
+
+FOR_ITER new behavior is not mentioned
+The fact that POP_JUMP_IF_* family of instructions are now real instructions is not mentioned
+YIELD_VALUE need for an argument is not mentioned
+
+
+
 
 Demos and Tools
 ===============
