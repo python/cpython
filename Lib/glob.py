@@ -273,63 +273,35 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     escaped_seps = ''.join(re.escape(sep) for sep in seps)
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
-    not_dot = r'(?!\.)'
-    res = []
-    add = res.append
-    i, n = 0, len(pat)
-    if pat[:1] != '.' and not include_hidden:
-        add(not_dot)
-    while i < n:
-        c = pat[i]
-        i = i+1
-        if c == '*':
-            h = i-1
-            while i < n and pat[i] == '*':
-                i = i+1
-            star_count = i-h
-            is_segment = (h == 0 or pat[h-1] in seps) and (i == n or pat[i] in seps)
-            if star_count == 1 or not recursive:
-                if is_segment:
-                    add(f'{not_sep}+')
+    if include_hidden:
+        one_segment = f'{not_sep}+'
+        any_segments = f'(?:.+{any_sep})?'
+        any_final_segments = '.*'
+    else:
+        one_segment = f'[^{escaped_seps}.]{not_sep}*'
+        any_segments = fr'(?:{one_segment}{any_sep})*'
+        any_final_segments = fr'{any_segments}(?:{one_segment})?'
+
+    results = ['(\.\Z)?+']
+    parts = re.split(any_sep, pat)
+    last_part_idx = len(parts) - 1
+    for idx, part in enumerate(parts):
+        if recursive:
+            if part == '**':
+                if idx < last_part_idx:
+                    results.append(any_segments)
                 else:
-                    add(f'{not_sep}*')
-            elif star_count == 2 and is_segment:
-                if i == n:
-                    if include_hidden:
-                        add('.*')
-                    else:
-                        add(fr'(?:{not_dot}{not_sep}+{any_sep})*{not_dot}{not_sep}*')
-                else:
-                    if include_hidden:
-                        add(f'(?:.+{any_sep})?')
-                        i = i+1
-                    else:
-                        add(fr'(?:{not_dot}{not_sep}+{any_sep})*')
-                        i = i+1
-                        if i < n and pat[i] != '.':
-                            add(not_dot)
-            else:
+                    results.append(any_final_segments)
+                continue
+            elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        elif c in seps:
-            add(any_sep)
-            if i < n and pat[i] != '.' and not include_hidden:
-                add(not_dot)
-        elif c == '?':
-            add(not_sep)
-        elif c == '[':
-            j = i
-            if j < n and pat[j] == '!':
-                j = j+1
-            if j < n and pat[j] == ']':
-                j = j+1
-            while j < n and pat[j] != ']':
-                j = j+1
-            if j >= n:
-                add('\\[')
-            else:
-                add(fnmatch._translate_char_set(pat[i:j]))
-                i = j + 1
+        if part == '*':
+            results.append(one_segment)
         else:
-            add(re.escape(c))
-    res = "".join(res)
+            if not (include_hidden or part.startswith('.')):
+                results.append(r'(?!\.)')
+            results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+        if idx < last_part_idx:
+            results.append(any_sep)
+    res = ''.join(results)
     return fr'(?s:{res})\Z'

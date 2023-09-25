@@ -397,11 +397,11 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('?aa'), r'(?s:[^/]aa)\Z')
         self.assertEqual(fn('aa?'), r'(?s:aa[^/])\Z')
         self.assertEqual(fn('aa[ab]'), r'(?s:aa[ab])\Z')
-        self.assertEqual(fn('**'), r'(?s:[^/]+)\Z')
-        self.assertEqual(fn('***'), r'(?s:[^/]+)\Z')
+        self.assertEqual(fn('**'), r'(?s:[^/]*)\Z')
+        self.assertEqual(fn('***'), r'(?s:[^/]*)\Z')
         self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
         self.assertEqual(fn('**b'), r'(?s:[^/]*b)\Z')
-        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]+/[^/]+/[^/]*\.[^/]*/[^/]+)\Z')
+        self.assertEqual(fn('/**/*/*.*/**'), r'(?s:/[^/]*/[^/]+/[^/]*\.[^/]*/[^/]*)\Z')
 
     def test_translate_recursive(self):
         def fn(pat):

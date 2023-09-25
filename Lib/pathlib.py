@@ -131,7 +131,7 @@ def _select_unique(paths):
     yielded = set()
     try:
         for path in paths:
-            path_str = path._str
+            path_str = str(path)
             if path_str not in yielded:
                 yield path
                 yielded.add(path_str)
@@ -203,10 +203,10 @@ class PurePath:
         # tail are normalized.
         '_drv', '_root', '_tail_cached',
 
-        # The `_str_cached` slot stores the string representation of the path,
+        # The `_str` slot stores the string representation of the path,
         # computed from the drive, root and tail when `__str__()` is called
         # for the first time. It's used to implement `_str_normcase`
-        '_str_cached',
+        '_str',
 
         # The `_str_normcase_cached` slot stores the string path with
         # normalized case. It is set when the `_str_normcase` property is
@@ -306,7 +306,7 @@ class PurePath:
     def _from_parsed_parts(self, drv, root, tail):
         path_str = self._format_parsed_parts(drv, root, tail)
         path = self.with_segments(path_str)
-        path._str_cached = path_str
+        path._str = path_str or '.'
         path._drv = drv
         path._root = root
         path._tail_cached = tail
@@ -323,7 +323,12 @@ class PurePath:
     def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
-        return self._str or '.'
+        try:
+            return self._str
+        except AttributeError:
+            self._str = self._format_parsed_parts(self.drive, self.root,
+                                                  self._tail) or '.'
+            return self._str
 
     def __fspath__(self):
         return str(self)
@@ -362,24 +367,15 @@ class PurePath:
         return prefix + urlquote_from_bytes(os.fsencode(path))
 
     @property
-    def _str(self):
-        try:
-            return self._str_cached
-        except AttributeError:
-            self._str_cached = self._format_parsed_parts(
-                self.drive, self.root, self._tail)
-            return self._str_cached
-
-    @property
     def _str_normcase(self):
         # String with normalized case, for hashing and equality checks
         try:
             return self._str_normcase_cached
         except AttributeError:
             if _is_case_sensitive(self.pathmod):
-                self._str_normcase_cached = self._str
+                self._str_normcase_cached = str(self)
             else:
-                self._str_normcase_cached = self._str.lower()
+                self._str_normcase_cached = str(self).lower()
             return self._str_normcase_cached
 
     @property
@@ -661,7 +657,7 @@ class PurePath:
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
         sep = path_pattern.pathmod.sep
-        pattern_str = path_pattern._str
+        pattern_str = str(path_pattern)
         if path_pattern.drive or path_pattern.root:
             pass
         elif path_pattern._tail:
@@ -669,7 +665,7 @@ class PurePath:
         else:
             raise ValueError("empty pattern")
         match = _compile_pattern(pattern_str, sep, case_sensitive)
-        return match(self._str) is not None
+        return match(str(self)) is not None
 
 
 # Subclassing os.PathLike makes isinstance() checks slower,
@@ -944,11 +940,11 @@ class Path(PurePath):
     def _make_child_relpath(self, name):
         tail = self._tail
         if tail:
-            path_str = f'{self._str}{self.pathmod.sep}{name}'
+            path_str = f'{self}{self.pathmod.sep}{name}'
         else:
-            path_str = f'{self._str}{name}'
+            path_str = f'{self}{name}'
         path = self.with_segments(path_str)
-        path._str_cached = path_str
+        path._str = path_str
         path._drv = self.drive
         path._root = self.root
         path._tail_cached = tail + [name]
@@ -1023,9 +1019,9 @@ class Path(PurePath):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(self._make_child_relpath('_')._str) - 1
-                    match = _compile_pattern(path_pattern._str, sep, case_sensitive)
-                    paths = (path for path in paths if match(path._str[prefix_len:]))
+                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
+                    match = _compile_pattern(str(path_pattern), sep, case_sensitive)
+                    paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
 
                 dir_only = part_idx < len(pattern_parts)
@@ -1131,11 +1127,11 @@ class Path(PurePath):
             # Fast path for "empty" paths, e.g. Path("."), Path("") or Path().
             # We pass only one argument to with_segments() to avoid the cost
             # of joining, and we exploit the fact that getcwd() returns a
-            # fully-normalized string by storing it in _str_cached. This is
-            # used to implement Path.cwd().
+            # fully-normalized string by storing it in _str. This is used to
+            # implement Path.cwd().
             if not self.root and not self._tail:
                 result = self.with_segments(cwd)
-                result._str_cached = cwd
+                result._str = cwd
                 return result
         return self.with_segments(cwd, self)
 
