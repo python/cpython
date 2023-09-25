@@ -499,6 +499,12 @@ class FinalizationTests(TestBase):
             ''']
         proc = subprocess.run(argv, capture_output=True, text=True)
         self.assertIn('Traceback', proc.stderr)
+        if proc.returncode == 0 and support.verbose:
+            print()
+            print("--- cmd unexpected succeeded ---")
+            print(f"stdout:\n{proc.stdout}")
+            print(f"stderr:\n{proc.stderr}")
+            print("------")
         self.assertEqual(proc.returncode, 1)
 
 
