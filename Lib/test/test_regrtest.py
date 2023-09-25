@@ -500,7 +500,8 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if env_changed:
-            regex = list_regex('%s test%s altered the execution environment',
+            regex = list_regex(r'%s test%s altered the execution environment '
+                               r'\(env changed\)',
                                env_changed)
             self.check_line(output, regex)
 
