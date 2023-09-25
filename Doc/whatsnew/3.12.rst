@@ -2180,12 +2180,12 @@ although there is currently no date scheduled for their removal.
 * :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`
 * :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`
 * :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`
-* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child()`
-* :c:func:`PySlice_GetIndicesEx`
-* :c:func:`!PyUnicode_AsDecodedObject`
-* :c:func:`!PyUnicode_AsDecodedUnicode`
-* :c:func:`!PyUnicode_AsEncodedObject`
-* :c:func:`!PyUnicode_AsEncodedUnicode`
+* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child`
+* :c:func:`PySlice_GetIndicesEx`: use :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`
+* :c:func:`!PyUnicode_AsDecodedObject`: use c:func:`PyCodec_Decode`
+* :c:func:`!PyUnicode_AsDecodedUnicode`: use c:func:`PyCodec_Decode`
+* :c:func:`!PyUnicode_AsEncodedObject`: use c:func:`PyCodec_Encode`
+* :c:func:`!PyUnicode_AsEncodedUnicode`: use c:func:`PyCodec_Encode`
 * :c:func:`PyUnicode_READY`: unneeded since Python 3.12
 * :c:func:`!PyErr_Display`: use :c:func:`PyErr_DisplayException`
 * :c:func:`!_PyErr_ChainExceptions`: use ``_PyErr_ChainExceptions1``
