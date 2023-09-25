@@ -4133,6 +4133,14 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             if (PyObject_GetBuffer(cadata, &buf, PyBUF_SIMPLE)) {
                 goto error;
             }
+            assert(PyBuffer_IsContiguous(&buf, 'C'));
+            if (buf.ndim > 1) {
+                PyBuffer_Release(&buf);
+                PyErr_SetString(PyExc_TypeError,
+                                "cadata should be a contiguous buffer with "
+                                "a single dimension");
+                goto error;
+            }
             r = _add_ca_certs(self, buf.buf, buf.len, SSL_FILETYPE_ASN1);
             PyBuffer_Release(&buf);
             if (r == -1) {
