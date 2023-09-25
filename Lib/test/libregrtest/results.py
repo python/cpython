@@ -25,7 +25,7 @@ class TestResults:
         self.env_changed: TestList = []
         self.run_no_tests: TestList = []
         self.rerun: TestList = []
-        self.bad_results: list[TestResult] = []
+        self.rerun_results: list[TestResult] = []
 
         self.interrupted: bool = False
         self.test_times: list[tuple[float, TestName]] = []
@@ -87,6 +87,7 @@ class TestResults:
                 self.good.append(test_name)
             case State.ENV_CHANGED:
                 self.env_changed.append(test_name)
+                self.rerun_results.append(result)
             case State.SKIPPED:
                 self.skipped.append(test_name)
             case State.RESOURCE_DENIED:
@@ -98,7 +99,7 @@ class TestResults:
             case _:
                 if result.is_failed(fail_env_changed):
                     self.bad.append(test_name)
-                    self.bad_results.append(result)
+                    self.rerun_results.append(result)
                 else:
                     raise ValueError(f"invalid test state: {result.state!r}")
 
@@ -114,12 +115,12 @@ class TestResults:
             self.add_junit(xml_data)
 
     def need_rerun(self):
-        return bool(self.bad_results)
+        return bool(self.rerun_results)
 
     def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
-        for result in self.bad_results:
+        for result in self.rerun_results:
             tests.append(result.test_name)
 
             match_tests = result.get_rerun_match_tests()
@@ -130,7 +131,8 @@ class TestResults:
         # Clear previously failed tests
         self.rerun_bad.extend(self.bad)
         self.bad.clear()
-        self.bad_results.clear()
+        self.env_changed.clear()
+        self.rerun_results.clear()
 
         return (tuple(tests), match_tests_dict)
 
