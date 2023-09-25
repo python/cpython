@@ -260,7 +260,7 @@ values but should not rebind them):
 
    .. versionchanged:: 3.4
       Following :pep:`442`, objects with a :meth:`~object.__del__` method don't end
-      up in :attr:`gc.garbage` anymore.
+      up in :data:`gc.garbage` anymore.
 
 .. data:: callbacks
 

@@ -56,6 +56,8 @@ Additionally, there are **low-level** APIs for
 * :ref:`bridge <asyncio-futures>` callback-based libraries and code
   with async/await syntax.
 
+.. _asyncio-cli:
+
 You can experiment with an ``asyncio`` concurrent context in the REPL:
 
 .. code-block:: pycon

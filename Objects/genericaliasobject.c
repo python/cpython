@@ -1,9 +1,10 @@
 // types.GenericAlias -- used to represent e.g. list[int].
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_object.h"
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdbool.h>
 
@@ -54,8 +55,7 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     PyObject *qualname = NULL;
     PyObject *module = NULL;
     PyObject *r = NULL;
-    PyObject *tmp;
-    int err;
+    int rc;
 
     if (p == Py_Ellipsis) {
         // The Ellipsis object
@@ -63,19 +63,14 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
         goto done;
     }
 
-    if (PyObject_GetOptionalAttr(p, &_Py_ID(__origin__), &tmp) < 0) {
-        goto done;
+    if ((rc = PyObject_HasAttrWithError(p, &_Py_ID(__origin__))) > 0 &&
+        (rc = PyObject_HasAttrWithError(p, &_Py_ID(__args__))) > 0)
+    {
+        // It looks like a GenericAlias
+        goto use_repr;
     }
-    if (tmp != NULL) {
-        Py_DECREF(tmp);
-        if (PyObject_GetOptionalAttr(p, &_Py_ID(__args__), &tmp) < 0) {
-            goto done;
-        }
-        if (tmp != NULL) {
-            Py_DECREF(tmp);
-            // It looks like a GenericAlias
-            goto use_repr;
-        }
+    if (rc < 0) {
+        goto done;
     }
 
     if (PyObject_GetOptionalAttr(p, &_Py_ID(__qualname__), &qualname) < 0) {
@@ -112,13 +107,13 @@ done:
     Py_XDECREF(module);
     if (r == NULL) {
         // error if any of the above PyObject_Repr/PyUnicode_From* fail
-        err = -1;
+        rc = -1;
     }
     else {
-        err = _PyUnicodeWriter_WriteStr(writer, r);
+        rc = _PyUnicodeWriter_WriteStr(writer, r);
         Py_DECREF(r);
     }
-    return err;
+    return rc;
 }
 
 static int
@@ -252,18 +247,17 @@ _Py_make_parameters(PyObject *args)
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
-        PyObject *subst;
         // We don't want __parameters__ descriptor of a bare Python class.
         if (PyType_Check(t)) {
             continue;
         }
-        if (PyObject_GetOptionalAttr(t, &_Py_ID(__typing_subst__), &subst) < 0) {
+        int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
+        if (rc < 0) {
             Py_DECREF(parameters);
             return NULL;
         }
-        if (subst) {
+        if (rc) {
             iparam += tuple_add(parameters, iparam, t);
-            Py_DECREF(subst);
         }
         else {
             PyObject *subparams;
@@ -626,6 +620,7 @@ ga_vectorcall(PyObject *self, PyObject *const *args,
 
 static const char* const attr_exceptions[] = {
     "__class__",
+    "__bases__",
     "__origin__",
     "__args__",
     "__unpacked__",
@@ -782,9 +777,9 @@ static PyMethodDef ga_methods[] = {
 };
 
 static PyMemberDef ga_members[] = {
-    {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
-    {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
-    {"__unpacked__", T_BOOL, offsetof(gaobject, starred), READONLY},
+    {"__origin__", _Py_T_OBJECT, offsetof(gaobject, origin), Py_READONLY},
+    {"__args__", _Py_T_OBJECT, offsetof(gaobject, args), Py_READONLY},
+    {"__unpacked__", Py_T_BOOL, offsetof(gaobject, starred), Py_READONLY},
     {0}
 };
 
@@ -812,7 +807,7 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 }
 
 static PyGetSetDef ga_properties[] = {
-    {"__parameters__", ga_parameters, (setter)NULL, "Type variables in the GenericAlias.", NULL},
+    {"__parameters__", ga_parameters, (setter)NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
     {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
     {0}
 };

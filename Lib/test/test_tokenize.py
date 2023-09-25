@@ -1200,7 +1200,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
     """
 
     def _testFile(self, filename):
-        path = os.path.join(os.path.dirname(__file__), filename)
+        path = os.path.join(os.path.dirname(__file__), 'tokenizedata', filename)
         with open(path, 'rb') as f:
             TestRoundtrip.check_roundtrip(self, f)
 
@@ -1794,7 +1794,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = support.findfile("tokenize_tests.txt", subdir="tokenizedata")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1849,8 +1849,7 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
-        tempdir = os.path.dirname(fn) or os.curdir
+        tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
         # Tokenize is broken on test_pep3131.py because regular expressions are
@@ -1860,7 +1859,7 @@ class TestRoundtrip(TestCase):
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
 
-        # TODO: Remove this once we can unparse PEP 701 syntax
+        # TODO: Remove this once we can untokenize PEP 701 syntax
         testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
 
         for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
@@ -2521,7 +2520,7 @@ def"', """\
     def test_async(self):
 
         self.check_tokenize('async = 1', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     EQUAL      '='           (1, 6) (1, 7)
     NUMBER     '1'           (1, 8) (1, 9)
     """)
@@ -2530,21 +2529,21 @@ def"', """\
     NAME       'a'           (1, 0) (1, 1)
     EQUAL      '='           (1, 2) (1, 3)
     LPAR       '('           (1, 4) (1, 5)
-    ASYNC      'async'       (1, 5) (1, 10)
+    NAME       'async'       (1, 5) (1, 10)
     EQUAL      '='           (1, 11) (1, 12)
     NUMBER     '1'           (1, 13) (1, 14)
     RPAR       ')'           (1, 14) (1, 15)
     """)
 
         self.check_tokenize('async()', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     LPAR       '('           (1, 5) (1, 6)
     RPAR       ')'           (1, 6) (1, 7)
     """)
 
         self.check_tokenize('class async(Bar):pass', """\
     NAME       'class'       (1, 0) (1, 5)
-    ASYNC      'async'       (1, 6) (1, 11)
+    NAME       'async'       (1, 6) (1, 11)
     LPAR       '('           (1, 11) (1, 12)
     NAME       'Bar'         (1, 12) (1, 15)
     RPAR       ')'           (1, 15) (1, 16)
@@ -2554,13 +2553,13 @@ def"', """\
 
         self.check_tokenize('class async:pass', """\
     NAME       'class'       (1, 0) (1, 5)
-    ASYNC      'async'       (1, 6) (1, 11)
+    NAME       'async'       (1, 6) (1, 11)
     COLON      ':'           (1, 11) (1, 12)
     NAME       'pass'        (1, 12) (1, 16)
     """)
 
         self.check_tokenize('await = 1', """\
-    AWAIT      'await'       (1, 0) (1, 5)
+    NAME       'await'       (1, 0) (1, 5)
     EQUAL      '='           (1, 6) (1, 7)
     NUMBER     '1'           (1, 8) (1, 9)
     """)
@@ -2568,11 +2567,11 @@ def"', """\
         self.check_tokenize('foo.async', """\
     NAME       'foo'         (1, 0) (1, 3)
     DOT        '.'           (1, 3) (1, 4)
-    ASYNC      'async'       (1, 4) (1, 9)
+    NAME       'async'       (1, 4) (1, 9)
     """)
 
         self.check_tokenize('async for a in b: pass', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'for'         (1, 6) (1, 9)
     NAME       'a'           (1, 10) (1, 11)
     NAME       'in'          (1, 12) (1, 14)
@@ -2582,7 +2581,7 @@ def"', """\
     """)
 
         self.check_tokenize('async with a as b: pass', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'with'        (1, 6) (1, 10)
     NAME       'a'           (1, 11) (1, 12)
     NAME       'as'          (1, 13) (1, 15)
@@ -2592,45 +2591,45 @@ def"', """\
     """)
 
         self.check_tokenize('async.foo', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     DOT        '.'           (1, 5) (1, 6)
     NAME       'foo'         (1, 6) (1, 9)
     """)
 
         self.check_tokenize('async', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     """)
 
         self.check_tokenize('async\n#comment\nawait', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NEWLINE    ''            (1, 5) (1, 5)
-    AWAIT      'await'       (3, 0) (3, 5)
+    NAME       'await'       (3, 0) (3, 5)
     """)
 
         self.check_tokenize('async\n...\nawait', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NEWLINE    ''            (1, 5) (1, 5)
     ELLIPSIS   '...'         (2, 0) (2, 3)
     NEWLINE    ''            (2, 3) (2, 3)
-    AWAIT      'await'       (3, 0) (3, 5)
+    NAME       'await'       (3, 0) (3, 5)
     """)
 
         self.check_tokenize('async\nawait', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NEWLINE    ''            (1, 5) (1, 5)
-    AWAIT      'await'       (2, 0) (2, 5)
+    NAME       'await'       (2, 0) (2, 5)
     """)
 
         self.check_tokenize('foo.async + 1', """\
     NAME       'foo'         (1, 0) (1, 3)
     DOT        '.'           (1, 3) (1, 4)
-    ASYNC      'async'       (1, 4) (1, 9)
+    NAME       'async'       (1, 4) (1, 9)
     PLUS       '+'           (1, 10) (1, 11)
     NUMBER     '1'           (1, 12) (1, 13)
     """)
 
         self.check_tokenize('async def foo(): pass', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     LPAR       '('           (1, 13) (1, 14)
@@ -2647,7 +2646,7 @@ async def foo():
     await
 async += 1
 ''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     LPAR       '('           (1, 13) (1, 14)
@@ -2658,12 +2657,12 @@ async += 1
     NAME       'def'         (2, 2) (2, 5)
     NAME       'foo'         (2, 6) (2, 9)
     LPAR       '('           (2, 9) (2, 10)
-    AWAIT      'await'       (2, 10) (2, 15)
+    NAME       'await'       (2, 10) (2, 15)
     RPAR       ')'           (2, 15) (2, 16)
     COLON      ':'           (2, 16) (2, 17)
     NEWLINE    ''            (2, 17) (2, 17)
     INDENT     ''            (3, -1) (3, -1)
-    AWAIT      'await'       (3, 4) (3, 9)
+    NAME       'await'       (3, 4) (3, 9)
     EQUAL      '='           (3, 10) (3, 11)
     NUMBER     '1'           (3, 12) (3, 13)
     NEWLINE    ''            (3, 13) (3, 13)
@@ -2673,18 +2672,18 @@ async += 1
     COLON      ':'           (4, 6) (4, 7)
     NEWLINE    ''            (4, 7) (4, 7)
     INDENT     ''            (5, -1) (5, -1)
-    AWAIT      'await'       (5, 4) (5, 9)
+    NAME       'await'       (5, 4) (5, 9)
     NEWLINE    ''            (5, 9) (5, 9)
     DEDENT     ''            (6, -1) (6, -1)
     DEDENT     ''            (6, -1) (6, -1)
-    ASYNC      'async'       (6, 0) (6, 5)
+    NAME       'async'       (6, 0) (6, 5)
     PLUSEQUAL  '+='          (6, 6) (6, 8)
     NUMBER     '1'           (6, 9) (6, 10)
     NEWLINE    ''            (6, 10) (6, 10)
     """)
 
         self.check_tokenize('async def foo():\n  async for i in 1: pass', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     LPAR       '('           (1, 13) (1, 14)
@@ -2692,7 +2691,7 @@ async += 1
     COLON      ':'           (1, 15) (1, 16)
     NEWLINE    ''            (1, 16) (1, 16)
     INDENT     ''            (2, -1) (2, -1)
-    ASYNC      'async'       (2, 2) (2, 7)
+    NAME       'async'       (2, 2) (2, 7)
     NAME       'for'         (2, 8) (2, 11)
     NAME       'i'           (2, 12) (2, 13)
     NAME       'in'          (2, 14) (2, 16)
@@ -2703,14 +2702,14 @@ async += 1
     """)
 
         self.check_tokenize('async def foo(async): await', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'foo'         (1, 10) (1, 13)
     LPAR       '('           (1, 13) (1, 14)
-    ASYNC      'async'       (1, 14) (1, 19)
+    NAME       'async'       (1, 14) (1, 19)
     RPAR       ')'           (1, 19) (1, 20)
     COLON      ':'           (1, 20) (1, 21)
-    AWAIT      'await'       (1, 22) (1, 27)
+    NAME       'await'       (1, 22) (1, 27)
     """)
 
         self.check_tokenize('''\
@@ -2734,7 +2733,7 @@ def f():
     COLON      ':'           (3, 11) (3, 12)
     NAME       'pass'        (3, 13) (3, 17)
     NEWLINE    ''            (3, 17) (3, 17)
-    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'async'       (4, 2) (4, 7)
     NAME       'def'         (4, 8) (4, 11)
     NAME       'bar'         (4, 12) (4, 15)
     LPAR       '('           (4, 15) (4, 16)
@@ -2742,7 +2741,7 @@ def f():
     COLON      ':'           (4, 17) (4, 18)
     NAME       'pass'        (4, 19) (4, 23)
     NEWLINE    ''            (4, 23) (4, 23)
-    AWAIT      'await'       (6, 2) (6, 7)
+    NAME       'await'       (6, 2) (6, 7)
     EQUAL      '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
     DEDENT     ''            (6, -1) (6, -1)
@@ -2755,7 +2754,7 @@ async def f():
   async def bar(): pass
 
   await = 2''', """\
-    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'async'       (1, 0) (1, 5)
     NAME       'def'         (1, 6) (1, 9)
     NAME       'f'           (1, 10) (1, 11)
     LPAR       '('           (1, 11) (1, 12)
@@ -2770,7 +2769,7 @@ async def f():
     COLON      ':'           (3, 11) (3, 12)
     NAME       'pass'        (3, 13) (3, 17)
     NEWLINE    ''            (3, 17) (3, 17)
-    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'async'       (4, 2) (4, 7)
     NAME       'def'         (4, 8) (4, 11)
     NAME       'bar'         (4, 12) (4, 15)
     LPAR       '('           (4, 15) (4, 16)
@@ -2778,7 +2777,7 @@ async def f():
     COLON      ':'           (4, 17) (4, 18)
     NAME       'pass'        (4, 19) (4, 23)
     NEWLINE    ''            (4, 23) (4, 23)
-    AWAIT      'await'       (6, 2) (6, 7)
+    NAME       'await'       (6, 2) (6, 7)
     EQUAL      '='           (6, 8) (6, 9)
     NUMBER     '2'           (6, 10) (6, 11)
     DEDENT     ''            (6, -1) (6, -1)

@@ -717,11 +717,11 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
@@ -783,7 +783,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, expected_filters)
 
     def check_pythonmalloc(self, env_var, name):
-        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
         env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
@@ -799,6 +799,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()

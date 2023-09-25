@@ -606,7 +606,6 @@ class TestCase(object):
         else:
             stopTestRun = None
 
-        result.startTest(self)
         try:
             testMethod = getattr(self, self._testMethodName)
             if (getattr(self.__class__, "__unittest_skip__", False) or
@@ -616,6 +615,9 @@ class TestCase(object):
                             or getattr(testMethod, '__unittest_skip_why__', ''))
                 _addSkip(result, self, skip_why)
                 return result
+
+            # Increase the number of tests only if it hasn't been skipped
+            result.startTest(self)
 
             expecting_failure = (
                 getattr(self, "__unittest_expecting_failure__", False) or

@@ -3,9 +3,10 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_time.h"          // _PyTime_t
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 typedef struct {
@@ -373,7 +374,7 @@ static PyMethodDef simplequeue_methods[] = {
 };
 
 static struct PyMemberDef simplequeue_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(simplequeueobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(simplequeueobject, weakreflist), Py_READONLY},
     {NULL},
 };
 

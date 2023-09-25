@@ -9,6 +9,7 @@
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
 
 # Build system
 configure*                    @erlend-aasland @corona10
@@ -69,6 +70,7 @@ Python/traceback.c            @iritkatriel
 
 # Import (including importlib).
 **/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+/Python/import.c              @kumaraditya303
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
@@ -178,3 +180,6 @@ Doc/c-api/stable.rst          @encukou
 /Tools/clinic/**              @erlend-aasland @AlexWaygood
 /Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
 Doc/howto/clinic.rst          @erlend-aasland
+
+# WebAssembly
+/Tools/wasm/                  @brettcannon
