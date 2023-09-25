@@ -127,6 +127,8 @@ Security improvements:
 * Replace the builtin :mod:`hashlib` implementations of
   SHA1, SHA3, SHA2-384, SHA2-512, and MD5 with formally verified code from the
   `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  These builtin implementations remain as fallbacks that are only used when
+  OpenSSL does not provide them.
 
 C API improvements:
 
