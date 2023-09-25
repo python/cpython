@@ -257,7 +257,7 @@ def ci(pull_request):
         print('No whitespace issues found')
     else:
         count = len(fixed)
-        print(f'Please fix the {count} {n_files_str(count)} with whitespace issues')
+        print(f'Please fix the {n_files_str(count)} with whitespace issues')
         print('(on Unix you can run `make patchcheck` to make the fixes)')
         sys.exit(1)
 
