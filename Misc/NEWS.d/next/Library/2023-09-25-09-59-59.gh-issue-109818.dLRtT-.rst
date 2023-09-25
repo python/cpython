@@ -1,2 +1,2 @@
-Fix :func:`repllib.recursive_repl` not copying ``__type_params__`` from
+Fix :func:`reprlib.recursive_repr` not copying ``__type_params__`` from
 decorated function.
