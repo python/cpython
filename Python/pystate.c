@@ -1585,6 +1585,9 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
     if (tstate->on_delete != NULL) {
+        assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
+               || (tstate->interp->finalizing
+                   && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
         tstate->on_delete(tstate->on_delete_data);
     }
 
