@@ -77,7 +77,7 @@ and :keyword:`type` statement improve ergonomics for using :term:`generic types
 <generic type>` and :term:`type aliases <type alias>` with static type checkers.
 
 This article doesn't attempt to provide a complete specification of all new features,
-but instead tries to give a convenient overview.
+but instead gives a convenient overview.
 For full details, you should refer to the documentation,
 such as the  :ref:`Library Reference <library-index>`
 and :ref:`Language Reference <reference-index>`.
