@@ -93,6 +93,13 @@ Important deprecations, removals or restrictions:
   `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
   for advice on its replacement.
 
+* :gh:`95299`: Do not pre-install ``setuptools`` in virtual environments
+  created with :mod:`venv`.
+  This means that ``distutils``, ``setuptools``, ``pkg_resources``,
+  and ``easy_install`` will no longer available by default; to access these
+  run ``pip install setuptools`` in the :ref:`activated <venv-explanation>`
+  virtual environment.
+
 Improved Error Messages
 =======================
 
