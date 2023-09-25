@@ -229,7 +229,8 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
         _Py_atomic_store_relaxed(&interp->_finalizing_id, 0);
     }
     else {
-        assert(tstate->thread_id == PyThread_get_thread_ident());
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
         _Py_atomic_store_relaxed(&interp->_finalizing_id, tstate->thread_id);
     }
 }
