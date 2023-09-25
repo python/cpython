@@ -4,6 +4,7 @@ from test.support import run_with_locale, cpython_only
 import collections.abc
 from collections import namedtuple
 import copy
+import _datetime
 import gc
 import inspect
 import pickle
@@ -635,6 +636,9 @@ class TypesTests(unittest.TestCase):
             exc = e
         self.assertIsInstance(exc.__traceback__, types.TracebackType)
         self.assertIsInstance(exc.__traceback__.tb_frame, types.FrameType)
+
+    def test_capsule_type(self):
+        self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
 
 class UnionTests(unittest.TestCase):
