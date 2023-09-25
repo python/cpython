@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
@@ -301,23 +301,41 @@ class CAPITest(unittest.TestCase):
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount')
-    def test_negative_refcount(self):
+    def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """)
+        code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
 
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
@@ -2067,7 +2085,15 @@ class Test_testcapi(unittest.TestCase):
 class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
-                    if name.startswith('test_'))
+                    if name.startswith('test_')
+                    and not name.startswith('test_lock_'))
+
+
+@threading_helper.requires_working_threading()
+class Test_PyLock(unittest.TestCase):
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_lock_'))
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")

@@ -44,7 +44,7 @@ extern void _PyEval_SignalReceived(PyInterpreterState *interp);
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
-    int (*func)(void *),
+    _Py_pending_call_func func,
     void *arg,
     int mainthreadonly);
 
