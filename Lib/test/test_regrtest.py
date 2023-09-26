@@ -23,8 +23,9 @@ import unittest
 from test import support
 from test.support import os_helper, TestStats, without_optimizer
 from test.libregrtest import cmdline
-from test.libregrtest import utils
+from test.libregrtest import main
 from test.libregrtest import setup
+from test.libregrtest import utils
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -75,8 +76,15 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_timeout(self):
         ns = self.parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
+
+        # negative, zero and empty string are treated as "no timeout"
+        for value in ('-1', '0', ''):
+            with self.subTest(value=value):
+                ns = self.parse_args([f'--timeout={value}'])
+                self.assertEqual(ns.timeout, None)
+
         self.checkError(['--timeout'], 'expected one argument')
-        self.checkError(['--timeout', 'foo'], 'invalid float value')
+        self.checkError(['--timeout', 'foo'], 'invalid timeout value:')
 
     def test_wait(self):
         ns = self.parse_args(['--wait'])
@@ -365,6 +373,44 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_unknown_option(self):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
+
+    def check_ci_mode(self, args, use_resources):
+        ns = cmdline._parse_args(args)
+        if utils.MS_WINDOWS:
+            self.assertTrue(ns.nowindows)
+
+        # Check Regrtest attributes which are more reliable than Namespace
+        # which has an unclear API
+        regrtest = main.Regrtest(ns)
+        self.assertNotEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.want_rerun)
+        self.assertTrue(regrtest.randomize)
+        self.assertIsNone(regrtest.random_seed)
+        self.assertTrue(regrtest.fail_env_changed)
+        self.assertTrue(regrtest.fail_rerun)
+        self.assertTrue(regrtest.print_slowest)
+        self.assertTrue(regrtest.output_on_failure)
+        self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
+        return regrtest
+
+    def test_fast_ci(self):
+        args = ['--fast-ci']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources)
+        self.assertEqual(regrtest.timeout, 10 * 60)
+
+    def test_fast_ci_resource(self):
+        # it should be possible to override resources
+        args = ['--fast-ci', '-u', 'network']
+        use_resources = ['network']
+        self.check_ci_mode(args, use_resources)
+
+    def test_slow_ci(self):
+        args = ['--slow-ci']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        regrtest = self.check_ci_mode(args, use_resources)
+        self.assertEqual(regrtest.timeout, 20 * 60)
 
 
 @dataclasses.dataclass(slots=True)
