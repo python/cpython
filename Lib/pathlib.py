@@ -1019,7 +1019,7 @@ class Path(PurePath):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
+                    prefix_len = len(str(self)) + bool(self._tail)
                     match = _compile_pattern(str(path_pattern), sep, case_sensitive)
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
