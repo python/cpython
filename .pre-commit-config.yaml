@@ -19,6 +19,14 @@ repos:
       - id: trailing-whitespace
         types_or: [c, python, rst]
 
+  - repo: local
+    hooks:
+      - id: c-file-whitespace
+        name: "Check C file whitespace"
+        language: pygrep
+        entry: '\t'
+        types_or: ['c', 'c++']
+
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
     hooks:

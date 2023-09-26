@@ -191,20 +191,6 @@ def normalize_whitespace(file_paths):
     return fixed
 
 
-@status("Fixing C file whitespace", info=report_modified_files)
-def normalize_c_whitespace(file_paths):
-    """Report if any C files """
-    fixed = []
-    for path in file_paths:
-        abspath = os.path.join(SRCDIR, path)
-        with open(abspath, 'r') as f:
-            if '\t' not in f.read():
-                continue
-        untabify.process(abspath, 8, verbose=False)
-        fixed.append(path)
-    return fixed
-
-
 ws_re = re.compile(br'\s+(\r?\n)$')
 
 @status("Fixing docs whitespace", info=report_modified_files)
@@ -272,7 +258,6 @@ def ci(pull_request):
                  fn.endswith(('.rst', '.inc'))]
     fixed = []
     fixed.extend(normalize_whitespace(python_files))
-    fixed.extend(normalize_c_whitespace(c_files))
     fixed.extend(normalize_docs_whitespace(doc_files))
     if not fixed:
         print('No whitespace issues found')
@@ -285,14 +270,11 @@ def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
-    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
     misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
-    # C rules enforcement.
-    normalize_c_whitespace(c_files)
     # Doc whitespace enforcement.
     normalize_docs_whitespace(doc_files)
     # Docs updated.
@@ -307,10 +289,12 @@ def main():
     regenerated_pyconfig_h_in(file_paths)
 
     # Test suite run and passed.
-    if python_files or c_files:
-        end = " and check for refleaks?" if c_files else "?"
-        print()
-        print("Did you run the test suite" + end)
+    has_c_files = any(fn for fn in file_paths if fn.endswith(('.c', '.h')))
+    print()
+    if has_c_files:
+        print("Did you run the test suite and check for refleaks?")
+    elif python_files:
+        print("Did you run the test suite?")
 
 
 if __name__ == '__main__':
