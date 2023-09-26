@@ -1,2 +1,2 @@
 from test.libregrtest.main import main
-main()
+main(reexec=True)

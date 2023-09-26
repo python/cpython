@@ -23,11 +23,7 @@ def is_python_flag(arg):
 
 
 def main(regrtest_args):
-    args = [sys.executable,
-            '-u',                 # Unbuffered stdout and stderr
-            '-W', 'default',      # Warnings set to 'default'
-            '-bb',                # Warnings about bytes/bytearray
-            ]
+    args = [sys.executable]
 
     cross_compile = '_PYTHON_HOST_PLATFORM' in os.environ
     if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
@@ -47,7 +43,6 @@ def main(regrtest_args):
         }
     else:
         environ = os.environ.copy()
-        args.append("-E")
 
     # Allow user-specified interpreter options to override our defaults.
     args.extend(test.support.args_from_interpreter_flags())
@@ -70,7 +65,8 @@ def main(regrtest_args):
 
     args.extend(regrtest_args)
 
-    print(shlex.join(args))
+    print(shlex.join(args), flush=True)
+
     if sys.platform == 'win32':
         from subprocess import call
         sys.exit(call(args))
