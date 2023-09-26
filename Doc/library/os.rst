@@ -1753,7 +1753,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    make sense to block because there are no writers connected to the write end
    of the pipe.
 
-   See man page :manpage:`splice(2)` for more information.
+   ..seealso:: The :manpage:`splice(2)` man page.
 
    .. availability:: Linux >= 2.6.17 with glibc >= 2.5
 
