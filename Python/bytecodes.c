@@ -658,6 +658,7 @@ dummy_func(
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->return_offset = 0;
+            frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
@@ -1086,12 +1087,14 @@ DUMP_FRAME(">> INSTRUMENTED_YIELD_VALUE");
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
+if (VERBOSE) {
 fprintf(stderr, "YIELD VALUE: ");
 _PyObject_Dump(retval);
 fprintf(stderr, "\n");
+}
             _PyFrame_StackPush(frame, retval);
 DUMP_FRAME(">> YIELD_VALUE");
-            frame->instr_ptr += frame->new_return_offset;
+            frame->instr_ptr += frame->yield_offset;
             frame->new_return_offset =  frame->yield_offset = 0;
             frame->prev_instr = frame->instr_ptr - 1;
             goto resume_frame;
@@ -2679,6 +2682,7 @@ DUMP_FRAME(">> YIELD_VALUE");
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             frame->return_offset = oparg;
+            frame->yield_offset = next_instr - frame->instr_ptr;
             frame->new_return_offset = oparg + next_instr - frame->instr_ptr;
             DISPATCH_INLINED(gen_frame);
         }
@@ -3016,6 +3020,7 @@ DUMP_FRAME("CALL - not normal python func2");
             ERROR_IF(res == NULL, error);
 DUMP_FRAME("CALL - END");
             frame->return_offset = 0;
+            frame->yield_offset = 0;
             frame->new_return_offset = 0;
             CHECK_EVAL_BREAKER();
         }
@@ -3074,6 +3079,7 @@ DUMP_FRAME("CALL - END");
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
+            frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
@@ -3146,6 +3152,7 @@ DUMP_FRAME("_PUSH_FRAME");
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->return_offset = 0;
+            frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
@@ -3226,6 +3233,7 @@ DUMP_FRAME("_PUSH_FRAME");
             frame->prev_instr = next_instr - 1;
             frame->instr_ptr = next_instr;
             frame->return_offset = 0;
+            frame->yield_offset = 0;
             frame->new_return_offset = 0;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -3597,6 +3605,7 @@ DUMP_FRAME("_PUSH_FRAME");
                     goto error;
                 }
                 frame->return_offset = 0;
+                frame->yield_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
             }
@@ -3701,6 +3710,7 @@ DUMP_FRAME("CALL_FUNCTION_EX3");
                         goto error;
                     }
                     frame->return_offset = 0;
+                    frame->yield_offset = 0;
                     frame->new_return_offset = next_instr - frame->instr_ptr;
 DUMP_FRAME("CALL_FUNCTION_EX3a");
                     DISPATCH_INLINED(new_frame);

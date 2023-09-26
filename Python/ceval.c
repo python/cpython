@@ -743,6 +743,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Jump back to the last instruction executed... */ \
     DUMP_FRAME("SET_LOCALS_FROM_FRAME:"); \
     next_instr = frame->instr_ptr + frame->new_return_offset; \
+    frame->new_return_offset = frame->yield_offset = 0; \
     assert (next_instr == frame->prev_instr + 1); \
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
@@ -943,6 +944,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
+    frame->prev_instr = frame->instr_ptr + frame->new_return_offset -1; // for the assertion in SET_LOCALS_FROM_FRAME
     DUMP_FRAME("exit_unwind:");
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */
