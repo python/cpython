@@ -1,0 +1,1 @@
+Expose the type of PyCapsule objects as ``types.CapsuleType``.

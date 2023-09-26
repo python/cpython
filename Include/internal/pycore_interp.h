@@ -186,8 +186,9 @@ struct _is {
     _PyOptimizerObject *optimizer;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
+    uint32_t next_func_version;
 
-    _Py_Monitors monitors;
+    _Py_GlobalMonitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;

@@ -1,2 +1,2 @@
-from test.libregrtest import main
-main()
+from test.libregrtest.main import main
+main(reexec=True)
