@@ -1269,6 +1269,7 @@ class _PathBase(PurePath):
         def split(path):
             return path._from_parsed_parts(path.drive, path.root, []), path._tail[::-1]
 
+        missing = False
         link_count = 0
         stat_cache = {}
         target_cache = {}
@@ -1284,6 +1285,8 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
+                path = path._make_child_relpath(part)
+            elif missing:
                 path = path._make_child_relpath(part)
             else:
                 lookup_path = path
@@ -1312,10 +1315,7 @@ class _PathBase(PurePath):
                     if strict:
                         raise
                     else:
-                        # Append remaining path segments without further processing.
-                        for part in reversed(parts):
-                            path = path._make_child_relpath(part)
-                        break
+                        missing = True
         path._resolving = False
         return path
 
