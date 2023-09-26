@@ -938,11 +938,14 @@ class Path(PurePath):
         return os.scandir(self)
 
     def _make_child_relpath(self, name):
+        path_str = str(self)
         tail = self._tail
         if tail:
-            path_str = f'{self}{self.pathmod.sep}{name}'
+            path_str = f'{path_str}{self.pathmod.sep}{name}'
+        elif path_str != '.':
+            path_str = f'{path_str}{name}'
         else:
-            path_str = f'{self}{name}'
+            path_str = name
         path = self.with_segments(path_str)
         path._str = path_str
         path._drv = self.drive
@@ -1019,7 +1022,7 @@ class Path(PurePath):
                     paths = _select_recursive(paths, dir_only, follow_symlinks)
 
                     # Filter out paths that don't match pattern.
-                    prefix_len = len(str(self)) + bool(self._tail)
+                    prefix_len = len(str(self._make_child_relpath('_'))) - 1
                     match = _compile_pattern(str(path_pattern), sep, case_sensitive)
                     paths = (path for path in paths if match(str(path), prefix_len))
                     return paths
