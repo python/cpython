@@ -777,12 +777,6 @@ handle_signals(PyThreadState *tstate)
     return 0;
 }
 
-static inline int
-maybe_has_pending_calls(PyInterpreterState *interp)
-{
-    return _Py_eval_breaker_bit_is_set(interp, _PY_CALLS_TO_DO_BIT) ? 1 : 0;
-}
-
 static int
 _make_pending_calls(struct _pending_calls *pending)
 {
@@ -1003,7 +997,7 @@ _Py_HandlePending(PyThreadState *tstate)
     }
 
     /* Pending calls */
-    if (maybe_has_pending_calls(interp)) {
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_CALLS_TO_DO_BIT)) {
         if (make_pending_calls(interp) != 0) {
             return -1;
         }
@@ -1033,13 +1027,15 @@ _Py_HandlePending(PyThreadState *tstate)
     }
 
     /* Check for asynchronous exception. */
-    if (tstate->async_exc != NULL) {
-        PyObject *exc = tstate->async_exc;
-        tstate->async_exc = NULL;
+    if (_Py_eval_breaker_bit_is_set(interp, _PY_ASYNC_EXCEPTION_BIT)) {
         _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 0);
-        _PyErr_SetNone(tstate, exc);
-        Py_DECREF(exc);
-        return -1;
+        if (tstate->async_exc != NULL) {
+            PyObject *exc = tstate->async_exc;
+            tstate->async_exc = NULL;
+            _PyErr_SetNone(tstate, exc);
+            Py_DECREF(exc);
+            return -1;
+        }
     }
     return 0;
 }
