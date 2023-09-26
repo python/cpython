@@ -28,6 +28,7 @@
 #include "microprotocols.h"
 #include "row.h"
 #include "blob.h"
+#include "util.h"
 
 #if SQLITE_VERSION_NUMBER < 3007015
 #error "SQLite 3.7.15 or higher required"
@@ -99,6 +100,35 @@ pysqlite_complete_statement_impl(PyObject *module, const char *statement)
     } else {
         return Py_NewRef(Py_False);
     }
+}
+
+/*[clinic input]
+_sqlite3.status as pysqlite_status
+
+    op: int
+    resetFlag: int
+
+# TODO update
+Checks if a string contains a complete SQL statement.
+[clinic start generated code]*/
+
+static PyObject *
+pysqlite_status_impl(PyObject *module, int op, int resetFlag)
+/*[clinic end generated code: output=e55f1ff1952df558 input=ac45d257375bb828]*/
+{
+    int statement = op;
+    int current = -1;
+    int highwater = -1;
+
+    int rc = sqlite3_status(op, &current, &highwater, resetFlag);
+
+//    if (rc != SQLITE_OK) {
+//        _pysqlite_seterror(state, db);
+//        return NULL;
+//    }
+
+    // TODO: create a structure to return both
+    return PyLong_FromLong(current);
 }
 
 /*[clinic input]
@@ -271,6 +301,7 @@ load_functools_lru_cache(PyObject *module)
 static PyMethodDef module_methods[] = {
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
+    PYSQLITE_STATUS_METHODDEF
     PYSQLITE_CONNECT_METHODDEF
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_ENABLE_SHARED_CACHE_METHODDEF
@@ -535,6 +566,16 @@ add_integer_constants(PyObject *module) {
 #if SQLITE_VERSION_NUMBER >= 3008007
     ADD_INT(SQLITE_LIMIT_WORKER_THREADS);
 #endif
+    ADD_INT(SQLITE_STATUS_MEMORY_USED);
+    ADD_INT(SQLITE_STATUS_PAGECACHE_USED);
+    ADD_INT(SQLITE_STATUS_PAGECACHE_OVERFLOW);
+    ADD_INT(SQLITE_STATUS_SCRATCH_USED);  /* NOT USED */
+    ADD_INT(SQLITE_STATUS_SCRATCH_OVERFLOW);  /* NOT USED */
+    ADD_INT(SQLITE_STATUS_MALLOC_SIZE);
+    ADD_INT(SQLITE_STATUS_PARSER_STACK);
+    ADD_INT(SQLITE_STATUS_PAGECACHE_SIZE);
+    ADD_INT(SQLITE_STATUS_SCRATCH_SIZE);  /* NOT USED */
+    ADD_INT(SQLITE_STATUS_MALLOC_COUNT);
 #undef ADD_INT
     return 0;
 }

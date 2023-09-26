@@ -46,6 +46,45 @@ exit:
     return return_value;
 }
 
+
+
+PyDoc_STRVAR(pysqlite_status__doc__,
+"status($module, /, statement)\n"
+"--\n"
+"\n"
+"Retrieve runtime status information about the performance of SQLite.");
+
+#define PYSQLITE_STATUS_METHODDEF    \
+    {"status", _PyCFunction_CAST(pysqlite_status), METH_FASTCALL|METH_KEYWORDS, pysqlite_status__doc__},
+
+static PyObject *
+pysqlite_status_impl(PyObject *module, int op, int resetFlag);
+
+static PyObject *
+pysqlite_status(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"op", "resultFlag", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "status", 0};
+    PyObject *argsbuf[2];
+    int op;
+    int resultFlag;
+
+    // TODO: handle kwargs
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    op = PyLong_AsLong(args[0]);
+    resultFlag = PyLong_AsLong(args[1]);
+    return_value = pysqlite_status_impl(module, op, resultFlag);
+
+exit:
+    return return_value;
+}
+
+
+
 PyDoc_STRVAR(pysqlite_enable_shared_cache__doc__,
 "enable_shared_cache($module, /, do_enable)\n"
 "--\n"
