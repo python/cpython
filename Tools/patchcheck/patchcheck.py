@@ -253,7 +253,6 @@ def ci(pull_request):
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
-    c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
     fixed = []
