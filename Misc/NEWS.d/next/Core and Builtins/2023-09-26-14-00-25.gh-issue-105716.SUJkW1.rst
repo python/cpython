@@ -1,0 +1,3 @@
+Subinterpreters now correctly handle the case where they have threads
+running in the background.  Before, such threads would interfere with
+cleaning up and destroying them, as well as prevent running another script.
