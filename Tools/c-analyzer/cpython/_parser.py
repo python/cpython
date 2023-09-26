@@ -89,9 +89,6 @@ Python/abstract_interp_cases.c.h
 # not actually source
 Python/bytecodes.c
 
-# Fuzzers, these are meant to have global state.
-Modules/_xxtestfuzz/fuzzer.c
-
 # @end=conf@
 ''')
 
