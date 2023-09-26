@@ -425,7 +425,7 @@ class Regrtest:
         if (self.want_header
             or not(self.pgo or self.quiet or self.single_test_run
                    or tests or self.cmdline_args)):
-            display_header()
+            display_header(self.use_resources)
 
         if self.randomize:
             print("Using random seed", self.random_seed)

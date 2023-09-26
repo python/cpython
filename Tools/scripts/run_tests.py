@@ -18,9 +18,6 @@ def is_multiprocess_flag(arg):
     return arg.startswith('-j') or arg.startswith('--multiprocess')
 
 
-def is_resource_use_flag(arg):
-    return arg.startswith('-u') or arg.startswith('--use')
-
 def is_python_flag(arg):
     return arg.startswith('-p') or arg.startswith('--python')
 
@@ -56,20 +53,13 @@ def main(regrtest_args):
     args.extend(test.support.args_from_interpreter_flags())
 
     args.extend(['-m', 'test',    # Run the test suite
-                 '-r',            # Randomize test order
-                 '-w',            # Re-run failed tests in verbose mode
+                 '--fast-ci',     # Fast Continuous Integration mode
                  ])
-    if sys.platform == 'win32':
-        args.append('-n')         # Silence alerts under Windows
     if not any(is_multiprocess_flag(arg) for arg in regrtest_args):
         if cross_compile and hostrunner:
             # For now use only two cores for cross-compiled builds;
             # hostrunner can be expensive.
             args.extend(['-j', '2'])
-        else:
-            args.extend(['-j', '0'])  # Use all CPU cores
-    if not any(is_resource_use_flag(arg) for arg in regrtest_args):
-        args.extend(['-u', 'all,-largefile,-audio,-gui'])
 
     if cross_compile and hostrunner:
         # If HOSTRUNNER is set and -p/--python option is not given, then
