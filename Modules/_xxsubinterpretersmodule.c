@@ -434,6 +434,10 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     if (interp != tstate->interp) {
         // XXX Using the "head" thread isn't strictly correct.
         tstate = PyInterpreterState_ThreadHead(interp);
+        assert(tstate != NULL);
+        while(tstate->next != NULL) {
+            tstate = tstate->next;
+        }
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
@@ -558,6 +562,10 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Destroy the interpreter.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    assert(tstate != NULL);
+    while(tstate->next != NULL) {
+        tstate = tstate->next;
+    }
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
