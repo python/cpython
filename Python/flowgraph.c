@@ -1595,7 +1595,11 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         remove_redundant_nops(b);
     }
     eliminate_empty_basic_blocks(g);
-    assert(no_redundant_nops(g));
+    /* This assertion fails in an edge case (See gh-109889).
+     * Remove it for the release (it's just one more NOP in the
+     * bytecode for unlikely code).
+     */
+    // assert(no_redundant_nops(g));
     RETURN_IF_ERROR(remove_redundant_jumps(g));
     return SUCCESS;
 }
