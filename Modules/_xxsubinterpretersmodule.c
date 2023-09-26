@@ -389,7 +389,6 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
     // Run the string (see PyRun_SimpleStringFlags).
     PyObject *result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
-    PyInterpreterState_SetNotRunningMain(interp);
     Py_DECREF(ns);
     if (result == NULL) {
         goto error;
@@ -397,6 +396,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     else {
         Py_DECREF(result);  // We throw away the result.
     }
+    PyInterpreterState_SetNotRunningMain(interp);
 
     *sharedexc = no_exception;
     return 0;
