@@ -222,7 +222,7 @@ _Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)
 static inline bool
 _Py_eval_breaker_bit_is_set(PyInterpreterState *interp, int32_t bit)
 {
-    return _Py_atomic_load_uintptr(&interp->ceval.eval_breaker) & (((uintptr_t)1) << bit);
+    return _Py_atomic_load_uintptr_relaxed(&interp->ceval.eval_breaker) & (((uintptr_t)1) << bit);
 }
 
 
