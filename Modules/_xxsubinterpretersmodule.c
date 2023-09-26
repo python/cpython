@@ -438,6 +438,16 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
         while(tstate->next != NULL) {
             tstate = tstate->next;
         }
+        // XXX Drop this redundant check once we stop re-using
+        // tstates that might already be in use.
+        if (PyInterpreterState_IsRunningMain(interp)) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "interpreter already running");
+            if (shared != NULL) {
+                _sharedns_free(shared);
+            }
+            return -1;
+        }
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
