@@ -274,31 +274,31 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
     if include_hidden:
-        one_segment = f'{not_sep}+'
+        one_last_segment = f'{not_sep}+'
+        one_segment = f'{one_last_segment}{any_sep}'
         any_segments = f'(?:.+{any_sep})?'
-        any_final_segments = '.*'
+        any_last_segments = '.*'
     else:
-        one_segment = f'[^{escaped_seps}.]{not_sep}*'
-        any_segments = fr'(?:{one_segment}{any_sep})*'
-        any_final_segments = fr'{any_segments}(?:{one_segment})?'
+        one_last_segment = f'[^{escaped_seps}.]{not_sep}*'
+        one_segment = f'{one_last_segment}{any_sep}'
+        any_segments = fr'(?:{one_segment})*'
+        any_last_segments = fr'{any_segments}(?:{one_last_segment})?'
 
     results = []
     parts = re.split(any_sep, pat)
     last_part_idx = len(parts) - 1
     for idx, part in enumerate(parts):
+        if part == '*':
+            results.append(one_segment if idx < last_part_idx else one_last_segment)
+            continue
         if recursive:
             if part == '**':
-                if idx < last_part_idx:
-                    results.append(any_segments)
-                else:
-                    results.append(any_final_segments)
+                results.append(any_segments if idx < last_part_idx else any_last_segments)
                 continue
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
-        if part == '*':
-            results.append(one_segment)
-        else:
-            if not (include_hidden or part.startswith('.')):
+        if part:
+            if not include_hidden and part[0] in '*?':
                 results.append(r'(?!\.)')
             results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
         if idx < last_part_idx:
