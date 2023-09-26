@@ -1718,9 +1718,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
 
-   *flags* argument is a bit mask that is composed by ORing
-   together zero or more of the following: :const:`SPLICE_F_MOVE`,
-   :const:`SPLICE_F_NONBLOCK`, and :const:`SPLICE_F_MORE`.
+   The splicing behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
 
    * If :const:`SPLICE_F_MOVE` is specified,
      the kernel is asked to move pages instead of copying,
