@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import shlex
 import sys
 import time
 
@@ -20,7 +21,7 @@ from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir,
+    display_header, cleanup_temp_dir, print_warning,
     MS_WINDOWS)
 
 
@@ -47,7 +48,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace):
+    def __init__(self, ns: Namespace, reexec: bool = False):
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
@@ -69,6 +70,7 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+        self.want_reexec: bool = (reexec and not ns.no_reexec)
 
         # Select tests
         if ns.match_tests:
@@ -95,6 +97,7 @@ class Regrtest:
         self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
+        self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
         self.fail_fast: bool = ns.failfast
         self.fail_env_changed: bool = ns.fail_env_changed
         self.fail_rerun: bool = ns.fail_rerun
@@ -483,7 +486,37 @@ class Regrtest:
                 # processes.
                 return self._run_tests(selected, tests)
 
+    def _reexecute_python(self):
+        if self.python_cmd:
+            # Do nothing if --python=cmd option is used
+            return
+
+        python_opts = [
+            '-u',                 # Unbuffered stdout and stderr
+            '-W', 'default',      # Add warnings filter 'default'
+            '-bb',                # Error on bytes/str comparison
+            '-E',                 # Ignore PYTHON* environment variables
+        ]
+
+        cmd = [*sys.orig_argv, "--no-reexec"]
+        cmd[1:1] = python_opts
+
+        # Make sure that messages before execv() are logged
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        try:
+            os.execv(cmd[0], cmd)
+            # execv() do no return and so we don't get to this line on success
+        except OSError as exc:
+            cmd_text = shlex.join(cmd)
+            print_warning(f"Failed to reexecute Python: {exc!r}\n"
+                          f"Command: {cmd_text}")
+
     def main(self, tests: TestList | None = None):
+        if self.want_reexec and self.ci_mode:
+            self._reexecute_python()
+
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
 
@@ -515,7 +548,7 @@ class Regrtest:
         sys.exit(exitcode)
 
 
-def main(tests=None, **kwargs):
+def main(tests=None, reexec=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns).main(tests=tests)
+    Regrtest(ns, reexec=reexec).main(tests=tests)
