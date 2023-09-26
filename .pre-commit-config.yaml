@@ -26,6 +26,8 @@ repos:
         language: pygrep
         entry: '\t'
         types_or: ['c', 'c++']
+        # Don't check the style of copies directories containing external libraries
+        exclude: '^Modules/(_decimal/libmpdec|expat|zlib)/.*$'
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8

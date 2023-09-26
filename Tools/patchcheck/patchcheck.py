@@ -8,16 +8,8 @@ import subprocess
 import sysconfig
 
 import reindent
-import untabify
 
 
-# Excluded directories which are copies of external libraries:
-# don't check their coding style
-EXCLUDE_DIRS = [
-    os.path.join('Modules', '_decimal', 'libmpdec'),
-    os.path.join('Modules', 'expat'),
-    os.path.join('Modules', 'zlib'),
-    ]
 SRCDIR = sysconfig.get_config_var('srcdir')
 
 
@@ -147,15 +139,8 @@ def changed_files(base_branch=None):
     else:
         sys.exit('need a git checkout to get modified files')
 
-    filenames2 = []
-    for filename in filenames:
-        # Normalize the path to be able to match using .startswith()
-        filename = os.path.normpath(filename)
-        if any(filename.startswith(path) for path in EXCLUDE_DIRS):
-            # Exclude the file
-            continue
-        filenames2.append(filename)
-
+    # Normalize the path to be able to match using .startswith()
+    filenames2 = list(map(os.path.normpath, filenames))
     return filenames2
 
 
