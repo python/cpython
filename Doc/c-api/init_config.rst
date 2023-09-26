@@ -878,6 +878,17 @@ PyConfig
 
       .. versionadded:: 3.12
 
+   .. c:member:: int cpu_count
+      If the value of <cpu_count> is not ``-1`` then it will override
+      the return value of :func:`cpu_count` into <cpu_count>.
+
+      Configured by the :samp:`-X cpu_count={n}` command line
+      flag or the :envvar:`PYTHONCPUCOUNT` environment variable.
+
+      Default: ``-1``, it will follow the original behavior of :func:`cpu_count`.
+
+      .. versionadded:: 3.13
+
    .. c:member:: int isolated
 
       If greater than ``0``, enable isolated mode:
