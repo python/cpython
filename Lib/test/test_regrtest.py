@@ -382,7 +382,8 @@ class ParseArgsTestCase(unittest.TestCase):
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
         regrtest = main.Regrtest(ns)
-        self.assertNotEqual(regrtest.num_workers, 0)
+        self.assertTrue(regrtest.ci_mode)
+        self.assertEqual(regrtest.num_workers, -1)
         self.assertTrue(regrtest.want_rerun)
         self.assertTrue(regrtest.randomize)
         self.assertIsNone(regrtest.random_seed)
@@ -1959,6 +1960,61 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--python", python_cmd, "-j0", *tests)
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
+
+    def check_reexec(self, option):
+        # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+            try:
+                from _testinternalcapi import get_config
+            except ImportError:
+                get_config = None
+
+            class WorkerTests(unittest.TestCase):
+                @unittest.skipUnless(get_config is None, 'need get_config()')
+                def test_config(self):
+                    config = get_config()['config']
+                    # -u option
+                    self.assertEqual(config['buffered_stdio'], 0)
+                    # -W default option
+                    self.assertTrue(config['warnoptions'], ['default'])
+                    # -bb option
+                    self.assertTrue(config['bytes_warning'], 2)
+                    # -E option
+                    self.assertTrue(config['use_environment'], 0)
+
+                # test if get_config() is not available
+                def test_unbuffered(self):
+                    # -u option
+                    self.assertFalse(sys.stdout.line_buffering)
+                    self.assertFalse(sys.stderr.line_buffering)
+
+                def test_python_opts(self):
+                    # -W default option
+                    self.assertTrue(sys.warnoptions, ['default'])
+                    # -bb option
+                    self.assertEqual(sys.flags.bytes_warning, 2)
+                    # -E option
+                    self.assertTrue(sys.flags.ignore_environment)
+        """)
+        testname = self.create_test(code=code)
+
+        cmd = [sys.executable,
+               "-m", "test", option,
+               f'--testdir={self.tmptestdir}',
+               testname]
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              text=True)
+        self.assertEqual(proc.returncode, 0, proc)
+
+    def test_reexec_fast_ci(self):
+        self.check_reexec("--fast-ci")
+
+    def test_reexec_slow_ci(self):
+        self.check_reexec("--slow-ci")
 
 
 class TestUtils(unittest.TestCase):
