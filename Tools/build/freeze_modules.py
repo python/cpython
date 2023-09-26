@@ -647,7 +647,7 @@ def regen_pcbuild(modules):
     filterlines = []
     corelines = []
     deepfreezemappingsfile = f'$(IntDir)\\{DEEPFREEZE_MAPPING_FNAME}'
-    deepfreezerules = [f'\t<Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "{deepfreezemappingsfile}" -o "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\' />']
+    deepfreezerules = [f'      <Exec Command=\'$(PythonForBuild) "$(PySourcePath)Tools\\build\\deepfreeze.py" -f "{deepfreezemappingsfile}" -o "$(PySourcePath)Python\\deepfreeze\\deepfreeze.c"\' />']
     deepfreezemappings = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
