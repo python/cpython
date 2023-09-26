@@ -1124,10 +1124,7 @@ PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 int
 PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main == NULL) {
-        return 0;
-    }
-    return PyThreadState_IsRunning(interp->threads.main);
+    return (interp->threads.main != NULL);
 }
 
 
@@ -1716,13 +1713,6 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
-}
-
-
-int
-PyThreadState_IsRunning(PyThreadState *tstate)
-{
-    return tstate->current_frame != NULL;
 }
 
 

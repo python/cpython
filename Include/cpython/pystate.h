@@ -214,7 +214,6 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 PyAPI_FUNC(int) PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) PyInterpreterState_IsRunningMain(PyInterpreterState *);
-PyAPI_FUNC(int) PyThreadState_IsRunning(PyThreadState *);
 
 
 // Disable tracing and profiling.
