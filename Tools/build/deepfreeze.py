@@ -518,7 +518,7 @@ def main() -> None:
             print(f"Reading targets from {args.file}")
         with open(args.file, "rt", encoding="utf-8-sig") as fin:
             rules = [x.strip() for x in fin]
-    else args.args:
+    else:
         rules = args.args
 
     with open(output, "w", encoding="utf-8") as file:
