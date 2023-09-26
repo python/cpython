@@ -400,6 +400,12 @@ class ParseArgsTestCase(unittest.TestCase):
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 10 * 60)
 
+    def test_fast_ci_resource(self):
+        # it should be possible to override resources
+        args = ['--fast-ci', '-u', 'network']
+        use_resources = ['network']
+        self.check_ci_mode(args, use_resources)
+
     def test_slow_ci(self):
         args = ['--slow-ci']
         use_resources = sorted(cmdline.ALL_RESOURCES)
