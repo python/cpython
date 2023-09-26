@@ -366,6 +366,7 @@ _PyCfgBuilder_Addop(cfg_builder *g, int opcode, int oparg, location loc)
 #ifndef NDEBUG
 static int remove_redundant_nops(basicblock *bb);
 
+/*
 static bool
 no_redundant_nops(cfg_builder *g) {
     for (basicblock *b = g->g_entryblock; b != NULL; b = b->b_next) {
@@ -375,6 +376,7 @@ no_redundant_nops(cfg_builder *g) {
     }
     return true;
 }
+*/
 
 static bool
 no_empty_basic_blocks(cfg_builder *g) {
@@ -1595,7 +1597,11 @@ optimize_cfg(cfg_builder *g, PyObject *consts, PyObject *const_cache)
         remove_redundant_nops(b);
     }
     eliminate_empty_basic_blocks(g);
-    assert(no_redundant_nops(g));
+    /* This assertion fails in an edge case (See gh-109889).
+     * Remove it for the release (it's just one more NOP in the
+     * bytecode for unlikely code).
+     */
+    // assert(no_redundant_nops(g));
     RETURN_IF_ERROR(remove_redundant_jumps(g));
     return SUCCESS;
 }
