@@ -513,7 +513,7 @@ def main() -> None:
 
     if args.file:
         if verbose:
-            print(f"reading rules from {args.file}")
+            print(f"Reading targets from {args.file}")
         with open(args.file, "rt", encoding="utf-8-sig") as fin:
             rules = [x.strip() for x in fin]
     elif args.args:
