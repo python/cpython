@@ -1722,18 +1722,17 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    together zero or more of the following: :const:`SPLICE_F_MOVE`,
    :const:`SPLICE_F_NONBLOCK`, and :const:`SPLICE_F_MORE`.
 
-   If :const:`SPLICE_F_MOVE` is specified it hints the kernel
-   to move pages instead of copying, but pages may still be copied if the
-   kernel cannot move the pages from the pipe.
+   * If :const:`SPLICE_F_MOVE` is specified,
+     the kernel is asked to move pages instead of copying,
+     but pages may still be copied if the kernel cannot move the pages from the pipe.
 
-   If :const:`SPLICE_F_NONBLOCK` is specified it hints the kernel
-   to not block on I/O.  This makes the splice pipe
-   operations nonblocking, but splice may nevertheless
-   block because the file descriptors that are spliced
-   to/from may block.
+   * If :const:`SPLICE_F_NONBLOCK` is specified,
+     the kernel is asked to not block on I/O.
+     This makes the splice pipe operations nonblocking,
+     but splice may nevertheless block because the spliced file descriptors may block.
 
-   If :const:`SPLICE_F_MORE` is specified it hints the kernel
-   that more data will be coming in a subsequent splice.
+   * If :const:`SPLICE_F_MORE` is specified,
+     it hints to the kernel that more data will be coming in a subsequent splice.
 
    At least one of the file descriptors must refer to a pipe. If *offset_src*
    is ``None``, then *src* is read from the current position; respectively for
