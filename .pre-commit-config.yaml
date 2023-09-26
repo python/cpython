@@ -23,8 +23,8 @@ repos:
     hooks:
       - id: python-file-whitespace
         name: "Check Python file whitespace"
-        entry: "python Tools/patchcheck/reindent.py --nobackup --newline LF"
-        language: "system"
+        entry: 'python Tools/patchcheck/reindent.py --nobackup --newline LF'
+        language: 'system'
         types: [python]
         exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/_parser).*$'
 
