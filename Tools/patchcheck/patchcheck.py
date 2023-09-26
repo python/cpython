@@ -7,7 +7,6 @@ import os.path
 import subprocess
 import sysconfig
 
-import reindent
 import untabify
 
 
@@ -174,21 +173,6 @@ def report_modified_files(file_paths):
 _PYTHON_FILES_WITH_TABS = frozenset({
     'Tools/c-analyzer/cpython/_parser.py',
 })
-
-
-@status("Fixing Python file whitespace", info=report_modified_files)
-def normalize_whitespace(file_paths):
-    """Make sure that the whitespace for .py files have been normalized."""
-    reindent.makebackup = False  # No need to create backups.
-    fixed = [
-        path for path in file_paths
-        if (
-            path.endswith('.py')
-            and path not in _PYTHON_FILES_WITH_TABS
-            and reindent.check(os.path.join(SRCDIR, path))
-        )
-    ]
-    return fixed
 
 
 @status("Fixing C file whitespace", info=report_modified_files)
