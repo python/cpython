@@ -1254,6 +1254,14 @@ class _PathBase(PurePath):
         """
         self._unsupported("readlink")
 
+    def _split_stack(self):
+        """
+        Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+        uppermost parent of the path (equivalent to path.parents[-1]), and
+        *parts* is a reversed list of parts following the anchor.
+        """
+        return self._from_parsed_parts(self.drive, self.root, []), self._tail[::-1]
+
     def resolve(self, strict=False):
         """
         Make the path absolute, resolving all symlinks on the way and also
@@ -1266,14 +1274,11 @@ class _PathBase(PurePath):
         except UnsupportedOperation:
             path = self
 
-        def split(path):
-            return path._from_parsed_parts(path.drive, path.root, []), path._tail[::-1]
-
         missing = False
         link_count = 0
         stat_cache = {}
         target_cache = {}
-        path, parts = split(path)
+        path, parts = path._split_stack()
         while parts:
             part = parts.pop()
             if part == '..':
@@ -1306,7 +1311,7 @@ class _PathBase(PurePath):
                         target = target_cache.get(path_str)
                         if target is None:
                             target = target_cache[path_str] = path.readlink()
-                        target, target_parts = split(target)
+                        target, target_parts = target._split_stack()
                         path = target if target.root else lookup_path
                         parts.extend(target_parts)
                     elif parts and not S_ISDIR(st.st_mode):
