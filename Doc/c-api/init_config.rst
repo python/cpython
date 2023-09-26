@@ -879,6 +879,7 @@ PyConfig
       .. versionadded:: 3.12
 
    .. c:member:: int cpu_count
+
       If the value of <cpu_count> is not ``-1`` then it will override
       the return value of :func:`cpu_count` into <cpu_count>.
 
