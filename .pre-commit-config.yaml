@@ -23,8 +23,8 @@ repos:
     hooks:
       - id: c-file-whitespace
         name: "Check C file whitespace"
-        language: pygrep
-        entry: '\t'
+        entry: "python Tools/patchcheck/untabify.py"
+        language: "system"
         types_or: ['c', 'c++']
         # Don't check the style of copies directories containing external libraries
         exclude: '^Modules/(_decimal/libmpdec|expat|zlib)/.*$'
