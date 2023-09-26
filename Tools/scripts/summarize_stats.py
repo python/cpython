@@ -624,7 +624,7 @@ def calculate_optimization_stats(stats):
     return [
         ("Optimization attempts", attempts, ""),
         (
-            "Traces created", created, 
+            "Traces created", created,
             format_ratio(created, attempts)
         ),
         ("Traces executed", executed, ""),
@@ -661,7 +661,7 @@ def emit_optimization_stats(stats):
         with Section("Uop stats", level=3):
             rows = calculate_uop_execution_counts(uop_stats)
             emit_table(
-                ("Uop", "Count:", "Self:", "Cumulative:"), 
+                ("Uop", "Count:", "Self:", "Cumulative:"),
                 rows
             )
 

@@ -218,7 +218,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization traces created: %" PRIu64 "\n", stats->traces_created);
     fprintf(out, "Optimization traces executed: %" PRIu64 "\n", stats->traces_executed);
     fprintf(out, "Optimization uops executed: %" PRIu64 "\n", stats->uops_executed);
-    
+
     char** names;
     for (int i = 0; i < 512; i++) {
         if (i < 256) {
