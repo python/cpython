@@ -21,8 +21,7 @@ def main():
         if optname == '-t':
             tabsize = int(optvalue)
 
-    for filename in args:
-        process(filename, tabsize)
+    return max(process(filename, tabsize) for filename in args)
 
 
 def process(filename, tabsize, verbose=True):
