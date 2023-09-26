@@ -1121,17 +1121,9 @@ PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
     interp->threads.main = NULL;
 }
 
-static int interpreter_exists(PyInterpreterState *);
-
 int
 PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
-    HEAD_LOCK(interp->runtime);
-    int exists = interpreter_exists(interp);
-    HEAD_UNLOCK(interp->runtime);
-    if (!exists) {
-        return 0;
-    }
     if (interp->threads.main == NULL) {
         return 0;
     }
@@ -1247,22 +1239,6 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
 //-----------------------------
 // look up an interpreter state
 //-----------------------------
-
-/* This must be called with the "head" lock held. */
-static int
-interpreter_exists(PyInterpreterState *interp)
-{
-    PyInterpreterState *actual = interp->runtime->interpreters.head;
-    while (actual != NULL) {
-        if (actual == interp) {
-            return 1;
-        }
-        actual = actual->next;
-    }
-    // It's a dangling pointer.
-    return 0;
-}
-
 
 /* Return the interpreter associated with the current OS thread.
 
