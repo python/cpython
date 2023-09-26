@@ -513,9 +513,11 @@ class Regrtest:
             print_warning(f"Failed to reexecute Python: {exc!r}\n"
                           f"Command: {cmd_text}")
 
-    def main(self, tests: TestList | None = None):
-        if self.want_reexec and self.ci_mode:
-            self._reexecute_python()
+    def _init(self):
+        # Set sys.stdout encoder error handler to backslashreplace,
+        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+        # when printing a traceback or any other non-encodable character.
+        sys.stdout.reconfigure(errors="backslashreplace")
 
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
@@ -523,6 +525,12 @@ class Regrtest:
         strip_py_suffix(self.cmdline_args)
 
         self.tmp_dir = get_temp_dir(self.tmp_dir)
+
+    def main(self, tests: TestList | None = None):
+        if self.want_reexec and self.ci_mode:
+            self._reexecute_python()
+
+        self._init()
 
         if self.want_cleanup:
             cleanup_temp_dir(self.tmp_dir)
