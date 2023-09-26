@@ -350,8 +350,7 @@ class GlobTests(unittest.TestCase):
             for it in iters:
                 self.assertEqual(next(it), p)
 
-
-    def test_translate(self):
+    def test_translate_matching(self):
         match = re.compile(glob.translate('*')).match
         self.assertIsNotNone(match('foo'))
         self.assertIsNotNone(match('foo.bar'))
@@ -383,6 +382,26 @@ class GlobTests(unittest.TestCase):
         self.assertIsNone(match(os.path.join('foo', '.bar')))
         self.assertIsNotNone(match(os.path.join('foo', 'bar.txt')))
         self.assertIsNone(match(os.path.join('foo', '.bar.txt')))
+
+    def test_translate(self):
+        def fn(pat):
+            return glob.translate(pat, seps='/')
+        self.assertEqual(fn('foo'), r'(?s:foo)\Z')
+        self.assertEqual(fn('foo/bar'), r'(?s:foo/bar)\Z')
+        self.assertEqual(fn('*'), r'(?s:[^/.][^/]*)\Z')
+        self.assertEqual(fn('?'), r'(?s:(?!\.)[^/])\Z')
+        self.assertEqual(fn('a*'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('*a'), r'(?s:(?!\.)[^/]*a)\Z')
+        self.assertEqual(fn('.*'), r'(?s:\.[^/]*)\Z')
+        self.assertEqual(fn('?aa'), r'(?s:(?!\.)[^/]aa)\Z')
+        self.assertEqual(fn('aa?'), r'(?s:aa[^/])\Z')
+        self.assertEqual(fn('aa[ab]'), r'(?s:aa[ab])\Z')
+        self.assertEqual(fn('**'), r'(?s:(?!\.)[^/]*)\Z')
+        self.assertEqual(fn('***'), r'(?s:(?!\.)[^/]*)\Z')
+        self.assertEqual(fn('a**'), r'(?s:a[^/]*)\Z')
+        self.assertEqual(fn('**b'), r'(?s:(?!\.)[^/]*b)\Z')
+        self.assertEqual(fn('/**/*/*.*/**'),
+                         r'(?s:/(?!\.)[^/]*/[^/.][^/]*/(?!\.)[^/]*\.[^/]*/(?!\.)[^/]*)\Z')
 
     def test_translate_include_hidden(self):
         def fn(pat):
