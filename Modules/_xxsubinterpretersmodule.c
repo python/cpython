@@ -429,27 +429,12 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
+    PyThreadState *tstate = NULL;
+    PyThreadState _tstate;
     if (interp != PyInterpreterState_Get()) {
-        // XXX gh-109860: Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        assert(tstate != NULL);
-        // Hack (until gh-109860): The interpreter's initial thread state
-        // is least likely to break.
-        while(tstate->next != NULL) {
-            tstate = tstate->next;
-        }
-        // We must do this check before switching interpreters, so any
-        // exception gets raised in the right one.
-        // XXX gh-109860: Drop this redundant check once we stop
-        // re-using tstates that might already be in use.
-        if (_PyInterpreterState_IsRunningMain(interp)) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "interpreter already running");
-            if (shared != NULL) {
-                _sharedns_free(shared);
-            }
-            return -1;
-        }
+        tstate = &_tstate;
+        PyThreadState_Init(tstate, interp, _PyThreadState_WHENCE_EXEC);
+        PyThreadState_Bind(tstate);
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
@@ -461,6 +446,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     // Switch back.
     if (save_tstate != NULL) {
         PyThreadState_Swap(save_tstate);
+        PyThreadState_Fini(tstate);
     }
 
     // Propagate any exception out to the caller.
@@ -502,6 +488,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     const PyInterpreterConfig config = isolated
         ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+
     // XXX Possible GILState issues?
     PyThreadState *tstate = NULL;
     PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
@@ -517,6 +504,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     assert(tstate != NULL);
+
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
@@ -573,17 +561,12 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    // XXX gh-109860: Using the "head" thread isn't strictly correct.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    assert(tstate != NULL);
-    // Hack (until gh-109860): The interpreter's initial thread state
-    // is least likely to break.
-    while(tstate->next != NULL) {
-        tstate = tstate->next;
-    }
+    PyThreadState tstate;
+    PyThreadState_Init(&tstate, interp, _PyThreadState_WHENCE_INTERP);
+    PyThreadState_Bind(&tstate);
     // XXX Possible GILState issues?
-    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
-    Py_EndInterpreter(tstate);
+    PyThreadState *save_tstate = PyThreadState_Swap(&tstate);
+    Py_EndInterpreter(&tstate);
     PyThreadState_Swap(save_tstate);
 
     Py_RETURN_NONE;

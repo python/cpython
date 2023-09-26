@@ -1170,10 +1170,6 @@ _PyInterpreterState_IDIncref(PyInterpreterState *interp)
 }
 
 
-static void PyThreadState_Init(PyThreadState *tstate,
-                               PyInterpreterState *interp, int whence);
-static void PyThreadState_Fini(PyThreadState *tstate);
-
 void
 _PyInterpreterState_IDDecref(PyInterpreterState *interp)
 {
@@ -1380,7 +1376,7 @@ init_threadstate(PyThreadState *tstate,
     assert(tstate->prev == NULL);
 
     assert(tstate->_whence == _PyThreadState_WHENCE_NOTSET);
-    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_GILSTATE);
+    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_EXEC);
     tstate->_whence = whence;
 
     assert(id > 0);
@@ -1599,9 +1595,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
     if (tstate->on_delete != NULL) {
-        assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
-               || (tstate->interp->finalizing
-                   && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
+        // XXX Once we fix gh-75698:
+        //assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
+        //       || (tstate->interp->finalizing
+        //           && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
         tstate->on_delete(tstate->on_delete_data);
     }
 
@@ -1733,7 +1730,8 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
     }
 }
 
-static void
+
+void
 PyThreadState_Init(PyThreadState *tstate,
                    PyInterpreterState *interp, int whence)
 {
@@ -1753,7 +1751,7 @@ PyThreadState_Init(PyThreadState *tstate,
     HEAD_UNLOCK(interp->runtime);
 }
 
-static void
+void
 PyThreadState_Fini(PyThreadState *tstate)
 {
     PyThreadState_Clear(tstate);
@@ -1993,7 +1991,7 @@ PyThreadState_Swap(PyThreadState *newts)
 
 
 void
-_PyThreadState_Bind(PyThreadState *tstate)
+PyThreadState_Bind(PyThreadState *tstate)
 {
     // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
     // was called, tstate becomes a dangling pointer.

@@ -98,6 +98,7 @@ struct _ts {
 #  define _PyThreadState_WHENCE_INTERP 1
 #  define _PyThreadState_WHENCE_THREADING 2
 #  define _PyThreadState_WHENCE_GILSTATE 3
+#  define _PyThreadState_WHENCE_EXEC 4
 #endif
     int _whence;
 
@@ -211,6 +212,13 @@ struct _ts {
    // This value is duplicated in Lib/test/support/__init__.py
 #  define Py_C_RECURSION_LIMIT 1500
 #endif
+
+PyAPI_FUNC(void) PyThreadState_Init(
+    PyThreadState *tstate,
+    PyInterpreterState *interp,
+    int whence);
+PyAPI_FUNC(void) PyThreadState_Fini(PyThreadState *tstate);
+PyAPI_FUNC(void) PyThreadState_Bind(PyThreadState *tstate);
 
 
 /* other API */

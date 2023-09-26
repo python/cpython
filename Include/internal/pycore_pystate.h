@@ -142,7 +142,7 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 extern PyThreadState * _PyThreadState_New(
     PyInterpreterState *interp,
     int whence);
-extern void _PyThreadState_Bind(PyThreadState *tstate);
+#define _PyThreadState_Bind(tstate) PyThreadState_Bind(tstate)
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
 // Export for '_testinternalcapi' shared extension
