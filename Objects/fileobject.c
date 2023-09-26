@@ -529,6 +529,18 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

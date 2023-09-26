@@ -20,7 +20,8 @@ from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir)
+    display_header, cleanup_temp_dir,
+    MS_WINDOWS)
 
 
 class Regrtest:
@@ -435,7 +436,15 @@ class Regrtest:
 
         setup_process()
 
-        self.logger.start_load_tracker()
+        if self.hunt_refleak and not self.num_workers:
+            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+            use_load_tracker = False
+        else:
+            # WindowsLoadTracker is only needed on Windows
+            use_load_tracker = MS_WINDOWS
+
+        if use_load_tracker:
+            self.logger.start_load_tracker()
         try:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
@@ -448,7 +457,8 @@ class Regrtest:
             if self.want_rerun and self.results.need_rerun():
                 self.rerun_failed_tests(runtests)
         finally:
-            self.logger.stop_load_tracker()
+            if use_load_tracker:
+                self.logger.stop_load_tracker()
 
         self.display_summary()
         self.finalize_tests(tracer)
