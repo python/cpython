@@ -559,6 +559,13 @@ class BasicTest(BaseTest):
                                     platlibdir,
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
+
+        # gh-109748: Don't copy __pycache__/ sub-directories, because they can
+        # be modified by other Python tests running in parallel.
+        ignored_names = {'__pycache__'}
+        def ignore_pycache(src, names):
+            return ignored_names
+
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -575,7 +582,8 @@ class BasicTest(BaseTest):
                     if os.path.isfile(fn):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
-                        shutil.copytree(fn, os.path.join(libdir, name))
+                        shutil.copytree(fn, os.path.join(libdir, name),
+                                        ignore=ignore_pycache)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)

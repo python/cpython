@@ -1783,6 +1783,9 @@ class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
 
+    def test_recursion_count(self):
+        self.skipTest("Condition does not expose _recursion_count()")
+
 class ConditionTests(lock_tests.ConditionTests):
     condtype = staticmethod(threading.Condition)
 
