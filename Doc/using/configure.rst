@@ -965,7 +965,7 @@ Main Makefile targets
   this the default target of the ``make`` command (``make all`` or just
   ``make``).
 
-* ``make test``: Build Python and run the Python test suite with ``--slow-ci``
+* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
   option. Variables:
 
   * ``TESTOPTS``: additional regrtest command line options.
