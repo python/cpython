@@ -57,27 +57,26 @@
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) _Py_atomic_load_relaxed(ATOMIC_VAL)
 #endif
 
-
+/* bpo-40010: eval_breaker should be recomputed if there
+   is a pending signal: signal received by another thread which cannot
+   handle signals.
+   Similarly, we set CALLS_TO_DO and ASYNC_EXCEPTION to match the thread.
+*/
 static inline void
 update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstate)
 {
     if (tstate == NULL) {
         return;
     }
-    int32_t calls_to_do;
     if (_Py_ThreadCanHandleSignals(interp)) {
-        calls_to_do = _Py_atomic_load_int32_relaxed(
+        int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
             &_PyRuntime.ceval.pending_mainthread.calls_to_do);
+        if (calls_to_do) {
+            _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
+        }
         if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
             _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
         }
-    }
-    else {
-        calls_to_do = _Py_atomic_load_int32_relaxed(
-            &interp->ceval.pending.calls_to_do);
-    }
-    if (calls_to_do) {
-        _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
     }
     if (tstate->async_exc != NULL) {
         _Py_set_eval_breaker_bit(interp, _PY_ASYNC_EXCEPTION_BIT, 1);
