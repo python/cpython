@@ -71,19 +71,61 @@ def fnmatchcase(name, pat):
     return match(name) is not None
 
 
+_TRANSLATE_RE = re.compile(
+    r'(?P<star>\*+)|'
+    r'(?P<question_mark>\?)|'
+    r'(?P<set>\[(?P<negated>!?+)(?P<set_inner>\]?+[^\]]*)\])|'
+    r'(?P<literal>.)',
+    flags=re.DOTALL)
+
+
+def _translate_iter(pat, star, question_mark):
+    for match in _TRANSLATE_RE.finditer(pat):
+        if match.group('star'):
+            yield star
+        elif match.group('question_mark'):
+            yield question_mark
+        elif match.group('set'):
+            inner = ''.join(_translate_set_iter(match.group('set_inner')))
+            if match.group('negated'):
+                yield f'[^{inner}]' if inner else question_mark
+            else:
+                yield f'[{inner}]' if inner else '(?!)'
+        else:
+            yield re.escape(match.group())
+
+
+_TRANSLATE_SET_RE = re.compile(
+    r'(?P<range>(?P<start>.)-(?P<end>.))|'
+    r'(?P<literal>.)',
+    flags=re.DOTALL)
+
+
+def _translate_set_iter(token):
+    for match in _TRANSLATE_SET_RE.finditer(token):
+        if match.group('range'):
+            start, end = match.group('start'), match.group('end')
+            if start <= end:
+                yield f'{re.escape(start)}-{re.escape(end)}'
+        else:
+            yield re.escape(match.group())
+
+
 def translate(pat):
     """Translate a shell PATTERN to a regular expression.
 
     There is no way to quote meta-characters.
     """
 
+    STAR = object()
+    inp = list(_translate_iter(pat, STAR, '.'))
+
     # Deal with STARs.
-    inp = _scanner.scan(pat)[0]
     res = []
     add = res.append
     i, n = 0, len(inp)
     # Fixed pieces at the start?
-    while i < n and inp[i] is not _STAR:
+    while i < n and inp[i] is not STAR:
         add(inp[i])
         i += 1
     # Now deal with STAR fixed STAR fixed ...
@@ -94,14 +136,14 @@ def translate(pat):
     # translate() results together via "|" to build large regexps matching
     # "one of many" shell patterns.
     while i < n:
-        assert inp[i] is _STAR
+        assert inp[i] is STAR
         i += 1
         if i == n:
             add(".*")
             break
-        assert inp[i] is not _STAR
+        assert inp[i] is not STAR
         fixed = []
-        while i < n and inp[i] is not _STAR:
+        while i < n and inp[i] is not STAR:
             fixed.append(inp[i])
             i += 1
         fixed = "".join(fixed)
@@ -113,43 +155,3 @@ def translate(pat):
     assert i == n
     res = "".join(res)
     return fr'(?s:{res})\Z'
-
-
-def _translate_literal(scanner, token):
-    """Translate a literal token to a regular expression."""
-    return re.escape(token)
-
-
-def _translate_range(scanner, token):
-    """Translate a character range, like 'a-z', to a regular expression."""
-    start, end = token[0], token[2]
-    if start > end:
-        # Remove empty ranges -- invalid in RE.
-        return ''
-    return f'{re.escape(start)}-{re.escape(end)}'
-
-
-def _translate_set(scanner, token):
-    """Translate a set wildcard, like '[a-z]' or '[!ij]', to a regular expression."""
-    negated = token[1] == '!'
-    token = token[1+negated:-1]
-    token = ''.join(_set_scanner.scan(token)[0])
-    if negated:
-        return f'[^{token}]' if token else '.'
-    else:
-        return f'[{token}]' if token else '(?!)'
-
-
-_STAR = object()
-
-_scanner = re.Scanner([
-    (r'\*+', _STAR),
-    (r'\?', '.'),
-    (r'\[!?+\]?+[^\]]*\]', _translate_set),
-    (r'.', _translate_literal),
-], flags=re.DOTALL)
-
-_set_scanner = re.Scanner([
-    (r'.-.', _translate_range),
-    (r'.', _translate_literal),
-], flags=re.DOTALL)
