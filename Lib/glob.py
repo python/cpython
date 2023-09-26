@@ -282,7 +282,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
         any_segments = fr'(?:{one_segment}{any_sep})*'
         any_final_segments = fr'{any_segments}(?:{one_segment})?'
 
-    results = ['(\.\Z)?+']
+    results = []
     parts = re.split(any_sep, pat)
     last_part_idx = len(parts) - 1
     for idx, part in enumerate(parts):

@@ -70,7 +70,7 @@ def _compile_pattern(pat, sep, case_sensitive):
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
-    return re.compile(regex, flags).match
+    return re.compile(r'(\.\Z)?+' + regex, flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
