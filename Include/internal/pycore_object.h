@@ -10,9 +10,41 @@ extern "C" {
 
 #include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime.h"       // _PyRuntime
+
+/* Check if an object is consistent. For example, ensure that the reference
+   counter is greater than or equal to 1, and ensure that ob_type is not NULL.
+
+   Call _PyObject_AssertFailed() if the object is inconsistent.
+
+   If check_content is zero, only check header fields: reduce the overhead.
+
+   The function always return 1. The return value is just here to be able to
+   write:
+
+   assert(_PyObject_CheckConsistency(obj, 1)); */
+extern int _PyObject_CheckConsistency(PyObject *op, int check_content);
+
+extern void _PyDebugAllocatorStats(FILE *out, const char *block_name,
+                                   int num_blocks, size_t sizeof_block);
+
+extern void _PyObject_DebugTypeStats(FILE *out);
+
+#ifdef Py_TRACE_REFS
+// Forget a reference registered by _Py_NewReference(). Function called by
+// _Py_Dealloc().
+//
+// On a free list, the function can be used before modifying an object to
+// remove the object from traced objects. Then _Py_NewReference() or
+// _Py_NewReferenceNoTotal() should be called again on the object to trace
+// it again.
+extern void _Py_ForgetReference(PyObject *);
+#endif
+
+// Export for shared _testinternalcapi extension
+PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
    designated initializer conflicts in C++20. If we use the deinition in
@@ -24,7 +56,6 @@ extern "C" {
    backwards compatible solution */
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
-        _PyObject_EXTRA_INIT              \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
     },
@@ -34,7 +65,7 @@ extern "C" {
         .ob_size = size                       \
     },
 
-PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
@@ -135,8 +166,8 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 #endif
 
 
-PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
-PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
+extern int _PyType_CheckConsistency(PyTypeObject *type);
+extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 /* Update the Python traceback of an object. This function must be called
    when a memory block is reused from a free list.
@@ -152,6 +183,9 @@ _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
 
 extern void _PyType_InitCache(PyInterpreterState *interp);
 
+extern PyStatus _PyObject_InitState(PyInterpreterState *interp);
+extern void _PyObject_FiniState(PyInterpreterState *interp);
+extern bool _PyRefchain_IsTraced(PyInterpreterState *interp, PyObject *obj);
 
 /* Inline functions trading binary compatibility for speed:
    _PyObject_Init() is the fast version of PyObject_Init(), and
@@ -270,9 +304,9 @@ extern void _PyDebug_PrintTotalRefs(void);
 #endif
 
 #ifdef Py_TRACE_REFS
-extern void _Py_AddToAllObjects(PyObject *op, int force);
-extern void _Py_PrintReferences(FILE *);
-extern void _Py_PrintReferenceAddresses(FILE *);
+extern void _Py_AddToAllObjects(PyObject *op);
+extern void _Py_PrintReferences(PyInterpreterState *, FILE *);
+extern void _Py_PrintReferenceAddresses(PyInterpreterState *, FILE *);
 #endif
 
 
@@ -355,8 +389,14 @@ static inline int _PyType_SUPPORTS_WEAKREFS(PyTypeObject *type) {
 }
 
 extern PyObject* _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems);
+extern PyObject *_PyType_NewManagedObject(PyTypeObject *type);
+
+extern PyTypeObject* _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
+extern PyObject* _PyType_GetDocFromInternalDoc(const char *, const char *);
+extern PyObject* _PyType_GetTextSignatureFromInternalDoc(const char *, const char *, int);
 
 extern int _PyObject_InitializeDict(PyObject *obj);
+int _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp);
 extern int _PyObject_StoreInstanceAttribute(PyObject *obj, PyDictValues *values,
                                           PyObject *name, PyObject *value);
 PyObject * _PyObject_GetInstanceAttribute(PyObject *obj, PyDictValues *values,
@@ -407,7 +447,17 @@ extern PyObject ** _PyObject_ComputedDictPointer(PyObject *);
 extern void _PyObject_FreeInstanceAttributes(PyObject *obj);
 extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 
-PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+// Export for 'math' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
+
+extern int _PyObject_IsAbstract(PyObject *);
+
+extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+extern PyObject* _PyObject_NextNotImplemented(PyObject *);
+
+// Pickle support.
+// Export for '_datetime' shared extension
+PyAPI_FUNC(PyObject*) _PyObject_GetState(PyObject *);
 
 /* C function call trampolines to mitigate bad function pointer casts.
  *
@@ -435,6 +485,14 @@ extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
     (meth)((self), (args), (kw))
 #endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+
+// Export these 2 symbols for '_pickle' shared extension
+PyAPI_DATA(PyTypeObject) _PyNone_Type;
+PyAPI_DATA(PyTypeObject) _PyNotImplemented_Type;
+
+// Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
+// Export for the stable ABI.
+PyAPI_DATA(int) _Py_SwappedOp[];
 
 #ifdef __cplusplus
 }

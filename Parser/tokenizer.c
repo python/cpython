@@ -1,11 +1,9 @@
 
 /* Tokenizer implementation */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#include <ctype.h>
 #include <assert.h>
 
 #include "tokenizer.h"
@@ -105,10 +103,6 @@ tok_new(void)
     tok->decoding_buffer = NULL;
     tok->readline = NULL;
     tok->type_comments = 0;
-    tok->async_hacks = 0;
-    tok->async_def = 0;
-    tok->async_def_indent = 0;
-    tok->async_def_nl = 0;
     tok->interactive_underflow = IUNDERFLOW_NORMAL;
     tok->str = NULL;
     tok->report_warnings = 1;
@@ -117,7 +111,6 @@ tok_new(void)
     tok->implicit_newline = 0;
     tok->tok_mode_stack[0] = (tokenizer_mode){.kind =TOK_REGULAR_MODE, .f_string_quote='\0', .f_string_quote_size = 0, .f_string_debug=0};
     tok->tok_mode_stack_index = 0;
-    tok->tok_report_warnings = 1;
 #ifdef Py_DEBUG
     tok->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -164,7 +157,7 @@ get_normal_name(const char *s)  /* for utf-8 and latin-1 */
         else if (c == '_')
             buf[i] = '-';
         else
-            buf[i] = tolower(c);
+            buf[i] = Py_TOLOWER(c);
     }
     buf[i] = '\0';
     if (strcmp(buf, "utf-8") == 0 ||
@@ -1039,9 +1032,6 @@ tok_readline_raw(struct tok_state *tok)
         if (line == NULL) {
             return 1;
         }
-        if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
-            return 0;
-        }
         if (tok->fp_interactive &&
             tok_concatenate_interactive_new_line(tok, line) == -1) {
             return 0;
@@ -1106,11 +1096,7 @@ tok_readline_string(struct tok_state* tok) {
     tok->inp += buflen;
     *tok->inp = '\0';
 
-    if (tok->start == NULL) {
-        tok->buf = tok->cur;
-    }
     tok->line_start = tok->cur;
-
     Py_DECREF(line);
     return 1;
 error:
@@ -1274,6 +1260,10 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
+    }
+
     ADVANCE_LINENO();
     if (tok->decoding_state != STATE_NORMAL) {
         if (tok->lineno > 2) {
@@ -1316,6 +1306,10 @@ tok_underflow_readline(struct tok_state* tok) {
         *tok->inp++ = '\n';
         *tok->inp = '\0';
         tok->implicit_newline = 1;
+    }
+
+    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+        return 0;
     }
 
     ADVANCE_LINENO();
@@ -1544,8 +1538,7 @@ error:
 static int
 warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
-
-    if (!tok->tok_report_warnings) {
+    if (!tok->report_warnings) {
         return 0;
     }
 
@@ -1558,12 +1551,12 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
         return -1;
     }
 
-    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg, tok->filename,
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, tok->filename,
                                  tok->lineno, NULL, NULL) < 0) {
         Py_DECREF(msg);
 
-        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            /* Replace the DeprecationWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
@@ -1600,8 +1593,12 @@ lookahead(struct tok_state *tok, const char *test)
 }
 
 static int
-verify_end_of_number(struct tok_state *tok, int c, const char *kind)
-{
+verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
+    if (tok->tok_extra_tokens) {
+        // When we are parsing extra tokens, we don't want to emit warnings
+        // about invalid literals, because we want to be a bit more liberal.
+        return 1;
+    }
     /* Emit a deprecation warning only if the numeric literal is immediately
      * followed by one of keywords which can occur after a numeric literal
      * in valid code: "and", "else", "for", "if", "in", "is" and "or".
@@ -1645,7 +1642,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
         tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
-    if (is_potential_identifier_char(c)) {
+    if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
         syntaxerror(tok, "invalid %s literal", kind);
         return 0;
@@ -1659,6 +1656,9 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind)
 static int
 verify_identifier(struct tok_state *tok)
 {
+    if (tok->tok_extra_tokens) {
+        return 1;
+    }
     PyObject *s;
     if (tok->decoding_erred)
         return 0;
@@ -1714,12 +1714,12 @@ tok_decimal_tail(struct tok_state *tok)
     while (1) {
         do {
             c = tok_nextc(tok);
-        } while (isdigit(c));
+        } while (Py_ISDIGIT(c));
         if (c != '_') {
             break;
         }
         c = tok_nextc(tok);
-        if (!isdigit(c)) {
+        if (!Py_ISDIGIT(c)) {
             tok_backup(tok, c);
             syntaxerror(tok, "invalid decimal literal");
             return 0;
@@ -1923,27 +1923,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Peek ahead at the next character */
     c = tok_nextc(tok);
     tok_backup(tok, c);
-    /* Check if we are closing an async function */
-    if (tok->async_def
-        && !blankline
-        /* Due to some implementation artifacts of type comments,
-         * a TYPE_COMMENT at the start of a function won't set an
-         * indentation level and it will produce a NEWLINE after it.
-         * To avoid spuriously ending an async function due to this,
-         * wait until we have some non-newline char in front of us. */
-        && c != '\n'
-        && tok->level == 0
-        /* There was a NEWLINE after ASYNC DEF,
-           so we're past the signature. */
-        && tok->async_def_nl
-        /* Current indentation level is less than where
-           the async function was defined */
-        && tok->async_def_indent >= tok->indent)
-    {
-        tok->async_def = 0;
-        tok->async_def_indent = 0;
-        tok->async_def_nl = 0;
-    }
 
  again:
     tok->start = NULL;
@@ -2092,54 +2071,6 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur;
 
-        /* async/await parsing block. */
-        if (tok->cur - tok->start == 5 && tok->start[0] == 'a') {
-            /* May be an 'async' or 'await' token.  For Python 3.7 or
-               later we recognize them unconditionally.  For Python
-               3.5 or 3.6 we recognize 'async' in front of 'def', and
-               either one inside of 'async def'.  (Technically we
-               shouldn't recognize these at all for 3.4 or earlier,
-               but there's no *valid* Python 3.4 code that would be
-               rejected, and async functions will be rejected in a
-               later phase.) */
-            if (!tok->async_hacks || tok->async_def) {
-                /* Always recognize the keywords. */
-                if (memcmp(tok->start, "async", 5) == 0) {
-                    return MAKE_TOKEN(ASYNC);
-                }
-                if (memcmp(tok->start, "await", 5) == 0) {
-                    return MAKE_TOKEN(AWAIT);
-                }
-            }
-            else if (memcmp(tok->start, "async", 5) == 0) {
-                /* The current token is 'async'.
-                   Look ahead one token to see if that is 'def'. */
-
-                struct tok_state ahead_tok;
-                struct token ahead_token;
-                _PyToken_Init(&ahead_token);
-                int ahead_tok_kind;
-
-                memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-                ahead_tok_kind = tok_get_normal_mode(&ahead_tok,
-                                                     current_tok,
-                                                     &ahead_token);
-
-                if (ahead_tok_kind == NAME
-                    && ahead_tok.cur - ahead_tok.start == 3
-                    && memcmp(ahead_tok.start, "def", 3) == 0)
-                {
-                    /* The next token is going to be 'def', so instead of
-                       returning a plain NAME token, return ASYNC. */
-                    tok->async_def_indent = tok->indent;
-                    tok->async_def = 1;
-                    _PyToken_Free(&ahead_token);
-                    return MAKE_TOKEN(ASYNC);
-                }
-                _PyToken_Free(&ahead_token);
-            }
-        }
-
         return MAKE_TOKEN(NAME);
     }
 
@@ -2170,18 +2101,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
-        if (tok->async_def) {
-            /* We're somewhere inside an 'async def' function, and
-               we've encountered a NEWLINE after its signature. */
-            tok->async_def_nl = 1;
-        }
         return MAKE_TOKEN(NEWLINE);
     }
 
     /* Period or number starting with period? */
     if (c == '.') {
         c = tok_nextc(tok);
-        if (isdigit(c)) {
+        if (Py_ISDIGIT(c)) {
             goto fraction;
         } else if (c == '.') {
             c = tok_nextc(tok);
@@ -2204,7 +2130,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     /* Number */
-    if (isdigit(c)) {
+    if (Py_ISDIGIT(c)) {
         if (c == '0') {
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
@@ -2215,13 +2141,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     if (c == '_') {
                         c = tok_nextc(tok);
                     }
-                    if (!isxdigit(c)) {
+                    if (!Py_ISXDIGIT(c)) {
                         tok_backup(tok, c);
                         return MAKE_TOKEN(syntaxerror(tok, "invalid hexadecimal literal"));
                     }
                     do {
                         c = tok_nextc(tok);
-                    } while (isxdigit(c));
+                    } while (Py_ISXDIGIT(c));
                 } while (c == '_');
                 if (!verify_end_of_number(tok, c, "hexadecimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
@@ -2235,7 +2161,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        if (isdigit(c)) {
+                        if (Py_ISDIGIT(c)) {
                             return MAKE_TOKEN(syntaxerror(tok,
                                     "invalid digit '%c' in octal literal", c));
                         }
@@ -2248,7 +2174,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     return MAKE_TOKEN(syntaxerror(tok,
                             "invalid digit '%c' in octal literal", c));
                 }
@@ -2264,7 +2190,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        if (isdigit(c)) {
+                        if (Py_ISDIGIT(c)) {
                             return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                         }
                         else {
@@ -2276,7 +2202,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     } while (c == '0' || c == '1');
                 } while (c == '_');
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                 }
                 if (!verify_end_of_number(tok, c, "binary")) {
@@ -2290,7 +2216,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 while (1) {
                     if (c == '_') {
                         c = tok_nextc(tok);
-                        if (!isdigit(c)) {
+                        if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
                         }
@@ -2301,7 +2227,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
                 }
                 char* zeros_end = tok->cur;
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     nonzero = 1;
                     c = tok_decimal_tail(tok);
                     if (c == 0) {
@@ -2318,7 +2244,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 else if (c == 'j' || c == 'J') {
                     goto imaginary;
                 }
-                else if (nonzero) {
+                else if (nonzero && !tok->tok_extra_tokens) {
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
                     return MAKE_TOKEN(syntaxerror_known_range(
@@ -2345,7 +2271,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
         fraction:
                     /* Fraction */
-                    if (isdigit(c)) {
+                    if (Py_ISDIGIT(c)) {
                         c = tok_decimal_tail(tok);
                         if (c == 0) {
                             return MAKE_TOKEN(ERRORTOKEN);
@@ -2360,11 +2286,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
                     if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
-                        if (!isdigit(c)) {
+                        if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
                         }
-                    } else if (!isdigit(c)) {
+                    } else if (!Py_ISDIGIT(c)) {
                         tok_backup(tok, c);
                         if (!verify_end_of_number(tok, e, "decimal")) {
                             return MAKE_TOKEN(ERRORTOKEN);
@@ -2399,7 +2325,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
   f_string_quote:
-    if (((tolower(*tok->start) == 'f' || tolower(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
+    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
 
@@ -2450,7 +2376,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         switch (*tok->start) {
             case 'F':
             case 'f':
-                the_current_tok->f_string_raw = tolower(*(tok->start + 1)) == 'r';
+                the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
                 break;
             case 'R':
             case 'r':

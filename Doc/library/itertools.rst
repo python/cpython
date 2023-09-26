@@ -844,7 +844,7 @@ which incur interpreter overhead.
        return next(islice(iterable, n, None), default)
 
    def quantify(iterable, pred=bool):
-       "Count how many times the predicate is True"
+       "Given a predicate that returns True or False, count the True results."
        return sum(map(pred, iterable))
 
    def all_equal(iterable):
@@ -865,26 +865,23 @@ which incur interpreter overhead.
        # first_true([a,b], x, f) --> a if f(a) else b if f(b) else x
        return next(filter(pred, iterable), default)
 
-   def iter_index(iterable, value, start=0):
+   def iter_index(iterable, value, start=0, stop=None):
        "Return indices where a value occurs in a sequence or iterable."
        # iter_index('AABCADEAF', 'A') --> 0 1 4 7
-       try:
-           seq_index = iterable.index
-       except AttributeError:
+       seq_index = getattr(iterable, 'index', None)
+       if seq_index is None:
            # Slow path for general iterables
-           it = islice(iterable, start, None)
-           i = start - 1
-           try:
-               while True:
-                   yield (i := i + operator.indexOf(it, value) + 1)
-           except ValueError:
-               pass
+           it = islice(iterable, start, stop)
+           for i, element in enumerate(it, start):
+               if element is value or element == value:
+                   yield i
        else:
            # Fast path for sequences
+           stop = len(iterable) if stop is None else stop
            i = start - 1
            try:
                while True:
-                   yield (i := seq_index(value, i+1))
+                   yield (i := seq_index(value, i+1, stop))
            except ValueError:
                pass
 
@@ -1031,32 +1028,6 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
-   def sieve(n):
-       "Primes less than n."
-       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
-       data = bytearray((0, 1)) * (n // 2)
-       data[:3] = 0, 0, 0
-       limit = math.isqrt(n) + 1
-       for p in compress(range(limit), data):
-           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
-       data[2] = 1
-       return iter_index(data, 1) if n > 2 else iter([])
-
-   def factor(n):
-       "Prime factors of n."
-       # factor(99) --> 3 3 11
-       for prime in sieve(math.isqrt(n) + 1):
-           while True:
-               quotient, remainder = divmod(n, prime)
-               if remainder:
-                   break
-               yield prime
-               n = quotient
-               if n == 1:
-                   return
-       if n > 1:
-           yield n
-
    def sum_of_squares(it):
        "Add up the squares of the input values."
        # sum_of_squares([10, 20, 30]) -> 1400
@@ -1074,19 +1045,26 @@ The following recipes have a more mathematical flavor:
        return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
 
    def convolve(signal, kernel):
-       """Linear convolution of two iterables.
+       """Discrete linear convolution of two iterables.
+
+       The kernel is fully consumed before the calculations begin.
+       The signal is consumed lazily and can be infinite.
+
+       Convolutions are mathematically commutative.
+       If the signal and kernel are swapped,
+       the output will be the same.
 
        Article:  https://betterexplained.com/articles/intuitive-convolution/
        Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
        """
        # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
-       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
-       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
+       # convolve(data, [1/2, 0, -1/2]) --> 1st derivative estimate
+       # convolve(data, [1, -2, 1]) --> 2nd derivative estimate
        kernel = tuple(kernel)[::-1]
        n = len(kernel)
        padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
-       for window in sliding_window(padded_signal, n):
-           yield math.sumprod(kernel, window)
+       windowed_signal = sliding_window(padded_signal, n)
+       return map(math.sumprod, repeat(kernel), windowed_signal)
 
    def polynomial_from_roots(roots):
        """Compute a polynomial's coefficients from its roots.
@@ -1105,8 +1083,8 @@ The following recipes have a more mathematical flavor:
        # Evaluate x³ -4x² -17x + 60 at x = 2.5
        # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
        n = len(coefficients)
-       if n == 0:
-           return x * 0  # coerce zero to the type of x
+       if not n:
+           return type(x)(0)
        powers = map(pow, repeat(x), reversed(range(n)))
        return math.sumprod(coefficients, powers)
 
@@ -1120,6 +1098,34 @@ The following recipes have a more mathematical flavor:
        n = len(coefficients)
        powers = reversed(range(1, n))
        return list(map(operator.mul, coefficients, powers))
+
+   def sieve(n):
+       "Primes less than n."
+       # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
+       if n > 2:
+           yield 2
+       start = 3
+       data = bytearray((0, 1)) * (n // 2)
+       limit = math.isqrt(n) + 1
+       for p in iter_index(data, 1, start, limit):
+           yield from iter_index(data, 1, start, p*p)
+           data[p*p : n : p+p] = bytes(len(range(p*p, n, p+p)))
+           start = p*p
+       yield from iter_index(data, 1, start)
+
+   def factor(n):
+       "Prime factors of n."
+       # factor(99) --> 3 3 11
+       # factor(1_000_000_000_000_007) --> 47 59 360620266859
+       # factor(1_000_000_000_000_403) --> 1000000000000403
+       for prime in sieve(math.isqrt(n) + 1):
+           while not n % prime:
+               yield prime
+               n //= prime
+               if n == 1:
+                   return
+       if n > 1:
+           yield n
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
@@ -1296,7 +1302,7 @@ The following recipes have a more mathematical flavor:
     >>> polynomial_eval([], Fraction(2, 3))
     Fraction(0, 1)
     >>> polynomial_eval([], Decimal('1.75'))
-    Decimal('0.00')
+    Decimal('0')
     >>> polynomial_eval([11], 7) == 11
     True
     >>> polynomial_eval([11, 2], 7) == 11 * 7 + 2
@@ -1332,6 +1338,31 @@ The following recipes have a more mathematical flavor:
     []
     >>> list(iter_index(iter('AABCADEAF'), 'A', 10))
     []
+    >>> list(iter_index('AABCADEAF', 'A', 1, 7))
+    [1, 4]
+    >>> list(iter_index(iter('AABCADEAF'), 'A', 1, 7))
+    [1, 4]
+    >>> # Verify that ValueErrors not swallowed (gh-107208)
+    >>> def assert_no_value(iterable, forbidden_value):
+    ...     for item in iterable:
+    ...         if item == forbidden_value:
+    ...             raise ValueError
+    ...         yield item
+    ...
+    >>> list(iter_index(assert_no_value('AABCADEAF', 'B'), 'A'))
+    Traceback (most recent call last):
+    ...
+    ValueError
+    >>> # Verify that both paths can find identical NaN values
+    >>> x = float('NaN')
+    >>> y = float('NaN')
+    >>> list(iter_index([0, x, x, y, 0], x))
+    [1, 2]
+    >>> list(iter_index(iter([0, x, x, y, 0]), x))
+    [1, 2]
+    >>> # Test list input. Lists do not support None for the stop argument
+    >>> list(iter_index(list('AABCADEAF'), 'A'))
+    [0, 1, 4, 7]
 
     >>> list(sieve(30))
     [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
@@ -1352,6 +1383,12 @@ The following recipes have a more mathematical flavor:
     >>> set(sieve(10_000)).isdisjoint(carmichael)
     True
 
+    >>> list(factor(99))                    # Code example 1
+    [3, 3, 11]
+    >>> list(factor(1_000_000_000_000_007)) # Code example 2
+    [47, 59, 360620266859]
+    >>> list(factor(1_000_000_000_000_403)) # Code example 3
+    [1000000000000403]
     >>> list(factor(0))
     []
     >>> list(factor(1))

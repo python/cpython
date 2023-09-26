@@ -20,7 +20,9 @@
 #endif /* MS_WINDOWS */
 
 
-PyThreadState* _PyOS_ReadlineTState = NULL;
+// Export the symbol since it's used by the readline shared extension
+PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+PyThreadState *_PyOS_ReadlineTState = NULL;
 
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 

@@ -410,7 +410,7 @@ the :mod:`glob` module.)
    *start*.  On Windows, :exc:`ValueError` is raised when *path* and *start*
    are on different drives.
 
-   *start* defaults to :attr:`os.curdir`.
+   *start* defaults to :data:`os.curdir`.
 
    .. availability:: Unix, Windows.
 

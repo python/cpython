@@ -7,9 +7,10 @@
  */
 
 #include "Python.h"
-#include "pycore_atexit.h"
+#include "pycore_atexit.h"        // export _Py_AtExit()
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY
 #include "pycore_interp.h"        // PyInterpreterState.atexit
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
 
 /* ===================================================================== */
@@ -24,8 +25,8 @@ get_atexit_state(void)
 
 
 int
-_Py_AtExit(PyInterpreterState *interp,
-           atexit_datacallbackfunc func, void *data)
+PyUnstable_AtExit(PyInterpreterState *interp,
+                  atexit_datacallbackfunc func, void *data)
 {
     assert(interp == _PyInterpreterState_GET());
     atexit_callback *callback = PyMem_Malloc(sizeof(atexit_callback));

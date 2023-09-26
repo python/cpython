@@ -3,7 +3,8 @@
 #include <Python.h>
 #include "pycore_dtoa.h"          // _Py_dg_strtod()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include <locale.h>
+
+#include <locale.h>               // localeconv()
 
 /* Case-insensitive string match used for nan and inf detection; t should be
    lower-case.  Returns 1 for a successful match, 0 otherwise. */

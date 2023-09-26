@@ -269,6 +269,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
+    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         # check_output() function with timeout arg
         with self.assertRaises(subprocess.TimeoutExpired) as c:
@@ -1292,6 +1293,7 @@ class ProcessTestCase(BaseTestCase):
         with self.assertWarnsRegex(RuntimeWarning, 'line buffering'):
             self._test_bufsize_equal_one(line, b'', universal_newlines=False)
 
+    @support.requires_resource('cpu')
     def test_leaking_fds_on_error(self):
         # see bug #5179: Popen leaks file descriptors to PIPEs if
         # the child fails to execute; this will eventually exhaust
@@ -1642,6 +1644,7 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
+    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             cp = self.run_python((
@@ -1691,6 +1694,14 @@ class RunFuncTestCase(BaseTestCase):
         args = [path, '-c', 'import sys; sys.exit(57)']
         res = subprocess.run(args)
         self.assertEqual(res.returncode, 57)
+
+    @unittest.skipUnless(mswindows, "Maybe test trigger a leak on Ubuntu")
+    def test_run_with_an_empty_env(self):
+        # gh-105436: fix subprocess.run(..., env={}) broken on Windows
+        args = [sys.executable, "-c", 'pass']
+        # Ignore subprocess errors - we only care that the API doesn't
+        # raise an OSError
+        subprocess.run(args, env={})
 
     def test_capture_output(self):
         cp = self.run_python(("import sys;"

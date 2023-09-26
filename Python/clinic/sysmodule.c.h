@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -444,7 +443,7 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    new_limit = _PyLong_AsInt(arg);
+    new_limit = PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -507,7 +506,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     if (!args) {
         goto exit;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -675,7 +674,7 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -730,7 +729,7 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -808,7 +807,7 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     if (!args) {
         goto exit;
     }
-    maxdigits = _PyLong_AsInt(args[0]);
+    maxdigits = PyLong_AsInt(args[0]);
     if (maxdigits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -969,7 +968,7 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1121,7 +1120,7 @@ PyDoc_STRVAR(sys__stats_on__doc__,
 "_stats_on($module, /)\n"
 "--\n"
 "\n"
-"Turns on stats gathering (stats gathering is on by default).");
+"Turns on stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_ON_METHODDEF    \
     {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
@@ -1143,7 +1142,7 @@ PyDoc_STRVAR(sys__stats_off__doc__,
 "_stats_off($module, /)\n"
 "--\n"
 "\n"
-"Turns off stats gathering (stats gathering is on by default).");
+"Turns off stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_OFF_METHODDEF    \
     {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
@@ -1187,18 +1186,30 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "_stats_dump($module, /)\n"
 "--\n"
 "\n"
-"Dump stats to file, and clears the stats.");
+"Dump stats to file, and clears the stats.\n"
+"\n"
+"Return False if no statistics were not dumped because stats gathering was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
 
-static PyObject *
+static int
 sys__stats_dump_impl(PyObject *module);
 
 static PyObject *
 sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys__stats_dump_impl(module);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__stats_dump_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(Py_STATS) */
@@ -1358,7 +1369,7 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1412,4 +1423,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=41937e0843c68009 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=549bb1f92a15f916 input=a9049054013a1b77]*/

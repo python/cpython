@@ -737,7 +737,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
@@ -912,6 +912,13 @@ class UtimeTests(unittest.TestCase):
             # Set to the current time in the old explicit way.
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
+
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
 
     def get_file_system(self, path):
         if sys.platform == 'win32':
@@ -4646,6 +4653,45 @@ class TestPEP519(unittest.TestCase):
             def __fspath__(self):
                 return ''
         self.assertFalse(hasattr(A(), '__dict__'))
+
+    def test_fspath_set_to_None(self):
+        class Foo:
+            __fspath__ = None
+
+        class Bar:
+            def __fspath__(self):
+                return 'bar'
+
+        class Baz(Bar):
+            __fspath__ = None
+
+        good_error_msg = (
+            r"expected str, bytes or os.PathLike object, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            self.fspath(Foo())
+
+        self.assertEqual(self.fspath(Bar()), 'bar')
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            self.fspath(Baz())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            open(Foo())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            open(Baz())
+
+        other_good_error_msg = (
+            r"should be string, bytes or os.PathLike, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Foo")):
+            os.rename(Foo(), "foooo")
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Baz")):
+            os.rename(Baz(), "bazzz")
 
 class TimesTests(unittest.TestCase):
     def test_times(self):

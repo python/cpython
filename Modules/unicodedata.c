@@ -16,13 +16,11 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "structmember.h"         // PyMemberDef
 
 #include <stdbool.h>
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 module unicodedata
@@ -84,7 +82,7 @@ typedef struct previous_version {
 #define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
 
 static PyMemberDef DB_members[] = {
-        {"unidata_version", T_STRING, offsetof(PreviousDBVersion, name), READONLY},
+        {"unidata_version", Py_T_STRING, offsetof(PreviousDBVersion, name), Py_READONLY},
         {NULL}
 };
 
@@ -1037,6 +1035,7 @@ is_unified_ideograph(Py_UCS4 code)
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
         (0x2B820 <= code && code <= 0x2CEA1) || /* CJK Ideograph Extension E */
         (0x2CEB0 <= code && code <= 0x2EBE0) || /* CJK Ideograph Extension F */
+        (0x2EBF0 <= code && code <= 0x2EE5D) || /* CJK Ideograph Extension I */
         (0x30000 <= code && code <= 0x3134A) || /* CJK Ideograph Extension G */
         (0x31350 <= code && code <= 0x323AF);   /* CJK Ideograph Extension H */
 }
@@ -1489,22 +1488,12 @@ unicodedata_exec(PyObject *module)
     v = new_previous_version(ucd_type, "3.2.0",
                              get_change_3_2_0, normalization_3_2_0);
     Py_DECREF(ucd_type);
-    if (v == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(module, "ucd_3_2_0", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "ucd_3_2_0", v) < 0) {
         return -1;
     }
 
     /* Export C API */
-    PyObject *capsule = unicodedata_create_capi();
-    if (capsule == NULL) {
-        return -1;
-    }
-    int rc = PyModule_AddObjectRef(module, "_ucnhash_CAPI", capsule);
-    Py_DECREF(capsule);
-    if (rc < 0) {
+    if (PyModule_Add(module, "_ucnhash_CAPI", unicodedata_create_capi()) < 0) {
         return -1;
     }
     return 0;

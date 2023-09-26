@@ -209,6 +209,7 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     const SRE_CHAR* ptr = (const SRE_CHAR *)state->ptr;
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t i;
+    INIT_TRACE(state);
 
     /* adjust end */
     if (maxcount < end - ptr && maxcount != SRE_MAXREPEAT)
@@ -563,10 +564,11 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t ret = 0;
     int jump;
-    unsigned int sigcount=0;
+    unsigned int sigcount = state->sigcount;
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
+    INIT_TRACE(state);
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
@@ -1334,6 +1336,10 @@ dispatch:
                     MARK_POP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
+                    /* Restore the global Input Stream pointer
+                       since it can change after jumps. */
+                    state->ptr = ptr;
+
                     /* We have sufficient matches, so exit loop. */
                     break;
                 }
@@ -1561,8 +1567,10 @@ exit:
     ctx_pos = ctx->last_ctx_pos;
     jump = ctx->jump;
     DATA_POP_DISCARD(ctx);
-    if (ctx_pos == -1)
+    if (ctx_pos == -1) {
+        state->sigcount = sigcount;
         return ret;
+    }
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1639,6 +1647,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
     int flags = 0;
+    INIT_TRACE(state);
 
     if (ptr > end)
         return 0;

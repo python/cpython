@@ -70,7 +70,7 @@ The module defines the following items:
 .. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
-   methods of a :term:`file object`, with the exception of the :meth:`truncate`
+   methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
    method.  At least one of *fileobj* and *filename* must be given a non-trivial
    value.
 
@@ -113,7 +113,7 @@ The module defines the following items:
 
    :class:`GzipFile` supports the :class:`io.BufferedIOBase` interface,
    including iteration and the :keyword:`with` statement.  Only the
-   :meth:`truncate` method isn't implemented.
+   :meth:`~io.IOBase.truncate` method isn't implemented.
 
    :class:`GzipFile` also provides the following method and attribute:
 
@@ -250,6 +250,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 
@@ -268,7 +270,7 @@ Command line options
 
 .. cmdoption:: file
 
-   If *file* is not specified, read from :attr:`sys.stdin`.
+   If *file* is not specified, read from :data:`sys.stdin`.
 
 .. cmdoption:: --fast
 

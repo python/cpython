@@ -447,6 +447,18 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.12b1 3531 (Add PEP 695 changes)
 #     Python 3.13a1 3550 (Plugin optimizer support)
 #     Python 3.13a1 3551 (Compact superinstructions)
+#     Python 3.13a1 3552 (Remove LOAD_FAST__LOAD_CONST and LOAD_CONST__LOAD_FAST)
+#     Python 3.13a1 3553 (Add SET_FUNCTION_ATTRIBUTE)
+#     Python 3.13a1 3554 (more efficient bytecodes for f-strings)
+#     Python 3.13a1 3555 (generate specialized opcodes metadata from bytecodes.c)
+#     Python 3.13a1 3556 (Convert LOAD_CLOSURE to a pseudo-op)
+#     Python 3.13a1 3557 (Make the conversion to boolean in jumps explicit)
+#     Python 3.13a1 3558 (Reorder the stack items for CALL)
+#     Python 3.13a1 3559 (Generate opcode IDs from bytecodes.c)
+#     Python 3.13a1 3560 (Add RESUME_CHECK instruction)
+#     Python 3.13a1 3561 (Add cache entry to branch instructions)
+#     Python 3.13a1 3562 (Assign opcode IDs for internal ops in separate range)
+#     Python 3.13a1 3563 (Add CALL_KW and remove KW_NAMES)
 
 #     Python 3.14 will start with 3600
 
@@ -463,7 +475,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3551).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3563).to_bytes(2, 'little') + b'\r\n'
 
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 

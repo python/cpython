@@ -21,21 +21,19 @@ Copyright (C) 1994 Steen Lumholt.
 
 */
 
-#define PY_SSIZE_T_CLEAN
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-#include <ctype.h>
 #ifdef MS_WINDOWS
 #  include "pycore_fileutils.h"   // _Py_stat()
 #endif
 
-#include "pycore_long.h"
+#include "pycore_long.h"          // _PyLong_IsNegative()
 
 #ifdef MS_WINDOWS
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 #define CHECK_SIZE(size, elemsize) \
@@ -47,11 +45,11 @@ Copyright (C) 1994 Steen Lumholt.
 #define TCL_THREADS
 
 #ifdef TK_FRAMEWORK
-#include <Tcl/tcl.h>
-#include <Tk/tk.h>
+#  include <Tcl/tcl.h>
+#  include <Tk/tk.h>
 #else
-#include <tcl.h>
-#include <tk.h>
+#  include <tcl.h>
+#  include <tk.h>
 #endif
 
 #include "tkinter.h"
@@ -318,7 +316,6 @@ typedef struct {
     const Tcl_ObjType *WideIntType;
     const Tcl_ObjType *BignumType;
     const Tcl_ObjType *ListType;
-    const Tcl_ObjType *ProcBodyType;
     const Tcl_ObjType *StringType;
 } TkappObject;
 
@@ -596,7 +593,6 @@ Tkapp_New(const char *screenName, const char *className,
     v->WideIntType = Tcl_GetObjType("wideInt");
     v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
-    v->ProcBodyType = Tcl_GetObjType("procbody");
     v->StringType = Tcl_GetObjType("string");
 
     /* Delete the 'exit' command, which can screw things up */
@@ -875,8 +871,9 @@ asBignumObj(PyObject *value)
         return NULL;
     }
     hexchars += neg + 2; /* skip sign and "0x" */
-    mp_init(&bigValue);
-    if (mp_read_radix(&bigValue, hexchars, 16) != MP_OKAY) {
+    if (mp_init(&bigValue) != MP_OKAY ||
+        mp_read_radix(&bigValue, hexchars, 16) != MP_OKAY)
+    {
         mp_clear(&bigValue);
         Py_DECREF(hexstr);
         PyErr_NoMemory();
@@ -913,16 +910,13 @@ AsObj(PyObject *value)
     if (PyLong_CheckExact(value)) {
         int overflow;
         long longValue;
-#ifdef TCL_WIDE_INT_TYPE
         Tcl_WideInt wideValue;
-#endif
         longValue = PyLong_AsLongAndOverflow(value, &overflow);
         if (!overflow) {
             return Tcl_NewLongObj(longValue);
         }
         /* If there is an overflow in the long conversion,
            fall through to wideInt handling. */
-#ifdef TCL_WIDE_INT_TYPE
         if (_PyLong_AsByteArray((PyLongObject *)value,
                                 (unsigned char *)(void *)&wideValue,
                                 sizeof(wideValue),
@@ -931,7 +925,6 @@ AsObj(PyObject *value)
             return Tcl_NewWideIntObj(wideValue);
         }
         PyErr_Clear();
-#endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
         return asBignumObj(value);
@@ -1173,10 +1166,6 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
             PyTuple_SET_ITEM(result, i, elem);
         }
         return result;
-    }
-
-    if (value->typePtr == tkapp->ProcBodyType) {
-      /* fall through: return tcl object. */
     }
 
     if (value->typePtr == tkapp->StringType) {
@@ -3198,7 +3187,7 @@ static struct PyModuleDef _tkintermodule = {
 PyMODINIT_FUNC
 PyInit__tkinter(void)
 {
-  PyObject *m, *uexe, *cexe, *o;
+    PyObject *m, *uexe, *cexe;
 
     tcl_lock = PyThread_allocate_lock();
     if (tcl_lock == NULL)
@@ -3208,17 +3197,11 @@ PyInit__tkinter(void)
     if (m == NULL)
         return NULL;
 
-    o = PyErr_NewException("_tkinter.TclError", NULL, NULL);
-    if (o == NULL) {
+    Tkinter_TclError = PyErr_NewException("_tkinter.TclError", NULL, NULL);
+    if (PyModule_AddObjectRef(m, "TclError", Tkinter_TclError)) {
         Py_DECREF(m);
         return NULL;
     }
-    if (PyModule_AddObject(m, "TclError", Py_NewRef(o))) {
-        Py_DECREF(o);
-        Py_DECREF(m);
-        return NULL;
-    }
-    Tkinter_TclError = o;
 
     if (PyModule_AddIntConstant(m, "READABLE", TCL_READABLE)) {
         Py_DECREF(m);
@@ -3265,41 +3248,23 @@ PyInit__tkinter(void)
         return NULL;
     }
 
-    o = PyType_FromSpec(&Tkapp_Type_spec);
-    if (o == NULL) {
+    Tkapp_Type = PyType_FromSpec(&Tkapp_Type_spec);
+    if (PyModule_AddObjectRef(m, "TkappType", Tkapp_Type)) {
         Py_DECREF(m);
         return NULL;
     }
-    if (PyModule_AddObject(m, "TkappType", o)) {
-        Py_DECREF(o);
-        Py_DECREF(m);
-        return NULL;
-    }
-    Tkapp_Type = o;
 
-    o = PyType_FromSpec(&Tktt_Type_spec);
-    if (o == NULL) {
+    Tktt_Type = PyType_FromSpec(&Tktt_Type_spec);
+    if (PyModule_AddObjectRef(m, "TkttType", Tktt_Type)) {
         Py_DECREF(m);
         return NULL;
     }
-    if (PyModule_AddObject(m, "TkttType", o)) {
-        Py_DECREF(o);
-        Py_DECREF(m);
-        return NULL;
-    }
-    Tktt_Type = o;
 
-    o = PyType_FromSpec(&PyTclObject_Type_spec);
-    if (o == NULL) {
+    PyTclObject_Type = PyType_FromSpec(&PyTclObject_Type_spec);
+    if (PyModule_AddObjectRef(m, "Tcl_Obj", PyTclObject_Type)) {
         Py_DECREF(m);
         return NULL;
     }
-    if (PyModule_AddObject(m, "Tcl_Obj", o)) {
-        Py_DECREF(o);
-        Py_DECREF(m);
-        return NULL;
-    }
-    PyTclObject_Type = o;
 
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
