@@ -382,7 +382,6 @@ class ParseArgsTestCase(unittest.TestCase):
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
         regrtest = main.Regrtest(ns)
-        self.assertTrue(regrtest.ci_mode)
         self.assertEqual(regrtest.num_workers, -1)
         self.assertTrue(regrtest.want_rerun)
         self.assertTrue(regrtest.randomize)
@@ -412,6 +411,11 @@ class ParseArgsTestCase(unittest.TestCase):
         use_resources = sorted(cmdline.ALL_RESOURCES)
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 20 * 60)
+
+    def test_dont_add_python_opts(self):
+        args = ['--dont-add-python-opts']
+        ns = cmdline._parse_args(args)
+        self.assertFalse(ns._add_python_opts)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1984,22 +1988,23 @@ class ArgsTestCase(BaseTestCase):
                     # -E option
                     self.assertTrue(config['use_environment'], 0)
 
-                # test if get_config() is not available
-                def test_unbuffered(self):
-                    # -u option
-                    self.assertFalse(sys.stdout.line_buffering)
-                    self.assertFalse(sys.stderr.line_buffering)
-
                 def test_python_opts(self):
+                    # -u option
+                    self.assertTrue(sys.__stdout__.write_through)
+                    self.assertTrue(sys.__stderr__.write_through)
+
                     # -W default option
                     self.assertTrue(sys.warnoptions, ['default'])
+
                     # -bb option
                     self.assertEqual(sys.flags.bytes_warning, 2)
+
                     # -E option
                     self.assertTrue(sys.flags.ignore_environment)
         """)
         testname = self.create_test(code=code)
 
+        # Use directly subprocess to control the exact command line
         cmd = [sys.executable,
                "-m", "test", option,
                f'--testdir={self.tmptestdir}',
@@ -2010,11 +2015,10 @@ class ArgsTestCase(BaseTestCase):
                               text=True)
         self.assertEqual(proc.returncode, 0, proc)
 
-    def test_reexec_fast_ci(self):
-        self.check_reexec("--fast-ci")
-
-    def test_reexec_slow_ci(self):
-        self.check_reexec("--slow-ci")
+    def test_add_python_opts(self):
+        for opt in ("--fast-ci", "--slow-ci"):
+            with self.subTest(opt=opt):
+                self.check_reexec(opt)
 
 
 class TestUtils(unittest.TestCase):

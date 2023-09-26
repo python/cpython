@@ -48,7 +48,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace, reexec: bool = False):
+    def __init__(self, ns: Namespace, _add_python_opts: bool = False):
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
@@ -70,7 +70,11 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
-        self.want_reexec: bool = (reexec and not ns.no_reexec)
+
+        ci_mode = (ns.fast_ci or ns.slow_ci)
+        self.want_add_python_opts: bool = (_add_python_opts
+                                           and ns._add_python_opts
+                                           and ci_mode)
 
         # Select tests
         if ns.match_tests:
@@ -97,7 +101,6 @@ class Regrtest:
         self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
-        self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
         self.fail_fast: bool = ns.failfast
         self.fail_env_changed: bool = ns.fail_env_changed
         self.fail_rerun: bool = ns.fail_rerun
@@ -486,32 +489,48 @@ class Regrtest:
                 # processes.
                 return self._run_tests(selected, tests)
 
-    def _reexecute_python(self):
-        if self.python_cmd:
-            # Do nothing if --python=cmd option is used
+    def _add_python_opts(self):
+        python_opts = []
+
+        # Unbuffered stdout and stderr
+        if not sys.stdout.write_through:
+            python_opts.append('-u')
+
+        # Add warnings filter 'default'
+        if 'default' not in sys.warnoptions:
+            python_opts.extend(('-W', 'default'))
+
+        # Error on bytes/str comparison
+        if sys.flags.bytes_warning < 2:
+            python_opts.append('-bb')
+
+        # Ignore PYTHON* environment variables
+        if not sys.flags.ignore_environment:
+            python_opts.append('-E')
+
+        if not python_opts:
             return
 
-        python_opts = [
-            '-u',                 # Unbuffered stdout and stderr
-            '-W', 'default',      # Add warnings filter 'default'
-            '-bb',                # Error on bytes/str comparison
-            '-E',                 # Ignore PYTHON* environment variables
-        ]
-
-        cmd = [*sys.orig_argv, "--no-reexec"]
+        cmd = [*sys.orig_argv, "--dont-add-python-opts"]
         cmd[1:1] = python_opts
 
         # Make sure that messages before execv() are logged
         sys.stdout.flush()
         sys.stderr.flush()
 
+        cmd_text = shlex.join(cmd)
         try:
-            os.execv(cmd[0], cmd)
-            # execv() do no return and so we don't get to this line on success
-        except OSError as exc:
-            cmd_text = shlex.join(cmd)
-            print_warning(f"Failed to reexecute Python: {exc!r}\n"
+            if hasattr(os, 'execv') and not MS_WINDOWS:
+                os.execv(cmd[0], cmd)
+                # execv() do no return and so we don't get to this line on success
+            else:
+                import subprocess
+                proc = subprocess.run(cmd)
+                sys.exit(proc.returncode)
+        except Exception as exc:
+            print_warning(f"Failed to change Python options: {exc!r}\n"
                           f"Command: {cmd_text}")
+            # continue executing main()
 
     def _init(self):
         # Set sys.stdout encoder error handler to backslashreplace,
@@ -527,8 +546,8 @@ class Regrtest:
         self.tmp_dir = get_temp_dir(self.tmp_dir)
 
     def main(self, tests: TestList | None = None):
-        if self.want_reexec and self.ci_mode:
-            self._reexecute_python()
+        if self.want_add_python_opts:
+            self._add_python_opts()
 
         self._init()
 
@@ -556,7 +575,7 @@ class Regrtest:
         sys.exit(exitcode)
 
 
-def main(tests=None, reexec=False, **kwargs):
+def main(tests=None, _add_python_opts=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns, reexec=reexec).main(tests=tests)
+    Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)
