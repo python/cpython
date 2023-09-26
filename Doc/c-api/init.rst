@@ -1115,6 +1115,42 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.7
 
 
+.. c:function:: int PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
+
+   Indicate that current thread will be executing Python code against
+   the ``__main__`` module of the given interpreter.  This is meant for
+   use in embedded applications or code that manages subinterpreters.
+   Calling this is appropriate right before running a script,
+   e.g. using :c:func:`PyRun_SimpleString`.
+
+   If the interpreter is already running then this will raise
+   :exc:`RuntimeError`.
+
+   This must be called in the thread where that will happen.
+   The caller must hold the GIL.  Every call must have a corresponding
+   call to :c:func:`PyInterpreterState_UnsetRunningMain`.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: void PyInterpreterState_UnsetRunningMain(PyInterpreterState *interp)
+
+   Indicate that the current thread is done running code in the
+   interpreter's ``__main__`` module.  This is the companion to
+   :c:func:`PyInterpreterState_SetRunningMain`.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
+
+   Return true (nonzero) if the interpreter is currently running a script
+   in its ``__main__`` module, false (zero) if not.
+   See :c:func:`PyInterpreterState_SetRunningMain`.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: PyObject* PyInterpreterState_GetDict(PyInterpreterState *interp)
 
    Return a dictionary in which interpreter-specific data may be stored.
