@@ -27,7 +27,7 @@ repos:
         language: "system"
         types_or: ['c', 'c++']
         # Don't check the style of copies directories containing external libraries
-        exclude: '^Modules/(_decimal/libmpdec|expat|zlib)/.*$'
+        exclude: '^Modules/(_decimal/libmpdec|expat)/.*$'
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
