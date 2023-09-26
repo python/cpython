@@ -465,44 +465,8 @@ and others in :gh:`103764`.)
 Other Language Changes
 ======================
 
-* Add :ref:`support for the perf profiler <perf_profiling>` through the new
-  environment variable :envvar:`PYTHONPERFSUPPORT`
-  and command-line option :option:`-X perf <-X>`,
-  as well as the new :func:`sys.activate_stack_trampoline`,
-  :func:`sys.deactivate_stack_trampoline`,
-  and :func:`sys.is_stack_trampoline_active` functions.
-  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
-  with contributions from Gregory P. Smith [Google] and Mark Shannon
-  in :gh:`96123`.)
-
-* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
-  have a new a *filter* argument that allows limiting tar features than may be
-  surprising or dangerous, such as creating files outside the destination
-  directory.
-  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
-  In Python 3.14, the default will switch to ``'data'``.
-  (Contributed by Petr Viktorin in :pep:`706`.)
-
-* :class:`types.MappingProxyType` instances are now hashable if the underlying
-  mapping is hashable.
-  (Contributed by Serhiy Storchaka in :gh:`87995`.)
-
-* :class:`memoryview` now supports the half-float type (the "e" format code).
-  (Contributed by Donghee Na and Antoine Pitrou in :gh:`90751`.)
-
 * The parser now raises :exc:`SyntaxError` when parsing source code containing
   null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
-
-* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
-  when parsing source code containing null bytes. (Contributed by Pablo Galindo
-  in :gh:`96670`.)
-
-* The Garbage Collector now runs only on the eval breaker mechanism of the
-  Python bytecode evaluation loop instead of object allocations. The GC can
-  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
-  need to run for a long time without executing any Python code also have a
-  chance to execute the GC periodically. (Contributed by Pablo Galindo in
-  :gh:`97922`.)
 
 * A backslash-character pair that is not a valid escape sequence now generates
   a :exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.
@@ -519,23 +483,12 @@ Other Language Changes
   In a future Python version they will be eventually a :exc:`SyntaxError`.
   (Contributed by Victor Stinner in :gh:`98401`.)
 
-* All builtin and extension callables expecting boolean parameters now accept
-  arguments of any type instead of just :class:`bool` and :class:`int`.
-  (Contributed by Serhiy Storchaka in :gh:`60203`.)
-
 * Variables used in the target part of comprehensions that are not stored to
   can now be used in assignment expressions (``:=``).
   For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
   ``b`` is now allowed. Note that assigning to variables stored to in the target
   part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
   (Contributed by Nikita Sobolev in :gh:`100581`.)
-
-* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
-  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
-
-* :func:`sum` now uses Neumaier summation to improve accuracy when summing
-  floats or mixed ints and floats.
-  (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a class or type's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
@@ -545,6 +498,53 @@ Other Language Changes
   and raises one other exception, that exception is no longer wrapped in an
   :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
   Katriel in :gh:`103590`.)
+
+* The Garbage Collector now runs only on the eval breaker mechanism of the
+  Python bytecode evaluation loop instead of object allocations. The GC can
+  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
+  need to run for a long time without executing any Python code also have a
+  chance to execute the GC periodically. (Contributed by Pablo Galindo in
+  :gh:`97922`.)
+
+* All builtin and extension callables expecting boolean parameters now accept
+  arguments of any type instead of just :class:`bool` and :class:`int`.
+  (Contributed by Serhiy Storchaka in :gh:`60203`.)
+
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Donghee Na and Antoine Pitrou in :gh:`90751`.)
+
+* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
+  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
+
+* :func:`sum` now uses Neumaier summation to improve accuracy and commutativity
+  when summing floats or mixed ints and floats.
+  (Contributed by Raymond Hettinger in :gh:`100425`.)
+
+* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
+  when parsing source code containing null bytes. (Contributed by Pablo Galindo
+  in :gh:`96670`.)
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
+
+* :class:`types.MappingProxyType` instances are now hashable if the underlying
+  mapping is hashable.
+  (Contributed by Serhiy Storchaka in :gh:`87995`.)
+
+* Add :ref:`support for the perf profiler <perf_profiling>` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`
+  and command-line option :option:`-X perf <-X>`,
+  as well as the new :func:`sys.activate_stack_trampoline`,
+  :func:`sys.deactivate_stack_trampoline`,
+  and :func:`sys.is_stack_trampoline_active` functions.
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
 
 
 New Modules
