@@ -266,12 +266,10 @@ def ci(pull_request):
         return
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
     fixed = []
-    fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
     fixed.extend(normalize_docs_whitespace(doc_files))
     if not fixed:
@@ -284,13 +282,10 @@ def ci(pull_request):
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
     misc_files = {p for p in file_paths if p.startswith('Misc')}
-    # PEP 8 whitespace rules enforcement.
-    normalize_whitespace(python_files)
     # C rules enforcement.
     normalize_c_whitespace(c_files)
     # Doc whitespace enforcement.
@@ -307,10 +302,13 @@ def main():
     regenerated_pyconfig_h_in(file_paths)
 
     # Test suite run and passed.
-    if python_files or c_files:
-        end = " and check for refleaks?" if c_files else "?"
-        print()
-        print("Did you run the test suite" + end)
+    has_c_files = any(fn for fn in file_paths if fn.endswith(('.c', '.h')))
+    has_python_files = any(fn for fn in file_paths if fn.endswith('.py'))
+    print()
+    if has_c_files:
+        print("Did you run the test suite and check for refleaks?")
+    elif has_python_files:
+        print("Did you run the test suite?")
 
 
 if __name__ == '__main__':
