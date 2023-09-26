@@ -670,7 +670,7 @@ def emit_optimization_stats(stats):
 
 
 def emit_comparative_optimization_stats(base_stats, head_stats):
-    if not any("Optimization attempts" in stats for stats in (base_stats, head_stats)):
+    if not all("Optimization attempts" in stats for stats in (base_stats, head_stats)):
         return
 
     base_uop_stats = extract_opcode_stats(base_stats, "uop")
