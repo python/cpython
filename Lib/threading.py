@@ -1621,6 +1621,7 @@ def main_thread():
     In normal conditions, the main thread is the thread from which the
     Python interpreter was started.
     """
+    # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
 
 # get thread-local implementation, either from the thread
