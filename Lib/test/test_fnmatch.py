@@ -225,7 +225,7 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('?'), r'(?s:.)\Z')
         self.assertEqual(translate('a?b*'), r'(?s:a.b.*)\Z')
         self.assertEqual(translate('[abc]'), r'(?s:[abc])\Z')
-        self.assertEqual(translate('[]]'), r'(?s:[]])\Z')
+        self.assertEqual(translate('[]]'), r'(?s:[\]])\Z')
         self.assertEqual(translate('[!x]'), r'(?s:[^x])\Z')
         self.assertEqual(translate('[^x]'), r'(?s:[\^x])\Z')
         self.assertEqual(translate('[x'), r'(?s:\[x)\Z')
@@ -235,7 +235,7 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('*********'), r'(?s:.*)\Z')
         self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
         self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
-        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[\?].)\Z')
         # fancy translation to prevent exponential-time match failure
         t = translate('**a*a****a')
         self.assertEqual(t, r'(?s:(?>.*?a)(?>.*?a).*a)\Z')

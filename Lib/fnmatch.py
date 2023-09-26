@@ -77,83 +77,13 @@ def translate(pat):
     There is no way to quote meta-characters.
     """
 
-    STAR = object()
-    res = []
-    add = res.append
-    i, n = 0, len(pat)
-    while i < n:
-        c = pat[i]
-        i = i+1
-        if c == '*':
-            # compress consecutive `*` into one
-            if (not res) or res[-1] is not STAR:
-                add(STAR)
-        elif c == '?':
-            add('.')
-        elif c == '[':
-            j = i
-            if j < n and pat[j] == '!':
-                j = j+1
-            if j < n and pat[j] == ']':
-                j = j+1
-            while j < n and pat[j] != ']':
-                j = j+1
-            if j >= n:
-                add('\\[')
-            else:
-                stuff = pat[i:j]
-                if '-' not in stuff:
-                    stuff = stuff.replace('\\', r'\\')
-                else:
-                    chunks = []
-                    k = i+2 if pat[i] == '!' else i+1
-                    while True:
-                        k = pat.find('-', k, j)
-                        if k < 0:
-                            break
-                        chunks.append(pat[i:k])
-                        i = k+1
-                        k = k+3
-                    chunk = pat[i:j]
-                    if chunk:
-                        chunks.append(chunk)
-                    else:
-                        chunks[-1] += '-'
-                    # Remove empty ranges -- invalid in RE.
-                    for k in range(len(chunks)-1, 0, -1):
-                        if chunks[k-1][-1] > chunks[k][0]:
-                            chunks[k-1] = chunks[k-1][:-1] + chunks[k][1:]
-                            del chunks[k]
-                    # Escape backslashes and hyphens for set difference (--).
-                    # Hyphens that create ranges shouldn't be escaped.
-                    stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
-                                     for s in chunks)
-                # Escape set operations (&&, ~~ and ||).
-                stuff = re.sub(r'([&~|])', r'\\\1', stuff)
-                i = j+1
-                if not stuff:
-                    # Empty range: never match.
-                    add('(?!)')
-                elif stuff == '!':
-                    # Negated empty range: match any character.
-                    add('.')
-                else:
-                    if stuff[0] == '!':
-                        stuff = '^' + stuff[1:]
-                    elif stuff[0] in ('^', '['):
-                        stuff = '\\' + stuff
-                    add(f'[{stuff}]')
-        else:
-            add(re.escape(c))
-    assert i == n
-
     # Deal with STARs.
-    inp = res
+    inp = _scanner.scan(pat)[0]
     res = []
     add = res.append
     i, n = 0, len(inp)
     # Fixed pieces at the start?
-    while i < n and inp[i] is not STAR:
+    while i < n and inp[i] is not _STAR:
         add(inp[i])
         i += 1
     # Now deal with STAR fixed STAR fixed ...
@@ -164,14 +94,14 @@ def translate(pat):
     # translate() results together via "|" to build large regexps matching
     # "one of many" shell patterns.
     while i < n:
-        assert inp[i] is STAR
+        assert inp[i] is _STAR
         i += 1
         if i == n:
             add(".*")
             break
-        assert inp[i] is not STAR
+        assert inp[i] is not _STAR
         fixed = []
-        while i < n and inp[i] is not STAR:
+        while i < n and inp[i] is not _STAR:
             fixed.append(inp[i])
             i += 1
         fixed = "".join(fixed)
@@ -183,3 +113,43 @@ def translate(pat):
     assert i == n
     res = "".join(res)
     return fr'(?s:{res})\Z'
+
+
+def _translate_literal(scanner, token):
+    """Translate a literal token to a regular expression."""
+    return re.escape(token)
+
+
+def _translate_range(scanner, token):
+    """Translate a character range, like 'a-z', to a regular expression."""
+    start, end = token[0], token[2]
+    if start > end:
+        # Remove empty ranges -- invalid in RE.
+        return ''
+    return f'{re.escape(start)}-{re.escape(end)}'
+
+
+def _translate_set(scanner, token):
+    """Translate a set wildcard, like '[a-z]' or '[!ij]', to a regular expression."""
+    negated = token[1] == '!'
+    token = token[1+negated:-1]
+    token = ''.join(_set_scanner.scan(token)[0])
+    if negated:
+        return f'[^{token}]' if token else '.'
+    else:
+        return f'[{token}]' if token else '(?!)'
+
+
+_STAR = object()
+
+_scanner = re.Scanner([
+    (r'\*+', _STAR),
+    (r'\?', '.'),
+    (r'\[!?+\]?+[^\]]*\]', _translate_set),
+    (r'.', _translate_literal),
+], flags=re.DOTALL)
+
+_set_scanner = re.Scanner([
+    (r'.-.', _translate_range),
+    (r'.', _translate_literal),
+], flags=re.DOTALL)
