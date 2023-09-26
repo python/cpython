@@ -199,6 +199,9 @@ void _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame)
 #define _PY_ASYNC_EXCEPTION_BIT 3
 #define _PY_GC_SCHEDULED_BIT 4
 
+/* Reserve a few bits for future use */
+#define _PY_EVAL_EVENTS_BITS 8
+#define _PY_EVAL_EVENTS_MASK ((1 << _PY_EVAL_EVENTS_BITS)-1)
 
 static inline void
 _Py_set_eval_breaker_bit(PyInterpreterState *interp, uint32_t bit, uint32_t set)

@@ -4,6 +4,7 @@
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_call.h"
+#include "pycore_ceval.h"         // _PY_EVAL_EVENTS_BITS
 #include "pycore_code.h"          // _PyCode_Clear_Executors()
 #include "pycore_frame.h"
 #include "pycore_interp.h"
@@ -1780,7 +1781,7 @@ check_tool(PyInterpreterState *interp, int tool_id)
 
 /* We share the eval-breaker with flags, so the monitoring
  * version goes in the top 24 bits */
-#define MONITORING_VERSION_INCREMENT (1 << 8)
+#define MONITORING_VERSION_INCREMENT (1 << _PY_EVAL_EVENTS_BITS)
 
 int
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
