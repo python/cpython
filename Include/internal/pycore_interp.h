@@ -73,6 +73,8 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        /* The thread currently executing in the __main__ module, if any. */
+        PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
         long count;
         /* Support for runtime thread stack size tuning.

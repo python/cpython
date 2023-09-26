@@ -1095,6 +1095,50 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 #endif
 
 
+int
+PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
+{
+    if (interp->threads.main != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter already running");
+        return -1;
+    }
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    _Py_EnsureTstateNotNULL(tstate);
+    if (tstate->interp != interp) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "current tstate has wrong interpreter");
+        return -1;
+    }
+    interp->threads.main = tstate;
+    return 0;
+}
+
+void
+PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
+{
+    assert(interp->threads.main == current_fast_get(&_PyRuntime));
+    interp->threads.main = NULL;
+}
+
+static int interpreter_exists(PyInterpreterState *);
+
+int
+PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
+{
+    HEAD_LOCK(interp->runtime);
+    int exists = interpreter_exists(interp);
+    HEAD_UNLOCK(interp->runtime);
+    if (!exists) {
+        return 0;
+    }
+    if (interp->threads.main == NULL) {
+        return 0;
+    }
+    return PyThreadState_IsRunning(interp->threads.main);
+}
+
+
 //----------
 // accessors
 //----------
@@ -1203,6 +1247,22 @@ PyInterpreterState_GetDict(PyInterpreterState *interp)
 //-----------------------------
 // look up an interpreter state
 //-----------------------------
+
+/* This must be called with the "head" lock held. */
+static int
+interpreter_exists(PyInterpreterState *interp)
+{
+    PyInterpreterState *actual = interp->runtime->interpreters.head;
+    while (actual != NULL) {
+        if (actual == interp) {
+            return 1;
+        }
+        actual = actual->next;
+    }
+    // It's a dangling pointer.
+    return 0;
+}
+
 
 /* Return the interpreter associated with the current OS thread.
 
@@ -1680,6 +1740,13 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
         PyThreadState_Clear(p);
         free_threadstate(p);
     }
+}
+
+
+int
+PyThreadState_IsRunning(PyThreadState *tstate)
+{
+    return tstate->current_frame != NULL;
 }
 
 
@@ -2804,6 +2871,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 }
 
+
+/*************/
+/* Other API */
+/*************/
 
 _PyFrameEvalFunction
 _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)

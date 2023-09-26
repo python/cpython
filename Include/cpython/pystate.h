@@ -211,6 +211,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
 
+PyAPI_FUNC(int) PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) PyInterpreterState_IsRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) PyThreadState_IsRunning(PyThreadState *);
+
+
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
 
