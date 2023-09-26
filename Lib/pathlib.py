@@ -1297,25 +1297,24 @@ class _PathBase(PurePath):
                 lookup_path = path
                 path = path._make_child_relpath(part)
                 path._resolving = True
-                path_str = str(path)
                 try:
-                    st = stat_cache.get(path_str)
+                    st = stat_cache.get(path)
                     if st is None:
-                        st = stat_cache[path_str] = path.stat(follow_symlinks=False)
+                        st = stat_cache[path] = path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
                         if link_count >= _MAX_SYMLINKS:
-                            raise OSError(ELOOP, "Too many symbolic links in path", path_str)
-                        target = target_cache.get(path_str)
+                            raise OSError(ELOOP, "Too many symbolic links in path", str(path))
+                        target = target_cache.get(path)
                         if target is None:
-                            target = target_cache[path_str] = path.readlink()
+                            target = target_cache[path] = path.readlink()
                         target, target_parts = target._split_stack()
                         path = target if target.root else lookup_path
                         parts.extend(target_parts)
                     elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", path_str)
+                        raise NotADirectoryError(ENOTDIR, "Not a directory", str(path))
                 except OSError:
                     if strict:
                         raise
