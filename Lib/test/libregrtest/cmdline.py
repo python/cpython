@@ -184,7 +184,7 @@ class Namespace(argparse.Namespace):
         self.threshold = None
         self.fail_rerun = False
         self.tempdir = None
-        self.no_reexec = False
+        self._add_python_opts = True
 
         super().__init__(**kwargs)
 
@@ -344,7 +344,8 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
-    group.add_argument('--no-reexec', action='store_true',
+    group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
+                       action='store_false',
                        help="internal option, don't use it")
     return parser
 
@@ -425,7 +426,7 @@ def _parse_args(args, **kwargs):
         if MS_WINDOWS:
             ns.nowindows = True  # Silence alerts under Windows
     else:
-        ns.no_reexec = True
+        ns._add_python_opts = False
 
     # When both --slow-ci and --fast-ci options are present,
     # --slow-ci has the priority
