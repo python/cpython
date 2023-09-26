@@ -964,9 +964,18 @@ Main Makefile targets
   You can use the configure :option:`--enable-optimizations` option to make
   this the default target of the ``make`` command (``make all`` or just
   ``make``).
-* ``make buildbottest``: Build Python and run the Python test suite, the same
-  way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
-  to change the test timeout (1200 by default: 20 minutes).
+
+* ``make test``: Build Python and run the Python test suite with ``--slow-ci``
+  option. Variables:
+
+  * ``TESTOPTS``: additional regrtest command line options.
+  * ``TESTPYTHONOPTS``: additional Python command line options.
+  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+
+* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
+  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
+  and a default timeout of 10 minutes.
+
 * ``make install``: Build and install Python.
 * ``make regen-all``: Regenerate (almost) all generated files;
   ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately

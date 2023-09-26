@@ -182,7 +182,7 @@ jobs:
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
 
   build_win_amd64:
     name: 'Windows (x64)'
@@ -201,7 +201,7 @@ jobs:
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci
 
   build_win_arm64:
     name: 'Windows (arm64)'
@@ -252,7 +252,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: make test
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -319,7 +319,7 @@ jobs:
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: xvfb-run make test
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -535,7 +535,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: xvfb-run make test
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass

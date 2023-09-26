@@ -547,7 +547,7 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def display_header():
+def display_header(use_resources: tuple[str, ...]):
     encoding = sys.stdout.encoding
 
     # Print basic platform information
@@ -568,6 +568,13 @@ def display_header():
         print("== CPU count:", cpu_count)
     print("== encodings: locale=%s, FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))
+
+
+    if use_resources:
+        print(f"== resources ({len(use_resources)}): "
+              f"{', '.join(sorted(use_resources))}")
+    else:
+        print(f"== resources: (all disabled, use -u option)")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.

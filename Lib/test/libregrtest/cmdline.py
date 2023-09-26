@@ -4,6 +4,8 @@ import shlex
 import sys
 from test.support import os_helper
 
+from .utils import MS_WINDOWS
+
 
 USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]
@@ -145,6 +147,7 @@ RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs) -> None:
+        self.ci = False
         self.testdir = None
         self.verbose = 0
         self.quiet = False
@@ -209,7 +212,13 @@ def _create_parser():
     # We add help explicitly to control what argument group it renders under.
     group.add_argument('-h', '--help', action='help',
                        help='show this help message and exit')
-    group.add_argument('--timeout', metavar='TIMEOUT', type=float,
+    group.add_argument('--fast-ci', action='store_true',
+                       help='Fast Continuous Integration (CI) mode used by '
+                            'GitHub Actions')
+    group.add_argument('--slow-ci', action='store_true',
+                       help='Slow Continuous Integration (CI) mode used by '
+                            'buildbot workers')
+    group.add_argument('--timeout', metavar='TIMEOUT',
                         help='dump the traceback and exit if a test takes '
                              'more than TIMEOUT seconds; disabled if TIMEOUT '
                              'is negative or equals to zero')
@@ -384,7 +393,49 @@ def _parse_args(args, **kwargs):
     for arg in ns.args:
         if arg.startswith('-'):
             parser.error("unrecognized arguments: %s" % arg)
-            sys.exit(1)
+
+    if ns.timeout is not None:
+        # Support "--timeout=" (no value) so Makefile.pre.pre TESTTIMEOUT
+        # can be used by "make buildbottest" and "make test".
+        if ns.timeout != "":
+            try:
+                ns.timeout = float(ns.timeout)
+            except ValueError:
+                parser.error(f"invalid timeout value: {ns.timeout!r}")
+        else:
+            ns.timeout = None
+
+    # Continuous Integration (CI): common options for fast/slow CI modes
+    if ns.slow_ci or ns.fast_ci:
+        # Similar to options:
+        #
+        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
+        #     --slowest --verbose3 --nowindows
+        if ns.use_mp is None:
+            ns.use_mp = 0
+        ns.randomize = True
+        ns.fail_env_changed = True
+        ns.fail_rerun = True
+        ns.rerun = True
+        ns.print_slow = True
+        ns.verbose3 = True
+        if MS_WINDOWS:
+            ns.nowindows = True  # Silence alerts under Windows
+
+    # When both --slow-ci and --fast-ci options are present,
+    # --slow-ci has the priority
+    if ns.slow_ci:
+        # Similar to: -u "all" --timeout=1200
+        if not ns.use:
+            ns.use = [['all']]
+        if ns.timeout is None:
+            ns.timeout = 1200  # 20 minutes
+    elif ns.fast_ci:
+        # Similar to: -u "all,-cpu" --timeout=600
+        if not ns.use:
+            ns.use = [['all', '-cpu']]
+        if ns.timeout is None:
+            ns.timeout = 600  # 10 minutes
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
