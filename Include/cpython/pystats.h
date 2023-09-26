@@ -98,7 +98,6 @@ typedef struct _gc_stats {
 
 typedef struct _uop_stats {
     uint64_t execution_count;
-    uint64_t miss;
 } UOpStats;
 
 typedef struct _optimization_stats {

@@ -284,7 +284,6 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPTIMIZATION_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_EXE_INC(opname) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].execution_count++; } while (0)
-#define UOP_STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].name++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -301,7 +300,6 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPTIMIZATION_STAT_INC(name) ((void)0)
 #define UOP_EXE_INC(opname) ((void)0)
-#define UOP_STAT_INC(opname, name) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
