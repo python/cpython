@@ -518,10 +518,8 @@ def main() -> None:
             print(f"Reading targets from {args.file}")
         with open(args.file, "rt", encoding="utf-8-sig") as fin:
             rules = [x.strip() for x in fin]
-    elif args.args:
+    else args.args:
         rules = args.args
-    else:
-        raise argparse.ArgumentError(None, "no rule(s) specified")
 
     with open(output, "w", encoding="utf-8") as file:
         with report_time("generate"):
