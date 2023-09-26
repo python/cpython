@@ -1502,6 +1502,7 @@ if test "$disable_gil" = "yes"
 then
   AC_DEFINE([Py_NOGIL], [1],
             [Define if you want to disable the GIL])
+  # "t" (for "threaded")
   ABIFLAGS="${ABIFLAGS}t"
 fi
 
