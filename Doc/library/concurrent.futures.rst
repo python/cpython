@@ -293,6 +293,14 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
 
+   .. versionchanged:: 3.12
+      On POSIX systems, if your application has multiple threads and the
+      :mod:`multiprocessing` context uses the ``"fork"`` start method:
+      The :func:`os.fork` function called internally to spawn workers may raise a
+      :exc:`DeprecationWarning`. Pass a *mp_context* configured to use a
+      different start method. See the :func:`os.fork` documentation for
+      further explanation.
+
 .. _processpoolexecutor-example:
 
 ProcessPoolExecutor Example

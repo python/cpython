@@ -44,7 +44,6 @@
 
 This article explains the new features in Python 3.9, compared to 3.8.
 Python 3.9 was released on October 5, 2020.
-
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -415,7 +414,7 @@ datetime
 The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
 and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
 methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
-(Contributed by Dong-hee Na in :issue:`24416`.)
+(Contributed by Donghee Na in :issue:`24416`.)
 
 distutils
 ---------
@@ -429,14 +428,14 @@ fcntl
 
 Added constants :const:`~fcntl.F_OFD_GETLK`, :const:`~fcntl.F_OFD_SETLK`
 and :const:`~fcntl.F_OFD_SETLKW`.
-(Contributed by Dong-hee Na in :issue:`38602`.)
+(Contributed by Donghee Na in :issue:`38602`.)
 
 ftplib
 -------
 
 :class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
 gc
 --
@@ -468,7 +467,7 @@ http
 ----
 
 HTTP status codes ``103 EARLY_HINTS``, ``418 IM_A_TEAPOT`` and ``425 TOO_EARLY`` are added to
-:class:`http.HTTPStatus`. (Contributed by Dong-hee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
+:class:`http.HTTPStatus`. (Contributed by Donghee Na in :issue:`39509` and Ross Rhodes in :issue:`39507`.)
 
 IDLE and idlelib
 ----------------
@@ -509,14 +508,14 @@ an optional *timeout* parameter for their constructors.
 Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
 with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
-(Contributed by Dong-hee Na in :issue:`38615`.)
+(Contributed by Donghee Na in :issue:`38615`.)
 
 :meth:`imaplib.IMAP4.unselect` is added.
 :meth:`imaplib.IMAP4.unselect` frees server's resources associated with the
 selected mailbox and returns the server to the authenticated
 state. This command performs the same actions as :meth:`imaplib.IMAP4.close`, except
 that no messages are permanently removed from the currently
-selected mailbox. (Contributed by Dong-hee Na in :issue:`40375`.)
+selected mailbox. (Contributed by Donghee Na in :issue:`40375`.)
 
 importlib
 ---------
@@ -588,13 +587,13 @@ nntplib
 
 :class:`~!nntplib.NNTP` and :class:`~!nntplib.NNTP_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
 os
 --
 
 Added :const:`~os.CLD_KILLED` and :const:`~os.CLD_STOPPED` for :attr:`si_code`.
-(Contributed by Dong-hee Na in :issue:`38493`.)
+(Contributed by Donghee Na in :issue:`38493`.)
 
 Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :const:`os.P_PIDFD` (:issue:`38713`) for process management with file
@@ -629,7 +628,7 @@ poplib
 
 :class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
 pprint
 ------
@@ -661,10 +660,10 @@ smtplib
 
 :class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+a non-blocking socket. (Contributed by Donghee Na in :issue:`39259`.)
 
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
-(Contributed by Dong-hee Na in :issue:`39329`.)
+(Contributed by Donghee Na in :issue:`39329`.)
 
 socket
 ------
@@ -777,7 +776,7 @@ Optimizations
 * A number of Python builtins (:class:`range`, :class:`tuple`, :class:`set`,
   :class:`frozenset`, :class:`list`, :class:`dict`) are now sped up by using
   :pep:`590` vectorcall protocol.
-  (Contributed by Dong-hee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
+  (Contributed by Donghee Na, Mark Shannon, Jeroen Demeyer and Petr Viktorin in :issue:`37207`.)
 
 * Optimized :func:`~set.difference_update` for the case when the other set
   is much larger than the base set.
@@ -791,7 +790,7 @@ Optimizations
 
 * :term:`floor division` of float operation now has a better performance. Also
   the message of :exc:`ZeroDivisionError` for this operation is updated.
-  (Contributed by Dong-hee Na in :issue:`39434`.)
+  (Contributed by Donghee Na in :issue:`39434`.)
 
 * Decoding short ASCII strings with UTF-8 and ascii codecs is now about
   15% faster.  (Contributed by Inada Naoki in :issue:`37348`.)
@@ -961,7 +960,7 @@ Removed
   are not supported or not enabled by NNTP server administrators.
   For ``xgtitle()``, please use :meth:`!nntplib.NNTP.descriptions` or
   :meth:`!nntplib.NNTP.description` instead.
-  (Contributed by Dong-hee Na in :issue:`39366`.)
+  (Contributed by Donghee Na in :issue:`39366`.)
 
 * :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
@@ -994,7 +993,7 @@ Removed
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
   has been removed. It was deprecated since Python 3.8.
   Use :meth:`~threading.Thread.is_alive()` instead.
-  (Contributed by Dong-hee Na in :issue:`37804`.)
+  (Contributed by Donghee Na in :issue:`37804`.)
 
 * Methods ``getchildren()`` and ``getiterator()`` of classes
   :class:`~xml.etree.ElementTree.ElementTree` and
@@ -1315,7 +1314,7 @@ New Features
 
 * The :c:func:`PyModule_AddType` function is added to help adding a type
   to a module.
-  (Contributed by Dong-hee Na in :issue:`40024`.)
+  (Contributed by Donghee Na in :issue:`40024`.)
 
 * Added the functions :c:func:`PyObject_GC_IsTracked` and
   :c:func:`PyObject_GC_IsFinalized` to the public API to allow to query if

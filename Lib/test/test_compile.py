@@ -443,6 +443,33 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_compile_invalid_namedexpr(self):
+        # gh-109351
+        m = ast.Module(
+            body=[
+                ast.Expr(
+                    value=ast.ListComp(
+                        elt=ast.NamedExpr(
+                            target=ast.Constant(value=1),
+                            value=ast.Constant(value=3),
+                        ),
+                        generators=[
+                            ast.comprehension(
+                                target=ast.Name(id="x", ctx=ast.Store()),
+                                iter=ast.Name(id="y", ctx=ast.Load()),
+                                ifs=[],
+                                is_async=0,
+                            )
+                        ],
+                    )
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -477,6 +504,26 @@ class TestSpecifics(unittest.TestCase):
         ast = _ast.Module()
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
+
+    def test_compile_invalid_typealias(self):
+        # gh-109341
+        m = ast.Module(
+            body=[
+                ast.TypeAlias(
+                    name=ast.Subscript(
+                        value=ast.Name(id="foo", ctx=ast.Load()),
+                        slice=ast.Constant(value="x"),
+                        ctx=ast.Store(),
+                    ),
+                    type_params=[],
+                    value=ast.Name(id="Callable", ctx=ast.Load()),
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "TypeAlias with non-Name name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
 
     def test_dict_evaluation_order(self):
         i = 0
@@ -1205,6 +1252,31 @@ class TestSpecifics(unittest.TestCase):
             return a, b
         self.assertEqual(f(), (54, 96))
 
+    def test_duplicated_small_exit_block(self):
+        # See gh-109627
+        def f():
+            while element and something:
+                try:
+                    return something
+                except:
+                    pass
+
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1750,6 +1822,13 @@ class TestSourcePositions(unittest.TestCase):
                     list(code.co_consts[0].co_positions()),
                     list(code.co_consts[1].co_positions()),
                 )
+
+    def test_load_super_attr(self):
+        source = "class C:\n  def __init__(self):\n    super().__init__()"
+        code = compile(source, "<test>", "exec").co_consts[0].co_consts[1]
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
+        )
 
 
 class TestExpressionStackSize(unittest.TestCase):
