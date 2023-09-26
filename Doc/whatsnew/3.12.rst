@@ -3,7 +3,7 @@
   What's New In Python 3.12
 ****************************
 
-:Editor: TBD
+:Editor: Adam Turner
 
 .. Rules for maintenance:
 
@@ -46,15 +46,12 @@
    researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
-
+Python 3.12 will be released on October 2, 2023.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+.. seealso::
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.12 moves towards release,
-   so it's worth checking back even after reading earlier versions.
-
+   :pep:`693` -- Python 3.12 Release Schedule
 
 Summary -- Release highlights
 =============================
@@ -92,6 +89,13 @@ Important deprecations, removals or restrictions:
 * :pep:`632`: Remove the ``distutils`` package. See
   `the migration guide <https://peps.python.org/pep-0632/#migration-advice>`_
   for advice on its replacement.
+
+* :gh:`95299`: Do not pre-install ``setuptools`` in virtual environments
+  created with :mod:`venv`.
+  This means that ``distutils``, ``setuptools``, ``pkg_resources``,
+  and ``easy_install`` will no longer available by default; to access these
+  run ``pip install setuptools`` in the :ref:`activated <venv-explanation>`
+  virtual environment.
 
 Improved Error Messages
 =======================
@@ -461,44 +465,8 @@ and others in :gh:`103764`.)
 Other Language Changes
 ======================
 
-* Add :ref:`support for the perf profiler <perf_profiling>` through the new
-  environment variable :envvar:`PYTHONPERFSUPPORT`
-  and command-line option :option:`-X perf <-X>`,
-  as well as the new :func:`sys.activate_stack_trampoline`,
-  :func:`sys.deactivate_stack_trampoline`,
-  and :func:`sys.is_stack_trampoline_active` functions.
-  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
-  with contributions from Gregory P. Smith [Google] and Mark Shannon
-  in :gh:`96123`.)
-
-* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
-  have a new a *filter* argument that allows limiting tar features than may be
-  surprising or dangerous, such as creating files outside the destination
-  directory.
-  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
-  In Python 3.14, the default will switch to ``'data'``.
-  (Contributed by Petr Viktorin in :pep:`706`.)
-
-* :class:`types.MappingProxyType` instances are now hashable if the underlying
-  mapping is hashable.
-  (Contributed by Serhiy Storchaka in :gh:`87995`.)
-
-* :class:`memoryview` now supports the half-float type (the "e" format code).
-  (Contributed by Donghee Na and Antoine Pitrou in :gh:`90751`.)
-
 * The parser now raises :exc:`SyntaxError` when parsing source code containing
   null bytes. (Contributed by Pablo Galindo in :gh:`96670`.)
-
-* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
-  when parsing source code containing null bytes. (Contributed by Pablo Galindo
-  in :gh:`96670`.)
-
-* The Garbage Collector now runs only on the eval breaker mechanism of the
-  Python bytecode evaluation loop instead of object allocations. The GC can
-  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
-  need to run for a long time without executing any Python code also have a
-  chance to execute the GC periodically. (Contributed by Pablo Galindo in
-  :gh:`97922`.)
 
 * A backslash-character pair that is not a valid escape sequence now generates
   a :exc:`SyntaxWarning`, instead of :exc:`DeprecationWarning`.
@@ -515,23 +483,12 @@ Other Language Changes
   In a future Python version they will be eventually a :exc:`SyntaxError`.
   (Contributed by Victor Stinner in :gh:`98401`.)
 
-* All builtin and extension callables expecting boolean parameters now accept
-  arguments of any type instead of just :class:`bool` and :class:`int`.
-  (Contributed by Serhiy Storchaka in :gh:`60203`.)
-
 * Variables used in the target part of comprehensions that are not stored to
   can now be used in assignment expressions (``:=``).
   For example, in ``[(b := 1) for a, b.prop in some_iter]``, the assignment to
   ``b`` is now allowed. Note that assigning to variables stored to in the target
   part of comprehensions (like ``a``) is still disallowed, as per :pep:`572`.
   (Contributed by Nikita Sobolev in :gh:`100581`.)
-
-* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
-  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
-
-* :func:`sum` now uses Neumaier summation to improve accuracy and commutativity
-  when summing floats or mixed ints and floats.
-  (Contributed by Raymond Hettinger in :gh:`100425`.)
 
 * Exceptions raised in a class or type's ``__set_name__`` method are no longer
   wrapped by a :exc:`RuntimeError`. Context information is added to the
@@ -541,6 +498,53 @@ Other Language Changes
   and raises one other exception, that exception is no longer wrapped in an
   :exc:`ExceptionGroup`. Also changed in version 3.11.4. (Contributed by Irit
   Katriel in :gh:`103590`.)
+
+* The Garbage Collector now runs only on the eval breaker mechanism of the
+  Python bytecode evaluation loop instead of object allocations. The GC can
+  also run when :c:func:`PyErr_CheckSignals` is called so C extensions that
+  need to run for a long time without executing any Python code also have a
+  chance to execute the GC periodically. (Contributed by Pablo Galindo in
+  :gh:`97922`.)
+
+* All builtin and extension callables expecting boolean parameters now accept
+  arguments of any type instead of just :class:`bool` and :class:`int`.
+  (Contributed by Serhiy Storchaka in :gh:`60203`.)
+
+* :class:`memoryview` now supports the half-float type (the "e" format code).
+  (Contributed by Donghee Na and Antoine Pitrou in :gh:`90751`.)
+
+* :class:`slice` objects are now hashable, allowing them to be used as dict keys and
+  set items. (Contributed by Will Bradshaw, Furkan Onder, and Raymond Hettinger in :gh:`101264`.)
+
+* :func:`sum` now uses Neumaier summation to improve accuracy and commutativity
+  when summing floats or mixed ints and floats.
+  (Contributed by Raymond Hettinger in :gh:`100425`.)
+
+* :func:`ast.parse` now raises :exc:`SyntaxError` instead of :exc:`ValueError`
+  when parsing source code containing null bytes. (Contributed by Pablo Galindo
+  in :gh:`96670`.)
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile extraction filters <tarfile-extraction-filter>` for details.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)
+
+* :class:`types.MappingProxyType` instances are now hashable if the underlying
+  mapping is hashable.
+  (Contributed by Serhiy Storchaka in :gh:`87995`.)
+
+* Add :ref:`support for the perf profiler <perf_profiling>` through the new
+  environment variable :envvar:`PYTHONPERFSUPPORT`
+  and command-line option :option:`-X perf <-X>`,
+  as well as the new :func:`sys.activate_stack_trampoline`,
+  :func:`sys.deactivate_stack_trampoline`,
+  and :func:`sys.is_stack_trampoline_active` functions.
+  (Design by Pablo Galindo. Contributed by Pablo Galindo and Christian Heimes
+  with contributions from Gregory P. Smith [Google] and Mark Shannon
+  in :gh:`96123`.)
 
 
 New Modules
@@ -566,7 +570,7 @@ asyncio
   writing to sockets and uses :meth:`~socket.socket.sendmsg` if the platform
   supports it. (Contributed by Kumar Aditya in :gh:`91166`.)
 
-* Added :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
+* Add :func:`asyncio.eager_task_factory` and :func:`asyncio.create_eager_task_factory`
   functions to allow opting an event loop in to eager task execution,
   making some use-cases 2x to 5x faster.
   (Contributed by Jacob Bower & Itamar Oren in :gh:`102853`, :gh:`104140`, and :gh:`104138`)
@@ -652,7 +656,7 @@ inspect
 
 * Add :func:`inspect.getasyncgenstate` and :func:`inspect.getasyncgenlocals`
   for determining the current state of asynchronous generators.
-  (Contributed by Thomas Krennwallner in :issue:`35759`.)
+  (Contributed by Thomas Krennwallner in :gh:`79940`.)
 
 * The performance of :func:`inspect.getattr_static` has been considerably
   improved. Most calls to the function should be at least 2x faster than they
@@ -662,17 +666,17 @@ inspect
 itertools
 ---------
 
-* Added :class:`itertools.batched()` for collecting into even-sized
+* Add :class:`itertools.batched()` for collecting into even-sized
   tuples where the last batch may be shorter than the rest.
   (Contributed by Raymond Hettinger in :gh:`98363`.)
 
 math
 ----
 
-* Added :func:`math.sumprod` for computing a sum of products.
+* Add :func:`math.sumprod` for computing a sum of products.
   (Contributed by Raymond Hettinger in :gh:`100485`.)
 
-* Extended :func:`math.nextafter` to include a *steps* argument
+* Extend :func:`math.nextafter` to include a *steps* argument
   for moving up or down multiple steps at a time.
   (By Matthias Goergens, Mark Dickinson, and Raymond Hettinger in :gh:`94906`.)
 
@@ -725,7 +729,7 @@ pathlib
 * Add *walk_up* optional parameter to :meth:`pathlib.PurePath.relative_to`
   to allow the insertion of ``..`` entries in the result; this behavior is
   more consistent with :func:`os.path.relpath`.
-  (Contributed by Domenico Ragusa in :issue:`40358`.)
+  (Contributed by Domenico Ragusa in :gh:`84538`.)
 
 * Add :meth:`pathlib.Path.is_junction` as a proxy to :func:`os.path.isjunction`.
   (Contributed by Charles Machalow in :gh:`99547`.)
@@ -745,10 +749,10 @@ pdb
 random
 ------
 
-* Added :func:`random.binomialvariate`.
+* Add :func:`random.binomialvariate`.
   (Contributed by Raymond Hettinger in :gh:`81620`.)
 
-* Added a default of ``lamb=1.0`` to :func:`random.expovariate`.
+* Add a default of ``lamb=1.0`` to :func:`random.expovariate`.
   (Contributed by Raymond Hettinger in :gh:`100234`.)
 
 shutil
@@ -807,7 +811,7 @@ sqlite3
 statistics
 ----------
 
-* Extended :func:`statistics.correlation` to include as a ``ranked`` method
+* Extend :func:`statistics.correlation` to include as a ``ranked`` method
   for computing the Spearman correlation of ranked data.
   (Contributed by Raymond Hettinger in :gh:`95861`.)
 
@@ -945,7 +949,7 @@ unicodedata
 unittest
 --------
 
-Added ``--durations`` command line option, showing the N slowest test cases::
+Add a ``--durations`` command line option, showing the N slowest test cases::
 
   python3 -m unittest --durations=3 lib.tests.test_threading
   .....
@@ -961,7 +965,7 @@ Added ``--durations`` command line option, showing the N slowest test cases::
 
   OK (skipped=3)
 
-(Contributed by Giampaolo Rodola in :issue:`4080`)
+(Contributed by Giampaolo Rodola in :gh:`48330`)
 
 uuid
 ----
@@ -973,11 +977,11 @@ uuid
 Optimizations
 =============
 
-* Removed ``wstr`` and ``wstr_length`` members from Unicode objects.
+* Remove ``wstr`` and ``wstr_length`` members from Unicode objects.
   It reduces object size by 8 or 16 bytes on 64bit platform. (:pep:`623`)
   (Contributed by Inada Naoki in :gh:`92536`.)
 
-* Added experimental support for using the BOLT binary optimizer in the build
+* Add experimental support for using the BOLT binary optimizer in the build
   process, which improves performance by 1-5%.
   (Contributed by Kevin Modzelewski in :gh:`90536` and tuned by Donghee Na in :gh:`101525`)
 
@@ -1010,7 +1014,7 @@ CPython bytecode changes
 * Remove the :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
   instructions. (Contributed by Irit Katriel in :gh:`102859`.)
 
-* Removed the :opcode:`!PRECALL` instruction. (Contributed by Mark Shannon in
+* Remove the :opcode:`!PRECALL` instruction. (Contributed by Mark Shannon in
   :gh:`92925`.)
 
 * Add the :opcode:`LOAD_FAST_AND_CLEAR` instruction as part of the
@@ -1121,11 +1125,6 @@ Deprecated
   module differs from ``__spec__.parent`` (previously it was
   :exc:`ImportWarning`).
   (Contributed by Brett Cannon in :gh:`65961`.)
-
-* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
-  is deprecated for extension modules. Accessing this field will generate a compiler
-  warning at compile time. This field will be removed in Python 3.14.
-  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
 
 * The bitwise inversion operator (``~``) on bool is deprecated. It will throw an
   error in Python 3.14. Use ``not`` for logical negation of bools instead.
@@ -1257,9 +1256,6 @@ Pending Removal in Python 3.14
 * :mod:`xml.etree.ElementTree`: Testing the truth value of an :class:`xml.etree.ElementTree.Element`
   is deprecated and will raise an exception in Python 3.14.
 
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases using the C API (:gh:`95388`).
-
 * ``__package__`` and ``__cached__`` will cease to be set or taken
   into consideration by the import system (:gh:`97879`).
 
@@ -1268,9 +1264,6 @@ Pending Removal in Python 3.14
   but it only got a proper :exc:`DeprecationWarning` in 3.12.
   May be removed in 3.14.
   (Contributed by Nikita Sobolev in :gh:`101866`.)
-
-* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
-  bases using the C API (:gh:`95388`)
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -1404,7 +1397,7 @@ imp
 * The :mod:`!imp` module has been removed.  (Contributed by Barry Warsaw in
   :gh:`98040`.)
 
-* Replace removed :mod:`!imp` functions with :mod:`importlib` functions:
+  To migrate, consult the following correspondence table:
 
     =================================  =======================================
        imp                                importlib
@@ -1419,9 +1412,10 @@ imp
     ``imp.new_module(name)``           ``types.ModuleType(name)``
     ``imp.reload()``                   :func:`importlib.reload`
     ``imp.source_from_cache()``        :func:`importlib.util.source_from_cache`
+    ``imp.load_source()``              *See below*
     =================================  =======================================
 
-* Replace ``imp.load_source()`` with::
+  Replace ``imp.load_source()`` with::
 
         import importlib.util
         import importlib.machinery
@@ -1436,9 +1430,9 @@ imp
             loader.exec_module(module)
             return module
 
-* Removed :mod:`!imp` functions and attributes with no replacements:
+* Remove :mod:`!imp` functions and attributes with no replacements:
 
-  * undocumented functions:
+  * Undocumented functions:
 
     * ``imp.init_builtin()``
     * ``imp.load_compiled()``
@@ -1519,7 +1513,7 @@ ssl
 unittest
 --------
 
-* Removed many old deprecated :mod:`unittest` features:
+* Remove many long-deprecated :mod:`unittest` features:
 
   * A number of :class:`~unittest.TestCase` method aliases:
 
@@ -1556,13 +1550,13 @@ unittest
   * An alias of the :class:`~unittest.TextTestResult` class:
     ``_TextTestResult`` (deprecated in Python 3.2).
 
-  (Contributed by Serhiy Storchaka in :issue:`45162`.)
+  (Contributed by Serhiy Storchaka in :gh:`89325`.)
 
 webbrowser
 ----------
 
 * Remove support for obsolete browsers from :mod:`webbrowser`.
-  Removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
+  The removed browsers include: Grail, Mosaic, Netscape, Galeon, Skipstone,
   Iceape, Firebird, and Firefox versions 35 and below (:gh:`102871`).
 
 xml.etree.ElementTree
@@ -1585,8 +1579,8 @@ zipimport
 Others
 ------
 
-* Removed the ``suspicious`` rule from the documentation :file:`Makefile`, and
-  removed ``Doc/tools/rstlint.py``, both in favor of `sphinx-lint
+* Remove the ``suspicious`` rule from the documentation :file:`Makefile` and
+  :file:`Doc/tools/rstlint.py`, both in favor of `sphinx-lint
   <https://github.com/sphinx-contrib/sphinx-lint>`_.
   (Contributed by Julien Palard in :gh:`98179`.)
 
@@ -1616,7 +1610,7 @@ Changes in the Python API
   contain ASCII letters and digits and underscore.
   (Contributed by Serhiy Storchaka in :gh:`91760`.)
 
-* Removed ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
+* Remove ``randrange()`` functionality deprecated since Python 3.10.  Formerly,
   ``randrange(10.0)`` losslessly converted to ``randrange(10)``. Now, it raises a
   :exc:`TypeError`. Also, the exception raised for non-integer values such as
   ``randrange(10.5)`` or ``randrange('10')`` has been changed from :exc:`ValueError` to
@@ -1630,7 +1624,7 @@ Changes in the Python API
   to :term:`filesystem encoding and error handler`.
   Argument files should be encoded in UTF-8 instead of ANSI Codepage on Windows.
 
-* Removed the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
+* Remove the ``asyncore``-based ``smtpd`` module deprecated in Python 3.4.7
   and 3.5.4.  A recommended replacement is the
   :mod:`asyncio`-based aiosmtpd_ PyPI module.
 
@@ -1755,7 +1749,7 @@ New Features
 ------------
 
 
-* :pep:`697`: Introduced the :ref:`Unstable C API tier <unstable-c-api>`,
+* :pep:`697`: Introduce the :ref:`Unstable C API tier <unstable-c-api>`,
   intended for low-level tools like debuggers and JIT compilers.
   This API may change in each minor release of CPython without deprecation
   warnings.
@@ -1777,7 +1771,7 @@ New Features
 
   (Contributed by Petr Viktorin in :gh:`101101`.)
 
-* :pep:`697`: Added API for extending types whose instance memory layout is
+* :pep:`697`: Add an API for extending types whose instance memory layout is
   opaque:
 
   - :c:member:`PyType_Spec.basicsize` can be zero or negative to specify
@@ -1792,7 +1786,7 @@ New Features
 
   (Contributed by Petr Viktorin in :gh:`103509`.)
 
-* Added the new :ref:`limited C API <limited-c-api>` function :c:func:`PyType_FromMetaclass`,
+* Add the new :ref:`limited C API <limited-c-api>` function :c:func:`PyType_FromMetaclass`,
   which generalizes the existing :c:func:`PyType_FromModuleAndSpec` using
   an additional metaclass argument.
   (Contributed by Wenzel Jakob in :gh:`93012`.)
@@ -1831,13 +1825,13 @@ New Features
   protocol are now available in the :ref:`Limited API <stable>`. (Contributed
   by Wenzel Jakob in :gh:`98586`.)
 
-* Added two new public functions,
+* Add two new public functions,
   :c:func:`PyEval_SetProfileAllThreads` and
   :c:func:`PyEval_SetTraceAllThreads`, that allow to set tracing and profiling
   functions in all running threads in addition to the calling one. (Contributed
   by Pablo Galindo in :gh:`93503`.)
 
-* Added new function :c:func:`PyFunction_SetVectorcall` to the C API
+* Add new function :c:func:`PyFunction_SetVectorcall` to the C API
   which sets the vectorcall field of a given :c:type:`PyFunctionObject`.
   (Contributed by Andrew Frost in :gh:`92257`.)
 
@@ -1847,11 +1841,11 @@ New Features
   compilers, or debuggers.
   (Contributed by Carl Meyer in :gh:`91052`.)
 
-* Added :c:func:`PyType_AddWatcher` and :c:func:`PyType_Watch` API to register
+* Add :c:func:`PyType_AddWatcher` and :c:func:`PyType_Watch` API to register
   callbacks to receive notification on changes to a type.
   (Contributed by Carl Meyer in :gh:`91051`.)
 
-* Added :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
+* Add :c:func:`PyCode_AddWatcher` and :c:func:`PyCode_ClearWatcher`
   APIs to register callbacks to receive notification on creation and
   destruction of code objects.
   (Contributed by Itamar Oren in :gh:`91054`.)
@@ -1881,8 +1875,8 @@ New Features
   to replace the legacy-api :c:func:`!PyErr_Display`. (Contributed by
   Irit Katriel in :gh:`102755`).
 
-* :pep:`683`: Introduced Immortal Objects to Python which allows objects
-  to bypass reference counts and introduced changes to the C-API:
+* :pep:`683`: Introduce *Immortal Objects*, which allows objects
+  to bypass reference counts, and related changes to the C-API:
 
   - ``_Py_IMMORTAL_REFCNT``: The reference count that defines an object
       as immortal.
@@ -1899,7 +1893,7 @@ New Features
 
   (Contributed by Eddie Elizondo in :gh:`84436`.)
 
-* :pep:`684`: Added the new :c:func:`Py_NewInterpreterFromConfig`
+* :pep:`684`: Add the new :c:func:`Py_NewInterpreterFromConfig`
   function and :c:type:`PyInterpreterConfig`, which may be used
   to create sub-interpreters with their own GILs.
   (See :ref:`whatsnew312-pep684` for more info.)
@@ -1948,7 +1942,7 @@ Porting to Python 3.12
   copied as-is to the result string, and any extra arguments discarded.
   (Contributed by Serhiy Storchaka in :gh:`95781`.)
 
-* Fixed wrong sign placement in :c:func:`PyUnicode_FromFormat` and
+* Fix wrong sign placement in :c:func:`PyUnicode_FromFormat` and
   :c:func:`PyUnicode_FromFormatV`.
   (Contributed by Philip Georgi in :gh:`95504`.)
 
@@ -2053,6 +2047,11 @@ Porting to Python 3.12
 Deprecated
 ----------
 
+* In accordance with :pep:`699`, the ``ma_version_tag`` field in :c:type:`PyDictObject`
+  is deprecated for extension modules. Accessing this field will generate a compiler
+  warning at compile time. This field will be removed in Python 3.14.
+  (Contributed by Ramvikrams and Kumar Aditya in :gh:`101193`. PEP by Ken Jin.)
+
 * Deprecate global configuration variable:
 
   * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
@@ -2082,8 +2081,8 @@ Deprecated
   :c:type:`PyConfig` instead.
   (Contributed by Victor Stinner in :gh:`77782`.)
 
-* Creating immutable types (:c:macro:`Py_TPFLAGS_IMMUTABLETYPE`) with mutable
-  bases is deprecated and will be disabled in Python 3.14.
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases is deprecated and will be disabled in Python 3.14. (:gh:`95388`)
 
 * The :file:`structmember.h` header is deprecated, though it continues to be
   available and there are no plans to remove it.
@@ -2131,6 +2130,93 @@ Deprecated
   or :c:func:`PyType_FromModuleAndSpec` to create a class whose metaclass
   overrides :c:member:`~PyTypeObject.tp_new` is deprecated.
   Call the metaclass instead.
+
+Pending Removal in Python 3.14
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* The ``ma_version_tag`` field in :c:type:`PyDictObject` for extension modules
+  (:pep:`699`; :gh:`101193`).
+
+* Global configuration variables:
+
+  * :c:var:`Py_DebugFlag`: use :c:member:`PyConfig.parser_debug`
+  * :c:var:`Py_VerboseFlag`: use :c:member:`PyConfig.verbose`
+  * :c:var:`Py_QuietFlag`: use :c:member:`PyConfig.quiet`
+  * :c:var:`Py_InteractiveFlag`: use :c:member:`PyConfig.interactive`
+  * :c:var:`Py_InspectFlag`: use :c:member:`PyConfig.inspect`
+  * :c:var:`Py_OptimizeFlag`: use :c:member:`PyConfig.optimization_level`
+  * :c:var:`Py_NoSiteFlag`: use :c:member:`PyConfig.site_import`
+  * :c:var:`Py_BytesWarningFlag`: use :c:member:`PyConfig.bytes_warning`
+  * :c:var:`Py_FrozenFlag`: use :c:member:`PyConfig.pathconfig_warnings`
+  * :c:var:`Py_IgnoreEnvironmentFlag`: use :c:member:`PyConfig.use_environment`
+  * :c:var:`Py_DontWriteBytecodeFlag`: use :c:member:`PyConfig.write_bytecode`
+  * :c:var:`Py_NoUserSiteDirectory`: use :c:member:`PyConfig.user_site_directory`
+  * :c:var:`Py_UnbufferedStdioFlag`: use :c:member:`PyConfig.buffered_stdio`
+  * :c:var:`Py_HashRandomizationFlag`: use :c:member:`PyConfig.use_hash_seed`
+    and :c:member:`PyConfig.hash_seed`
+  * :c:var:`Py_IsolatedFlag`: use :c:member:`PyConfig.isolated`
+  * :c:var:`Py_LegacyWindowsFSEncodingFlag`: use :c:member:`PyPreConfig.legacy_windows_fs_encoding`
+  * :c:var:`Py_LegacyWindowsStdioFlag`: use :c:member:`PyConfig.legacy_windows_stdio`
+  * :c:var:`!Py_FileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_HasFileSystemDefaultEncoding`: use :c:member:`PyConfig.filesystem_encoding`
+  * :c:var:`!Py_FileSystemDefaultEncodeErrors`: use :c:member:`PyConfig.filesystem_errors`
+  * :c:var:`!Py_UTF8Mode`: use :c:member:`PyPreConfig.utf8_mode` (see :c:func:`Py_PreInitialize`)
+
+  The :c:func:`Py_InitializeFromConfig` API should be used with
+  :c:type:`PyConfig` instead.
+
+* Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
+  bases (:gh:`95388`).
+
+Pending Removal in Python 3.15
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* :c:func:`PyImport_ImportModuleNoBlock`: use :c:func:`PyImport_ImportModule`
+* :c:type:`!Py_UNICODE_WIDE` type: use :c:type:`wchar_t`
+* :c:type:`Py_UNICODE` type: use :c:type:`wchar_t`
+* Python initialization functions:
+
+  * :c:func:`PySys_ResetWarnOptions`: clear :data:`sys.warnoptions` and
+    :data:`!warnings.filters`
+  * :c:func:`Py_GetExecPrefix`: get :data:`sys.exec_prefix`
+  * :c:func:`Py_GetPath`: get :data:`sys.path`
+  * :c:func:`Py_GetPrefix`: get :data:`sys.prefix`
+  * :c:func:`Py_GetProgramFullPath`: get :data:`sys.executable`
+  * :c:func:`Py_GetProgramName`: get :data:`sys.executable`
+  * :c:func:`Py_GetPythonHome`: get :c:member:`PyConfig.home` or
+    the :envvar:`PYTHONHOME` environment variable
+
+Pending Removal in Future Versions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following APIs are deprecated and will be removed,
+although there is currently no date scheduled for their removal.
+
+* :c:macro:`Py_TPFLAGS_HAVE_FINALIZE`: unneeded since Python 3.8
+* :c:func:`PyErr_Fetch`: use :c:func:`PyErr_GetRaisedException`
+* :c:func:`PyErr_NormalizeException`: use :c:func:`PyErr_GetRaisedException`
+* :c:func:`PyErr_Restore`: use :c:func:`PyErr_SetRaisedException`
+* :c:func:`PyModule_GetFilename`: use :c:func:`PyModule_GetFilenameObject`
+* :c:func:`PyOS_AfterFork`: use :c:func:`PyOS_AfterFork_Child`
+* :c:func:`PySlice_GetIndicesEx`: use :c:func:`PySlice_Unpack` and :c:func:`PySlice_AdjustIndices`
+* :c:func:`!PyUnicode_AsDecodedObject`: use :c:func:`PyCodec_Decode`
+* :c:func:`!PyUnicode_AsDecodedUnicode`: use :c:func:`PyCodec_Decode`
+* :c:func:`!PyUnicode_AsEncodedObject`: use :c:func:`PyCodec_Encode`
+* :c:func:`!PyUnicode_AsEncodedUnicode`: use :c:func:`PyCodec_Encode`
+* :c:func:`PyUnicode_READY`: unneeded since Python 3.12
+* :c:func:`!PyErr_Display`: use :c:func:`PyErr_DisplayException`
+* :c:func:`!_PyErr_ChainExceptions`: use ``_PyErr_ChainExceptions1``
+* :c:member:`!PyBytesObject.ob_shash` member:
+  call :c:func:`PyObject_Hash` instead
+* :c:member:`!PyDictObject.ma_version_tag` member
+* Thread Local Storage (TLS) API:
+
+  * :c:func:`PyThread_create_key`: use :c:func:`PyThread_tss_alloc`
+  * :c:func:`PyThread_delete_key`: use :c:func:`PyThread_tss_free`
+  * :c:func:`PyThread_set_key_value`: use :c:func:`PyThread_tss_set`
+  * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`
+  * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`
+  * :c:func:`PyThread_ReInitTLS`: unneeded since Python 3.7
 
 Removed
 -------

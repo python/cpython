@@ -1,5 +1,6 @@
 import builtins
 import codecs
+import _datetime
 import gc
 import locale
 import operator
@@ -1581,7 +1582,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        # XXX
+        check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
