@@ -1159,18 +1159,18 @@ Deprecated
 
 * :mod:`sqlite3`:
 
-    * :ref:`default adapters and converters
-      <sqlite3-default-converters>` are now deprecated.
-      Instead, use the :ref:`sqlite3-adapter-converter-recipes`
-      and tailor them to your needs.
-      (Contributed by Erlend E. Aasland in :gh:`90016`.)
+  * :ref:`default adapters and converters
+    <sqlite3-default-converters>` are now deprecated.
+    Instead, use the :ref:`sqlite3-adapter-converter-recipes`
+    and tailor them to your needs.
+    (Contributed by Erlend E. Aasland in :gh:`90016`.)
 
-    * In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
-      when :ref:`named placeholders <sqlite3-placeholders>` are used together with
-      parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
-      Starting from Python 3.14, using named placeholders with parameters supplied
-      as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
-      (Contributed by Erlend E. Aasland in :gh:`101698`.)
+  * In :meth:`~sqlite3.Cursor.execute`, :exc:`DeprecationWarning` is now emitted
+    when :ref:`named placeholders <sqlite3-placeholders>` are used together with
+    parameters supplied as a :term:`sequence` instead of as a :class:`dict`.
+    Starting from Python 3.14, using named placeholders with parameters supplied
+    as a sequence will raise a :exc:`~sqlite3.ProgrammingError`.
+    (Contributed by Erlend E. Aasland in :gh:`101698`.)
 
 * :mod:`sys`: The :data:`sys.last_type`, :data:`sys.last_value` and :data:`sys.last_traceback`
   fields are deprecated. Use :data:`sys.last_exc` instead.
