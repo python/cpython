@@ -42,7 +42,6 @@ except ImportError:
 BUFSIZE = 8192
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
-WSA_OPERATION_ABORTED = 995
 
 _mmap_counter = itertools.count()
 
@@ -300,7 +299,7 @@ if _winapi:
             finally:
                 self._send_ov = None
                 nwritten, err = ov.GetOverlappedResult(True)
-            if err == WSA_OPERATION_ABORTED:
+            if err == _winapi.ERROR_OPERATION_ABORTED:
                 # close() was called by another thread while
                 # WaitForMultipleObjects() was waiting for the overlapped
                 # operation.
