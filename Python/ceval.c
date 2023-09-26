@@ -695,6 +695,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
+    entry_frame.yield_offset = 0;
     entry_frame.new_return_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
@@ -725,14 +726,22 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Local "register" variables.
      * These are cached values from the frame and code object.  */
 
-    _Py_CODEUNIT *next_instr;
+    _Py_CODEUNIT *next_instr = NULL;
     PyObject **stack_pointer;
+
+#undef DUMP_FRAME
+#define DUMP_FRAME(TITLE) do { \
+     if (VERBOSE) { \
+       dump_frame_ip(TITLE, frame); \
+       fprintf(stderr, "next_instr = %p\n", next_instr); \
+     } \
+   } while(0);
+
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
-if (!(frame->instr_ptr == frame->prev_instr + 1)) if (VERBOSE) fprintf(stderr, "SET_LOCALS_FROM_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
-    if (0) frame->instr_ptr += 1 + _PyOpcode_Caches[_PyOpcode_Deopt[frame->instr_ptr->op.code]]; \
+    DUMP_FRAME("SET_LOCALS_FROM_FRAME:"); \
     next_instr = frame->instr_ptr + frame->new_return_offset; \
     assert (next_instr == frame->prev_instr + 1); \
     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -868,7 +877,7 @@ exception_unwind:
         {
             /* We can't use frame->f_lasti here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
-if (VERBOSE) fprintf(stderr, "exception_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr-1=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr-1, frame->new_return_offset);
+            DUMP_FRAME("exception_unwind:");
             int level, handler, lasti;
             if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
 if (VERBOSE) fprintf(stderr, "No Exception Handler: offset=%d lasti=%d  handler=%d\n", offset, lasti, handler);
@@ -884,7 +893,7 @@ if (VERBOSE) fprintf(stderr, "No Exception Handler: offset=%d lasti=%d  handler=
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
-if (VERBOSE) fprintf(stderr, "goto exit_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p  new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+                DUMP_FRAME("goto exit_unwind:");
                 goto exit_unwind;
             }
 
@@ -934,7 +943,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
-if (VERBOSE) fprintf(stderr, "exit_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p  new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+    DUMP_FRAME("exit_unwind:");
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;

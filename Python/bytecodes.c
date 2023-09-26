@@ -755,7 +755,7 @@ dummy_func(
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
                     monitor_reraise(tstate, frame, next_instr-1);
-if (VERBOSE) fprintf(stderr, "goto exception_unwind: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+                    DUMP_FRAME("goto exception_unwind");
                     goto exception_unwind;
                 }
                 break;
@@ -771,7 +771,7 @@ if (VERBOSE) fprintf(stderr, "goto exception_unwind: frame=%p frame->prev_instr=
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
-if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d frame->previous = %p\n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset, frame->previous);
+            DUMP_FRAME("INTERPRETER_EXIT1");
             tstate->current_frame = frame->previous;
 if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%p tstate->current_frame->prev_instr=%p tstate->current_frame->instr_ptr=%p new_return_offset=%d \n", tstate->current_frame, tstate->current_frame->prev_instr, tstate->current_frame->instr_ptr, tstate->current_frame->new_return_offset);
             assert(!_PyErr_Occurred(tstate));
@@ -794,16 +794,17 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-if (VERBOSE) fprintf(stderr, "_POP_FRAME[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p new_return_offset=%d \n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
+DUMP_FRAME("_POP_FRAME[1]");
             frame->prev_instr += frame->return_offset;
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
 
-if (VERBOSE) fprintf(stderr, "_POP_FRAME[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+DUMP_FRAME("_POP_FRAME[2]");
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
-if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p \n", frame, frame->prev_instr, frame->instr_ptr);
+DUMP_FRAME("_POP_FRAME[3]");
+
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -999,7 +1000,9 @@ if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 frame->return_offset = oparg;
+                frame->yield_offset = next_instr - frame->instr_ptr;
                 frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
+                DUMP_FRAME("SEND (to gen_frame)");
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1039,6 +1042,7 @@ if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             frame->return_offset = oparg;
+            frame->yield_offset = next_instr - frame->instr_ptr;
             frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -1061,6 +1065,7 @@ if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+DUMP_FRAME(">> INSTRUMENTED_YIELD_VALUE");
             goto resume_frame;
         }
 
@@ -1081,11 +1086,14 @@ if (VERBOSE) fprintf(stderr, "_POP_FRAME[3]: frame=%p frame->prev_instr=%p frame
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
+fprintf(stderr, "YIELD VALUE: ");
+_PyObject_Dump(retval);
+fprintf(stderr, "\n");
             _PyFrame_StackPush(frame, retval);
+DUMP_FRAME(">> YIELD_VALUE");
             frame->instr_ptr += frame->new_return_offset;
-            frame->new_return_offset = 0;
+            frame->new_return_offset =  frame->yield_offset = 0;
             frame->prev_instr = frame->instr_ptr - 1;
-if (VERBOSE) fprintf(stderr, "YIELD_VALUE: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
             goto resume_frame;
         }
 
@@ -2919,7 +2927,7 @@ if (VERBOSE) fprintf(stderr, "YIELD_VALUE: frame=%p frame->prev_instr=%p frame->
         // When calling Python, inline the call using DISPATCH_INLINED().
         inst(CALL, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             // oparg counts all of the args, but *not* self:
-if (VERBOSE) fprintf(stderr, "CALL1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL1");
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2935,7 +2943,7 @@ if (VERBOSE) fprintf(stderr, "CALL1: frame=%p frame->prev_instr=%p frame->instr_
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-if (VERBOSE) fprintf(stderr, "CALL2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL2");
             if (self_or_null == NULL && Py_TYPE(callable) == &PyMethod_Type) {
                 args--;
                 total_args++;
@@ -2946,14 +2954,14 @@ if (VERBOSE) fprintf(stderr, "CALL2: frame=%p frame->prev_instr=%p frame->instr_
                 Py_DECREF(callable);
                 callable = method;
             }
-if (VERBOSE) fprintf(stderr, "CALL3: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
 
+DUMP_FRAME("CALL3");
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
                 ((PyFunctionObject *)callable)->vectorcall == _PyFunction_Vectorcall)
             {
-if (VERBOSE) fprintf(stderr, "CALL4: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL4");
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
@@ -2967,21 +2975,21 @@ if (VERBOSE) fprintf(stderr, "CALL4: frame=%p frame->prev_instr=%p frame->instr_
                 if (new_frame == NULL) {
                     goto error;
                 }
-if (VERBOSE) fprintf(stderr, "CALL5: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL5");
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-if (VERBOSE) fprintf(stderr, "CALL6: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL6");
                 frame->return_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-if (VERBOSE) fprintf(stderr, "CALL-DISPATCH_INLINED: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL7");
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-if (VERBOSE) fprintf(stderr, "CALL-not normal python func1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL - not normal python func1");
             res = PyObject_Vectorcall(
                 callable, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-if (VERBOSE) fprintf(stderr, "CALL-not normal python func2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL - not normal python func2");
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : args[0];
@@ -3006,7 +3014,7 @@ if (VERBOSE) fprintf(stderr, "CALL-not normal python func2: frame=%p frame->prev
             }
 
             ERROR_IF(res == NULL, error);
-if (VERBOSE) fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p\n", frame, frame->prev_instr, frame->instr_ptr, next_instr);
+DUMP_FRAME("CALL - END");
             frame->return_offset = 0;
             frame->new_return_offset = 0;
             CHECK_EVAL_BREAKER();
@@ -3071,7 +3079,7 @@ if (VERBOSE) fprintf(stderr, "CALL-END: frame=%p frame->prev_instr=%p frame->ins
             STORE_SP();
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
-if (VERBOSE) fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->instr_ptr=%p  new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, frame->new_return_offset);
+DUMP_FRAME("_PUSH_FRAME");
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
             LOAD_SP();
@@ -3632,15 +3640,15 @@ if (VERBOSE) fprintf(stderr, "_PUSH_FRAME: frame=%p frame->prev_instr=%p frame->
             // DICT_MERGE is called before this opcode if there are kwargs.
             // It converts all dict subtypes in kwargs into regular dicts.
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX BEGIN: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); 
+DUMP_FRAME("CALL_FUNCTION_EX BEGIN");
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX0: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); 
+DUMP_FRAME("CALL_FUNCTION_EX0");
                     goto error;
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX1: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL_FUNCTION_EX1");
                     goto error;
                 }
                 Py_SETREF(callargs, tuple);
@@ -3656,7 +3664,7 @@ if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX1: frame=%p frame->prev_instr=%p f
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
                 if (err) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX2: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL_FUNCTION_EX2");
                     goto error;
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -3689,12 +3697,12 @@ if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX2: frame=%p frame->prev_instr=%p f
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL_FUNCTION_EX3");
                         goto error;
                     }
                     frame->return_offset = 0;
                     frame->new_return_offset = next_instr - frame->instr_ptr;
-if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("CALL_FUNCTION_EX3a");
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -3964,11 +3972,11 @@ if (VERBOSE) fprintf(stderr, "CALL_FUNCTION_EX3a: frame=%p frame->prev_instr=%p 
 
         op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
-if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[1]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("_SAVE_CURRENT_IP[1]");
             frame->prev_instr = next_instr - 1;
             assert(frame->new_return_offset == 0);
             frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
-if (VERBOSE) fprintf(stderr, "_SAVE_CURRENT_IP[2]: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset);
+DUMP_FRAME("_SAVE_CURRENT_IP[2]");
             #endif
             #if TIER_TWO
             // Relies on a preceding _SET_IP

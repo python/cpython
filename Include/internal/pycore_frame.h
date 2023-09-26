@@ -72,6 +72,7 @@ typedef struct _PyInterpreterFrame {
      * so it needs to be set in any CALL (to a Python function)
      * or SEND (to a coroutine or generator).
      * If there is no callee, then it is meaningless. */
+    uint16_t yield_offset;
     uint16_t return_offset;
     /* The new_return_offset determines where a `RETURN` should go in the caller,
      * relative to `instr_ptr`.
@@ -95,6 +96,18 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     assert(PyCode_Check(f->f_executable));
     return (PyCodeObject *)f->f_executable;
 }
+
+
+static void
+dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
+    if (frame) {
+        fprintf(stderr, "%s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p ",
+                title, frame, frame->prev_instr, frame->instr_ptr);
+        fprintf(stderr, "new_return_offset=%d yield_offset=%d  \n",
+                frame->new_return_offset, frame->yield_offset);
+    }
+}
+
 
 static void
 check_lasti_values(_PyInterpreterFrame *f, bool raise, const char* filename, int line) {
@@ -161,6 +174,7 @@ _PyFrame_Initialize(
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
     frame->new_return_offset = 0;
+    frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
@@ -327,6 +341,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
     frame->new_return_offset = 0;
+    frame->yield_offset = 0;
     return frame;
 }
 

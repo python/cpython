@@ -71,10 +71,10 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
-if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
+if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
         frame->instr_ptr = next_instr; \
         frame->prev_instr = next_instr++; \
-if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
+if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
     } while(0)
 #endif
 
@@ -164,6 +164,13 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  */
 #define JUMPBY(x)       next_instr += (x);
 #define SKIP_OVER(x)    JUMPBY(x)
+
+
+#define DUMP_FRAME(TITLE) do { \
+     if (VERBOSE) { \
+       dump_frame_ip(TITLE, frame); \
+     } \
+   } while(0);
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
