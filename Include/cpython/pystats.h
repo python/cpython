@@ -86,10 +86,6 @@ typedef struct _object_stats {
     uint64_t type_cache_dunder_hits;
     uint64_t type_cache_dunder_misses;
     uint64_t type_cache_collisions;
-    uint64_t optimization_attempts;
-    uint64_t optimization_traces_created;
-    uint64_t optimization_traces_executed;
-    uint64_t optimization_uops_executed;
     /* Temporary value used during GC */
     uint64_t object_visits;
 } ObjectStats;
@@ -100,10 +96,24 @@ typedef struct _gc_stats {
     uint64_t objects_collected;
 } GCStats;
 
+typedef struct _uop_stats {
+    uint64_t execution_count;
+    uint64_t miss;
+} UOpStats;
+
+typedef struct _optimization_stats {
+    uint64_t attempts;
+    uint64_t traces_created;
+    uint64_t traces_executed;
+    uint64_t uops_executed;
+    UOpStats opcode[512];
+} OptimizationStats;
+
 typedef struct _stats {
     OpcodeStats opcode_stats[256];
     CallStats call_stats;
     ObjectStats object_stats;
+    OptimizationStats optimization_stats;
     GCStats *gc_stats;
 } PyStats;
 

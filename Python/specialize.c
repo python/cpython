@@ -199,10 +199,6 @@ print_object_stats(FILE *out, ObjectStats *stats)
     fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
     fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
     fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
-    fprintf(out, "Optimization attempts: %" PRIu64 "\n", stats->optimization_attempts);
-    fprintf(out, "Optimization traces created: %" PRIu64 "\n", stats->optimization_traces_created);
-    fprintf(out, "Optimization traces executed: %" PRIu64 "\n", stats->optimization_traces_executed);
-    fprintf(out, "Optimization uops executed: %" PRIu64 "\n", stats->optimization_uops_executed);
 }
 
 static void
@@ -216,12 +212,34 @@ print_gc_stats(FILE *out, GCStats *stats)
 }
 
 static void
+print_optimization_stats(FILE *out, OptimizationStats *stats)
+{
+    fprintf(out, "Optimization attempts: %" PRIu64 "\n", stats->attempts);
+    fprintf(out, "Optimization traces created: %" PRIu64 "\n", stats->traces_created);
+    fprintf(out, "Optimization traces executed: %" PRIu64 "\n", stats->traces_executed);
+    fprintf(out, "Optimization uops executed: %" PRIu64 "\n", stats->uops_executed);
+    
+    char** names;
+    for (int i = 0; i < 512; i++) {
+        if (i < 256) {
+            names = _PyOpcode_OpName;
+        } else {
+            names = _PyOpcode_uop_name;
+        }
+        if (stats->opcode[i].execution_count) {
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+        }
+    }
+}
+
+static void
 print_stats(FILE *out, PyStats *stats)
 {
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
     print_gc_stats(out, stats->gc_stats);
+    print_optimization_stats(out, &stats->optimization_stats);
 }
 
 void

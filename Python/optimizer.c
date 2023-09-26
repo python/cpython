@@ -891,7 +891,7 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
-    OBJECT_STAT_INC(optimization_traces_created);
+    OPTIMIZATION_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);

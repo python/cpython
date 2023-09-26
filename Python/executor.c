@@ -62,7 +62,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
     CHECK_EVAL_BREAKER();
 
-    OBJECT_STAT_INC(optimization_traces_executed);
+    OPTIMIZATION_STAT_INC(traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int pc = 0;
     int opcode;
@@ -81,7 +81,9 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
-        OBJECT_STAT_INC(optimization_uops_executed);
+        OPTIMIZATION_STAT_INC(uops_executed);
+        assert(opcode < 512);
+        UOP_EXE_INC(opcode);
         switch (opcode) {
 
 #include "executor_cases.c.h"

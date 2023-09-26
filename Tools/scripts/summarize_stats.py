@@ -211,12 +211,12 @@ def gather_stats(input):
     else:
         raise ValueError(f"{input:r} is not a file or directory path")
 
-def extract_opcode_stats(stats):
+def extract_opcode_stats(stats, prefix):
     opcode_stats = collections.defaultdict(dict)
     for key, value in stats.items():
-        if not key.startswith("opcode"):
+        if not key.startswith(prefix):
             continue
-        name, _, rest = key[7:].partition("]")
+        name, _, rest = key[len(prefix) + 2:].partition("]")
         opcode_stats[name][rest.strip(".")] = value
     return opcode_stats
 
@@ -350,35 +350,38 @@ def emit_execution_counts(opcode_stats, total):
             rows
         )
 
+def _emit_comparative_execution_counts(base_rows, head_rows):
+    base_data = dict((x[0], x[1:]) for x in base_rows)
+    head_data = dict((x[0], x[1:]) for x in head_rows)
+    opcodes = set(base_data.keys()) | set(head_data.keys())
+
+    rows = []
+    default = [0, "0.0%", "0.0%", 0]
+    for opcode in opcodes:
+        base_entry = base_data.get(opcode, default)
+        head_entry = head_data.get(opcode, default)
+        if base_entry[0] == 0:
+            change = 1
+        else:
+            change = (head_entry[0] - base_entry[0]) / base_entry[0]
+        rows.append(
+            (opcode, base_entry[0], head_entry[0],
+                f"{100*change:0.1f}%"))
+
+    rows.sort(key=lambda x: -abs(percentage_to_float(x[-1])))
+
+    emit_table(
+        ("Name", "Base Count:", "Head Count:", "Change:"),
+        rows
+    )
+
 def emit_comparative_execution_counts(
-    base_opcode_stats, base_total, head_opcode_stats, head_total
+    base_opcode_stats, base_total, head_opcode_stats, head_total, level=2
 ):
-    with Section("Execution counts", summary="execution counts for all instructions"):
+    with Section("Execution counts", summary="execution counts for all instructions", level=level):
         base_rows = calculate_execution_counts(base_opcode_stats, base_total)
         head_rows = calculate_execution_counts(head_opcode_stats, head_total)
-        base_data = dict((x[0], x[1:]) for x in base_rows)
-        head_data = dict((x[0], x[1:]) for x in head_rows)
-        opcodes = set(base_data.keys()) | set(head_data.keys())
-
-        rows = []
-        default = [0, "0.0%", "0.0%", 0]
-        for opcode in opcodes:
-            base_entry = base_data.get(opcode, default)
-            head_entry = head_data.get(opcode, default)
-            if base_entry[0] == 0:
-                change = 1
-            else:
-                change = (head_entry[0] - base_entry[0]) / base_entry[0]
-            rows.append(
-                (opcode, base_entry[0], head_entry[0],
-                 f"{100*change:0.1f}%"))
-
-        rows.sort(key=lambda x: -abs(percentage_to_float(x[-1])))
-
-        emit_table(
-            ("Name", "Base Count:", "Head Count:", "Change:"),
-            rows
-        )
+        _emit_comparative_execution_counts(base_rows, head_rows)
 
 def get_defines():
     spec_path = os.path.join(os.path.dirname(__file__), "../../Python/specialize.c")
@@ -611,8 +614,76 @@ def emit_pair_counts(opcode_stats, total):
                     succ_rows
                 )
 
+
+def calculate_optimization_stats(stats):
+    attempts = stats["Optimization attempts"]
+    created = stats["Optimization traces created"]
+    executed = stats["Optimization traces executed"]
+    uops = stats["Optimization uops executed"]
+
+    return [
+        ("Optimization attempts", attempts, ""),
+        (
+            "Traces created", created, 
+            format_ratio(created, attempts)
+        ),
+        ("Traces executed", executed, ""),
+        ("Uops executed", uops, format_ratio(uops, executed))
+    ]
+
+
+def calculate_uop_execution_counts(opcode_stats):
+    total = 0
+    counts = []
+    for name, opcode_stat in opcode_stats.items():
+        if "execution_count" in opcode_stat:
+            count = opcode_stat['execution_count']
+            counts.append((count, name))
+            total += count
+    counts.sort(reverse=True)
+    cumulative = 0
+    rows = []
+    for (count, name) in counts:
+        cumulative += count
+        rows.append((name, count, format_ratio(count, total),
+                     format_ratio(cumulative, total)))
+    return rows
+
+
+def emit_optimization_stats(stats):
+    uop_stats = extract_opcode_stats(stats, "uop")
+
+    with Section("Optimization (Tier 2) stats", summary="statistics about the Tier 2 optimizer"):
+        with Section("Overall stats", level=3):
+            rows = calculate_optimization_stats(stats)
+            emit_table(("", "Count:", "Ratio:"), rows)
+
+        with Section("Uop stats", level=3):
+            rows = calculate_uop_execution_counts(uop_stats)
+            emit_table(
+                ("Uop", "Count:", "Self:", "Cumulative:"), 
+                rows
+            )
+
+
+def emit_comparative_optimization_stats(base_stats, head_stats):
+    base_uop_stats = extract_opcode_stats(base_stats, "uop")
+    head_uop_stats = extract_opcode_stats(head_stats, "uop")
+
+    with Section("Optimization (Tier 2) stats", summary="statistics about the Tier 2 optimizer"):
+        with Section("Overall stats", level=3):
+            base_rows = calculate_optimization_stats(base_stats)
+            head_rows = calculate_optimization_stats(head_stats)
+            emit_table(("", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
+
+        with Section("Uop stats", level=3):
+            base_rows = calculate_uop_execution_counts(base_uop_stats)
+            head_rows = calculate_uop_execution_counts(head_uop_stats)
+            _emit_comparative_execution_counts(base_rows, head_rows)
+
+
 def output_single_stats(stats):
-    opcode_stats = extract_opcode_stats(stats)
+    opcode_stats = extract_opcode_stats(stats, "opcode")
     total = get_total(opcode_stats)
     emit_execution_counts(opcode_stats, total)
     emit_pair_counts(opcode_stats, total)
@@ -621,15 +692,16 @@ def output_single_stats(stats):
     emit_call_stats(stats, stats["_stats_defines"])
     emit_object_stats(stats)
     emit_gc_stats(stats)
+    emit_optimization_stats(stats)
     with Section("Meta stats", summary="Meta statistics"):
         emit_table(("", "Count:"), [('Number of data files', stats['__nfiles__'])])
 
 
 def output_comparative_stats(base_stats, head_stats):
-    base_opcode_stats = extract_opcode_stats(base_stats)
+    base_opcode_stats = extract_opcode_stats(base_stats, "opcode")
     base_total = get_total(base_opcode_stats)
 
-    head_opcode_stats = extract_opcode_stats(head_stats)
+    head_opcode_stats = extract_opcode_stats(head_stats, "opcode")
     head_total = get_total(head_opcode_stats)
 
     emit_comparative_execution_counts(
@@ -645,6 +717,7 @@ def output_comparative_stats(base_stats, head_stats):
     emit_comparative_call_stats(base_stats, head_stats, head_stats["_stats_defines"])
     emit_comparative_object_stats(base_stats, head_stats)
     emit_comparative_gc_stats(base_stats, head_stats)
+    emit_comparative_optimization_stats(base_stats, head_stats)
 
 def output_stats(inputs, json_output=None):
     if len(inputs) == 1:
