@@ -268,6 +268,8 @@ def main():
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
+    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
+                 fn.endswith(('.rst', '.inc'))]
     misc_files = {p for p in file_paths if p.startswith('Misc')}
     # PEP 8 whitespace rules enforcement.
     normalize_whitespace(python_files)
