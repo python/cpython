@@ -752,7 +752,7 @@ random
 * Add :func:`random.binomialvariate`.
   (Contributed by Raymond Hettinger in :gh:`81620`.)
 
-* Add a default of ``lamb=1.0`` to :func:`random.expovariate`.
+* Add a default of ``lambd=1.0`` to :func:`random.expovariate`.
   (Contributed by Raymond Hettinger in :gh:`100234`.)
 
 shutil
