@@ -2334,6 +2334,38 @@ class DummyPathTest(unittest.TestCase):
         # Non-strict
         self.assertEqual(r.resolve(strict=False), p / '3' / '4')
 
+    def _check_symlink_loop(self, *args):
+        path = self.cls(*args)
+        with self.assertRaises(OSError) as cm:
+            path.resolve(strict=True)
+        self.assertEqual(cm.exception.errno, errno.ELOOP)
+
+    def test_resolve_loop(self):
+        if not self.can_symlink:
+            self.skipTest("symlinks required")
+        if os.name == 'nt' and issubclass(self.cls, pathlib.Path):
+            self.skipTest("symlink loops work differently with concrete Windows paths")
+        # Loops with relative symlinks.
+        self.cls(BASE, 'linkX').symlink_to('linkX/inside')
+        self._check_symlink_loop(BASE, 'linkX')
+        self.cls(BASE, 'linkY').symlink_to('linkY')
+        self._check_symlink_loop(BASE, 'linkY')
+        self.cls(BASE, 'linkZ').symlink_to('linkZ/../linkZ')
+        self._check_symlink_loop(BASE, 'linkZ')
+        # Non-strict
+        p = self.cls(BASE, 'linkZ', 'foo')
+        self.assertEqual(p.resolve(strict=False), p)
+        # Loops with absolute symlinks.
+        self.cls(BASE, 'linkU').symlink_to(join('linkU/inside'))
+        self._check_symlink_loop(BASE, 'linkU')
+        self.cls(BASE, 'linkV').symlink_to(join('linkV'))
+        self._check_symlink_loop(BASE, 'linkV')
+        self.cls(BASE, 'linkW').symlink_to(join('linkW/../linkW'))
+        self._check_symlink_loop(BASE, 'linkW')
+        # Non-strict
+        q = self.cls(BASE, 'linkW', 'foo')
+        self.assertEqual(q.resolve(strict=False), q)
+
     def test_stat(self):
         statA = self.cls(BASE).joinpath('fileA').stat()
         statB = self.cls(BASE).joinpath('dirB', 'fileB').stat()
@@ -3428,12 +3460,6 @@ class PosixPathTest(PathTest):
         self.assertEqual(str(P('//a').absolute()), '//a')
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
-    def _check_symlink_loop(self, *args):
-        path = self.cls(*args)
-        with self.assertRaises(OSError) as cm:
-            path.resolve(strict=True)
-        self.assertEqual(cm.exception.errno, errno.ELOOP)
-
     @unittest.skipIf(
         is_emscripten or is_wasi,
         "umask is not implemented on Emscripten/WASI."
@@ -3479,30 +3505,6 @@ class PosixPathTest(PathTest):
         (p / 'masked_new_file').touch(mode=0o750)
         st = os.stat(join('masked_new_file'))
         self.assertEqual(stat.S_IMODE(st.st_mode), 0o750)
-
-    def test_resolve_loop(self):
-        if not self.can_symlink:
-            self.skipTest("symlinks required")
-        # Loops with relative symlinks.
-        os.symlink('linkX/inside', join('linkX'))
-        self._check_symlink_loop(BASE, 'linkX')
-        os.symlink('linkY', join('linkY'))
-        self._check_symlink_loop(BASE, 'linkY')
-        os.symlink('linkZ/../linkZ', join('linkZ'))
-        self._check_symlink_loop(BASE, 'linkZ')
-        # Non-strict
-        p = self.cls(BASE, 'linkZ', 'foo')
-        self.assertEqual(p.resolve(strict=False), p)
-        # Loops with absolute symlinks.
-        os.symlink(join('linkU/inside'), join('linkU'))
-        self._check_symlink_loop(BASE, 'linkU')
-        os.symlink(join('linkV'), join('linkV'))
-        self._check_symlink_loop(BASE, 'linkV')
-        os.symlink(join('linkW/../linkW'), join('linkW'))
-        self._check_symlink_loop(BASE, 'linkW')
-        # Non-strict
-        q = self.cls(BASE, 'linkW', 'foo')
-        self.assertEqual(q.resolve(strict=False), q)
 
     def test_glob(self):
         P = self.cls
