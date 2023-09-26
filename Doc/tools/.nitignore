@@ -147,7 +147,6 @@ Doc/library/unittest.mock.rst
 Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
 Doc/library/urllib.request.rst
-Doc/library/weakref.rst
 Doc/library/webbrowser.rst
 Doc/library/wsgiref.rst
 Doc/library/xdrlib.rst
