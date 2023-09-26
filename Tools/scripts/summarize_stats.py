@@ -651,6 +651,9 @@ def calculate_uop_execution_counts(opcode_stats):
 
 
 def emit_optimization_stats(stats):
+    if "Optimization attempts" not in stats:
+        return
+
     uop_stats = extract_opcode_stats(stats, "uop")
 
     with Section("Optimization (Tier 2) stats", summary="statistics about the Tier 2 optimizer"):
@@ -667,6 +670,9 @@ def emit_optimization_stats(stats):
 
 
 def emit_comparative_optimization_stats(base_stats, head_stats):
+    if not any("Optimization attempts" in stats for stats in (base_stats, head_stats)):
+        return
+
     base_uop_stats = extract_opcode_stats(base_stats, "uop")
     head_uop_stats = extract_opcode_stats(head_stats, "uop")
 
