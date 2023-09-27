@@ -7,22 +7,15 @@
             break;
         }
 
-        case RESUME: {
-            assert(frame == tstate->current_frame);
-            /* Possibly combine this with eval breaker */
-            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
-                int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-                if (err) goto error;
-                #if TIER_ONE
-                next_instr--;
-                #endif
-                #if TIER_TWO
-                goto deoptimize;
-                #endif
-            }
-            else if (oparg < 2) {
-                CHECK_EVAL_BREAKER();
-            }
+        case RESUME_CHECK: {
+#if defined(__EMSCRIPTEN__)
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#endif
+            /* Possibly combine these two checks */
+            DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version
+                != tstate->interp->monitoring_version, RESUME);
+            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker), RESUME);
             break;
         }
 
@@ -1053,7 +1046,7 @@
             break;
         }
 
-        case _LOAD_LOCALS: {
+        case LOAD_LOCALS: {
             PyObject *locals;
             locals = LOCALS();
             if (locals == NULL) {
@@ -1067,16 +1060,14 @@
             break;
         }
 
-        case _LOAD_FROM_DICT_OR_GLOBALS: {
+        case LOAD_FROM_DICT_OR_GLOBALS: {
             PyObject *mod_or_class_dict;
             PyObject *v;
             mod_or_class_dict = stack_pointer[-1];
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
-                Py_DECREF(mod_or_class_dict);
                 goto error;
             }
-            Py_DECREF(mod_or_class_dict);
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1097,6 +1088,44 @@
                     }
                 }
             }
+            Py_DECREF(mod_or_class_dict);
+            stack_pointer[-1] = v;
+            break;
+        }
+
+        case LOAD_NAME: {
+            PyObject *v;
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                if (true) goto error;
+            }
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
+            if (PyMapping_GetOptionalItem(mod_or_class_dict, name, &v) < 0) {
+                goto error;
+            }
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyMapping_GetOptionalItem(BUILTINS(), name, &v) < 0) {
+                        goto error;
+                    }
+                    if (v == NULL) {
+                        _PyEval_FormatExcCheckArg(
+                                    tstate, PyExc_NameError,
+                                    NAME_ERROR_MSG, name);
+                        goto error;
+                    }
+                }
+            }
+            STACK_GROW(1);
             stack_pointer[-1] = v;
             break;
         }
@@ -1404,9 +1433,6 @@
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             for (int _i = oparg*2; --_i >= 0;) {
                 Py_DECREF(values[_i]);
             }
@@ -1873,7 +1899,7 @@
             break;
         }
 
-        case IS_NONE: {
+        case _IS_NONE: {
             PyObject *value;
             PyObject *b;
             value = stack_pointer[-1];
@@ -2230,7 +2256,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)operand;
-            ASSERT_KWNAMES_IS_NULL();
             DEOPT_IF(!PyFunction_Check(callable), CALL);
             PyFunctionObject *func = (PyFunctionObject *)callable;
             DEOPT_IF(func->func_version != func_version, CALL);
@@ -2245,6 +2270,7 @@
             PyFunctionObject *func = (PyFunctionObject *)callable;
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), CALL);
+            DEOPT_IF(tstate->py_recursion_remaining <= 1, CALL);
             break;
         }
 
@@ -2281,22 +2307,23 @@
             // Eventually this should be the only occurrence of this code.
             frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            STORE_SP();
             new_frame->previous = frame;
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
-            #if TIER_ONE
-            goto start_frame;
-            #endif
-            #if TIER_TWO
-            if (_Py_EnterRecursivePy(tstate)) goto pop_1_exit_unwind;
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-            #endif
+            tstate->py_recursion_remaining--;
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
             break;
         }
 
-        case CALL_NO_KW_TYPE_1: {
+        case CALL_TYPE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2304,7 +2331,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             PyObject *obj = args[0];
@@ -2319,7 +2345,7 @@
             break;
         }
 
-        case CALL_NO_KW_STR_1: {
+        case CALL_STR_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2327,7 +2353,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyUnicode_Type, CALL);
@@ -2344,7 +2369,7 @@
             break;
         }
 
-        case CALL_NO_KW_TUPLE_1: {
+        case CALL_TUPLE_1: {
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -2352,7 +2377,6 @@
             args = stack_pointer - oparg;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             assert(oparg == 1);
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(callable != (PyObject *)&PyTuple_Type, CALL);
@@ -2383,7 +2407,38 @@
             break;
         }
 
-        case CALL_NO_KW_BUILTIN_O: {
+        case CALL_BUILTIN_CLASS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            args = stack_pointer - oparg;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(!PyType_Check(callable), CALL);
+            PyTypeObject *tp = (PyTypeObject *)callable;
+            DEOPT_IF(tp->tp_vectorcall == NULL, CALL);
+            STAT_INC(CALL, hit);
+            res = tp->tp_vectorcall((PyObject *)tp, args, total_args, NULL);
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(tp);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_BUILTIN_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2392,7 +2447,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             /* Builtin METH_O functions */
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2423,7 +2477,7 @@
             break;
         }
 
-        case CALL_NO_KW_BUILTIN_FAST: {
+        case CALL_BUILTIN_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2432,7 +2486,6 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             /* Builtin METH_FASTCALL functions, without keywords */
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2467,7 +2520,7 @@
             break;
         }
 
-        case CALL_NO_KW_LEN: {
+        case CALL_BUILTIN_FAST_WITH_KEYWORDS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2475,7 +2528,44 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            /* Builtin METH_FASTCALL | METH_KEYWORDS functions */
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            DEOPT_IF(!PyCFunction_CheckExact(callable), CALL);
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable) !=
+                (METH_FASTCALL | METH_KEYWORDS), CALL);
+            STAT_INC(CALL, hit);
+            /* res = func(self, args, nargs, kwnames) */
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))
+                PyCFunction_GET_FUNCTION(callable);
+            res = cfunc(PyCFunction_GET_SELF(callable), args, total_args, NULL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_LEN: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            args = stack_pointer - oparg;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             /* len(o) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2503,7 +2593,7 @@
             break;
         }
 
-        case CALL_NO_KW_ISINSTANCE: {
+        case CALL_ISINSTANCE: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2511,7 +2601,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             /* isinstance(o, o2) */
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2541,7 +2630,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_O: {
+        case CALL_METHOD_DESCRIPTOR_O: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2549,7 +2638,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2584,7 +2672,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_NOARGS: {
+        case CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2592,7 +2680,46 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
+            int total_args = oparg;
+            if (self_or_null != NULL) {
+                args--;
+                total_args++;
+            }
+            PyMethodDescrObject *method = (PyMethodDescrObject *)callable;
+            DEOPT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type), CALL);
+            PyMethodDef *meth = method->d_method;
+            DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
+            PyTypeObject *d_type = method->d_common.d_type;
+            PyObject *self = args[0];
+            DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
+            STAT_INC(CALL, hit);
+            int nargs = total_args - 1;
+            _PyCFunctionFastWithKeywords cfunc =
+                (_PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            res = cfunc(self, args + 1, nargs, NULL);
+            assert((res != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+
+            /* Free the arguments. */
+            for (int i = 0; i < total_args; i++) {
+                Py_DECREF(args[i]);
+            }
+            Py_DECREF(callable);
+            if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
+            STACK_SHRINK(oparg);
+            STACK_SHRINK(1);
+            stack_pointer[-1] = res;
+            CHECK_EVAL_BREAKER();
+            break;
+        }
+
+        case CALL_METHOD_DESCRIPTOR_NOARGS: {
+            PyObject **args;
+            PyObject *self_or_null;
+            PyObject *callable;
+            PyObject *res;
+            args = stack_pointer - oparg;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
             assert(oparg == 0 || oparg == 1);
             int total_args = oparg;
             if (self_or_null != NULL) {
@@ -2626,7 +2753,7 @@
             break;
         }
 
-        case CALL_NO_KW_METHOD_DESCRIPTOR_FAST: {
+        case CALL_METHOD_DESCRIPTOR_FAST: {
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -2634,7 +2761,6 @@
             args = stack_pointer - oparg;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            ASSERT_KWNAMES_IS_NULL();
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2856,29 +2982,29 @@
             break;
         }
 
-        case JUMP_TO_TOP: {
+        case _JUMP_TO_TOP: {
             pc = 0;
             CHECK_EVAL_BREAKER();
             break;
         }
 
-        case SAVE_IP: {
+        case _SET_IP: {
             frame->prev_instr = ip_offset + oparg;
             break;
         }
 
-        case SAVE_CURRENT_IP: {
+        case _SAVE_CURRENT_IP: {
             #if TIER_ONE
             frame->prev_instr = next_instr - 1;
             #endif
             #if TIER_TWO
-            // Relies on a preceding SAVE_IP
+            // Relies on a preceding _SET_IP
             frame->prev_instr--;
             #endif
             break;
         }
 
-        case EXIT_TRACE: {
+        case _EXIT_TRACE: {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
@@ -2886,7 +3012,7 @@
             break;
         }
 
-        case INSERT: {
+        case _INSERT: {
             PyObject *top;
             top = stack_pointer[-1];
             // Inserts TOS at position specified by oparg;

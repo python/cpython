@@ -22,6 +22,8 @@ always available.
 
    .. versionadded:: 3.2
 
+   .. availability:: Unix.
+
 
 .. function:: addaudithook(hook)
 
@@ -378,7 +380,7 @@ always available.
 
    This function prints out a given traceback and exception to ``sys.stderr``.
 
-   When an exception is raised and uncaught, the interpreter calls
+   When an exception other than :exc:`SystemExit` is raised and uncaught, the interpreter calls
    ``sys.excepthook`` with three arguments, the exception class, exception
    instance, and a traceback object.  In an interactive session this happens just
    before control is returned to the prompt; in a Python program this happens just
@@ -753,7 +755,7 @@ always available.
 
    Return the current value of the flags that are used for
    :c:func:`dlopen` calls.  Symbolic names for the flag values can be
-   found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -1441,7 +1443,7 @@ always available.
    lazy resolving of symbols when importing a module, if called as
    ``sys.setdlopenflags(0)``.  To share symbols across extension modules, call as
    ``sys.setdlopenflags(os.RTLD_GLOBAL)``.  Symbolic names for the flag values
-   can be found in the :mod:`os` module (``RTLD_xxx`` constants, e.g.
+   can be found in the :mod:`os` module (:samp:`RTLD_{xxx}` constants, e.g.
    :const:`os.RTLD_LAZY`).
 
    .. availability:: Unix.
@@ -1952,6 +1954,13 @@ always available.
 
    .. availability:: Windows.
 
+
+.. data:: monitoring
+   :noindex:
+
+   Namespace containing functions and constants for register callbacks
+   and controlling monitoring events.
+   See  :mod:`sys.monitoring` for details.
 
 .. data:: _xoptions
 

@@ -17,14 +17,22 @@ operations (explained below).
 
 Interface summary:
 
-.. function:: copy(x)
+.. function:: copy(obj)
 
-   Return a shallow copy of *x*.
+   Return a shallow copy of *obj*.
 
 
-.. function:: deepcopy(x[, memo])
+.. function:: deepcopy(obj[, memo])
 
-   Return a deep copy of *x*.
+   Return a deep copy of *obj*.
+
+
+.. function:: replace(obj, /, **changes)
+
+   Creates a new object of the same type as *obj*, replacing fields with values
+   from *changes*.
+
+   .. versionadded:: 3.13
 
 
 .. exception:: Error
@@ -87,6 +95,20 @@ argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation n
 to make a deep copy of a component, it should call the :func:`deepcopy` function
 with the component as first argument and the memo dictionary as second argument.
 The memo dictionary should be treated as an opaque object.
+
+
+.. index::
+   single: __replace__() (replace protocol)
+
+Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
+and only supports named tuples created by :func:`~collections.namedtuple`,
+:mod:`dataclasses`, and other classes which define method :meth:`!__replace__`.
+
+   .. method:: __replace__(self, /, **changes)
+      :noindex:
+
+:meth:`!__replace__` should create a new object of the same type,
+replacing fields with values from *changes*.
 
 
 .. seealso::

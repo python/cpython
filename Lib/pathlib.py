@@ -1009,8 +1009,7 @@ class Path(PurePath):
         The children are yielded in arbitrary order, and the
         special entries '.' and '..' are not included.
         """
-        for name in os.listdir(self):
-            yield self._make_child_relpath(name)
+        return (self._make_child_relpath(name) for name in os.listdir(self))
 
     def _scandir(self):
         # bpo-24132: a future version of pathlib will support subclassing of
@@ -1231,26 +1230,7 @@ class Path(PurePath):
         normalizing it.
         """
 
-        def check_eloop(e):
-            winerror = getattr(e, 'winerror', 0)
-            if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
-                raise RuntimeError("Symlink loop from %r" % e.filename)
-
-        try:
-            s = os.path.realpath(self, strict=strict)
-        except OSError as e:
-            check_eloop(e)
-            raise
-        p = self.with_segments(s)
-
-        # In non-strict mode, realpath() doesn't raise on symlink loops.
-        # Ensure we get an exception by calling stat()
-        if not strict:
-            try:
-                p.stat()
-            except OSError as e:
-                check_eloop(e)
-        return p
+        return self.with_segments(os.path.realpath(self, strict=strict))
 
     def owner(self):
         """

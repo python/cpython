@@ -5,13 +5,8 @@
 #include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#ifdef HAVE_DIRECT_H
-#include <direct.h>
-#endif
-#include <ctype.h>
-
-#include "importdl.h"
-#include "patchlevel.h"
+#include "importdl.h"             // dl_funcptr
+#include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
 
 #ifdef _DEBUG
@@ -20,10 +15,16 @@
 #define PYD_DEBUG_SUFFIX ""
 #endif
 
-#ifdef PYD_PLATFORM_TAG
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) "-" PYD_PLATFORM_TAG ".pyd"
+#ifdef Py_NOGIL
+#  define PYD_THREADING_TAG "t"
 #else
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) ".pyd"
+#  define PYD_THREADING_TAG ""
+#endif
+
+#ifdef PYD_PLATFORM_TAG
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) PYD_THREADING_TAG "-" PYD_PLATFORM_TAG ".pyd"
+#else
+#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX ".cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) PYD_THREADING_TAG ".pyd"
 #endif
 
 #define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"

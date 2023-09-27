@@ -245,7 +245,6 @@ _io_FileIO_readinto(fileio *self, PyTypeObject *cls, PyObject *const *args, Py_s
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
@@ -536,4 +535,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=238dd48819076434 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ce6ce923ccef86e input=a9049054013a1b77]*/
