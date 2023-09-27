@@ -251,9 +251,9 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     for (int i = 0; i < 256; i++) {
         if (stats->unsupported_opcode[i]) {
             fprintf(
-                out, 
-                "unsupported_opcode[%s].count : %" PRIu64 "\n", 
-                _PyOpcode_OpName[i], 
+                out,
+                "unsupported_opcode[%s].count : %" PRIu64 "\n",
+                _PyOpcode_OpName[i],
                 stats->unsupported_opcode[i]
             );
         }

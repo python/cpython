@@ -682,8 +682,8 @@ def emit_optimization_stats(stats):
             emit_table(("", "Count:", "Ratio:"), rows)
 
         emit_histogram(
-            "Trace length histogram", 
-            stats, 
+            "Trace length histogram",
+            stats,
             "Trace length",
             stats["Optimization traces created"]
         )
@@ -694,8 +694,8 @@ def emit_optimization_stats(stats):
             stats["Optimization traces created"]
         )
         emit_histogram(
-            "Trace run length histogram", 
-            stats, 
+            "Trace run length histogram",
+            stats,
             "Trace run length",
             stats["Optimization traces executed"]
         )
