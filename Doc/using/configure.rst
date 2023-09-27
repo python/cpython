@@ -769,8 +769,8 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
-:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/exports.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
