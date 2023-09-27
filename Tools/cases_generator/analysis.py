@@ -414,3 +414,35 @@ class Analyzer:
                 case _:
                     assert_never(uop)
         return components
+
+    def report_non_viable_uops(self):
+        print("The following ops are not viable uops:")
+        skips = {
+            "CACHE",
+            "RESERVED",
+            "ENTER_EXECUTOR",
+            "LOAD_FAST_LOAD_FAST",
+            "LOAD_FAST_LOAD_CONST",
+            "LOAD_CONST_LOAD_FAST",
+            "_BINARY_OP_INPLACE_ADD_UNICODE",
+            "POP_JUMP_IF_TRUE",
+            "POP_JUMP_IF_FALSE",
+            "_ITER_JUMP_LIST",
+            "_ITER_JUMP_TUPLE",
+            "_ITER_JUMP_SET",
+        }
+        non_viable = [
+            instr
+            for instr in self.instrs.values()
+            if not instr.is_viable_uop()
+            and instr.name not in skips
+            and not instr.name.startswith("INSTRUMENTED_")
+        ]
+        non_viable.sort(key=lambda instr: instr.name)
+        for instr in non_viable:
+            print(f"   {instr.name:<35}", end="")
+            if instr.name in self.families:
+                print("      (unspecialized)", end="")
+            elif instr.family is not None:
+                print(f" (specialization of {instr.family.name})", end="")
+            print()
