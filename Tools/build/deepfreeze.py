@@ -492,7 +492,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-o", "--output", help="Defaults to deepfreeze.c", default="deepfreeze.c")
 parser.add_argument("-v", "--verbose", action="store_true", help="Print diagnostics")
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument("-f", "--file", help="reads rule lines from a file")
+group.add_argument("-f", "--file", help="read rule lines from a file")
 group.add_argument('args', nargs="*", default=(),
                    help="Input file and module name (required) in file:modname format")
 
