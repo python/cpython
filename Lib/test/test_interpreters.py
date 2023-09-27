@@ -483,10 +483,12 @@ class StressTests(TestBase):
         alive = []
         start = threading.Event()
         def task():
-            start.wait(10)
-            interp = interpreters.create()
-            alive.append(interp)
-        threads = [threading.Thread(target=task) for _ in range(200)]
+            if not start.wait(10):
+                raise TimeoutError
+            for _ in range(20):
+                interp = interpreters.create()
+                alive.append(interp)
+        threads = [threading.Thread(target=task) for _ in range(10)]
         with threading_helper.start_threads(threads):
             start.set()
         del alive
