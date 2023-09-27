@@ -429,14 +429,18 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
-        // XXX Using the "head" thread isn't strictly correct.
+        // XXX gh-109860: Using the "head" thread isn't strictly correct.
         PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         assert(tstate != NULL);
+        // Hack (until gh-109860): The interpreter's initial thread state
+        // is least likely to break.
         while(tstate->next != NULL) {
             tstate = tstate->next;
         }
-        // XXX Drop this redundant check once we stop re-using
-        // tstates that might already be in use.
+        // We must do this check before switching interpreters, so any
+        // exception gets raised in the right one.
+        // XXX gh-109860: Drop this redundant check once we stop
+        // re-using tstates that might already be in use.
         if (PyInterpreterState_IsRunningMain(interp)) {
             PyErr_SetString(PyExc_RuntimeError,
                             "interpreter already running");
@@ -568,8 +572,11 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
+    // XXX gh-109860: Using the "head" thread isn't strictly correct.
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     assert(tstate != NULL);
+    // Hack (until gh-109860): The interpreter's initial thread state
+    // is least likely to break.
     while(tstate->next != NULL) {
         tstate = tstate->next;
     }
