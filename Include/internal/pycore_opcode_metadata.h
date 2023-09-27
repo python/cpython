@@ -59,18 +59,20 @@
 #define _ITER_JUMP_RANGE 331
 #define _IS_ITER_EXHAUSTED_RANGE 332
 #define _ITER_NEXT_RANGE 333
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 334
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 335
-#define _CHECK_PEP_523 336
-#define _CHECK_FUNCTION_EXACT_ARGS 337
-#define _CHECK_STACK_SPACE 338
-#define _INIT_CALL_PY_EXACT_ARGS 339
-#define _PUSH_FRAME 340
-#define _POP_JUMP_IF_FALSE 341
-#define _POP_JUMP_IF_TRUE 342
-#define _JUMP_TO_TOP 343
-#define _SAVE_CURRENT_IP 344
-#define _INSERT 345
+#define _GUARD_KEYS_VERSION 334
+#define _LOAD_ATTR_METHOD_WITH_VALUES 335
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 336
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 337
+#define _CHECK_PEP_523 338
+#define _CHECK_FUNCTION_EXACT_ARGS 339
+#define _CHECK_STACK_SPACE 340
+#define _INIT_CALL_PY_EXACT_ARGS 341
+#define _PUSH_FRAME 342
+#define _POP_JUMP_IF_FALSE 343
+#define _POP_JUMP_IF_TRUE 344
+#define _JUMP_TO_TOP 345
+#define _SAVE_CURRENT_IP 346
+#define _INSERT 347
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -477,6 +479,10 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case POP_BLOCK:
             return 0;
         case PUSH_EXC_INFO:
+            return 1;
+        case _GUARD_KEYS_VERSION:
+            return 1;
+        case _LOAD_ATTR_METHOD_WITH_VALUES:
             return 1;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return 1;
@@ -1018,6 +1024,10 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case PUSH_EXC_INFO:
             return 2;
+        case _GUARD_KEYS_VERSION:
+            return 1;
+        case _LOAD_ATTR_METHOD_WITH_VALUES:
+            return 2;
         case LOAD_ATTR_METHOD_WITH_VALUES:
             return 2;
         case LOAD_ATTR_METHOD_NO_DICT:
@@ -1420,6 +1430,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [SETUP_WITH] = { true, INSTR_FMT_IX, 0 },
     [POP_BLOCK] = { true, INSTR_FMT_IX, 0 },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_KEYS_VERSION] = { true, INSTR_FMT_IXC0, HAS_DEOPT_FLAG },
+    [_LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_ATTR_METHOD_NO_DICT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
@@ -1600,6 +1612,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
+    [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_TYPE_1] = { .nuops = 1, .uops = { { CALL_TYPE_1, 0, 0 } } },
@@ -1665,6 +1678,8 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_ITER_JUMP_RANGE] = "_ITER_JUMP_RANGE",
     [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
+    [_LOAD_ATTR_METHOD_WITH_VALUES] = "_LOAD_ATTR_METHOD_WITH_VALUES",
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = "_CHECK_CALL_BOUND_METHOD_EXACT_ARGS",
     [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = "_INIT_CALL_BOUND_METHOD_EXACT_ARGS",
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
