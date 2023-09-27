@@ -2661,7 +2661,7 @@ DUMP_FRAME(">> YIELD_VALUE");
             new_frame->localsplus[1] = Py_NewRef(name);
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
             frame->return_offset = 0;
-            frame->new_return_offset = 0;
+            frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
 

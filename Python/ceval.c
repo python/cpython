@@ -733,7 +733,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #define DUMP_FRAME(TITLE) do { \
      if (VERBOSE) { \
        dump_frame_ip(TITLE, frame); \
-       fprintf(stderr, "next_instr = %p\n", next_instr); \
+       fprintf(stderr, "next_instr = %p  \n", next_instr); \
      } \
    } while(0);
 
@@ -741,10 +741,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
-    DUMP_FRAME("SET_LOCALS_FROM_FRAME:"); \
+    DUMP_FRAME("SET_LOCALS_FROM_FRAME1"); \
     next_instr = frame->instr_ptr + frame->new_return_offset; \
     frame->new_return_offset = frame->yield_offset = 0; \
-    assert (next_instr == frame->prev_instr + 1); \
+    DUMP_FRAME("SET_LOCALS_FROM_FRAME2"); \
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
@@ -894,7 +894,7 @@ if (VERBOSE) fprintf(stderr, "No Exception Handler: offset=%d lasti=%d  handler=
                 assert(STACK_LEVEL() == 0);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 monitor_unwind(tstate, frame, next_instr-1);
-                DUMP_FRAME("goto exit_unwind:");
+                DUMP_FRAME("goto exit_unwind");
                 goto exit_unwind;
             }
 
@@ -944,8 +944,8 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
-    frame->prev_instr = frame->instr_ptr + frame->new_return_offset -1; // for the assertion in SET_LOCALS_FROM_FRAME
-    DUMP_FRAME("exit_unwind:");
+    frame->yield_offset = frame->new_return_offset = 0;
+    DUMP_FRAME("exit_unwind");
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;
