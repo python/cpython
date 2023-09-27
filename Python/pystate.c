@@ -1094,9 +1094,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "interpreter already running");
+    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
         return -1;
     }
     PyThreadState *tstate = current_fast_get(&_PyRuntime);
@@ -1134,6 +1132,17 @@ int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
     return (interp->threads.main != NULL);
+}
+
+int
+_PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
+{
+    if (interp->threads.main != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter already running");
+        return -1;
+    }
+    return 0;
 }
 
 
