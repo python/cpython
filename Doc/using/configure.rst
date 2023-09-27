@@ -679,7 +679,7 @@ Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 The :file:`setup.py` script only builds C extensions as shared libraries using
 the :mod:`distutils` module.
 
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
+The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
 :c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
