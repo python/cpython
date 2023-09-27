@@ -802,8 +802,13 @@ class TestSupport(unittest.TestCase):
             support.real_max_memuse = old_real_max_memuse
 
     def test_copy_python_src_ignore(self):
-        src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
         src_dir = os.path.abspath(src_dir)
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
 
         ignored = {'.git', '__pycache__'}
 
