@@ -2249,6 +2249,26 @@
             break;
         }
 
+        case _LOAD_ATTR_METHOD_NO_DICT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert(oparg & 1);
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            assert(owner_cls->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            attr = Py_NewRef(descr);
+            self = owner;
+            STACK_GROW(1);
+            stack_pointer[-2] = attr;
+            stack_pointer[-1] = self;
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
