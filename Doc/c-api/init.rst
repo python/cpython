@@ -1175,6 +1175,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    a "main" Python program in one of its threads, false (zero) if not.
    See :c:func:`PyInterpreterState_SetRunningMain`.
 
+   This relates only to the thread where the program started,
+   not subthreads.  An interpreter may still have subthreads running
+   even if this returns false.
+
    The caller must hold the GIL.
 
    This function will typically only be useful for embedded applications
