@@ -802,17 +802,25 @@ class TestSupport(unittest.TestCase):
             support.real_max_memuse = old_real_max_memuse
 
     def test_copy_python_src_ignore(self):
+        # Get source directory
         src_dir = sysconfig.get_config_var('abs_srcdir')
         if not src_dir:
             src_dir = sysconfig.get_config_var('srcdir')
         src_dir = os.path.abspath(src_dir)
+
+        # Check that the source code is available
         if not os.path.exists(src_dir):
             self.skipTest(f"cannot access Python source code directory:"
                           f" {src_dir!r}")
+        landmark = os.path.join(src_dir, 'Lib', 'os.py')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
 
-        ignored = {'.git', '__pycache__'}
+        # Test support.copy_python_src_ignore()
 
         # Source code directory
+        ignored = {'.git', '__pycache__'}
         names = os.listdir(src_dir)
         self.assertEqual(support.copy_python_src_ignore(src_dir, names),
                          ignored | {'build'})
