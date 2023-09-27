@@ -2083,10 +2083,13 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        inst(STORE_ATTR_SLOT, (unused/1, type_version/2, index/1, value, owner --)) {
+        op(_GUARD_TYPE_VERSION_STORE, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
+        }
+
+        op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
@@ -2094,6 +2097,11 @@ dummy_func(
             Py_XDECREF(old_value);
             Py_DECREF(owner);
         }
+
+        macro(STORE_ATTR_SLOT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION_STORE +
+            _STORE_ATTR_SLOT;
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,

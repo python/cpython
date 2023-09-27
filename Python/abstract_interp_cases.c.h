@@ -481,6 +481,15 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION_STORE: {
+            break;
+        }
+
+        case _STORE_ATTR_SLOT: {
+            STACK_SHRINK(2);
+            break;
+        }
+
         case COMPARE_OP: {
             STACK_SHRINK(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);

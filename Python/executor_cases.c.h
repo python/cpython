@@ -1733,6 +1733,32 @@
             break;
         }
 
+        case _GUARD_TYPE_VERSION_STORE: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            PyTypeObject *tp = Py_TYPE(owner);
+            assert(type_version != 0);
+            DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
+            break;
+        }
+
+        case _STORE_ATTR_SLOT: {
+            PyObject *owner;
+            PyObject *value;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            uint16_t index = (uint16_t)operand;
+            char *addr = (char *)owner + index;
+            STAT_INC(STORE_ATTR, hit);
+            PyObject *old_value = *(PyObject **)addr;
+            *(PyObject **)addr = value;
+            Py_XDECREF(old_value);
+            Py_DECREF(owner);
+            STACK_SHRINK(2);
+            break;
+        }
+
         case COMPARE_OP: {
             PyObject *right;
             PyObject *left;
