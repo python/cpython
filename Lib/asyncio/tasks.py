@@ -76,14 +76,14 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     # _fut_waiter is either None or a Future.  The task can be
     # in any of 3 states:
     #
-    # - 1 (_fut_waiter is not None and not _fut_waiter.done());
-    #   __step() is *not* scheduled and the Task is waiting for _fut_waiter.
-    # - 2a (_fut_waiter is None or _fut_waiter.done()), and __wakeup() is scheduled;
-    #   the Task is waiting for __wakeup() to be executed.
-    # - 2b (_fut_waiter is None or _fut_waiter.done()), and __step() is scheduled;
-    #   the Task is waiting for __step() to be executed.
-    # - 3 _fut_waiter is None and __step() is *not* scheduled;
-    #   the Task is currently executing (in __step()).
+    # - 1:  _fut_waiter is not None and not _fut_waiter.done()):
+    #       __step() is *not* scheduled and the Task is waiting for _fut_waiter.
+    # - 2a: _fut_waiter is None or _fut_waiter.done()) and __wakeup() is scheduled:
+    #       the Task is waiting for __wakeup() to be executed.
+    # - 2b: _fut_waiter is None or _fut_waiter.done()) and __step() is scheduled
+    #       the Task is waiting for __step() to be executed.
+    # - 3:  _fut_waiter is None and __step() is *not* scheduled:
+    #       the Task is currently executing (in __step()).
     #
     # The transition from 1 to 2a happens when _fut_waiter becomes done(),
     # as it schedules __wakeup() to be called.
