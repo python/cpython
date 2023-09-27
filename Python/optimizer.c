@@ -461,6 +461,7 @@ translate_bytecode_to_trace(
     if (trace_length + (n) > max_length) { \
         DPRINTF(2, "No room for %s (need %d, got %d)\n", \
                 (opname), (n), max_length - trace_length); \
+        OPTIMIZATION_STAT_INC(trace_too_long); \
         goto done; \
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
@@ -472,6 +473,7 @@ translate_bytecode_to_trace(
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
+        OPTIMIZATION_STAT_INC(trace_stack_overflow); \
         ADD_TO_TRACE(_SET_IP, 0, 0); \
         goto done; \
     } \
@@ -572,6 +574,7 @@ pop_jump_if_bool:
                     ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
                 }
                 else {
+                    OPTIMIZATION_STAT_INC(inner_loop);
                     DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
                 }
                 goto done;
@@ -638,7 +641,9 @@ pop_jump_if_bool:
                         // LOAD_CONST + _POP_FRAME.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
-                            goto done;}
+                            OPTIMIZATION_STAT_INC(trace_stack_underflow);
+                            goto done;
+                        }
                     }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
                     for (int i = 0; i < nuops; i++) {
@@ -713,6 +718,7 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_qualname),
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
+                                    OPTIMIZATION_STAT_INC(recursive_call);
                                     ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
@@ -744,6 +750,7 @@ pop_jump_if_bool:
                     break;
                 }
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
+                OPTIMIZE_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
 

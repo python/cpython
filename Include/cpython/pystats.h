@@ -105,7 +105,13 @@ typedef struct _optimization_stats {
     uint64_t traces_created;
     uint64_t traces_executed;
     uint64_t uops_executed;
+    uint64_t trace_stack_overflow;
+    uint64_t trace_stack_underflow;
+    uint64_t trace_too_long;
+    uint64_t inner_loop;
+    uint64_t recursive_call;
     UOpStats opcode[512];
+    uint64_t unsupported_opcode[256];
 } OptimizationStats;
 
 typedef struct _stats {

@@ -218,6 +218,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization traces created: %" PRIu64 "\n", stats->traces_created);
     fprintf(out, "Optimization traces executed: %" PRIu64 "\n", stats->traces_executed);
     fprintf(out, "Optimization uops executed: %" PRIu64 "\n", stats->uops_executed);
+    fprintf(out, "Optimization trace stack overflow: %" PRIu64 "\n", stats->trace_stack_overflow);
+    fprintf(out, "Optimization trace stack underflow: %" PRIu64 "\n", stats->trace_stack_underflow);
+    fprintf(out, "Optimization trace too long: %" PRIu64 "\n", stats->trace_too_long);
+    fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
+    fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
 
     char** names;
     for (int i = 0; i < 512; i++) {
@@ -228,6 +233,12 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         }
         if (stats->opcode[i].execution_count) {
             fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+        }
+    }
+
+    for (int i = 0; i < 256; i++) {
+        if (stats->unsupported_opcode[i]) {
+            fprintf(out, "unsupported_opcode[%s].count : %" PRIu64 "\n", _PyOpcode_OpName[i]);
         }
     }
 }

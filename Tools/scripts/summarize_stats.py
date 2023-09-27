@@ -620,6 +620,11 @@ def calculate_optimization_stats(stats):
     created = stats["Optimization traces created"]
     executed = stats["Optimization traces executed"]
     uops = stats["Optimization uops executed"]
+    trace_stack_overflow = stats["Optimization trace stack overflow"]
+    trace_stack_underflow = stats["Optimization trace stack underflow"]
+    trace_too_long = stats["Optimization trace too long"]
+    inner_loop = stats["Optimization inner loop"]
+    recursive_call = stats["Optimization recursive call"]
 
     return [
         ("Optimization attempts", attempts, ""),
@@ -628,7 +633,12 @@ def calculate_optimization_stats(stats):
             format_ratio(created, attempts)
         ),
         ("Traces executed", executed, ""),
-        ("Uops executed", uops, format_ratio(uops, executed))
+        ("Uops executed", uops, int(uops / executed)),
+        ("Trace stack overflow", trace_stack_overflow, ""),
+        ("Trace stack underflow", trace_stack_underflow, ""),
+        ("Trace too long", trace_too_long, ""),
+        ("Inner loop found", inner_loop, ""),
+        ("Recursive call", recursive_call, "")
     ]
 
 
@@ -667,6 +677,15 @@ def emit_optimization_stats(stats):
                 ("Uop", "Count:", "Self:", "Cumulative:"),
                 rows
             )
+
+        with Section("Unsupported opcodes", level=3):
+            unsupported_opcodes = extract_opcode_stats(stats, "unsupported_opcode")
+            data = []
+            for opcode, entry in unsupported_opcodes.items():
+                data.append((entry["count"], opcode))
+            data.sort(reverse=True)
+            rows = [(x[1], x[0]) for x in data]
+            emit_table(("Opcode", "Count"), rows)
 
 
 def emit_comparative_optimization_stats(base_stats, head_stats):
