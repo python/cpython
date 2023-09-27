@@ -420,7 +420,8 @@ def _parse_args(args, **kwargs):
         ns.randomize = True
         ns.fail_env_changed = True
         ns.fail_rerun = True
-        ns.rerun = True
+        if ns.python is None:
+            ns.rerun = True
         ns.print_slow = True
         ns.verbose3 = True
         if MS_WINDOWS:
