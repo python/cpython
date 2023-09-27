@@ -873,7 +873,8 @@ def main() -> None:
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
     if args.verbose:
-        a.report_non_viable_uops()
+        # Load execution counts from bmraw.json, if it exists
+        a.report_non_viable_uops("bmraw.json")
         return
 
     # These raise OSError if output can't be written
