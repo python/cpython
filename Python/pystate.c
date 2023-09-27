@@ -1113,7 +1113,20 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    assert(interp->threads.main == current_fast_get(&_PyRuntime));
+    PyThreadState *tstate = interp->threads.main;
+    assert(tstate == current_fast_get(&_PyRuntime));
+
+    if (tstate->on_delete != NULL) {
+        // The threading module was imported for the first time in this
+        // thread, so it was set as threading._main_thread.  (See gh-75698.)
+        // The thread has finished running the Python program so we mark
+        // the thread object as finished.
+        assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
+        tstate->on_delete(tstate->on_delete_data);
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
+    }
+
     interp->threads.main = NULL;
 }
 
@@ -1592,10 +1605,14 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
     if (tstate->on_delete != NULL) {
-        // XXX Once we fix gh-75698:
-        //assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
-        //       || (tstate->interp->finalizing
-        //           && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
+        // For the "main" thread of each interpreter, this is meant
+        // to be done in PyInterpreterState_SetNotRunningMain().
+        // Tha leaves threads created by the threading module.
+        // However, we also accommodate "main" threads that still
+        // don't call PyInterpreterState_SetNotRunningMain() yet.
+        assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
+               || (tstate->interp->finalizing
+                   && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
         tstate->on_delete(tstate->on_delete_data);
     }
 
