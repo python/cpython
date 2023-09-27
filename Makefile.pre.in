@@ -2772,8 +2772,6 @@ funny:
 .PHONY: patchcheck
 patchcheck: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/patchcheck/patchcheck.py
-	@$(RUNSHARED) ./$(BUILDPYTHON) -m pre_commit --version >/dev/null 2>&1 || $(RUNSHARED) ./$(BUILDPYTHON) -m pip install pre-commit >/dev/null 2>&1
-	$(RUNSHARED) ./$(BUILDPYTHON) -m pre_commit run --all-files
 
 .PHONY: check-limited-abi
 check-limited-abi: all
