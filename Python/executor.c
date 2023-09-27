@@ -31,6 +31,16 @@
         goto deoptimize;         \
     }
 
+#ifdef Py_STATS
+// Disable these macros that apply to Tier 1 stats when we are in Tier 2
+#undef STAT_INC
+#define STAT_INC(opname, name) ((void)0)
+#undef STAT_DEC
+#define STAT_DEC(opname, name) ((void)0)
+#undef CALL_STAT_INC
+#define CALL_STAT_INC(name) ((void)0)
+#endif
+
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
