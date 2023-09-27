@@ -1114,12 +1114,6 @@ Deprecated
   volume and maintenance burden.
   (Contributed by Raymond Hettinger in :gh:`101588`.)
 
-* :mod:`os`: The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
-  Windows are deprecated. In a future release, they will contain the last
-  metadata change time, consistent with other platforms. For now, they still
-  contain the creation time, which is also available in the new ``st_birthtime``
-  field. (Contributed by Steve Dower in :gh:`99726`.)
-
 * :mod:`multiprocessing`: In Python 3.14, the default :mod:`multiprocessing`
   start method will change to a safer one on Linux, BSDs,
   and other non-macOS POSIX platforms where ``'fork'`` is currently
@@ -1140,15 +1134,23 @@ Deprecated
   proper :exc:`DeprecationWarning` in 3.12. Remove them in 3.14.
   (Contributed by Soumendra Ganguly and Gregory P. Smith in :gh:`85984`.)
 
-* :mod:`os`: On POSIX platforms, :func:`os.fork` can now raise a
-  :exc:`DeprecationWarning` when it can detect being called from a
-  multithreaded process. There has always been a fundamental incompatibility
-  with the POSIX platform when doing so. Even if such code *appeared* to work.
-  We added the warning to to raise awareness as issues encounted by code doing
-  this are becoming more frequent. See the :func:`os.fork` documentation for
-  more details along with `this discussion on fork being incompatible with threads
-  <https://discuss.python.org/t/33555>`_ for *why* we're now surfacing this
-  longstanding platform compatibility problem to developers.
+* :mod:`os`:
+
+  * The ``st_ctime`` fields return by :func:`os.stat` and :func:`os.lstat` on
+    Windows are deprecated. In a future release, they will contain the last
+    metadata change time, consistent with other platforms. For now, they still
+    contain the creation time, which is also available in the new ``st_birthtime``
+    field. (Contributed by Steve Dower in :gh:`99726`.)
+
+  * On POSIX platforms, :func:`os.fork` can now raise a
+    :exc:`DeprecationWarning` when it can detect being called from a
+    multithreaded process. There has always been a fundamental incompatibility
+    with the POSIX platform when doing so. Even if such code *appeared* to work.
+    We added the warning to to raise awareness as issues encounted by code doing
+    this are becoming more frequent. See the :func:`os.fork` documentation for
+    more details along with `this discussion on fork being incompatible with threads
+    <https://discuss.python.org/t/33555>`_ for *why* we're now surfacing this
+    longstanding platform compatibility problem to developers.
 
   When this warning appears due to usage of :mod:`multiprocessing` or
   :mod:`concurrent.futures` the fix is to use a different
