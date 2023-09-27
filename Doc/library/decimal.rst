@@ -1926,30 +1926,6 @@ to work with the :class:`Decimal` class::
        getcontext().prec -= 2
        return +s               # unary plus applies the new precision
 
-   def exp(x):
-       """Return e raised to the power of x.  Result type matches input type.
-
-       >>> print(exp(Decimal(1)))
-       2.718281828459045235360287471
-       >>> print(exp(Decimal(2)))
-       7.389056098930650227230427461
-       >>> print(exp(2.0))
-       7.38905609893
-       >>> print(exp(2+0j))
-       (7.38905609893+0j)
-
-       """
-       getcontext().prec += 2
-       i, lasts, s, fact, num = 0, 0, 1, 1, 1
-       while s != lasts:
-           lasts = s
-           i += 1
-           fact *= i
-           num *= x
-           s += num / fact
-       getcontext().prec -= 2
-       return +s
-
    def cos(x):
        """Return the cosine of x as measured in radians.
 
