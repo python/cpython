@@ -475,16 +475,22 @@ class StressTests(TestBase):
         for _ in range(100):
             interp = interpreters.create()
             alive.append(interp)
+        del alive
+        support.gc_collect()
 
     @support.requires_resource('cpu')
     def test_create_many_threaded(self):
         alive = []
+        start = threading.Event()
         def task():
+            start.wait(10)
             interp = interpreters.create()
             alive.append(interp)
-        threads = (threading.Thread(target=task) for _ in range(200))
+        threads = [threading.Thread(target=task) for _ in range(200)]
         with threading_helper.start_threads(threads):
-            pass
+            start.set()
+        del alive
+        support.gc_collect()
 
 
 class TestIsShareable(TestBase):
