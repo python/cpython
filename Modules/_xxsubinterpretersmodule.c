@@ -242,6 +242,10 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
+    PyInterpreterState *interp;
+#define ERR_NOT_SET 0
+#define ERR_ALREADY_RUNNING 1
+    int code;
     const char *name;
     const char *msg;
 } _sharedexception;
@@ -263,8 +267,19 @@ _sharedexception_clear(_sharedexception *exc)
 }
 
 static const char *
-_sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
+_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
 {
+    if (sharedexc->interp == NULL) {
+        sharedexc->interp = PyInterpreterState_Get();
+    }
+
+    if (code != ERR_NOT_SET) {
+        assert(exc == NULL);
+        assert(code > 0);
+        sharedexc->code = code;
+        return NULL;
+    }
+
     assert(exc != NULL);
     const char *failure = NULL;
 
@@ -301,6 +316,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
             goto error;
         }
     }
+            PyErr_NoMemory();
 
     return NULL;
 
@@ -316,6 +332,7 @@ static void
 _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
     if (exc->name != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         if (exc->msg != NULL) {
             PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
         }
@@ -324,9 +341,16 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
         }
     }
     else if (exc->msg != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetString(wrapperclass, exc->msg);
     }
+    else if (exc->code == ERR_ALREADY_RUNNING) {
+        assert(exc->interp != NULL);
+        assert(_PyInterpreterState_IsRunningMain(exc->interp));
+        _PyInterpreterState_FailIfRunningMain(exc->interp);
+    }
     else {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetNone(wrapperclass);
     }
 }
@@ -362,9 +386,16 @@ static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
+    int errcode = ERR_NOT_SET;
+
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
-        // We skip going through the shared exception.
-        return -1;
+        assert(PyErr_Occurred());
+        // In the case where we didn't switch interpreters, it would
+        // be more efficient to leave the exception in place and return
+        // immediately.  However, life is simpler if we don't.
+        PyErr_Clear();
+        errcode = ERR_ALREADY_RUNNING;
+        goto error;
     }
 
     PyObject *excval = NULL;
@@ -403,7 +434,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
 error:
     excval = PyErr_GetRaisedException();
-    const char *failure = _sharedexception_bind(excval, sharedexc);
+    const char *failure = _sharedexception_bind(excval, errcode, sharedexc);
     if (failure != NULL) {
         fprintf(stderr,
                 "RunFailedError: script raised an uncaught exception (%s)",
@@ -412,7 +443,9 @@ error:
     }
     Py_XDECREF(excval);
     assert(!PyErr_Occurred());
-    _PyInterpreterState_SetNotRunningMain(interp);
+    if (errcode != ERR_ALREADY_RUNNING) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
     return -1;
 }
 
@@ -421,6 +454,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
                            const char *codestr, PyObject *shareables)
 {
     module_state *state = get_module_state(mod);
+    assert(state != NULL);
 
     _sharedns *shared = _get_shared_ns(shareables);
     if (shared == NULL && PyErr_Occurred()) {
@@ -438,7 +472,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Run the script.
-    _sharedexception exc = {NULL, NULL};
+    _sharedexception exc = (_sharedexception){ .interp = interp };
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
@@ -449,15 +483,10 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     }
 
     // Propagate any exception out to the caller.
-    if (exc.name != NULL) {
-        assert(state != NULL);
+    if (result < 0) {
+        assert(!PyErr_Occurred());
         _sharedexception_apply(&exc, state->RunFailedError);
-    }
-    else if (result != 0) {
-        if (!PyErr_Occurred()) {
-            // We were unable to allocate a shared exception.
-            PyErr_NoMemory();
-        }
+        assert(PyErr_Occurred());
     }
 
     if (shared != NULL) {
