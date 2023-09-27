@@ -48,7 +48,6 @@ Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
 Doc/library/contextlib.rst
-Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
