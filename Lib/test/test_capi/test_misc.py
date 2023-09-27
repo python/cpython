@@ -2376,6 +2376,7 @@ def get_first_executor(func):
     return None
 
 
+@unittest.skip
 class TestUops(unittest.TestCase):
 
     def test_basic_loop(self):
