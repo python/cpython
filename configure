@@ -7871,7 +7871,7 @@ then
 
 printf "%s\n" "#define Py_NOGIL 1" >>confdefs.h
 
-  # "t" (for "threaded")
+  # Add "t" for "threaded"
   ABIFLAGS="${ABIFLAGS}t"
 fi
 
