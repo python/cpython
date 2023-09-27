@@ -16,9 +16,9 @@
 #endif
 
 #ifdef Py_NOGIL
-#define PYD_THREADING_TAG "t"
+#  define PYD_THREADING_TAG "t"
 #else
-#define PYD_THREADING_TAG ""
+#  define PYD_THREADING_TAG ""
 #endif
 
 #ifdef PYD_PLATFORM_TAG
