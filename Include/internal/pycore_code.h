@@ -282,10 +282,9 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
     do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
-#define OPTIMIZATION_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
+#define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_EXE_INC(opname) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].execution_count++; } while (0)
-#define OPTIMIZE_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
-#define OPTIMIZE_TRACE_STACK_OVERFLOW() do { if (_Py_stats) _Py_stats->optimization_stats.trace_stack_overflow++; } while (0)
+#define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -300,10 +299,9 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
-#define OPTIMIZATION_STAT_INC(name) ((void)0)
+#define OPT_STAT_INC(name) ((void)0)
 #define UOP_EXE_INC(opname) ((void)0)
-#define OPTIMIZE_UNSUPPOTED_OPCODE(opname) ((void)0)
-#define OPTIMIZE_TRACE_STACK_OVERFLOW() ((void)0)
+#define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.

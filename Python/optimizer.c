@@ -461,7 +461,7 @@ translate_bytecode_to_trace(
     if (trace_length + (n) > max_length) { \
         DPRINTF(2, "No room for %s (need %d, got %d)\n", \
                 (opname), (n), max_length - trace_length); \
-        OPTIMIZATION_STAT_INC(trace_too_long); \
+        OPT_STAT_INC(trace_too_long); \
         goto done; \
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
@@ -473,7 +473,7 @@ translate_bytecode_to_trace(
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
-        OPTIMIZATION_STAT_INC(trace_stack_overflow); \
+        OPT_STAT_INC(trace_stack_overflow); \
         ADD_TO_TRACE(_SET_IP, 0, 0); \
         goto done; \
     } \
@@ -574,7 +574,7 @@ pop_jump_if_bool:
                     ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
                 }
                 else {
-                    OPTIMIZATION_STAT_INC(inner_loop);
+                    OPT_STAT_INC(inner_loop);
                     DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
                 }
                 goto done;
@@ -641,7 +641,7 @@ pop_jump_if_bool:
                         // LOAD_CONST + _POP_FRAME.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
-                            OPTIMIZATION_STAT_INC(trace_stack_underflow);
+                            OPT_STAT_INC(trace_stack_underflow);
                             goto done;
                         }
                     }
@@ -718,7 +718,7 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_qualname),
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
-                                    OPTIMIZATION_STAT_INC(recursive_call);
+                                    OPT_STAT_INC(recursive_call);
                                     ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
@@ -898,7 +898,7 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
-    OPTIMIZATION_STAT_INC(traces_created);
+    OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);

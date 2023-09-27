@@ -224,7 +224,7 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
 
-    char** names;
+    char* const* names;
     for (int i = 0; i < 512; i++) {
         if (i < 256) {
             names = _PyOpcode_OpName;
