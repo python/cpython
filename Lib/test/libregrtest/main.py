@@ -504,9 +504,12 @@ class Regrtest:
         if sys.flags.bytes_warning < 2:
             python_opts.append('-bb')
 
-        # Ignore PYTHON* environment variables
-        if not sys.flags.ignore_environment:
-            python_opts.append('-E')
+        # WASM/WASI buildbot builders pass multiple PYTHON environment
+        # variables such as PYTHONPATH and _PYTHON_HOSTRUNNER.
+        if not self.python_cmd:
+            # Ignore PYTHON* environment variables
+            if not sys.flags.ignore_environment:
+                python_opts.append('-E')
 
         if not python_opts:
             return

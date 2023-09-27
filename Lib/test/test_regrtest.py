@@ -1965,15 +1965,19 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
 
-    def check_reexec(self, option):
+    def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
         code = textwrap.dedent(r"""
             import sys
             import unittest
+            from test import support
             try:
                 from _testinternalcapi import get_config
             except ImportError:
                 get_config = None
+
+            # WASI/WASM buildbots don't use -E option
+            use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
                 @unittest.skipUnless(get_config is None, 'need get_config()')
@@ -1986,7 +1990,7 @@ class ArgsTestCase(BaseTestCase):
                     # -bb option
                     self.assertTrue(config['bytes_warning'], 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], 0)
+                    self.assertTrue(config['use_environment'], use_environment)
 
                 def test_python_opts(self):
                     # -u option
@@ -2000,7 +2004,8 @@ class ArgsTestCase(BaseTestCase):
                     self.assertEqual(sys.flags.bytes_warning, 2)
 
                     # -E option
-                    self.assertTrue(sys.flags.ignore_environment)
+                    self.assertEqual(not sys.flags.ignore_environment,
+                                     use_environment)
         """)
         testname = self.create_test(code=code)
 
@@ -2018,7 +2023,7 @@ class ArgsTestCase(BaseTestCase):
     def test_add_python_opts(self):
         for opt in ("--fast-ci", "--slow-ci"):
             with self.subTest(opt=opt):
-                self.check_reexec(opt)
+                self.check_add_python_opts(opt)
 
 
 class TestUtils(unittest.TestCase):
