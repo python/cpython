@@ -747,7 +747,7 @@ class Regrtest:
             if sysconfig.is_python_build():
                 self.tmp_dir = sysconfig.get_config_var('abs_builddir')
                 if self.tmp_dir is None:
-                    # bpo-30284: On Windows, only srcdir is available. Using
+                    # gh-74470: On Windows, only srcdir is available. Using
                     # abs_builddir mostly matters on UNIX when building Python
                     # out of the source tree, especially when the source tree
                     # is read only.

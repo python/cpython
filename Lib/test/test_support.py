@@ -7,6 +7,7 @@ import socket
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 import unittest
@@ -764,6 +765,27 @@ class TestSupport(unittest.TestCase):
                 self.fail("RecursionError was not raised")
 
         #self.assertEqual(available, 2)
+
+    def test_copy_python_src_ignore(self):
+        src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = os.path.abspath(src_dir)
+
+        ignored = {'.git', '__pycache__'}
+
+        # Source code directory
+        names = os.listdir(src_dir)
+        self.assertEqual(support.copy_python_src_ignore(src_dir, names),
+                         ignored | {'build'})
+
+        # Doc/ directory
+        path = os.path.join(src_dir, 'Doc')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored | {'build', 'venv'})
+
+        # An other directory
+        path = os.path.join(src_dir, 'Objects')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
