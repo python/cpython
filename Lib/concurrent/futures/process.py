@@ -71,6 +71,11 @@ class _ThreadWakeup:
         self._reader, self._writer = mp.Pipe(duplex=False)
 
     def close(self):
+        # Please note that we do not take the shutdown lock when
+        # calling clear() (to avoid deadlocking) so this method can
+        # only be called safely from the same thread as all calls to
+        # clear() even if you hold the shutdown lock. Otherwise we
+        # might try to read from the closed pipe.
         if not self._closed:
             self._closed = True
             self._writer.close()
@@ -426,8 +431,12 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
-        with self.shutdown_lock:
-            self.thread_wakeup.clear()
+        # No need to hold the _shutdown_lock here because:
+        # 1. we're the only thread to use the wakeup reader
+        # 2. we're also the only thread to call thread_wakeup.close()
+        # 3. we want to avoid a possible deadlock when both reader and writer
+        #    would block (gh-105829)
+        self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
 
@@ -435,24 +444,14 @@ class _ExecutorManagerThread(threading.Thread):
         # Process the received a result_item. This can be either the PID of a
         # worker that exited gracefully or a _ResultItem
 
-        if isinstance(result_item, int):
-            # Clean shutdown of a worker using its PID
-            # (avoids marking the executor broken)
-            assert self.is_shutting_down()
-            p = self.processes.pop(result_item)
-            p.join()
-            if not self.processes:
-                self.join_executor_internals()
-                return
-        else:
-            # Received a _ResultItem so mark the future as completed.
-            work_item = self.pending_work_items.pop(result_item.work_id, None)
-            # work_item can be None if another process terminated (see above)
-            if work_item is not None:
-                if result_item.exception:
-                    work_item.future.set_exception(result_item.exception)
-                else:
-                    work_item.future.set_result(result_item.result)
+        # Received a _ResultItem so mark the future as completed.
+        work_item = self.pending_work_items.pop(result_item.work_id, None)
+        # work_item can be None if another process terminated (see above)
+        if work_item is not None:
+            if result_item.exception:
+                work_item.future.set_exception(result_item.exception)
+            else:
+                work_item.future.set_result(result_item.result)
 
     def is_shutting_down(self):
         # Check whether we should start shutting down the executor.
@@ -495,7 +494,7 @@ class _ExecutorManagerThread(threading.Thread):
                 # set_exception() fails if the future is cancelled: ignore it.
                 # Trying to check if the future is cancelled before calling
                 # set_exception() would leave a race condition if the future is
-                # cancelled betwen the check and set_exception().
+                # cancelled between the check and set_exception().
                 pass
             # Delete references to object. See issue16284
             del work_item
@@ -512,7 +511,8 @@ class _ExecutorManagerThread(threading.Thread):
 
         # gh-107219: Close the connection writer which can unblock
         # Queue._feed() if it was stuck in send_bytes().
-        self.call_queue._writer.close()
+        if sys.platform == 'win32':
+            self.call_queue._writer.close()
 
         # clean up resources
         self.join_executor_internals()
@@ -717,7 +717,10 @@ class ProcessPoolExecutor(_base.Executor):
         # as it could result in a deadlock if a worker process dies with the
         # _result_queue write lock still acquired.
         #
-        # _shutdown_lock must be locked to access _ThreadWakeup.
+        # _shutdown_lock must be locked to access _ThreadWakeup.close() and
+        # .wakeup(). Care must also be taken to not call clear or close from
+        # more than one thread since _ThreadWakeup.clear() is not protected by
+        # the _shutdown_lock
         self._executor_manager_thread_wakeup = _ThreadWakeup()
 
         # Create communication channels for the executor

@@ -520,6 +520,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'abs_builddir',
+        'abs_srcdir',
         'prefix',
         'srcdir',
     ):
@@ -956,6 +957,16 @@ def collect_tempfile(info_add):
 
     info_add('tempfile.gettempdir', tempfile.gettempdir())
 
+
+def collect_libregrtest_utils(info_add):
+    try:
+        from test.libregrtest import utils
+    except ImportError:
+        return
+
+    info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -995,6 +1006,7 @@ def collect_info(info):
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

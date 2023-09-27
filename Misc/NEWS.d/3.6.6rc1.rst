@@ -289,7 +289,7 @@ literals on pydoc. Patch by Andrés Delfino.
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
