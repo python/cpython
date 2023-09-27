@@ -1253,6 +1253,7 @@ class _PathBase(PurePath):
         Return the path to which the symbolic link points.
         """
         self._unsupported("readlink")
+    readlink._unsupported = True
 
     def _split_stack(self):
         """
@@ -1274,7 +1275,7 @@ class _PathBase(PurePath):
         except UnsupportedOperation:
             path = self
 
-        missing = False
+        querying = strict or not getattr(self.readlink, '_unsupported', False)
         link_count = 0
         stat_cache = {}
         target_cache = {}
@@ -1290,12 +1291,9 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
-                path = path._make_child_relpath(part)
-            elif missing:
-                path = path._make_child_relpath(part)
-            else:
-                lookup_path = path
-                path = path._make_child_relpath(part)
+            lookup_path = path
+            path = path._make_child_relpath(part)
+            if querying and part != '..':
                 path._resolving = True
                 try:
                     st = stat_cache.get(path)
@@ -1319,7 +1317,7 @@ class _PathBase(PurePath):
                     if strict:
                         raise
                     else:
-                        missing = True
+                        querying = False
         path._resolving = False
         return path
 
