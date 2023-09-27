@@ -428,11 +428,9 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
-    PyThreadState *tcur = PyThreadState_Get();
-    PyThreadState *tstate = tcur;
-    if (interp != tstate->interp) {
+    if (interp != PyInterpreterState_Get()) {
         // XXX Using the "head" thread isn't strictly correct.
-        tstate = PyInterpreterState_ThreadHead(interp);
+        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
         assert(tstate != NULL);
         while(tstate->next != NULL) {
             tstate = tstate->next;
