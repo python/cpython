@@ -1137,13 +1137,16 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    to be in a pristine condition and may still hold state and objects
    from an earlier "main".
 
-   Calling this function is is not required before running Python code
-   or otherwise interacting with the runtime.
+   Before running a Python program, there are often a number of
+   interactions with the runtime, sometimes even including running
+   non-"main" Python code.  Calling this function first before doing
+   them is not necessary, as long as it is called before running the
+   program itself.
 
    The caller must hold the GIL.
 
-   This function is intended for use in embedded applications
-   or by extension modules that manage subinterpreters.
+   This function is intended for use in embedded applications or by
+   extension modules that manage subinterpreters.
 
    .. versionadded:: 3.13
 
@@ -1176,7 +1179,8 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    This function will typically only be useful for embedded applications
    or extension modules that manage subinterpreters.  For other cases
-   this will always return true.
+   expect that this would always return true, since the application
+   or subinterpreters extension should have already set it.
 
    .. versionadded:: 3.13
 
