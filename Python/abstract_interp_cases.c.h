@@ -481,6 +481,15 @@
             break;
         }
 
+        case _GUARD_DORV_VALUES: {
+            break;
+        }
+
+        case _STORE_ATTR_INSTANCE_VALUE: {
+            STACK_SHRINK(2);
+            break;
+        }
+
         case _GUARD_TYPE_VERSION_STORE: {
             break;
         }

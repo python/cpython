@@ -1733,6 +1733,38 @@
             break;
         }
 
+        case _GUARD_DORV_VALUES: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            PyTypeObject *tp = Py_TYPE(owner);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
+            break;
+        }
+
+        case _STORE_ATTR_INSTANCE_VALUE: {
+            PyObject *owner;
+            PyObject *value;
+            owner = stack_pointer[-1];
+            value = stack_pointer[-2];
+            uint16_t index = (uint16_t)operand;
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            STAT_INC(STORE_ATTR, hit);
+            PyDictValues *values = _PyDictOrValues_GetValues(dorv);
+            PyObject *old_value = values->values[index];
+            values->values[index] = value;
+            if (old_value == NULL) {
+                _PyDictValues_AddToInsertionOrder(values, index);
+            }
+            else {
+                Py_DECREF(old_value);
+            }
+            Py_DECREF(owner);
+            STACK_SHRINK(2);
+            break;
+        }
+
         case _GUARD_TYPE_VERSION_STORE: {
             PyObject *owner;
             owner = stack_pointer[-1];
