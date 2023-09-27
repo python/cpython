@@ -91,11 +91,13 @@ In order for a class to define its own copy implementation, it can define
 special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 
 .. method:: object.__copy__(self)
+   :noindex:
 
    Called to implement the shallow copy operation;
    no additional arguments are passed.
 
 .. method:: object.__deepcopy__(self, memo)
+   :noindex:
 
    Called to implement the deep copy operation; it is passed one
    argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
@@ -112,6 +114,7 @@ and only supports named tuples created by :func:`~collections.namedtuple`,
 :mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
 
 .. method:: object.__replace__(self, /, **changes)
+   :noindex:
 
    This method should create a new object of the same type,
    replacing fields with values from *changes*.
