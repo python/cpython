@@ -20,6 +20,7 @@ from ._collections import FreezableDefaultDict, Pair
 from ._functools import method_cache, pass_none
 from ._itertools import always_iterable, unique_everseen
 from ._meta import PackageMetadata, SimplePath
+from ._adapters import Ident
 
 from contextlib import suppress
 from importlib import import_module
@@ -31,6 +32,7 @@ from typing import List, Mapping, Optional, cast
 __all__ = [
     'Distribution',
     'DistributionFinder',
+    'Ident',
     'PackageMetadata',
     'PackageNotFoundError',
     'distribution',
