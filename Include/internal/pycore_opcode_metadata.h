@@ -64,21 +64,22 @@
 #define _ITER_JUMP_RANGE 336
 #define _IS_ITER_EXHAUSTED_RANGE 337
 #define _ITER_NEXT_RANGE 338
-#define _GUARD_KEYS_VERSION 339
-#define _LOAD_ATTR_METHOD_WITH_VALUES 340
-#define _LOAD_ATTR_METHOD_NO_DICT 341
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 342
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 343
-#define _CHECK_PEP_523 344
-#define _CHECK_FUNCTION_EXACT_ARGS 345
-#define _CHECK_STACK_SPACE 346
-#define _INIT_CALL_PY_EXACT_ARGS 347
-#define _PUSH_FRAME 348
-#define _POP_JUMP_IF_FALSE 349
-#define _POP_JUMP_IF_TRUE 350
-#define _JUMP_TO_TOP 351
-#define _SAVE_CURRENT_IP 352
-#define _INSERT 353
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 339
+#define _GUARD_KEYS_VERSION 340
+#define _LOAD_ATTR_METHOD_WITH_VALUES 341
+#define _LOAD_ATTR_METHOD_NO_DICT 342
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 343
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 344
+#define _CHECK_PEP_523 345
+#define _CHECK_FUNCTION_EXACT_ARGS 346
+#define _CHECK_STACK_SPACE 347
+#define _INIT_CALL_PY_EXACT_ARGS 348
+#define _PUSH_FRAME 349
+#define _POP_JUMP_IF_FALSE 350
+#define _POP_JUMP_IF_TRUE 351
+#define _JUMP_TO_TOP 352
+#define _SAVE_CURRENT_IP 353
+#define _INSERT 354
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -495,6 +496,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case POP_BLOCK:
             return 0;
         case PUSH_EXC_INFO:
+            return 1;
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
             return 1;
         case _GUARD_KEYS_VERSION:
             return 1;
@@ -1052,6 +1055,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case PUSH_EXC_INFO:
             return 2;
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT:
+            return 1;
         case _GUARD_KEYS_VERSION:
             return 1;
         case _LOAD_ATTR_METHOD_WITH_VALUES:
@@ -1465,6 +1470,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [SETUP_WITH] = { true, INSTR_FMT_IX, 0 },
     [POP_BLOCK] = { true, INSTR_FMT_IX, 0 },
     [PUSH_EXC_INFO] = { true, INSTR_FMT_IX, 0 },
+    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [_GUARD_KEYS_VERSION] = { true, INSTR_FMT_IXC0, HAS_DEOPT_FLAG },
     [_LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
@@ -1651,7 +1657,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [GET_YIELD_FROM_ITER] = { .nuops = 1, .uops = { { GET_YIELD_FROM_ITER, 0, 0 } } },
     [WITH_EXCEPT_START] = { .nuops = 1, .uops = { { WITH_EXCEPT_START, 0, 0 } } },
     [PUSH_EXC_INFO] = { .nuops = 1, .uops = { { PUSH_EXC_INFO, 0, 0 } } },
-    [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
+    [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 0 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
     [LOAD_ATTR_METHOD_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_METHOD_NO_DICT, 4, 5 } } },
     [CALL_BOUND_METHOD_EXACT_ARGS] = { .nuops = 9, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _INIT_CALL_BOUND_METHOD_EXACT_ARGS, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
     [CALL_PY_EXACT_ARGS] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _CHECK_FUNCTION_EXACT_ARGS, 2, 1 }, { _CHECK_STACK_SPACE, 0, 0 }, { _INIT_CALL_PY_EXACT_ARGS, 0, 0 }, { _SET_IP, 7, 3 }, { _SAVE_CURRENT_IP, 0, 0 }, { _PUSH_FRAME, 0, 0 } } },
@@ -1723,6 +1729,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_ITER_JUMP_RANGE] = "_ITER_JUMP_RANGE",
     [_IS_ITER_EXHAUSTED_RANGE] = "_IS_ITER_EXHAUSTED_RANGE",
     [_ITER_NEXT_RANGE] = "_ITER_NEXT_RANGE",
+    [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
     [_LOAD_ATTR_METHOD_WITH_VALUES] = "_LOAD_ATTR_METHOD_WITH_VALUES",
     [_LOAD_ATTR_METHOD_NO_DICT] = "_LOAD_ATTR_METHOD_NO_DICT",

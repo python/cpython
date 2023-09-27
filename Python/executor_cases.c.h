@@ -2296,6 +2296,18 @@
             break;
         }
 
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            PyTypeObject *owner_cls = Py_TYPE(owner);
+            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
+                     !_PyObject_MakeInstanceAttributesFromDict(owner, dorv),
+                     LOAD_ATTR);
+            break;
+        }
+
         case _GUARD_KEYS_VERSION: {
             PyObject *owner;
             owner = stack_pointer[-1];

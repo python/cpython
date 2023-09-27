@@ -3588,6 +3588,15 @@
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             }
+            // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
+            {
+                PyTypeObject *owner_cls = Py_TYPE(owner);
+                assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
+                DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
+                         !_PyObject_MakeInstanceAttributesFromDict(owner, dorv),
+                         LOAD_ATTR);
+            }
             // _GUARD_KEYS_VERSION
             {
                 uint32_t keys_version = read_u32(&next_instr[3].cache);
