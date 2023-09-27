@@ -520,6 +520,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'abs_builddir',
+        'abs_srcdir',
         'prefix',
         'srcdir',
     ):

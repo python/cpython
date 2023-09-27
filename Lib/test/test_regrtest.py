@@ -374,7 +374,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources):
+    def check_ci_mode(self, args, use_resources, rerun=True):
         ns = cmdline._parse_args(args)
         if utils.MS_WINDOWS:
             self.assertTrue(ns.nowindows)
@@ -382,9 +382,8 @@ class ParseArgsTestCase(unittest.TestCase):
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
         regrtest = main.Regrtest(ns)
-        self.assertTrue(regrtest.ci_mode)
         self.assertEqual(regrtest.num_workers, -1)
-        self.assertTrue(regrtest.want_rerun)
+        self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
         self.assertIsNone(regrtest.random_seed)
         self.assertTrue(regrtest.fail_env_changed)
@@ -401,6 +400,14 @@ class ParseArgsTestCase(unittest.TestCase):
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 10 * 60)
 
+    def test_fast_ci_python_cmd(self):
+        args = ['--fast-ci', '--python', 'python -X dev']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources, rerun=False)
+        self.assertEqual(regrtest.timeout, 10 * 60)
+        self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
+
     def test_fast_ci_resource(self):
         # it should be possible to override resources
         args = ['--fast-ci', '-u', 'network']
@@ -412,6 +419,11 @@ class ParseArgsTestCase(unittest.TestCase):
         use_resources = sorted(cmdline.ALL_RESOURCES)
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 20 * 60)
+
+    def test_dont_add_python_opts(self):
+        args = ['--dont-add-python-opts']
+        ns = cmdline._parse_args(args)
+        self.assertFalse(ns._add_python_opts)
 
 
 @dataclasses.dataclass(slots=True)
@@ -1961,15 +1973,19 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, tests,
                                   stats=len(tests), parallel=True)
 
-    def check_reexec(self, option):
+    def check_add_python_opts(self, option):
         # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
         code = textwrap.dedent(r"""
             import sys
             import unittest
+            from test import support
             try:
                 from _testinternalcapi import get_config
             except ImportError:
                 get_config = None
+
+            # WASI/WASM buildbots don't use -E option
+            use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
                 @unittest.skipUnless(get_config is None, 'need get_config()')
@@ -1982,24 +1998,26 @@ class ArgsTestCase(BaseTestCase):
                     # -bb option
                     self.assertTrue(config['bytes_warning'], 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], 0)
-
-                # test if get_config() is not available
-                def test_unbuffered(self):
-                    # -u option
-                    self.assertFalse(sys.stdout.line_buffering)
-                    self.assertFalse(sys.stderr.line_buffering)
+                    self.assertTrue(config['use_environment'], use_environment)
 
                 def test_python_opts(self):
+                    # -u option
+                    self.assertTrue(sys.__stdout__.write_through)
+                    self.assertTrue(sys.__stderr__.write_through)
+
                     # -W default option
                     self.assertTrue(sys.warnoptions, ['default'])
+
                     # -bb option
                     self.assertEqual(sys.flags.bytes_warning, 2)
+
                     # -E option
-                    self.assertTrue(sys.flags.ignore_environment)
+                    self.assertEqual(not sys.flags.ignore_environment,
+                                     use_environment)
         """)
         testname = self.create_test(code=code)
 
+        # Use directly subprocess to control the exact command line
         cmd = [sys.executable,
                "-m", "test", option,
                f'--testdir={self.tmptestdir}',
@@ -2010,11 +2028,10 @@ class ArgsTestCase(BaseTestCase):
                               text=True)
         self.assertEqual(proc.returncode, 0, proc)
 
-    def test_reexec_fast_ci(self):
-        self.check_reexec("--fast-ci")
-
-    def test_reexec_slow_ci(self):
-        self.check_reexec("--slow-ci")
+    def test_add_python_opts(self):
+        for opt in ("--fast-ci", "--slow-ci"):
+            with self.subTest(opt=opt):
+                self.check_add_python_opts(opt)
 
 
 class TestUtils(unittest.TestCase):

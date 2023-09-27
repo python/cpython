@@ -2468,17 +2468,19 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
          * of 0. This is because RETURN_GENERATOR pushes an element
          * with _PyFrame_StackPush before switching stacks.
          */
+
+        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));

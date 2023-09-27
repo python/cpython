@@ -22,6 +22,8 @@ always available.
 
    .. versionadded:: 3.2
 
+   .. availability:: Unix.
+
 
 .. function:: addaudithook(hook)
 
