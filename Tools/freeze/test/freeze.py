@@ -1,14 +1,15 @@
 import os
 import os.path
-import re
 import shlex
 import shutil
 import subprocess
+import sysconfig
+from test import support
 
 
 TESTS_DIR = os.path.dirname(__file__)
 TOOL_ROOT = os.path.dirname(TESTS_DIR)
-SRCDIR = os.path.dirname(os.path.dirname(TOOL_ROOT))
+SRCDIR = os.path.abspath(sysconfig.get_config_var('srcdir'))
 
 MAKE = shutil.which('make')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
@@ -75,54 +76,15 @@ def ensure_opt(args, name, value):
 
 
 def copy_source_tree(newroot, oldroot):
-    print(f'copying the source tree into {newroot}...')
+    print(f'copying the source tree from {oldroot} to {newroot}...')
     if os.path.exists(newroot):
         if newroot == SRCDIR:
             raise Exception('this probably isn\'t what you wanted')
         shutil.rmtree(newroot)
 
-    def ignore_non_src(src, names):
-        """Turns what could be a 1000M copy into a 100M copy."""
-        # Don't copy the ~600M+ of needless git repo metadata.
-        # source only, ignore cached .pyc files.
-        subdirs_to_skip = {'.git', '__pycache__'}
-        if os.path.basename(src) == 'Doc':
-            # Another potential ~250M+ of non test related data.
-            subdirs_to_skip.add('build')
-            subdirs_to_skip.add('venv')
-        return subdirs_to_skip
-
-    shutil.copytree(oldroot, newroot, ignore=ignore_non_src)
+    shutil.copytree(oldroot, newroot, ignore=support.copy_python_src_ignore)
     if os.path.exists(os.path.join(newroot, 'Makefile')):
         _run_quiet([MAKE, 'clean'], newroot)
-
-
-def get_makefile_var(builddir, name):
-    regex = re.compile(rf'^{name} *=\s*(.*?)\s*$')
-    filename = os.path.join(builddir, 'Makefile')
-    try:
-        infile = open(filename, encoding='utf-8')
-    except FileNotFoundError:
-        return None
-    with infile:
-        for line in infile:
-            m = regex.match(line)
-            if m:
-                value, = m.groups()
-                return value or ''
-    return None
-
-
-def get_config_var(builddir, name):
-    python = os.path.join(builddir, 'python')
-    if os.path.isfile(python):
-        cmd = [python, '-c',
-               f'import sysconfig; print(sysconfig.get_config_var("{name}"))']
-        try:
-            return _run_stdout(cmd)
-        except subprocess.CalledProcessError:
-            pass
-    return get_makefile_var(builddir, name)
 
 
 ##################################
@@ -151,10 +113,8 @@ def prepare(script=None, outdir=None):
 
     # Run configure.
     print(f'configuring python in {builddir}...')
-    cmd = [
-        os.path.join(srcdir, 'configure'),
-        *shlex.split(get_config_var(SRCDIR, 'CONFIG_ARGS') or ''),
-    ]
+    config_args = shlex.split(sysconfig.get_config_var('CONFIG_ARGS') or '')
+    cmd = [os.path.join(srcdir, 'configure'), *config_args]
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
