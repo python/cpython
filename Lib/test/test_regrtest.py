@@ -374,7 +374,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
-    def check_ci_mode(self, args, use_resources):
+    def check_ci_mode(self, args, use_resources, rerun=True):
         ns = cmdline._parse_args(args)
         if utils.MS_WINDOWS:
             self.assertTrue(ns.nowindows)
@@ -383,7 +383,7 @@ class ParseArgsTestCase(unittest.TestCase):
         # which has an unclear API
         regrtest = main.Regrtest(ns)
         self.assertEqual(regrtest.num_workers, -1)
-        self.assertTrue(regrtest.want_rerun)
+        self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
         self.assertIsNone(regrtest.random_seed)
         self.assertTrue(regrtest.fail_env_changed)
@@ -399,6 +399,14 @@ class ParseArgsTestCase(unittest.TestCase):
         use_resources.remove('cpu')
         regrtest = self.check_ci_mode(args, use_resources)
         self.assertEqual(regrtest.timeout, 10 * 60)
+
+    def test_fast_ci_python_cmd(self):
+        args = ['--fast-ci', '--python', 'python -X dev']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources, rerun=False)
+        self.assertEqual(regrtest.timeout, 10 * 60)
+        self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
 
     def test_fast_ci_resource(self):
         # it should be possible to override resources
