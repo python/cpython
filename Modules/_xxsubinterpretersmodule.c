@@ -312,8 +312,7 @@ error:
 }
 
 static void
-_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass,
-                       PyInterpreterState *interp)
+_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
     if (exc->name != NULL) {
         if (exc->msg != NULL) {
@@ -464,7 +463,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     // Propagate any exception out to the caller.
     if (exc.name != NULL) {
         assert(state != NULL);
-        _sharedexception_apply(&exc, state->RunFailedError, interp);
+        _sharedexception_apply(&exc, state->RunFailedError);
     }
     else if (result != 0) {
         if (!PyErr_Occurred()) {
