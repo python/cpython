@@ -212,6 +212,14 @@ print_gc_stats(FILE *out, GCStats *stats)
 }
 
 static void
+print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
+{
+    for (int i = 0; i < _Py_UOP_HIST_SIZE; i++) {
+        fprintf(out, "%s[%d]: %" PRIu64 "\n", name, (1 << (i + 2)), hist[i]);
+    }
+}
+
+static void
 print_optimization_stats(FILE *out, OptimizationStats *stats)
 {
     fprintf(out, "Optimization attempts: %" PRIu64 "\n", stats->attempts);
@@ -224,7 +232,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
     fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
     fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
 
-    char* const* names;
+    print_histogram(out, "Trace length", stats->trace_length_hist);
+    print_histogram(out, "Trace run length", stats->trace_run_length_hist);
+    print_histogram(out, "Optimized trace length", stats->optimized_trace_length_hist);
+
+    const char* const* names;
     for (int i = 0; i < 512; i++) {
         if (i < 256) {
             names = _PyOpcode_OpName;
@@ -238,7 +250,12 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
 
     for (int i = 0; i < 256; i++) {
         if (stats->unsupported_opcode[i]) {
-            fprintf(out, "unsupported_opcode[%s].count : %" PRIu64 "\n", _PyOpcode_OpName[i]);
+            fprintf(
+                out, 
+                "unsupported_opcode[%s].count : %" PRIu64 "\n", 
+                _PyOpcode_OpName[i], 
+                stats->unsupported_opcode[i]
+            );
         }
     }
 }

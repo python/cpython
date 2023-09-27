@@ -750,7 +750,7 @@ pop_jump_if_bool:
                     break;
                 }
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
-                OPTIMIZE_UNSUPPORTED_OPCODE(opcode);
+                OPT_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
 
@@ -898,6 +898,7 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
+    OPT_HIST(trace_length, trace_length_hist);
     OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
@@ -908,6 +909,7 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+    OPT_HIST(trace_length, optimized_trace_length_hist);
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;

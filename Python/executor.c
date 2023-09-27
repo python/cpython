@@ -2,6 +2,7 @@
 
 #include "opcode.h"
 
+#include "pycore_bitutils.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
@@ -82,7 +83,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         OPT_STAT_INC(uops_executed);
-        assert(opcode < 512);
         UOP_EXE_INC(opcode);
         switch (opcode) {
 
@@ -116,6 +116,7 @@ error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    OPT_HIST(pc, trace_run_length_hist);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -124,6 +125,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    OPT_HIST(pc, trace_run_length_hist);
     frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);

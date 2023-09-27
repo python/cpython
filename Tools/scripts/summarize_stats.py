@@ -13,6 +13,7 @@ import os.path
 from datetime import date
 import itertools
 import sys
+import re
 
 if os.name == "nt":
     DEFAULT_DIR = "c:\\temp\\py_stats\\"
@@ -319,6 +320,15 @@ def emit_table(header, rows):
             raise ValueError("Wrong number of elements in row '" + str(row) + "'")
         print("|", " | ".join(to_str(i) for i in row), "|")
     print()
+
+def emit_histogram(title, stats, key, total):
+    rows = []
+    for k, v in stats.items():
+        if k.startswith(key):
+            entry = int(re.match(r".+\[([0-9]+)\]", k).groups()[0])
+            rows.append((f"<= {entry}", int(v), format_ratio(int(v), total)))
+    print(f"**{title}**\n")
+    emit_table(("Range", "Count:", "Ratio:"), rows)
 
 def calculate_execution_counts(opcode_stats, total):
     counts = []
@@ -671,6 +681,25 @@ def emit_optimization_stats(stats):
             rows = calculate_optimization_stats(stats)
             emit_table(("", "Count:", "Ratio:"), rows)
 
+        emit_histogram(
+            "Trace length histogram", 
+            stats, 
+            "Trace length",
+            stats["Optimization traces created"]
+        )
+        emit_histogram(
+            "Optimized trace length histogram",
+            stats,
+            "Optimized trace length",
+            stats["Optimization traces created"]
+        )
+        emit_histogram(
+            "Trace run length histogram", 
+            stats, 
+            "Trace run length",
+            stats["Optimization traces executed"]
+        )
+
         with Section("Uop stats", level=3):
             rows = calculate_uop_execution_counts(uop_stats)
             emit_table(
@@ -689,22 +718,7 @@ def emit_optimization_stats(stats):
 
 
 def emit_comparative_optimization_stats(base_stats, head_stats):
-    if not all("Optimization attempts" in stats for stats in (base_stats, head_stats)):
-        return
-
-    base_uop_stats = extract_opcode_stats(base_stats, "uop")
-    head_uop_stats = extract_opcode_stats(head_stats, "uop")
-
-    with Section("Optimization (Tier 2) stats", summary="statistics about the Tier 2 optimizer"):
-        with Section("Overall stats", level=3):
-            base_rows = calculate_optimization_stats(base_stats)
-            head_rows = calculate_optimization_stats(head_stats)
-            emit_table(("", "Base Count:", "Base Ratio:", "Head Count:", "Head Ratio:"), join_rows(base_rows, head_rows))
-
-        with Section("Uop stats", level=3):
-            base_rows = calculate_uop_execution_counts(base_uop_stats)
-            head_rows = calculate_uop_execution_counts(head_uop_stats)
-            _emit_comparative_execution_counts(base_rows, head_rows)
+    print("## Comparative optimization stats not implemented\n\n")
 
 
 def output_single_stats(stats):

@@ -2244,7 +2244,7 @@ dummy_func(
                 // Double-check that the opcode isn't instrumented or something:
                 here->op.code == JUMP_BACKWARD)
             {
-                OPTIMIZATION_STAT_INC(attempts);
+                OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
@@ -3913,6 +3913,7 @@ dummy_func(
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
+            OPT_HIST(pc, trace_run_length_hist);
             return frame;
         }
 
