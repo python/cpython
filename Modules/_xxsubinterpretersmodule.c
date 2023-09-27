@@ -244,7 +244,8 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 typedef struct _sharedexception {
     PyInterpreterState *interp;
 #define ERR_NOT_SET 0
-#define ERR_ALREADY_RUNNING 1
+#define ERR_NO_MEMORY 1
+#define ERR_ALREADY_RUNNING 2
     int code;
     const char *name;
     const char *msg;
@@ -286,6 +287,7 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
     PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
+        code = ERR_NO_MEMORY;
         goto error;
     }
     sharedexc->name = _copy_raw_string(nameobj);
@@ -296,6 +298,7 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
         } else {
             failure = "unable to encode and copy exception type name";
         }
+        code = ERR_NO_MEMORY;
         goto error;
     }
 
@@ -303,6 +306,7 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
         PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
         if (msgobj == NULL) {
             failure = "unable to format exception message";
+            code = ERR_NO_MEMORY;
             goto error;
         }
         sharedexc->msg = _copy_raw_string(msgobj);
@@ -313,10 +317,10 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
             } else {
                 failure = "unable to encode and copy exception message";
             }
+            code = ERR_NO_MEMORY;
             goto error;
         }
     }
-            PyErr_NoMemory();
 
     return NULL;
 
@@ -324,7 +328,10 @@ error:
     assert(failure != NULL);
     PyErr_Clear();
     _sharedexception_clear(sharedexc);
-    *sharedexc = no_exception;
+    *sharedexc = (_sharedexception){
+        .interp = sharedexc->interp,
+        .code = code,
+    };
     return failure;
 }
 
@@ -343,6 +350,9 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
     else if (exc->msg != NULL) {
         assert(exc->code == ERR_NOT_SET);
         PyErr_SetString(wrapperclass, exc->msg);
+    }
+    else if (exc->code == ERR_NO_MEMORY) {
+        PyErr_NoMemory();
     }
     else if (exc->code == ERR_ALREADY_RUNNING) {
         assert(exc->interp != NULL);
@@ -439,13 +449,12 @@ error:
         fprintf(stderr,
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
-        PyErr_Clear();
     }
     Py_XDECREF(excval);
-    assert(!PyErr_Occurred());
     if (errcode != ERR_ALREADY_RUNNING) {
         _PyInterpreterState_SetNotRunningMain(interp);
     }
+    assert(!PyErr_Occurred());
     return -1;
 }
 
