@@ -524,7 +524,10 @@ def collect_sysconfig(info_add):
         'Py_NOGIL',
         'SHELL',
         'SOABI',
+        'abs_builddir',
+        'abs_srcdir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
