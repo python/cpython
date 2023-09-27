@@ -1311,7 +1311,6 @@ class SubinterpThreadingTests(BaseTestCase):
 
     @requires_subinterpreters
     def test_threads_join_with_no_main(self):
-#        r_thread, w_thread = self.pipe()
         r_interp, w_interp = self.pipe()
 
         INTERP = b'I'
