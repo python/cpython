@@ -1607,12 +1607,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     if (tstate->on_delete != NULL) {
         // For the "main" thread of each interpreter, this is meant
         // to be done in PyInterpreterState_SetNotRunningMain().
-        // Tha leaves threads created by the threading module.
+        // Tha leaves threads created by the threading module,
+        // and any threads killed by forking.
         // However, we also accommodate "main" threads that still
         // don't call PyInterpreterState_SetNotRunningMain() yet.
-        assert(tstate->_whence == _PyThreadState_WHENCE_THREADING
-               || (tstate->interp->finalizing
-                   && tstate == _PyInterpreterState_GetFinalizing(tstate->interp)));
         tstate->on_delete(tstate->on_delete_data);
     }
 
