@@ -430,11 +430,9 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
     PyThreadState *tstate = NULL;
-    PyThreadState _tstate;
     if (interp != PyInterpreterState_Get()) {
-        tstate = &_tstate;
-        PyThreadState_Init(tstate, interp, _PyThreadState_WHENCE_EXEC);
-        PyThreadState_Bind(tstate);
+        tstate = PyThreadState_New(interp);
+        tstate->_whence = _PyThreadState_WHENCE_EXEC;
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
@@ -445,8 +443,9 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Switch back.
     if (save_tstate != NULL) {
+        PyThreadState_Clear(tstate);
         PyThreadState_Swap(save_tstate);
-        PyThreadState_Fini(tstate);
+        PyThreadState_Delete(tstate);
     }
 
     // Propagate any exception out to the caller.
@@ -565,12 +564,11 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    PyThreadState tstate;
-    PyThreadState_Init(&tstate, interp, _PyThreadState_WHENCE_INTERP);
-    PyThreadState_Bind(&tstate);
+    PyThreadState *tstate = PyThreadState_New(interp);
+    tstate->_whence = _PyThreadState_WHENCE_INTERP;
     // XXX Possible GILState issues?
-    PyThreadState *save_tstate = PyThreadState_Swap(&tstate);
-    Py_EndInterpreter(&tstate);
+    PyThreadState *save_tstate = PyThreadState_Swap(tstate);
+    Py_EndInterpreter(tstate);
     PyThreadState_Swap(save_tstate);
 
     Py_RETURN_NONE;

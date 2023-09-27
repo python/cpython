@@ -213,13 +213,6 @@ struct _ts {
 #  define Py_C_RECURSION_LIMIT 1500
 #endif
 
-PyAPI_FUNC(void) PyThreadState_Init(
-    PyThreadState *tstate,
-    PyInterpreterState *interp,
-    int whence);
-PyAPI_FUNC(void) PyThreadState_Fini(PyThreadState *tstate);
-PyAPI_FUNC(void) PyThreadState_Bind(PyThreadState *tstate);
-
 
 /* other API */
 

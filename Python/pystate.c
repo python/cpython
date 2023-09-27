@@ -1183,13 +1183,13 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0 && interp->requires_idref) {
-        PyThreadState tstate;
-        PyThreadState_Init(&tstate, interp, _PyThreadState_WHENCE_INTERP);
-        _PyThreadState_Bind(&tstate);
+        PyThreadState *tstate = _PyThreadState_New(interp,
+                                                   _PyThreadState_WHENCE_INTERP);
+        _PyThreadState_Bind(tstate);
 
         // XXX Possible GILState issues?
-        PyThreadState *save_tstate = _PyThreadState_Swap(runtime, &tstate);
-        Py_EndInterpreter(&tstate);
+        PyThreadState *save_tstate = _PyThreadState_Swap(runtime, tstate);
+        Py_EndInterpreter(tstate);
         _PyThreadState_Swap(runtime, save_tstate);
     }
 }
@@ -1441,7 +1441,6 @@ new_threadstate(PyInterpreterState *interp, int whence)
     PyThreadState *old_head = interp->threads.head;
     if (old_head == NULL) {
         // It's the interpreter's initial thread state.
-        assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
     }
@@ -1729,34 +1728,6 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
 }
 
 
-void
-PyThreadState_Init(PyThreadState *tstate,
-                   PyInterpreterState *interp, int whence)
-{
-    HEAD_LOCK(interp->runtime);
-
-    interp->threads.next_unique_id += 1;
-    uint64_t id = interp->threads.next_unique_id;
-
-    // Set to _PyThreadState_INIT.
-    memcpy(tstate,
-           &initial._main_interpreter._initial_thread,
-           sizeof(*tstate));
-
-    init_threadstate(tstate, interp, id, whence);
-    add_threadstate(interp, tstate, interp->threads.head);
-
-    HEAD_UNLOCK(interp->runtime);
-}
-
-void
-PyThreadState_Fini(PyThreadState *tstate)
-{
-    PyThreadState_Clear(tstate);
-    tstate_delete_common(tstate);
-}
-
-
 //----------
 // accessors
 //----------
@@ -1989,7 +1960,7 @@ PyThreadState_Swap(PyThreadState *newts)
 
 
 void
-PyThreadState_Bind(PyThreadState *tstate)
+_PyThreadState_Bind(PyThreadState *tstate)
 {
     // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
     // was called, tstate becomes a dangling pointer.
