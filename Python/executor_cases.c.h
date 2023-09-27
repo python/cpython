@@ -1714,6 +1714,25 @@
             break;
         }
 
+        case _LOAD_ATTR_SLOT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)operand;
+            char *addr = (char *)owner + index;
+            attr = *(PyObject **)addr;
+            DEOPT_IF(attr == NULL, LOAD_ATTR);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
         case COMPARE_OP: {
             PyObject *right;
             PyObject *left;
