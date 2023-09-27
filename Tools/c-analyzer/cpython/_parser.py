@@ -89,6 +89,11 @@ Python/abstract_interp_cases.c.h
 # not actually source
 Python/bytecodes.c
 
+# mimalloc
+Objects/mimalloc/*.c
+Include/mimalloc/*.h
+Include/mimalloc/mimalloc/*.h
+
 # @end=conf@
 ''')
 
@@ -109,6 +114,7 @@ glob	dirname
 *	.
 *	./Include
 *	./Include/internal
+*   ./Include/mimalloc
 
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat
