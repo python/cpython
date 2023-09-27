@@ -1344,9 +1344,9 @@ class SubinterpThreadingTests(BaseTestCase):
             """)
         interp.close()
 
-        self.assertEqual(os.read(r_inerp, 1), INTERP)
-        self.assertEqual(os.read(r_inerp, 1), FINI)
-        self.assertEqual(os.read(r_inerp, 1), DONE)
+        self.assertEqual(os.read(r_interp, 1), INTERP)
+        self.assertEqual(os.read(r_interp, 1), FINI)
+        self.assertEqual(os.read(r_interp, 1), DONE)
 
     @cpython_only
     def test_daemon_threads_fatal_error(self):
