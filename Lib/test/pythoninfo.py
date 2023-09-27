@@ -516,6 +516,8 @@ def collect_sysconfig(info_add):
         'Py_ENABLE_SHARED',
         'SHELL',
         'SOABI',
+        'abs_builddir',
+        'abs_srcdir',
         'prefix',
     ):
         value = sysconfig.get_config_var(name)
