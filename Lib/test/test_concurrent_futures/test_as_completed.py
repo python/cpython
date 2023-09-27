@@ -42,11 +42,14 @@ class AsCompletedTests:
                              EXCEPTION_FUTURE,
                              SUCCESSFUL_FUTURE}
 
-        for timeout in (0, 0.01):
+        # Windows clock resolution is around 15.6 ms
+        short_timeout = 0.100
+        for timeout in (0, short_timeout):
             with self.subTest(timeout):
 
-                future = self.executor.submit(time.sleep, 0.1)
                 completed_futures = set()
+                future = self.executor.submit(time.sleep, short_timeout * 10)
+
                 try:
                     for f in futures.as_completed(
                         already_completed | {future},

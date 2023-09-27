@@ -1,0 +1,3 @@
+regrtest: Fix reference leak check on Windows. Disable the load tracker on
+Windows in the reference leak check mode (-R option). Patch by Victor
+Stinner.
