@@ -7,9 +7,16 @@ import sysconfig
 from test import support
 
 
+def get_python_source_dir():
+    src_dir = sysconfig.get_config_var('abs_srcdir')
+    if not src_dir:
+        src_dir = sysconfig.get_config_var('srcdir')
+    return os.path.abspath(src_dir)
+
+
 TESTS_DIR = os.path.dirname(__file__)
 TOOL_ROOT = os.path.dirname(TESTS_DIR)
-SRCDIR = os.path.abspath(sysconfig.get_config_var('srcdir'))
+SRCDIR = get_python_source_dir()
 
 MAKE = shutil.which('make')
 FREEZE = os.path.join(TOOL_ROOT, 'freeze.py')
