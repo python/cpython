@@ -34,7 +34,7 @@ The corresponding `mi_track_free` still uses the block start pointer and origina
 The `mi_track_resize` is currently unused but could be called on reallocations within a block.
 `mi_track_init` is called at program start.
 
-The following macros are for tools like asan and valgrind to track whether memory is 
+The following macros are for tools like asan and valgrind to track whether memory is
 defined, undefined, or not accessible at all:
 
   #define mi_track_mem_defined(p,size)
@@ -94,7 +94,7 @@ defined, undefined, or not accessible at all:
 // no tracking
 
 #define MI_TRACK_ENABLED      0
-#define MI_TRACK_HEAP_DESTROY 0 
+#define MI_TRACK_HEAP_DESTROY 0
 #define MI_TRACK_TOOL         "none"
 
 #define mi_track_malloc_size(p,reqsize,size,zero)

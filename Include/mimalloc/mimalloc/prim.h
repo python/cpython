@@ -35,10 +35,10 @@ void _mi_prim_mem_init( mi_os_mem_config_t* config );
 
 // Free OS memory
 int _mi_prim_free(void* addr, size_t size );
-  
+
 // Allocate OS memory. Return NULL on error.
 // The `try_alignment` is just a hint and the returned pointer does not have to be aligned.
-// If `commit` is false, the virtual memory range only needs to be reserved (with no access) 
+// If `commit` is false, the virtual memory range only needs to be reserved (with no access)
 // which will later be committed explicitly using `_mi_prim_commit`.
 // `is_zero` is set to true if the memory was zero initialized (as on most OS's)
 // pre: !commit => !allow_large
@@ -82,11 +82,11 @@ mi_msecs_t _mi_prim_clock_now(void);
 typedef struct mi_process_info_s {
   mi_msecs_t  elapsed;
   mi_msecs_t  utime;
-  mi_msecs_t  stime; 
-  size_t      current_rss; 
-  size_t      peak_rss;  
+  mi_msecs_t  stime;
+  size_t      current_rss;
+  size_t      peak_rss;
   size_t      current_commit;
-  size_t      peak_commit; 
+  size_t      peak_commit;
   size_t      page_faults;
 } mi_process_info_t;
 
@@ -117,7 +117,7 @@ void _mi_prim_thread_associate_default_heap(mi_heap_t* heap);
 
 //-------------------------------------------------------------------
 // Thread id: `_mi_prim_thread_id()`
-// 
+//
 // Getting the thread id should be performant as it is called in the
 // fast path of `_mi_free` and we specialize for various platforms as
 // inlined definitions. Regular code should call `init.c:_mi_thread_id()`.

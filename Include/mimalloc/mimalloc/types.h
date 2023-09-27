@@ -181,7 +181,7 @@ typedef int32_t  mi_ssize_t;
 
 #define MI_SMALL_OBJ_SIZE_MAX             (MI_SMALL_PAGE_SIZE/4)   // 8KiB on 64-bit
 #define MI_MEDIUM_OBJ_SIZE_MAX            (MI_MEDIUM_PAGE_SIZE/4)  // 128KiB on 64-bit
-#define MI_MEDIUM_OBJ_WSIZE_MAX           (MI_MEDIUM_OBJ_SIZE_MAX/MI_INTPTR_SIZE)   
+#define MI_MEDIUM_OBJ_WSIZE_MAX           (MI_MEDIUM_OBJ_SIZE_MAX/MI_INTPTR_SIZE)
 #define MI_LARGE_OBJ_SIZE_MAX             (MI_SEGMENT_SIZE/2)      // 32MiB on 64-bit
 #define MI_LARGE_OBJ_WSIZE_MAX            (MI_LARGE_OBJ_SIZE_MAX/MI_INTPTR_SIZE)
 
@@ -199,10 +199,10 @@ typedef int32_t  mi_ssize_t;
 #define MI_HUGE_BLOCK_SIZE                ((uint32_t)(2*MI_GiB))
 
 // blocks up to this size are always allocated aligned
-#define MI_MAX_ALIGN_GUARANTEE            (8*MI_MAX_ALIGN_SIZE)  
+#define MI_MAX_ALIGN_GUARANTEE            (8*MI_MAX_ALIGN_SIZE)
 
-// Alignments over MI_ALIGNMENT_MAX are allocated in dedicated huge page segments 
-#define MI_ALIGNMENT_MAX                  (MI_SEGMENT_SIZE >> 1)  
+// Alignments over MI_ALIGNMENT_MAX are allocated in dedicated huge page segments
+#define MI_ALIGNMENT_MAX                  (MI_SEGMENT_SIZE >> 1)
 
 
 // ------------------------------------------------------
@@ -291,7 +291,7 @@ typedef uintptr_t mi_thread_free_t;
 typedef struct mi_page_s {
   // "owned" by the segment
   uint32_t              slice_count;       // slices in this page (0 if not a page)
-  uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)  
+  uint32_t              slice_offset;      // distance from the actual page data slice (0 if a page)
   uint8_t               is_committed : 1;  // `true` if the page virtual memory is committed
   uint8_t               is_zero_init : 1;  // `true` if the page was initially zero initialized
 
@@ -345,7 +345,7 @@ typedef enum mi_segment_kind_e {
 // A segment holds a commit mask where a bit is set if
 // the corresponding MI_COMMIT_SIZE area is committed.
 // The MI_COMMIT_SIZE must be a multiple of the slice
-// size. If it is equal we have the most fine grained 
+// size. If it is equal we have the most fine grained
 // decommit (but setting it higher can be more efficient).
 // The MI_MINIMAL_COMMIT_SIZE is the minimal amount that will
 // be committed in one go which can be set higher than
@@ -353,9 +353,9 @@ typedef enum mi_segment_kind_e {
 // is still tracked in fine-grained MI_COMMIT_SIZE chunks)
 // ------------------------------------------------------
 
-#define MI_MINIMAL_COMMIT_SIZE      (1*MI_SEGMENT_SLICE_SIZE)            
+#define MI_MINIMAL_COMMIT_SIZE      (1*MI_SEGMENT_SLICE_SIZE)
 #define MI_COMMIT_SIZE              (MI_SEGMENT_SLICE_SIZE)              // 64KiB
-#define MI_COMMIT_MASK_BITS         (MI_SEGMENT_SIZE / MI_COMMIT_SIZE)  
+#define MI_COMMIT_MASK_BITS         (MI_SEGMENT_SIZE / MI_COMMIT_SIZE)
 #define MI_COMMIT_MASK_FIELD_BITS    MI_SIZE_BITS
 #define MI_COMMIT_MASK_FIELD_COUNT  (MI_COMMIT_MASK_BITS / MI_COMMIT_MASK_FIELD_BITS)
 
@@ -428,11 +428,11 @@ typedef struct mi_segment_s {
 
   // from here is zero initialized
   struct mi_segment_s* next;            // the list of freed segments in the cache (must be first field, see `segment.c:mi_segment_init`)
-  
+
   size_t            abandoned;          // abandoned pages (i.e. the original owning thread stopped) (`abandoned <= used`)
   size_t            abandoned_visits;   // count how often this segment is visited in the abandoned list (to force reclaim it it is too long)
   size_t            used;               // count of pages in use
-  uintptr_t         cookie;             // verify addresses in debug mode: `mi_ptr_cookie(segment) == segment->cookie`  
+  uintptr_t         cookie;             // verify addresses in debug mode: `mi_ptr_cookie(segment) == segment->cookie`
 
   size_t            segment_slices;      // for huge segments this may be different from `MI_SLICES_PER_SEGMENT`
   size_t            segment_info_slices; // initial slices we are using segment info and possible guard pages.
@@ -503,7 +503,7 @@ struct mi_heap_s {
   mi_page_queue_t       pages[MI_BIN_FULL + 1];              // queue of pages for each size class (or "bin")
   _Atomic(mi_block_t*)  thread_delayed_free;
   mi_threadid_t         thread_id;                           // thread this heap belongs too
-  mi_arena_id_t         arena_id;                            // arena id if the heap belongs to a specific arena (or 0)  
+  mi_arena_id_t         arena_id;                            // arena id if the heap belongs to a specific arena (or 0)
   uintptr_t             cookie;                              // random cookie to verify pointers (see `_mi_ptr_cookie`)
   uintptr_t             keys[2];                             // two random keys used to encode the `thread_delayed_free` list
   mi_random_ctx_t       random;                              // random number context used for secure allocation

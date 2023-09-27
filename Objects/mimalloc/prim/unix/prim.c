@@ -57,7 +57,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 //------------------------------------------------------------------------------------
 // Use syscalls for some primitives to allow for libraries that override open/read/close etc.
-// and do allocation themselves; using syscalls prevents recursion when mimalloc is 
+// and do allocation themselves; using syscalls prevents recursion when mimalloc is
 // still initializing (issue #713)
 //------------------------------------------------------------------------------------
 
@@ -120,7 +120,7 @@ static bool unix_detect_overcommit(void) {
     os_overcommit = (val != 0);
   }
 #else
-  // default: overcommit is true  
+  // default: overcommit is true
 #endif
   return os_overcommit;
 }
@@ -168,12 +168,12 @@ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int p
     size_t n = mi_bsr(try_alignment);
     if (((size_t)1 << n) == try_alignment && n >= 12 && n <= 30) {  // alignment is a power of 2 and 4096 <= alignment <= 1GiB
       p = mmap(addr, size, protect_flags, flags | MAP_ALIGNED(n), fd, 0);
-      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) { 
+      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) {
         int err = errno;
         _mi_warning_message("unable to directly request aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, addr);
       }
       if (p!=MAP_FAILED) return p;
-      // fall back to regular mmap      
+      // fall back to regular mmap
     }
   }
   #elif defined(MAP_ALIGN)  // Solaris
@@ -189,7 +189,7 @@ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int p
     void* hint = _mi_os_get_aligned_hint(try_alignment, size);
     if (hint != NULL) {
       p = mmap(hint, size, protect_flags, flags, fd, 0);
-      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) { 
+      if (p==MAP_FAILED || !_mi_is_aligned(p,try_alignment)) {
         #if MI_TRACK_ENABLED  // asan sometimes does not instrument errno correctly?
         int err = 0;
         #else
@@ -198,7 +198,7 @@ static void* unix_mmap_prim(void* addr, size_t size, size_t try_alignment, int p
         _mi_warning_message("unable to directly request hinted aligned OS memory (error: %d (0x%x), size: 0x%zx bytes, alignment: 0x%zx, hint address: %p)\n", err, err, size, try_alignment, hint);
       }
       if (p!=MAP_FAILED) return p;
-      // fall back to regular mmap      
+      // fall back to regular mmap
     }
   }
   #endif
@@ -327,9 +327,9 @@ int _mi_prim_alloc(size_t size, size_t try_alignment, bool commit, bool allow_la
   mi_assert_internal(size > 0 && (size % _mi_os_page_size()) == 0);
   mi_assert_internal(commit || !allow_large);
   mi_assert_internal(try_alignment > 0);
-  
+
   *is_zero = true;
-  int protect_flags = (commit ? (PROT_WRITE | PROT_READ) : PROT_NONE);  
+  int protect_flags = (commit ? (PROT_WRITE | PROT_READ) : PROT_NONE);
   *addr = unix_mmap(NULL, size, try_alignment, protect_flags, false, allow_large, is_large);
   return (*addr != NULL ? 0 : errno);
 }
@@ -357,19 +357,19 @@ int _mi_prim_commit(void* start, size_t size, bool* is_zero) {
   // was either from mmap PROT_NONE, or from decommit MADV_DONTNEED, but
   // we sometimes call commit on a range with still partially committed
   // memory and `mprotect` does not zero the range.
-  *is_zero = false;  
+  *is_zero = false;
   int err = mprotect(start, size, (PROT_READ | PROT_WRITE));
-  if (err != 0) { 
-    err = errno; 
+  if (err != 0) {
+    err = errno;
     unix_mprotect_hint(err);
   }
   return err;
 }
 
 int _mi_prim_decommit(void* start, size_t size, bool* needs_recommit) {
-  int err = 0;  
+  int err = 0;
   // decommit: use MADV_DONTNEED as it decreases rss immediately (unlike MADV_FREE)
-  err = unix_madvise(start, size, MADV_DONTNEED);    
+  err = unix_madvise(start, size, MADV_DONTNEED);
   #if !MI_DEBUG && !MI_SECURE
     *needs_recommit = false;
   #else
@@ -381,15 +381,15 @@ int _mi_prim_decommit(void* start, size_t size, bool* needs_recommit) {
   *needs_recommit = true;
   const int fd = unix_mmap_fd();
   void* p = mmap(start, size, PROT_NONE, (MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE), fd, 0);
-  if (p != start) { err = errno; }    
+  if (p != start) { err = errno; }
   */
   return err;
 }
 
 int _mi_prim_reset(void* start, size_t size) {
-  // We try to use `MADV_FREE` as that is the fastest. A drawback though is that it 
+  // We try to use `MADV_FREE` as that is the fastest. A drawback though is that it
   // will not reduce the `rss` stats in tools like `top` even though the memory is available
-  // to other processes. With the default `MIMALLOC_PURGE_DECOMMITS=1` we ensure that by 
+  // to other processes. With the default `MIMALLOC_PURGE_DECOMMITS=1` we ensure that by
   // default `MADV_DONTNEED` is used though.
   #if defined(MADV_FREE)
   static _Atomic(size_t) advice = MI_ATOMIC_VAR_INIT(MADV_FREE);
@@ -409,7 +409,7 @@ int _mi_prim_reset(void* start, size_t size) {
 
 int _mi_prim_protect(void* start, size_t size, bool protect) {
   int err = mprotect(start, size, protect ? PROT_NONE : (PROT_READ | PROT_WRITE));
-  if (err != 0) { err = errno; }  
+  if (err != 0) { err = errno; }
   unix_mprotect_hint(err);
   return err;
 }
@@ -450,7 +450,7 @@ int _mi_prim_alloc_huge_os_pages(void* hint_addr, size_t size, int numa_node, bo
     if (err != 0) {
       err = errno;
       _mi_warning_message("failed to bind huge (1GiB) pages to numa node %d (error: %d (0x%x))\n", numa_node, err, err);
-    }    
+    }
   }
   return (*addr != NULL ? 0 : errno);
 }
@@ -567,9 +567,9 @@ mi_msecs_t _mi_prim_clock_now(void) {
 // low resolution timer
 mi_msecs_t _mi_prim_clock_now(void) {
   #if !defined(CLOCKS_PER_SEC) || (CLOCKS_PER_SEC == 1000) || (CLOCKS_PER_SEC == 0)
-  return (mi_msecs_t)clock();  
+  return (mi_msecs_t)clock();
   #elif (CLOCKS_PER_SEC < 1000)
-  return (mi_msecs_t)clock() * (1000 / (mi_msecs_t)CLOCKS_PER_SEC);  
+  return (mi_msecs_t)clock() * (1000 / (mi_msecs_t)CLOCKS_PER_SEC);
   #else
   return (mi_msecs_t)clock() / ((mi_msecs_t)CLOCKS_PER_SEC / 1000);
   #endif
@@ -609,7 +609,7 @@ void _mi_prim_process_info(mi_process_info_t* pinfo)
   pinfo->stime = timeval_secs(&rusage.ru_stime);
 #if !defined(__HAIKU__)
   pinfo->page_faults = rusage.ru_majflt;
-#endif  
+#endif
 #if defined(__HAIKU__)
   // Haiku does not have (yet?) a way to
   // get these stats per process
@@ -750,7 +750,7 @@ bool _mi_prim_random_buf(void* buf, size_t buf_len) {
 
 #elif defined(__ANDROID__) || defined(__DragonFly__) || \
       defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
-      defined(__sun) 
+      defined(__sun)
 
 #include <stdlib.h>
 bool _mi_prim_random_buf(void* buf, size_t buf_len) {
@@ -842,7 +842,7 @@ void _mi_prim_thread_associate_default_heap(mi_heap_t* heap) {
   }
 }
 
-#else 
+#else
 
 void _mi_prim_thread_init_auto_done(void) {
   // nothing

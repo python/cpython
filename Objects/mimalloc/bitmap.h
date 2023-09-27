@@ -41,7 +41,7 @@ static inline mi_bitmap_index_t mi_bitmap_index_create(size_t idx, size_t bitidx
 }
 
 // Create a bit index.
-static inline mi_bitmap_index_t mi_bitmap_index_create_from_bit(size_t full_bitidx) {  
+static inline mi_bitmap_index_t mi_bitmap_index_create_from_bit(size_t full_bitidx) {
   return mi_bitmap_index_create(full_bitidx / MI_BITMAP_FIELD_BITS, full_bitidx % MI_BITMAP_FIELD_BITS);
 }
 
@@ -80,7 +80,7 @@ bool _mi_bitmap_try_find_from_claim_pred(mi_bitmap_t bitmap, const size_t bitmap
 // Returns `true` if all `count` bits were 1 previously.
 bool _mi_bitmap_unclaim(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
 
-// Try to set `count` bits at `bitmap_idx` from 0 to 1 atomically. 
+// Try to set `count` bits at `bitmap_idx` from 0 to 1 atomically.
 // Returns `true` if successful when all previous `count` bits were 0.
 bool _mi_bitmap_try_claim(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx);
 

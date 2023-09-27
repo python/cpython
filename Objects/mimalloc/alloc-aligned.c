@@ -47,7 +47,7 @@ static mi_decl_noinline void* mi_heap_malloc_zero_aligned_at_fallback(mi_heap_t*
     oversize = (size <= MI_SMALL_SIZE_MAX ? MI_SMALL_SIZE_MAX + 1 /* ensure we use generic malloc path */ : size);
     p = _mi_heap_malloc_zero_ex(heap, oversize, false, alignment); // the page block size should be large enough to align in the single huge page block
     // zero afterwards as only the area from the aligned_p may be committed!
-    if (p == NULL) return NULL;    
+    if (p == NULL) return NULL;
   }
   else {
     // otherwise over-allocate
@@ -73,7 +73,7 @@ static mi_decl_noinline void* mi_heap_malloc_zero_aligned_at_fallback(mi_heap_t*
   mi_assert_internal(((uintptr_t)aligned_p + offset) % alignment == 0);
   mi_assert_internal(mi_usable_size(aligned_p)>=size);
   mi_assert_internal(mi_usable_size(p) == mi_usable_size(aligned_p)+adjust);
-    
+
   // now zero the block if needed
   if (alignment > MI_ALIGNMENT_MAX) {
     // for the tracker, on huge aligned allocations only from the start of the large block is defined
@@ -85,7 +85,7 @@ static mi_decl_noinline void* mi_heap_malloc_zero_aligned_at_fallback(mi_heap_t*
 
   if (p != aligned_p) {
     mi_track_align(p,aligned_p,adjust,mi_usable_size(aligned_p));
-  }  
+  }
   return aligned_p;
 }
 

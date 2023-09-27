@@ -109,15 +109,15 @@ bool _mi_bitmap_try_find_from_claim(mi_bitmap_t bitmap, const size_t bitmap_fiel
 }
 
 // Like _mi_bitmap_try_find_from_claim but with an extra predicate that must be fullfilled
-bool _mi_bitmap_try_find_from_claim_pred(mi_bitmap_t bitmap, const size_t bitmap_fields, 
-            const size_t start_field_idx, const size_t count, 
-            mi_bitmap_pred_fun_t pred_fun, void* pred_arg,            
+bool _mi_bitmap_try_find_from_claim_pred(mi_bitmap_t bitmap, const size_t bitmap_fields,
+            const size_t start_field_idx, const size_t count,
+            mi_bitmap_pred_fun_t pred_fun, void* pred_arg,
             mi_bitmap_index_t* bitmap_idx) {
   size_t idx = start_field_idx;
   for (size_t visited = 0; visited < bitmap_fields; visited++, idx++) {
     if (idx >= bitmap_fields) idx = 0; // wrap
     if (_mi_bitmap_try_find_claim_field(bitmap, idx, count, bitmap_idx)) {
-      if (pred_fun == NULL || pred_fun(*bitmap_idx, pred_arg)) { 
+      if (pred_fun == NULL || pred_fun(*bitmap_idx, pred_arg)) {
         return true;
       }
       // predicate returned false, unclaim and look further
@@ -164,7 +164,7 @@ static bool mi_bitmap_is_claimedx(mi_bitmap_t bitmap, size_t bitmap_fields, size
   return ((field & mask) == mask);
 }
 
-// Try to set `count` bits at `bitmap_idx` from 0 to 1 atomically. 
+// Try to set `count` bits at `bitmap_idx` from 0 to 1 atomically.
 // Returns `true` if successful when all previous `count` bits were 0.
 bool _mi_bitmap_try_claim(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count, mi_bitmap_index_t bitmap_idx) {
   const size_t idx = mi_bitmap_index_field(bitmap_idx);
@@ -172,9 +172,9 @@ bool _mi_bitmap_try_claim(mi_bitmap_t bitmap, size_t bitmap_fields, size_t count
   const size_t mask = mi_bitmap_mask_(count, bitidx);
   mi_assert_internal(bitmap_fields > idx); MI_UNUSED(bitmap_fields);
   size_t expected = mi_atomic_load_relaxed(&bitmap[idx]);
-  do  {    
+  do  {
     if ((expected & mask) != 0) return false;
-  } 
+  }
   while (!mi_atomic_cas_strong_acq_rel(&bitmap[idx], &expected, expected | mask));
   mi_assert_internal((expected & mask) == 0);
   return true;
@@ -212,7 +212,7 @@ static bool mi_bitmap_try_find_claim_field_across(mi_bitmap_t bitmap, size_t bit
   if (initial == 0)     return false;
   if (initial >= count) return _mi_bitmap_try_find_claim_field(bitmap, idx, count, bitmap_idx);    // no need to cross fields (this case won't happen for us)
   if (_mi_divide_up(count - initial, MI_BITMAP_FIELD_BITS) >= (bitmap_fields - idx)) return false; // not enough entries
-  
+
   // scan ahead
   size_t found = initial;
   size_t mask = 0;     // mask bits for the final field

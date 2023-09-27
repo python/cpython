@@ -160,7 +160,7 @@ If we cannot get good randomness, we fall back to weak randomness based on a tim
 
 uintptr_t _mi_os_random_weak(uintptr_t extra_seed) {
   uintptr_t x = (uintptr_t)&_mi_os_random_weak ^ extra_seed; // ASLR makes the address random
-  x ^= _mi_prim_clock_now();  
+  x ^= _mi_prim_clock_now();
   // and do a few randomization steps
   uintptr_t max = ((x ^ (x >> 17)) & 0x0F) + 1;
   for (uintptr_t i = 0; i < max; i++) {

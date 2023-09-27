@@ -32,7 +32,7 @@ static bool mi_heap_visit_pages(mi_heap_t* heap, heap_page_visitor_fun* fn, void
   #if MI_DEBUG>1
   size_t total = heap->page_count;
   size_t count = 0;
-  #endif  
+  #endif
 
   for (size_t i = 0; i <= MI_BIN_FULL; i++) {
     mi_page_queue_t* pq = &heap->pages[i];
@@ -120,11 +120,11 @@ static void mi_heap_collect_ex(mi_heap_t* heap, mi_collect_t collect)
 {
   if (heap==NULL || !mi_heap_is_initialized(heap)) return;
 
-  const bool force = collect >= MI_FORCE;  
+  const bool force = collect >= MI_FORCE;
   _mi_deferred_free(heap, force);
 
-  // note: never reclaim on collect but leave it to threads that need storage to reclaim 
-  const bool force_main = 
+  // note: never reclaim on collect but leave it to threads that need storage to reclaim
+  const bool force_main =
     #ifdef NDEBUG
       collect == MI_FORCE
     #else

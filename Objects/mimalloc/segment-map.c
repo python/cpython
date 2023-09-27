@@ -102,8 +102,8 @@ static mi_segment_t* _mi_segment_of(const void* p) {
     uintptr_t lomask = mask;
     loindex = index;
     do {
-      loindex--;  
-      lomask = mi_atomic_load_relaxed(&mi_segment_map[loindex]);      
+      loindex--;
+      lomask = mi_atomic_load_relaxed(&mi_segment_map[loindex]);
     } while (lomask != 0 && loindex > 0);
     if (lomask == 0) return NULL;
     lobitidx = mi_bsr(lomask);    // lomask != 0
