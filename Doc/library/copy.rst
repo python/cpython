@@ -87,7 +87,7 @@ pickle functions from the :mod:`copyreg` module.
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
-.. currentmodule:: builtins
+.. currentmodule:: None
 
 In order for a class to define its own copy implementation, it can define
 special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
