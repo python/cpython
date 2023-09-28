@@ -500,15 +500,15 @@ if hasattr(select, 'kqueue'):
             key = super().register(fileobj, events, data)
             try:
                 if events & EVENT_READ:
-                    self._max_events += 1
                     kev = select.kevent(key.fd, select.KQ_FILTER_READ,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
-                if events & EVENT_WRITE:
                     self._max_events += 1
+                if events & EVENT_WRITE:
                     kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                         select.KQ_EV_ADD)
                     self._selector.control([kev], 0, 0)
+                    self._max_events += 1
             except:
                 super().unregister(fileobj)
                 raise
@@ -517,9 +517,9 @@ if hasattr(select, 'kqueue'):
         def unregister(self, fileobj):
             key = super().unregister(fileobj)
             if key.events & EVENT_READ:
-                self._max_events -= 1
                 kev = select.kevent(key.fd, select.KQ_FILTER_READ,
                                     select.KQ_EV_DELETE)
+                self._max_events -= 1
                 try:
                     self._selector.control([kev], 0, 0)
                 except OSError:
@@ -527,9 +527,9 @@ if hasattr(select, 'kqueue'):
                     # was registered.
                     pass
             if key.events & EVENT_WRITE:
-                self._max_events -= 1
                 kev = select.kevent(key.fd, select.KQ_FILTER_WRITE,
                                     select.KQ_EV_DELETE)
+                self._max_events -= 1
                 try:
                     self._selector.control([kev], 0, 0)
                 except OSError:
