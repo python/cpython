@@ -1,1 +1,1 @@
-Add a ``peek()`` method to :class:`io.BytesIO`.
+Add :meth:`io.BytesIO.peek`.
