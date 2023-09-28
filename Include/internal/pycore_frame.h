@@ -86,10 +86,10 @@ typedef struct _PyInterpreterFrame {
     PyObject *localsplus[1];
 } _PyInterpreterFrame;
 
-#define NewPyInterpreterFrame_LASTI(IF) \
+#define _PyInterpreterFrame_LASTI(IF) \
     ((int)(((IF)->instr_ptr) - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
-#define _PyInterpreterFrame_LASTI(IF) \
+#define _OldPyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
@@ -111,8 +111,8 @@ dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
 
 static void
 check_lasti_values(_PyInterpreterFrame *f, bool raise, const char* filename, int line) {
-    int new_addr = NewPyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
-    int addr = _PyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
+    int new_addr = _PyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
+    int addr = _OldPyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
     int new = PyCode_Addr2Line(_PyFrame_GetCode(f), new_addr);
     int old = PyCode_Addr2Line(_PyFrame_GetCode(f), addr);
 
