@@ -785,14 +785,17 @@ def check_cflags_pgo():
     # Check if Python was built with ./configure --enable-optimizations:
     # with Profile Guided Optimization (PGO).
     cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
-    pgo_options = (
+    pgo_options = [
         # GCC
         '-fprofile-use',
         # clang: -fprofile-instr-use=code.profclangd
         '-fprofile-instr-use',
         # ICC
         "-prof-use",
-    )
+    ]
+    PGO_PROF_USE_FLAG = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+    if PGO_PROF_USE_FLAG:
+        pgo_options.append(PGO_PROF_USE_FLAG)
     return any(option in cflags_nodist for option in pgo_options)
 
 
