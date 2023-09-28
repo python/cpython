@@ -111,13 +111,16 @@ dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
 
 static void
 check_lasti_values(_PyInterpreterFrame *f, bool raise, const char* filename, int line) {
-    int old = _PyInterpreterFrame_LASTI(f);
-    int new = NewPyInterpreterFrame_LASTI(f);
+    int new_addr = NewPyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
+    int addr = _PyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
+    int new = PyCode_Addr2Line(_PyFrame_GetCode(f), new_addr);
+    int old = PyCode_Addr2Line(_PyFrame_GetCode(f), addr);
 
     if (old != new) {
-        //fprintf(stderr, "f=%p old=%d new=%d\n", f, old, new);
+        fprintf(stderr, "f=%p f->prev_instr=%p f->instr_ptr=%p old=%d new=%d\n", f, f->prev_instr, f->instr_ptr, old, new);
+        fprintf(stderr, "%s : %d\n", filename, line);
     }
-    if (raise) assert(old == new);
+    if (true || raise) assert(old == new);
 }
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
