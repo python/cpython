@@ -23773,6 +23773,7 @@ else $as_nop
 fi
 
 
+# gh-105323: Need to handle the macOS editline as an alias of readline.
 case $ac_sys_system/$ac_sys_release in #(
   Darwin/*) :
     ac_fn_c_check_type "$LINENO" "Function" "ac_cv_type_Function" "#include <readline/readline.h>

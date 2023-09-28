@@ -5831,9 +5831,12 @@ AC_ARG_WITH(
   [with_readline=readline]
 )
 
-dnl gh-105323: Need to handle the macOS editline as an alias of readline.
+# gh-105323: Need to handle the macOS editline as an alias of readline.
 AS_CASE([$ac_sys_system/$ac_sys_release],
-  [Darwin/*], [AC_CHECK_TYPE(Function, [AC_DEFINE([WITH_APPLE_EDITLINE])], [], [#include <readline/readline.h>])],
+  [Darwin/*], [AC_CHECK_TYPE([Function],
+                             [AC_DEFINE([WITH_APPLE_EDITLINE])],
+                             [],
+                             [@%:@include <readline/readline.h>])],
   []
 )
 
