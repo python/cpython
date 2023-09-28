@@ -3,6 +3,7 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
 #include <object.h>
@@ -115,7 +116,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         }
     }
     else if (PyLong_Check(file)) {
-        fd = _PyLong_AsInt(file);
+        fd = PyLong_AsInt(file);
         if (fd == -1 && PyErr_Occurred())
             return -1;
         if (fd < 0) {
@@ -145,10 +146,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
         return -1;
     }
 
-    result = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (result != NULL)
-        Py_DECREF(result);
-    else {
+    if (_PyFile_Flush(file) < 0) {
         /* ignore flush() error */
         PyErr_Clear();
     }
@@ -414,11 +412,10 @@ faulthandler_allocate_stack(void)
 
     int err = sigaltstack(&stack, &old_stack);
     if (err) {
+        PyErr_SetFromErrno(PyExc_OSError);
         /* Release the stack to retry sigaltstack() next time */
         PyMem_Free(stack.ss_sp);
         stack.ss_sp = NULL;
-
-        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
     return 0;

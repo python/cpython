@@ -669,6 +669,8 @@ MODULE__TESTBUFFER_FALSE
 MODULE__TESTBUFFER_TRUE
 MODULE__TESTINTERNALCAPI_FALSE
 MODULE__TESTINTERNALCAPI_TRUE
+MODULE__TESTCLINIC_LIMITED_FALSE
+MODULE__TESTCLINIC_LIMITED_TRUE
 MODULE__TESTCLINIC_FALSE
 MODULE__TESTCLINIC_TRUE
 MODULE__TESTCAPI_FALSE
@@ -1063,6 +1065,7 @@ with_suffix
 enable_shared
 with_static_libpython
 enable_profiling
+enable_gil
 with_pydebug
 with_trace_refs
 enable_pystats
@@ -1103,7 +1106,6 @@ with_openssl_rpath
 with_ssl_default_suites
 with_builtin_hashlib_hashes
 enable_test_modules
-enable_gil
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1790,6 +1792,8 @@ Optional Features:
                           no)
   --enable-profiling      enable C-level code profiling with gprof (default is
                           no)
+  --disable-gil           enable experimental support for running without the
+                          GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
@@ -1804,8 +1808,6 @@ Optional Features:
                           use big digits (30 or 15 bits) for Python longs
                           (default is 30)]
   --disable-test-modules  don't build nor install test modules
-  --disable-gil           enable experimental support for running without the
-                          GIL (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -6719,200 +6721,16 @@ fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 printf %s "checking for the platform triplet based on compiler characteristics... " >&6; }
-cat > conftest.c <<EOF
-#undef bfin
-#undef cris
-#undef fr30
-#undef linux
-#undef hppa
-#undef hpux
-#undef i386
-#undef mips
-#undef powerpc
-#undef sparc
-#undef unix
-#if defined(__ANDROID__)
-    # Android is not a multiarch system.
-#elif defined(__linux__)
-# if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-gnu
-# elif defined(__x86_64__) && defined(__ILP32__)
-        x86_64-linux-gnux32
-# elif defined(__i386__)
-        i386-linux-gnu
-# elif defined(__aarch64__) && defined(__AARCH64EL__)
-#  if defined(__ILP32__)
-        aarch64_ilp32-linux-gnu
-#  else
-        aarch64-linux-gnu
-#  endif
-# elif defined(__aarch64__) && defined(__AARCH64EB__)
-#  if defined(__ILP32__)
-        aarch64_be_ilp32-linux-gnu
-#  else
-        aarch64_be-linux-gnu
-#  endif
-# elif defined(__alpha__)
-        alpha-linux-gnu
-# elif defined(__ARM_EABI__) && defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabihf
-#  else
-        armeb-linux-gnueabihf
-#  endif
-# elif defined(__ARM_EABI__) && !defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabi
-#  else
-        armeb-linux-gnueabi
-#  endif
-# elif defined(__hppa__)
-        hppa-linux-gnu
-# elif defined(__ia64__)
-        ia64-linux-gnu
-# elif defined(__loongarch__)
-#  if defined(__loongarch_lp64)
-#   if defined(__loongarch_soft_float)
-        loongarch64-linux-gnusf
-#   elif defined(__loongarch_single_float)
-        loongarch64-linux-gnuf32
-#   elif defined(__loongarch_double_float)
-        loongarch64-linux-gnu
-#   else
-#    error unknown platform triplet
-#   endif
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__m68k__) && !defined(__mcoldfire__)
-        m68k-linux-gnu
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6el-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsel-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float)
-#  if _MIPS_SIM == _ABIO32
-        mips-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__or1k__)
-        or1k-linux-gnu
-# elif defined(__powerpc__) && defined(__SPE__)
-        powerpc-linux-gnuspe
-# elif defined(__powerpc64__)
-#  if defined(__LITTLE_ENDIAN__)
-        powerpc64le-linux-gnu
-#  else
-        powerpc64-linux-gnu
-#  endif
-# elif defined(__powerpc__)
-        powerpc-linux-gnu
-# elif defined(__s390x__)
-        s390x-linux-gnu
-# elif defined(__s390__)
-        s390-linux-gnu
-# elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
-        sh4-linux-gnu
-# elif defined(__sparc__) && defined(__arch64__)
-        sparc64-linux-gnu
-# elif defined(__sparc__)
-        sparc-linux-gnu
-# elif defined(__riscv)
-#  if __riscv_xlen == 32
-        riscv32-linux-gnu
-#  elif __riscv_xlen == 64
-        riscv64-linux-gnu
-#  else
-#   error unknown platform triplet
-#  endif
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__FreeBSD_kernel__)
-# if defined(__LP64__)
-        x86_64-kfreebsd-gnu
-# elif defined(__i386__)
-        i386-kfreebsd-gnu
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__gnu_hurd__)
-        i386-gnu
-#elif defined(__APPLE__)
-        darwin
-#elif defined(__VXWORKS__)
-        vxworks
-#elif defined(__wasm32__)
-#  if defined(__EMSCRIPTEN__)
-	wasm32-emscripten
-#  elif defined(__wasi__)
-#    if defined(_REENTRANT)
-	wasm32-wasi-threads
-#    else
-	wasm32-wasi
-#    endif
-#  else
-#    error unknown wasm32 platform
-#  endif
-#elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN__)
-	wasm64-emscripten
-#  elif defined(__wasi__)
-	wasm64-wasi
-#  else
-#    error unknown wasm64 platform
-#  endif
-#else
-# error unknown platform triplet
-#endif
-
-EOF
-
-if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  case "$build_os" in
-  linux-musl*)
-    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
-    ;;
-  esac
+if $CPP $CPPFLAGS $srcdir/Misc/platform_triplet.c >conftest.out 2>/dev/null; then
+  PLATFORM_TRIPLET=`grep '^PLATFORM_TRIPLET=' conftest.out | tr -d ' 	'`
+  PLATFORM_TRIPLET="${PLATFORM_TRIPLET#PLATFORM_TRIPLET=}"
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $PLATFORM_TRIPLET" >&5
 printf "%s\n" "$PLATFORM_TRIPLET" >&6; }
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: none" >&5
 printf "%s\n" "none" >&6; }
 fi
-rm -f conftest.c conftest.out
+rm -f conftest.out
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for multiarch" >&5
 printf %s "checking for multiarch... " >&6; }
@@ -8027,6 +7845,36 @@ fi
 
 ABIFLAGS=""
 
+# Check for --disable-gil
+# --disable-gil
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-gil" >&5
+printf %s "checking for --disable-gil... " >&6; }
+# Check whether --enable-gil was given.
+if test ${enable_gil+y}
+then :
+  enableval=$enable_gil; if test "x$enable_gil" = xyes
+then :
+  disable_gil=no
+else $as_nop
+  disable_gil=yes
+fi
+else $as_nop
+  disable_gil=no
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_gil" >&5
+printf "%s\n" "$disable_gil" >&6; }
+
+if test "$disable_gil" = "yes"
+then
+
+printf "%s\n" "#define Py_NOGIL 1" >>confdefs.h
+
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
+
 # Check for --with-pydebug
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pydebug" >&5
 printf %s "checking for --with-pydebug... " >&6; }
@@ -8746,7 +8594,10 @@ printf "%s\n" "$as_me: llvm-profdata found via xcrun: ${LLVM_PROFDATA}" >&6;}
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+
+# GNU Autoconf recommends the use of expr instead of basename.
+CC_BASENAME=$(expr "//$CC" : '.*/\(.*\)')
+case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -9575,7 +9426,7 @@ fi
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    case $CC in #(
+    case "$CC_BASENAME" in #(
   *icc*) :
     ac_cv_disable_unused_result_warning=no
 
@@ -10156,7 +10007,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
     ;;
 esac
 
-case "$CC" in
+case "$CC_BASENAME" in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
@@ -10503,12 +10354,6 @@ ac_fn_c_check_header_compile "$LINENO" "grp.h" "ac_cv_header_grp_h" "$ac_include
 if test "x$ac_cv_header_grp_h" = xyes
 then :
   printf "%s\n" "#define HAVE_GRP_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "ieeefp.h" "ac_cv_header_ieeefp_h" "$ac_includes_default"
-if test "x$ac_cv_header_ieeefp_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_IEEEFP_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "io.h" "ac_cv_header_io_h" "$ac_includes_default"
@@ -17126,8 +16971,8 @@ PLATFORM_OBJS=
 case $ac_sys_system in #(
   Emscripten) :
 
-    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
-    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
+    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
    ;; #(
   *) :
      ;;
@@ -23731,6 +23576,7 @@ printf "%s\n" "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -23750,8 +23596,9 @@ SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFO
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 printf "%s\n" "$SOABI" >&6; }
 
-# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
-if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+# Release build, debug build (Py_DEBUG), and trace refs build (Py_TRACE_REFS)
+# are ABI compatible
+if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
 
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
@@ -26731,6 +26578,7 @@ SRCDIRS="\
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
+  Modules/_testinternalcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -27907,34 +27755,85 @@ fi
 printf "%s\n" "$TEST_MODULES" >&6; }
 
 
-# Check for --disable-gil
-# --disable-gil
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --disable-gil" >&5
-printf %s "checking for --disable-gil... " >&6; }
-# Check whether --enable-gil was given.
-if test ${enable_gil+y}
+# gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
+# On Linux aarch64, GCC may require programs and libraries to be linked
+# explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+# libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+# compiler flags.
+#
+# Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
+# requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
+# anymore.  <pyport.h> cannot be included alone, it's designed to be included
+# by <Python.h>: it expects other includes and macros to be defined.
+save_CPPFLAGS=$CPPFLAGS
+CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether libatomic is needed by <pyatomic.h>" >&5
+printf %s "checking whether libatomic is needed by <pyatomic.h>... " >&6; }
+if test ${ac_cv_libatomic_needed+y}
 then :
-  enableval=$enable_gil; if test "x$enable_gil" = xyes
+  printf %s "(cached) " >&6
+else $as_nop
+  if test "$cross_compiling" = yes
 then :
-  disable_gil=no
+    ac_cv_libatomic_needed=no
 else $as_nop
-  disable_gil=yes
-fi
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+// pyatomic.h needs uint64_t and Py_ssize_t types
+#include <stdint.h>  // int64_t, intptr_t
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h> // ssize_t
+#endif
+// Code adapted from Include/pyport.h
+#if HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+typedef intptr_t Py_ssize_t;
+#else
+#  error "unable to define Py_ssize_t"
+#endif
+
+#include "pyatomic.h"
+
+int main()
+{
+    uint64_t byte;
+    _Py_atomic_store_uint64(&byte, 2);
+    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint64(&byte) != 10) {
+        return 1; // error
+    }
+    return 0; // all good
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  ac_cv_libatomic_needed=no
 else $as_nop
-  disable_gil=no
-
+    ac_cv_libatomic_needed=yes
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $disable_gil" >&5
-printf "%s\n" "$disable_gil" >&6; }
-
-if test "$disable_gil" = "yes"
-then
-
-printf "%s\n" "#define Py_NOGIL 1" >>confdefs.h
-
 fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_libatomic_needed" >&5
+printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
 
+if test "x$ac_cv_libatomic_needed" = xyes
+then :
+  LIBS="${LIBS} -latomic"
+fi
+CPPFLAGS=$save_CPPFLAGS
+
+
+# stdlib
 
 
 # stdlib not available
@@ -30136,6 +30035,44 @@ fi
 printf "%s\n" "$py_cv_module__testclinic" >&6; }
 
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testclinic_limited" >&5
+printf %s "checking for stdlib extension module _testclinic_limited... " >&6; }
+        if test "$py_cv_module__testclinic_limited" != "n/a"
+then :
+
+    if test "$TEST_MODULES" = yes
+then :
+  if true
+then :
+  py_cv_module__testclinic_limited=yes
+else $as_nop
+  py_cv_module__testclinic_limited=missing
+fi
+else $as_nop
+  py_cv_module__testclinic_limited=disabled
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__TESTCLINIC_LIMITED_STATE=$py_cv_module__testclinic_limited$as_nl"
+  if test "x$py_cv_module__testclinic_limited" = xyes
+then :
+
+
+
+
+fi
+   if test "$py_cv_module__testclinic_limited" = yes; then
+  MODULE__TESTCLINIC_LIMITED_TRUE=
+  MODULE__TESTCLINIC_LIMITED_FALSE='#'
+else
+  MODULE__TESTCLINIC_LIMITED_TRUE='#'
+  MODULE__TESTCLINIC_LIMITED_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__testclinic_limited" >&5
+printf "%s\n" "$py_cv_module__testclinic_limited" >&6; }
+
+
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _testinternalcapi" >&5
 printf %s "checking for stdlib extension module _testinternalcapi... " >&6; }
         if test "$py_cv_module__testinternalcapi" != "n/a"
@@ -30408,7 +30345,7 @@ printf %s "checking for stdlib extension module xxlimited... " >&6; }
         if test "$py_cv_module_xxlimited" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -30446,7 +30383,7 @@ printf %s "checking for stdlib extension module xxlimited_35... " >&6; }
         if test "$py_cv_module_xxlimited_35" != "n/a"
 then :
 
-    if test "$with_trace_refs" = "no"
+    if true
 then :
   if test "$ac_cv_func_dlopen" = yes
 then :
@@ -30489,6 +30426,7 @@ ac_config_files="$ac_config_files Modules/Setup.bootstrap Modules/Setup.stdlib"
 
 ac_config_files="$ac_config_files Modules/ld_so_aix"
 
+# Generate files like pyconfig.h
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -30873,6 +30811,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTCLINIC_TRUE}" && test -z "${MODULE__TESTCLINIC_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TESTCLINIC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TESTCLINIC_LIMITED_TRUE}" && test -z "${MODULE__TESTCLINIC_LIMITED_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TESTCLINIC_LIMITED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TESTINTERNALCAPI_TRUE}" && test -z "${MODULE__TESTINTERNALCAPI_FALSE}"; then

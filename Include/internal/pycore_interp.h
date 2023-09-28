@@ -93,6 +93,8 @@ struct _is {
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct _gc_runtime_state gc;
 
@@ -186,8 +188,9 @@ struct _is {
     _PyOptimizerObject *optimizer;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
+    uint32_t next_func_version;
 
-    _Py_Monitors monitors;
+    _Py_GlobalMonitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
@@ -214,9 +217,23 @@ _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
     return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
 }
 
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return _Py_atomic_load_ulong_relaxed(&interp->_finalizing_id);
+}
+
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
 
@@ -243,40 +260,40 @@ extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
-/* Get a copy of the current interpreter configuration.
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The caller must initialize 'config', using PyConfig_InitPythonConfig()
-   for example.
-
-   Python must be preinitialized to call this method.
-   The caller must hold the GIL.
-
-   Once done with the configuration, PyConfig_Clear() must be called to clear
-   it.
-
-   Export for '_testinternalcapi' shared extension. */
+// Get a copy of the current interpreter configuration.
+//
+// Return 0 on success. Raise an exception and return -1 on error.
+//
+// The caller must initialize 'config', using PyConfig_InitPythonConfig()
+// for example.
+//
+// Python must be preinitialized to call this method.
+// The caller must hold the GIL.
+//
+// Once done with the configuration, PyConfig_Clear() must be called to clear
+// it.
+//
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
     struct PyConfig *config);
 
-/* Set the configuration of the current interpreter.
-
-   This function should be called during or just after the Python
-   initialization.
-
-   Update the sys module with the new configuration. If the sys module was
-   modified directly after the Python initialization, these changes are lost.
-
-   Some configuration like faulthandler or warnoptions can be updated in the
-   configuration, but don't reconfigure Python (don't enable/disable
-   faulthandler and don't reconfigure warnings filters).
-
-   Return 0 on success. Raise an exception and return -1 on error.
-
-   The configuration should come from _PyInterpreterState_GetConfigCopy().
-
-   Export for '_testinternalcapi' shared extension. */
+// Set the configuration of the current interpreter.
+//
+// This function should be called during or just after the Python
+// initialization.
+//
+// Update the sys module with the new configuration. If the sys module was
+// modified directly after the Python initialization, these changes are lost.
+//
+// Some configuration like faulthandler or warnoptions can be updated in the
+// configuration, but don't reconfigure Python (don't enable/disable
+// faulthandler and don't reconfigure warnings filters).
+//
+// Return 0 on success. Raise an exception and return -1 on error.
+//
+// The configuration should come from _PyInterpreterState_GetConfigCopy().
+//
+// Export for '_testinternalcapi' shared extension.
 PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
     const struct PyConfig *config);
 
@@ -310,6 +327,10 @@ might not be allowed in the current interpreter (i.e. os.fork() would fail).
 
 extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
                                           unsigned long feature);
+
+PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
+    PyThreadState *tstate,
+    PyInterpreterState **pinterp);
 
 
 #ifdef __cplusplus

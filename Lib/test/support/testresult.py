@@ -8,6 +8,7 @@ import sys
 import time
 import traceback
 import unittest
+from test import support
 
 class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
@@ -112,6 +113,8 @@ class RegressionTestResult(unittest.TextTestResult):
     def addFailure(self, test, err):
         self._add_result(test, True, failure=self.__makeErrorDict(*err))
         super().addFailure(test, err)
+        if support.failfast:
+            self.stop()
 
     def addSkip(self, test, reason):
         self._add_result(test, skipped=reason)

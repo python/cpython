@@ -5,6 +5,10 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // _POSIX_THREADS
+#endif
+
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
    not present in unistd.h. But they still can be implemented as an external

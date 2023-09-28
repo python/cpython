@@ -50,6 +50,9 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
+## thread-safe hashtable (internal locks)
+Python/parking_lot.c	-	buckets	-
+
 
 ##################################
 ## state tied to Py_Main()
@@ -420,6 +423,7 @@ Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
 Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
+Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
@@ -576,15 +580,15 @@ Modules/_testmultiphase.c	-	uninitialized_def	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
-Modules/_xxtestfuzz/fuzzer.c	-	SRE_FLAG_DEBUG	-
+Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
 Modules/_xxtestfuzz/fuzzer.c	-	json_loads_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	regex_patterns	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_compile_method	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_error_exception	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-

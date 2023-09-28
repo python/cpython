@@ -4,7 +4,6 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#include <ctype.h>
 #include <assert.h>
 
 #include "tokenizer.h"
@@ -158,7 +157,7 @@ get_normal_name(const char *s)  /* for utf-8 and latin-1 */
         else if (c == '_')
             buf[i] = '-';
         else
-            buf[i] = tolower(c);
+            buf[i] = Py_TOLOWER(c);
     }
     buf[i] = '\0';
     if (strcmp(buf, "utf-8") == 0 ||
@@ -1643,7 +1642,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
         tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
-    if (is_potential_identifier_char(c)) {
+    if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
         syntaxerror(tok, "invalid %s literal", kind);
         return 0;
@@ -1715,12 +1714,12 @@ tok_decimal_tail(struct tok_state *tok)
     while (1) {
         do {
             c = tok_nextc(tok);
-        } while (isdigit(c));
+        } while (Py_ISDIGIT(c));
         if (c != '_') {
             break;
         }
         c = tok_nextc(tok);
-        if (!isdigit(c)) {
+        if (!Py_ISDIGIT(c)) {
             tok_backup(tok, c);
             syntaxerror(tok, "invalid decimal literal");
             return 0;
@@ -2108,7 +2107,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     /* Period or number starting with period? */
     if (c == '.') {
         c = tok_nextc(tok);
-        if (isdigit(c)) {
+        if (Py_ISDIGIT(c)) {
             goto fraction;
         } else if (c == '.') {
             c = tok_nextc(tok);
@@ -2131,7 +2130,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     /* Number */
-    if (isdigit(c)) {
+    if (Py_ISDIGIT(c)) {
         if (c == '0') {
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
@@ -2142,13 +2141,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     if (c == '_') {
                         c = tok_nextc(tok);
                     }
-                    if (!isxdigit(c)) {
+                    if (!Py_ISXDIGIT(c)) {
                         tok_backup(tok, c);
                         return MAKE_TOKEN(syntaxerror(tok, "invalid hexadecimal literal"));
                     }
                     do {
                         c = tok_nextc(tok);
-                    } while (isxdigit(c));
+                    } while (Py_ISXDIGIT(c));
                 } while (c == '_');
                 if (!verify_end_of_number(tok, c, "hexadecimal")) {
                     return MAKE_TOKEN(ERRORTOKEN);
@@ -2162,7 +2161,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     }
                     if (c < '0' || c >= '8') {
-                        if (isdigit(c)) {
+                        if (Py_ISDIGIT(c)) {
                             return MAKE_TOKEN(syntaxerror(tok,
                                     "invalid digit '%c' in octal literal", c));
                         }
@@ -2175,7 +2174,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     return MAKE_TOKEN(syntaxerror(tok,
                             "invalid digit '%c' in octal literal", c));
                 }
@@ -2191,7 +2190,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     }
                     if (c != '0' && c != '1') {
-                        if (isdigit(c)) {
+                        if (Py_ISDIGIT(c)) {
                             return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                         }
                         else {
@@ -2203,7 +2202,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                     } while (c == '0' || c == '1');
                 } while (c == '_');
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                 }
                 if (!verify_end_of_number(tok, c, "binary")) {
@@ -2217,7 +2216,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 while (1) {
                     if (c == '_') {
                         c = tok_nextc(tok);
-                        if (!isdigit(c)) {
+                        if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
                         }
@@ -2228,7 +2227,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
                 }
                 char* zeros_end = tok->cur;
-                if (isdigit(c)) {
+                if (Py_ISDIGIT(c)) {
                     nonzero = 1;
                     c = tok_decimal_tail(tok);
                     if (c == 0) {
@@ -2272,7 +2271,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
         fraction:
                     /* Fraction */
-                    if (isdigit(c)) {
+                    if (Py_ISDIGIT(c)) {
                         c = tok_decimal_tail(tok);
                         if (c == 0) {
                             return MAKE_TOKEN(ERRORTOKEN);
@@ -2287,11 +2286,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     c = tok_nextc(tok);
                     if (c == '+' || c == '-') {
                         c = tok_nextc(tok);
-                        if (!isdigit(c)) {
+                        if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
                             return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
                         }
-                    } else if (!isdigit(c)) {
+                    } else if (!Py_ISDIGIT(c)) {
                         tok_backup(tok, c);
                         if (!verify_end_of_number(tok, e, "decimal")) {
                             return MAKE_TOKEN(ERRORTOKEN);
@@ -2326,7 +2325,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
   f_string_quote:
-    if (((tolower(*tok->start) == 'f' || tolower(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
+    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
 
@@ -2377,7 +2376,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         switch (*tok->start) {
             case 'F':
             case 'f':
-                the_current_tok->f_string_raw = tolower(*(tok->start + 1)) == 'r';
+                the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
                 break;
             case 'R':
             case 'r':

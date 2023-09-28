@@ -2495,12 +2495,12 @@ either in embedding applications, or in CPython itself.
 :issue:`22257`, and further updated by Nick, Eric, and Victor Stinner in a
 number of other issues). Some known details affected:
 
-* :c:func:`PySys_AddWarnOptionUnicode` is not currently usable by embedding
+* :c:func:`!PySys_AddWarnOptionUnicode` is not currently usable by embedding
   applications due to the requirement to create a Unicode object prior to
-  calling ``Py_Initialize``. Use :c:func:`PySys_AddWarnOption` instead.
+  calling ``Py_Initialize``. Use :c:func:`!PySys_AddWarnOption` instead.
 
 * warnings filters added by an embedding application with
-  :c:func:`PySys_AddWarnOption` should now more consistently take precedence
+  :c:func:`!PySys_AddWarnOption` should now more consistently take precedence
   over the default filters set by the interpreter
 
 Due to changes in the way the default warnings filters are configured,

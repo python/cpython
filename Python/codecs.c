@@ -10,12 +10,10 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include "pycore_dict.h"          // _PyDict_GetItemStringWithError()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
 
@@ -618,20 +616,19 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
    the error handling callback for strict encoding will be returned. */
 PyObject *PyCodec_LookupError(const char *name)
 {
-    PyObject *handler = NULL;
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 
     if (name==NULL)
         name = "strict";
-    handler = _PyDict_GetItemStringWithError(interp->codec_error_registry, name);
-    if (handler) {
-        Py_INCREF(handler);
+    PyObject *handler;
+    if (PyDict_GetItemStringRef(interp->codec_error_registry, name, &handler) < 0) {
+        return NULL;
     }
-    else if (!PyErr_Occurred()) {
+    if (handler == NULL) {
         PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
+        return NULL;
     }
     return handler;
 }

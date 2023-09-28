@@ -2557,7 +2557,8 @@ class TarFile(object):
                     os.lchown(targetpath, u, g)
                 else:
                     os.chown(targetpath, u, g)
-            except OSError as e:
+            except (OSError, OverflowError) as e:
+                # OverflowError can be raised if an ID doesn't fit in `id_t`
                 raise ExtractError("could not change owner") from e
 
     def chmod(self, tarinfo, targetpath):

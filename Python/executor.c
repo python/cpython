@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#include "opcode.h"
+
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
@@ -15,6 +17,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
+#define TIER_TWO 2
 #include "ceval_macros.h"
 
 
@@ -81,7 +84,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         OBJECT_STAT_INC(optimization_uops_executed);
         switch (opcode) {
 
-#define TIER_TWO 2
 #include "executor_cases.c.h"
 
             default:
@@ -107,7 +109,6 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
-pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     // On ERROR_IF we return NULL as the frame.
