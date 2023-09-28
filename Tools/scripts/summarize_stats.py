@@ -217,7 +217,7 @@ def extract_opcode_stats(stats, prefix):
     for key, value in stats.items():
         if not key.startswith(prefix):
             continue
-        name, _, rest = key[len(prefix) + 2:].partition("]")
+        name, _, rest = key[len(prefix) + 1:].partition("]")
         opcode_stats[name][rest.strip(".")] = value
     return opcode_stats
 
@@ -361,9 +361,9 @@ def emit_execution_counts(opcode_stats, total):
         )
 
 def _emit_comparative_execution_counts(base_rows, head_rows):
-    base_data = dict((x[0], x[1:]) for x in base_rows)
-    head_data = dict((x[0], x[1:]) for x in head_rows)
-    opcodes = set(base_data.keys()) | set(head_data.keys())
+    base_data = {x[0]: x[1:] for x in base_rows}
+    head_data = {x[0]: x[1:] for x in head_rows}
+    opcodes = base_data.keys() | head_data.keys()
 
     rows = []
     default = [0, "0.0%", "0.0%", 0]
@@ -376,9 +376,9 @@ def _emit_comparative_execution_counts(base_rows, head_rows):
             change = (head_entry[0] - base_entry[0]) / base_entry[0]
         rows.append(
             (opcode, base_entry[0], head_entry[0],
-                f"{100*change:0.1f}%"))
+                f"{change:0.1%}"))
 
-    rows.sort(key=lambda x: -abs(percentage_to_float(x[-1])))
+    rows.sort(key=lambda x: abs(percentage_to_float(x[-1])), reverse=True)
 
     emit_table(
         ("Name", "Base Count:", "Head Count:", "Change:"),
