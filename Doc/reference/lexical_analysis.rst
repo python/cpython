@@ -570,7 +570,7 @@ Standard C.  The recognized escape sequences are:
 +-------------------------+---------------------------------+-------+
 | ``\v``                  | ASCII Vertical Tab (VT)         |       |
 +-------------------------+---------------------------------+-------+
-| :samp:`\\{ooo}`         | Character with octal value      | (2,4) |
+| :samp:`\\\\{ooo}`       | Character with octal value      | (2,4) |
 |                         | *ooo*                           |       |
 +-------------------------+---------------------------------+-------+
 | :samp:`\\x{hh}`         | Character with hex value *hh*   | (3,4) |
