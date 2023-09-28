@@ -185,7 +185,7 @@ functions leave the current exception unchanged. Patch by Victor Stinner.
 .. section: Core and Builtins
 
 Fix a minor memory leak at exit: release the memory of the
-:class:`generic_alias_iterator` type. Patch by Dong-hee Na.
+:class:`generic_alias_iterator` type. Patch by Donghee Na.
 
 ..
 

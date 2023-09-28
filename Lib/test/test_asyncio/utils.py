@@ -37,10 +37,9 @@ from test.support import threading_helper
 
 
 def data_file(*filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, *filename)
-        if os.path.isfile(fullname):
-            return fullname
+    fullname = os.path.join(support.TEST_HOME_DIR, *filename)
+    if os.path.isfile(fullname):
+        return fullname
     fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
     if os.path.isfile(fullname):
         return fullname

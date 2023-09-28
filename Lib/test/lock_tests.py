@@ -330,6 +330,42 @@ class RLockTests(BaseLockTests):
         lock.release()
         self.assertRaises(RuntimeError, lock._release_save)
 
+    def test_recursion_count(self):
+        lock = self.locktype()
+        self.assertEqual(0, lock._recursion_count())
+        lock.acquire()
+        self.assertEqual(1, lock._recursion_count())
+        lock.acquire()
+        lock.acquire()
+        self.assertEqual(3, lock._recursion_count())
+        lock.release()
+        self.assertEqual(2, lock._recursion_count())
+        lock.release()
+        lock.release()
+        self.assertEqual(0, lock._recursion_count())
+
+        phase = []
+
+        def f():
+            lock.acquire()
+            phase.append(None)
+            while len(phase) == 1:
+                _wait()
+            lock.release()
+            phase.append(None)
+
+        with threading_helper.wait_threads_exit():
+            start_new_thread(f, ())
+            while len(phase) == 0:
+                _wait()
+            self.assertEqual(len(phase), 1)
+            self.assertEqual(0, lock._recursion_count())
+            phase.append(None)
+            while len(phase) == 2:
+                _wait()
+            self.assertEqual(len(phase), 3)
+            self.assertEqual(0, lock._recursion_count())
+
     def test_different_thread(self):
         # Cannot release from a different thread
         lock = self.locktype()
@@ -1014,13 +1050,15 @@ class BarrierTests(BaseTestCase):
         """
         Test the barrier's default timeout
         """
-        # create a barrier with a low default timeout
-        barrier = self.barriertype(self.N, timeout=0.3)
+        # gh-109401: Barrier timeout should be long enough
+        # to create 4 threads on a slow CI.
+        timeout = 1.0
+        barrier = self.barriertype(self.N, timeout=timeout)
         def f():
             i = barrier.wait()
             if i == self.N // 2:
-                # One thread is later than the default timeout of 0.3s.
-                time.sleep(1.0)
+                # One thread is later than the default timeout.
+                time.sleep(timeout * 2)
             self.assertRaises(threading.BrokenBarrierError, barrier.wait)
         self.run_threads(f)
 
