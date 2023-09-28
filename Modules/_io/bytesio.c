@@ -448,7 +448,8 @@ peek_bytes_lock_held(bytesio *self, Py_ssize_t size)
 }
 
 static PyObject *
-read_bytes_lock_held(bytesio *self, Py_ssize_t size) {
+read_bytes_lock_held(bytesio *self, Py_ssize_t size)
+{
     PyObject *bytes = peek_bytes_lock_held(self, size);
     self->pos += size;
     return bytes;
