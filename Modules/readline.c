@@ -1018,16 +1018,12 @@ on_hook(PyObject *func)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
-{
-#elif defined(__APPLE__) && defined(WITH_APPLE_EDITLINE)
-on_startup_hook(const char *text, int state)
-{
-  (void)text;
-  (void)state;
+#elif defined(WITH_APPLE_EDITLINE)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state)
 #else
 on_startup_hook(void)
-{
 #endif
+{
     int r;
     PyGILState_STATE gilstate = PyGILState_Ensure();
     r = on_hook(readlinestate_global->startup_hook);
