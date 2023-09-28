@@ -499,8 +499,7 @@ operations on it as if it was a Python list. The top of the stack corresponds to
 
 .. opcode:: END_SEND
 
-   Removes the top value from the stack.
-   Equivalent to ``POP_TOP``.
+   Implements ``del STACK[-2]``.
    Used to clean up when a generator exits.
 
    .. versionadded:: 3.12
