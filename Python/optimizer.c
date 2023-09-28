@@ -261,6 +261,7 @@ counter_optimize(
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr;
     *exec_ptr = (_PyExecutorObject *)executor;
+    executor->executor.valid = true;
     return 1;
 }
 
@@ -904,6 +905,7 @@ uop_optimize(
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;
+    executor->base.valid = true;
     return 1;
 }
 

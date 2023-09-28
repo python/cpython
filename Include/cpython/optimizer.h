@@ -16,6 +16,7 @@ typedef struct _PyExecutorObject {
     /* WARNING: execute consumes a reference to self. This is necessary to allow executors to tail call into each other. */
     struct _PyInterpreterFrame *(*execute)(struct _PyExecutorObject *self, struct _PyInterpreterFrame *frame, PyObject **stack_pointer);
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
+    bool valid; /* This should be set to true by the optimizer */
     /* Data needed by the executor goes here, but is opaque to the VM */
 } _PyExecutorObject;
 
