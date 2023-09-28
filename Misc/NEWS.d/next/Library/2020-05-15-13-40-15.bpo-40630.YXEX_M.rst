@@ -1,2 +1,0 @@
-Added :func:`tracemalloc.reset_peak` to set the peak size of traced memory
-blocks to the current size, to measure the peak of specific pieces of code.

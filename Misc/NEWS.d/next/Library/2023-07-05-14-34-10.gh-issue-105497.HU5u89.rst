@@ -1,0 +1,1 @@
+Fix flag mask inversion when unnamed flags exist.

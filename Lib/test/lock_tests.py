@@ -2,7 +2,7 @@
 Various tests for synchronization primitives.
 """
 
-import os
+import gc
 import sys
 import time
 from _thread import start_new_thread, TIMEOUT_MAX
@@ -14,7 +14,7 @@ from test import support
 from test.support import threading_helper
 
 
-requires_fork = unittest.skipUnless(hasattr(os, 'fork'),
+requires_fork = unittest.skipUnless(support.has_fork_support,
                                     "platform doesn't support fork "
                                      "(no _at_fork_reinit method)")
 
@@ -221,6 +221,7 @@ class BaseLockTests(BaseTestCase):
         lock = self.locktype()
         ref = weakref.ref(lock)
         del lock
+        gc.collect()  # For PyPy or other GCs.
         self.assertIsNone(ref())
 
 
@@ -328,6 +329,42 @@ class RLockTests(BaseLockTests):
         lock.release()
         lock.release()
         self.assertRaises(RuntimeError, lock._release_save)
+
+    def test_recursion_count(self):
+        lock = self.locktype()
+        self.assertEqual(0, lock._recursion_count())
+        lock.acquire()
+        self.assertEqual(1, lock._recursion_count())
+        lock.acquire()
+        lock.acquire()
+        self.assertEqual(3, lock._recursion_count())
+        lock.release()
+        self.assertEqual(2, lock._recursion_count())
+        lock.release()
+        lock.release()
+        self.assertEqual(0, lock._recursion_count())
+
+        phase = []
+
+        def f():
+            lock.acquire()
+            phase.append(None)
+            while len(phase) == 1:
+                _wait()
+            lock.release()
+            phase.append(None)
+
+        with threading_helper.wait_threads_exit():
+            start_new_thread(f, ())
+            while len(phase) == 0:
+                _wait()
+            self.assertEqual(len(phase), 1)
+            self.assertEqual(0, lock._recursion_count())
+            phase.append(None)
+            while len(phase) == 2:
+                _wait()
+            self.assertEqual(len(phase), 3)
+            self.assertEqual(0, lock._recursion_count())
 
     def test_different_thread(self):
         # Cannot release from a different thread
@@ -452,6 +489,12 @@ class EventTests(BaseTestCase):
         evt._at_fork_reinit()
         with evt._cond:
             self.assertFalse(evt._cond.acquire(False))
+
+    def test_repr(self):
+        evt = self.eventtype()
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: unset>")
+        evt.set()
+        self.assertRegex(repr(evt), r"<\w+\.Event at .*: set>")
 
 
 class ConditionTests(BaseTestCase):
@@ -800,6 +843,15 @@ class SemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
 
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=3>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=2>")
+        sem.release()
+        sem.release()
+        self.assertRegex(repr(sem), r"<\w+\.Semaphore at .*: value=4>")
+
 
 class BoundedSemaphoreTests(BaseSemaphoreTests):
     """
@@ -813,6 +865,12 @@ class BoundedSemaphoreTests(BaseSemaphoreTests):
         sem.acquire()
         sem.release()
         self.assertRaises(ValueError, sem.release)
+
+    def test_repr(self):
+        sem = self.semtype(3)
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=3/3>")
+        sem.acquire()
+        self.assertRegex(repr(sem), r"<\w+\.BoundedSemaphore at .*: value=2/3>")
 
 
 class BarrierTests(BaseTestCase):
@@ -992,13 +1050,15 @@ class BarrierTests(BaseTestCase):
         """
         Test the barrier's default timeout
         """
-        # create a barrier with a low default timeout
-        barrier = self.barriertype(self.N, timeout=0.3)
+        # gh-109401: Barrier timeout should be long enough
+        # to create 4 threads on a slow CI.
+        timeout = 1.0
+        barrier = self.barriertype(self.N, timeout=timeout)
         def f():
             i = barrier.wait()
             if i == self.N // 2:
-                # One thread is later than the default timeout of 0.3s.
-                time.sleep(1.0)
+                # One thread is later than the default timeout.
+                time.sleep(timeout * 2)
             self.assertRaises(threading.BrokenBarrierError, barrier.wait)
         self.run_threads(f)
 
@@ -1006,3 +1066,18 @@ class BarrierTests(BaseTestCase):
         b = self.barriertype(1)
         b.wait()
         b.wait()
+
+    def test_repr(self):
+        b = self.barriertype(3)
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
+        def f():
+            b.wait(3)
+        bunch = Bunch(f, 2)
+        bunch.wait_for_started()
+        time.sleep(0.2)
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=2/3>")
+        b.wait(3)
+        bunch.wait_for_finished()
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: waiters=0/3>")
+        b.abort()
+        self.assertRegex(repr(b), r"<\w+\.Barrier at .*: broken>")

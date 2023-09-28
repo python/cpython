@@ -46,6 +46,7 @@
 
 #include "Python.h"
 #include "pycore_hashtable.h"
+#include "pycore_pyhash.h"        // _Py_HashPointerRaw()
 
 #define HASHTABLE_MIN_SIZE 16
 #define HASHTABLE_HIGH 0.50
@@ -128,12 +129,19 @@ _Py_hashtable_size(const _Py_hashtable_t *ht)
 }
 
 
+size_t
+_Py_hashtable_len(const _Py_hashtable_t *ht)
+{
+    return ht->nentries;
+}
+
+
 _Py_hashtable_entry_t *
 _Py_hashtable_get_entry_generic(_Py_hashtable_t *ht, const void *key)
 {
     Py_uhash_t key_hash = ht->hash_func(key);
     size_t index = key_hash & (ht->nbuckets - 1);
-    _Py_hashtable_entry_t *entry = entry = TABLE_HEAD(ht, index);
+    _Py_hashtable_entry_t *entry = TABLE_HEAD(ht, index);
     while (1) {
         if (entry == NULL) {
             return NULL;
@@ -155,7 +163,7 @@ _Py_hashtable_get_entry_ptr(_Py_hashtable_t *ht, const void *key)
 {
     Py_uhash_t key_hash = _Py_hashtable_hash_ptr(key);
     size_t index = key_hash & (ht->nbuckets - 1);
-    _Py_hashtable_entry_t *entry = entry = TABLE_HEAD(ht, index);
+    _Py_hashtable_entry_t *entry = TABLE_HEAD(ht, index);
     while (1) {
         if (entry == NULL) {
             return NULL;
@@ -217,7 +225,6 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
     entry = ht->get_entry_func(ht, key);
     assert(entry == NULL);
 #endif
-
 
     entry = ht->alloc.malloc(sizeof(_Py_hashtable_entry_t));
     if (entry == NULL) {

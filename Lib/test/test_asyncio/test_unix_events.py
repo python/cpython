@@ -1,21 +1,25 @@
 """Tests for unix_events.py."""
 
-import collections
 import contextlib
 import errno
 import io
+import multiprocessing
 import os
 import pathlib
 import signal
 import socket
 import stat
 import sys
-import tempfile
 import threading
+import time
 import unittest
 from unittest import mock
+import warnings
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
+from test.support import wait_process
+from test.support import hashlib_helper
 
 if sys.platform == 'win32':
     raise unittest.SkipTest('UNIX only')
@@ -27,11 +31,21 @@ from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
 
+def tearDownModule():
+    asyncio.set_event_loop_policy(None)
+
+
 MOCK_ANY = mock.ANY
 
 
-def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+def EXITCODE(exitcode):
+    return 32768 + exitcode
+
+
+def SIGNAL(signum):
+    if not 1 <= signum <= 68:
+        raise AssertionError(f'invalid signum {signum}')
+    return 32768 - signum
 
 
 def close_pipe_transport(transport):
@@ -306,11 +320,15 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                 self.loop.run_until_complete(coro)
 
     def test_create_unix_server_existing_path_nonsock(self):
-        with tempfile.NamedTemporaryFile() as file:
-            coro = self.loop.create_unix_server(lambda: None, file.name)
-            with self.assertRaisesRegex(OSError,
-                                        'Address.*is already in use'):
-                self.loop.run_until_complete(coro)
+        path = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, path)
+        # create the file
+        open(path, "wb").close()
+
+        coro = self.loop.create_unix_server(lambda: None, path)
+        with self.assertRaisesRegex(OSError,
+                                    'Address.*is already in use'):
+            self.loop.run_until_complete(coro)
 
     def test_create_unix_server_ssl_bool(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -347,20 +365,18 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                          'no socket.SOCK_NONBLOCK (linux only)')
     @socket_helper.skip_unless_bind_unix_socket
     def test_create_unix_server_path_stream_bittype(self):
-        sock = socket.socket(
-            socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-        with tempfile.NamedTemporaryFile() as file:
-            fn = file.name
-        try:
-            with sock:
-                sock.bind(fn)
-                coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                    sock=sock)
-                srv = self.loop.run_until_complete(coro)
-                srv.close()
-                self.loop.run_until_complete(srv.wait_closed())
-        finally:
-            os.unlink(fn)
+        fn = test_utils.gen_unix_socket_path()
+        self.addCleanup(os_helper.unlink, fn)
+
+        sock = socket.socket(socket.AF_UNIX,
+                             socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with sock:
+            sock.bind(fn)
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
 
     def test_create_unix_server_ssl_timeout_with_plain_sock(self):
         coro = self.loop.create_unix_server(lambda: None, path='spam',
@@ -467,19 +483,19 @@ class SelectorEventLoopUnixSockSendfileTests(test_utils.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        with open(support.TESTFN, 'wb') as fp:
+        with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(cls.DATA)
         super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
-        support.unlink(support.TESTFN)
+        os_helper.unlink(os_helper.TESTFN)
         super().tearDownClass()
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         self.set_event_loop(self.loop)
-        self.file = open(support.TESTFN, 'rb')
+        self.file = open(os_helper.TESTFN, 'rb')
         self.addCleanup(self.file.close)
         super().setUp()
 
@@ -1097,6 +1113,11 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
 
 class AbstractChildWatcherTests(unittest.TestCase):
 
+    def test_warns_on_subclassing(self):
+        with self.assertWarns(DeprecationWarning):
+            class MyWatcher(asyncio.AbstractChildWatcher):
+                pass
+
     def test_not_implemented(self):
         f = mock.Mock()
         watcher = asyncio.AbstractChildWatcher()
@@ -1123,15 +1144,6 @@ class BaseChildWatcherTests(unittest.TestCase):
         watcher = unix_events.BaseChildWatcher()
         self.assertRaises(
             NotImplementedError, watcher._do_waitpid, f)
-
-
-WaitPidMocks = collections.namedtuple("WaitPidMocks",
-                                      ("waitpid",
-                                       "WIFEXITED",
-                                       "WIFSIGNALED",
-                                       "WEXITSTATUS",
-                                       "WTERMSIG",
-                                       ))
 
 
 class ChildWatcherTestsMixin:
@@ -1164,22 +1176,16 @@ class ChildWatcherTestsMixin:
         else:
             raise ChildProcessError()
 
-    def add_zombie(self, pid, returncode):
-        self.zombies[pid] = returncode + 32768
+    def add_zombie(self, pid, status):
+        self.zombies[pid] = status
 
-    def WIFEXITED(self, status):
-        return status >= 32768
-
-    def WIFSIGNALED(self, status):
-        return 32700 < status < 32768
-
-    def WEXITSTATUS(self, status):
-        self.assertTrue(self.WIFEXITED(status))
-        return status - 32768
-
-    def WTERMSIG(self, status):
-        self.assertTrue(self.WIFSIGNALED(status))
-        return 32768 - status
+    def waitstatus_to_exitcode(self, status):
+        if status > 32768:
+            return status - 32768
+        elif 32700 < status < 32768:
+            return status - 32768
+        else:
+            return status
 
     def test_create_watcher(self):
         self.m_add_signal_handler.assert_called_once_with(
@@ -1191,19 +1197,13 @@ class ChildWatcherTestsMixin:
                 return mock.patch(target, wraps=wrapper,
                                   new_callable=mock.Mock)
 
-            with patch('os.WTERMSIG', self.WTERMSIG) as m_WTERMSIG, \
-                 patch('os.WEXITSTATUS', self.WEXITSTATUS) as m_WEXITSTATUS, \
-                 patch('os.WIFSIGNALED', self.WIFSIGNALED) as m_WIFSIGNALED, \
-                 patch('os.WIFEXITED', self.WIFEXITED) as m_WIFEXITED, \
+            with patch('asyncio.unix_events.waitstatus_to_exitcode', self.waitstatus_to_exitcode), \
                  patch('os.waitpid', self.waitpid) as m_waitpid:
-                func(self, WaitPidMocks(m_waitpid,
-                                        m_WIFEXITED, m_WIFSIGNALED,
-                                        m_WEXITSTATUS, m_WTERMSIG,
-                                        ))
+                func(self, m_waitpid)
         return wrapped_func
 
     @waitpid_mocks
-    def test_sigchld(self, m):
+    def test_sigchld(self, m_waitpid):
         # register a child
         callback = mock.Mock()
 
@@ -1212,59 +1212,36 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(42, callback, 9, 10, 14)
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child is running
         self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child terminates (returncode 12)
         self.running = False
-        self.add_zombie(42, 12)
+        self.add_zombie(42, EXITCODE(12))
         self.watcher._sig_chld()
 
-        self.assertTrue(m.WIFEXITED.called)
-        self.assertTrue(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
         callback.assert_called_once_with(42, 12, 9, 10, 14)
 
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WEXITSTATUS.reset_mock()
         callback.reset_mock()
 
         # ensure that the child is effectively reaped
-        self.add_zombie(42, 13)
+        self.add_zombie(42, EXITCODE(13))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WTERMSIG.called)
-
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WEXITSTATUS.reset_mock()
 
         # sigchld called again
         self.zombies.clear()
         self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
     @waitpid_mocks
-    def test_sigchld_two_children(self, m):
+    def test_sigchld_two_children(self, m_waitpid):
         callback1 = mock.Mock()
         callback2 = mock.Mock()
 
@@ -1275,10 +1252,6 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # register child 2
         with self.watcher:
@@ -1286,34 +1259,20 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # children are running
         self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child 1 terminates (signal 3)
-        self.add_zombie(43, -3)
+        self.add_zombie(43, SIGNAL(3))
         self.watcher._sig_chld()
 
         callback1.assert_called_once_with(43, -3, 7, 8)
         self.assertFalse(callback2.called)
-        self.assertTrue(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertTrue(m.WTERMSIG.called)
 
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WTERMSIG.reset_mock()
         callback1.reset_mock()
 
         # child 2 still running
@@ -1321,40 +1280,25 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child 2 terminates (code 108)
-        self.add_zombie(44, 108)
+        self.add_zombie(44, EXITCODE(108))
         self.running = False
         self.watcher._sig_chld()
 
         callback2.assert_called_once_with(44, 108, 147, 18)
         self.assertFalse(callback1.called)
-        self.assertTrue(m.WIFEXITED.called)
-        self.assertTrue(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WEXITSTATUS.reset_mock()
         callback2.reset_mock()
 
         # ensure that the children are effectively reaped
-        self.add_zombie(43, 14)
-        self.add_zombie(44, 15)
+        self.add_zombie(43, EXITCODE(14))
+        self.add_zombie(44, EXITCODE(15))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WTERMSIG.called)
-
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WEXITSTATUS.reset_mock()
 
         # sigchld called again
         self.zombies.clear()
@@ -1362,13 +1306,9 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
     @waitpid_mocks
-    def test_sigchld_two_children_terminating_together(self, m):
+    def test_sigchld_two_children_terminating_together(self, m_waitpid):
         callback1 = mock.Mock()
         callback2 = mock.Mock()
 
@@ -1379,10 +1319,6 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # register child 2
         with self.watcher:
@@ -1390,60 +1326,43 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # children are running
         self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child 1 terminates (code 78)
         # child 2 terminates (signal 5)
-        self.add_zombie(45, 78)
-        self.add_zombie(46, -5)
+        self.add_zombie(45, EXITCODE(78))
+        self.add_zombie(46, SIGNAL(5))
         self.running = False
         self.watcher._sig_chld()
 
         callback1.assert_called_once_with(45, 78, 17, 8)
         callback2.assert_called_once_with(46, -5, 1147, 18)
-        self.assertTrue(m.WIFSIGNALED.called)
-        self.assertTrue(m.WIFEXITED.called)
-        self.assertTrue(m.WEXITSTATUS.called)
-        self.assertTrue(m.WTERMSIG.called)
 
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WTERMSIG.reset_mock()
-        m.WEXITSTATUS.reset_mock()
         callback1.reset_mock()
         callback2.reset_mock()
 
         # ensure that the children are effectively reaped
-        self.add_zombie(45, 14)
-        self.add_zombie(46, 15)
+        self.add_zombie(45, EXITCODE(14))
+        self.add_zombie(46, EXITCODE(15))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WTERMSIG.called)
 
     @waitpid_mocks
-    def test_sigchld_race_condition(self, m):
+    def test_sigchld_race_condition(self, m_waitpid):
         # register a child
         callback = mock.Mock()
 
         with self.watcher:
             # child terminates before being registered
-            self.add_zombie(50, 4)
+            self.add_zombie(50, EXITCODE(4))
             self.watcher._sig_chld()
 
             self.watcher.add_child_handler(50, callback, 1, 12)
@@ -1452,14 +1371,14 @@ class ChildWatcherTestsMixin:
         callback.reset_mock()
 
         # ensure that the child is effectively reaped
-        self.add_zombie(50, -1)
+        self.add_zombie(50, SIGNAL(1))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
 
     @waitpid_mocks
-    def test_sigchld_replace_handler(self, m):
+    def test_sigchld_replace_handler(self, m_waitpid):
         callback1 = mock.Mock()
         callback2 = mock.Mock()
 
@@ -1470,10 +1389,6 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # register the same child again
         with self.watcher:
@@ -1481,38 +1396,27 @@ class ChildWatcherTestsMixin:
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child terminates (signal 8)
         self.running = False
-        self.add_zombie(51, -8)
+        self.add_zombie(51, SIGNAL(8))
         self.watcher._sig_chld()
 
         callback2.assert_called_once_with(51, -8, 21)
         self.assertFalse(callback1.called)
-        self.assertTrue(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertTrue(m.WTERMSIG.called)
 
-        m.WIFSIGNALED.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WTERMSIG.reset_mock()
         callback2.reset_mock()
 
         # ensure that the child is effectively reaped
-        self.add_zombie(51, 13)
+        self.add_zombie(51, EXITCODE(13))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
         self.assertFalse(callback2.called)
-        self.assertFalse(m.WTERMSIG.called)
 
     @waitpid_mocks
-    def test_sigchld_remove_handler(self, m):
+    def test_sigchld_remove_handler(self, m_waitpid):
         callback = mock.Mock()
 
         # register a child
@@ -1521,30 +1425,22 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(52, callback, 1984)
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # unregister the child
         self.watcher.remove_child_handler(52)
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child terminates (code 99)
         self.running = False
-        self.add_zombie(52, 99)
+        self.add_zombie(52, EXITCODE(99))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
 
     @waitpid_mocks
-    def test_sigchld_unknown_status(self, m):
+    def test_sigchld_unknown_status(self, m_waitpid):
         callback = mock.Mock()
 
         # register a child
@@ -1553,10 +1449,6 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(53, callback, -19)
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # terminate with unknown status
         self.zombies[53] = 1178
@@ -1564,24 +1456,18 @@ class ChildWatcherTestsMixin:
         self.watcher._sig_chld()
 
         callback.assert_called_once_with(53, 1178, -19)
-        self.assertTrue(m.WIFEXITED.called)
-        self.assertTrue(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         callback.reset_mock()
-        m.WIFEXITED.reset_mock()
-        m.WIFSIGNALED.reset_mock()
 
         # ensure that the child is effectively reaped
-        self.add_zombie(53, 101)
+        self.add_zombie(53, EXITCODE(101))
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         self.assertFalse(callback.called)
 
     @waitpid_mocks
-    def test_remove_child_handler(self, m):
+    def test_remove_child_handler(self, m_waitpid):
         callback1 = mock.Mock()
         callback2 = mock.Mock()
         callback3 = mock.Mock()
@@ -1602,9 +1488,9 @@ class ChildWatcherTestsMixin:
         self.assertFalse(self.watcher.remove_child_handler(55))
 
         # all children terminate
-        self.add_zombie(54, 0)
-        self.add_zombie(55, 1)
-        self.add_zombie(56, 2)
+        self.add_zombie(54, EXITCODE(0))
+        self.add_zombie(55, EXITCODE(1))
+        self.add_zombie(56, EXITCODE(2))
         self.running = False
         with self.ignore_warnings:
             self.watcher._sig_chld()
@@ -1614,7 +1500,7 @@ class ChildWatcherTestsMixin:
         callback3.assert_called_once_with(56, 2, 3)
 
     @waitpid_mocks
-    def test_sigchld_unhandled_exception(self, m):
+    def test_sigchld_unhandled_exception(self, m_waitpid):
         callback = mock.Mock()
 
         # register a child
@@ -1623,7 +1509,7 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(57, callback)
 
         # raise an exception
-        m.waitpid.side_effect = ValueError
+        m_waitpid.side_effect = ValueError
 
         with mock.patch.object(log.logger,
                                'error') as m_error:
@@ -1632,7 +1518,7 @@ class ChildWatcherTestsMixin:
             self.assertTrue(m_error.called)
 
     @waitpid_mocks
-    def test_sigchld_child_reaped_elsewhere(self, m):
+    def test_sigchld_child_reaped_elsewhere(self, m_waitpid):
         # register a child
         callback = mock.Mock()
 
@@ -1641,33 +1527,29 @@ class ChildWatcherTestsMixin:
             self.watcher.add_child_handler(58, callback)
 
         self.assertFalse(callback.called)
-        self.assertFalse(m.WIFEXITED.called)
-        self.assertFalse(m.WIFSIGNALED.called)
-        self.assertFalse(m.WEXITSTATUS.called)
-        self.assertFalse(m.WTERMSIG.called)
 
         # child terminates
         self.running = False
-        self.add_zombie(58, 4)
+        self.add_zombie(58, EXITCODE(4))
 
         # waitpid is called elsewhere
         os.waitpid(58, os.WNOHANG)
 
-        m.waitpid.reset_mock()
+        m_waitpid.reset_mock()
 
         # sigchld
         with self.ignore_warnings:
             self.watcher._sig_chld()
 
         if isinstance(self.watcher, asyncio.FastChildWatcher):
-            # here the FastChildWatche enters a deadlock
+            # here the FastChildWatcher enters a deadlock
             # (there is no way to prevent it)
             self.assertFalse(callback.called)
         else:
             callback.assert_called_once_with(58, 255)
 
     @waitpid_mocks
-    def test_sigchld_unknown_pid_during_registration(self, m):
+    def test_sigchld_unknown_pid_during_registration(self, m_waitpid):
         # register two children
         callback1 = mock.Mock()
         callback2 = mock.Mock()
@@ -1675,9 +1557,9 @@ class ChildWatcherTestsMixin:
         with self.ignore_warnings, self.watcher:
             self.running = True
             # child 1 terminates
-            self.add_zombie(591, 7)
+            self.add_zombie(591, EXITCODE(7))
             # an unknown child terminates
-            self.add_zombie(593, 17)
+            self.add_zombie(593, EXITCODE(17))
 
             self.watcher._sig_chld()
 
@@ -1688,7 +1570,7 @@ class ChildWatcherTestsMixin:
         self.assertFalse(callback2.called)
 
     @waitpid_mocks
-    def test_set_loop(self, m):
+    def test_set_loop(self, m_waitpid):
         # register a child
         callback = mock.Mock()
 
@@ -1713,13 +1595,13 @@ class ChildWatcherTestsMixin:
 
         # child terminates
         self.running = False
-        self.add_zombie(60, 9)
+        self.add_zombie(60, EXITCODE(9))
         self.watcher._sig_chld()
 
         callback.assert_called_once_with(60, 9)
 
     @waitpid_mocks
-    def test_set_loop_race_condition(self, m):
+    def test_set_loop_race_condition(self, m_waitpid):
         # register 3 children
         callback1 = mock.Mock()
         callback2 = mock.Mock()
@@ -1746,8 +1628,8 @@ class ChildWatcherTestsMixin:
                 signal.SIGCHLD)
 
         # child 1 & 2 terminate
-        self.add_zombie(61, 11)
-        self.add_zombie(62, -5)
+        self.add_zombie(61, EXITCODE(11))
+        self.add_zombie(62, SIGNAL(5))
 
         # SIGCHLD was not caught
         self.assertFalse(callback1.called)
@@ -1773,7 +1655,7 @@ class ChildWatcherTestsMixin:
 
         # child 3 terminates
         self.running = False
-        self.add_zombie(622, 19)
+        self.add_zombie(622, EXITCODE(19))
         self.watcher._sig_chld()
 
         self.assertFalse(callback1.called)
@@ -1781,16 +1663,16 @@ class ChildWatcherTestsMixin:
         callback3.assert_called_once_with(622, 19)
 
     @waitpid_mocks
-    def test_close(self, m):
+    def test_close(self, m_waitpid):
         # register two children
         callback1 = mock.Mock()
 
         with self.watcher:
             self.running = True
             # child 1 terminates
-            self.add_zombie(63, 9)
+            self.add_zombie(63, EXITCODE(9))
             # other child terminates
-            self.add_zombie(65, 18)
+            self.add_zombie(65, EXITCODE(18))
             self.watcher._sig_chld()
 
             self.watcher.add_child_handler(63, callback1)
@@ -1815,12 +1697,16 @@ class ChildWatcherTestsMixin:
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.SafeChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.SafeChildWatcher()
 
 
 class FastChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):
     def create_watcher(self):
-        return asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return asyncio.FastChildWatcher()
 
 
 class PolicyTests(unittest.TestCase):
@@ -1828,24 +1714,40 @@ class PolicyTests(unittest.TestCase):
     def create_policy(self):
         return asyncio.DefaultEventLoopPolicy()
 
-    def test_get_default_child_watcher(self):
+    @mock.patch('asyncio.unix_events.can_use_pidfd')
+    def test_get_default_child_watcher(self, m_can_use_pidfd):
+        m_can_use_pidfd.return_value = False
         policy = self.create_policy()
         self.assertIsNone(policy._watcher)
-
-        watcher = policy.get_child_watcher()
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
         self.assertIsInstance(watcher, asyncio.ThreadedChildWatcher)
 
         self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
-        self.assertIs(watcher, policy.get_child_watcher())
+        m_can_use_pidfd.return_value = True
+        policy = self.create_policy()
+        self.assertIsNone(policy._watcher)
+        with self.assertWarns(DeprecationWarning):
+            watcher = policy.get_child_watcher()
+        self.assertIsInstance(watcher, asyncio.PidfdChildWatcher)
+
+        self.assertIs(policy._watcher, watcher)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_after_set(self):
         policy = self.create_policy()
-        watcher = asyncio.FastChildWatcher()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.FastChildWatcher()
+            policy.set_child_watcher(watcher)
 
-        policy.set_child_watcher(watcher)
         self.assertIs(policy._watcher, watcher)
-        self.assertIs(watcher, policy.get_child_watcher())
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(watcher, policy.get_child_watcher())
 
     def test_get_child_watcher_thread(self):
 
@@ -1854,7 +1756,9 @@ class PolicyTests(unittest.TestCase):
 
             self.assertIsInstance(policy.get_event_loop(),
                                   asyncio.AbstractEventLoop)
-            watcher = policy.get_child_watcher()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                watcher = policy.get_child_watcher()
 
             self.assertIsInstance(watcher, asyncio.SafeChildWatcher)
             self.assertIsNone(watcher._loop)
@@ -1862,7 +1766,9 @@ class PolicyTests(unittest.TestCase):
             policy.get_event_loop().close()
 
         policy = self.create_policy()
-        policy.set_child_watcher(asyncio.SafeChildWatcher())
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            policy.set_child_watcher(asyncio.SafeChildWatcher())
 
         th = threading.Thread(target=f)
         th.start()
@@ -1870,12 +1776,15 @@ class PolicyTests(unittest.TestCase):
 
     def test_child_watcher_replace_mainloop_existing(self):
         policy = self.create_policy()
-        loop = policy.get_event_loop()
+        loop = policy.new_event_loop()
+        policy.set_event_loop(loop)
 
         # Explicitly setup SafeChildWatcher,
         # default ThreadedChildWatcher has no _loop property
-        watcher = asyncio.SafeChildWatcher()
-        policy.set_child_watcher(watcher)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            watcher = asyncio.SafeChildWatcher()
+            policy.set_child_watcher(watcher)
         watcher.attach_loop(loop)
 
         self.assertIs(watcher._loop, loop)
@@ -1962,6 +1871,113 @@ class TestFunctional(unittest.TestCase):
             rsock.close()
             wsock.close()
 
+
+@unittest.skipUnless(hasattr(os, 'fork'), 'requires os.fork()')
+class TestFork(unittest.IsolatedAsyncioTestCase):
+
+    async def test_fork_not_share_event_loop(self):
+        # The forked process should not share the event loop with the parent
+        loop = asyncio.get_running_loop()
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        pid = os.fork()
+        if pid == 0:
+            # child
+            try:
+                with self.assertWarns(DeprecationWarning):
+                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                os.write(w, b'LOOP:' + str(id(loop)).encode())
+            except RuntimeError:
+                os.write(w, b'NO LOOP')
+            except BaseException as e:
+                os.write(w, b'ERROR:' + ascii(e).encode())
+            finally:
+                os._exit(0)
+        else:
+            # parent
+            result = os.read(r, 100)
+            self.assertEqual(result[:5], b'LOOP:', result)
+            self.assertNotEqual(int(result[5:]), id(loop))
+            wait_process(pid, exitcode=0)
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_signal_handling(self):
+        # Sending signal to the forked process should not affect the parent
+        # process
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        child_started = manager.Event()
+        child_handled = manager.Event()
+        parent_handled = manager.Event()
+
+        def child_main():
+            def on_sigterm(*args):
+                child_handled.set()
+                sys.exit()
+
+            signal.signal(signal.SIGTERM, on_sigterm)
+            child_started.set()
+            while True:
+                time.sleep(1)
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.add_signal_handler(signal.SIGTERM, lambda *args: parent_handled.set())
+
+            process = ctx.Process(target=child_main)
+            process.start()
+            child_started.wait()
+            os.kill(process.pid, signal.SIGTERM)
+            process.join(timeout=support.SHORT_TIMEOUT)
+
+            async def func():
+                await asyncio.sleep(0.1)
+                return 42
+
+            # Test parent's loop is still functional
+            self.assertEqual(await asyncio.create_task(func()), 42)
+
+        asyncio.run(main())
+
+        child_handled.wait(timeout=support.SHORT_TIMEOUT)
+        self.assertFalse(parent_handled.is_set())
+        self.assertTrue(child_handled.is_set())
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_asyncio_run(self):
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 0)
+
+        async def child_main():
+            await asyncio.sleep(0.1)
+            result.value = 42
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 42)
+
+    @hashlib_helper.requires_hashdigest('md5')
+    def test_fork_asyncio_subprocess(self):
+        ctx = multiprocessing.get_context('fork')
+        manager = ctx.Manager()
+        self.addCleanup(manager.shutdown)
+        result = manager.Value('i', 1)
+
+        async def child_main():
+            proc = await asyncio.create_subprocess_exec(sys.executable, '-c', 'pass')
+            result.value = await proc.wait()
+
+        process = ctx.Process(target=lambda: asyncio.run(child_main()))
+        process.start()
+        process.join()
+
+        self.assertEqual(result.value, 0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,9 +10,11 @@ import stat
 import unittest
 import dbm.dumb as dumbdbm
 from test import support
+from test.support import os_helper
 from functools import partial
 
-_fname = support.TESTFN
+_fname = os_helper.TESTFN
+
 
 def _delete_files():
     for ext in [".dir", ".dat", ".bak"]:
@@ -40,6 +42,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.read_helper(f)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
+    @os_helper.skip_unless_working_chmod
     def test_dumbdbm_creation_mode(self):
         try:
             old_umask = os.umask(0o002)
@@ -230,7 +233,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(f.keys(), [])
 
     def test_eval(self):
-        with open(_fname + '.dir', 'w') as stream:
+        with open(_fname + '.dir', 'w', encoding="utf-8") as stream:
             stream.write("str(print('Hacked!')), 0\n")
         with support.captured_stdout() as stdout:
             with self.assertRaises(ValueError):
@@ -263,8 +266,9 @@ class DumbDBMTestCase(unittest.TestCase):
                                         "'r', 'w', 'c', or 'n'"):
                 dumbdbm.open(_fname, flag)
 
+    @os_helper.skip_unless_working_chmod
     def test_readonly_files(self):
-        with support.temp_dir() as dir:
+        with os_helper.temp_dir() as dir:
             fname = os.path.join(dir, 'db')
             with dumbdbm.open(fname, 'n') as f:
                 self.assertEqual(list(f.keys()), [])
@@ -277,12 +281,12 @@ class DumbDBMTestCase(unittest.TestCase):
                 self.assertEqual(sorted(f.keys()), sorted(self._dict))
                 f.close()  # don't write
 
-    @unittest.skipUnless(support.TESTFN_NONASCII,
+    @unittest.skipUnless(os_helper.TESTFN_NONASCII,
                          'requires OS support of non-ASCII encodings')
     def test_nonascii_filename(self):
-        filename = support.TESTFN_NONASCII
+        filename = os_helper.TESTFN_NONASCII
         for suffix in ['.dir', '.dat', '.bak']:
-            self.addCleanup(support.unlink, filename + suffix)
+            self.addCleanup(os_helper.unlink, filename + suffix)
         with dumbdbm.open(filename, 'c') as db:
             db[b'key'] = b'value'
         self.assertTrue(os.path.exists(filename + '.dat'))
@@ -291,6 +295,15 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(list(db.keys()), [b'key'])
             self.assertTrue(b'key' in db)
             self.assertEqual(db[b'key'], b'value')
+
+    def test_open_with_pathlib_path(self):
+        dumbdbm.open(os_helper.FakePath(_fname), "c").close()
+
+    def test_open_with_bytes_path(self):
+        dumbdbm.open(os.fsencode(_fname), "c").close()
+
+    def test_open_with_pathlib_bytes_path(self):
+        dumbdbm.open(os_helper.FakePath(os.fsencode(_fname)), "c").close()
 
     def tearDown(self):
         _delete_files()

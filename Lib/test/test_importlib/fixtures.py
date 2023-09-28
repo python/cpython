@@ -1,10 +1,27 @@
 import os
 import sys
+import copy
 import shutil
 import pathlib
 import tempfile
 import textwrap
+import functools
 import contextlib
+
+from test.support.os_helper import FS_NONASCII
+from test.support import requires_zlib
+
+from . import _path
+from ._path import FilesSpec
+
+
+try:
+    from importlib import resources  # type: ignore
+
+    getattr(resources, 'files')
+    getattr(resources, 'as_file')
+except (ImportError, AttributeError):
+    import importlib_resources as resources  # type: ignore
 
 
 @contextlib.contextmanager
@@ -50,7 +67,7 @@ class Fixtures:
 
 class SiteDir(Fixtures):
     def setUp(self):
-        super(SiteDir, self).setUp()
+        super().setUp()
         self.site_dir = self.fixtures.enter_context(tempdir())
 
 
@@ -65,12 +82,12 @@ class OnSysPath(Fixtures):
             sys.path.remove(str(dir))
 
     def setUp(self):
-        super(OnSysPath, self).setUp()
+        super().setUp()
         self.fixtures.enter_context(self.add_sys_path(self.site_dir))
 
 
 class DistInfoPkg(OnSysPath, SiteDir):
-    files = {
+    files: FilesSpec = {
         "distinfo_pkg-1.0.0.dist-info": {
             "METADATA": """
                 Name: distinfo-pkg
@@ -78,33 +95,83 @@ class DistInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Requires-Dist: wheel >= 1.0
                 Requires-Dist: pytest; extra == 'test'
+                Keywords: sample package
+
+                Once upon a time
+                There was a distinfo pkg
                 """,
             "RECORD": "mod.py,sha256=abc,20\n",
             "entry_points.txt": """
                 [entries]
                 main = mod:main
                 ns:sub = mod:main
-            """
-            },
+            """,
+        },
         "mod.py": """
             def main():
                 print("hello world")
             """,
-        }
+    }
 
     def setUp(self):
-        super(DistInfoPkg, self).setUp()
+        super().setUp()
         build_files(DistInfoPkg.files, self.site_dir)
+
+    def make_uppercase(self):
+        """
+        Rewrite metadata with everything uppercase.
+        """
+        shutil.rmtree(self.site_dir / "distinfo_pkg-1.0.0.dist-info")
+        files = copy.deepcopy(DistInfoPkg.files)
+        info = files["distinfo_pkg-1.0.0.dist-info"]
+        info["METADATA"] = info["METADATA"].upper()
+        build_files(files, self.site_dir)
+
+
+class DistInfoPkgWithDot(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "pkg_dot-1.0.0.dist-info": {
+            "METADATA": """
+                Name: pkg.dot
+                Version: 1.0.0
+                """,
+        },
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(DistInfoPkgWithDot.files, self.site_dir)
+
+
+class DistInfoPkgWithDotLegacy(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "pkg.dot-1.0.0.dist-info": {
+            "METADATA": """
+                Name: pkg.dot
+                Version: 1.0.0
+                """,
+        },
+        "pkg.lot.egg-info": {
+            "METADATA": """
+                Name: pkg.lot
+                Version: 1.0.0
+                """,
+        },
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(DistInfoPkgWithDotLegacy.files, self.site_dir)
 
 
 class DistInfoPkgOffPath(SiteDir):
     def setUp(self):
-        super(DistInfoPkgOffPath, self).setUp()
+        super().setUp()
         build_files(DistInfoPkg.files, self.site_dir)
 
 
 class EggInfoPkg(OnSysPath, SiteDir):
-    files = {
+    files: FilesSpec = {
         "egginfo_pkg.egg-info": {
             "PKG-INFO": """
                 Name: egginfo-pkg
@@ -113,6 +180,9 @@ class EggInfoPkg(OnSysPath, SiteDir):
                 Version: 1.0.0
                 Classifier: Intended Audience :: Developers
                 Classifier: Topic :: Software Development :: Libraries
+                Keywords: sample package
+                Description: Once upon a time
+                        There was an egginfo package
                 """,
             "SOURCES.txt": """
                 mod.py
@@ -127,21 +197,112 @@ class EggInfoPkg(OnSysPath, SiteDir):
                 [test]
                 pytest
             """,
-            "top_level.txt": "mod\n"
-            },
+            "top_level.txt": "mod\n",
+        },
         "mod.py": """
             def main():
                 print("hello world")
             """,
-        }
+    }
 
     def setUp(self):
-        super(EggInfoPkg, self).setUp()
+        super().setUp()
         build_files(EggInfoPkg.files, prefix=self.site_dir)
 
 
+class EggInfoPkgPipInstalledNoToplevel(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "egg_with_module_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_module-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                egg_with_module.py
+                setup.py
+                egg_with_module_pkg.egg-info/PKG-INFO
+                egg_with_module_pkg.egg-info/SOURCES.txt
+                egg_with_module_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                ../egg_with_module.py
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # missing top_level.txt (to trigger fallback to installed-files.txt)
+        },
+        "egg_with_module.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgPipInstalledNoToplevel.files, prefix=self.site_dir)
+
+
+class EggInfoPkgPipInstalledNoModules(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "egg_with_no_modules_pkg.egg-info": {
+            "PKG-INFO": "Name: egg_with_no_modules-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                setup.py
+                egg_with_no_modules_pkg.egg-info/PKG-INFO
+                egg_with_no_modules_pkg.egg-info/SOURCES.txt
+                egg_with_no_modules_pkg.egg-info/top_level.txt
+            """,
+            # installed-files.txt is written by pip, and is a strictly more
+            # accurate source than SOURCES.txt as to the installed contents of
+            # the package.
+            "installed-files.txt": """
+                PKG-INFO
+                SOURCES.txt
+                top_level.txt
+            """,
+            # top_level.txt correctly reflects that no modules are installed
+            "top_level.txt": b"\n",
+        },
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgPipInstalledNoModules.files, prefix=self.site_dir)
+
+
+class EggInfoPkgSourcesFallback(OnSysPath, SiteDir):
+    files: FilesSpec = {
+        "sources_fallback_pkg.egg-info": {
+            "PKG-INFO": "Name: sources_fallback-pkg",
+            # SOURCES.txt is made from the source archive, and contains files
+            # (setup.py) that are not present after installation.
+            "SOURCES.txt": """
+                sources_fallback.py
+                setup.py
+                sources_fallback_pkg.egg-info/PKG-INFO
+                sources_fallback_pkg.egg-info/SOURCES.txt
+            """,
+            # missing installed-files.txt (i.e. not installed by pip) and
+            # missing top_level.txt (to trigger fallback to SOURCES.txt)
+        },
+        "sources_fallback.py": """
+            def main():
+                print("hello world")
+            """,
+    }
+
+    def setUp(self):
+        super().setUp()
+        build_files(EggInfoPkgSourcesFallback.files, prefix=self.site_dir)
+
+
 class EggInfoFile(OnSysPath, SiteDir):
-    files = {
+    files: FilesSpec = {
         "egginfo_file.egg-info": """
             Metadata-Version: 1.0
             Name: egginfo_file
@@ -154,45 +315,34 @@ class EggInfoFile(OnSysPath, SiteDir):
             Description: UNKNOWN
             Platform: UNKNOWN
             """,
-        }
+    }
 
     def setUp(self):
-        super(EggInfoFile, self).setUp()
+        super().setUp()
         build_files(EggInfoFile.files, prefix=self.site_dir)
 
 
-def build_files(file_defs, prefix=pathlib.Path()):
-    """Build a set of files/directories, as described by the
+# dedent all text strings before writing
+orig = _path.create.registry[str]
+_path.create.register(str, lambda content, path: orig(DALS(content), path))
 
-    file_defs dictionary.  Each key/value pair in the dictionary is
-    interpreted as a filename/contents pair.  If the contents value is a
-    dictionary, a directory is created, and the dictionary interpreted
-    as the files within it, recursively.
 
-    For example:
+build_files = _path.build
 
-    {"README.txt": "A README file",
-     "foo": {
-        "__init__.py": "",
-        "bar": {
-            "__init__.py": "",
-        },
-        "baz.py": "# Some code",
-     }
-    }
-    """
-    for name, contents in file_defs.items():
-        full_name = prefix / name
-        if isinstance(contents, dict):
-            full_name.mkdir()
-            build_files(contents, prefix=full_name)
-        else:
-            if isinstance(contents, bytes):
-                with full_name.open('wb') as f:
-                    f.write(contents)
-            else:
-                with full_name.open('w') as f:
-                    f.write(DALS(contents))
+
+def build_record(file_defs):
+    return ''.join(f'{name},,\n' for name in record_names(file_defs))
+
+
+def record_names(file_defs):
+    recording = _path.Recording()
+    _path.build(file_defs, recording)
+    return recording.record
+
+
+class FileBuilder:
+    def unicode_filename(self):
+        return FS_NONASCII or self.skip("File system does not support non-ascii.")
 
 
 def DALS(str):
@@ -200,6 +350,33 @@ def DALS(str):
     return textwrap.dedent(str).lstrip()
 
 
-class NullFinder:
-    def find_module(self, name):
-        pass
+@requires_zlib()
+class ZipFixtures:
+    root = 'test.test_importlib.data'
+
+    def _fixture_on_path(self, filename):
+        pkg_file = resources.files(self.root).joinpath(filename)
+        file = self.resources.enter_context(resources.as_file(pkg_file))
+        assert file.name.startswith('example'), file.name
+        sys.path.insert(0, str(file))
+        self.resources.callback(sys.path.pop, 0)
+
+    def setUp(self):
+        # Add self.zip_name to the front of sys.path.
+        self.resources = contextlib.ExitStack()
+        self.addCleanup(self.resources.close)
+
+
+def parameterize(*args_set):
+    """Run test method with a series of parameters."""
+
+    def wrapper(func):
+        @functools.wraps(func)
+        def _inner(self):
+            for args in args_set:
+                with self.subTest(**args):
+                    func(self, **args)
+
+        return _inner
+
+    return wrapper

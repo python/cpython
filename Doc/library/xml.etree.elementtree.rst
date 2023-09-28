@@ -15,7 +15,9 @@ for parsing and creating XML data.
 
 .. versionchanged:: 3.3
    This module will use a fast implementation whenever available.
-   The :mod:`xml.etree.cElementTree` module is deprecated.
+
+.. deprecated:: 3.3
+   The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
 .. warning::
@@ -249,11 +251,17 @@ We can remove elements using :meth:`Element.remove`.  Let's say we want to
 remove all countries with a rank higher than 50::
 
    >>> for country in root.findall('country'):
+   ...     # using root.findall() to avoid removal during traversal
    ...     rank = int(country.find('rank').text)
    ...     if rank > 50:
    ...         root.remove(country)
    ...
    >>> tree.write('output.xml')
+
+Note that concurrent modification while iterating can lead to problems,
+just like when iterating and modifying Python lists or dicts.
+Therefore, the example first collects all matching elements with
+``root.findall()``, and only then iterates over the list of matches.
 
 Our XML now looks like this:
 
@@ -355,13 +363,6 @@ These two approaches both output::
      |--> Commander Clement
 
 
-Additional resources
-^^^^^^^^^^^^^^^^^^^^
-
-See http://effbot.org/zone/element-index.htm for tutorials and links to other
-docs.
-
-
 .. _elementtree-xpath:
 
 XPath support
@@ -447,6 +448,12 @@ Supported XPath syntax
 |                       | has the given value.  The value cannot contain       |
 |                       | quotes.                                              |
 +-----------------------+------------------------------------------------------+
+| ``[@attrib!='value']``| Selects all elements for which the given attribute   |
+|                       | does not have the given value. The value cannot      |
+|                       | contain quotes.                                      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag]``             | Selects all elements that have a child named         |
 |                       | ``tag``.  Only immediate children are supported.     |
 +-----------------------+------------------------------------------------------+
@@ -455,9 +462,21 @@ Supported XPath syntax
 |                       |                                                      |
 |                       | .. versionadded:: 3.7                                |
 +-----------------------+------------------------------------------------------+
+| ``[.!='text']``       | Selects all elements whose complete text content,    |
+|                       | including descendants, does not equal the given      |
+|                       | ``text``.                                            |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
++-----------------------+------------------------------------------------------+
 | ``[tag='text']``      | Selects all elements that have a child named         |
 |                       | ``tag`` whose complete text content, including       |
 |                       | descendants, equals the given ``text``.              |
++-----------------------+------------------------------------------------------+
+| ``[tag!='text']``     | Selects all elements that have a child named         |
+|                       | ``tag`` whose complete text content, including       |
+|                       | descendants, does not equal the given ``text``.      |
+|                       |                                                      |
+|                       | .. versionadded:: 3.10                               |
 +-----------------------+------------------------------------------------------+
 | ``[position]``        | Selects all elements that are located at the given   |
 |                       | position.  The position can be either an integer     |
@@ -806,7 +825,10 @@ Reference
 Functions
 ^^^^^^^^^
 
+.. module:: xml.etree.ElementInclude
+
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
+   :module:
 
    Default loader. This default loader reads an included resource from disk.  *href* is a URL.
    *parse* is for parse mode either "xml" or "text".  *encoding*
@@ -816,21 +838,34 @@ Functions
    loader fails, it can return None or raise an exception.
 
 
-.. function:: xml.etree.ElementInclude.include( elem, loader=None)
+.. function:: xml.etree.ElementInclude.include( elem, loader=None, base_url=None, \
+                                                max_depth=6)
+   :module:
 
    This function expands XInclude directives.  *elem* is the root element.  *loader* is
    an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
    If given, it should be a callable that implements the same interface as
-   :func:`default_loader`.  Returns the expanded resource.  If the parse mode is
+   :func:`default_loader`.  *base_url* is base URL of the original file, to resolve
+   relative include file references.  *max_depth* is the maximum number of recursive
+   inclusions.  Limited to reduce the risk of malicious content explosion. Pass a
+   negative value to disable the limitation.
+
+   Returns the expanded resource.  If the parse mode is
    ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
    this is a Unicode string.  If the loader fails, it can return None or
    raise an exception.
+
+   .. versionadded:: 3.9
+      The *base_url* and *max_depth* parameters.
 
 
 .. _elementtree-element-objects:
 
 Element Objects
 ^^^^^^^^^^^^^^^
+
+.. module:: xml.etree.ElementTree
+   :noindex:
 
 .. class:: Element(tag, attrib={}, **extra)
 
@@ -1015,9 +1050,9 @@ Element Objects
    :meth:`~object.__getitem__`, :meth:`~object.__setitem__`,
    :meth:`~object.__len__`.
 
-   Caution: Elements with no subelements will test as ``False``.  This behavior
-   will change in future versions.  Use specific ``len(elem)`` or ``elem is
-   None`` test instead. ::
+   Caution: Elements with no subelements will test as ``False``.  Testing the
+   truth value of an Element is deprecated and will raise an exception in
+   Python 3.14.  Use specific ``len(elem)`` or ``elem is None`` test instead.::
 
      element = root.find('foo')
 
@@ -1026,6 +1061,9 @@ Element Objects
 
      if element is None:
          print("element not found")
+
+   .. versionchanged:: 3.12
+      Testing the truth value of an Element emits :exc:`DeprecationWarning`.
 
    Prior to Python 3.8, the serialisation order of the XML attributes of
    elements was artificially made predictable by sorting the attributes by
@@ -1182,6 +1220,7 @@ Example of changing the attribute "target" of every link in first paragraph::
     [<Element 'a' at 0xb77ec2ac>, <Element 'a' at 0xb77ec1cc>]
     >>> for i in links:             # Iterates through all found links
     ...     i.attrib["target"] = "blank"
+    ...
     >>> tree.write("output.xhtml")
 
 .. _elementtree-qname-objects:

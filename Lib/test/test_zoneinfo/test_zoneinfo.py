@@ -6,7 +6,6 @@ import dataclasses
 import importlib.metadata
 import io
 import json
-import lzma
 import os
 import pathlib
 import pickle
@@ -18,9 +17,11 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
-from . import _support as test_support
-from ._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.test_zoneinfo import _support as test_support
+from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
+from test.support.import_helper import import_module
 
+lzma = import_module('lzma')
 py_zoneinfo, c_zoneinfo = test_support.get_modules()
 
 try:
@@ -403,6 +404,19 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 class CZoneInfoTest(ZoneInfoTest):
     module = c_zoneinfo
 
+    def test_signatures(self):
+        """Ensure that C module has valid method signatures."""
+        import inspect
+
+        must_have_signatures = (
+            self.klass.clear_cache,
+            self.klass.no_cache,
+            self.klass.from_file,
+        )
+        for method in must_have_signatures:
+            with self.subTest(method=method):
+                inspect.Signature.from_callable(method)
+
     def test_fold_mutate(self):
         """Test that fold isn't mutated when no change is necessary.
 
@@ -462,7 +476,7 @@ class CZoneInfoDatetimeSubclassTest(DatetimeSubclassMixin, CZoneInfoTest):
     pass
 
 
-class ZoneInfoTestSubclass(ZoneInfoTest):
+class ZoneInfoSubclassTest(ZoneInfoTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -483,7 +497,7 @@ class ZoneInfoTestSubclass(ZoneInfoTest):
         self.assertIsInstance(sub_obj, self.klass)
 
 
-class CZoneInfoTestSubclass(ZoneInfoTest):
+class CZoneInfoSubclassTest(ZoneInfoSubclassTest):
     module = c_zoneinfo
 
 
@@ -1402,44 +1416,50 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
         return [self.zoneinfo_data.tzpath]
 
     def test_cache_hit(self):
-        zi_in = self.klass("Europe/Dublin")
-        pkl = pickle.dumps(zi_in)
-        zi_rt = pickle.loads(pkl)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                zi_in = self.klass("Europe/Dublin")
+                pkl = pickle.dumps(zi_in, protocol=proto)
+                zi_rt = pickle.loads(pkl)
 
-        with self.subTest(test="Is non-pickled ZoneInfo"):
-            self.assertIs(zi_in, zi_rt)
+                with self.subTest(test="Is non-pickled ZoneInfo"):
+                    self.assertIs(zi_in, zi_rt)
 
-        zi_rt2 = pickle.loads(pkl)
-        with self.subTest(test="Is unpickled ZoneInfo"):
-            self.assertIs(zi_rt, zi_rt2)
+                zi_rt2 = pickle.loads(pkl)
+                with self.subTest(test="Is unpickled ZoneInfo"):
+                    self.assertIs(zi_rt, zi_rt2)
 
     def test_cache_miss(self):
-        zi_in = self.klass("Europe/Dublin")
-        pkl = pickle.dumps(zi_in)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                zi_in = self.klass("Europe/Dublin")
+                pkl = pickle.dumps(zi_in, protocol=proto)
 
-        del zi_in
-        self.klass.clear_cache()  # Induce a cache miss
-        zi_rt = pickle.loads(pkl)
-        zi_rt2 = pickle.loads(pkl)
+                del zi_in
+                self.klass.clear_cache()  # Induce a cache miss
+                zi_rt = pickle.loads(pkl)
+                zi_rt2 = pickle.loads(pkl)
 
-        self.assertIs(zi_rt, zi_rt2)
+                self.assertIs(zi_rt, zi_rt2)
 
     def test_no_cache(self):
-        zi_no_cache = self.klass.no_cache("Europe/Dublin")
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                zi_no_cache = self.klass.no_cache("Europe/Dublin")
 
-        pkl = pickle.dumps(zi_no_cache)
-        zi_rt = pickle.loads(pkl)
+                pkl = pickle.dumps(zi_no_cache, protocol=proto)
+                zi_rt = pickle.loads(pkl)
 
-        with self.subTest(test="Not the pickled object"):
-            self.assertIsNot(zi_rt, zi_no_cache)
+                with self.subTest(test="Not the pickled object"):
+                    self.assertIsNot(zi_rt, zi_no_cache)
 
-        zi_rt2 = pickle.loads(pkl)
-        with self.subTest(test="Not a second unpickled object"):
-            self.assertIsNot(zi_rt, zi_rt2)
+                zi_rt2 = pickle.loads(pkl)
+                with self.subTest(test="Not a second unpickled object"):
+                    self.assertIsNot(zi_rt, zi_rt2)
 
-        zi_cache = self.klass("Europe/Dublin")
-        with self.subTest(test="Not a cached object"):
-            self.assertIsNot(zi_rt, zi_cache)
+                zi_cache = self.klass("Europe/Dublin")
+                with self.subTest(test="Not a cached object"):
+                    self.assertIsNot(zi_rt, zi_cache)
 
     def test_from_file(self):
         key = "Europe/Dublin"
@@ -1455,35 +1475,38 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
         ]
 
         for zi, test_name in test_cases:
-            with self.subTest(test_name=test_name):
-                with self.assertRaises(pickle.PicklingError):
-                    pickle.dumps(zi)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(test_name=test_name, proto=proto):
+                    with self.assertRaises(pickle.PicklingError):
+                        pickle.dumps(zi, protocol=proto)
 
     def test_pickle_after_from_file(self):
         # This may be a bit of paranoia, but this test is to ensure that no
         # global state is maintained in order to handle the pickle cache and
         # from_file behavior, and that it is possible to interweave the
         # constructors of each of these and pickling/unpickling without issues.
-        key = "Europe/Dublin"
-        zi = self.klass(key)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                key = "Europe/Dublin"
+                zi = self.klass(key)
 
-        pkl_0 = pickle.dumps(zi)
-        zi_rt_0 = pickle.loads(pkl_0)
-        self.assertIs(zi, zi_rt_0)
+                pkl_0 = pickle.dumps(zi, protocol=proto)
+                zi_rt_0 = pickle.loads(pkl_0)
+                self.assertIs(zi, zi_rt_0)
 
-        with open(self.zoneinfo_data.path_from_key(key), "rb") as f:
-            zi_ff = self.klass.from_file(f, key=key)
+                with open(self.zoneinfo_data.path_from_key(key), "rb") as f:
+                    zi_ff = self.klass.from_file(f, key=key)
 
-        pkl_1 = pickle.dumps(zi)
-        zi_rt_1 = pickle.loads(pkl_1)
-        self.assertIs(zi, zi_rt_1)
+                pkl_1 = pickle.dumps(zi, protocol=proto)
+                zi_rt_1 = pickle.loads(pkl_1)
+                self.assertIs(zi, zi_rt_1)
 
-        with self.assertRaises(pickle.PicklingError):
-            pickle.dumps(zi_ff)
+                with self.assertRaises(pickle.PicklingError):
+                    pickle.dumps(zi_ff, protocol=proto)
 
-        pkl_2 = pickle.dumps(zi)
-        zi_rt_2 = pickle.loads(pkl_2)
-        self.assertIs(zi, zi_rt_2)
+                pkl_2 = pickle.dumps(zi, protocol=proto)
+                zi_rt_2 = pickle.loads(pkl_2)
+                self.assertIs(zi, zi_rt_2)
 
 
 class CZoneInfoPickleTest(ZoneInfoPickleTest):
@@ -1520,13 +1543,20 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
     @contextlib.contextmanager
     def python_tzpath_context(value):
         path_var = "PYTHONTZPATH"
+        unset_env_sentinel = object()
+        old_env = unset_env_sentinel
         try:
             with OS_ENV_LOCK:
                 old_env = os.environ.get(path_var, None)
                 os.environ[path_var] = value
                 yield
         finally:
-            if old_env is None:
+            if old_env is unset_env_sentinel:
+                # In this case, `old_env` was never retrieved from the
+                # environment for whatever reason, so there's no need to
+                # reset the environment TZPATH.
+                pass
+            elif old_env is None:
                 del os.environ[path_var]
             else:
                 os.environ[path_var] = old_env  # pragma: nocover
@@ -1774,12 +1804,10 @@ class ExtensionBuiltTest(unittest.TestCase):
         self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
 
     def test_gc_tracked(self):
-        # The pure Python version is tracked by the GC but (for now) the C
-        # version is not.
         import gc
 
         self.assertTrue(gc.is_tracked(py_zoneinfo.ZoneInfo))
-        self.assertFalse(gc.is_tracked(c_zoneinfo.ZoneInfo))
+        self.assertTrue(gc.is_tracked(c_zoneinfo.ZoneInfo))
 
 
 @dataclasses.dataclass(frozen=True)
@@ -2097,3 +2125,7 @@ class ZoneDumpData:
 
     _ZONEDUMP_DATA = None
     _FIXED_OFFSET_ZONES = None
+
+
+if __name__ == '__main__':
+    unittest.main()

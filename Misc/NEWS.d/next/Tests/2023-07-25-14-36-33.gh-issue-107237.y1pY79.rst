@@ -1,0 +1,2 @@
+``test_logging``: Fix ``test_udp_reconnection()`` by increasing the timeout
+from 100 ms to 5 minutes (LONG_TIMEOUT). Patch by Victor Stinner.

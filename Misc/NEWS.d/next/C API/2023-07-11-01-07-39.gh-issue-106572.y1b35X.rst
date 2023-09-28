@@ -1,0 +1,2 @@
+Convert :c:func:`PyObject_DelAttr` and :c:func:`PyObject_DelAttrString`
+macros to functions. Patch by Victor Stinner.

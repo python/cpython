@@ -35,11 +35,12 @@ PGO_TESTS = [
     'test_memoryview',
     'test_operator',
     'test_ordered_dict',
+    'test_patma',
     'test_pickle',
     'test_pprint',
     'test_re',
     'test_set',
-    'test_sqlite',
+    'test_sqlite3',
     'test_statistics',
     'test_struct',
     'test_tabnanny',
@@ -49,7 +50,7 @@ PGO_TESTS = [
     'test_xml_etree_c',
 ]
 
-def setup_pgo_tests(ns):
-    if not ns.args and not ns.pgo_extended:
+def setup_pgo_tests(cmdline_args, pgo_extended: bool):
+    if not cmdline_args and not pgo_extended:
         # run default set of tests for PGO training
-        ns.args = PGO_TESTS[:]
+        cmdline_args[:] = PGO_TESTS[:]

@@ -22,7 +22,7 @@ This module provides functions for calculating mathematical statistics of
 numeric (:class:`~numbers.Real`-valued) data.
 
 The module is not intended to be a competitor to third-party libraries such
-as `NumPy <https://numpy.org>`_, `SciPy <https://www.scipy.org/>`_, or
+as `NumPy <https://numpy.org>`_, `SciPy <https://scipy.org/>`_, or
 proprietary full-featured statistics packages aimed at professional
 statisticians such as Minitab, SAS and Matlab. It is aimed at the level of
 graphing and scientific calculators.
@@ -35,6 +35,35 @@ and implementation-dependent.  If your input data consists of mixed types,
 you may be able to use :func:`map` to ensure a consistent result, for
 example: ``map(float, input_data)``.
 
+Some datasets use ``NaN`` (not a number) values to represent missing data.
+Since NaNs have unusual comparison semantics, they cause surprising or
+undefined behaviors in the statistics functions that sort data or that count
+occurrences.  The functions affected are ``median()``, ``median_low()``,
+``median_high()``, ``median_grouped()``, ``mode()``, ``multimode()``, and
+``quantiles()``.  The ``NaN`` values should be stripped before calling these
+functions::
+
+    >>> from statistics import median
+    >>> from math import isnan
+    >>> from itertools import filterfalse
+
+    >>> data = [20.7, float('NaN'),19.2, 18.3, float('NaN'), 14.4]
+    >>> sorted(data)  # This has surprising behavior
+    [20.7, nan, 14.4, 18.3, 19.2, nan]
+    >>> median(data)  # This result is unexpected
+    16.35
+
+    >>> sum(map(isnan, data))    # Number of missing values
+    2
+    >>> clean = list(filterfalse(isnan, data))  # Strip NaN values
+    >>> clean
+    [20.7, 19.2, 18.3, 14.4]
+    >>> sorted(clean)  # Sorting now works as expected
+    [14.4, 18.3, 19.2, 20.7]
+    >>> median(clean)       # This result is now well defined
+    18.75
+
+
 Averages and measures of central location
 -----------------------------------------
 
@@ -43,7 +72,7 @@ or sample.
 
 =======================  ===============================================================
 :func:`mean`             Arithmetic mean ("average") of data.
-:func:`fmean`            Fast, floating point arithmetic mean.
+:func:`fmean`            Fast, floating point arithmetic mean, with optional weighting.
 :func:`geometric_mean`   Geometric mean of data.
 :func:`harmonic_mean`    Harmonic mean of data.
 :func:`median`           Median (middle value) of data.
@@ -51,7 +80,7 @@ or sample.
 :func:`median_high`      High median of data.
 :func:`median_grouped`   Median, or 50th percentile, of grouped data.
 :func:`mode`             Single mode (most common value) of discrete or nominal data.
-:func:`multimode`        List of modes (most common values) of discrete or nomimal data.
+:func:`multimode`        List of modes (most common values) of discrete or nominal data.
 :func:`quantiles`        Divide data into intervals with equal probability.
 =======================  ===============================================================
 
@@ -67,6 +96,17 @@ tends to deviate from the typical or average values.
 :func:`stdev`            Sample standard deviation of data.
 :func:`variance`         Sample variance of data.
 =======================  =============================================
+
+Statistics for relations between two inputs
+-------------------------------------------
+
+These functions calculate statistics regarding relations between two inputs.
+
+=========================  =====================================================
+:func:`covariance`         Sample covariance for two variables.
+:func:`correlation`        Pearson and Spearman's correlation coefficients.
+:func:`linear_regression`  Slope and intercept for simple linear regression.
+=========================  =====================================================
 
 
 Function details
@@ -105,10 +145,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. note::
 
-      The mean is strongly affected by outliers and is not a robust estimator
-      for central location: the mean is not necessarily a typical example of
-      the data points.  For more robust measures of central location, see
-      :func:`median` and :func:`mode`.
+      The mean is strongly affected by `outliers
+      <https://en.wikipedia.org/wiki/Outlier>`_ and is not necessarily a
+      typical example of the data points. For a more robust, although less
+      efficient, measure of `central tendency
+      <https://en.wikipedia.org/wiki/Central_tendency>`_, see :func:`median`.
 
       The sample mean gives an unbiased estimate of the true population mean,
       so that when taken on average over all the possible samples,
@@ -117,7 +158,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       ``mean(data)`` is equivalent to calculating the true population mean μ.
 
 
-.. function:: fmean(data)
+.. function:: fmean(data, weights=None)
 
    Convert *data* to floats and compute the arithmetic mean.
 
@@ -130,7 +171,24 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> fmean([3.5, 4.0, 5.25])
       4.25
 
+   Optional weighting is supported.  For example, a professor assigns a
+   grade for a course by weighting quizzes at 20%, homework at 20%, a
+   midterm exam at 30%, and a final exam at 30%:
+
+   .. doctest::
+
+      >>> grades = [85, 92, 83, 91]
+      >>> weights = [0.20, 0.20, 0.30, 0.30]
+      >>> fmean(grades, weights)
+      87.6
+
+   If *weights* is supplied, it must be the same length as the *data* or
+   a :exc:`ValueError` will be raised.
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.11
+      Added support for *weights*.
 
 
 .. function:: geometric_mean(data)
@@ -156,20 +214,20 @@ However, for reading convenience, most of the examples show sorted sequences.
    .. versionadded:: 3.8
 
 
-.. function:: harmonic_mean(data)
+.. function:: harmonic_mean(data, weights=None)
 
    Return the harmonic mean of *data*, a sequence or iterable of
-   real-valued numbers.
+   real-valued numbers.  If *weights* is omitted or *None*, then
+   equal weighting is assumed.
 
-   The harmonic mean, sometimes called the subcontrary mean, is the
-   reciprocal of the arithmetic :func:`mean` of the reciprocals of the
-   data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
-   is zero, the result will be zero.
+   The harmonic mean is the reciprocal of the arithmetic :func:`mean` of the
+   reciprocals of the data. For example, the harmonic mean of three values *a*,
+   *b* and *c* will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the
+   values is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
-   rates or ratios, for example speeds.
+   ratios or rates, for example speeds.
 
    Suppose a car travels 10 km at 40 km/hr, then another 10 km at 60 km/hr.
    What is the average speed?
@@ -179,17 +237,17 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> harmonic_mean([40, 60])
       48.0
 
-   Suppose an investor purchases an equal value of shares in each of
-   three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
-   What is the average P/E ratio for the investor's portfolio?
+   Suppose a car travels 40 km/hr for 5 km, and when traffic clears,
+   speeds-up to 60 km/hr for the remaining 30 km of the journey. What
+   is the average speed?
 
    .. doctest::
 
-      >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
-      3.6
+      >>> harmonic_mean([40, 60], weights=[5, 30])
+      56.0
 
-   :exc:`StatisticsError` is raised if *data* is empty, or any element
-   is less than zero.
+   :exc:`StatisticsError` is raised if *data* is empty, any element
+   is less than zero, or if the weighted sum isn't positive.
 
    The current algorithm has an early-out when it encounters a zero
    in the input.  This means that the subsequent inputs are not tested
@@ -197,6 +255,8 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.6
 
+   .. versionchanged:: 3.10
+      Added support for *weights*.
 
 .. function:: median(data)
 
@@ -564,6 +624,127 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.8
 
+.. function:: covariance(x, y, /)
+
+   Return the sample covariance of two inputs *x* and *y*. Covariance
+   is a measure of the joint variability of two inputs.
+
+   Both inputs must be of the same length (no less than two), otherwise
+   :exc:`StatisticsError` is raised.
+
+   Examples:
+
+   .. doctest::
+
+      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+      >>> covariance(x, y)
+      0.75
+      >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      >>> covariance(x, z)
+      -7.5
+      >>> covariance(z, x)
+      -7.5
+
+   .. versionadded:: 3.10
+
+.. function:: correlation(x, y, /, *, method='linear')
+
+   Return the `Pearson's correlation coefficient
+   <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
+   for two inputs. Pearson's correlation coefficient *r* takes values
+   between -1 and +1. It measures the strength and direction of a linear
+   relationship.
+
+   If *method* is "ranked", computes `Spearman's rank correlation coefficient
+   <https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient>`_
+   for two inputs. The data is replaced by ranks.  Ties are averaged so that
+   equal values receive the same rank.  The resulting coefficient measures the
+   strength of a monotonic relationship.
+
+   Spearman's correlation coefficient is appropriate for ordinal data or for
+   continuous data that doesn't meet the linear proportion requirement for
+   Pearson's correlation coefficient.
+
+   Both inputs must be of the same length (no less than two), and need
+   not to be constant, otherwise :exc:`StatisticsError` is raised.
+
+   Example with `Kepler's laws of planetary motion
+   <https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion>`_:
+
+   .. doctest::
+
+      >>> # Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and  Neptune
+      >>> orbital_period = [88, 225, 365, 687, 4331, 10_756, 30_687, 60_190]    # days
+      >>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
+
+      >>> # Show that a perfect monotonic relationship exists
+      >>> correlation(orbital_period, dist_from_sun, method='ranked')
+      1.0
+
+      >>> # Observe that a linear relationship is imperfect
+      >>> round(correlation(orbital_period, dist_from_sun), 4)
+      0.9882
+
+      >>> # Demonstrate Kepler's third law: There is a linear correlation
+      >>> # between the square of the orbital period and the cube of the
+      >>> # distance from the sun.
+      >>> period_squared = [p * p for p in orbital_period]
+      >>> dist_cubed = [d * d * d for d in dist_from_sun]
+      >>> round(correlation(period_squared, dist_cubed), 4)
+      1.0
+
+   .. versionadded:: 3.10
+
+   .. versionchanged:: 3.12
+      Added support for Spearman's rank correlation coefficient.
+
+.. function:: linear_regression(x, y, /, *, proportional=False)
+
+   Return the slope and intercept of `simple linear regression
+   <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
+   parameters estimated using ordinary least squares. Simple linear
+   regression describes the relationship between an independent variable *x* and
+   a dependent variable *y* in terms of this linear function:
+
+      *y = slope \* x + intercept + noise*
+
+   where ``slope`` and ``intercept`` are the regression parameters that are
+   estimated, and ``noise`` represents the
+   variability of the data that was not explained by the linear regression
+   (it is equal to the difference between predicted and actual values
+   of the dependent variable).
+
+   Both inputs must be of the same length (no less than two), and
+   the independent variable *x* cannot be constant;
+   otherwise a :exc:`StatisticsError` is raised.
+
+   For example, we can use the `release dates of the Monty
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_
+   to predict the cumulative number of Monty Python films
+   that would have been produced by 2019
+   assuming that they had kept the pace.
+
+   .. doctest::
+
+      >>> year = [1971, 1975, 1979, 1982, 1983]
+      >>> films_total = [1, 2, 3, 4, 5]
+      >>> slope, intercept = linear_regression(year, films_total)
+      >>> round(slope * 2019 + intercept)
+      16
+
+   If *proportional* is true, the independent variable *x* and the
+   dependent variable *y* are assumed to be directly proportional.
+   The data is fit to a line passing through the origin.
+   Since the *intercept* will always be 0.0, the underlying linear
+   function simplifies to:
+
+      *y = slope \* x + noise*
+
+   .. versionadded:: 3.10
+
+   .. versionchanged:: 3.11
+      Added support for *proportional*.
 
 Exceptions
 ----------
@@ -647,6 +828,11 @@ of applications in statistics.
        number generator.  This is useful for creating reproducible results,
        even in a multi-threading context.
 
+       .. versionchanged:: 3.13
+
+       Switched to a faster algorithm.  To reproduce samples from previous
+       versions, use :func:`random.seed` and :func:`random.gauss`.
+
     .. method:: NormalDist.pdf(x)
 
        Using a `probability density function (pdf)
@@ -658,7 +844,7 @@ of applications in statistics.
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
        the word "density").  Since the likelihood is relative to other points,
-       its value can be greater than `1.0`.
+       its value can be greater than ``1.0``.
 
     .. method:: NormalDist.cdf(x)
 
@@ -672,7 +858,7 @@ of applications in statistics.
        Compute the inverse cumulative distribution function, also known as the
        `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
        or the `percent-point
-       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       <https://web.archive.org/web/20190203145224/https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
        function.  Mathematically, it is written ``x : P(X <= x) = p``.
 
        Finds the value *x* of the random variable *X* such that the
@@ -741,6 +927,10 @@ of applications in statistics.
 :class:`NormalDist` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Classic probability problems
+****************************
+
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
@@ -766,6 +956,10 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
+
+Monte Carlo inputs for simulations
+**********************************
+
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
@@ -782,8 +976,11 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
+Approximating binomial distributions
+************************************
+
 Normal distributions can be used to approximate `Binomial
-distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
 when the sample size is large and when the probability of a successful
 trial is near 50%.
 
@@ -815,13 +1012,18 @@ probability that the Python room will stay within its capacity limits?
     >>> seed(8675309)
     >>> def trial():
     ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    ...
     >>> mean(trial() <= k for i in range(10_000))
     0.8398
+
+
+Naive bayesian classifier
+*************************
 
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification>`_.
 The challenge is to predict a person's gender from measurements of normally
 distributed features including height, weight, and foot size.
 
@@ -871,6 +1073,48 @@ The final prediction goes to the largest posterior. This is known as the
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
 
+
+Kernel density estimation
+*************************
+
+It is possible to estimate a continuous probability density function
+from a fixed number of discrete samples.
+
+The basic idea is to smooth the data using `a kernel function such as a
+normal distribution, triangular distribution, or uniform distribution
+<https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
+The degree of smoothing is controlled by a single
+parameter, ``h``, representing the variance of the kernel function.
+
+.. testcode::
+
+   import math
+
+   def kde_normal(sample, h):
+       "Create a continuous probability density function from a sample."
+       # Smooth the sample with a normal distribution of variance h.
+       kernel_h = NormalDist(0.0, math.sqrt(h)).pdf
+       n = len(sample)
+       def pdf(x):
+           return sum(kernel_h(x - x_i) for x_i in sample) / n
+       return pdf
+
+`Wikipedia has an example
+<https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+where we can use the ``kde_normal()`` recipe to generate and plot
+a probability density function estimated from a small sample:
+
+.. doctest::
+
+   >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+   >>> f_hat = kde_normal(sample, h=2.25)
+   >>> xarr = [i/100 for i in range(-750, 1100)]
+   >>> yarr = [f_hat(x) for x in xarr]
+
+The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
+
+.. image:: kde_example.png
+   :alt: Scatter plot of the estimated probability density function.
 
 ..
    # This modelines must appear within the last ten lines of the file.

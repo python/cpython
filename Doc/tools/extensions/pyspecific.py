@@ -14,32 +14,32 @@ import io
 from os import getenv, path
 from time import asctime
 from pprint import pformat
+
+from docutils import nodes, utils
 from docutils.io import StringOutput
 from docutils.parsers.rst import Directive
 from docutils.utils import new_document
-
-from docutils import nodes, utils
-
 from sphinx import addnodes
 from sphinx.builders import Builder
-try:
-    from sphinx.errors import NoUri
-except ImportError:
-    from sphinx.environment import NoUri
-from sphinx.locale import translators
-from sphinx.util import status_iterator, logging
+from sphinx.domains.python import PyFunction, PyMethod
+from sphinx.errors import NoUri
+from sphinx.locale import _ as sphinx_gettext
+from sphinx.util import logging
+from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.text import TextWriter, TextTranslator
-from sphinx.writers.latex import LaTeXTranslator
-from sphinx.domains.python import PyModulelevel, PyClassmember
 
-# Support for checking for suspicious markup
+try:
+    # Sphinx 6+
+    from sphinx.util.display import status_iterator
+except ImportError:
+    # Deprecated in Sphinx 6.1, will be removed in Sphinx 8
+    from sphinx.util import status_iterator
 
-import suspicious
 
-
-ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/master/%s'
+ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
+GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.12/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -53,8 +53,30 @@ Body.enum.converters['loweralpha'] = \
 
 def issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     issue = utils.unescape(text)
+    # sanity check: there are no bpo issues within these two values
+    if 47261 < int(issue) < 400000:
+        msg = inliner.reporter.error(f'The BPO ID {text!r} seems too high -- '
+                                     'use :gh:`...` for GitHub IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
     text = 'bpo-' + issue
     refnode = nodes.reference(text, text, refuri=ISSUE_URI % issue)
+    return [refnode], []
+
+
+# Support for marking up and linking to GitHub issues
+
+def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    issue = utils.unescape(text)
+    # sanity check: all GitHub issues have ID >= 32426
+    # even though some of them are also valid BPO IDs
+    if int(issue) < 32426:
+        msg = inliner.reporter.error(f'The GitHub ID {text!r} seems too low -- '
+                                     'use :issue:`...` for BPO IDs', line=lineno)
+        prb = inliner.problematic(rawtext, rawtext, msg)
+        return [prb], [msg]
+    text = 'gh-' + issue
+    refnode = nodes.reference(text, text, refuri=GH_ISSUE_URI % issue)
     return [refnode], []
 
 
@@ -73,57 +95,135 @@ def source_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
 class ImplementationDetail(Directive):
 
     has_content = True
-    required_arguments = 0
-    optional_arguments = 1
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
-    label_text = 'CPython implementation detail:'
+    label_text = sphinx_gettext('CPython implementation detail:')
 
     def run(self):
+        self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
-        label = translators['sphinx'].gettext(self.label_text)
         content = self.content
-        add_text = nodes.strong(label, label)
-        if self.arguments:
-            n, m = self.state.inline_text(self.arguments[0], self.lineno)
-            pnode.append(nodes.paragraph('', '', *(n + m)))
+        add_text = nodes.strong(self.label_text, self.label_text)
         self.state.nested_parse(content, self.content_offset, pnode)
-        if pnode.children and isinstance(pnode[0], nodes.paragraph):
-            content = nodes.inline(pnode[0].rawsource, translatable=True)
-            content.source = pnode[0].source
-            content.line = pnode[0].line
-            content += pnode[0].children
-            pnode[0].replace_self(nodes.paragraph('', '', content,
-                                                  translatable=False))
-            pnode[0].insert(0, add_text)
-            pnode[0].insert(1, nodes.Text(' '))
-        else:
-            pnode.insert(0, nodes.paragraph('', '', add_text))
+        content = nodes.inline(pnode[0].rawsource, translatable=True)
+        content.source = pnode[0].source
+        content.line = pnode[0].line
+        content += pnode[0].children
+        pnode[0].replace_self(nodes.paragraph(
+            '', '', add_text, nodes.Text(' '), content, translatable=False))
         return [pnode]
 
 
 # Support for documenting platform availability
 
-class Availability(Directive):
+class Availability(SphinxDirective):
 
-    has_content = False
+    has_content = True
     required_arguments = 1
     optional_arguments = 0
     final_argument_whitespace = True
 
+    # known platform, libc, and threading implementations
+    known_platforms = frozenset({
+        "AIX", "Android", "BSD", "DragonFlyBSD", "Emscripten", "FreeBSD",
+        "Linux", "NetBSD", "OpenBSD", "POSIX", "Solaris", "Unix", "VxWorks",
+        "WASI", "Windows", "macOS",
+        # libc
+        "BSD libc", "glibc", "musl",
+        # POSIX platforms with pthreads
+        "pthreads",
+    })
+
     def run(self):
         availability_ref = ':ref:`Availability <availability>`: '
+        avail_nodes, avail_msgs = self.state.inline_text(
+            availability_ref + self.arguments[0],
+            self.lineno)
         pnode = nodes.paragraph(availability_ref + self.arguments[0],
-                                classes=["availability"],)
-        n, m = self.state.inline_text(availability_ref, self.lineno)
-        pnode.extend(n + m)
-        n, m = self.state.inline_text(self.arguments[0], self.lineno)
-        pnode.extend(n + m)
-        return [pnode]
+                                '', *avail_nodes, *avail_msgs)
+        self.set_source_info(pnode)
+        cnode = nodes.container("", pnode, classes=["availability"])
+        self.set_source_info(cnode)
+        if self.content:
+            self.state.nested_parse(self.content, self.content_offset, cnode)
+        self.parse_platforms()
+
+        return [cnode]
+
+    def parse_platforms(self):
+        """Parse platform information from arguments
+
+        Arguments is a comma-separated string of platforms. A platform may
+        be prefixed with "not " to indicate that a feature is not available.
+
+        Example::
+
+           .. availability:: Windows, Linux >= 4.2, not Emscripten, not WASI
+
+        Arguments like "Linux >= 3.17 with glibc >= 2.27" are currently not
+        parsed into separate tokens.
+        """
+        platforms = {}
+        for arg in self.arguments[0].rstrip(".").split(","):
+            arg = arg.strip()
+            platform, _, version = arg.partition(" >= ")
+            if platform.startswith("not "):
+                version = False
+                platform = platform[4:]
+            elif not version:
+                version = True
+            platforms[platform] = version
+
+        unknown = set(platforms).difference(self.known_platforms)
+        if unknown:
+            cls = type(self)
+            logger = logging.getLogger(cls.__qualname__)
+            logger.warning(
+                f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
+                f"in '.. availability:: {self.arguments[0]}', see "
+                f"{__file__}:{cls.__qualname__}.known_platforms for a set "
+                "known platforms."
+            )
+
+        return platforms
+
 
 
 # Support for documenting audit event
+
+def audit_events_purge(app, env, docname):
+    """This is to remove from env.all_audit_events old traces of removed
+    documents.
+    """
+    if not hasattr(env, 'all_audit_events'):
+        return
+    fresh_all_audit_events = {}
+    for name, event in env.all_audit_events.items():
+        event["source"] = [(d, t) for d, t in event["source"] if d != docname]
+        if event["source"]:
+            # Only keep audit_events that have at least one source.
+            fresh_all_audit_events[name] = event
+    env.all_audit_events = fresh_all_audit_events
+
+
+def audit_events_merge(app, env, docnames, other):
+    """In Sphinx parallel builds, this merges env.all_audit_events from
+    subprocesses.
+
+    all_audit_events is a dict of names, with values like:
+    {'source': [(docname, target), ...], 'args': args}
+    """
+    if not hasattr(other, 'all_audit_events'):
+        return
+    if not hasattr(env, 'all_audit_events'):
+        env.all_audit_events = {}
+    for name, value in other.all_audit_events.items():
+        if name in env.all_audit_events:
+            env.all_audit_events[name]["source"].extend(value["source"])
+        else:
+            env.all_audit_events[name] = value
+
 
 class AuditEvent(Directive):
 
@@ -133,9 +233,9 @@ class AuditEvent(Directive):
     final_argument_whitespace = True
 
     _label = [
-        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
-        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
-        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with no arguments."),
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with argument {args}."),
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with arguments {args}."),
     ]
 
     @property
@@ -151,7 +251,7 @@ class AuditEvent(Directive):
         else:
             args = []
 
-        label = translators['sphinx'].gettext(self._label[min(2, len(args))])
+        label = self._label[min(2, len(args))]
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
@@ -166,7 +266,7 @@ class AuditEvent(Directive):
         info = env.all_audit_events.setdefault(name, new_info)
         if info is not new_info:
             if not self._do_args_match(info['args'], new_info['args']):
-                self.logger.warn(
+                self.logger.warning(
                     "Mismatched arguments for audit-event {}: {!r} != {!r}"
                     .format(name, info['args'], new_info['args'])
                 )
@@ -186,6 +286,7 @@ class AuditEvent(Directive):
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
+        pnode.line = self.lineno
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, pnode)
         else:
@@ -238,17 +339,18 @@ class PyDecoratorMixin(object):
         return False
 
 
-class PyDecoratorFunction(PyDecoratorMixin, PyModulelevel):
+class PyDecoratorFunction(PyDecoratorMixin, PyFunction):
     def run(self):
         # a decorator function is a function after all
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyDecoratorMethod(PyDecoratorMixin, PyClassmember):
+# TODO: Use sphinx.domains.python.PyDecoratorMethod when possible
+class PyDecoratorMethod(PyDecoratorMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 class PyCoroutineMixin(object):
@@ -265,31 +367,31 @@ class PyAwaitableMixin(object):
         return ret
 
 
-class PyCoroutineFunction(PyCoroutineMixin, PyModulelevel):
+class PyCoroutineFunction(PyCoroutineMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyModulelevel.run(self)
+        return PyFunction.run(self)
 
 
-class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
+class PyCoroutineMethod(PyCoroutineMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAwaitableFunction(PyAwaitableMixin, PyClassmember):
+class PyAwaitableFunction(PyAwaitableMixin, PyFunction):
     def run(self):
         self.name = 'py:function'
-        return PyClassmember.run(self)
+        return PyFunction.run(self)
 
 
-class PyAwaitableMethod(PyAwaitableMixin, PyClassmember):
+class PyAwaitableMethod(PyAwaitableMixin, PyMethod):
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
-class PyAbstractMethod(PyClassmember):
+class PyAbstractMethod(PyMethod):
 
     def handle_signature(self, sig, signode):
         ret = super(PyAbstractMethod, self).handle_signature(sig, signode)
@@ -299,7 +401,7 @@ class PyAbstractMethod(PyClassmember):
 
     def run(self):
         self.name = 'py:method'
-        return PyClassmember.run(self)
+        return PyMethod.run(self)
 
 
 # Support for documenting version of removal in deprecations
@@ -311,7 +413,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
+    _deprecated_label = sphinx_gettext('Deprecated since version {deprecated}, will be removed in version {removed}')
+    _removed_label = sphinx_gettext('Deprecated since version {deprecated}, removed in version {removed}')
 
     def run(self):
         node = addnodes.versionmodified()
@@ -319,7 +422,14 @@ class DeprecatedRemoved(Directive):
         node['type'] = 'deprecated-removed'
         version = (self.arguments[0], self.arguments[1])
         node['version'] = version
-        label = translators['sphinx'].gettext(self._label)
+        env = self.state.document.settings.env
+        current_version = tuple(int(e) for e in env.config.version.split('.'))
+        removed_version = tuple(int(e) for e in self.arguments[1].split('.'))
+        if current_version < removed_version:
+            label = self._deprecated_label
+        else:
+            label = self._removed_label
+
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
@@ -352,7 +462,8 @@ class DeprecatedRemoved(Directive):
 
 # Support for including Misc/NEWS
 
-issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)')
+issue_re = re.compile('(?:[Ii]ssue #|bpo-)([0-9]+)', re.I)
+gh_issue_re = re.compile('(?:gh-issue-|gh-)([0-9]+)', re.I)
 whatsnew_re = re.compile(r"(?im)^what's new in (.*?)\??$")
 
 
@@ -379,8 +490,9 @@ class MiscNews(Directive):
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
             return [node]
-        content = issue_re.sub(r'`bpo-\1 <https://bugs.python.org/issue\1>`__',
-                               content)
+        content = issue_re.sub(r':issue:`\1`', content)
+        # Fallback handling for the GitHub issue
+        content = gh_issue_re.sub(r':gh:`\1`', content)
         content = whatsnew_re.sub(r'\1', content)
         # remove first 3 lines as they are the main heading
         lines = ['.. default-role:: obj', ''] + content.splitlines()[3:]
@@ -430,7 +542,7 @@ class PydocTopicsBuilder(Builder):
                                      'building topics... ',
                                      length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warn('label %r not in documentation' % label)
+                self.env.logger.warning(f'label {label!r} not in documentation')
                 continue
             docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)
@@ -445,6 +557,7 @@ class PydocTopicsBuilder(Builder):
         try:
             f.write('# -*- coding: utf-8 -*-\n'.encode('utf-8'))
             f.write(('# Autogenerated by Sphinx on %s\n' % asctime()).encode('utf-8'))
+            f.write('# as part of the release process.\n'.encode('utf-8'))
             f.write(('topics = ' + pformat(self.topics) + '\n').encode('utf-8'))
         finally:
             f.close()
@@ -558,8 +671,33 @@ def process_audit_events(app, doctree, fromdocname):
         node.replace_self(table)
 
 
+def patch_pairindextypes(app, _env) -> None:
+    """Remove all entries from ``pairindextypes`` before writing POT files.
+
+    We want to run this just before writing output files, as the check to
+    circumvent is in ``I18nBuilder.write_doc()``.
+    As such, we link this to ``env-check-consistency``, even though it has
+    nothing to do with the environment consistency check.
+    """
+    if app.builder.name != 'gettext':
+        return
+
+    # allow translating deprecated index entries
+    try:
+        from sphinx.domains.python import pairindextypes
+    except ImportError:
+        pass
+    else:
+        # Sphinx checks if a 'pair' type entry on an index directive is one of
+        # the Sphinx-translated pairindextypes values. As we intend to move
+        # away from this, we need Sphinx to believe that these values don't
+        # exist, by deleting them when using the gettext builder.
+        pairindextypes.clear()
+
+
 def setup(app):
     app.add_role('issue', issue_role)
+    app.add_role('gh', gh_issue_role)
     app.add_role('source', source_role)
     app.add_directive('impl-detail', ImplementationDetail)
     app.add_directive('availability', Availability)
@@ -567,10 +705,8 @@ def setup(app):
     app.add_directive('audit-event-table', AuditEventListDirective)
     app.add_directive('deprecated-removed', DeprecatedRemoved)
     app.add_builder(PydocTopicsBuilder)
-    app.add_builder(suspicious.CheckSuspiciousMarkupBuilder)
     app.add_object_type('opcode', 'opcode', '%s (opcode)', parse_opcode_signature)
     app.add_object_type('pdbcommand', 'pdbcmd', '%s (pdb command)', parse_pdb_command)
-    app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
     app.add_directive_to_domain('py', 'decorator', PyDecoratorFunction)
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
@@ -579,5 +715,8 @@ def setup(app):
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
+    app.connect('env-check-consistency', patch_pairindextypes)
     app.connect('doctree-resolved', process_audit_events)
+    app.connect('env-merge-info', audit_events_merge)
+    app.connect('env-purge-doc', audit_events_purge)
     return {'version': '1.0', 'parallel_read_safe': True}

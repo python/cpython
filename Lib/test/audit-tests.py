@@ -6,6 +6,7 @@ module with arguments identifying each test.
 """
 
 import contextlib
+import os
 import sys
 
 
@@ -42,28 +43,6 @@ class TestHook:
         self.seen.append((event, args))
         if event in self.raise_on_events:
             raise self.exc_type("saw event " + event)
-
-
-class TestFinalizeHook:
-    """Used in the test_finalize_hooks function to ensure that hooks
-    are correctly cleaned up, that they are notified about the cleanup,
-    and are unable to prevent it.
-    """
-
-    def __init__(self):
-        print("Created", id(self), file=sys.stdout, flush=True)
-
-    def __call__(self, event, args):
-        # Avoid recursion when we call id() below
-        if event == "builtins.id":
-            return
-
-        print(event, id(self), file=sys.stdout, flush=True)
-
-        if event == "cpython._PySys_ClearAuditHooks":
-            raise RuntimeError("Should be ignored")
-        elif event == "cpython.PyInterpreterState_Clear":
-            raise RuntimeError("Should be ignored")
 
 
 # Simple helpers, since we are not in unittest here
@@ -128,8 +107,30 @@ def test_block_add_hook_baseexception():
                 pass
 
 
-def test_finalize_hooks():
-    sys.addaudithook(TestFinalizeHook())
+def test_marshal():
+    import marshal
+    o = ("a", "b", "c", 1, 2, 3)
+    payload = marshal.dumps(o)
+
+    with TestHook() as hook:
+        assertEqual(o, marshal.loads(marshal.dumps(o)))
+
+        try:
+            with open("test-marshal.bin", "wb") as f:
+                marshal.dump(o, f)
+            with open("test-marshal.bin", "rb") as f:
+                assertEqual(o, marshal.load(f))
+        finally:
+            os.unlink("test-marshal.bin")
+
+    actual = [(a[0], a[1]) for e, a in hook.seen if e == "marshal.dumps"]
+    assertSequenceEqual(actual, [(o, marshal.version)] * 2)
+
+    actual = [a[0] for e, a in hook.seen if e == "marshal.loads"]
+    assertSequenceEqual(actual, [payload])
+
+    actual = [e for e, a in hook.seen if e == "marshal.load"]
+    assertSequenceEqual(actual, ["marshal.load"])
 
 
 def test_pickle():
@@ -185,7 +186,7 @@ def test_monkeypatch():
     )
 
 
-def test_open():
+def test_open(testfn):
     # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
     try:
         import ssl
@@ -198,11 +199,11 @@ def test_open():
     # All of them should fail
     with TestHook(raise_on_events={"open"}) as hook:
         for fn, *args in [
-            (open, sys.argv[2], "r"),
+            (open, testfn, "r"),
             (open, sys.executable, "rb"),
             (open, 3, "wb"),
-            (open, sys.argv[2], "w", -1, None, None, None, False, lambda *a: 1),
-            (load_dh_params, sys.argv[2]),
+            (open, testfn, "w", -1, None, None, None, False, lambda *a: 1),
+            (load_dh_params, testfn),
         ]:
             if not fn:
                 continue
@@ -215,11 +216,11 @@ def test_open():
         [
             i
             for i in [
-                (sys.argv[2], "r"),
+                (testfn, "r"),
                 (sys.executable, "r"),
                 (3, "w"),
-                (sys.argv[2], "w"),
-                (sys.argv[2], "rb") if load_dh_params else None,
+                (testfn, "w"),
+                (testfn, "rb") if load_dh_params else None,
             ]
             if i is not None
         ],
@@ -288,7 +289,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testcapi import write_unraisable_exc
+    from _testinternalcapi import write_unraisable_exc
 
     def unraisablehook(hookargs):
         pass
@@ -349,10 +350,206 @@ def test_socket():
         sock.close()
 
 
-if __name__ == "__main__":
-    from test.libregrtest.setup import suppress_msvcrt_asserts
+def test_gc():
+    import gc
 
-    suppress_msvcrt_asserts(False)
+    def hook(event, args):
+        if event.startswith("gc."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+
+    gc.get_objects(generation=1)
+
+    x = object()
+    y = [x]
+
+    gc.get_referrers(x)
+    gc.get_referents(y)
+
+
+def test_http_client():
+    import http.client
+
+    def hook(event, args):
+        if event.startswith("http.client."):
+            print(event, *args[1:])
+
+    sys.addaudithook(hook)
+
+    conn = http.client.HTTPConnection('www.python.org')
+    try:
+        conn.request('GET', '/')
+    except OSError:
+        print('http.client.send', '[cannot send]')
+    finally:
+        conn.close()
+
+
+def test_sqlite3():
+    import sqlite3
+
+    def hook(event, *args):
+        if event.startswith("sqlite3."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    cx1 = sqlite3.connect(":memory:")
+    cx2 = sqlite3.Connection(":memory:")
+
+    # Configured without --enable-loadable-sqlite-extensions
+    try:
+        if hasattr(sqlite3.Connection, "enable_load_extension"):
+            cx1.enable_load_extension(False)
+            try:
+                cx1.load_extension("test")
+            except sqlite3.OperationalError:
+                pass
+            else:
+                raise RuntimeError("Expected sqlite3.load_extension to fail")
+    finally:
+        cx1.close()
+        cx2.close()
+
+def test_sys_getframe():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys."):
+            print(event, args[0].f_code.co_name)
+
+    sys.addaudithook(hook)
+    sys._getframe()
+
+
+def test_sys_getframemodulename():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    sys._getframemodulename()
+
+
+def test_threading():
+    import _thread
+
+    def hook(event, args):
+        if event.startswith(("_thread.", "cpython.PyThreadState", "test.")):
+            print(event, args)
+
+    sys.addaudithook(hook)
+
+    lock = _thread.allocate_lock()
+    lock.acquire()
+
+    class test_func:
+        def __repr__(self): return "<test_func>"
+        def __call__(self):
+            sys.audit("test.test_func")
+            lock.release()
+
+    i = _thread.start_new_thread(test_func(), ())
+    lock.acquire()
+
+
+def test_threading_abort():
+    # Ensures that aborting PyThreadState_New raises the correct exception
+    import _thread
+
+    class ThreadNewAbortError(Exception):
+        pass
+
+    def hook(event, args):
+        if event == "cpython.PyThreadState_New":
+            raise ThreadNewAbortError()
+
+    sys.addaudithook(hook)
+
+    try:
+        _thread.start_new_thread(lambda: None, ())
+    except ThreadNewAbortError:
+        # Other exceptions are raised and the test will fail
+        pass
+
+
+def test_wmi_exec_query():
+    import _wmi
+
+    def hook(event, args):
+        if event.startswith("_wmi."):
+            print(event, args[0])
+
+    sys.addaudithook(hook)
+    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+
+def test_syslog():
+    import syslog
+
+    def hook(event, args):
+        if event.startswith("syslog."):
+            print(event, *args)
+
+    sys.addaudithook(hook)
+    syslog.openlog('python')
+    syslog.syslog('test')
+    syslog.setlogmask(syslog.LOG_DEBUG)
+    syslog.closelog()
+    # implicit open
+    syslog.syslog('test2')
+    # open with default ident
+    syslog.openlog(logoption=syslog.LOG_NDELAY, facility=syslog.LOG_LOCAL0)
+    sys.argv = None
+    syslog.openlog()
+    syslog.closelog()
+
+
+def test_not_in_gc():
+    import gc
+
+    hook = lambda *a: None
+    sys.addaudithook(hook)
+
+    for o in gc.get_objects():
+        if isinstance(o, list):
+            assert hook not in o
+
+
+def test_time(mode):
+    import time
+
+    def hook(event, args):
+        if event.startswith("time."):
+            if mode == 'print':
+                print(event, *args)
+            elif mode == 'fail':
+                raise AssertionError('hook failed')
+    sys.addaudithook(hook)
+
+    time.sleep(0)
+    time.sleep(0.0625)  # 1/16, a small exact float
+    try:
+        time.sleep(-1)
+    except ValueError:
+        pass
+
+def test_sys_monitoring_register_callback():
+    import sys
+
+    def hook(event, args):
+        if event.startswith("sys.monitoring"):
+            print(event, args)
+
+    sys.addaudithook(hook)
+    sys.monitoring.register_callback(1, 1, None)
+
+
+if __name__ == "__main__":
+    from test.support import suppress_msvcrt_asserts
+
+    suppress_msvcrt_asserts()
 
     test = sys.argv[1]
-    globals()[test]()
+    globals()[test](*sys.argv[2:])

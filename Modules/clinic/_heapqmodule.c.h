@@ -9,7 +9,7 @@ PyDoc_STRVAR(_heapq_heappush__doc__,
 "Push item onto heap, maintaining the heap invariant.");
 
 #define _HEAPQ_HEAPPUSH_METHODDEF    \
-    {"heappush", (PyCFunction)(void(*)(void))_heapq_heappush, METH_FASTCALL, _heapq_heappush__doc__},
+    {"heappush", _PyCFunction_CAST(_heapq_heappush), METH_FASTCALL, _heapq_heappush__doc__},
 
 static PyObject *
 _heapq_heappush_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -80,7 +80,7 @@ PyDoc_STRVAR(_heapq_heapreplace__doc__,
 "        item = heapreplace(heap, item)");
 
 #define _HEAPQ_HEAPREPLACE_METHODDEF    \
-    {"heapreplace", (PyCFunction)(void(*)(void))_heapq_heapreplace, METH_FASTCALL, _heapq_heapreplace__doc__},
+    {"heapreplace", _PyCFunction_CAST(_heapq_heapreplace), METH_FASTCALL, _heapq_heapreplace__doc__},
 
 static PyObject *
 _heapq_heapreplace_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -117,7 +117,7 @@ PyDoc_STRVAR(_heapq_heappushpop__doc__,
 "a separate call to heappop().");
 
 #define _HEAPQ_HEAPPUSHPOP_METHODDEF    \
-    {"heappushpop", (PyCFunction)(void(*)(void))_heapq_heappushpop, METH_FASTCALL, _heapq_heappushpop__doc__},
+    {"heappushpop", _PyCFunction_CAST(_heapq_heappushpop), METH_FASTCALL, _heapq_heappushpop__doc__},
 
 static PyObject *
 _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item);
@@ -209,7 +209,7 @@ PyDoc_STRVAR(_heapq__heapreplace_max__doc__,
 "Maxheap variant of heapreplace.");
 
 #define _HEAPQ__HEAPREPLACE_MAX_METHODDEF    \
-    {"_heapreplace_max", (PyCFunction)(void(*)(void))_heapq__heapreplace_max, METH_FASTCALL, _heapq__heapreplace_max__doc__},
+    {"_heapreplace_max", _PyCFunction_CAST(_heapq__heapreplace_max), METH_FASTCALL, _heapq__heapreplace_max__doc__},
 
 static PyObject *
 _heapq__heapreplace_max_impl(PyObject *module, PyObject *heap,
@@ -265,4 +265,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9975cf51762878d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a22715a8bf0c91d input=a9049054013a1b77]*/

@@ -1,0 +1,3 @@
+Add :attr:`pathlib.PurePath.pathmod` class attribute that stores the
+implementation of :mod:`os.path` used for low-level path operations: either
+``posixpath`` or ``ntpath``.

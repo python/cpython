@@ -25,7 +25,7 @@ from collections.abc import Sized, Container, Callable, Collection
 from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
-from collections.abc import ByteString
+from collections.abc import ByteString, Buffer
 
 
 class TestUserObjects(unittest.TestCase):
@@ -70,6 +70,14 @@ class TestUserObjects(unittest.TestCase):
         obj = UserDict()
         obj[123] = "abc"
         self._copy_test(obj)
+
+    def test_dict_missing(self):
+        class A(UserDict):
+            def __missing__(self, key):
+                return 456
+        self.assertEqual(A()[123], 456)
+        # get() ignores __missing__ on dict
+        self.assertIs(A().get(123), None)
 
 
 ################################################################################
@@ -196,6 +204,22 @@ class TestChainMap(unittest.TestCase):
              ('e', 55), ('f', 666), ('g', 777), ('h', 88888),
              ('i', 9999), ('j', 0)])
 
+    def test_iter_not_calling_getitem_on_maps(self):
+        class DictWithGetItem(UserDict):
+            def __init__(self, *args, **kwds):
+                self.called = False
+                UserDict.__init__(self, *args, **kwds)
+            def __getitem__(self, item):
+                self.called = True
+                UserDict.__getitem__(self, item)
+
+        d = DictWithGetItem(a=1)
+        c = ChainMap(d)
+        d.called = False
+
+        set(c)  # iterate over chain map
+        self.assertFalse(d.called, '__getitem__ was called')
+
     def test_dict_coercion(self):
         d = ChainMap(dict(a=1, b=2), dict(b=20, c=30))
         self.assertEqual(dict(d), dict(a=1, b=2, c=30))
@@ -232,6 +256,10 @@ class TestChainMap(unittest.TestCase):
             self.assertIn(key, d)
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
+
+        c = ChainMap({'a': 1, 'b': 2})
+        d = c.new_child(b=20, c=30)
+        self.assertEqual(d.maps, [{'b': 20, 'c': 30}, {'a': 1, 'b': 2}])
 
     def test_union_operators(self):
         cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
@@ -517,7 +545,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(Dot(1)._replace(d=999), (999,))
         self.assertEqual(Dot(1)._fields, ('d',))
 
-        n = 5000
+        n = support.EXCEEDS_RECURSION_LIMIT
         names = list(set(''.join([choice(string.ascii_letters)
                                   for j in range(10)]) for i in range(n)))
         n = len(names)
@@ -648,6 +676,7 @@ class TestNamedTuple(unittest.TestCase):
         a.w = 5
         self.assertEqual(a.__dict__, {'w': 5})
 
+    @support.cpython_only
     def test_field_descriptor(self):
         Point = namedtuple('Point', 'x y')
         p = Point(11, 22)
@@ -656,14 +685,38 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__set__, p, 33)
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
-        class NewPoint(tuple):
-            x = pickle.loads(pickle.dumps(Point.x))
-            y = pickle.loads(pickle.dumps(Point.y))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                class NewPoint(tuple):
+                    x = pickle.loads(pickle.dumps(Point.x, proto))
+                    y = pickle.loads(pickle.dumps(Point.y, proto))
 
-        np = NewPoint([1, 2])
+                np = NewPoint([1, 2])
 
-        self.assertEqual(np.x, 1)
-        self.assertEqual(np.y, 2)
+                self.assertEqual(np.x, 1)
+                self.assertEqual(np.y, 2)
+
+    def test_new_builtins_issue_43102(self):
+        obj = namedtuple('C', ())
+        new_func = obj.__new__
+        self.assertEqual(new_func.__globals__['__builtins__'], {})
+        self.assertEqual(new_func.__builtins__, {})
+
+    def test_match_args(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(Point.__match_args__, ('x', 'y'))
+
+    def test_non_generic_subscript(self):
+        # For backward compatibility, subscription works
+        # on arbitrary named tuple types.
+        Group = collections.namedtuple('Group', 'key group')
+        A = Group[int, list[int]]
+        self.assertEqual(A.__origin__, Group)
+        self.assertEqual(A.__parameters__, ())
+        self.assertEqual(A.__args__, (int, list[int]))
+        a = A(1, [2])
+        self.assertIs(type(a), Group)
+        self.assertEqual(a, (1, [2]))
 
 
 ################################################################################
@@ -757,6 +810,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
             def __await__(self):
                 yield
 
+        self.validate_abstract_methods(Awaitable, '__await__')
+
         non_samples = [None, int(), gen(), object()]
         for x in non_samples:
             self.assertNotIsInstance(x, Awaitable)
@@ -806,6 +861,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 super().throw(typ, val, tb)
             def __await__(self):
                 yield
+
+        self.validate_abstract_methods(Coroutine, '__await__', 'send', 'throw')
 
         non_samples = [None, int(), gen(), object(), Bar()]
         for x in non_samples:
@@ -1482,8 +1539,12 @@ class TestCollectionABCs(ABCTestCase):
                 return result
             def __repr__(self):
                 return "MySet(%s)" % repr(list(self))
-        s = MySet([5,43,2,1])
-        self.assertEqual(s.pop(), 1)
+        items = [5,43,2,1]
+        s = MySet(items)
+        r = s.pop()
+        self.assertEqual(len(s), len(items) - 1)
+        self.assertNotIn(r, s)
+        self.assertIn(r, items)
 
     def test_issue8750(self):
         empty = WithSet()
@@ -1545,6 +1606,7 @@ class TestCollectionABCs(ABCTestCase):
         containers = [
             seq,
             ItemsView({1: nan, 2: obj}),
+            KeysView({1: nan, 2: obj}),
             ValuesView({1: nan, 2: obj})
         ]
         for container in containers:
@@ -1558,6 +1620,62 @@ class TestCollectionABCs(ABCTestCase):
     def assertSameSet(self, s1, s2):
         # coerce both to a real set then check equality
         self.assertSetEqual(set(s1), set(s2))
+
+    def test_Set_from_iterable(self):
+        """Verify _from_iterable overridden to an instance method works."""
+        class SetUsingInstanceFromIterable(MutableSet):
+            def __init__(self, values, created_by):
+                if not created_by:
+                    raise ValueError('created_by must be specified')
+                self.created_by = created_by
+                self._values = set(values)
+
+            def _from_iterable(self, values):
+                return type(self)(values, 'from_iterable')
+
+            def __contains__(self, value):
+                return value in self._values
+
+            def __iter__(self):
+                yield from self._values
+
+            def __len__(self):
+                return len(self._values)
+
+            def add(self, value):
+                self._values.add(value)
+
+            def discard(self, value):
+                self._values.discard(value)
+
+        impl = SetUsingInstanceFromIterable([1, 2, 3], 'test')
+
+        actual = impl - {1}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({2, 3}, actual)
+
+        actual = impl | {4}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({1, 2, 3, 4}, actual)
+
+        actual = impl & {2}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({2}, actual)
+
+        actual = impl ^ {3, 4}
+        self.assertIsInstance(actual, SetUsingInstanceFromIterable)
+        self.assertEqual('from_iterable', actual.created_by)
+        self.assertEqual({1, 2, 4}, actual)
+
+        # NOTE: ixor'ing with a list is important here: internally, __ixor__
+        # only calls _from_iterable if the other value isn't already a Set.
+        impl ^= [3, 4]
+        self.assertIsInstance(impl, SetUsingInstanceFromIterable)
+        self.assertEqual('test', impl.created_by)
+        self.assertEqual({1, 2, 4}, impl)
 
     def test_Set_interoperability_with_real_sets(self):
         # Issue: 8743
@@ -1711,6 +1829,18 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(f1 != l1)
         self.assertTrue(f1 != l2)
 
+    def test_Set_hash_matches_frozenset(self):
+        sets = [
+            {}, {1}, {None}, {-1}, {0.0}, {"abc"}, {1, 2, 3},
+            {10**100, 10**101}, {"a", "b", "ab", ""}, {False, True},
+            {object(), object(), object()}, {float("nan")},  {frozenset()},
+            {*range(1000)}, {*range(1000)} - {100, 200, 300},
+            {*range(sys.maxsize - 10, sys.maxsize + 10)},
+        ]
+        for s in sets:
+            fs = frozenset(s)
+            self.assertEqual(hash(fs), Set._hash(fs), msg=s)
+
     def test_Mapping(self):
         for sample in [dict]:
             self.assertIsInstance(sample(), Mapping)
@@ -1740,6 +1870,8 @@ class TestCollectionABCs(ABCTestCase):
         mymap['red'] = 5
         self.assertIsInstance(mymap.keys(), Set)
         self.assertIsInstance(mymap.keys(), KeysView)
+        self.assertIsInstance(mymap.values(), Collection)
+        self.assertIsInstance(mymap.values(), ValuesView)
         self.assertIsInstance(mymap.items(), Set)
         self.assertIsInstance(mymap.items(), ItemsView)
 
@@ -1808,13 +1940,34 @@ class TestCollectionABCs(ABCTestCase):
 
     def test_ByteString(self):
         for sample in [bytes, bytearray]:
-            self.assertIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertIsInstance(sample(), ByteString)
             self.assertTrue(issubclass(sample, ByteString))
         for sample in [str, list, tuple]:
-            self.assertNotIsInstance(sample(), ByteString)
+            with self.assertWarns(DeprecationWarning):
+                self.assertNotIsInstance(sample(), ByteString)
             self.assertFalse(issubclass(sample, ByteString))
-        self.assertNotIsInstance(memoryview(b""), ByteString)
+        with self.assertWarns(DeprecationWarning):
+            self.assertNotIsInstance(memoryview(b""), ByteString)
         self.assertFalse(issubclass(memoryview, ByteString))
+        with self.assertWarns(DeprecationWarning):
+            self.validate_abstract_methods(ByteString, '__getitem__', '__len__')
+
+        with self.assertWarns(DeprecationWarning):
+            class X(ByteString): pass
+
+        with self.assertWarns(DeprecationWarning):
+            # No metaclass conflict
+            class Z(ByteString, Awaitable): pass
+
+    def test_Buffer(self):
+        for sample in [bytes, bytearray, memoryview]:
+            self.assertIsInstance(sample(b"x"), Buffer)
+            self.assertTrue(issubclass(sample, Buffer))
+        for sample in [str, list, tuple]:
+            self.assertNotIsInstance(sample(), Buffer)
+            self.assertFalse(issubclass(sample, Buffer))
+        self.validate_abstract_methods(Buffer, '__buffer__')
 
     def test_MutableSequence(self):
         for sample in [tuple, str, bytes]:
@@ -1876,6 +2029,12 @@ class TestCollectionABCs(ABCTestCase):
         mss.extend(mss)
         self.assertEqual(len(mss), len(mss2))
         self.assertEqual(list(mss), list(mss2))
+
+    def test_illegal_patma_flags(self):
+        with self.assertRaises(TypeError):
+            class Both(Collection):
+                __abc_tpflags__ = (Sequence.__flags__ | Mapping.__flags__)
+
 
 
 ################################################################################
@@ -1969,6 +2128,10 @@ class TestCounter(unittest.TestCase):
         self.assertRaises(TypeError, Counter, 42)
         self.assertRaises(TypeError, Counter, (), ())
         self.assertRaises(TypeError, Counter.__init__)
+
+    def test_total(self):
+        c = Counter(a=10, b=5, c=0)
+        self.assertEqual(c.total(), 15)
 
     def test_order_preservation(self):
         # Input order dictates items() order
@@ -2123,29 +2286,6 @@ class TestCounter(unittest.TestCase):
                 set_result = setop(set(p.elements()), set(q.elements()))
                 self.assertEqual(counter_result, dict.fromkeys(set_result, 1))
 
-    def test_subset_superset_not_implemented(self):
-        # Verify that multiset comparison operations are not implemented.
-
-        # These operations were intentionally omitted because multiset
-        # comparison semantics conflict with existing dict equality semantics.
-
-        # For multisets, we would expect that if p<=q and p>=q are both true,
-        # then p==q.  However, dict equality semantics require that p!=q when
-        # one of sets contains an element with a zero count and the other
-        # doesn't.
-
-        p = Counter(a=1, b=0)
-        q = Counter(a=1, c=0)
-        self.assertNotEqual(p, q)
-        with self.assertRaises(TypeError):
-            p < q
-        with self.assertRaises(TypeError):
-            p <= q
-        with self.assertRaises(TypeError):
-            p > q
-        with self.assertRaises(TypeError):
-            p >= q
-
     def test_inplace_operations(self):
         elements = 'abcd'
         for i in range(1000):
@@ -2234,64 +2374,38 @@ class TestCounter(unittest.TestCase):
             self.assertEqual(set(cp - cq), sp - sq)
             self.assertEqual(set(cp | cq), sp | sq)
             self.assertEqual(set(cp & cq), sp & sq)
-            self.assertEqual(cp.isequal(cq), sp == sq)
-            self.assertEqual(cp.issubset(cq), sp.issubset(sq))
-            self.assertEqual(cp.issuperset(cq), sp.issuperset(sq))
-            self.assertEqual(cp.isdisjoint(cq), sp.isdisjoint(sq))
+            self.assertEqual(cp == cq, sp == sq)
+            self.assertEqual(cp != cq, sp != sq)
+            self.assertEqual(cp <= cq, sp <= sq)
+            self.assertEqual(cp >= cq, sp >= sq)
+            self.assertEqual(cp < cq, sp < sq)
+            self.assertEqual(cp > cq, sp > sq)
 
-    def test_multiset_equal(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).isequal('ababa'))
-        self.assertFalse(Counter(a=3, b=2).isequal('babab'))
+    def test_eq(self):
+        self.assertEqual(Counter(a=3, b=2, c=0), Counter('ababa'))
+        self.assertNotEqual(Counter(a=3, b=2), Counter('babab'))
 
-    def test_multiset_subset(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).issubset('ababa'))
-        self.assertFalse(Counter(a=3, b=2).issubset('babab'))
+    def test_le(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) <= Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2) <= Counter('babab'))
 
-    def test_multiset_superset(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).issuperset('aab'))
-        self.assertFalse(Counter(a=3, b=2, c=0).issuperset('aabd'))
+    def test_lt(self):
+        self.assertTrue(Counter(a=3, b=1, c=0) < Counter('ababa'))
+        self.assertFalse(Counter(a=3, b=2, c=0) < Counter('ababa'))
 
-    def test_multiset_disjoint(self):
-        self.assertTrue(Counter(a=3, b=2, c=0).isdisjoint('cde'))
-        self.assertFalse(Counter(a=3, b=2, c=0).isdisjoint('bcd'))
+    def test_ge(self):
+        self.assertTrue(Counter(a=2, b=1, c=0) >= Counter('aab'))
+        self.assertFalse(Counter(a=3, b=2, c=0) >= Counter('aabd'))
 
-    def test_multiset_predicates_with_negative_counts(self):
-        # Multiset predicates run on the output of the elements() method,
-        # meaning that zero counts and negative counts are ignored.
-        # The tests below confirm that we get that same results as the
-        # tests above, even after a negative count has been included
-        # in either *self* or *other*.
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal('ababa'))
-        self.assertFalse(Counter(a=3, b=2, d=-1).isequal('babab'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset('ababa'))
-        self.assertFalse(Counter(a=3, b=2, d=-1).issubset('babab'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset('aab'))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset('aabd'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint('cde'))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint('bcd'))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isequal(Counter(a=3, b=2, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, d=-1).isequal(Counter(a=2, b=3, c=-1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issubset(Counter(a=3, b=2, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, d=-1).issubset(Counter(a=2, b=3, c=-1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1)))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).issuperset(Counter(a=2, b=1, c=-1, d=1)))
-        self.assertTrue(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(c=1, d=2, e=3, f=-1)))
-        self.assertFalse(Counter(a=3, b=2, c=0, d=-1).isdisjoint(Counter(b=1, c=1, d=1, e=-1)))
+    def test_gt(self):
+        self.assertTrue(Counter(a=3, b=2, c=0) > Counter('aab'))
+        self.assertFalse(Counter(a=2, b=1, c=0) > Counter('aab'))
 
 
-################################################################################
-### Run tests
-################################################################################
-
-def test_main(verbose=None):
-    NamedTupleDocs = doctest.DocTestSuite(module=collections)
-    test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
-                    TestCollectionABCs, TestCounter, TestChainMap,
-                    TestUserObjects,
-                    ]
-    support.run_unittest(*test_classes)
-    support.run_doctest(collections, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite(collections))
+    return tests
 
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

@@ -19,7 +19,7 @@
 
 This module provides a single class, :class:`RobotFileParser`, which answers
 questions about whether or not a particular user agent can fetch a URL on the
-Web site that published the :file:`robots.txt` file.  For more details on the
+web site that published the :file:`robots.txt` file.  For more details on the
 structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
 
 

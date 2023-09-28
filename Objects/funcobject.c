@@ -2,74 +2,313 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_tupleobject.h"
-#include "code.h"
-#include "structmember.h"         // PyMemberDef
+#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+
+
+static PyObject* func_repr(PyFunctionObject *op);
+
+static const char *
+func_event_name(PyFunction_WatchEvent event) {
+    switch (event) {
+        #define CASE(op)                \
+        case PyFunction_EVENT_##op:         \
+            return "PyFunction_EVENT_" #op;
+        PY_FOREACH_FUNC_EVENT(CASE)
+        #undef CASE
+    }
+    Py_UNREACHABLE();
+}
+
+static void
+notify_func_watchers(PyInterpreterState *interp, PyFunction_WatchEvent event,
+                     PyFunctionObject *func, PyObject *new_value)
+{
+    uint8_t bits = interp->active_func_watchers;
+    int i = 0;
+    while (bits) {
+        assert(i < FUNC_MAX_WATCHERS);
+        if (bits & 1) {
+            PyFunction_WatchCallback cb = interp->func_watchers[i];
+            // callback must be non-null if the watcher bit is set
+            assert(cb != NULL);
+            if (cb(event, func, new_value) < 0) {
+                // Don't risk resurrecting the func if an unraisablehook keeps a
+                // reference; pass a string as context.
+                PyObject *context = NULL;
+                PyObject *repr = func_repr(func);
+                if (repr != NULL) {
+                    context = PyUnicode_FromFormat(
+                        "%s watcher callback for %U",
+                        func_event_name(event), repr);
+                    Py_DECREF(repr);
+                }
+                if (context == NULL) {
+                    context = Py_NewRef(Py_None);
+                }
+                PyErr_WriteUnraisable(context);
+                Py_DECREF(context);
+            }
+        }
+        i++;
+        bits >>= 1;
+    }
+}
+
+static inline void
+handle_func_event(PyFunction_WatchEvent event, PyFunctionObject *func,
+                  PyObject *new_value)
+{
+    assert(Py_REFCNT(func) > 0);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    if (interp->active_func_watchers) {
+        notify_func_watchers(interp, event, func, new_value);
+    }
+}
+
+int
+PyFunction_AddWatcher(PyFunction_WatchCallback callback)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(interp->_initialized);
+    for (int i = 0; i < FUNC_MAX_WATCHERS; i++) {
+        if (interp->func_watchers[i] == NULL) {
+            interp->func_watchers[i] = callback;
+            interp->active_func_watchers |= (1 << i);
+            return i;
+        }
+    }
+    PyErr_SetString(PyExc_RuntimeError, "no more func watcher IDs available");
+    return -1;
+}
+
+int
+PyFunction_ClearWatcher(int watcher_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (watcher_id < 0 || watcher_id >= FUNC_MAX_WATCHERS) {
+        PyErr_Format(PyExc_ValueError, "invalid func watcher ID %d",
+                     watcher_id);
+        return -1;
+    }
+    if (!interp->func_watchers[watcher_id]) {
+        PyErr_Format(PyExc_ValueError, "no func watcher set for ID %d",
+                     watcher_id);
+        return -1;
+    }
+    interp->func_watchers[watcher_id] = NULL;
+    interp->active_func_watchers &= ~(1 << watcher_id);
+    return 0;
+}
+PyFunctionObject *
+_PyFunction_FromConstructor(PyFrameConstructor *constr)
+{
+    PyObject *module = Py_XNewRef(PyDict_GetItemWithError(constr->fc_globals, &_Py_ID(__name__)));
+    if (!module && PyErr_Occurred()) {
+        return NULL;
+    }
+
+    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        Py_XDECREF(module);
+        return NULL;
+    }
+    op->func_globals = Py_NewRef(constr->fc_globals);
+    op->func_builtins = Py_NewRef(constr->fc_builtins);
+    op->func_name = Py_NewRef(constr->fc_name);
+    op->func_qualname = Py_NewRef(constr->fc_qualname);
+    op->func_code = Py_NewRef(constr->fc_code);
+    op->func_defaults = Py_XNewRef(constr->fc_defaults);
+    op->func_kwdefaults = Py_XNewRef(constr->fc_kwdefaults);
+    op->func_closure = Py_XNewRef(constr->fc_closure);
+    op->func_doc = Py_NewRef(Py_None);
+    op->func_dict = NULL;
+    op->func_weakreflist = NULL;
+    op->func_module = module;
+    op->func_annotations = NULL;
+    op->func_typeparams = NULL;
+    op->vectorcall = _PyFunction_Vectorcall;
+    op->func_version = 0;
+    _PyObject_GC_TRACK(op);
+    handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
+    return op;
+}
 
 PyObject *
 PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
 {
-    PyFunctionObject *op;
-    PyObject *doc, *consts, *module;
-    static PyObject *__name__ = NULL;
-
-    if (__name__ == NULL) {
-        __name__ = PyUnicode_InternFromString("__name__");
-        if (__name__ == NULL)
-            return NULL;
-    }
-
-    op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
-    if (op == NULL)
-        return NULL;
-
-    op->func_weakreflist = NULL;
-    Py_INCREF(code);
-    op->func_code = code;
+    assert(globals != NULL);
+    assert(PyDict_Check(globals));
     Py_INCREF(globals);
-    op->func_globals = globals;
-    op->func_name = ((PyCodeObject *)code)->co_name;
-    Py_INCREF(op->func_name);
-    op->func_defaults = NULL; /* No default arguments */
-    op->func_kwdefaults = NULL; /* No keyword only defaults */
-    op->func_closure = NULL;
-    op->vectorcall = _PyFunction_Vectorcall;
 
-    consts = ((PyCodeObject *)code)->co_consts;
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    PyCodeObject *code_obj = (PyCodeObject *)Py_NewRef(code);
+
+    assert(code_obj->co_name != NULL);
+    PyObject *name = Py_NewRef(code_obj->co_name);
+
+    if (!qualname) {
+        qualname = code_obj->co_qualname;
+    }
+    assert(qualname != NULL);
+    Py_INCREF(qualname);
+
+    PyObject *consts = code_obj->co_consts;
+    assert(PyTuple_Check(consts));
+    PyObject *doc;
     if (PyTuple_Size(consts) >= 1) {
         doc = PyTuple_GetItem(consts, 0);
-        if (!PyUnicode_Check(doc))
+        if (!PyUnicode_Check(doc)) {
             doc = Py_None;
+        }
     }
-    else
+    else {
         doc = Py_None;
+    }
     Py_INCREF(doc);
+
+    // __module__: Use globals['__name__'] if it exists, or NULL.
+    PyObject *module = PyDict_GetItemWithError(globals, &_Py_ID(__name__));
+    PyObject *builtins = NULL;
+    if (module == NULL && _PyErr_Occurred(tstate)) {
+        goto error;
+    }
+    Py_XINCREF(module);
+
+    builtins = _PyEval_BuiltinsFromGlobals(tstate, globals); // borrowed ref
+    if (builtins == NULL) {
+        goto error;
+    }
+    Py_INCREF(builtins);
+
+    PyFunctionObject *op = PyObject_GC_New(PyFunctionObject, &PyFunction_Type);
+    if (op == NULL) {
+        goto error;
+    }
+    /* Note: No failures from this point on, since func_dealloc() does not
+       expect a partially-created object. */
+
+    op->func_globals = globals;
+    op->func_builtins = builtins;
+    op->func_name = name;
+    op->func_qualname = qualname;
+    op->func_code = (PyObject*)code_obj;
+    op->func_defaults = NULL;    // No default positional arguments
+    op->func_kwdefaults = NULL;  // No default keyword arguments
+    op->func_closure = NULL;
     op->func_doc = doc;
-
     op->func_dict = NULL;
-    op->func_module = NULL;
+    op->func_weakreflist = NULL;
+    op->func_module = module;
     op->func_annotations = NULL;
-
-    /* __module__: If module name is in globals, use it.
-       Otherwise, use None. */
-    module = PyDict_GetItemWithError(globals, __name__);
-    if (module) {
-        Py_INCREF(module);
-        op->func_module = module;
-    }
-    else if (PyErr_Occurred()) {
-        Py_DECREF(op);
-        return NULL;
-    }
-    if (qualname)
-        op->func_qualname = qualname;
-    else
-        op->func_qualname = op->func_name;
-    Py_INCREF(op->func_qualname);
-
+    op->func_typeparams = NULL;
+    op->vectorcall = _PyFunction_Vectorcall;
+    op->func_version = 0;
     _PyObject_GC_TRACK(op);
+    handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return (PyObject *)op;
+
+error:
+    Py_DECREF(globals);
+    Py_DECREF(code_obj);
+    Py_DECREF(name);
+    Py_DECREF(qualname);
+    Py_DECREF(doc);
+    Py_XDECREF(module);
+    Py_XDECREF(builtins);
+    return NULL;
+}
+
+/*
+Function versions
+-----------------
+
+Function versions are used to detect when a function object has been
+updated, invalidating inline cache data used by the `CALL` bytecode
+(notably `CALL_PY_EXACT_ARGS` and a few other `CALL` specializations).
+
+They are also used by the Tier 2 superblock creation code to find
+the function being called (and from there the code object).
+
+How does a function's `func_version` field get initialized?
+
+- `PyFunction_New` and friends initialize it to 0.
+- The `MAKE_FUNCTION` instruction sets it from the code's `co_version`.
+- It is reset to 0 when various attributes like `__code__` are set.
+- A new version is allocated by `_PyFunction_GetVersionForCurrentState`
+  when the specializer needs a version and the version is 0.
+
+The latter allocates versions using a counter in the interpreter state;
+when the counter wraps around to 0, no more versions are allocated.
+There is one other special case: functions with a non-standard
+`vectorcall` field are not given a version.
+
+When the function version is 0, the `CALL` bytecode is not specialized.
+
+Code object versions
+--------------------
+
+So where to code objects get their `co_version`?
+There is a per-interpreter counter, `next_func_version`.
+This is initialized to 1 when the interpreter is created.
+
+Code objects get a new `co_version` allocated from this counter upon
+creation. Since code objects are nominally immutable, `co_version` can
+not be invalidated. The only way it can be 0 is when 2**32 or more
+code objects have been created during the process's lifetime.
+(The counter isn't reset by `fork()`, extending the lifetime.)
+*/
+
+void
+_PyFunction_SetVersion(PyFunctionObject *func, uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (func->func_version != 0) {
+        PyFunctionObject **slot =
+            interp->func_state.func_version_cache
+            + (func->func_version % FUNC_VERSION_CACHE_SIZE);
+        if (*slot == func) {
+            *slot = NULL;
+        }
+    }
+    func->func_version = version;
+    if (version != 0) {
+        interp->func_state.func_version_cache[
+            version % FUNC_VERSION_CACHE_SIZE] = func;
+    }
+}
+
+PyFunctionObject *
+_PyFunction_LookupByVersion(uint32_t version)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyFunctionObject *func = interp->func_state.func_version_cache[
+        version % FUNC_VERSION_CACHE_SIZE];
+    if (func != NULL && func->func_version == version) {
+        return (PyFunctionObject *)Py_NewRef(func);
+    }
+    return NULL;
+}
+
+uint32_t
+_PyFunction_GetVersionForCurrentState(PyFunctionObject *func)
+{
+    if (func->func_version != 0) {
+        return func->func_version;
+    }
+    if (func->vectorcall != _PyFunction_Vectorcall) {
+        return 0;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (interp->func_state.next_version == 0) {
+        return 0;
+    }
+    uint32_t v = interp->func_state.next_version++;
+    _PyFunction_SetVersion(func, v);
+    return v;
 }
 
 PyObject *
@@ -134,8 +373,19 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS,
+                      (PyFunctionObject *) op, defaults);
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
+}
+
+void
+PyFunction_SetVectorcall(PyFunctionObject *func, vectorcallfunc vectorcall)
+{
+    assert(func != NULL);
+    _PyFunction_SetVersion(func, 0);
+    func->vectorcall = vectorcall;
 }
 
 PyObject *
@@ -165,6 +415,9 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS,
+                      (PyFunctionObject *) op, defaults);
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
@@ -197,8 +450,39 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      Py_TYPE(closure)->tp_name);
         return -1;
     }
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
+}
+
+static PyObject *
+func_get_annotation_dict(PyFunctionObject *op)
+{
+    if (op->func_annotations == NULL) {
+        return NULL;
+    }
+    if (PyTuple_CheckExact(op->func_annotations)) {
+        PyObject *ann_tuple = op->func_annotations;
+        PyObject *ann_dict = PyDict_New();
+        if (ann_dict == NULL) {
+            return NULL;
+        }
+
+        assert(PyTuple_GET_SIZE(ann_tuple) % 2 == 0);
+
+        for (Py_ssize_t i = 0; i < PyTuple_GET_SIZE(ann_tuple); i += 2) {
+            int err = PyDict_SetItem(ann_dict,
+                                     PyTuple_GET_ITEM(ann_tuple, i),
+                                     PyTuple_GET_ITEM(ann_tuple, i + 1));
+
+            if (err < 0) {
+                return NULL;
+            }
+        }
+        Py_SETREF(op->func_annotations, ann_dict);
+    }
+    assert(PyDict_Check(op->func_annotations));
+    return op->func_annotations;
 }
 
 PyObject *
@@ -208,7 +492,7 @@ PyFunction_GetAnnotations(PyObject *op)
         PyErr_BadInternalCall();
         return NULL;
     }
-    return ((PyFunctionObject *) op) -> func_annotations;
+    return func_get_annotation_dict((PyFunctionObject *)op);
 }
 
 int
@@ -228,6 +512,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
+    _PyFunction_SetVersion((PyFunctionObject *)op, 0);
     Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
@@ -237,10 +522,11 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
 #define OFF(x) offsetof(PyFunctionObject, x)
 
 static PyMemberDef func_memberlist[] = {
-    {"__closure__",   T_OBJECT,     OFF(func_closure), READONLY},
-    {"__doc__",       T_OBJECT,     OFF(func_doc), 0},
-    {"__globals__",   T_OBJECT,     OFF(func_globals), READONLY},
-    {"__module__",    T_OBJECT,     OFF(func_module), 0},
+    {"__closure__",   _Py_T_OBJECT,     OFF(func_closure), Py_READONLY},
+    {"__doc__",       _Py_T_OBJECT,     OFF(func_doc), 0},
+    {"__globals__",   _Py_T_OBJECT,     OFF(func_globals), Py_READONLY},
+    {"__module__",    _Py_T_OBJECT,     OFF(func_module), 0},
+    {"__builtins__",  _Py_T_OBJECT,     OFF(func_builtins), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -251,14 +537,14 @@ func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
         return NULL;
     }
 
-    Py_INCREF(op->func_code);
-    return op->func_code;
+    return Py_NewRef(op->func_code);
 }
 
 static int
 func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 {
-    Py_ssize_t nfree, nclosure;
+    Py_ssize_t nclosure;
+    int nfree;
 
     /* Not legal to del f.func_code or to set it to anything
      * other than a code object. */
@@ -273,7 +559,7 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
 
-    nfree = PyCode_GetNumFree((PyCodeObject *)value);
+    nfree = ((PyCodeObject *)value)->co_nfreevars;
     nclosure = (op->func_closure == NULL ? 0 :
             PyTuple_GET_SIZE(op->func_closure));
     if (nclosure != nfree) {
@@ -284,16 +570,16 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                      nclosure, nfree);
         return -1;
     }
-    Py_INCREF(value);
-    Py_XSETREF(op->func_code, value);
+    handle_func_event(PyFunction_EVENT_MODIFY_CODE, op, value);
+    _PyFunction_SetVersion(op, 0);
+    Py_XSETREF(op->func_code, Py_NewRef(value));
     return 0;
 }
 
 static PyObject *
 func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    Py_INCREF(op->func_name);
-    return op->func_name;
+    return Py_NewRef(op->func_name);
 }
 
 static int
@@ -306,16 +592,14 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
                         "__name__ must be set to a string object");
         return -1;
     }
-    Py_INCREF(value);
-    Py_XSETREF(op->func_name, value);
+    Py_XSETREF(op->func_name, Py_NewRef(value));
     return 0;
 }
 
 static PyObject *
 func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
-    Py_INCREF(op->func_qualname);
-    return op->func_qualname;
+    return Py_NewRef(op->func_qualname);
 }
 
 static int
@@ -328,8 +612,7 @@ func_set_qualname(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    Py_INCREF(value);
-    Py_XSETREF(op->func_qualname, value);
+    Py_XSETREF(op->func_qualname, Py_NewRef(value));
     return 0;
 }
 
@@ -342,8 +625,7 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     if (op->func_defaults == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(op->func_defaults);
-    return op->func_defaults;
+    return Py_NewRef(op->func_defaults);
 }
 
 static int
@@ -368,8 +650,9 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
         return -1;
     }
 
-    Py_XINCREF(value);
-    Py_XSETREF(op->func_defaults, value);
+    handle_func_event(PyFunction_EVENT_MODIFY_DEFAULTS, op, value);
+    _PyFunction_SetVersion(op, 0);
+    Py_XSETREF(op->func_defaults, Py_XNewRef(value));
     return 0;
 }
 
@@ -383,8 +666,7 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
     if (op->func_kwdefaults == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(op->func_kwdefaults);
-    return op->func_kwdefaults;
+    return Py_NewRef(op->func_kwdefaults);
 }
 
 static int
@@ -409,8 +691,9 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
         return -1;
     }
 
-    Py_XINCREF(value);
-    Py_XSETREF(op->func_kwdefaults, value);
+    handle_func_event(PyFunction_EVENT_MODIFY_KWDEFAULTS, op, value);
+    _PyFunction_SetVersion(op, 0);
+    Py_XSETREF(op->func_kwdefaults, Py_XNewRef(value));
     return 0;
 }
 
@@ -422,8 +705,8 @@ func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
         if (op->func_annotations == NULL)
             return NULL;
     }
-    Py_INCREF(op->func_annotations);
-    return op->func_annotations;
+    PyObject *d = func_get_annotation_dict(op);
+    return Py_XNewRef(d);
 }
 
 static int
@@ -439,9 +722,45 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XINCREF(value);
-    Py_XSETREF(op->func_annotations, value);
+    _PyFunction_SetVersion(op, 0);
+    Py_XSETREF(op->func_annotations, Py_XNewRef(value));
     return 0;
+}
+
+static PyObject *
+func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
+{
+    if (op->func_typeparams == NULL) {
+        return PyTuple_New(0);
+    }
+
+    assert(PyTuple_Check(op->func_typeparams));
+    return Py_NewRef(op->func_typeparams);
+}
+
+static int
+func_set_type_params(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    /* Not legal to del f.__type_params__ or to set it to anything
+     * other than a tuple object. */
+    if (value == NULL || !PyTuple_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__type_params__ must be set to a tuple");
+        return -1;
+    }
+    Py_XSETREF(op->func_typeparams, Py_NewRef(value));
+    return 0;
+}
+
+PyObject *
+_Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
+                             PyObject *type_params)
+{
+    assert(PyFunction_Check(func));
+    assert(PyTuple_Check(type_params));
+    PyFunctionObject *f = (PyFunctionObject *)func;
+    Py_XSETREF(f->func_typeparams, Py_NewRef(type_params));
+    return Py_NewRef(func);
 }
 
 static PyGetSetDef func_getsetlist[] = {
@@ -455,6 +774,8 @@ static PyGetSetDef func_getsetlist[] = {
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", (getter)func_get_name, (setter)func_set_name},
     {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
+    {"__type_params__", (getter)func_get_type_params,
+     (setter)func_set_type_params},
     {NULL} /* Sentinel */
 };
 
@@ -498,7 +819,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 /*[clinic end generated code: output=99c6d9da3a24e3be input=93611752fc2daf11]*/
 {
     PyFunctionObject *newfunc;
-    Py_ssize_t nfree, nclosure;
+    Py_ssize_t nclosure;
 
     if (name != Py_None && !PyUnicode_Check(name)) {
         PyErr_SetString(PyExc_TypeError,
@@ -510,9 +831,8 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
                         "arg 4 (defaults) must be None or tuple");
         return NULL;
     }
-    nfree = PyTuple_GET_SIZE(code->co_freevars);
     if (!PyTuple_Check(closure)) {
-        if (nfree && closure == Py_None) {
+        if (code->co_nfreevars && closure == Py_None) {
             PyErr_SetString(PyExc_TypeError,
                             "arg 5 (closure) must be tuple");
             return NULL;
@@ -526,10 +846,10 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     /* check that the closure is well-formed */
     nclosure = closure == Py_None ? 0 : PyTuple_GET_SIZE(closure);
-    if (nfree != nclosure)
+    if (code->co_nfreevars != nclosure)
         return PyErr_Format(PyExc_ValueError,
                             "%U requires closure of length %zd, not %zd",
-                            code->co_name, nfree, nclosure);
+                            code->co_name, code->co_nfreevars, nclosure);
     if (nclosure) {
         Py_ssize_t i;
         for (i = 0; i < nclosure; i++) {
@@ -547,20 +867,17 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 
     newfunc = (PyFunctionObject *)PyFunction_New((PyObject *)code,
                                                  globals);
-    if (newfunc == NULL)
+    if (newfunc == NULL) {
         return NULL;
-
+    }
     if (name != Py_None) {
-        Py_INCREF(name);
-        Py_SETREF(newfunc->func_name, name);
+        Py_SETREF(newfunc->func_name, Py_NewRef(name));
     }
     if (defaults != Py_None) {
-        Py_INCREF(defaults);
-        newfunc->func_defaults  = defaults;
+        newfunc->func_defaults = Py_NewRef(defaults);
     }
     if (closure != Py_None) {
-        Py_INCREF(closure);
-        newfunc->func_closure = closure;
+        newfunc->func_closure = Py_NewRef(closure);
     }
 
     return (PyObject *)newfunc;
@@ -569,28 +886,48 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
 static int
 func_clear(PyFunctionObject *op)
 {
-    Py_CLEAR(op->func_code);
+    _PyFunction_SetVersion(op, 0);
     Py_CLEAR(op->func_globals);
+    Py_CLEAR(op->func_builtins);
     Py_CLEAR(op->func_module);
-    Py_CLEAR(op->func_name);
     Py_CLEAR(op->func_defaults);
     Py_CLEAR(op->func_kwdefaults);
     Py_CLEAR(op->func_doc);
     Py_CLEAR(op->func_dict);
     Py_CLEAR(op->func_closure);
     Py_CLEAR(op->func_annotations);
-    Py_CLEAR(op->func_qualname);
+    Py_CLEAR(op->func_typeparams);
+    // Don't Py_CLEAR(op->func_code), since code is always required
+    // to be non-NULL. Similarly, name and qualname shouldn't be NULL.
+    // However, name and qualname could be str subclasses, so they
+    // could have reference cycles. The solution is to replace them
+    // with a genuinely immutable string.
+    Py_SETREF(op->func_name, &_Py_STR(empty));
+    Py_SETREF(op->func_qualname, &_Py_STR(empty));
     return 0;
 }
 
 static void
 func_dealloc(PyFunctionObject *op)
 {
+    assert(Py_REFCNT(op) == 0);
+    Py_SET_REFCNT(op, 1);
+    handle_func_event(PyFunction_EVENT_DESTROY, op, NULL);
+    if (Py_REFCNT(op) > 1) {
+        Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
+        return;
+    }
+    Py_SET_REFCNT(op, 0);
     _PyObject_GC_UNTRACK(op);
     if (op->func_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject *) op);
     }
+    _PyFunction_SetVersion(op, 0);
     (void)func_clear(op);
+    // These aren't cleared by func_clear().
+    Py_DECREF(op->func_code);
+    Py_DECREF(op->func_name);
+    Py_DECREF(op->func_qualname);
     PyObject_GC_Del(op);
 }
 
@@ -598,7 +935,7 @@ static PyObject*
 func_repr(PyFunctionObject *op)
 {
     return PyUnicode_FromFormat("<function %U at %p>",
-                               op->func_qualname, op);
+                                op->func_qualname, op);
 }
 
 static int
@@ -606,6 +943,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 {
     Py_VISIT(f->func_code);
     Py_VISIT(f->func_globals);
+    Py_VISIT(f->func_builtins);
     Py_VISIT(f->func_module);
     Py_VISIT(f->func_defaults);
     Py_VISIT(f->func_kwdefaults);
@@ -614,6 +952,7 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
     Py_VISIT(f->func_dict);
     Py_VISIT(f->func_closure);
     Py_VISIT(f->func_annotations);
+    Py_VISIT(f->func_typeparams);
     Py_VISIT(f->func_qualname);
     return 0;
 }
@@ -623,8 +962,7 @@ static PyObject *
 func_descr_get(PyObject *func, PyObject *obj, PyObject *type)
 {
     if (obj == Py_None || obj == NULL) {
-        Py_INCREF(func);
-        return func;
+        return Py_NewRef(func);
     }
     return PyMethod_New(func, obj);
 }
@@ -673,6 +1011,40 @@ PyTypeObject PyFunction_Type = {
 };
 
 
+static int
+functools_copy_attr(PyObject *wrapper, PyObject *wrapped, PyObject *name)
+{
+    PyObject *value;
+    int res = PyObject_GetOptionalAttr(wrapped, name, &value);
+    if (value != NULL) {
+        res = PyObject_SetAttr(wrapper, name, value);
+        Py_DECREF(value);
+    }
+    return res;
+}
+
+// Similar to functools.wraps(wrapper, wrapped)
+static int
+functools_wraps(PyObject *wrapper, PyObject *wrapped)
+{
+#define COPY_ATTR(ATTR) \
+    do { \
+        if (functools_copy_attr(wrapper, wrapped, &_Py_ID(ATTR)) < 0) { \
+            return -1; \
+        } \
+    } while (0) \
+
+    COPY_ATTR(__module__);
+    COPY_ATTR(__name__);
+    COPY_ATTR(__qualname__);
+    COPY_ATTR(__doc__);
+    COPY_ATTR(__annotations__);
+    return 0;
+
+#undef COPY_ATTR
+}
+
+
 /* Class method object */
 
 /* A class method receives the class as implicit first argument,
@@ -681,7 +1053,7 @@ PyTypeObject PyFunction_Type = {
 
      class C:
          @classmethod
-         def f(cls, arg1, arg2, ...):
+         def f(cls, arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -739,7 +1111,7 @@ cm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         type = (PyObject *)(Py_TYPE(obj));
     if (Py_TYPE(cm->cm_callable)->tp_descr_get != NULL) {
         return Py_TYPE(cm->cm_callable)->tp_descr_get(cm->cm_callable, type,
-                                                      NULL);
+                                                      type);
     }
     return PyMethod_New(cm->cm_callable, type);
 }
@@ -754,13 +1126,17 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
         return -1;
-    Py_INCREF(callable);
-    Py_XSETREF(cm->cm_callable, callable);
+    Py_XSETREF(cm->cm_callable, Py_NewRef(callable));
+
+    if (functools_wraps((PyObject *)cm, cm->cm_callable) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 static PyMemberDef cm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(classmethod, cm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(classmethod, cm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -779,12 +1155,16 @@ cm_get___isabstractmethod__(classmethod *cm, void *closure)
 
 static PyGetSetDef cm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)cm_get___isabstractmethod__, NULL,
-     NULL,
-     NULL},
+     (getter)cm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
+
+static PyObject*
+cm_repr(classmethod *cm)
+{
+    return PyUnicode_FromFormat("<classmethod(%R)>", cm->cm_callable);
+}
 
 PyDoc_STRVAR(classmethod_doc,
 "classmethod(function) -> method\n\
@@ -797,7 +1177,7 @@ To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
       @classmethod\n\
-      def f(cls, arg1, arg2, ...):\n\
+      def f(cls, arg1, arg2, argN):\n\
           ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
@@ -818,7 +1198,7 @@ PyTypeObject PyClassMethod_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)cm_repr,                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -856,8 +1236,7 @@ PyClassMethod_New(PyObject *callable)
     classmethod *cm = (classmethod *)
         PyType_GenericAlloc(&PyClassMethod_Type, 0);
     if (cm != NULL) {
-        Py_INCREF(callable);
-        cm->cm_callable = callable;
+        cm->cm_callable = Py_NewRef(callable);
     }
     return (PyObject *)cm;
 }
@@ -870,7 +1249,7 @@ PyClassMethod_New(PyObject *callable)
 
      class C:
          @staticmethod
-         def f(arg1, arg2, ...):
+         def f(arg1, arg2, argN):
              ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
@@ -922,8 +1301,7 @@ sm_descr_get(PyObject *self, PyObject *obj, PyObject *type)
                         "uninitialized staticmethod object");
         return NULL;
     }
-    Py_INCREF(sm->sm_callable);
-    return sm->sm_callable;
+    return Py_NewRef(sm->sm_callable);
 }
 
 static int
@@ -936,13 +1314,24 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
     if (!PyArg_UnpackTuple(args, "staticmethod", 1, 1, &callable))
         return -1;
-    Py_INCREF(callable);
-    Py_XSETREF(sm->sm_callable, callable);
+    Py_XSETREF(sm->sm_callable, Py_NewRef(callable));
+
+    if (functools_wraps((PyObject *)sm, sm->sm_callable) < 0) {
+        return -1;
+    }
     return 0;
 }
 
+static PyObject*
+sm_call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    staticmethod *sm = (staticmethod *)callable;
+    return PyObject_Call(sm->sm_callable, args, kwargs);
+}
+
 static PyMemberDef sm_memberlist[] = {
-    {"__func__", T_OBJECT, offsetof(staticmethod, sm_callable), READONLY},
+    {"__func__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
+    {"__wrapped__", _Py_T_OBJECT, offsetof(staticmethod, sm_callable), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -961,12 +1350,16 @@ sm_get___isabstractmethod__(staticmethod *sm, void *closure)
 
 static PyGetSetDef sm_getsetlist[] = {
     {"__isabstractmethod__",
-     (getter)sm_get___isabstractmethod__, NULL,
-     NULL,
-     NULL},
+     (getter)sm_get___isabstractmethod__, NULL, NULL, NULL},
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict, NULL, NULL},
     {NULL} /* Sentinel */
 };
+
+static PyObject*
+sm_repr(staticmethod *sm)
+{
+    return PyUnicode_FromFormat("<staticmethod(%R)>", sm->sm_callable);
+}
 
 PyDoc_STRVAR(staticmethod_doc,
 "staticmethod(function) -> method\n\
@@ -978,7 +1371,7 @@ To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
          @staticmethod\n\
-         def f(arg1, arg2, ...):\n\
+         def f(arg1, arg2, argN):\n\
              ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
@@ -998,12 +1391,12 @@ PyTypeObject PyStaticMethod_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)sm_repr,                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     0,                                          /* tp_hash */
-    0,                                          /* tp_call */
+    sm_call,                                    /* tp_call */
     0,                                          /* tp_str */
     0,                                          /* tp_getattro */
     0,                                          /* tp_setattro */
@@ -1036,8 +1429,7 @@ PyStaticMethod_New(PyObject *callable)
     staticmethod *sm = (staticmethod *)
         PyType_GenericAlloc(&PyStaticMethod_Type, 0);
     if (sm != NULL) {
-        Py_INCREF(callable);
-        sm->sm_callable = callable;
+        sm->sm_callable = Py_NewRef(callable);
     }
     return (PyObject *)sm;
 }

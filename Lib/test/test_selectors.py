@@ -6,6 +6,7 @@ import signal
 import socket
 import sys
 from test import support
+from test.support import os_helper
 from test.support import socket_helper
 from time import sleep
 import unittest
@@ -16,6 +17,10 @@ try:
     import resource
 except ImportError:
     resource = None
+
+
+if support.is_emscripten or support.is_wasi:
+    raise unittest.SkipTest("Cannot create socketpair on Emscripten/WASI.")
 
 
 if hasattr(socket, 'socketpair'):
@@ -48,7 +53,7 @@ def find_ready_matching(ready, flag):
     return match
 
 
-class BaseSelectorTestCase(unittest.TestCase):
+class BaseSelectorTestCase:
 
     def make_socketpair(self):
         rd, wr = socketpair()
@@ -218,6 +223,8 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.assertRaises(RuntimeError, s.get_key, wr)
         self.assertRaises(KeyError, mapping.__getitem__, rd)
         self.assertRaises(KeyError, mapping.__getitem__, wr)
+        self.assertEqual(mapping.get(rd), None)
+        self.assertEqual(mapping.get(wr), None)
 
     def test_get_key(self):
         s = self.SELECTOR()
@@ -236,13 +243,17 @@ class BaseSelectorTestCase(unittest.TestCase):
         self.addCleanup(s.close)
 
         rd, wr = self.make_socketpair()
+        sentinel = object()
 
         keys = s.get_map()
         self.assertFalse(keys)
         self.assertEqual(len(keys), 0)
         self.assertEqual(list(keys), [])
+        self.assertEqual(keys.get(rd), None)
+        self.assertEqual(keys.get(rd, sentinel), sentinel)
         key = s.register(rd, selectors.EVENT_READ, "data")
         self.assertIn(rd, keys)
+        self.assertEqual(key, keys.get(rd))
         self.assertEqual(key, keys[rd])
         self.assertEqual(len(keys), 1)
         self.assertEqual(list(keys), [rd.fileno()])
@@ -444,6 +455,7 @@ class ScalableSelectorMixIn:
     # see issue #18963 for why it's skipped on older OS X versions
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(resource, "Test needs resource module")
+    @support.requires_resource('cpu')
     def test_above_fd_setsize(self):
         # A scalable implementation should have no problem with more than
         # FD_SETSIZE file descriptors. Since we don't know the value, we just
@@ -492,26 +504,28 @@ class ScalableSelectorMixIn:
         self.assertEqual(NUM_FDS // 2, len(fds))
 
 
-class DefaultSelectorTestCase(BaseSelectorTestCase):
+class DefaultSelectorTestCase(BaseSelectorTestCase, unittest.TestCase):
 
     SELECTOR = selectors.DefaultSelector
 
 
-class SelectSelectorTestCase(BaseSelectorTestCase):
+class SelectSelectorTestCase(BaseSelectorTestCase, unittest.TestCase):
 
     SELECTOR = selectors.SelectSelector
 
 
 @unittest.skipUnless(hasattr(selectors, 'PollSelector'),
                      "Test needs selectors.PollSelector")
-class PollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
+class PollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
+                           unittest.TestCase):
 
     SELECTOR = getattr(selectors, 'PollSelector', None)
 
 
 @unittest.skipUnless(hasattr(selectors, 'EpollSelector'),
                      "Test needs selectors.EpollSelector")
-class EpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
+class EpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
+                            unittest.TestCase):
 
     SELECTOR = getattr(selectors, 'EpollSelector', None)
 
@@ -528,7 +542,8 @@ class EpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
 
 @unittest.skipUnless(hasattr(selectors, 'KqueueSelector'),
                      "Test needs selectors.KqueueSelector)")
-class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
+class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
+                             unittest.TestCase):
 
     SELECTOR = getattr(selectors, 'KqueueSelector', None)
 
@@ -536,7 +551,7 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
         # a file descriptor that's been closed should raise an OSError
         # with EBADF
         s = self.SELECTOR()
-        bad_f = support.make_bad_fd()
+        bad_f = os_helper.make_bad_fd()
         with self.assertRaises(OSError) as cm:
             s.register(bad_f, selectors.EVENT_READ)
         self.assertEqual(cm.exception.errno, errno.EBADF)
@@ -560,19 +575,15 @@ class KqueueSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
 
 @unittest.skipUnless(hasattr(selectors, 'DevpollSelector'),
                      "Test needs selectors.DevpollSelector")
-class DevpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn):
+class DevpollSelectorTestCase(BaseSelectorTestCase, ScalableSelectorMixIn,
+                              unittest.TestCase):
 
     SELECTOR = getattr(selectors, 'DevpollSelector', None)
 
 
-
-def test_main():
-    tests = [DefaultSelectorTestCase, SelectSelectorTestCase,
-             PollSelectorTestCase, EpollSelectorTestCase,
-             KqueueSelectorTestCase, DevpollSelectorTestCase]
-    support.run_unittest(*tests)
+def tearDownModule():
     support.reap_children()
 
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

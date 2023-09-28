@@ -30,7 +30,7 @@ PyDoc_STRVAR(_random_Random_seed__doc__,
 "of the current time and the process identifier.");
 
 #define _RANDOM_RANDOM_SEED_METHODDEF    \
-    {"seed", (PyCFunction)(void(*)(void))_random_Random_seed, METH_FASTCALL, _random_Random_seed__doc__},
+    {"seed", _PyCFunction_CAST(_random_Random_seed), METH_FASTCALL, _random_Random_seed__doc__},
 
 static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n);
@@ -100,7 +100,7 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int k;
 
-    k = _PyLong_AsInt(arg);
+    k = PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -109,4 +109,4 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc8a23b2757dc6ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e7e05d756a7e1c7 input=a9049054013a1b77]*/
