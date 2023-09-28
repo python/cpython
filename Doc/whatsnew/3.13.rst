@@ -151,7 +151,7 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
-* Add :meth:`~io.BytesIO.peek`. (Contributed by Marcel Martin in :gh:`90533`.)
+* Add :meth:`io.BytesIO.peek`. (Contributed by Marcel Martin in :gh:`90533`.)
 
 opcode
 ------
