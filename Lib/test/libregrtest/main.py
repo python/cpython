@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import shlex
 import sys
 import time
 
@@ -20,7 +21,8 @@ from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir)
+    display_header, cleanup_temp_dir, print_warning,
+    MS_WINDOWS)
 
 
 class Regrtest:
@@ -46,7 +48,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace):
+    def __init__(self, ns: Namespace, _add_python_opts: bool = False):
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
@@ -68,6 +70,11 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+
+        ci_mode = (ns.fast_ci or ns.slow_ci)
+        self.want_add_python_opts: bool = (_add_python_opts
+                                           and ns._add_python_opts
+                                           and ci_mode)
 
         # Select tests
         if ns.match_tests:
@@ -424,7 +431,7 @@ class Regrtest:
         if (self.want_header
             or not(self.pgo or self.quiet or self.single_test_run
                    or tests or self.cmdline_args)):
-            display_header()
+            display_header(self.use_resources)
 
         if self.randomize:
             print("Using random seed", self.random_seed)
@@ -435,7 +442,15 @@ class Regrtest:
 
         setup_process()
 
-        self.logger.start_load_tracker()
+        if self.hunt_refleak and not self.num_workers:
+            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+            use_load_tracker = False
+        else:
+            # WindowsLoadTracker is only needed on Windows
+            use_load_tracker = MS_WINDOWS
+
+        if use_load_tracker:
+            self.logger.start_load_tracker()
         try:
             if self.num_workers:
                 self._run_tests_mp(runtests, self.num_workers)
@@ -448,7 +463,8 @@ class Regrtest:
             if self.want_rerun and self.results.need_rerun():
                 self.rerun_failed_tests(runtests)
         finally:
-            self.logger.stop_load_tracker()
+            if use_load_tracker:
+                self.logger.stop_load_tracker()
 
         self.display_summary()
         self.finalize_tests(tracer)
@@ -473,13 +489,70 @@ class Regrtest:
                 # processes.
                 return self._run_tests(selected, tests)
 
-    def main(self, tests: TestList | None = None):
+    def _add_python_opts(self):
+        python_opts = []
+
+        # Unbuffered stdout and stderr
+        if not sys.stdout.write_through:
+            python_opts.append('-u')
+
+        # Add warnings filter 'default'
+        if 'default' not in sys.warnoptions:
+            python_opts.extend(('-W', 'default'))
+
+        # Error on bytes/str comparison
+        if sys.flags.bytes_warning < 2:
+            python_opts.append('-bb')
+
+        # WASM/WASI buildbot builders pass multiple PYTHON environment
+        # variables such as PYTHONPATH and _PYTHON_HOSTRUNNER.
+        if not self.python_cmd:
+            # Ignore PYTHON* environment variables
+            if not sys.flags.ignore_environment:
+                python_opts.append('-E')
+
+        if not python_opts:
+            return
+
+        cmd = [*sys.orig_argv, "--dont-add-python-opts"]
+        cmd[1:1] = python_opts
+
+        # Make sure that messages before execv() are logged
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        cmd_text = shlex.join(cmd)
+        try:
+            if hasattr(os, 'execv') and not MS_WINDOWS:
+                os.execv(cmd[0], cmd)
+                # execv() do no return and so we don't get to this line on success
+            else:
+                import subprocess
+                proc = subprocess.run(cmd)
+                sys.exit(proc.returncode)
+        except Exception as exc:
+            print_warning(f"Failed to change Python options: {exc!r}\n"
+                          f"Command: {cmd_text}")
+            # continue executing main()
+
+    def _init(self):
+        # Set sys.stdout encoder error handler to backslashreplace,
+        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+        # when printing a traceback or any other non-encodable character.
+        sys.stdout.reconfigure(errors="backslashreplace")
+
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
 
         strip_py_suffix(self.cmdline_args)
 
         self.tmp_dir = get_temp_dir(self.tmp_dir)
+
+    def main(self, tests: TestList | None = None):
+        if self.want_add_python_opts:
+            self._add_python_opts()
+
+        self._init()
 
         if self.want_cleanup:
             cleanup_temp_dir(self.tmp_dir)
@@ -505,7 +578,7 @@ class Regrtest:
         sys.exit(exitcode)
 
 
-def main(tests=None, **kwargs):
+def main(tests=None, _add_python_opts=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns).main(tests=tests)
+    Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)
