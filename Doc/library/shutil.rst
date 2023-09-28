@@ -476,6 +476,12 @@ Directory and files operations
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
 
+   .. versionchanged:: 3.12.1
+      On Windows, if *mode* includes ``os.X_OK``, only executables with an
+      extension in ``PATHEXT`` will be returned. Therefore extension-less
+      files cannot be returned by :func:`shutil.which` by default on Windows.
+      This brings behavior closer to that of Python 3.11.
+
 .. exception:: Error
 
    This exception collects exceptions that are raised during a multi-file
