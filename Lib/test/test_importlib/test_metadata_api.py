@@ -5,6 +5,7 @@ import warnings
 import importlib
 import contextlib
 
+from itertools import zip_longest
 from unittest.mock import patch
 from test.support.hypothesis_helper import hypothesis
 
@@ -338,6 +339,19 @@ class MetadataAPITests(unittest.TestCase):
         mock_rt.assert_called()
         return md
 
+    @staticmethod
+    def diff(*iters, fillvalue=None):
+        return {
+            i: tup
+            for i, tup in enumerate(zip_longest(*iters, fillvalue=fillvalue))
+            if len(set(tup)) != 1
+        }
+
+    @staticmethod
+    def diff_fmt(diff, indent=4):
+        indent = max((len(str(i)) for i in diff), default=0) + indent
+        return "\n".join(f"{i:{indent}}: {tup!r}" for i, tup in diff.items())
+
     @hypothesis.given(identity.identities_strategy())
     @hypothesis.example(
         (
@@ -346,14 +360,14 @@ class MetadataAPITests(unittest.TestCase):
             Author-email: Pradyun Gedam <pradyun@example.com>, Tzu-Ping Chung <tzu-ping@example.com>, different.person@example.com
             Maintainer-email: Brett Cannon <brett@python.org>
             """,  # noqa: E501
-            {
+            [
                 ("Another person", None),
                 ("Yet Another name", None),
                 ("Pradyun Gedam", "pradyun@example.com"),
                 ("Tzu-Ping Chung", "tzu-ping@example.com"),
                 (None, "different.person@example.com"),
-            },
-            {("Brett Cannon", "brett@python.org")},
+            ],
+            [("Brett Cannon", "brett@python.org")],
         )
     )
     def test_structured_identity(self, arg):
@@ -363,20 +377,14 @@ class MetadataAPITests(unittest.TestCase):
         """
         metadata_text, expected_authors, expected_maintainers = arg
         md = self.metadata_from_text(metadata_text)
-        authors = set(map(tuple, md.authors))
-        maintainers = set(map(tuple, md.maintainers))
+        authors = list(map(tuple, md.authors))
+        maintainers = list(map(tuple, md.maintainers))
 
-        authors_exp_act = expected_authors - authors
-        authors_act_exp = authors - expected_authors
-        maintainers_exp_act = expected_maintainers - maintainers
-        maintainers_act_exp = maintainers - expected_maintainers
+        authors_diff = self.diff(authors, expected_authors)
+        maintainers_diff = self.diff(maintainers, expected_maintainers)
 
-        hypothesis.note(f"Authors, expected - actual: {authors_exp_act!r}")
-        hypothesis.note(f"Authors, actual - expected: {authors_act_exp!r}")
-        hypothesis.note(f"Maintainers, expected - actual: {maintainers_exp_act!r}")
-        hypothesis.note(f"Maintainers, actual - expected: {maintainers_act_exp!r}")
+        hypothesis.note(f"Authors diff: {self.diff_fmt(authors_diff)}")
+        hypothesis.note(f"Maintainers diff: {self.diff_fmt(maintainers_diff)}")
 
-        assert not authors_exp_act
-        assert not authors_act_exp
-        assert not maintainers_exp_act
-        assert not maintainers_act_exp
+        assert authors == expected_authors
+        assert maintainers == expected_maintainers

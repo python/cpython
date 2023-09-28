@@ -46,13 +46,13 @@ class PackageMetadata(Protocol):
         """
 
     @property
-    def authors(self) -> set[Ident]:
+    def authors(self) -> list[Ident]:
         """
         Minimal parsing for "Author" and "Author-email" fields.
         """
 
     @property
-    def maintainers(self) -> set[Ident]:
+    def maintainers(self) -> list[Ident]:
         """
         Minimal parsing for "Maintainer" and "Maintainer-email" fields.
         """

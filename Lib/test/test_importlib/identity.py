@@ -9,10 +9,45 @@ import types
 import typing
 import itertools
 import dataclasses
+import collections.abc
 
 from test.support.hypothesis_helper import hypothesis
 
 st = hypothesis.strategies
+
+
+class OrderedSet(collections.abc.MutableSet):
+    """
+    Represent an ordered set using a dictionary attribute ``data``.
+    """
+
+    def __init__(self, values=[]):
+        self.data = {value: None for value in values}
+
+    def __contains__(self, value):
+        return value in self.data
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __len__(self):
+        return len(self.data)
+
+    def add(self, value):
+        self.data[value] = None
+
+    def discard(self, value):
+        del self.data[value]
+
+    def __repr__(self):
+        data = ", ".join(repr(value) for value in self)
+        return f"{type(self).__name__}([{data}])"
+
+    def __eq__(self, other):
+        try:
+            return tuple(self) == tuple(other)
+        except TypeError:
+            return NotImplemented
 
 
 @dataclasses.dataclass
@@ -238,8 +273,8 @@ def identities_strategy(draw, simple_chars=True, debug_entries=False):
     identity information, empty identities, and so forth.
     """
     text = ""
-    authors = set()
-    maintainers = set()
+    authors = OrderedSet()
+    maintainers = OrderedSet()
     entry_dict = dict()
     state = types.SimpleNamespace(simple_chars=simple_chars)
 
@@ -282,7 +317,7 @@ def process(entries):
     visualization.
     """
     text = ""
-    data = set()
+    data = OrderedSet()
 
     for entry in entries:
         entry_text = entry.as_text

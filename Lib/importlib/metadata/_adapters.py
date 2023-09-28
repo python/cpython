@@ -209,6 +209,26 @@ def _name_email_split(string):
     return _name_email.match(string).groups()[::4]
 
 
+def _uniq(values):
+    """
+    Return a list omitting duplicate values.
+
+    >>> _uniq([1, 2, 1, 2, 3, 1, 4])
+    [1, 2, 3, 4]
+
+    >>> _uniq(())
+    []
+    """
+    unique = set()
+    result = []
+    for value in values:
+        if value in unique:
+            continue
+        unique.add(value)
+        result.append(value)
+    return result
+
+
 @dataclasses.dataclass(eq=True, frozen=True)
 class Ident:
     """
@@ -297,15 +317,15 @@ class Message(email.message.Message):
 
     def _parse_idents(self, string):
         entries = (_name_email_split(entry) for entry in _entries_findall(string))
-        return {Ident(*entry) for entry in entries if entry != (None, None)}
+        return _uniq(Ident(*entry) for entry in entries if entry != (None, None))
 
     def _parse_names(self, string):
-        return {Ident(entry, None) for entry in _entries_findall(string)}
+        return _uniq(Ident(entry, None) for entry in _entries_findall(string))
 
     def _parse_names_idents(self, names_field, idents_field):
-        names_str = self.get(names_field, "")
-        idents_str = self.get(idents_field, "")
-        return self._parse_names(names_str) | self._parse_idents(idents_str)
+        names = self._parse_names(self.get(names_field, ""))
+        idents = self._parse_idents(self.get(idents_field, ""))
+        return _uniq((*names, *idents))
 
     @property
     def authors(self):
