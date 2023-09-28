@@ -730,10 +730,9 @@ than raw I/O does.
 
    .. method:: peek(size=1, /)
 
-      Return bytes from the current position onwards but without advancing the
-      position. If the size argument is less than one or larger than the number
-      of available bytes, a copy of the buffer from the current position until
-      the end is returned.
+      Return bytes from the current position onwards without advancing the position.
+      If the size argument is less than one or larger than the number of available bytes,
+      a copy of the buffer from the current position until the end is returned.
       Return an empty bytes object at EOF.
 
       .. versionadded:: 3.13
