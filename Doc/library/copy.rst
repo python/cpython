@@ -87,18 +87,18 @@ pickle functions from the :mod:`copyreg` module.
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
+.. currentmodule:: builtins
+
 In order for a class to define its own copy implementation, it can define
-special methods :meth:`~builtins.object.__copy__` and :meth:`~builtins.object.__deepcopy__`.
+special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
 
 .. method:: object.__copy__(self)
-   :module: builtins
    :noindexentry:
 
    Called to implement the shallow copy operation;
    no additional arguments are passed.
 
 .. method:: object.__deepcopy__(self, memo)
-   :module: builtins
    :noindexentry:
 
    Called to implement the deep copy operation; it is passed one
@@ -111,12 +111,12 @@ special methods :meth:`~builtins.object.__copy__` and :meth:`~builtins.object.__
 .. index::
    single: __replace__() (replace protocol)
 
-Function :func:`replace` is more limited than :func:`copy` and :func:`deepcopy`,
+Function :func:`!copy.replace` is more limited
+than :func:`~copy.copy` and :func:`~copy.deepcopy`,
 and only supports named tuples created by :func:`~collections.namedtuple`,
-:mod:`dataclasses`, and other classes which define method :meth:`~builtins.object.__replace__`.
+:mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
 
 .. method:: object.__replace__(self, /, **changes)
-   :module: builtins
    :noindexentry:
 
    This method should create a new object of the same type,
