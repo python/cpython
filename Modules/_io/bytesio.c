@@ -493,8 +493,9 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
     n = self->string_size - self->pos;
     if (size < 1 || size > n) {
         size = n;
-        if (size < 0)
+        if (size < 0) {
             size = 0;
+        }
     }
     return peek_bytes(self, size);
 }
