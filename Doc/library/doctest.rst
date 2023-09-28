@@ -288,7 +288,7 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 
    <name of M>.__test__.K
 
-A Simple example is to place this block of code at the top of :file:`example.py`.
+An example is to place this block of code at the top of :file:`example.py`.
 
 .. code-block:: none
 
