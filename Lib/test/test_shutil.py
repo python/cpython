@@ -2323,34 +2323,40 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     # See GH-109590
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
-    def test_extensionless_file_resolution_no_dot_in_pathext(self):
+    def test_pathext_enforced_for_execute(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env['PATHEXT'] = ".test;"
-            env['PATH'] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+            env["PATH"] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+            env["PATHEXT"] = ".test"
 
-            extensionless_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file"))
-            open(extensionless_file_in_path, 'w').close()
+            exe = os.path.join(self.temp_dir, self.to_text_type("test.exe"))
+            open(exe, 'w').close()
+            os.chmod(exe, 0o755)
 
-            extensioned_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file.test"))
-            open(extensioned_file_in_path, 'w').close()
+            # default does not match since .exe is not in PATHEXT
+            self.assertIsNone(shutil.which(self.to_text_type("test.exe")))
 
-
-            self.assertEqual(shutil.which(self.to_text_type('file'), os.F_OK), extensioned_file_in_path)
+            # but if we don't use os.X_OK we're ok not matching PATHEXT
+            self.assertEqual(shutil.which(self.to_text_type("test.exe"), mode=os.F_OK), exe)
 
     # See GH-109590
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
-    def test_extensionless_file_resolution_dot_in_pathext(self):
+    def test_pathext_given_extension_preferred(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env['PATHEXT'] = ".test;.;"
-            env['PATH'] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+            env["PATH"] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
+            env["PATHEXT"] = ".exe2;.exe"
 
-            extensionless_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file"))
-            open(extensionless_file_in_path, 'w').close()
+            exe = os.path.join(self.temp_dir, self.to_text_type("test.exe"))
+            open(exe, 'w').close()
+            os.chmod(exe, 0o755)
 
-            extensioned_file_in_path = os.path.join(self.temp_dir, self.to_text_type("file.test"))
-            open(extensioned_file_in_path, 'w').close()
+            exe2 = os.path.join(self.temp_dir, self.to_text_type("test.exe2"))
+            open(exe2, 'w').close()
+            os.chmod(exe2, 0o755)
 
-            self.assertEqual(shutil.which(self.to_text_type('file')), extensionless_file_in_path)
+            # even though .exe2 is preferred in PATHEXT, we matched directly to test.exe
+            self.assertEqual(shutil.which(self.to_text_type("test.exe")), exe)
+
+            self.assertEqual(shutil.which(self.to_text_type("test")), exe2)
 
 
 class TestWhichBytes(TestWhich):
