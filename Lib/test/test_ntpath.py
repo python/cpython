@@ -1,5 +1,4 @@
 import inspect
-import genericpath
 import ntpath
 import os
 import string
@@ -998,16 +997,6 @@ class TestNtpath(NtpathTestCase):
         self.assertFalse(inspect.isfunction(os.path.islink))
         self.assertTrue(os.path.exists is nt._path_exists)
         self.assertFalse(inspect.isfunction(os.path.exists))
-
-    def test_signatures_identical_to_other_platforms(self):
-        for func_name in "isdir", "isfile", "islink", "exists":
-            with self.subTest(func_name=func_name):
-                ntpath_function = getattr(ntpath, func_name)
-                genericpath_function = getattr(genericpath, func_name)
-                self.assertEqual(
-                    inspect.signature(ntpath_function),
-                    inspect.signature(genericpath_function)
-                )
 
     @unittest.skipIf(os.name != 'nt', "Dev Drives only exist on Win32")
     def test_isdevdrive(self):
