@@ -20,6 +20,10 @@
 #   error "Require native threads. See https://bugs.python.org/issue31370"
 #endif
 
+#ifndef MS_WINDOWS
+#   include <unistd.h>              // _POSIX_SEMAPHORES
+#endif
+
 #if (defined(_POSIX_SEMAPHORES) && (_POSIX_SEMAPHORES+0) != -1 && \
         defined(HAVE_SEM_TIMEDWAIT))
 #   define _Py_USE_SEMAPHORES
