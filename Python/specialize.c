@@ -215,7 +215,7 @@ static void
 print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
 {
     for (int i = 0; i < _Py_UOP_HIST_SIZE; i++) {
-        fprintf(out, "%s[%d]: %" PRIu64 "\n", name, (1 << (i + 2)), hist[i]);
+        fprintf(out, "%s[%d]: %" PRIu64 "\n", name, (1 << (i + _Py_UOP_HIST_BIAS)), hist[i]);
     }
 }
 
