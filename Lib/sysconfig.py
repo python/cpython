@@ -545,15 +545,32 @@ def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
     import _imp
+    import re
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    try:
+
+    extension_suffixes = _imp.extension_suffixes()
+    if len(extension_suffixes) >= 1:
         # GH-99201: _imp.extension_suffixes may be empty when
         # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
-        vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
-    except IndexError:
-        pass
+        # e.g., "_d.cp313-win_amd64.pyd"
+        vars['EXT_SUFFIX'] = extension_suffixes[0]
+
+        # e.g., "cp313-win_amd64"
+        _, soabi, _ = vars['EXT_SUFFIX'].split('.')
+        vars['SOABI'] = soabi
+
+        # e.g., check for a "t" (for "threading") in SOABI
+        if re.match(r'cp\d+t', soabi):
+            vars['Py_NOGIL'] = 1
+
+    vars['LIBPL'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
+    if hasattr(sys, 'dllhandle'):
+        import _winapi
+        dllhandle = _winapi.GetModuleFileName(sys.dllhandle)
+        vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
+        vars['LDLIBRARY'] = vars['LIBRARY']
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))

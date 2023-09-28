@@ -1,0 +1,2 @@
+Add new :mod:`sysconfig` variables on Windows: ``LIBRARY``, ``LDLIBRARY``,
+``LIBPL``, ``SOABI``, and ``Py_NOGIL``.
