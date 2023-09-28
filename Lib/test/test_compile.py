@@ -1242,6 +1242,11 @@ class TestSpecifics(unittest.TestCase):
             while x:
                 0 if 1 else 0
 
+    def test_remove_redundant_nop_edge_case(self):
+        # See gh-109889
+        def f():
+            a if (1 if b else c) else d
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers

@@ -981,7 +981,17 @@ remove_redundant_nops(basicblock *bb) {
                 }
                 /* or if last instruction in BB and next BB has same line number */
                 if (next) {
-                    if (lineno == next->b_instr[0].i_loc.lineno) {
+                    location next_loc = NO_LOCATION;
+                    for (int next_i=0; next_i < next->b_iused; next_i++) {
+                        cfg_instr *instr = &next->b_instr[next_i];
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
+                            /* Skip over NOPs without location, they will be removed */
+                            continue;
+                        }
+                        next_loc = instr->i_loc;
+                        break;
+                    }
+                    if (lineno == next_loc.lineno) {
                         continue;
                     }
                 }
