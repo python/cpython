@@ -678,7 +678,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
 
     _PyInterpreterFrame  entry_frame;
-    PyObject *kwnames = NULL; // Borrowed reference. Reset by CALL instructions.
 
 
 
@@ -840,7 +839,6 @@ pop_2_error:
 pop_1_error:
     STACK_SHRINK(1);
 error:
-        kwnames = NULL;
         /* Double-check exception status. */
 #ifdef NDEBUG
         if (!_PyErr_Occurred(tstate)) {

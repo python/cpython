@@ -11,7 +11,9 @@ import io
 import locale
 import os.path
 import platform
+import random
 import re
+import shlex
 import subprocess
 import sys
 import sysconfig
@@ -19,10 +21,11 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper, TestStats
+from test.support import os_helper, TestStats, without_optimizer
 from test.libregrtest import cmdline
-from test.libregrtest import utils
+from test.libregrtest import main
 from test.libregrtest import setup
+from test.libregrtest import utils
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -73,8 +76,15 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_timeout(self):
         ns = self.parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
+
+        # negative, zero and empty string are treated as "no timeout"
+        for value in ('-1', '0', ''):
+            with self.subTest(value=value):
+                ns = self.parse_args([f'--timeout={value}'])
+                self.assertEqual(ns.timeout, None)
+
         self.checkError(['--timeout'], 'expected one argument')
-        self.checkError(['--timeout', 'foo'], 'invalid float value')
+        self.checkError(['--timeout', 'foo'], 'invalid timeout value:')
 
     def test_wait(self):
         ns = self.parse_args(['--wait'])
@@ -364,6 +374,57 @@ class ParseArgsTestCase(unittest.TestCase):
         self.checkError(['--unknown-option'],
                         'unrecognized arguments: --unknown-option')
 
+    def check_ci_mode(self, args, use_resources, rerun=True):
+        ns = cmdline._parse_args(args)
+        if utils.MS_WINDOWS:
+            self.assertTrue(ns.nowindows)
+
+        # Check Regrtest attributes which are more reliable than Namespace
+        # which has an unclear API
+        regrtest = main.Regrtest(ns)
+        self.assertEqual(regrtest.num_workers, -1)
+        self.assertEqual(regrtest.want_rerun, rerun)
+        self.assertTrue(regrtest.randomize)
+        self.assertIsNone(regrtest.random_seed)
+        self.assertTrue(regrtest.fail_env_changed)
+        self.assertTrue(regrtest.fail_rerun)
+        self.assertTrue(regrtest.print_slowest)
+        self.assertTrue(regrtest.output_on_failure)
+        self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
+        return regrtest
+
+    def test_fast_ci(self):
+        args = ['--fast-ci']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources)
+        self.assertEqual(regrtest.timeout, 10 * 60)
+
+    def test_fast_ci_python_cmd(self):
+        args = ['--fast-ci', '--python', 'python -X dev']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        regrtest = self.check_ci_mode(args, use_resources, rerun=False)
+        self.assertEqual(regrtest.timeout, 10 * 60)
+        self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
+
+    def test_fast_ci_resource(self):
+        # it should be possible to override resources
+        args = ['--fast-ci', '-u', 'network']
+        use_resources = ['network']
+        self.check_ci_mode(args, use_resources)
+
+    def test_slow_ci(self):
+        args = ['--slow-ci']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        regrtest = self.check_ci_mode(args, use_resources)
+        self.assertEqual(regrtest.timeout, 20 * 60)
+
+    def test_dont_add_python_opts(self):
+        args = ['--dont-add-python-opts']
+        ns = cmdline._parse_args(args)
+        self.assertFalse(ns._add_python_opts)
+
 
 @dataclasses.dataclass(slots=True)
 class Rerun:
@@ -419,10 +480,12 @@ class BaseTestCase(unittest.TestCase):
             self.fail("%r not found in %r" % (regex, output))
         return match
 
-    def check_line(self, output, regex, full=False):
+    def check_line(self, output, pattern, full=False, regex=True):
+        if not regex:
+            pattern = re.escape(pattern)
         if full:
-            regex += '\n'
-        regex = re.compile(r'^' + regex, re.MULTILINE)
+            pattern += '\n'
+        regex = re.compile(r'^' + pattern, re.MULTILINE)
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
@@ -431,13 +494,14 @@ class BaseTestCase(unittest.TestCase):
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
-    def check_executed_tests(self, output, tests, skipped=(), failed=(),
+    def check_executed_tests(self, output, tests, *, stats,
+                             skipped=(), failed=(),
                              env_changed=(), omitted=(),
                              rerun=None, run_no_tests=(),
                              resource_denied=(),
-                             randomize=False, interrupted=False,
+                             randomize=False, parallel=False, interrupted=False,
                              fail_env_changed=False,
-                             *, stats, forever=False, filtered=False):
+                             forever=False, filtered=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
@@ -454,9 +518,11 @@ class BaseTestCase(unittest.TestCase):
             run_no_tests = [run_no_tests]
         if isinstance(stats, int):
             stats = TestStats(stats)
+        if parallel:
+            randomize = True
 
         rerun_failed = []
-        if rerun is not None:
+        if rerun is not None and not env_changed:
             failed = [rerun.name]
             if not rerun.success:
                 rerun_failed.append(rerun.name)
@@ -493,7 +559,8 @@ class BaseTestCase(unittest.TestCase):
             self.check_line(output, regex)
 
         if env_changed:
-            regex = list_regex('%s test%s altered the execution environment',
+            regex = list_regex(r'%s test%s altered the execution environment '
+                               r'\(env changed\)',
                                env_changed)
             self.check_line(output, regex)
 
@@ -504,7 +571,7 @@ class BaseTestCase(unittest.TestCase):
         if rerun is not None:
             regex = list_regex('%s re-run test%s', [rerun.name])
             self.check_line(output, regex)
-            regex = LOG_PREFIX + fr"Re-running 1 failed tests in verbose mode"
+            regex = LOG_PREFIX + r"Re-running 1 failed tests in verbose mode"
             self.check_line(output, regex)
             regex = fr"Re-running {rerun.name} in verbose mode"
             if rerun.match:
@@ -583,7 +650,7 @@ class BaseTestCase(unittest.TestCase):
         state = ', '.join(state)
         if rerun is not None:
             new_state = 'SUCCESS' if rerun.success else 'FAILURE'
-            state = 'FAILURE then ' + new_state
+            state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
     def parse_random_seed(self, output):
@@ -1018,13 +1085,14 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    def check_leak(self, code, what, *, multiprocessing=False):
+    @without_optimizer
+    def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
-        cmd = ['--huntrleaks', '6:3:']
-        if multiprocessing:
+        cmd = ['--huntrleaks', '3:3:']
+        if run_workers:
             cmd.append('-j1')
         cmd.append(test)
         output = self.run_tests(*cmd,
@@ -1032,7 +1100,7 @@ class ArgsTestCase(BaseTestCase):
                                 stderr=subprocess.STDOUT)
         self.check_executed_tests(output, [test], failed=test, stats=1)
 
-        line = 'beginning 9 repetitions\n123456789\n.........\n'
+        line = 'beginning 6 repetitions\n123456\n......\n'
         self.check_line(output, re.escape(line))
 
         line2 = '%s leaked [1, 1, 1] %s, sum=3\n' % (test, what)
@@ -1043,7 +1111,7 @@ class ArgsTestCase(BaseTestCase):
             self.assertIn(line2, reflog)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
-    def check_huntrleaks(self, *, multiprocessing: bool):
+    def check_huntrleaks(self, *, run_workers: bool):
         # test --huntrleaks
         code = textwrap.dedent("""
             import unittest
@@ -1054,13 +1122,13 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'references', multiprocessing=multiprocessing)
+        self.check_leak(code, 'references', run_workers=run_workers)
 
     def test_huntrleaks(self):
-        self.check_huntrleaks(multiprocessing=False)
+        self.check_huntrleaks(run_workers=False)
 
     def test_huntrleaks_mp(self):
-        self.check_huntrleaks(multiprocessing=True)
+        self.check_huntrleaks(run_workers=True)
 
     @unittest.skipUnless(support.Py_DEBUG, 'need a debug build')
     def test_huntrleaks_fd_leak(self):
@@ -1118,7 +1186,7 @@ class ArgsTestCase(BaseTestCase):
         tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, tests, failed=crash_test,
-                                  randomize=True, stats=0)
+                                  parallel=True, stats=0)
 
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
@@ -1138,8 +1206,6 @@ class ArgsTestCase(BaseTestCase):
                 def test_method4(self):
                     pass
         """)
-        all_methods = ['test_method1', 'test_method2',
-                       'test_method3', 'test_method4']
         testname = self.create_test(code=code)
 
         # only run a subset
@@ -1221,6 +1287,15 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_ENV_CHANGED)
         self.check_executed_tests(output, [testname], env_changed=testname,
                                   fail_env_changed=True, stats=1)
+
+        # rerun
+        output = self.run_tests("--rerun", testname)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=testname,
+                                  rerun=Rerun(testname,
+                                              match=None,
+                                              success=True),
+                                  stats=2)
 
     def test_rerun_fail(self):
         # FAILURE then FAILURE
@@ -1744,16 +1819,15 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testnames,
                                   env_changed=testnames,
                                   fail_env_changed=True,
-                                  randomize=True,
+                                  parallel=True,
                                   stats=len(testnames))
         for testname in testnames:
             self.assertIn(f"Warning -- {testname} leaked temporary "
                           f"files (1): mytmpfile",
                           output)
 
-    def test_mp_decode_error(self):
-        # gh-101634: If a worker stdout cannot be decoded, report a failed test
-        # and a non-zero exit code.
+    def test_worker_decode_error(self):
+        # gh-109425: Use "backslashreplace" error handler to decode stdout.
         if sys.platform == 'win32':
             encoding = locale.getencoding()
         else:
@@ -1761,34 +1835,46 @@ class ArgsTestCase(BaseTestCase):
             if encoding is None:
                 encoding = sys.__stdout__.encoding
                 if encoding is None:
-                    self.skipTest(f"cannot get regrtest worker encoding")
+                    self.skipTest("cannot get regrtest worker encoding")
 
-        nonascii = b"byte:\xa0\xa9\xff\n"
+        nonascii = bytes(ch for ch in range(128, 256))
+        corrupted_output = b"nonascii:%s\n" % (nonascii,)
+        # gh-108989: On Windows, assertion errors are written in UTF-16: when
+        # decoded each letter is follow by a NUL character.
+        assertion_failed = 'Assertion failed: tstate_is_alive(tstate)\n'
+        corrupted_output += assertion_failed.encode('utf-16-le')
         try:
-            nonascii.decode(encoding)
+            corrupted_output.decode(encoding)
         except UnicodeDecodeError:
             pass
         else:
-            self.skipTest(f"{encoding} can decode non-ASCII bytes {nonascii!a}")
+            self.skipTest(f"{encoding} can decode non-ASCII bytes")
+
+        expected_line = corrupted_output.decode(encoding, 'backslashreplace')
 
         code = textwrap.dedent(fr"""
             import sys
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_pass(self):
+                    pass
+
             # bytes which cannot be decoded from UTF-8
-            nonascii = {nonascii!a}
-            sys.stdout.buffer.write(nonascii)
+            corrupted_output = {corrupted_output!a}
+            sys.stdout.buffer.write(corrupted_output)
             sys.stdout.buffer.flush()
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
-                                exitcode=EXITCODE_BAD_TEST)
+        output = self.run_tests("--fail-env-changed", "-v", "-j1", testname)
         self.check_executed_tests(output, [testname],
-                                  failed=[testname],
-                                  randomize=True,
-                                  stats=0)
+                                  parallel=True,
+                                  stats=1)
+        self.check_line(output, expected_line, regex=False)
 
     def test_doctest(self):
-        code = textwrap.dedent(fr'''
+        code = textwrap.dedent(r'''
             import doctest
             import sys
             from test import support
@@ -1823,8 +1909,129 @@ class ArgsTestCase(BaseTestCase):
                                 exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
                                   failed=[testname],
-                                  randomize=True,
+                                  parallel=True,
                                   stats=TestStats(1, 1, 0))
+
+    def _check_random_seed(self, run_workers: bool):
+        # gh-109276: When -r/--randomize is used, random.seed() is called
+        # with the same random seed before running each test file.
+        code = textwrap.dedent(r'''
+            import random
+            import unittest
+
+            class RandomSeedTest(unittest.TestCase):
+                def test_randint(self):
+                    numbers = [random.randint(0, 1000) for _ in range(10)]
+                    print(f"Random numbers: {numbers}")
+        ''')
+        tests = [self.create_test(name=f'test_random{i}', code=code)
+                 for i in range(1, 3+1)]
+
+        random_seed = 856_656_202
+        cmd = ["--randomize", f"--randseed={random_seed}"]
+        if run_workers:
+            # run as many worker processes than the number of tests
+            cmd.append(f'-j{len(tests)}')
+        cmd.extend(tests)
+        output = self.run_tests(*cmd)
+
+        random.seed(random_seed)
+        # Make the assumption that nothing consume entropy between libregrest
+        # setup_tests() which calls random.seed() and RandomSeedTest calling
+        # random.randint().
+        numbers = [random.randint(0, 1000) for _ in range(10)]
+        expected = f"Random numbers: {numbers}"
+
+        regex = r'^Random numbers: .*$'
+        matches = re.findall(regex, output, flags=re.MULTILINE)
+        self.assertEqual(matches, [expected] * len(tests))
+
+    def test_random_seed(self):
+        self._check_random_seed(run_workers=False)
+
+    def test_random_seed_workers(self):
+        self._check_random_seed(run_workers=True)
+
+    def test_python_command(self):
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+
+            class WorkerTests(unittest.TestCase):
+                def test_dev_mode(self):
+                    self.assertTrue(sys.flags.dev_mode)
+        """)
+        tests = [self.create_test(code=code) for _ in range(3)]
+
+        # Custom Python command: "python -X dev"
+        python_cmd = [sys.executable, '-X', 'dev']
+        # test.libregrtest.cmdline uses shlex.split() to parse the Python
+        # command line string
+        python_cmd = shlex.join(python_cmd)
+
+        output = self.run_tests("--python", python_cmd, "-j0", *tests)
+        self.check_executed_tests(output, tests,
+                                  stats=len(tests), parallel=True)
+
+    def check_add_python_opts(self, option):
+        # --fast-ci and --slow-ci add "-u -W default -bb -E" options to Python
+        code = textwrap.dedent(r"""
+            import sys
+            import unittest
+            from test import support
+            try:
+                from _testinternalcapi import get_config
+            except ImportError:
+                get_config = None
+
+            # WASI/WASM buildbots don't use -E option
+            use_environment = (support.is_emscripten or support.is_wasi)
+
+            class WorkerTests(unittest.TestCase):
+                @unittest.skipUnless(get_config is None, 'need get_config()')
+                def test_config(self):
+                    config = get_config()['config']
+                    # -u option
+                    self.assertEqual(config['buffered_stdio'], 0)
+                    # -W default option
+                    self.assertTrue(config['warnoptions'], ['default'])
+                    # -bb option
+                    self.assertTrue(config['bytes_warning'], 2)
+                    # -E option
+                    self.assertTrue(config['use_environment'], use_environment)
+
+                def test_python_opts(self):
+                    # -u option
+                    self.assertTrue(sys.__stdout__.write_through)
+                    self.assertTrue(sys.__stderr__.write_through)
+
+                    # -W default option
+                    self.assertTrue(sys.warnoptions, ['default'])
+
+                    # -bb option
+                    self.assertEqual(sys.flags.bytes_warning, 2)
+
+                    # -E option
+                    self.assertEqual(not sys.flags.ignore_environment,
+                                     use_environment)
+        """)
+        testname = self.create_test(code=code)
+
+        # Use directly subprocess to control the exact command line
+        cmd = [sys.executable,
+               "-m", "test", option,
+               f'--testdir={self.tmptestdir}',
+               testname]
+        proc = subprocess.run(cmd,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              text=True)
+        self.assertEqual(proc.returncode, 0, proc)
+
+    def test_add_python_opts(self):
+        for opt in ("--fast-ci", "--slow-ci"):
+            with self.subTest(opt=opt):
+                self.check_add_python_opts(opt)
 
 
 class TestUtils(unittest.TestCase):

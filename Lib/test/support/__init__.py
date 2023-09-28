@@ -62,6 +62,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "without_optimizer",
     ]
 
 
@@ -770,6 +771,21 @@ def python_is_optimized():
         if opt.startswith('-O'):
             final_opt = opt
     return final_opt not in ('', '-O0', '-Og')
+
+
+def check_cflags_pgo():
+    # Check if Python was built with ./configure --enable-optimizations:
+    # with Profile Guided Optimization (PGO).
+    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    pgo_options = (
+        # GCC
+        '-fprofile-use',
+        # clang: -fprofile-instr-use=code.profclangd
+        '-fprofile-instr-use',
+        # ICC
+        "-prof-use",
+    )
+    return any(option in cflags_nodist for option in pgo_options)
 
 
 _header = 'nP'
@@ -2533,3 +2549,46 @@ skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == '
                                 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
+
+# Decorator to disable optimizer while a function run
+def without_optimizer(func):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return func
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        save_opt = _testinternalcapi.get_optimizer()
+        try:
+            _testinternalcapi.set_optimizer(None)
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(save_opt)
+    return wrapper
+
+
+_BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
+    # SRC_DIR/.git
+    '.git',
+    # ignore all __pycache__/ sub-directories
+    '__pycache__',
+})
+
+# Ignore function for shutil.copytree() to copy the Python source code.
+def copy_python_src_ignore(path, names):
+    ignored = _BASE_COPY_SRC_DIR_IGNORED_NAMES
+    if os.path.basename(path) == 'Doc':
+        ignored |= {
+            # SRC_DIR/Doc/build/
+            'build',
+            # SRC_DIR/Doc/venv/
+            'venv',
+        }
+
+    # check if we are at the root of the source code
+    elif 'Modules' in names:
+        ignored |= {
+            # SRC_DIR/build/
+            'build',
+        }
+    return ignored

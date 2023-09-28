@@ -1489,6 +1489,23 @@ fi
 AC_SUBST([ABIFLAGS])
 ABIFLAGS=""
 
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],
@@ -4593,8 +4610,8 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
@@ -5669,6 +5686,7 @@ AC_C_BIGENDIAN
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -6947,21 +6965,6 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
-# Check for --disable-gil
-# --disable-gil
-AC_MSG_CHECKING([for --disable-gil])
-AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
-  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
-)
-AC_MSG_RESULT([$disable_gil])
-
-if test "$disable_gil" = "yes"
-then
-  AC_DEFINE([Py_NOGIL], [1],
-            [Define if you want to disable the GIL])
-fi
-
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked
 # explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
@@ -6970,7 +6973,7 @@ fi
 #
 # Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
 # requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
-# If the check is done after AC_OUTPUT, modifying LIBATOMIC has no effect
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
 # anymore.  <pyport.h> cannot be included alone, it's designed to be included
 # by <Python.h>: it expects other includes and macros to be defined.
 _SAVE_VAR([CPPFLAGS])
@@ -6993,7 +6996,7 @@ typedef intptr_t Py_ssize_t;
 #  error "unable to define Py_ssize_t"
 #endif
 
-#include "cpython/pyatomic.h"
+#include "pyatomic.h"
 
 int main()
 {
@@ -7014,7 +7017,7 @@ int main()
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
-          [LIBATOMIC=${LIBATOMIC-"-latomic"}])
+          [LIBS="${LIBS} -latomic"])
 _RESTORE_VAR([CPPFLAGS])
 
 
@@ -7286,10 +7289,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi],
-    [test "$TEST_MODULES" = yes],  []
-    dnl Modules/_testcapi/pyatomic.c uses <cpython/pyatomic.h> header
-    [], [], [$LIBATOMIC])
+PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])

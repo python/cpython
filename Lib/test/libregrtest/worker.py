@@ -1,33 +1,36 @@
 import subprocess
 import sys
 import os
-from typing import TextIO, NoReturn
+from typing import Any, NoReturn
 
 from test import support
 from test.support import os_helper
 
 from .setup import setup_process, setup_test_dir
-from .runtests import RunTests
+from .runtests import RunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
     StrPath, StrJSON, FilterTuple,
-    get_work_dir, exit_timeout)
+    get_temp_dir, get_work_dir, exit_timeout)
 
 
 USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
-def create_worker_process(runtests: RunTests,
-                          output_file: TextIO,
+def create_worker_process(runtests: RunTests, output_fd: int,
                           tmp_dir: StrPath | None = None) -> subprocess.Popen:
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
+    python_opts = support.args_from_interpreter_flags()
     if python_cmd is not None:
         executable = python_cmd
+        # Remove -E option, since --python=COMMAND can set PYTHON environment
+        # variables, such as PYTHONPATH, in the worker process.
+        python_opts = [opt for opt in python_opts if opt != "-E"]
     else:
-        executable = [sys.executable]
-    cmd = [*executable, *support.args_from_interpreter_flags(),
+        executable = (sys.executable,)
+    cmd = [*executable, *python_opts,
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
            worker_json]
@@ -38,26 +41,37 @@ def create_worker_process(runtests: RunTests,
         env['TEMP'] = tmp_dir
         env['TMP'] = tmp_dir
 
+    # Emscripten and WASI Python must start in the Python source code directory
+    # to get 'python.js' or 'python.wasm' file. Then worker_process() changes
+    # to a temporary directory created to run tests.
+    work_dir = os_helper.SAVEDCWD
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    kw = dict(
+    kwargs: dict[str, Any] = dict(
         env=env,
-        stdout=output_file,
+        stdout=output_fd,
         # bpo-45410: Write stderr into stdout to keep messages order
-        stderr=output_file,
+        stderr=output_fd,
         text=True,
-        close_fds=(os.name != 'nt'),
+        close_fds=True,
+        cwd=work_dir,
     )
-    if USE_PROCESS_GROUP:
-        kw['start_new_session'] = True
-    return subprocess.Popen(cmd, **kw)
+
+    # Pass json_file to the worker process
+    json_file = runtests.json_file
+    json_file.configure_subprocess(kwargs)
+
+    with json_file.inherit_subprocess():
+        return subprocess.Popen(cmd, **kwargs)
 
 
 def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
     match_tests: FilterTuple | None = runtests.match_tests
+    json_file: JsonFile = runtests.json_file
 
     setup_test_dir(runtests.test_dir)
     setup_process()
@@ -70,11 +84,14 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
             print(f"Re-running {test_name} in verbose mode", flush=True)
 
     result = run_single_test(test_name, runtests)
-    print()   # Force a newline (just in case)
 
-    # Serialize TestResult as dict in JSON
-    result.write_json(sys.stdout)
-    sys.stdout.flush()
+    if json_file.file_type == JsonFileType.STDOUT:
+        print()
+        result.write_json_into(sys.stdout)
+    else:
+        with json_file.open('w', encoding='utf-8') as json_fp:
+            result.write_json_into(json_fp)
+
     sys.exit(0)
 
 
@@ -84,7 +101,8 @@ def main():
         sys.exit(1)
     worker_json = sys.argv[1]
 
-    work_dir = get_work_dir(worker=True)
+    tmp_dir = get_temp_dir()
+    work_dir = get_work_dir(tmp_dir, worker=True)
 
     with exit_timeout():
         with os_helper.temp_cwd(work_dir, quiet=True):

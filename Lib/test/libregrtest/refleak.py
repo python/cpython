@@ -1,6 +1,7 @@
 import sys
 import warnings
 from inspect import isabstract
+from typing import Any
 
 from test import support
 from test.support import os_helper
@@ -45,6 +46,7 @@ def runtest_refleak(test_name, test_func,
     fs = warnings.filters[:]
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
+    zdc: dict[str, Any] | None
     try:
         import zipimport
     except ImportError:

@@ -362,7 +362,7 @@ def write_macro_instr(
     parts = [
         part
         for part in mac.parts
-        if isinstance(part, Component) and part.instr.name != "SAVE_IP"
+        if isinstance(part, Component) and part.instr.name != "_SET_IP"
     ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
@@ -376,6 +376,8 @@ def write_macro_instr(
         if not parts[-1].instr.always_exits:
             if not next_instr_is_set and mac.cache_offset:
                 out.emit(f"next_instr += {mac.cache_offset};")
+            if parts[-1].instr.check_eval_breaker:
+                out.emit("CHECK_EVAL_BREAKER();")
             out.emit("DISPATCH();")
 
 
@@ -444,7 +446,7 @@ def write_components(
                 ), f"Expected {mgr.instr.name!r} to be the last uop"
                 assert_no_pokes(managers)
 
-        if mgr.instr.name == "SAVE_CURRENT_IP":
+        if mgr.instr.name == "_SAVE_CURRENT_IP":
             next_instr_is_set = True
             if cache_offset:
                 out.emit(f"next_instr += {cache_offset};")
@@ -457,7 +459,7 @@ def write_components(
             with out.block(""):
                 mgr.instr.write_body(out, -4, mgr.active_caches, tier)
 
-        if mgr is managers[-1] and not next_instr_is_set:
+        if mgr is managers[-1] and not next_instr_is_set and not mgr.instr.always_exits:
             # Adjust the stack to its final depth, *then* write the
             # pokes for all preceding uops.
             # Note that for array output effects we may still write
