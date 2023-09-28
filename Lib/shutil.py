@@ -1560,10 +1560,9 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         # for a PATHEXT match. The first cmd is the direct match
         # (e.g. python.exe instead of python)
         # Check that direct match first if and only if the extension is in PATHEXT
-        if mode & os.X_OK and not any(
-            [os.path.splitext(files[0])[1].upper() == ext.upper() for ext in pathext]
-            ):
-            files = files[1:]
+        suffix = os.path.splitext(files[0])[1].casefold()
+        if mode & os.X_OK and not any(suffix == ext.casefold() for ext in pathext):
+            del files[0]
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
