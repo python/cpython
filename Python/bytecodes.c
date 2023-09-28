@@ -1066,7 +1066,6 @@ DUMP_FRAME("_POP_FRAME[3]");
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-DUMP_FRAME(">> INSTRUMENTED_YIELD_VALUE");
             goto resume_frame;
         }
 
@@ -2931,7 +2930,6 @@ DUMP_FRAME(">> YIELD_VALUE");
         // When calling Python, inline the call using DISPATCH_INLINED().
         inst(CALL, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
             // oparg counts all of the args, but *not* self:
-DUMP_FRAME("CALL1");
             int total_args = oparg;
             if (self_or_null != NULL) {
                 args--;
@@ -2947,7 +2945,6 @@ DUMP_FRAME("CALL1");
             STAT_INC(CALL, deferred);
             DECREMENT_ADAPTIVE_COUNTER(cache->counter);
             #endif  /* ENABLE_SPECIALIZATION */
-DUMP_FRAME("CALL2");
             if (self_or_null == NULL && Py_TYPE(callable) == &PyMethod_Type) {
                 args--;
                 total_args++;
@@ -2959,13 +2956,11 @@ DUMP_FRAME("CALL2");
                 callable = method;
             }
 
-DUMP_FRAME("CALL3");
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
                 ((PyFunctionObject *)callable)->vectorcall == _PyFunction_Vectorcall)
             {
-DUMP_FRAME("CALL4");
                 int code_flags = ((PyCodeObject*)PyFunction_GET_CODE(callable))->co_flags;
                 PyObject *locals = code_flags & CO_OPTIMIZED ? NULL : Py_NewRef(PyFunction_GET_GLOBALS(callable));
                 _PyInterpreterFrame *new_frame = _PyEvalFramePushAndInit(
@@ -2979,21 +2974,16 @@ DUMP_FRAME("CALL4");
                 if (new_frame == NULL) {
                     goto error;
                 }
-DUMP_FRAME("CALL5");
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-DUMP_FRAME("CALL6");
                 frame->return_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
-DUMP_FRAME("CALL7");
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
-DUMP_FRAME("CALL - not normal python func1");
             res = PyObject_Vectorcall(
                 callable, args,
                 total_args | PY_VECTORCALL_ARGUMENTS_OFFSET,
                 NULL);
-DUMP_FRAME("CALL - not normal python func2");
             if (opcode == INSTRUMENTED_CALL) {
                 PyObject *arg = total_args == 0 ?
                     &_PyInstrumentation_MISSING : args[0];
@@ -3018,7 +3008,6 @@ DUMP_FRAME("CALL - not normal python func2");
             }
 
             ERROR_IF(res == NULL, error);
-DUMP_FRAME("CALL - END");
             frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = 0;
@@ -3231,10 +3220,9 @@ DUMP_FRAME("_PUSH_FRAME");
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->prev_instr = next_instr - 1;
-            frame->instr_ptr = next_instr;
             frame->return_offset = 0;
             frame->yield_offset = 0;
-            frame->new_return_offset = 0;
+            frame->new_return_offset = next_instr - frame->instr_ptr;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
@@ -3649,15 +3637,12 @@ DUMP_FRAME("_PUSH_FRAME");
             // DICT_MERGE is called before this opcode if there are kwargs.
             // It converts all dict subtypes in kwargs into regular dicts.
             assert(kwargs == NULL || PyDict_CheckExact(kwargs));
-DUMP_FRAME("CALL_FUNCTION_EX BEGIN");
             if (!PyTuple_CheckExact(callargs)) {
                 if (check_args_iterable(tstate, func, callargs) < 0) {
-DUMP_FRAME("CALL_FUNCTION_EX0");
                     goto error;
                 }
                 PyObject *tuple = PySequence_Tuple(callargs);
                 if (tuple == NULL) {
-DUMP_FRAME("CALL_FUNCTION_EX1");
                     goto error;
                 }
                 Py_SETREF(callargs, tuple);
@@ -3673,7 +3658,6 @@ DUMP_FRAME("CALL_FUNCTION_EX1");
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
                 if (err) {
-DUMP_FRAME("CALL_FUNCTION_EX2");
                     goto error;
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -3706,13 +3690,11 @@ DUMP_FRAME("CALL_FUNCTION_EX2");
                     // Need to manually shrink the stack since we exit with DISPATCH_INLINED.
                     STACK_SHRINK(oparg + 3);
                     if (new_frame == NULL) {
-DUMP_FRAME("CALL_FUNCTION_EX3");
                         goto error;
                     }
                     frame->return_offset = 0;
                     frame->yield_offset = 0;
                     frame->new_return_offset = next_instr - frame->instr_ptr;
-DUMP_FRAME("CALL_FUNCTION_EX3a");
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
