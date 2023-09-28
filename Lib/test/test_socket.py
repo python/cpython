@@ -167,7 +167,8 @@ def socket_setdefaulttimeout(timeout):
 
 
 @contextlib.contextmanager
-def catch_malformed_data_warning(quiet=False):
+def catch_malformed_data_warning(quiet=True):
+    # This warning happens on macos and win, but does not always happen on linux.
     with warnings_helper.check_warnings(
         ("received malformed or improperly-truncated ancillary data", RuntimeWarning),
         quiet=quiet,
