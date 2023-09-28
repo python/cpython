@@ -167,10 +167,10 @@ def socket_setdefaulttimeout(timeout):
 
 
 @contextlib.contextmanager
-def catch_malformed_data_warning(quite=False):
+def catch_malformed_data_warning(quiet=False):
     with warnings_helper.check_warnings(
         ("received malformed or improperly-truncated ancillary data", RuntimeWarning),
-        quite=quite,
+        quiet=quiet,
     ):
         yield
 
