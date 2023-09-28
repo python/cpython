@@ -2,53 +2,17 @@ import argparse
 import contextlib
 import os
 import pathlib
+import shutil
 import subprocess
 import sysconfig
 
-CHECKOUT = pathlib.Path(".").absolute()
+CHECKOUT = pathlib.Path(__file__).parent.parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
-HOST_TRIPLE = "wasm32-unknown-wasi"
+HOST_TRIPLE = "wasm32-wasi"
 
-# - Make sure `Modules/Setup.local` exists
-# - Make sure the necessary build tools are installed:
-#   - `make`
-#   - `pkg-config` (on Linux)
-# - Create the build Python
-#   - `mkdir -p builddir/build`
-#   - `pushd builddir/build`
-#   - Get the build platform
-#     - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
-#     - Shell: `../../config.guess`
-#   - `../../configure -C`
-#   - `make all`
-#   - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
-#   - `popd`
-# - Create the host/WASI Python
-#   - `mkdir builddir/wasi`
-#   - `pushd builddir/wasi`
-#   - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
-#     - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
-#     - `HOSTRUNNER="wasmtime run --mapdir /::$(dirname $(dirname $(pwd))) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/python.wasm --"`
-#       - Maps the source checkout to `/` in the WASI runtime
-#       - Stdlib gets loaded from `/Lib`
-#       - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
-#     - Set by `wasi-env`
-#       - `WASI_SDK_PATH`
-#       - `WASI_SYSROOT`; enough for `--sysroot`?
-#       - `CC`
-#       - `CPP`
-#       - `CXX`
-#       - `LDSHARED`
-#       - `AR`
-#       - `RANLIB`
-#       - `CFLAGS`
-#       - `LDFLAGS`
-#       - `PKG_CONFIG_PATH`
-#       - `PKG_CONFIG_LIBDIR`
-#       - `PKG_CONFIG_SYSROOT_DIR`
-#       - `PATH`
-#   - `make all`
-# - Create `run_wasi.sh`
+
+def section(title):
+    print("#" * 5, title, "#" * 5)
 
 def build_platform():
     """The name of the build/host platform."""
@@ -64,14 +28,20 @@ def compile_host_python():
     build_dir = CROSS_BUILD_DIR / "build"
     build_dir.mkdir(parents=True, exist_ok=True)
 
+    section(build_dir)
 
     with contextlib.chdir(build_dir):
         subprocess.check_call([CHECKOUT / "configure", "-C"])
-        subprocess.check_call(["make", "all"])
-        # XXX
-    #   - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
+        subprocess.check_call(["make", "--jobs", str(os.cpu_count()), "all"])
+
+    binary = build_dir / "python"
+    cmd = [binary, "-c",
+            "import sys; "
+            "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
+    version = subprocess.check_output(cmd, encoding="utf-8").strip()
+
     # XXX Check if the binary is named `python` on macOS
-    return build_dir / "python", XXX
+    return binary, version
 
 
 def find_wasi_sdk():
@@ -80,6 +50,67 @@ def find_wasi_sdk():
         return pathlib.Path(wasi_sdk_path)
     elif (default_path := pathlib.Path("/opt/wasi-sdk")).exists():
         return default_path
+
+
+def wasi_sdk_env(context):
+    """Calculate environment variables for building with wasi-sdk."""
+    wasi_sdk_path = context.wasi_sdk_path
+    sysroot = wasi_sdk_path / "share" / "wasi-sysroot"
+    env = {"CC": "clang", "CPP": "clang-cpp", "CXX": "clang++",
+           "LDSHARED": "wasm-ld", "AR": "llvm-ar", "RANLIB": "ranlib"}
+
+    for env_var, binary_name in list(env.items()):
+        env[env_var] = os.fsdecode(wasi_sdk_path / "bin" / binary_name)
+
+    if wasi_sdk_path != pathlib.Path("/opt/wasi-sdk"):
+        for compiler in ["CC", "CPP", "CXX"]:
+            env[compiler] += f" --sysroot={sysroot}"
+
+    env["PKG_CONFIG_PATH"] = ""
+    env["PKG_CONFIG_LIBDIR"] = os.pathsep.join(
+                                map(os.fsdecode,
+                                    [sysroot / "lib" / "pkgconfig",
+                                     sysroot / "share" / "pkgconfig"]))
+    env["PKG_CONFIG_SYSROOT_DIR"] = os.fsdecode(sysroot)
+
+    env["WASI_SDK_PATH"] = os.fsdecode(wasi_sdk_path)
+    env["WASI_SYSROOT"] = os.fsdecode(sysroot)
+
+    env["PATH"] = os.pathsep.join([os.fsdecode(wasi_sdk_path / "bin"),
+                                   os.environ["PATH"]])
+
+    return env
+
+
+def compile_wasi_python(context, build_python, version):
+    """Compile the wasm32-wasi Python."""
+    build_dir = CROSS_BUILD_DIR / HOST_TRIPLE
+    build_dir.mkdir(exist_ok=True)
+
+    section(build_dir)
+
+    config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
+    # Map the checkout to / to load the stdlib from /Lib. Also means paths for
+    # PYTHONPATH to include sysconfig data must be anchored to the WASI
+    # runtime's / directory.
+    host_runner = (f"{shutil.which('wasmtime')} run "
+                   f"--mapdir /::{CHECKOUT} "
+                   f"--env PYTHONPATH=/{CROSS_BUILD_DIR.name}/wasi/build/lib.wasi-wasm32-{version} "
+                   f"{build_dir / 'python.wasm'} --")
+    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner}
+
+    with contextlib.chdir(build_dir):
+        # The path to `configure` MUST be relative, else `python.wasm` is unable
+        # to find the stdlib for unknown reasons.
+        configure = [os.path.relpath(CHECKOUT / 'configure', build_dir),
+                     "-C",
+                     f"--host={HOST_TRIPLE}",
+                     f"--build={build_platform()}",
+                     f"--with-build-python={build_python}"]
+        configure_env = os.environ | env_additions | wasi_sdk_env(context)
+        subprocess.check_call(configure, env=configure_env)
+        subprocess.check_call(["make", "--jobs", str(os.cpu_count()), "all"],
+                              env=os.environ | env_additions)
 
 
 def main():
@@ -93,9 +124,11 @@ def main():
 
     args = parser.parse_args()
     if not args.wasi_sdk_path or not args.wasi_sdk_path.exists():
-        raise ValueError("wasi-sdk not found; see https://github.com/WebAssembly/wasi-sdk")
+        raise ValueError("wasi-sdk not found or specified; "
+                         "see https://github.com/WebAssembly/wasi-sdk")
 
-    compile_host_python()
+    build_python, version = compile_host_python()
+    compile_wasi_python(args, build_python, version)
 
 
 if  __name__ == "__main__":
