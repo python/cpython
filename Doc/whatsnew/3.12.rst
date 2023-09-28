@@ -1120,7 +1120,7 @@ CPython bytecode changes
 * Add the :opcode:`LOAD_SUPER_ATTR` instruction. (Contributed by Carl Meyer and
   Vladimir Matveev in :gh:`103497`.)
 
-* Add the :opcode:`RETURN_CONST` instruction. (:gh:`101632`.)
+* Add the :opcode:`RETURN_CONST` instruction. (Contributed by Wenyang Wang in :gh:`101632`.)
 
 Demos and Tools
 ===============
