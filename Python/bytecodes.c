@@ -258,7 +258,7 @@ dummy_func(
 
         macro(END_FOR) = POP_TOP + POP_TOP;
 
-        inst(_END_FOR_MONITOR, (receiver, value -- receiver, value)) {
+        op(_END_FOR_MONITOR, (receiver, value -- receiver, value)) {
             TIER_ONE_ONLY;
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
@@ -275,7 +275,7 @@ dummy_func(
             Py_DECREF(receiver);
         }
 
-        inst(_END_SEND_MONITOR, (receiver, value -- receiver, value)) {
+        op(_END_SEND_MONITOR, (receiver, value -- receiver, value)) {
             TIER_ONE_ONLY;
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);

@@ -186,22 +186,6 @@
             DISPATCH();
         }
 
-        TARGET(_END_FOR_MONITOR) {
-            PyObject *value;
-            PyObject *receiver;
-            value = stack_pointer[-1];
-            receiver = stack_pointer[-2];
-            TIER_ONE_ONLY;
-            /* Need to create a fake StopIteration error here,
-             * to conform to PEP 380 */
-            if (PyGen_Check(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
-                PyErr_SetRaisedException(NULL);
-            }
-            DISPATCH();
-        }
-
         TARGET(INSTRUMENTED_END_FOR) {
             PyObject *value;
             PyObject *receiver;
@@ -239,20 +223,6 @@
             Py_DECREF(receiver);
             STACK_SHRINK(1);
             stack_pointer[-1] = value;
-            DISPATCH();
-        }
-
-        TARGET(_END_SEND_MONITOR) {
-            PyObject *value;
-            PyObject *receiver;
-            value = stack_pointer[-1];
-            receiver = stack_pointer[-2];
-            TIER_ONE_ONLY;
-            if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
-                PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) goto error;
-                PyErr_SetRaisedException(NULL);
-            }
             DISPATCH();
         }
 
