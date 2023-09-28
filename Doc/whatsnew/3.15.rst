@@ -844,7 +844,7 @@ inspect
 io
 --
 
-* Add :meth:`~io.BytesIO.peek`.
+* Add :meth:`io.BytesIO.peek`.
   (Contributed by Marcel Martin in :gh:`90533`.)
 
 
