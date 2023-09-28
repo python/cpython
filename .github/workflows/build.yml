@@ -304,7 +304,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1v
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -373,7 +373,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1v, 3.0.10, 3.1.2]
+        openssl_ver: [1.1.1w, 3.0.11, 3.1.3]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
@@ -425,7 +425,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
     env:
-      OPENSSL_VER: 1.1.1v
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
@@ -534,7 +534,7 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1v
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
