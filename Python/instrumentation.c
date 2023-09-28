@@ -899,17 +899,17 @@ static inline int most_significant_bit(uint8_t bits) {
 static uint32_t
 global_version(PyInterpreterState *interp)
 {
-    return interp->ceval.eval_breaker & ~255;
+    return interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK;
 }
 
 static void
 set_global_version(PyInterpreterState *interp, uint32_t version)
 {
-    assert((version & 255) == 0);
+    assert((version & _PY_EVAL_EVENTS_MASK) == 0);
     uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
     intptr_t new;
     do {
-        new = (old & 255) | version;
+        new = (old & _PY_EVAL_EVENTS_MASK) | version;
     } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
 }
 
@@ -1574,7 +1574,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     if (is_version_up_to_date(code, interp)) {
         assert(
-            (interp->ceval.eval_breaker & ~0xff) == 0 ||
+            (interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK) == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;
@@ -1799,7 +1799,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
     set_events(&interp->monitors, tool_id, events);
     uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     if (new_version == 0) {
-        PyErr_Format(PyExc_OverflowError, "events set too many time");
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
         return -1;
     }
     set_global_version(interp, new_version);
@@ -2116,7 +2116,7 @@ monitoring_restart_events_impl(PyObject *module)
     uint32_t restart_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
     uint32_t new_version = restart_version + MONITORING_VERSION_INCREMENT;
     if (new_version <= MONITORING_VERSION_INCREMENT) {
-        PyErr_Format(PyExc_OverflowError, "events set too many time");
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
         return NULL;
     }
     interp->last_restart_version = restart_version;
