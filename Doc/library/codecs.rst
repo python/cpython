@@ -1350,7 +1350,7 @@ encodings.
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | :samp:`\\u{XXXX}` and     |
-|                    |         | :samp:`\\U{XXXXXXXX}``    |
+|                    |         | :samp:`\\U{XXXXXXXX}`     |
 |                    |         | for other code points.    |
 |                    |         | Existing                  |
 |                    |         | backslashes are not       |

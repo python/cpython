@@ -2631,8 +2631,7 @@
             }
             // _GUARD_DORV_VALUES
             {
-                PyTypeObject *tp = Py_TYPE(owner);
-                assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
                 DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
             }
@@ -3590,8 +3589,7 @@
             }
             // _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT
             {
-                PyTypeObject *owner_cls = Py_TYPE(owner);
-                assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
                 DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
                          !_PyObject_MakeInstanceAttributesFromDict(owner, dorv),
@@ -3639,8 +3637,7 @@
             {
                 PyObject *descr = read_obj(&next_instr[5].cache);
                 assert(oparg & 1);
-                PyTypeObject *owner_cls = Py_TYPE(owner);
-                assert(owner_cls->tp_dictoffset == 0);
+                assert(Py_TYPE(owner)->tp_dictoffset == 0);
                 STAT_INC(LOAD_ATTR, hit);
                 assert(descr != NULL);
                 assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));

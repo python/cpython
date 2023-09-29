@@ -541,7 +541,7 @@ def display_header(use_resources: tuple[str, ...]):
         print(f"== resources ({len(use_resources)}): "
               f"{', '.join(sorted(use_resources))}")
     else:
-        print(f"== resources: (all disabled, use -u option)")
+        print("== resources: (all disabled, use -u option)")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.

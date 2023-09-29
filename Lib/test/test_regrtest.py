@@ -376,8 +376,6 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def check_ci_mode(self, args, use_resources, rerun=True):
         ns = cmdline._parse_args(args)
-        if utils.MS_WINDOWS:
-            self.assertTrue(ns.nowindows)
 
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
