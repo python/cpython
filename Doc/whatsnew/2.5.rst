@@ -609,7 +609,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
