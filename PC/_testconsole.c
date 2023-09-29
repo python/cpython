@@ -1,22 +1,26 @@
-
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
+
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 
 #ifdef MS_WINDOWS
 
-#include "..\modules\_io\_iomodule.h"
+#include "pycore_fileutils.h"     // _Py_get_osfhandle()
+#include "pycore_runtime.h"       // _Py_ID()
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <fcntl.h>
 
  /* The full definition is in iomodule. We reproduce
- enough here to get the handle, which is all we want. */
+ enough here to get the fd, which is all we want. */
 typedef struct {
     PyObject_HEAD
-    HANDLE handle;
+    int fd;
 } winconsoleio;
 
 
@@ -27,8 +31,26 @@ static int execfunc(PyObject *m)
 
 PyModuleDef_Slot testconsole_slots[] = {
     {Py_mod_exec, execfunc},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL},
 };
+
+/*[python input]
+class HANDLE_converter(CConverter):
+    type = 'void *'
+    format_unit = '"_Py_PARSE_UINTPTR"'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsVoidPtr({argname});
+            if (!{paramname} && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=380aa5c91076742b]*/
+/*[python end generated code:]*/
 
 /*[clinic input]
 module _testconsole
@@ -47,7 +69,14 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
 {
     INPUT_RECORD *rec = NULL;
 
-    if (!PyWindowsConsoleIO_Check(file)) {
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+            &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
+    if (winconsoleio_type == NULL) {
+        return NULL;
+    }
+    int is_subclass = PyObject_TypeCheck(file, winconsoleio_type);
+    Py_DECREF(winconsoleio_type);
+    if (!is_subclass) {
         PyErr_SetString(PyExc_TypeError, "expected raw console object");
         return NULL;
     }
@@ -63,11 +92,14 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
     for (DWORD i = 0; i < size; ++i, ++p, ++prec) {
         prec->EventType = KEY_EVENT;
         prec->Event.KeyEvent.bKeyDown = TRUE;
-        prec->Event.KeyEvent.wRepeatCount = 10;
+        prec->Event.KeyEvent.wRepeatCount = 1;
         prec->Event.KeyEvent.uChar.UnicodeChar = *p;
     }
 
-    HANDLE hInput = ((winconsoleio*)file)->handle;
+    HANDLE hInput = _Py_get_osfhandle(((winconsoleio*)file)->fd);
+    if (hInput == INVALID_HANDLE_VALUE)
+        goto error;
+
     DWORD total = 0;
     while (total < size) {
         DWORD wrote;
@@ -101,11 +133,31 @@ _testconsole_read_output_impl(PyObject *module, PyObject *file)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+_testconsole.flush_console_input_buffer
+    handle: HANDLE
+
+Flushes the console input buffer.
+
+All input records currently in the input buffer are discarded.
+[clinic start generated code]*/
+
+static PyObject *
+_testconsole_flush_console_input_buffer_impl(PyObject *module, void *handle)
+/*[clinic end generated code: output=1f923a81331465ce input=be8203ae84a288f5]*/
+/*[clinic end generated code:]*/
+{
+    FlushConsoleInputBuffer(handle);
+
+    Py_RETURN_NONE;
+}
+
 #include "clinic\_testconsole.c.h"
 
 PyMethodDef testconsole_methods[] = {
     _TESTCONSOLE_WRITE_INPUT_METHODDEF
     _TESTCONSOLE_READ_OUTPUT_METHODDEF
+    _TESTCONSOLE_FLUSH_CONSOLE_INPUT_BUFFER_METHODDEF
     {NULL, NULL}
 };
 

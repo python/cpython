@@ -11,6 +11,8 @@ import sys
 
 glob = 42
 some_var = 12
+some_non_assigned_global_var = 11
+some_assigned_global_var = 11
 
 class Mine:
     instance_var = 24
@@ -19,6 +21,8 @@ class Mine:
 
 def spam(a, b, *var, **kw):
     global bar
+    global some_assigned_global_var
+    some_assigned_global_var = 12
     bar = 47
     some_var = 10
     x = 23
@@ -36,6 +40,15 @@ def foo():
 
 def namespace_test(): pass
 def namespace_test(): pass
+
+type Alias = int
+type GenericAlias[T] = list[T]
+
+def generic_spam[T](a):
+    pass
+
+class GenericMine[T: int]:
+    pass
 """
 
 
@@ -55,6 +68,14 @@ class SymtableTest(unittest.TestCase):
     internal = find_block(spam, "internal")
     other_internal = find_block(spam, "other_internal")
     foo = find_block(top, "foo")
+    Alias = find_block(top, "Alias")
+    GenericAlias = find_block(top, "GenericAlias")
+    GenericAlias_inner = find_block(GenericAlias, "GenericAlias")
+    generic_spam = find_block(top, "generic_spam")
+    generic_spam_inner = find_block(generic_spam, "generic_spam")
+    GenericMine = find_block(top, "GenericMine")
+    GenericMine_inner = find_block(GenericMine, "GenericMine")
+    T = find_block(GenericMine, "T")
 
     def test_type(self):
         self.assertEqual(self.top.get_type(), "module")
@@ -62,6 +83,27 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(self.a_method.get_type(), "function")
         self.assertEqual(self.spam.get_type(), "function")
         self.assertEqual(self.internal.get_type(), "function")
+        self.assertEqual(self.foo.get_type(), "function")
+        self.assertEqual(self.Alias.get_type(), "type alias")
+        self.assertEqual(self.GenericAlias.get_type(), "type parameter")
+        self.assertEqual(self.GenericAlias_inner.get_type(), "type alias")
+        self.assertEqual(self.generic_spam.get_type(), "type parameter")
+        self.assertEqual(self.generic_spam_inner.get_type(), "function")
+        self.assertEqual(self.GenericMine.get_type(), "type parameter")
+        self.assertEqual(self.GenericMine_inner.get_type(), "class")
+        self.assertEqual(self.T.get_type(), "TypeVar bound")
+
+    def test_id(self):
+        self.assertGreater(self.top.get_id(), 0)
+        self.assertGreater(self.Mine.get_id(), 0)
+        self.assertGreater(self.a_method.get_id(), 0)
+        self.assertGreater(self.spam.get_id(), 0)
+        self.assertGreater(self.internal.get_id(), 0)
+        self.assertGreater(self.foo.get_id(), 0)
+        self.assertGreater(self.Alias.get_id(), 0)
+        self.assertGreater(self.GenericAlias.get_id(), 0)
+        self.assertGreater(self.generic_spam.get_id(), 0)
+        self.assertGreater(self.GenericMine.get_id(), 0)
 
     def test_optimized(self):
         self.assertFalse(self.top.is_optimized())
@@ -81,14 +123,14 @@ class SymtableTest(unittest.TestCase):
 
     def test_lineno(self):
         self.assertEqual(self.top.get_lineno(), 0)
-        self.assertEqual(self.spam.get_lineno(), 12)
+        self.assertEqual(self.spam.get_lineno(), 14)
 
     def test_function_info(self):
         func = self.spam
         self.assertEqual(sorted(func.get_parameters()), ["a", "b", "kw", "var"])
         expected = ['a', 'b', 'internal', 'kw', 'other_internal', 'some_var', 'var', 'x']
         self.assertEqual(sorted(func.get_locals()), expected)
-        self.assertEqual(sorted(func.get_globals()), ["bar", "glob"])
+        self.assertEqual(sorted(func.get_globals()), ["bar", "glob", "some_assigned_global_var"])
         self.assertEqual(self.internal.get_frees(), ("x",))
 
     def test_globals(self):
@@ -99,6 +141,9 @@ class SymtableTest(unittest.TestCase):
         self.assertFalse(self.internal.lookup("x").is_global())
         self.assertFalse(self.Mine.lookup("instance_var").is_global())
         self.assertTrue(self.spam.lookup("bar").is_global())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_global())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_global())
 
     def test_nonlocal(self):
         self.assertFalse(self.spam.lookup("some_var").is_nonlocal())
@@ -109,6 +154,9 @@ class SymtableTest(unittest.TestCase):
     def test_local(self):
         self.assertTrue(self.spam.lookup("x").is_local())
         self.assertFalse(self.spam.lookup("bar").is_local())
+        # Module-scope globals are both global and local
+        self.assertTrue(self.top.lookup("some_non_assigned_global_var").is_local())
+        self.assertTrue(self.top.lookup("some_assigned_global_var").is_local())
 
     def test_free(self):
         self.assertTrue(self.internal.lookup("x").is_free())
@@ -141,6 +189,10 @@ class SymtableTest(unittest.TestCase):
         ns_test = self.top.lookup("namespace_test")
         self.assertEqual(len(ns_test.get_namespaces()), 2)
         self.assertRaises(ValueError, ns_test.get_namespace)
+
+        ns_test_2 = self.top.lookup("glob")
+        self.assertEqual(len(ns_test_2.get_namespaces()), 0)
+        self.assertRaises(ValueError, ns_test_2.get_namespace)
 
     def test_assigned(self):
         self.assertTrue(self.spam.lookup("x").is_assigned())
@@ -201,10 +253,9 @@ class SymtableTest(unittest.TestCase):
         checkfilename("def f(x): foo)(", 14)  # parse-time
         checkfilename("def f(x): global x", 11)  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
-        with self.assertWarns(DeprecationWarning), \
-             self.assertRaises(TypeError):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", bytearray(b"spam"), "exec")
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             symtable.symtable("pass", memoryview(b"spam"), "exec")
         with self.assertRaises(TypeError):
             symtable.symtable("pass", list(b"spam"), "exec")
@@ -226,6 +277,14 @@ class SymtableTest(unittest.TestCase):
 
         top = symtable.symtable(code, "?", "exec")
         self.assertIsNotNone(find_block(top, "\u017d"))
+
+    def test_symtable_repr(self):
+        self.assertEqual(str(self.top), "<SymbolTable for module ?>")
+        self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
+
+    def test_symtable_entry_repr(self):
+        expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
+        self.assertEqual(repr(self.top._table), expected)
 
 
 if __name__ == '__main__':

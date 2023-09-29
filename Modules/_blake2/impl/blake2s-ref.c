@@ -323,7 +323,7 @@ int blake2s_final( blake2s_state *S, uint8_t *out, size_t outlen )
     blake2s_increment_counter( S, BLAKE2S_BLOCKBYTES );
     blake2s_compress( S, S->buf );
     S->buflen -= BLAKE2S_BLOCKBYTES;
-    memcpy( S->buf, S->buf + BLAKE2S_BLOCKBYTES, S->buflen );
+    memmove( S->buf, S->buf + BLAKE2S_BLOCKBYTES, S->buflen );
   }
 
   blake2s_increment_counter( S, ( uint32_t )S->buflen );

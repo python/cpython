@@ -6,77 +6,40 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
-#include "pycore_pystate.h"   // _PyInterpreterState_GET()
-
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
-#endif
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_pythread.h"
 
 #ifndef DONT_HAVE_STDIO_H
-#include <stdio.h>
+#  include <stdio.h>
 #endif
 
 #include <stdlib.h>
 
-#ifndef _POSIX_THREADS
-
-/* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implemented to support python
-   threads.
-
-   This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
-   a check of __ia64 to verify that we're running on an ia64 system instead
-   of a pa-risc system.
-*/
-#ifdef __hpux
-#ifdef _SC_THREADS
-#define _POSIX_THREADS
-#endif
-#endif
-
-#endif /* _POSIX_THREADS */
-
-
-#ifdef Py_DEBUG
-static int thread_debug = 0;
-#define dprintf(args)   (void)((thread_debug & 1) && printf args)
-#define d2printf(args)  ((thread_debug & 8) && printf args)
-#else
-#define dprintf(args)
-#define d2printf(args)
-#endif
-
-static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
+
+#define initialized _PyRuntime.threads.initialized
 
 void
 PyThread_init_thread(void)
 {
-#ifdef Py_DEBUG
-    const char *p = Py_GETENV("PYTHONTHREADDEBUG");
-
-    if (p) {
-        if (*p)
-            thread_debug = atoi(p);
-        else
-            thread_debug = 1;
-    }
-#endif /* Py_DEBUG */
-    if (initialized)
+    if (initialized) {
         return;
+    }
     initialized = 1;
-    dprintf(("PyThread_init_thread called\n"));
     PyThread__init_thread();
 }
 
-#if defined(_POSIX_THREADS)
-#   define PYTHREAD_NAME "pthread"
+#if defined(HAVE_PTHREAD_STUBS)
+#   define PYTHREAD_NAME "pthread-stubs"
+#   include "thread_pthread_stubs.h"
+#elif defined(_USE_PTHREADS)  /* AKA _PTHREADS */
+#   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+#     define PYTHREAD_NAME "pthread-stubs"
+#   else
+#     define PYTHREAD_NAME "pthread"
+#   endif
 #   include "thread_pthread.h"
 #elif defined(NT_THREADS)
 #   define PYTHREAD_NAME "nt"
@@ -90,7 +53,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return _PyInterpreterState_GET()->pythread_stacksize;
+    return _PyInterpreterState_GET()->threads.stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro
@@ -174,9 +137,9 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (ThreadInfoType.tp_name == 0) {
-        if (PyStructSequence_InitType2(&ThreadInfoType, &threadinfo_desc) < 0)
-            return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyStructSequence_InitBuiltin(interp, &ThreadInfoType, &threadinfo_desc) < 0) {
+        return NULL;
     }
 
     threadinfo = PyStructSequence_New(&ThreadInfoType);
@@ -190,7 +153,9 @@ PyThread_GetInfo(void)
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
-#ifdef _POSIX_THREADS
+#ifdef HAVE_PTHREAD_STUBS
+    value = Py_NewRef(Py_None);
+#elif defined(_POSIX_THREADS)
 #ifdef USE_SEMAPHORES
     value = PyUnicode_FromString("semaphore");
 #else
@@ -201,8 +166,7 @@ PyThread_GetInfo(void)
         return NULL;
     }
 #else
-    Py_INCREF(Py_None);
-    value = Py_None;
+    value = Py_NewRef(Py_None);
 #endif
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
 
@@ -218,9 +182,15 @@ PyThread_GetInfo(void)
     if (value == NULL)
 #endif
     {
-        Py_INCREF(Py_None);
-        value = Py_None;
+        value = Py_NewRef(Py_None);
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
+}
+
+
+void
+_PyThread_FiniType(PyInterpreterState *interp)
+{
+    _PyStructSequence_FiniBuiltin(interp, &ThreadInfoType);
 }

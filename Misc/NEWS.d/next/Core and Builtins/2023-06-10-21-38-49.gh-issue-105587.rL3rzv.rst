@@ -1,0 +1,3 @@
+The runtime can't guarantee that immortal objects will not be mutated by
+Extensions. Thus, this modifies _PyStaticObject_CheckRefcnt to warn
+instead of asserting.

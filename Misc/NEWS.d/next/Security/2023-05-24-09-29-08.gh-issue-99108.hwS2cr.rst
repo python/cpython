@@ -1,0 +1,2 @@
+Refresh our new HACL* built-in :mod:`hashlib` code from upstream. Built-in
+SHA2 should be faster and an issue with SHA3 on 32-bit platforms is fixed.

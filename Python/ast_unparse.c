@@ -1,14 +1,23 @@
-#include <float.h>   /* DBL_MAX_10_EXP */
-#include <stdbool.h>
 #include "Python.h"
-#include "Python-ast.h"
+#include "pycore_ast.h"           // expr_ty
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
+#include <float.h>                // DBL_MAX_10_EXP
+#include <stdbool.h>
 
-static PyObject *_str_open_br;
-static PyObject *_str_dbl_open_br;
-static PyObject *_str_close_br;
-static PyObject *_str_dbl_close_br;
-static PyObject *_str_inf;
-static PyObject *_str_replace_inf;
+/* This limited unparser is used to convert annotations back to strings
+ * during compilation rather than being a full AST unparser.
+ * See ast.unparse for a full unparser (written in Python)
+ */
+
+_Py_DECLARE_STR(open_br, "{");
+_Py_DECLARE_STR(dbl_open_br, "{{");
+_Py_DECLARE_STR(close_br, "}");
+_Py_DECLARE_STR(dbl_close_br, "}}");
+
+/* We would statically initialize this if doing so were simple enough. */
+#define _str_replace_inf(interp) \
+    _Py_INTERP_CACHED_OBJECT(interp, str_replace_inf)
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
@@ -73,10 +82,11 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
        PyComplex_CheckExact(obj))
     {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         PyObject *new_repr = PyUnicode_Replace(
             repr,
-            _str_inf,
-            _str_replace_inf,
+            &_Py_ID(inf),
+            _str_replace_inf(interp),
             -1
         );
         Py_DECREF(repr);
@@ -117,7 +127,7 @@ static int
 append_ast_boolop(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     Py_ssize_t i, value_count;
-    asdl_seq *values;
+    asdl_expr_seq *values;
     const char *op = (e->v.BoolOp.op == And) ? " and " : " or ";
     int pr = (e->v.BoolOp.op == And) ? PR_AND : PR_OR;
 
@@ -398,7 +408,7 @@ append_ast_comprehension(_PyUnicodeWriter *writer, comprehension_ty gen)
 }
 
 static int
-append_ast_comprehensions(_PyUnicodeWriter *writer, asdl_seq *comprehensions)
+append_ast_comprehensions(_PyUnicodeWriter *writer, asdl_comprehension_seq *comprehensions)
 {
     Py_ssize_t i, gen_count;
     gen_count = asdl_seq_LEN(comprehensions);
@@ -453,7 +463,7 @@ append_ast_compare(_PyUnicodeWriter *writer, expr_ty e, int level)
 {
     const char *op;
     Py_ssize_t i, comparator_count;
-    asdl_seq *comparators;
+    asdl_expr_seq *comparators;
     asdl_int_seq *ops;
 
     APPEND_STR_IF(level > PR_CMP, "(");
@@ -570,11 +580,11 @@ escape_braces(PyObject *orig)
 {
     PyObject *temp;
     PyObject *result;
-    temp = PyUnicode_Replace(orig, _str_open_br, _str_dbl_open_br, -1);
+    temp = PyUnicode_Replace(orig, &_Py_STR(open_br), &_Py_STR(dbl_open_br), -1);
     if (!temp) {
         return NULL;
     }
-    result = PyUnicode_Replace(temp, _str_close_br, _str_dbl_close_br, -1);
+    result = PyUnicode_Replace(temp, &_Py_STR(close_br), &_Py_STR(dbl_close_br), -1);
     Py_DECREF(temp);
     return result;
 }
@@ -612,7 +622,7 @@ append_fstring_element(_PyUnicodeWriter *writer, expr_ty e, bool is_format_spec)
 /* Build body separately to enable wrapping the entire stream of Strs,
    Constants and FormattedValues in one opening and one closing quote. */
 static PyObject *
-build_fstring_body(asdl_seq *values, bool is_format_spec)
+build_fstring_body(asdl_expr_seq *values, bool is_format_spec)
 {
     Py_ssize_t i, value_count;
     _PyUnicodeWriter body_writer;
@@ -668,7 +678,7 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
     if (!temp_fv_str) {
         return -1;
     }
-    if (PyUnicode_Find(temp_fv_str, _str_open_br, 0, 1, 1) == 0) {
+    if (PyUnicode_Find(temp_fv_str, &_Py_STR(open_br), 0, 1, 1) == 0) {
         /* Expression starts with a brace, split it with a space from the outer
            one. */
         outer_brace = "{ ";
@@ -781,19 +791,8 @@ static int
 append_ast_subscript(_PyUnicodeWriter *writer, expr_ty e)
 {
     APPEND_EXPR(e->v.Subscript.value, PR_ATOM);
-    int level = PR_TUPLE;
-    expr_ty slice = e->v.Subscript.slice;
-    if (slice->kind == Tuple_kind) {
-        for (Py_ssize_t i = 0; i < asdl_seq_LEN(slice->v.Tuple.elts); i++) {
-            expr_ty element = asdl_seq_GET(slice->v.Tuple.elts, i);
-            if (element->kind == Starred_kind) {
-                ++level;
-                break;
-            }
-        }
-    }
     APPEND_STR("[");
-    APPEND_EXPR(e->v.Subscript.slice, level);
+    APPEND_EXPR(e->v.Subscript.slice, PR_TUPLE);
     APPEND_STR_FINISH("]");
 }
 
@@ -912,39 +911,23 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         return append_ast_tuple(writer, e, level);
     case NamedExpr_kind:
         return append_named_expr(writer, e, level);
-    default:
-        PyErr_SetString(PyExc_SystemError,
-                        "unknown expression kind");
-        return -1;
+    // No default so compiler emits a warning for unhandled cases
     }
+    PyErr_SetString(PyExc_SystemError,
+                    "unknown expression kind");
+    return -1;
 }
 
 static int
 maybe_init_static_strings(void)
 {
-    if (!_str_open_br &&
-        !(_str_open_br = PyUnicode_InternFromString("{"))) {
-        return -1;
-    }
-    if (!_str_dbl_open_br &&
-        !(_str_dbl_open_br = PyUnicode_InternFromString("{{"))) {
-        return -1;
-    }
-    if (!_str_close_br &&
-        !(_str_close_br = PyUnicode_InternFromString("}"))) {
-        return -1;
-    }
-    if (!_str_dbl_close_br &&
-        !(_str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
-        return -1;
-    }
-    if (!_str_inf &&
-        !(_str_inf = PyUnicode_FromString("inf"))) {
-        return -1;
-    }
-    if (!_str_replace_inf &&
-        !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
-        return -1;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_str_replace_inf(interp) == NULL) {
+        PyObject *tmp = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
+        if (tmp == NULL) {
+            return -1;
+        }
+        _str_replace_inf(interp) = tmp;
     }
     return 0;
 }

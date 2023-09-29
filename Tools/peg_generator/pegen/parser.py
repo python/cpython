@@ -4,16 +4,12 @@ import time
 import token
 import tokenize
 import traceback
-
 from abc import abstractmethod
-from typing import Any, Callable, cast, Dict, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, ClassVar, Dict, Optional, Tuple, Type, TypeVar, cast
 
-from pegen.tokenizer import exact_token_types
-from pegen.tokenizer import Mark
-from pegen.tokenizer import Tokenizer
+from pegen.tokenizer import Mark, Tokenizer, exact_token_types
 
 T = TypeVar("T")
-P = TypeVar("P", bound="Parser")
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -24,7 +20,7 @@ def logger(method: F) -> F:
     """
     method_name = method.__name__
 
-    def logger_wrapper(self: P, *args: object) -> T:
+    def logger_wrapper(self: "Parser", *args: object) -> Any:
         if not self._verbose:
             return method(self, *args)
         argsr = ",".join(repr(arg) for arg in args)
@@ -36,7 +32,7 @@ def logger(method: F) -> F:
         print(f"{fill}... {method_name}({argsr}) --> {tree!s:.200}")
         return tree
 
-    logger_wrapper.__wrapped__ = method  # type: ignore
+    logger_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return cast(F, logger_wrapper)
 
 
@@ -44,13 +40,13 @@ def memoize(method: F) -> F:
     """Memoize a symbol method."""
     method_name = method.__name__
 
-    def memoize_wrapper(self: P, *args: object) -> T:
-        mark = self.mark()
+    def memoize_wrapper(self: "Parser", *args: object) -> Any:
+        mark = self._mark()
         key = mark, method_name, args
         # Fast path: cache hit, and not verbose.
         if key in self._cache and not self._verbose:
             tree, endmark = self._cache[key]
-            self.reset(endmark)
+            self._reset(endmark)
             return tree
         # Slow path: no cache hit, or verbose.
         verbose = self._verbose
@@ -64,30 +60,32 @@ def memoize(method: F) -> F:
             self._level -= 1
             if verbose:
                 print(f"{fill}... {method_name}({argsr}) -> {tree!s:.200}")
-            endmark = self.mark()
+            endmark = self._mark()
             self._cache[key] = tree, endmark
         else:
             tree, endmark = self._cache[key]
             if verbose:
                 print(f"{fill}{method_name}({argsr}) -> {tree!s:.200}")
-            self.reset(endmark)
+            self._reset(endmark)
         return tree
 
-    memoize_wrapper.__wrapped__ = method  # type: ignore
+    memoize_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return cast(F, memoize_wrapper)
 
 
-def memoize_left_rec(method: Callable[[P], Optional[T]]) -> Callable[[P], Optional[T]]:
+def memoize_left_rec(
+    method: Callable[["Parser"], Optional[T]]
+) -> Callable[["Parser"], Optional[T]]:
     """Memoize a left-recursive symbol method."""
     method_name = method.__name__
 
-    def memoize_left_rec_wrapper(self: P) -> Optional[T]:
-        mark = self.mark()
+    def memoize_left_rec_wrapper(self: "Parser") -> Optional[T]:
+        mark = self._mark()
         key = mark, method_name, ()
         # Fast path: cache hit, and not verbose.
         if key in self._cache and not self._verbose:
             tree, endmark = self._cache[key]
-            self.reset(endmark)
+            self._reset(endmark)
             return tree
         # Slow path: no cache hit, or verbose.
         verbose = self._verbose
@@ -113,9 +111,13 @@ def memoize_left_rec(method: Callable[[P], Optional[T]]) -> Callable[[P], Option
                 print(f"{fill}Recursive {method_name} at {mark} depth {depth}")
 
             while True:
-                self.reset(mark)
-                result = method(self)
-                endmark = self.mark()
+                self._reset(mark)
+                self.in_recursive_rule += 1
+                try:
+                    result = method(self)
+                finally:
+                    self.in_recursive_rule -= 1
+                endmark = self._mark()
                 depth += 1
                 if verbose:
                     print(
@@ -131,42 +133,48 @@ def memoize_left_rec(method: Callable[[P], Optional[T]]) -> Callable[[P], Option
                     break
                 self._cache[key] = lastresult, lastmark = result, endmark
 
-            self.reset(lastmark)
+            self._reset(lastmark)
             tree = lastresult
 
             self._level -= 1
             if verbose:
                 print(f"{fill}{method_name}() -> {tree!s:.200} [cached]")
             if tree:
-                endmark = self.mark()
+                endmark = self._mark()
             else:
                 endmark = mark
-                self.reset(endmark)
+                self._reset(endmark)
             self._cache[key] = tree, endmark
         else:
             tree, endmark = self._cache[key]
             if verbose:
                 print(f"{fill}{method_name}() -> {tree!s:.200} [fresh]")
             if tree:
-                self.reset(endmark)
+                self._reset(endmark)
         return tree
 
-    memoize_left_rec_wrapper.__wrapped__ = method  # type: ignore
+    memoize_left_rec_wrapper.__wrapped__ = method  # type: ignore[attr-defined]
     return memoize_left_rec_wrapper
 
 
 class Parser:
     """Parsing base class."""
 
+    KEYWORDS: ClassVar[Tuple[str, ...]]
+
+    SOFT_KEYWORDS: ClassVar[Tuple[str, ...]]
+
     def __init__(self, tokenizer: Tokenizer, *, verbose: bool = False):
         self._tokenizer = tokenizer
         self._verbose = verbose
         self._level = 0
         self._cache: Dict[Tuple[Mark, str, Tuple[Any, ...]], Tuple[Any, Mark]] = {}
+        # Integer tracking whether we are in a left recursive rule or not. Can be useful
+        # for error reporting.
+        self.in_recursive_rule = 0
         # Pass through common tokenizer methods.
-        # TODO: Rename to _mark and _reset.
-        self.mark = self._tokenizer.mark
-        self.reset = self._tokenizer.reset
+        self._mark = self._tokenizer.mark
+        self._reset = self._tokenizer.reset
 
     @abstractmethod
     def start(self) -> Any:
@@ -179,7 +187,7 @@ class Parser:
     @memoize
     def name(self) -> Optional[tokenize.TokenInfo]:
         tok = self._tokenizer.peek()
-        if tok.type == token.NAME:
+        if tok.type == token.NAME and tok.string not in self.KEYWORDS:
             return self._tokenizer.getnext()
         return None
 
@@ -205,6 +213,20 @@ class Parser:
         return None
 
     @memoize
+    def type_comment(self) -> Optional[tokenize.TokenInfo]:
+        tok = self._tokenizer.peek()
+        if tok.type == token.TYPE_COMMENT:
+            return self._tokenizer.getnext()
+        return None
+
+    @memoize
+    def soft_keyword(self) -> Optional[tokenize.TokenInfo]:
+        tok = self._tokenizer.peek()
+        if tok.type == token.NAME and tok.string in self.SOFT_KEYWORDS:
+            return self._tokenizer.getnext()
+        return None
+
+    @memoize
     def expect(self, type: str) -> Optional[tokenize.TokenInfo]:
         tok = self._tokenizer.peek()
         if tok.string == type:
@@ -219,23 +241,26 @@ class Parser:
             return self._tokenizer.getnext()
         return None
 
+    def expect_forced(self, res: Any, expectation: str) -> Optional[tokenize.TokenInfo]:
+        if res is None:
+            raise self.make_syntax_error(f"expected {expectation}")
+        return res
+
     def positive_lookahead(self, func: Callable[..., T], *args: object) -> T:
-        mark = self.mark()
+        mark = self._mark()
         ok = func(*args)
-        self.reset(mark)
+        self._reset(mark)
         return ok
 
     def negative_lookahead(self, func: Callable[..., object], *args: object) -> bool:
-        mark = self.mark()
+        mark = self._mark()
         ok = func(*args)
-        self.reset(mark)
+        self._reset(mark)
         return not ok
 
-    def make_syntax_error(self, filename: str = "<unknown>") -> SyntaxError:
+    def make_syntax_error(self, message: str, filename: str = "<unknown>") -> SyntaxError:
         tok = self._tokenizer.diagnose()
-        return SyntaxError(
-            "pegen parse failure", (filename, tok.start[0], 1 + tok.start[1], tok.line)
-        )
+        return SyntaxError(message, (filename, tok.start[0], 1 + tok.start[1], tok.line))
 
 
 def simple_parser_main(parser_class: Type[Parser]) -> None:

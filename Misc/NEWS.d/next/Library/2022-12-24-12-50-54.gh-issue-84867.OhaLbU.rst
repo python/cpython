@@ -1,0 +1,2 @@
+:class:`unittest.TestLoader` no longer loads test cases from exact
+:class:`unittest.TestCase` and :class:`unittest.FunctionTestCase` classes.

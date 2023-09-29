@@ -21,7 +21,7 @@ Python's development never completely stops between releases, and a steady flow
 of bug fixes and improvements are always being submitted. A host of minor fixes,
 a few optimizations, additional docstrings, and better error messages went into
 2.0; to list them all would be impossible, but they're certainly significant.
-Consult the publicly-available CVS logs if you want to see the full list.  This
+Consult the publicly available CVS logs if you want to see the full list.  This
 progress is due to the five developers working for  PythonLabs are now getting
 paid to spend their days fixing bugs, and also due to the improved communication
 resulting  from moving to SourceForge.
@@ -108,7 +108,7 @@ usually easy compared to the earlier task of coming up with a good design.
 Discussions of new features can often explode into lengthy mailing list threads,
 making the discussion hard to follow, and no one can read every posting to
 python-dev.  Therefore, a relatively formal process has been set up to write
-Python Enhancement Proposals (PEPs), modelled on the Internet RFC process.  PEPs
+Python Enhancement Proposals (PEPs), modelled on the internet RFC process.  PEPs
 are draft documents that describe a proposed new feature, and are continually
 revised until the community reaches a consensus, either accepting or rejecting
 the proposal.  Quoting from the introduction to :pep:`1`, "PEP Purpose and
@@ -130,7 +130,7 @@ Guidelines":
 Read the rest of :pep:`1` for the details of the PEP editorial process, style, and
 format.  PEPs are kept in the Python CVS tree on SourceForge, though they're not
 part of the Python 2.0 distribution, and are also available in HTML form from
-https://www.python.org/dev/peps/.  As of September 2000, there are 25 PEPS, ranging
+https://peps.python.org/.  As of September 2000, there are 25 PEPS, ranging
 from :pep:`201`, "Lockstep Iteration", to PEP 225, "Elementwise/Objectwise
 Operators".
 
@@ -153,9 +153,9 @@ Lundh.  A detailed explanation of the interface was written up as :pep:`100`,
 significant points about the Unicode interfaces.
 
 In Python source code, Unicode strings are written as ``u"string"``.  Arbitrary
-Unicode characters can be written using a new escape sequence, ``\uHHHH``, where
+Unicode characters can be written using a new escape sequence, :samp:`\\u{HHHH}`, where
 *HHHH* is a 4-digit hexadecimal number from 0000 to FFFF.  The existing
-``\xHHHH`` escape sequence can also be used, and octal escapes can be used for
+:samp:`\\x{HH}` escape sequence can also be used, and octal escapes can be used for
 characters up to U+01FF, which is represented by ``\777``.
 
 Unicode strings, just like regular strings, are an immutable sequence type.
@@ -572,7 +572,7 @@ Work has been done on porting Python to 64-bit Windows on the Itanium processor,
 mostly by Trent Mick of ActiveState.  (Confusingly, ``sys.platform`` is still
 ``'win32'`` on Win64 because it seems that for ease of porting, MS Visual C++
 treats code as 32 bit on Itanium.) PythonWin also supports Windows CE; see the
-Python CE page at http://pythonce.sourceforge.net/ for more information.
+Python CE page at https://pythonce.sourceforge.net/ for more information.
 
 Another new platform is Darwin/MacOS X; initial support for it is in Python 2.0.
 Dynamic loading works, if you specify "configure --with-dyld --with-suffix=.x".
@@ -664,7 +664,7 @@ extra set of parentheses to pass both values as a tuple:  ``L.append( (1,2) )``.
 
 The earlier versions of these methods were more forgiving because they used an
 old function in Python's C interface to parse their arguments; 2.0 modernizes
-them to use :func:`PyArg_ParseTuple`, the current argument parsing function,
+them to use :c:func:`PyArg_ParseTuple`, the current argument parsing function,
 which provides more helpful error messages and treats multi-argument calls as
 errors.  If you absolutely must use 2.0 but can't fix your code, you can edit
 :file:`Objects/listobject.c` and define the preprocessor symbol
@@ -766,9 +766,9 @@ file, :file:`Include/pyport.h`.
 
 Vladimir Marangozov's long-awaited malloc restructuring was completed, to make
 it easy to have the Python interpreter use a custom allocator instead of C's
-standard :func:`malloc`.  For documentation, read the comments in
+standard :c:func:`malloc`.  For documentation, read the comments in
 :file:`Include/pymem.h` and :file:`Include/objimpl.h`.  For the lengthy
-discussions during which the interface was hammered out, see the Web archives of
+discussions during which the interface was hammered out, see the web archives of
 the 'patches' and 'python-dev' lists at python.org.
 
 Recent versions of the GUSI development environment for MacOS support POSIX
@@ -791,18 +791,18 @@ Previously the Python virtual machine used 16-bit numbers in its bytecode,
 limiting the size of source files.  In particular, this affected the maximum
 size of literal lists and dictionaries in Python source; occasionally people who
 are generating Python code would run into this limit.  A patch by Charles G.
-Waldman raises the limit from ``2^16`` to ``2^{32}``.
+Waldman raises the limit from ``2**16`` to ``2**32``.
 
 Three new convenience functions intended for adding constants to a module's
-dictionary at module initialization time were added: :func:`PyModule_AddObject`,
-:func:`PyModule_AddIntConstant`, and :func:`PyModule_AddStringConstant`.  Each
+dictionary at module initialization time were added: :c:func:`PyModule_AddObject`,
+:c:func:`PyModule_AddIntConstant`, and :c:func:`PyModule_AddStringConstant`.  Each
 of these functions takes a module object, a null-terminated C string containing
 the name to be added, and a third argument for the value to be assigned to the
 name.  This third argument is, respectively, a Python object, a C long, or a C
 string.
 
-A wrapper API was added for Unix-style signal handlers. :func:`PyOS_getsig` gets
-a signal handler and :func:`PyOS_setsig` will set a new handler.
+A wrapper API was added for Unix-style signal handlers. :c:func:`PyOS_getsig` gets
+a signal handler and :c:func:`PyOS_setsig` will set a new handler.
 
 .. ======================================================================
 
@@ -820,7 +820,7 @@ packages, which made administering a Python installation something of  a chore.
 
 The SIG for distribution utilities, shepherded by Greg Ward, has created the
 Distutils, a system to make package installation much easier.  They form the
-:mod:`distutils` package, a new part of Python's standard library. In the best
+``distutils`` package, a new part of Python's standard library. In the best
 case, installing a Python module from source will require the same steps: first
 you simply mean unpack the tarball or zip archive, and the run "``python
 setup.py install``".  The platform will be automatically detected, the compiler
@@ -933,7 +933,7 @@ using it::
    parser.parse( 'hamlet.xml' )
 
 For more information, consult the Python documentation, or the XML HOWTO at
-http://pyxml.sourceforge.net/topics/howto/xml-howto.html.
+https://pyxml.sourceforge.net/topics/howto/xml-howto.html.
 
 
 DOM Support
@@ -1002,7 +1002,7 @@ Relationship to PyXML
 ---------------------
 
 The XML Special Interest Group has been working on XML-related Python code for a
-while.  Its code distribution, called PyXML, is available from the SIG's Web
+while.  Its code distribution, called PyXML, is available from the SIG's web
 pages at https://www.python.org/community/sigs/current/xml-sig. The PyXML distribution also used
 the package name ``xml``.  If you've written programs that used PyXML, you're
 probably wondering about its compatibility with the 2.0 :mod:`xml` package.
@@ -1030,9 +1030,9 @@ Module changes
 
 Lots of improvements and bugfixes were made to Python's extensive standard
 library; some of the affected modules include :mod:`readline`,
-:mod:`ConfigParser`, :mod:`cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
-:mod:`xmllib`, :mod:`aifc`, :mod:`chunk, wave`, :mod:`random`, :mod:`shelve`,
-and :mod:`nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
+:mod:`ConfigParser`, :mod:`!cgi`, :mod:`calendar`, :mod:`posix`, :mod:`readline`,
+:mod:`xmllib`, :mod:`!aifc`, :mod:`!chunk`, :mod:`wave`, :mod:`random`, :mod:`shelve`,
+and :mod:`!nntplib`.  Consult the CVS logs for the exact patch-by-patch details.
 
 Brian Gallew contributed OpenSSL support for the :mod:`socket` module.  OpenSSL
 is an implementation of the Secure Socket Layer, which encrypts the data being
@@ -1109,7 +1109,7 @@ module.
   Prescod.)
 
 * :mod:`robotparser`: Parse a :file:`robots.txt` file, which is used for writing
-  Web spiders that politely avoid certain areas of a Web site.  The parser accepts
+  web spiders that politely avoid certain areas of a web site.  The parser accepts
   the contents of a :file:`robots.txt` file, builds a set of rules from it, and
   can then answer questions about the fetchability of a given URL.  (Contributed
   by Skip Montanaro.)

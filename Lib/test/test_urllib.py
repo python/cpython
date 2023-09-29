@@ -9,6 +9,9 @@ import io
 import unittest
 from unittest.mock import patch
 from test import support
+from test.support import os_helper
+from test.support import socket_helper
+from test.support import warnings_helper
 import os
 try:
     import ssl
@@ -20,6 +23,10 @@ from nturl2path import url2pathname, pathname2url
 
 from base64 import b64encode
 import collections
+
+
+if not socket_helper.has_gethostname:
+    raise unittest.SkipTest("test requires gethostname()")
 
 
 def hexescape(char):
@@ -50,7 +57,7 @@ def urlopen(url, data=None, proxies=None):
 
 
 def FancyURLopener():
-    with support.check_warnings(
+    with warnings_helper.check_warnings(
             ('FancyURLopener style of invoking requests is deprecated.',
             DeprecationWarning)):
         return urllib.request.FancyURLopener()
@@ -145,19 +152,19 @@ class urlopen_FileTests(unittest.TestCase):
         # Create a temp file to use for testing
         self.text = bytes("test_urllib: %s\n" % self.__class__.__name__,
                           "ascii")
-        f = open(support.TESTFN, 'wb')
+        f = open(os_helper.TESTFN, 'wb')
         try:
             f.write(self.text)
         finally:
             f.close()
-        self.pathname = support.TESTFN
+        self.pathname = os_helper.TESTFN
         self.quoted_pathname = urllib.parse.quote(self.pathname)
         self.returned_obj = urlopen("file:%s" % self.quoted_pathname)
 
     def tearDown(self):
         """Shut down the open object"""
         self.returned_obj.close()
-        os.remove(support.TESTFN)
+        os.remove(os_helper.TESTFN)
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -230,16 +237,11 @@ class ProxyTests(unittest.TestCase):
 
     def setUp(self):
         # Records changes to env vars
-        self.env = support.EnvironmentVarGuard()
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         # Delete all proxy related env vars
         for k in list(os.environ):
             if 'proxy' in k.lower():
                 self.env.unset(k)
-
-    def tearDown(self):
-        # Restore all proxy related env vars
-        self.env.__exit__()
-        del self.env
 
     def test_getproxies_environment_keep_no_proxies(self):
         self.env.set('NO_PROXY', 'localhost')
@@ -592,17 +594,8 @@ Connection: close
             self.unfakehttp()
 
     def test_URLopener_deprecation(self):
-        with support.check_warnings(('',DeprecationWarning)):
+        with warnings_helper.check_warnings(('',DeprecationWarning)):
             urllib.request.URLopener()
-
-    @unittest.skipUnless(ssl, "ssl module required")
-    def test_cafile_and_context(self):
-        context = ssl.create_default_context()
-        with support.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(ValueError):
-                urllib.request.urlopen(
-                    "https://localhost", cafile="/nonexistent/path", context=context
-                )
 
 
 class urlopen_DataTests(unittest.TestCase):
@@ -699,10 +692,10 @@ class urlretrieve_FileTests(unittest.TestCase):
         self.tempFiles = []
 
         # Create a temporary file.
-        self.registerFileForCleanUp(support.TESTFN)
+        self.registerFileForCleanUp(os_helper.TESTFN)
         self.text = b'testing urllib.urlretrieve'
         try:
-            FILE = open(support.TESTFN, 'wb')
+            FILE = open(os_helper.TESTFN, 'wb')
             FILE.write(self.text)
             FILE.close()
         finally:
@@ -745,18 +738,18 @@ class urlretrieve_FileTests(unittest.TestCase):
     def test_basic(self):
         # Make sure that a local file just gets its own location returned and
         # a headers value is returned.
-        result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
-        self.assertEqual(result[0], support.TESTFN)
+        result = urllib.request.urlretrieve("file:%s" % os_helper.TESTFN)
+        self.assertEqual(result[0], os_helper.TESTFN)
         self.assertIsInstance(result[1], email.message.Message,
                               "did not get an email.message.Message instance "
                               "as second returned value")
 
     def test_copy(self):
         # Test that setting the filename argument works.
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % os_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         result = urllib.request.urlretrieve(self.constructLocalFileUrl(
-            support.TESTFN), second_temp)
+            os_helper.TESTFN), second_temp)
         self.assertEqual(second_temp, result[0])
         self.assertTrue(os.path.exists(second_temp), "copy of the file was not "
                                                   "made")
@@ -777,10 +770,10 @@ class urlretrieve_FileTests(unittest.TestCase):
             self.assertIsInstance(file_size, int)
             self.assertEqual(block_count, count_holder[0])
             count_holder[0] = count_holder[0] + 1
-        second_temp = "%s.2" % support.TESTFN
+        second_temp = "%s.2" % os_helper.TESTFN
         self.registerFileForCleanUp(second_temp)
         urllib.request.urlretrieve(
-            self.constructLocalFileUrl(support.TESTFN),
+            self.constructLocalFileUrl(os_helper.TESTFN),
             second_temp, hooktester)
 
     def test_reporthook_0_bytes(self):
@@ -790,7 +783,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile()
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 1)
         self.assertEqual(report[0][2], 0)
 
@@ -803,7 +796,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 5)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 2)
         self.assertEqual(report[0][2], 5)
         self.assertEqual(report[1][2], 5)
@@ -817,7 +810,7 @@ class urlretrieve_FileTests(unittest.TestCase):
             _report.append((block_count, block_read_size, file_size))
         srcFileName = self.createNewTempFile(b"x" * 8193)
         urllib.request.urlretrieve(self.constructLocalFileUrl(srcFileName),
-            support.TESTFN, hooktester)
+            os_helper.TESTFN, hooktester)
         self.assertEqual(len(report), 3)
         self.assertEqual(report[0][2], 8193)
         self.assertEqual(report[0][1], 8192)
@@ -1102,6 +1095,8 @@ class UnquotingTests(unittest.TestCase):
         self.assertEqual(result.count('%'), 1,
                          "using unquote(): not all characters escaped: "
                          "%s" % result)
+
+    def test_unquote_rejects_none_and_tuple(self):
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
 
@@ -1525,6 +1520,24 @@ class Pathname_Tests(unittest.TestCase):
                          (expect, result))
 
     @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to the nturl2path functions.')
+    def test_prefixes(self):
+        # Test special prefixes are correctly handled in pathname2url()
+        given = '\\\\?\\C:\\dir'
+        expect = '///C:/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+        given = '\\\\?\\unc\\server\\share\\dir'
+        expect = '/server/share/dir'
+        result = urllib.request.pathname2url(given)
+        self.assertEqual(expect, result,
+                         "pathname2url() failed; %s != %s" %
+                         (expect, result))
+
+
+    @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to the urllib.url2path function.')
     def test_ntpath(self):
         given = ('/C:/', '///C:/', '/C|//')
@@ -1556,7 +1569,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
         class DummyURLopener(urllib.request.URLopener):
             def open_spam(self, url):
                 return url
-        with support.check_warnings(
+        with warnings_helper.check_warnings(
                 ('DummyURLopener style of invoking requests is deprecated.',
                 DeprecationWarning)):
             self.assertEqual(DummyURLopener().open(
@@ -1567,9 +1580,9 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
                 "spam://c:|windows%/:=&?~#+!$,;'@()*[]|/path/"),
                 "//c:|windows%/:=&?~#+!$,;'@()*[]|/path/")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_file(self):
-        with support.temp_dir() as tmpdir:
+        with os_helper.temp_dir() as tmpdir:
             fd, tmpfile = tempfile.mkstemp(dir=tmpdir)
             os.close(fd)
             fileurl = "file:" + urllib.request.pathname2url(tmpfile)
@@ -1577,7 +1590,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             # Some buildbots have TEMP folder that uses a lowercase drive letter.
             self.assertEqual(os.path.normcase(filename), os.path.normcase(tmpfile))
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_urlopener_retrieve_remote(self):
         url = "http://www.python.org/file.txt"
         self.fakehttp(b"HTTP/1.1 200 OK\r\n\r\nHello!")
@@ -1585,7 +1598,7 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
         filename, _ = urllib.request.URLopener().retrieve(url)
         self.assertEqual(os.path.splitext(filename)[1], ".txt")
 
-    @support.ignore_warnings(category=DeprecationWarning)
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_local_file_open(self):
         # bpo-35907, CVE-2019-9948: urllib must reject local_file:// scheme
         class DummyURLopener(urllib.request.URLopener):

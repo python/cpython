@@ -49,7 +49,7 @@ amazing new capabilities. Before beginning this, the longest and most
 complicated section of this article, I'll provide an overview of the changes and
 offer some comments.
 
-A long time ago I wrote a Web page listing flaws in Python's design.  One of the
+A long time ago I wrote a web page listing flaws in Python's design.  One of the
 most significant flaws was that it's impossible to subclass Python types
 implemented in C.  In particular, it's not possible to subclass built-in types,
 so you can't just subclass, say, lists in order to add a single useful method to
@@ -395,7 +395,7 @@ This section has just been a quick overview of the new features, giving enough
 of an explanation to start you programming, but many details have been
 simplified or ignored.  Where should you go to get a more complete picture?
 
-https://docs.python.org/dev/howto/descriptor.html is a lengthy tutorial introduction to
+The :ref:`descriptorhowto` is a lengthy tutorial introduction to
 the descriptor features, written by Guido van Rossum. If my description has
 whetted your appetite, go read this tutorial next, because it goes into much
 more detail about the new features while still remaining quite easy to read.
@@ -632,10 +632,10 @@ queen threatens another) and the Knight's Tour (a route that takes a knight to
 every square of an $NxN$ chessboard without visiting any square twice).
 
 The idea of generators comes from other programming languages, especially Icon
-(https://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
+(https://www2.cs.arizona.edu/icon/), where the idea of generators is central.  In
 Icon, every expression and function call behaves like a generator.  One example
 from "An Overview of the Icon Programming Language" at
-https://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
+https://www2.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
 like::
 
    sentence := "Store it in the neighboring harbor"
@@ -983,7 +983,7 @@ New and Improved Modules
   Jun-ichiro "itojun" Hagino.)
 
 * Two new format characters were added to the :mod:`struct` module for 64-bit
-  integers on platforms that support the C :c:type:`long long` type.  ``q`` is for
+  integers on platforms that support the C :c:expr:`long long` type.  ``q`` is for
   a signed 64-bit integer, and ``Q`` is for an unsigned one.  The value is
   returned in Python's long integer type.  (Contributed by Tim Peters.)
 
@@ -1078,17 +1078,17 @@ code, none of the changes described here will affect you very much.
 
   To upgrade an extension module to the new API, perform the following steps:
 
-* Rename :c:func:`Py_TPFLAGS_GC` to :c:func:`PyTPFLAGS_HAVE_GC`.
+* Rename :c:macro:`!Py_TPFLAGS_GC` to :c:macro:`Py_TPFLAGS_HAVE_GC`.
 
 * Use :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar` to allocate
     objects, and :c:func:`PyObject_GC_Del` to deallocate them.
 
-* Rename :c:func:`PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
-    :c:func:`PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
+* Rename :c:func:`!PyObject_GC_Init` to :c:func:`PyObject_GC_Track` and
+  :c:func:`!PyObject_GC_Fini` to :c:func:`PyObject_GC_UnTrack`.
 
-* Remove :c:func:`PyGC_HEAD_SIZE` from object size calculations.
+* Remove :c:macro:`!PyGC_HEAD_SIZE` from object size calculations.
 
-* Remove calls to :c:func:`PyObject_AS_GC` and :c:func:`PyObject_FROM_GC`.
+* Remove calls to :c:func:`!PyObject_AS_GC` and :c:func:`!PyObject_FROM_GC`.
 
 * A new ``et`` format sequence was added to :c:func:`PyArg_ParseTuple`; ``et``
   takes both a parameter and an encoding name, and converts the parameter to the
@@ -1102,14 +1102,14 @@ code, none of the changes described here will affect you very much.
 * A different argument parsing function, :c:func:`PyArg_UnpackTuple`, has been
   added that's simpler and presumably faster.  Instead of specifying a format
   string, the caller simply gives the minimum and maximum number of arguments
-  expected, and a set of pointers to :c:type:`PyObject\*` variables that will be
+  expected, and a set of pointers to :c:expr:`PyObject*` variables that will be
   filled in with argument values.
 
-* Two new flags :const:`METH_NOARGS` and :const:`METH_O` are available in method
+* Two new flags :c:macro:`METH_NOARGS` and :c:macro:`METH_O` are available in method
   definition tables to simplify implementation of methods with no arguments or a
   single untyped argument. Calling such methods is more efficient than calling a
-  corresponding method that uses :const:`METH_VARARGS`.  Also, the old
-  :const:`METH_OLDARGS` style of writing C methods is  now officially deprecated.
+  corresponding method that uses :c:macro:`METH_VARARGS`.  Also, the old
+  :c:macro:`!METH_OLDARGS` style of writing C methods is  now officially deprecated.
 
 * Two new wrapper functions, :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf`
   were added to provide  cross-platform implementations for the relatively new
@@ -1219,7 +1219,7 @@ Some of the more notable changes are:
   operator, but these features were rarely used and therefore buggy.  The
   :meth:`tolist` method and the :attr:`start`, :attr:`stop`, and :attr:`step`
   attributes are also being deprecated.  At the C level, the fourth argument to
-  the :c:func:`PyRange_New` function, ``repeat``, has also been deprecated.
+  the :c:func:`!PyRange_New` function, ``repeat``, has also been deprecated.
 
 * There were a bunch of patches to the dictionary implementation, mostly to fix
   potential core dumps if a dictionary contains objects that sneakily changed

@@ -26,6 +26,8 @@ implement a large subset of the IMAP4rev1 client protocol as defined in
 :rfc:`2060`. It is backward compatible with IMAP4 (:rfc:`1730`) servers, but
 note that the ``STATUS`` command is not supported in IMAP4.
 
+.. include:: ../includes/wasm-notavail.rst
+
 Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
@@ -82,8 +84,8 @@ Three exceptions are defined as attributes of the :class:`IMAP4` class:
 There's also a subclass for secure connections:
 
 
-.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, \
-                     certfile=None, ssl_context=None, timeout=None)
+.. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, *, ssl_context=None, \
+                     timeout=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -93,12 +95,6 @@ There's also a subclass for secure connections:
    SSL configuration options, certificates and private keys into a single
    (potentially long-lived) structure.  Please read :ref:`ssl-security` for
    best practices.
-
-   *keyfile* and *certfile* are a legacy alternative to *ssl_context* - they
-   can point to PEM-formatted private key and certificate chain files for
-   the SSL connection.  Note that the *keyfile*/*certfile* parameters are
-   mutually exclusive with *ssl_context*, a :class:`ValueError` is raised
-   if *keyfile*/*certfile* is provided along with *ssl_context*.
 
    The optional *timeout* parameter specifies a timeout in seconds for the
    connection attempt. If timeout is not given or is None, the global default
@@ -110,17 +106,13 @@ There's also a subclass for secure connections:
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
-
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *ssl_context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
+      :const:`ssl.HAS_SNI`).
 
    .. versionchanged:: 3.9
       The optional *timeout* parameter was added.
+
+   .. versionchanged:: 3.12
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 The second subclass allows for connections created by a child process:
 
@@ -143,7 +135,7 @@ The following utility functions are defined:
 
 .. function:: Int2AP(num)
 
-   Converts an integer into a string representation using characters from the set
+   Converts an integer into a bytes representation using characters from the set
    [``A`` .. ``P``].
 
 
@@ -174,9 +166,9 @@ example of usage.
 
 .. seealso::
 
-   Documents describing the protocol, and sources and binaries  for servers
-   implementing it, can all be found at the University of Washington's *IMAP
-   Information Center* (https://www.washington.edu/imap/).
+   Documents describing the protocol, sources for servers
+   implementing it, by the University of Washington's IMAP Information Center
+   can all be found at (**Source Code**) https://github.com/uw-imap/imap (**Not Maintained**).
 
 
 .. _imap4-objects:
@@ -185,7 +177,7 @@ IMAP4 Objects
 -------------
 
 All IMAP4rev1 commands are represented by methods of the same name, either
-upper-case or lower-case.
+uppercase or lowercase.
 
 All arguments to commands are converted to strings, except for ``AUTHENTICATE``,
 and the last argument to ``APPEND`` which is passed as an IMAP4 literal.  If
@@ -197,7 +189,7 @@ you want to avoid having an argument string quoted (eg: the *flags* argument to
 
 Each command returns a tuple: ``(type, [data, ...])`` where *type* is usually
 ``'OK'`` or ``'NO'``, and *data* is either the text from the command response,
-or mandated results from the command. Each *data* is either a string, or a
+or mandated results from the command. Each *data* is either a ``bytes``, or a
 tuple. If a tuple, then the first part is the header of the response, and the
 second part contains the data (ie: 'literal' value).
 
@@ -511,7 +503,7 @@ An :class:`IMAP4` instance has the following methods:
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
+      :const:`ssl.HAS_SNI`).
 
 
 .. method:: IMAP4.status(mailbox, names)
@@ -562,7 +554,7 @@ An :class:`IMAP4` instance has the following methods:
    ``search``, the searching *charset* argument is mandatory.  There is also a
    ``uid thread`` command which corresponds to ``thread`` the way that ``uid
    search`` corresponds to ``search``.  The ``thread`` command first searches the
-   mailbox for messages that match the given searching criteria using the charset
+   mailbox for messages that match the given searching criteria using the *charset*
    argument for the interpretation of strings in the searching criteria. It then
    returns the matching messages threaded according to the specified threading
    algorithm.

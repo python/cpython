@@ -2,8 +2,10 @@
    Roger E. Masse
 """
 
+import collections.abc
 import unittest
 from test import support
+from test.support import import_helper
 from test.support import os_helper
 from test.support import _2G
 import weakref
@@ -11,11 +13,14 @@ import pickle
 import operator
 import struct
 import sys
+import warnings
 
 import array
 from array import _array_reconstructor as array_reconstructor
 
-sizeof_wchar = array.array('u').itemsize
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore', DeprecationWarning)
+    sizeof_wchar = array.array('u').itemsize
 
 
 class ArraySubclass(array.array):
@@ -25,15 +30,32 @@ class ArraySubclassWithKwargs(array.array):
     def __init__(self, typecode, newarg=None):
         array.array.__init__(self)
 
-typecodes = 'ubBhHiIlLfdqQ'
+typecodes = 'uwbBhHiIlLfdqQ'
 
 class MiscTest(unittest.TestCase):
+
+    def test_array_is_sequence(self):
+        self.assertIsInstance(array.array("B"), collections.abc.MutableSequence)
+        self.assertIsInstance(array.array("B"), collections.abc.Reversible)
 
     def test_bad_constructor(self):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
         self.assertRaises(TypeError, array.array, 'xx')
         self.assertRaises(ValueError, array.array, 'x')
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        my_array = array.array("I")
+        support.check_disallow_instantiation(
+            self, type(iter(my_array)), my_array
+        )
+
+    @support.cpython_only
+    def test_immutable(self):
+        # bpo-43908: check that array.array is immutable
+        with self.assertRaises(TypeError):
+            array.array.foo = 1
 
     def test_empty(self):
         # Exercise code for handling zero-length arrays
@@ -74,7 +96,16 @@ UTF16_BE = 19
 UTF32_LE = 20
 UTF32_BE = 21
 
+
 class ArrayReconstructorTest(unittest.TestCase):
+
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
 
     def test_error(self):
         self.assertRaises(TypeError, array_reconstructor,
@@ -167,11 +198,12 @@ class ArrayReconstructorTest(unittest.TestCase):
         )
         for testcase in testcases:
             mformat_code, encoding = testcase
-            a = array.array('u', teststr)
-            b = array_reconstructor(
-                array.array, 'u', mformat_code, teststr.encode(encoding))
-            self.assertEqual(a, b,
-                msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
+            for c in 'uw':
+                a = array.array(c, teststr)
+                b = array_reconstructor(
+                    array.array, c, mformat_code, teststr.encode(encoding))
+                self.assertEqual(a, b,
+                    msg="{0!r} != {1!r}; testcase={2!r}".format(a, b, testcase))
 
 
 class BaseTest:
@@ -182,6 +214,14 @@ class BaseTest:
     # biggerexample: the same length as example, but bigger
     # outside: An entry that is not in example
     # minitemsize: the minimum guaranteed itemsize
+
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
 
     def assertEntryEqual(self, entry1, entry2):
         self.assertEqual(entry1, entry2)
@@ -215,7 +255,7 @@ class BaseTest:
         self.assertEqual(bi[1], len(a))
 
     def test_byteswap(self):
-        if self.typecode == 'u':
+        if self.typecode in ('u', 'w'):
             example = '\U00100100'
         else:
             example = self.example
@@ -330,6 +370,67 @@ class BaseTest:
         self.assertEqual(list(exhit), [])
         self.assertEqual(list(empit), [self.outside])
         self.assertEqual(list(a), list(self.example) + [self.outside])
+
+    def test_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        self.assertEqual(list(reversed(a)), list(iter(a))[::-1])
+
+    def test_reverse_iterator_picking(self):
+        orig = array.array(self.typecode, self.example)
+        data = list(orig)
+        data2 = [self.outside] + data
+        rev_data = data[len(data)-2::-1] + [self.outside]
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = reversed(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data)
+            self.assertEqual(list(a), data2)
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), rev_data[1:])
+            self.assertEqual(list(a), data2)
+
+            # empty iterator
+            for i in range(1, len(data)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.insert(0, self.outside)
+            self.assertEqual(list(it), [])
+            self.assertEqual(list(a), data2)
+
+    def test_exhausted_reverse_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        exhit = reversed(a)
+        empit = reversed(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # Pointing past the 0th position.
+        a.insert(0, self.outside)
+        self.assertEqual(list(exhit), [])
+        # The iterator index points past the 0th position so inserting
+        # an element in the beginning does not make it appear.
+        self.assertEqual(list(empit), [])
+        self.assertEqual(list(a), [self.outside] + list(self.example))
 
     def test_insert(self):
         a = array.array(self.typecode, self.example)
@@ -852,6 +953,17 @@ class BaseTest:
         self.assertRaises(ValueError, a.index, None)
         self.assertRaises(ValueError, a.index, self.outside)
 
+        a = array.array('i', [-2, -1, 0, 0, 1, 2])
+        self.assertEqual(a.index(0), 2)
+        self.assertEqual(a.index(0, 2), 2)
+        self.assertEqual(a.index(0, -4), 2)
+        self.assertEqual(a.index(-2, -10), 0)
+        self.assertEqual(a.index(0, 3), 3)
+        self.assertEqual(a.index(0, -3), 3)
+        self.assertEqual(a.index(0, 3, 4), 3)
+        self.assertEqual(a.index(0, -3, -2), 3)
+        self.assertRaises(ValueError, a.index, 2, 0, -10)
+
     def test_count(self):
         example = 2*self.example
         a = array.array(self.typecode, example)
@@ -988,7 +1100,7 @@ class BaseTest:
         self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, a.frombytes, a.tobytes())
         self.assertEqual(m.tobytes(), expected)
-        if self.typecode == 'u':
+        if self.typecode in ('u', 'w'):
             self.assertRaises(BufferError, a.fromunicode, a.tounicode())
             self.assertEqual(m.tobytes(), expected)
         self.assertRaises(BufferError, operator.imul, a, 2)
@@ -1007,6 +1119,7 @@ class BaseTest:
         p = weakref.proxy(s)
         self.assertEqual(p.tobytes(), s.tobytes())
         s = None
+        support.gc_collect()  # For PyPy or other GCs.
         self.assertRaises(ReferenceError, len, p)
 
     @unittest.skipUnless(hasattr(sys, 'getrefcount'),
@@ -1043,22 +1156,23 @@ class BaseTest:
         support.check_sizeof(self, a, basesize)
 
     def test_initialize_with_unicode(self):
-        if self.typecode != 'u':
+        if self.typecode not in ('u', 'w'):
             with self.assertRaises(TypeError) as cm:
                 a = array.array(self.typecode, 'foo')
             self.assertIn("cannot use a str", str(cm.exception))
             with self.assertRaises(TypeError) as cm:
-                a = array.array(self.typecode, array.array('u', 'foo'))
+                a = array.array(self.typecode, array.array('w', 'foo'))
             self.assertIn("cannot use a unicode array", str(cm.exception))
         else:
             a = array.array(self.typecode, "foo")
             a = array.array(self.typecode, array.array('u', 'foo'))
+            a = array.array(self.typecode, array.array('w', 'foo'))
 
     @support.cpython_only
     def test_obsolete_write_lock(self):
-        from _testcapi import getbuffer_with_null_view
+        _testcapi = import_helper.import_module('_testcapi')
         a = array.array('B', b"")
-        self.assertRaises(BufferError, getbuffer_with_null_view, a)
+        self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, a)
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, array.array,
@@ -1079,39 +1193,50 @@ class UnicodeTest(StringTest, unittest.TestCase):
     smallerexample = '\x01\u263a\x00\ufefe'
     biggerexample = '\x01\u263a\x01\ufeff'
     outside = str('\x33')
-    minitemsize = 2
+    minitemsize = sizeof_wchar
 
     def test_unicode(self):
         self.assertRaises(TypeError, array.array, 'b', 'foo')
 
-        a = array.array('u', '\xa0\xc2\u1234')
+        a = array.array(self.typecode, '\xa0\xc2\u1234')
         a.fromunicode(' ')
         a.fromunicode('')
         a.fromunicode('')
         a.fromunicode('\x11abc\xff\u1234')
         s = a.tounicode()
         self.assertEqual(s, '\xa0\xc2\u1234 \x11abc\xff\u1234')
-        self.assertEqual(a.itemsize, sizeof_wchar)
+        self.assertEqual(a.itemsize, self.minitemsize)
 
         s = '\x00="\'a\\b\x80\xff\u0000\u0001\u1234'
-        a = array.array('u', s)
+        a = array.array(self.typecode, s)
         self.assertEqual(
             repr(a),
-            "array('u', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
+            f"array('{self.typecode}', '\\x00=\"\\'a\\\\b\\x80\xff\\x00\\x01\u1234')")
 
         self.assertRaises(TypeError, a.fromunicode)
 
     def test_issue17223(self):
-        # this used to crash
-        if sizeof_wchar == 4:
-            # U+FFFFFFFF is an invalid code point in Unicode 6.0
-            invalid_str = b'\xff\xff\xff\xff'
-        else:
+        if self.typecode == 'u' and sizeof_wchar == 2:
             # PyUnicode_FromUnicode() cannot fail with 16-bit wchar_t
             self.skipTest("specific to 32-bit wchar_t")
-        a = array.array('u', invalid_str)
+
+        # this used to crash
+        # U+FFFFFFFF is an invalid code point in Unicode 6.0
+        invalid_str = b'\xff\xff\xff\xff'
+
+        a = array.array(self.typecode, invalid_str)
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
+
+    def test_typecode_u_deprecation(self):
+        with self.assertWarns(DeprecationWarning):
+            array.array("u")
+
+
+class UCS4Test(UnicodeTest):
+    typecode = 'w'
+    minitemsize = 4
+
 
 class NumberTest(BaseTest):
 

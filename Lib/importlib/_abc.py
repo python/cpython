@@ -35,16 +35,5 @@ class Loader(metaclass=abc.ABCMeta):
         """
         if not hasattr(self, 'exec_module'):
             raise ImportError
+        # Warning implemented in _load_module_shim().
         return _bootstrap._load_module_shim(self, fullname)
-
-    def module_repr(self, module):
-        """Return a module's repr.
-
-        Used by the module type when the method does not raise
-        NotImplementedError.
-
-        This method is deprecated.
-
-        """
-        # The exception will cause ModuleType.__repr__ to ignore this method.
-        raise NotImplementedError

@@ -11,7 +11,6 @@
  *
  */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #ifdef __cplusplus
@@ -592,17 +591,17 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_SYMLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_MOUNT_POINT",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_MOUNT_POINT",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_APPEXECLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_APPEXECLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+        return -1;
     }
 #endif
 
@@ -612,6 +611,7 @@ stat_exec(PyObject *module)
 
 static PyModuleDef_Slot stat_slots[] = {
     {Py_mod_exec, stat_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

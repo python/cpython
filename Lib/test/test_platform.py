@@ -1,4 +1,6 @@
 import os
+import copy
+import pickle
 import platform
 import subprocess
 import sys
@@ -8,17 +10,76 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 
+FEDORA_OS_RELEASE = """\
+NAME=Fedora
+VERSION="32 (Thirty Two)"
+ID=fedora
+VERSION_ID=32
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f32"
+PRETTY_NAME="Fedora 32 (Thirty Two)"
+ANSI_COLOR="0;34"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:32"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f32/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=32
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=32
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+"""
+
+UBUNTU_OS_RELEASE = """\
+NAME="Ubuntu"
+VERSION="20.04.1 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04.1 LTS"
+VERSION_ID="20.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+"""
+
+TEST_OS_RELEASE = r"""
+# test data
+ID_LIKE="egg spam viking"
+EMPTY=
+# comments and empty lines are ignored
+
+SINGLE_QUOTE='single'
+EMPTY_SINGLE=''
+DOUBLE_QUOTE="double"
+EMPTY_DOUBLE=""
+QUOTES="double\'s"
+SPECIALS="\$\`\\\'\""
+# invalid lines
+=invalid
+=
+INVALID
+IN-VALID=value
+IN VALID=value
+"""
+
 
 class PlatformTest(unittest.TestCase):
     def clear_caches(self):
         platform._platform_cache.clear()
         platform._sys_version_cache.clear()
         platform._uname_cache = None
+        platform._os_release_cache = None
 
     def test_architecture(self):
         res = platform.architecture()
 
     @os_helper.skip_unless_symlink
+    @support.requires_subprocess()
     def test_architecture_via_symlink(self): # issue3762
         with support.PythonSymlink() as py:
             cmd = "-c", "import platform; print(platform.architecture())"
@@ -62,10 +123,6 @@ class PlatformTest(unittest.TestCase):
         for input, output in (
             ('2.4.3 (#1, Jun 21 2006, 13:54:21) \n[GCC 3.3.4 (pre 3.3.5 20040809)]',
              ('CPython', '2.4.3', '', '', '1', 'Jun 21 2006 13:54:21', 'GCC 3.3.4 (pre 3.3.5 20040809)')),
-            ('IronPython 1.0.60816 on .NET 2.0.50727.42',
-             ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
-            ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
-             ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
             ('2.4.3 (truncation, date, t) \n[GCC]',
              ('CPython', '2.4.3', '', '', 'truncation', 'date t', 'GCC')),
             ('2.4.3 (truncation, date, ) \n[GCC]',
@@ -100,20 +157,11 @@ class PlatformTest(unittest.TestCase):
                  ('r261:67515', 'Dec  6 2008 15:26:00'),
                  'GCC 4.0.1 (Apple Computer, Inc. build 5370)'),
 
-            ("IronPython 2.0 (2.0.0.0) on .NET 2.0.50727.3053", None, "cli")
+            ("3.10.8 (tags/v3.10.8:aaaf517424, Feb 14 2023, 16:28:12) [GCC 9.4.0]",
+             None, "linux")
             :
-                ("IronPython", "2.0.0", "", "", ("", ""),
-                 ".NET 2.0.50727.3053"),
-
-            ("2.6.1 (IronPython 2.6.1 (2.6.10920.0) on .NET 2.0.50727.1433)", None, "cli")
-            :
-                ("IronPython", "2.6.1", "", "", ("", ""),
-                 ".NET 2.0.50727.1433"),
-
-            ("2.7.4 (IronPython 2.7.4 (2.7.0.40) on Mono 4.0.30319.1 (32-bit))", None, "cli")
-            :
-                ("IronPython", "2.7.4", "", "", ("", ""),
-                 "Mono 4.0.30319.1 (32-bit)"),
+                ('CPython', '3.10.8', '', '',
+                ('tags/v3.10.8:aaaf517424', 'Feb 14 2023 16:28:12'), 'GCC 9.4.0'),
 
             ("2.5 (trunk:6107, Mar 26 2009, 13:02:18) \n[Java HotSpot(TM) Client VM (\"Apple Computer, Inc.\")]",
             ('Jython', 'trunk', '6107'), "java1.5.0_16")
@@ -144,6 +192,9 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(platform.python_build(), info[4])
             self.assertEqual(platform.python_compiler(), info[5])
 
+        with self.assertRaises(ValueError):
+            platform._sys_version('2. 4.3 (truncation) \n[GCC]')
+
     def test_system_alias(self):
         res = platform.system_alias(
             platform.system(),
@@ -168,6 +219,14 @@ class PlatformTest(unittest.TestCase):
         self.assertEqual(res[-1], res.processor)
         self.assertEqual(len(res), 6)
 
+    @unittest.skipUnless(sys.platform.startswith('win'), "windows only test")
+    def test_uname_win32_without_wmi(self):
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
+            self.test_uname()
+
     def test_uname_cast_to_tuple(self):
         res = platform.uname()
         expected = (
@@ -176,7 +235,48 @@ class PlatformTest(unittest.TestCase):
         )
         self.assertEqual(tuple(res), expected)
 
+    def test_uname_replace(self):
+        res = platform.uname()
+        new = res._replace(
+            system='system', node='node', release='release',
+            version='version', machine='machine')
+        self.assertEqual(new.system, 'system')
+        self.assertEqual(new.node, 'node')
+        self.assertEqual(new.release, 'release')
+        self.assertEqual(new.version, 'version')
+        self.assertEqual(new.machine, 'machine')
+        # processor cannot be replaced
+        self.assertEqual(new.processor, res.processor)
+
+    def test_uname_copy(self):
+        uname = platform.uname()
+        self.assertEqual(copy.copy(uname), uname)
+        self.assertEqual(copy.deepcopy(uname), uname)
+
+    def test_uname_pickle(self):
+        orig = platform.uname()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(protocol=proto):
+                pickled = pickle.dumps(orig, proto)
+                restored = pickle.loads(pickled)
+                self.assertEqual(restored, orig)
+
+    def test_uname_slices(self):
+        res = platform.uname()
+        expected = tuple(res)
+        self.assertEqual(res[:], expected)
+        self.assertEqual(res[:5], expected[:5])
+
+    def test_uname_fields(self):
+        self.assertIn('processor', platform.uname()._fields)
+
+    def test_uname_asdict(self):
+        res = platform.uname()._asdict()
+        self.assertEqual(len(res), 6)
+        self.assertIn('processor', res)
+
     @unittest.skipIf(sys.platform in ['win32', 'OpenVMS'], "uname -p not used")
+    @support.requires_subprocess()
     def test_uname_processor(self):
         """
         On some systems, the processor must match the output
@@ -195,24 +295,31 @@ class PlatformTest(unittest.TestCase):
         # on 64 bit Windows: if PROCESSOR_ARCHITEW6432 exists we should be
         # using it, per
         # http://blogs.msdn.com/david.wang/archive/2006/03/26/HOWTO-Detect-Process-Bitness.aspx
-        try:
-            with support.EnvironmentVarGuard() as environ:
-                if 'PROCESSOR_ARCHITEW6432' in environ:
-                    del environ['PROCESSOR_ARCHITEW6432']
-                environ['PROCESSOR_ARCHITECTURE'] = 'foo'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'foo')
-                environ['PROCESSOR_ARCHITEW6432'] = 'bar'
-                platform._uname_cache = None
-                system, node, release, version, machine, processor = platform.uname()
-                self.assertEqual(machine, 'bar')
-        finally:
-            platform._uname_cache = None
+
+        # We also need to suppress WMI checks, as those are reliable and
+        # overrule the environment variables
+        def raises_oserror(*a):
+            raise OSError()
+
+        with support.swap_attr(platform, '_wmi_query', raises_oserror):
+            with os_helper.EnvironmentVarGuard() as environ:
+                try:
+                    if 'PROCESSOR_ARCHITEW6432' in environ:
+                        del environ['PROCESSOR_ARCHITEW6432']
+                    environ['PROCESSOR_ARCHITECTURE'] = 'foo'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'foo')
+                    environ['PROCESSOR_ARCHITEW6432'] = 'bar'
+                    platform._uname_cache = None
+                    system, node, release, version, machine, processor = platform.uname()
+                    self.assertEqual(machine, 'bar')
+                finally:
+                    platform._uname_cache = None
 
     def test_java_ver(self):
         res = platform.java_ver()
-        if sys.platform == 'java':
+        if sys.platform == 'java':  # Is never actually checked in CI
             self.assertTrue(all(res))
 
     def test_win32_ver(self):
@@ -238,7 +345,10 @@ class PlatformTest(unittest.TestCase):
             # On Snow Leopard, sw_vers reports 10.6.0 as 10.6
             if len_diff > 0:
                 expect_list.extend(['0'] * len_diff)
-            self.assertEqual(result_list, expect_list)
+            # For compatibility with older binaries, macOS 11.x may report
+            # itself as '10.16' rather than '11.x.y'.
+            if result_list != ['10', '16']:
+                self.assertEqual(result_list, expect_list)
 
             # res[1] claims to contain
             # (version, dev_stage, non_release_version)
@@ -246,7 +356,7 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(res[1], ('', '', ''))
 
             if sys.byteorder == 'little':
-                self.assertIn(res[2], ('i386', 'x86_64'))
+                self.assertIn(res[2], ('i386', 'x86_64', 'arm64'))
             else:
                 self.assertEqual(res[2], 'PowerPC')
 
@@ -267,6 +377,7 @@ class PlatformTest(unittest.TestCase):
             # parent
             support.wait_process(pid, exitcode=0)
 
+    @unittest.skipIf(support.is_emscripten, "Does not apply to Emscripten")
     def test_libc_ver(self):
         # check that libc_ver(executable) doesn't raise an exception
         if os.path.isdir(sys.executable) and \
@@ -378,6 +489,54 @@ class PlatformTest(unittest.TestCase):
                     self.clear_caches()
                     self.assertEqual(platform.platform(terse=1), expected_terse)
                     self.assertEqual(platform.platform(), expected)
+
+    def test_freedesktop_os_release(self):
+        self.addCleanup(self.clear_caches)
+        self.clear_caches()
+
+        if any(os.path.isfile(fn) for fn in platform._os_release_candidates):
+            info = platform.freedesktop_os_release()
+            self.assertIn("NAME", info)
+            self.assertIn("ID", info)
+
+            info["CPYTHON_TEST"] = "test"
+            self.assertNotIn(
+                "CPYTHON_TEST",
+                platform.freedesktop_os_release()
+            )
+        else:
+            with self.assertRaises(OSError):
+                platform.freedesktop_os_release()
+
+    def test_parse_os_release(self):
+        info = platform._parse_os_release(FEDORA_OS_RELEASE.splitlines())
+        self.assertEqual(info["NAME"], "Fedora")
+        self.assertEqual(info["ID"], "fedora")
+        self.assertNotIn("ID_LIKE", info)
+        self.assertEqual(info["VERSION_CODENAME"], "")
+
+        info = platform._parse_os_release(UBUNTU_OS_RELEASE.splitlines())
+        self.assertEqual(info["NAME"], "Ubuntu")
+        self.assertEqual(info["ID"], "ubuntu")
+        self.assertEqual(info["ID_LIKE"], "debian")
+        self.assertEqual(info["VERSION_CODENAME"], "focal")
+
+        info = platform._parse_os_release(TEST_OS_RELEASE.splitlines())
+        expected = {
+            "ID": "linux",
+            "NAME": "Linux",
+            "PRETTY_NAME": "Linux",
+            "ID_LIKE": "egg spam viking",
+            "EMPTY": "",
+            "DOUBLE_QUOTE": "double",
+            "EMPTY_DOUBLE": "",
+            "SINGLE_QUOTE": "single",
+            "EMPTY_SINGLE": "",
+            "QUOTES": "double's",
+            "SPECIALS": "$`\\'\"",
+        }
+        self.assertEqual(info, expected)
+        self.assertEqual(len(info["SPECIALS"]), 5)
 
 
 if __name__ == '__main__':

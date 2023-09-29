@@ -57,18 +57,32 @@ This module defines the following constants and functions:
    When the function raises a :exc:`SystemExit` exception, it is silently
    ignored.
 
+   .. audit-event:: _thread.start_new_thread function,args,kwargs start_new_thread
+
    .. versionchanged:: 3.8
       :func:`sys.unraisablehook` is now used to handle unhandled exceptions.
 
 
-.. function:: interrupt_main()
+.. function:: interrupt_main(signum=signal.SIGINT, /)
 
-   Simulate the effect of a :data:`signal.SIGINT` signal arriving in the main
-   thread. A thread can use this function to interrupt the main thread.
+   Simulate the effect of a signal arriving in the main thread.
+   A thread can use this function to interrupt the main thread, though
+   there is no guarantee that the interruption will happen immediately.
 
-   If :data:`signal.SIGINT` isn't handled by Python (it was set to
-   :data:`signal.SIG_DFL` or :data:`signal.SIG_IGN`), this function does
+   If given, *signum* is the number of the signal to simulate.
+   If *signum* is not given, :const:`signal.SIGINT` is simulated.
+
+   If the given signal isn't handled by Python (it was set to
+   :const:`signal.SIG_DFL` or :const:`signal.SIG_IGN`), this function does
    nothing.
+
+   .. versionchanged:: 3.10
+      The *signum* argument is added to customize the signal number.
+
+   .. note::
+      This does not emit the corresponding signal but schedules a call to
+      the associated handler (if it exists).
+      If you want to truly emit the signal, use :func:`signal.raise_signal`.
 
 
 .. function:: exit()
@@ -106,7 +120,7 @@ This module defines the following constants and functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
@@ -128,14 +142,16 @@ This module defines the following constants and functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 .. data:: TIMEOUT_MAX
 
    The maximum value allowed for the *timeout* parameter of
-   :meth:`Lock.acquire`. Specifying a timeout greater than this value will
-   raise an :exc:`OverflowError`.
+   :meth:`Lock.acquire <threading.Lock.acquire>`. Specifying a timeout greater
+   than this value will raise an :exc:`OverflowError`.
 
    .. versionadded:: 3.2
 
@@ -143,21 +159,21 @@ This module defines the following constants and functions:
 Lock objects have the following methods:
 
 
-.. method:: lock.acquire(waitflag=1, timeout=-1)
+.. method:: lock.acquire(blocking=True, timeout=-1)
 
    Without any optional argument, this method acquires the lock unconditionally, if
    necessary waiting until it is released by another thread (only one thread at a
    time can acquire a lock --- that's their reason for existence).
 
-   If the integer *waitflag* argument is present, the action depends on its
-   value: if it is zero, the lock is only acquired if it can be acquired
-   immediately without waiting, while if it is nonzero, the lock is acquired
+   If the *blocking* argument is present, the action depends on its
+   value: if it is False, the lock is only acquired if it can be acquired
+   immediately without waiting, while if it is True, the lock is acquired
    unconditionally as above.
 
    If the floating-point *timeout* argument is present and positive, it
    specifies the maximum wait time in seconds before returning.  A negative
    *timeout* argument specifies an unbounded wait.  You cannot specify
-   a *timeout* if *waitflag* is zero.
+   a *timeout* if *blocking* is False.
 
    The return value is ``True`` if the lock is acquired successfully,
    ``False`` if not.
@@ -192,7 +208,7 @@ In addition to these methods, lock objects can also be used via the
 
 **Caveats:**
 
-  .. index:: module: signal
+  .. index:: pair: module; signal
 
 * Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
   exception will be received by an arbitrary thread.  (When the :mod:`signal`
@@ -201,8 +217,9 @@ In addition to these methods, lock objects can also be used via the
 * Calling :func:`sys.exit` or raising the :exc:`SystemExit` exception is
   equivalent to calling :func:`_thread.exit`.
 
-* It is not possible to interrupt the :meth:`acquire` method on a lock --- the
-  :exc:`KeyboardInterrupt` exception will happen after the lock has been acquired.
+* It is not possible to interrupt the :meth:`~threading.Lock.acquire` method on
+  a lock --- the :exc:`KeyboardInterrupt` exception will happen after the lock
+  has been acquired.
 
 * When the main thread exits, it is system defined whether the other threads
   survive.  On most systems, they are killed without executing

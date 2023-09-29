@@ -1,0 +1,1 @@
+Speed up :func:`logging.getHandlerNames`.
