@@ -99,8 +99,8 @@ General Options
 
 .. cmdoption:: --enable-loadable-sqlite-extensions
 
-   Support loadable extensions in the :mod:`_sqlite` extension module (default
-   is no).
+   Support loadable extensions in the :mod:`!_sqlite` extension module (default
+   is no) of the :mod:`sqlite3` module.
 
    See the :meth:`sqlite3.Connection.enable_load_extension` method of the
    :mod:`sqlite3` module.
@@ -198,7 +198,7 @@ General Options
    Some Linux distribution packaging policies recommend against bundling
    dependencies. For example, Fedora installs wheel packages in the
    ``/usr/share/python-wheels/`` directory and don't install the
-   :mod:`ensurepip._bundled` package.
+   :mod:`!ensurepip._bundled` package.
 
    .. versionadded:: 3.10
 
@@ -289,6 +289,136 @@ General Options
 
    .. versionadded:: 3.13
 
+.. cmdoption:: PKG_CONFIG
+
+   Path to ``pkg-config`` utility.
+
+.. cmdoption:: PKG_CONFIG_LIBDIR
+.. cmdoption:: PKG_CONFIG_PATH
+
+   ``pkg-config`` options.
+
+
+C compiler options
+------------------
+
+.. cmdoption:: CC
+
+   C compiler command.
+
+.. cmdoption:: CFLAGS
+
+   C compiler flags.
+
+.. cmdoption:: CPP
+
+   C preprocessor command.
+
+.. cmdoption:: CPPFLAGS
+
+   C preprocessor flags, e.g. :samp:`-I{include_dir}`.
+
+
+Linker options
+--------------
+
+.. cmdoption:: LDFLAGS
+
+   Linker flags, e.g. :samp:`-L{library_directory}`.
+
+.. cmdoption:: LIBS
+
+   Libraries to pass to the linker, e.g. :samp:`-l{library}`.
+
+.. cmdoption:: MACHDEP
+
+   Name for machine-dependent library files.
+
+
+Options for third-party dependencies
+------------------------------------
+
+.. versionadded:: 3.11
+
+.. cmdoption:: BZIP2_CFLAGS
+.. cmdoption:: BZIP2_LIBS
+
+   C compiler and linker flags to link Python to ``libbz2``, used by :mod:`bz2`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: CURSES_CFLAGS
+.. cmdoption:: CURSES_LIBS
+
+   C compiler and linker flags for ``libncurses`` or ``libncursesw``, used by
+   :mod:`curses` module, overriding ``pkg-config``.
+
+.. cmdoption:: GDBM_CFLAGS
+.. cmdoption:: GDBM_LIBS
+
+   C compiler and linker flags for ``gdbm``.
+
+.. cmdoption:: LIBB2_CFLAGS
+.. cmdoption:: LIBB2_LIBS
+
+   C compiler and linker flags for ``libb2`` (:ref:`BLAKE2 <hashlib-blake2>`),
+   used by :mod:`hashlib` module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBEDIT_CFLAGS
+.. cmdoption:: LIBEDIT_LIBS
+
+   C compiler and linker flags for ``libedit``, used by :mod:`readline` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBFFI_CFLAGS
+.. cmdoption:: LIBFFI_LIBS
+
+   C compiler and linker flags for ``libffi``, used by :mod:`ctypes` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBLZMA_CFLAGS
+.. cmdoption:: LIBLZMA_LIBS
+
+   C compiler and linker flags for ``liblzma``, used by :mod:`lzma` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: LIBREADLINE_CFLAGS
+.. cmdoption:: LIBREADLINE_LIBS
+
+   C compiler and linker flags for ``libreadline``, used by :mod:`readline`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBSQLITE3_CFLAGS
+.. cmdoption:: LIBSQLITE3_LIBS
+
+   C compiler and linker flags for ``libsqlite3``, used by :mod:`sqlite3`
+   module, overriding ``pkg-config``.
+
+.. cmdoption:: LIBUUID_CFLAGS
+.. cmdoption:: LIBUUID_LIBS
+
+   C compiler and linker flags for ``libuuid``, used by :mod:`uuid` module,
+   overriding ``pkg-config``.
+
+.. cmdoption:: PANEL_CFLAGS
+.. cmdoption:: PANEL_LIBS
+
+   C compiler and Linker flags for PANEL, overriding ``pkg-config``.
+
+   C compiler and linker flags for ``libpanel`` or ``libpanelw``, used by
+   :mod:`curses.panel` module, overriding ``pkg-config``.
+
+.. cmdoption:: TCLTK_CFLAGS
+.. cmdoption:: TCLTK_LIBS
+
+   C compiler and linker flags for TCLTK, overriding ``pkg-config``.
+
+.. cmdoption:: ZLIB_CFLAGS
+.. cmdoption:: ZLIB_LIBS
+
+   C compiler and linker flags for ``libzlib``, used by :mod:`gzip` module,
+   overriding ``pkg-config``.
+
+
 WebAssembly Options
 -------------------
 
@@ -339,7 +469,7 @@ Install Options
 .. cmdoption:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the
-   :mod:`_testcapi` extension module (built and installed by default).
+   :mod:`!_testcapi` extension module (built and installed by default).
 
    .. versionadded:: 3.10
 
@@ -428,6 +558,19 @@ also be used to improve performance.
 
    .. versionadded:: 3.12
 
+.. cmdoption:: BOLT_APPLY_FLAGS
+
+   Arguments to ``llvm-bolt`` when creating a `BOLT optimized binary
+   <https://github.com/facebookarchive/BOLT>`_.
+
+   .. versionadded:: 3.12
+
+.. cmdoption:: BOLT_INSTRUMENT_FLAGS
+
+   Arguments to ``llvm-bolt`` when instrumenting binaries.
+
+   .. versionadded:: 3.12
+
 .. cmdoption:: --with-computed-gotos
 
    Enable computed gotos in evaluation loop (enabled by default on supported
@@ -472,7 +615,7 @@ Effects of a debug build:
 * Display all warnings by default: the list of default warning filters is empty
   in the :mod:`warnings` module.
 * Add ``d`` to :data:`sys.abiflags`.
-* Add :func:`sys.gettotalrefcount` function.
+* Add :func:`!sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
   variable to debug the parser.
@@ -494,7 +637,7 @@ Effects of a debug build:
   * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
-  * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and
+  * The :c:macro:`!Py_SAFE_DOWNCAST()` macro checks for integer underflow and
     overflow when downcasting from wide types to narrow types.
 
 See also the :ref:`Python Development Mode <devmode>` and the
@@ -521,7 +664,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`sys.getobjects` function.
+   * Add :func:`!sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -605,7 +748,7 @@ Libraries options
 
 .. cmdoption:: --with-system-expat
 
-   Build the :mod:`pyexpat` module using an installed ``expat`` library
+   Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
 
 .. cmdoption:: --with-system-libmpdec
@@ -615,11 +758,12 @@ Libraries options
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=editline
+.. cmdoption:: --with-readline=readline|editline
 
-   Use ``editline`` library for backend of the :mod:`readline` module.
+   Designate a backend library for the :mod:`readline` module.
 
-   Define the ``WITH_EDITLINE`` macro.
+   * readline: Use readline as the backend.
+   * editline: Use editline as the backend.
 
    .. versionadded:: 3.10
 
@@ -775,6 +919,12 @@ the version of the cross compiled host Python.
       ac_cv_file__dev_ptmx=yes
       ac_cv_file__dev_ptc=no
 
+.. cmdoption:: HOSTRUNNER
+
+   Program to run CPython for the host platform for cross-compilation.
+
+   .. versionadded:: 3.11
+
 
 Cross compiling example::
 
@@ -815,9 +965,18 @@ Main Makefile targets
   You can use the configure :option:`--enable-optimizations` option to make
   this the default target of the ``make`` command (``make all`` or just
   ``make``).
-* ``make buildbottest``: Build Python and run the Python test suite, the same
-  way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
-  to change the test timeout (1200 by default: 20 minutes).
+
+* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
+  option. Variables:
+
+  * ``TESTOPTS``: additional regrtest command line options.
+  * ``TESTPYTHONOPTS``: additional Python command line options.
+  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+
+* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
+  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
+  and a default timeout of 10 minutes.
+
 * ``make install``: Build and install Python.
 * ``make regen-all``: Regenerate (almost) all generated files;
   ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
@@ -855,15 +1014,15 @@ Example on Linux x86-64::
 At the beginning of the files, C extensions are built as built-in modules.
 Extensions defined after the ``*shared*`` marker are built as dynamic libraries.
 
-The :c:macro:`PyAPI_FUNC()`, :c:macro:`PyAPI_DATA()` and
-:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/pyport.h` are defined
+The :c:macro:`!PyAPI_FUNC()`, :c:macro:`!PyAPI_DATA()` and
+:c:macro:`PyMODINIT_FUNC` macros of :file:`Include/exports.h` are defined
 differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 
 * Use ``Py_EXPORTED_SYMBOL`` if the ``Py_BUILD_CORE_MODULE`` is defined
 * Use ``Py_IMPORTED_SYMBOL`` otherwise.
 
 If the ``Py_BUILD_CORE_BUILTIN`` macro is used by mistake on a C extension
-built as a shared library, its ``PyInit_xxx()`` function is not exported,
+built as a shared library, its :samp:`PyInit_{xxx}()` function is not exported,
 causing an :exc:`ImportError` on import.
 
 
@@ -884,8 +1043,8 @@ Preprocessor flags
 
 .. envvar:: CPPFLAGS
 
-   (Objective) C/C++ preprocessor flags, e.g. ``-I<include dir>`` if you have
-   headers in a nonstandard directory ``<include dir>``.
+   (Objective) C/C++ preprocessor flags, e.g. :samp:`-I{include_dir}` if you have
+   headers in a nonstandard directory *include_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the
@@ -1074,8 +1233,8 @@ Linker flags
 
 .. envvar:: LDFLAGS
 
-   Linker flags, e.g. ``-L<lib dir>`` if you have libraries in a nonstandard
-   directory ``<lib dir>``.
+   Linker flags, e.g. :samp:`-L{lib_dir}` if you have libraries in a nonstandard
+   directory *lib_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the

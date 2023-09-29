@@ -1974,10 +1974,7 @@ DUMP_FRAME(">> YIELD_VALUE");
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_SLOT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+        op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
             DEOPT_IF(attr == NULL, LOAD_ATTR);
@@ -1986,6 +1983,12 @@ DUMP_FRAME(">> YIELD_VALUE");
             null = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_SLOT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
+            unused/5;
 
         inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, null if (oparg & 1))) {
 
@@ -2056,13 +2059,14 @@ DUMP_FRAME(">> YIELD_VALUE");
             DISPATCH_INLINED(new_frame);
         }
 
-        inst(STORE_ATTR_INSTANCE_VALUE, (unused/1, type_version/2, index/1, value, owner --)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        op(_GUARD_DORV_VALUES, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(dorv), STORE_ATTR);
+        }
+
+        op(_STORE_ATTR_INSTANCE_VALUE, (index/1, value, owner --)) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             STAT_INC(STORE_ATTR, hit);
             PyDictValues *values = _PyDictOrValues_GetValues(dorv);
             PyObject *old_value = values->values[index];
@@ -2075,6 +2079,12 @@ DUMP_FRAME(">> YIELD_VALUE");
             }
             Py_DECREF(owner);
         }
+
+        macro(STORE_ATTR_INSTANCE_VALUE) =
+            unused/1 +
+            _GUARD_TYPE_VERSION_STORE +
+            _GUARD_DORV_VALUES +
+            _STORE_ATTR_INSTANCE_VALUE;
 
         inst(STORE_ATTR_WITH_HINT, (unused/1, type_version/2, hint/1, value, owner --)) {
             PyTypeObject *tp = Py_TYPE(owner);
@@ -2117,10 +2127,13 @@ DUMP_FRAME(">> YIELD_VALUE");
             Py_DECREF(owner);
         }
 
-        inst(STORE_ATTR_SLOT, (unused/1, type_version/2, index/1, value, owner --)) {
+        op(_GUARD_TYPE_VERSION_STORE, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, STORE_ATTR);
+        }
+
+        op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
             PyObject *old_value = *(PyObject **)addr;
@@ -2128,6 +2141,11 @@ DUMP_FRAME(">> YIELD_VALUE");
             Py_XDECREF(old_value);
             Py_DECREF(owner);
         }
+
+        macro(STORE_ATTR_SLOT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION_STORE +
+            _STORE_ATTR_SLOT;
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
             COMPARE_OP_FLOAT,
@@ -2809,20 +2827,24 @@ DUMP_FRAME(">> YIELD_VALUE");
             exc_info->exc_value = Py_NewRef(new_exc);
         }
 
-        inst(LOAD_ATTR_METHOD_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, owner -- attr, self if (1))) {
-            assert(oparg & 1);
-            /* Cached method object */
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) &&
                      !_PyObject_MakeInstanceAttributesFromDict(owner, dorv),
                      LOAD_ATTR);
+        }
+
+        op(_GUARD_KEYS_VERSION, (keys_version/2, owner -- owner)) {
+            PyTypeObject *owner_cls = Py_TYPE(owner);
             PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
             DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version !=
                      keys_version, LOAD_ATTR);
+        }
+
+        op(_LOAD_ATTR_METHOD_WITH_VALUES, (descr/4, owner -- attr, self if (1))) {
+            assert(oparg & 1);
+            /* Cached method object */
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             attr = Py_NewRef(descr);
@@ -2830,17 +2852,28 @@ DUMP_FRAME(">> YIELD_VALUE");
             self = owner;
         }
 
-        inst(LOAD_ATTR_METHOD_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, self if (1))) {
+        macro(LOAD_ATTR_METHOD_WITH_VALUES) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
+            _GUARD_KEYS_VERSION +
+            _LOAD_ATTR_METHOD_WITH_VALUES;
+
+        op(_LOAD_ATTR_METHOD_NO_DICT, (descr/4, owner -- attr, self if (1))) {
             assert(oparg & 1);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(owner_cls->tp_dictoffset == 0);
+            assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
             self = owner;
         }
+
+        macro(LOAD_ATTR_METHOD_NO_DICT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            unused/2 +
+            _LOAD_ATTR_METHOD_NO_DICT;
 
         inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, owner -- attr, unused if (0))) {
             assert((oparg & 1) == 0);

@@ -61,11 +61,6 @@
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
@@ -1639,27 +1634,20 @@ flush_std_files(void)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
     PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    PyObject *tmp;
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(fout) < 0) {
             PyErr_WriteUnraisable(fout);
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(ferr) < 0) {
             PyErr_Clear();
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     return status;
@@ -2632,12 +2620,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     Py_DECREF(exc);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-    if (res == NULL) {
+    if (_PyFile_Flush(ferr) < 0) {
         _PyErr_Clear(tstate);
-    }
-    else {
-        Py_DECREF(res);
     }
 
     return has_tb;
@@ -3150,7 +3134,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

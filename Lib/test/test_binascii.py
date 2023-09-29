@@ -230,7 +230,7 @@ class BinASCIITest(unittest.TestCase):
             binascii.b2a_uu(b"", True)
 
     @hypothesis.given(
-        binary=hypothesis.strategies.binary(),
+        binary=hypothesis.strategies.binary(max_size=45),
         backtick=hypothesis.strategies.booleans(),
     )
     def test_b2a_roundtrip(self, binary, backtick):

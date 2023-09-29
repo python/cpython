@@ -36,8 +36,12 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 static inline int
 _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
 {
-    return (_PyRuntimeState_GetFinalizing(interp->runtime) != NULL &&
-            interp == &interp->runtime->_main_interpreter);
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
 }
 
 

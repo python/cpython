@@ -474,6 +474,31 @@
             break;
         }
 
+        case _LOAD_ATTR_SLOT: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
+        case _GUARD_DORV_VALUES: {
+            break;
+        }
+
+        case _STORE_ATTR_INSTANCE_VALUE: {
+            STACK_SHRINK(2);
+            break;
+        }
+
+        case _GUARD_TYPE_VERSION_STORE: {
+            break;
+        }
+
+        case _STORE_ATTR_SLOT: {
+            STACK_SHRINK(2);
+            break;
+        }
+
         case COMPARE_OP: {
             STACK_SHRINK(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
@@ -621,6 +646,28 @@
         }
 
         case PUSH_EXC_INFO: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT: {
+            break;
+        }
+
+        case _GUARD_KEYS_VERSION: {
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_WITH_VALUES: {
+            STACK_GROW(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_NO_DICT: {
             STACK_GROW(1);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-2)), true);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);

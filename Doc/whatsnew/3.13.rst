@@ -119,7 +119,7 @@ copy
 ----
 
 * Add :func:`copy.replace` function which allows to create a modified copy of
-  an object, which is especially usefule for immutable objects.
+  an object, which is especially useful for immutable objects.
   It supports named tuples created with the factory function
   :func:`collections.namedtuple`, :class:`~dataclasses.dataclass` instances,
   various :mod:`datetime` objects, :class:`~inspect.Signature` objects,
@@ -132,7 +132,7 @@ dbm
 
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
-  (Contributed by Dong-hee Na in :gh:`107122`.)
+  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
@@ -208,7 +208,7 @@ tkinter
 traceback
 ---------
 
-* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+* Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
@@ -219,6 +219,16 @@ typing
   defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
+
+venv
+----
+
+* Add support for adding source control management (SCM) ignore files to a
+  virtual environment's directory. By default, Git is supported. This is
+  implemented as opt-in via the API which can be extended to support other SCMs
+  (:class:`venv.EnvBuilder` and :func:`venv.create`), and opt-out via the CLI
+  (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
+  :gh:`108125`.)
 
 Optimizations
 =============
@@ -248,10 +258,19 @@ Deprecated
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
-* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
+  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process based CGI
+  http servers have been out of favor for a very long time.  This code was
+  outdated, unmaintained, and rarely used.  It has a high potential for both
+  security and functionality bugs.  This includes removal of the ``--cgi``
+  flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`typing`:
+
+  * Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+    the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+    be disallowed in Python 3.15. Use the class-based syntax or the functional
+    syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
 
   * When using the functional syntax to create a :class:`typing.NamedTuple`
     class or a :class:`typing.TypedDict` class, failing to pass a value to the
@@ -413,6 +432,11 @@ Pending Removal in Python 3.14
 
 Pending Removal in Python 3.15
 ------------------------------
+
+* :class:`http.server.CGIHTTPRequestHandler` will be removed along with its
+  related ``--cgi`` flag to ``python -m http.server``.  It was obsolete and
+  rarely used.  No direct replacement exists.  *Anything* is better than CGI
+  to interface a web server with a request handler.
 
 * :class:`typing.NamedTuple`:
 
@@ -903,6 +927,18 @@ New Features
   These variants are more convenient and faster if the missing key should not
   be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
+
+* Add fixed variants of functions which silently ignore errors:
+
+  - :c:func:`PyObject_HasAttrWithError` replaces :c:func:`PyObject_HasAttr`.
+  - :c:func:`PyObject_HasAttrStringWithError` replaces :c:func:`PyObject_HasAttrString`.
+  - :c:func:`PyMapping_HasKeyWithError` replaces :c:func:`PyMapping_HasKey`.
+  - :c:func:`PyMapping_HasKeyStringWithError` replaces :c:func:`PyMapping_HasKeyString`.
+
+  New functions return not only ``1`` for true and ``0`` for false, but also
+  ``-1`` for error.
+
+  (Contributed by Serhiy Storchaka in :gh:`108511`.)
 
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and

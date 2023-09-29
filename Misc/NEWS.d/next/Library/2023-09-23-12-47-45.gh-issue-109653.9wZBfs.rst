@@ -1,0 +1,1 @@
+Reduce the import time of :mod:`enum` by over 50%. Patch by Alex Waygood.

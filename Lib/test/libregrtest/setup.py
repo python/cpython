@@ -1,4 +1,5 @@
 import faulthandler
+import gc
 import os
 import random
 import signal
@@ -6,15 +7,11 @@ import sys
 import unittest
 from test import support
 from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
-try:
-    import gc
-except ImportError:
-    gc = None
 
 from .runtests import RunTests
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask,
-    replace_stdout, adjust_rlimit_nofile)
+    adjust_rlimit_nofile)
 
 
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
@@ -52,7 +49,7 @@ def setup_process():
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
     adjust_rlimit_nofile()
-    replace_stdout()
+
     support.record_original_stdout(sys.stdout)
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from

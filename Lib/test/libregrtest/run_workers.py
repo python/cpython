@@ -21,7 +21,7 @@ from .results import TestResults
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, MS_WINDOWS,
+    StrPath, TestName, MS_WINDOWS,
     format_duration, print_warning, count, plural)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
@@ -42,7 +42,10 @@ MAIN_PROCESS_TIMEOUT = 5 * 60.0
 assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
-JOIN_TIMEOUT = 30.0   # seconds
+WAIT_COMPLETED_TIMEOUT = 30.0   # seconds
+
+# Time to wait a killed process (in seconds)
+WAIT_KILLED_TIMEOUT = 60.0
 
 
 # We do not use a generator so multiple threads can call next().
@@ -104,9 +107,9 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self.test_name = None
-        self.start_time = None
-        self._popen = None
+        self.test_name: TestName | None = None
+        self.start_time: float | None = None
+        self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
 
@@ -138,7 +141,7 @@ class WorkerThread(threading.Thread):
         if USE_PROCESS_GROUP:
             what = f"{self} process group"
         else:
-            what = f"{self}"
+            what = f"{self} process"
 
         print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
@@ -160,7 +163,7 @@ class WorkerThread(threading.Thread):
         self._kill()
 
     def _run_process(self, runtests: RunTests, output_fd: int,
-                     tmp_dir: StrPath | None = None) -> int:
+                     tmp_dir: StrPath | None = None) -> int | None:
         popen = create_worker_process(runtests, output_fd, tmp_dir)
         self._popen = popen
         self._killed = False
@@ -218,7 +221,12 @@ class WorkerThread(threading.Thread):
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
+        # gh-109425: Use "backslashreplace" error handler: log corrupted
+        # stdout+stderr, instead of failing with a UnicodeDecodeError and not
+        # logging stdout+stderr at all.
+        stdout_file = tempfile.TemporaryFile('w+',
+                                             encoding=encoding,
+                                             errors='backslashreplace')
         stack.enter_context(stdout_file)
         return stdout_file
 
@@ -260,7 +268,7 @@ class WorkerThread(threading.Thread):
             **kwargs)
 
     def run_tmp_files(self, worker_runtests: RunTests,
-                      stdout_fd: int) -> (int, list[StrPath]):
+                      stdout_fd: int) -> tuple[int | None, list[StrPath]]:
         # gh-93353: Check for leaked temporary files in the parent process,
         # since the deletion of temporary files can happen late during
         # Python finalization: too late for libregrtest.
@@ -297,13 +305,13 @@ class WorkerThread(threading.Thread):
         try:
             if json_tmpfile is not None:
                 json_tmpfile.seek(0)
-                worker_json: StrJSON = json_tmpfile.read()
+                worker_json = json_tmpfile.read()
             elif json_file.file_type == JsonFileType.STDOUT:
                 stdout, _, worker_json = stdout.rpartition("\n")
                 stdout = stdout.rstrip()
             else:
                 with json_file.open(encoding='utf8') as json_fp:
-                    worker_json: StrJSON = json_fp.read()
+                    worker_json = json_fp.read()
         except Exception as exc:
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
@@ -385,10 +393,10 @@ class WorkerThread(threading.Thread):
         popen = self._popen
 
         try:
-            popen.wait(JOIN_TIMEOUT)
+            popen.wait(WAIT_COMPLETED_TIMEOUT)
         except (subprocess.TimeoutExpired, OSError) as exc:
             print_warning(f"Failed to wait for {self} completion "
-                          f"(timeout={format_duration(JOIN_TIMEOUT)}): "
+                          f"(timeout={format_duration(WAIT_COMPLETED_TIMEOUT)}): "
                           f"{exc!r}")
 
     def wait_stopped(self, start_time: float) -> None:
@@ -409,13 +417,13 @@ class WorkerThread(threading.Thread):
                 break
             dt = time.monotonic() - start_time
             self.log(f"Waiting for {self} thread for {format_duration(dt)}")
-            if dt > JOIN_TIMEOUT:
+            if dt > WAIT_KILLED_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
 
 
-def get_running(workers: list[WorkerThread]) -> list[str]:
-    running = []
+def get_running(workers: list[WorkerThread]) -> str | None:
+    running: list[str] = []
     for worker in workers:
         test_name = worker.test_name
         if not test_name:
@@ -431,7 +439,7 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 class RunWorkers:
     def __init__(self, num_workers: int, runtests: RunTests,
-                 logger: Logger, results: TestResult) -> None:
+                 logger: Logger, results: TestResults) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
         self.log = logger.log
@@ -446,10 +454,10 @@ class RunWorkers:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
             # of 5 minutes to faulthandler to kill the worker.
-            self.worker_timeout = min(self.timeout * 1.5, self.timeout + 5 * 60)
+            self.worker_timeout: float | None = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
-        self.workers = None
+        self.workers: list[WorkerThread] | None = None
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -529,7 +537,7 @@ class RunWorkers:
                 text += f' -- {running}'
         self.display_progress(self.test_index, text)
 
-    def _process_result(self, item: QueueOutput) -> bool:
+    def _process_result(self, item: QueueOutput) -> TestResult:
         """Returns True if test runner must stop."""
         if item[0]:
             # Thread got an exception

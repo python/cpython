@@ -41,7 +41,7 @@ _get_current_interp(void)
 static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
-    assert(!PyObject_HasAttrString(mod, name));
+    assert(!PyObject_HasAttrStringWithError(mod, name));
     PyObject *exctype = PyErr_NewException(name, base, NULL);
     if (exctype == NULL) {
         return NULL;
@@ -58,24 +58,17 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+_release_xid_data(_PyCrossInterpreterData *data)
 {
-    PyObject *exc;
-    if (ignoreexc) {
-        exc = PyErr_GetRaisedException();
-    }
+    PyObject *exc = PyErr_GetRaisedException();
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
-        if (ignoreexc) {
-            // XXX Emit a warning?
-            PyErr_Clear();
-        }
+        // XXX Emit a warning?
+        PyErr_Clear();
     }
-    if (ignoreexc) {
-        PyErr_SetRaisedException(exc);
-    }
+    PyErr_SetRaisedException(exc);
     return res;
 }
 
@@ -145,7 +138,7 @@ _sharednsitem_clear(struct _sharednsitem *item)
         PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
-    (void)_release_xid_data(&item->data, 1);
+    (void)_release_xid_data(&item->data);
 }
 
 static int
@@ -174,16 +167,16 @@ typedef struct _sharedns {
 static _sharedns *
 _sharedns_new(Py_ssize_t len)
 {
-    _sharedns *shared = PyMem_NEW(_sharedns, 1);
+    _sharedns *shared = PyMem_RawCalloc(sizeof(_sharedns), 1);
     if (shared == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     shared->len = len;
-    shared->items = PyMem_NEW(struct _sharednsitem, len);
+    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
     if (shared->items == NULL) {
         PyErr_NoMemory();
-        PyMem_Free(shared);
+        PyMem_RawFree(shared);
         return NULL;
     }
     return shared;
@@ -195,8 +188,8 @@ _sharedns_free(_sharedns *shared)
     for (Py_ssize_t i=0; i < shared->len; i++) {
         _sharednsitem_clear(&shared->items[i]);
     }
-    PyMem_Free(shared->items);
-    PyMem_Free(shared);
+    PyMem_RawFree(shared->items);
+    PyMem_RawFree(shared);
 }
 
 static _sharedns *

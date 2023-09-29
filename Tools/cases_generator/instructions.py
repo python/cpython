@@ -53,7 +53,6 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
-    kind: typing.Literal["inst", "op"]
     name: str
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -77,7 +76,6 @@ class Instruction:
 
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
-        self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
