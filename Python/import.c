@@ -24,9 +24,6 @@
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /*[clinic input]
@@ -3887,8 +3884,3 @@ PyInit__imp(void)
 {
     return PyModuleDef_Init(&imp_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

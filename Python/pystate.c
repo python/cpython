@@ -29,16 +29,12 @@ to avoid the expense of doing their own locking).
 -------------------------------------------------------------------------- */
 
 #ifdef HAVE_DLOPEN
-#ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
-#if !HAVE_DECL_RTLD_LAZY
-#define RTLD_LAZY 1
-#endif
-#endif
-
-#ifdef __cplusplus
-extern "C" {
+#  ifdef HAVE_DLFCN_H
+#    include <dlfcn.h>
+#  endif
+#  if !HAVE_DECL_RTLD_LAZY
+#    define RTLD_LAZY 1
+#  endif
 #endif
 
 
@@ -3022,8 +3018,3 @@ _PyThreadState_MustExit(PyThreadState *tstate)
     }
     return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif

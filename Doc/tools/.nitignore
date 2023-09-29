@@ -48,12 +48,10 @@ Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
 Doc/library/contextlib.rst
-Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
-Doc/library/difflib.rst
 Doc/library/doctest.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
@@ -148,7 +146,6 @@ Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
 Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
-Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
 Doc/tutorial/introduction.rst
 Doc/using/cmdline.rst

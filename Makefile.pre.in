@@ -492,9 +492,6 @@ OBJECT_OBJS=	\
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
 
-DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
-DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
-
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS_OMIT_FROZEN=	\
@@ -1252,9 +1249,7 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 ############################################################################
 # Deepfreeze targets
 
-.PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_C)
-
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
@@ -1294,10 +1289,9 @@ regen-importlib: regen-frozen
 # Global objects
 
 # Dependencies which can add and/or remove _Py_ID() identifiers:
-# - deepfreeze.c
 # - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
 ############################################################################
@@ -2169,6 +2163,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_email \
 		test/test_email/data \
 		test/test_future_stmt \
+		test/test_gdb \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
