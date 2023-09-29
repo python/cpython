@@ -981,6 +981,9 @@ class BytesIO(BufferedIOBase):
     def peek(self, size=1):
         if self.closed:
             raise ValueError("peek on closed file")
+        # Due to slicing semantics, this works correctly
+        # even if the size is greater than the buffer length or
+        # the position is beyond the end of the buffer
         if size < 1:
             size = len(self._buffer) - self._pos
         return self._buffer[self._pos : self._pos + size]
