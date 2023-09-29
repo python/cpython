@@ -28,7 +28,7 @@ class UnsupportedError(Exception):
 
 
 def _run(cmd, cwd=None):
-    print('+', shlex.join(cmd))
+    print('+', shlex.join(cmd), flush=True)
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -37,7 +37,7 @@ def _run(cmd, cwd=None):
 
 
 def _run_quiet(cmd, cwd=None):
-    print('+', shlex.join(cmd))
+    print('+', shlex.join(cmd), flush=True)
     try:
         return subprocess.run(
             cmd,
@@ -53,7 +53,7 @@ def _run_quiet(cmd, cwd=None):
         print(err.stdout)
         print("--- STDERR ---")
         print(err.stderr)
-        print("---- END ----")
+        print("---- END ----", flush=True)
         raise
 
 
@@ -135,6 +135,15 @@ def prepare(script=None, outdir=None):
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
     _run(cmd, builddir)
+
+    # Dump Makefile
+    build_Makefile = os.path.join(builddir, 'Makefile')
+    with open(build_Makefile, encoding="utf8", errors="backslashreplace") as fp:
+        content = fp.read()
+    print("Makefile")
+    print("--")
+    print(content)
+    print("--")
 
     if not MAKE:
         raise UnsupportedError('make')
