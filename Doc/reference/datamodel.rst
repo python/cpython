@@ -3257,7 +3257,7 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   Semantically similar to :meth:`__enter__`, the only
+   Semantically similar to :meth:`~object.__enter__`, the only
    difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
