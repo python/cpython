@@ -687,12 +687,25 @@ class x86_64_apple_darwin(MachO):
                 "Offset": int(offset),
                 "PCRel": 1,
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "X86_64_RELOC_GOT_LOAD"},
+                "Type": {"Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_32, symbol, offset, addend - 4)
+            case {
+                "Length": 2,
+                "Offset": int(offset),
+                "PCRel": 1,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(self.body[where], "little", signed=False)
-                assert not what, what
                 addend = what
                 self.body[where] = [0] * 4
                 symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
@@ -707,20 +720,19 @@ class x86_64_apple_darwin(MachO):
                 self.body[where] = addend.to_bytes(4, sys.byteorder)
                 return None
             case {
-                "Length": 3,
+                "Length": 2,
                 "Offset": int(offset),
-                "PCRel": 0,
+                "PCRel": 1,
                 "Section": {"Value": str(section)},
-                "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+                "Type": {"Value": "X86_64_RELOC_SIGNED"},
             }:
                 offset += base
-                where = slice(offset, offset + 8)
+                where = slice(offset, offset + 4)
                 what = int.from_bytes(self.body[where], sys.byteorder)
-                # assert not what, what
                 addend = what
-                self.body[where] = [0] * 8
-                section = remove_prefix(section, self.SYMBOL_PREFIX)
-                return Hole(HoleKind.ABS_64, section, offset, addend)
+                self.body[where] = [0] * 4
+                section = section.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_32, section, offset, addend - 4)
             case {
                 "Length": 3,
                 "Offset": int(offset),
@@ -731,7 +743,6 @@ class x86_64_apple_darwin(MachO):
                 offset += base
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(self.body[where], sys.byteorder)
-                # assert not what, what
                 addend = what
                 self.body[where] = [0] * 8
                 symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
@@ -1219,7 +1230,7 @@ def main(host: str) -> None:
         (aarch64_apple_darwin, False, [f"-I{ROOT}"]),
         (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
         (i686_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
-        (x86_64_apple_darwin, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (x86_64_apple_darwin, True, [f"-I{ROOT}"]),
         (x86_64_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
         (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"]),
     ]:
