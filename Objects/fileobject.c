@@ -21,10 +21,6 @@
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* External C interface */
 
 PyObject *
@@ -539,8 +535,3 @@ _PyFile_Flush(PyObject *file)
     Py_DECREF(tmp);
     return 0;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
