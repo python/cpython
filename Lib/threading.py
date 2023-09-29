@@ -4,6 +4,7 @@ import os as _os
 import sys as _sys
 import _thread
 import functools
+import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -116,6 +117,12 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
+    if args or kwargs:
+        warnings.warn(
+            'Passing arguments to RLock is deprecated and will be removed in 3.15',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if _CRLock is None:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
@@ -237,6 +244,13 @@ class _RLock:
 
     def _is_owned(self):
         return self._owner == get_ident()
+
+    # Internal method used for reentrancy checks
+
+    def _recursion_count(self):
+        if self._owner != get_ident():
+            return 0
+        return self._count
 
 _PyRLock = _RLock
 

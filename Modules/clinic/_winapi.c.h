@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 
 PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "GetOverlappedResult($self, wait, /)\n"
@@ -1970,4 +1970,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f9fdcf6226d41e6b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=025b2c56d469c899 input=a9049054013a1b77]*/

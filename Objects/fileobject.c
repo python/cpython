@@ -21,10 +21,6 @@
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* External C interface */
 
 PyObject *
@@ -174,7 +170,7 @@ PyObject_AsFileDescriptor(PyObject *o)
     PyObject *meth;
 
     if (PyLong_Check(o)) {
-        fd = _PyLong_AsInt(o);
+        fd = PyLong_AsInt(o);
     }
     else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
@@ -186,7 +182,7 @@ PyObject_AsFileDescriptor(PyObject *o)
             return -1;
 
         if (PyLong_Check(fno)) {
-            fd = _PyLong_AsInt(fno);
+            fd = PyLong_AsInt(fno);
             Py_DECREF(fno);
         }
         else {
@@ -529,6 +525,13 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
-#ifdef __cplusplus
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
 }
-#endif

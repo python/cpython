@@ -737,7 +737,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
@@ -912,6 +912,13 @@ class UtimeTests(unittest.TestCase):
             # Set to the current time in the old explicit way.
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
+
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
 
     def get_file_system(self, path):
         if sys.platform == 'win32':

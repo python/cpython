@@ -889,7 +889,7 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -1192,7 +1192,7 @@ non-standard paths in the registry and user site-packages.
 
       * Adds ``._pth`` file support and removes ``applocal`` option from
         ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
+      * Adds :file:`python{XX}.zip` as a potential landmark when directly adjacent
         to the executable.
 
 .. deprecated::
@@ -1246,8 +1246,8 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a ``distutils``
-extension which wraps Python scripts into executable Windows programs
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_
+wraps Python scripts into executable Windows programs
 (:file:`{*}.exe` files).  When you have done this, you can distribute your
 application without requiring your users to install Python.
 

@@ -1,0 +1,2 @@
+Align function signature for ``functools.reduce`` in documentation and docstring
+with the C implementation.

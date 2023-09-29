@@ -13,9 +13,9 @@ extern "C" {
 /* This means pthreads are not implemented in libc headers, hence the macro
    not present in unistd.h. But they still can be implemented as an external
    library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
+#  ifdef HAVE_PTHREAD_H
+#    include <pthread.h>            // _POSIX_THREADS
+#  endif
 # ifndef _POSIX_THREADS
 /* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
    enough of the Posix threads package is implemented to support python
@@ -34,12 +34,12 @@ extern "C" {
 #endif /* _POSIX_THREADS */
 
 #if defined(_POSIX_THREADS) || defined(HAVE_PTHREAD_STUBS)
-# define _USE_PTHREADS
+#  define _USE_PTHREADS
 #endif
 
 #if defined(_USE_PTHREADS) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
 // monotonic is supported statically.  It doesn't mean it works on runtime.
-# define CONDATTR_MONOTONIC
+#  define CONDATTR_MONOTONIC
 #endif
 
 
@@ -73,6 +73,14 @@ struct _pythread_runtime_state {
     } stubs;
 #endif
 };
+
+
+#ifdef HAVE_FORK
+/* Private function to reinitialize a lock at fork in the child process.
+   Reset the lock to the unlocked state.
+   Return 0 on success, return -1 on error. */
+extern int _PyThread_at_fork_reinit(PyThread_type_lock *lock);
+#endif  /* HAVE_FORK */
 
 
 #ifdef __cplusplus

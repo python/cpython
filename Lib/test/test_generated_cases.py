@@ -1,8 +1,30 @@
+import contextlib
+import os
+import sys
 import tempfile
 import unittest
-import os
 
+from test import support
 from test import test_tools
+
+
+def skip_if_different_mount_drives():
+    if sys.platform != 'win32':
+        return
+    ROOT = os.path.dirname(os.path.dirname(__file__))
+    root_drive = os.path.splitroot(ROOT)[0]
+    cwd_drive = os.path.splitroot(os.getcwd())[0]
+    if root_drive != cwd_drive:
+        # generate_cases.py uses relpath() which raises ValueError if ROOT
+        # and the current working different have different mount drives
+        # (on Windows).
+        raise unittest.SkipTest(
+            f"the current working directory and the Python source code "
+            f"directory have different mount drives "
+            f"({cwd_drive} and {root_drive})"
+        )
+skip_if_different_mount_drives()
+
 
 test_tools.skip_if_missing('cases_generator')
 with test_tools.imports_under_tool('cases_generator'):
@@ -11,6 +33,12 @@ with test_tools.imports_under_tool('cases_generator'):
     import formatting
     from parsing import StackEffect
 
+
+def handle_stderr():
+    if support.verbose > 1:
+        return contextlib.nullcontext()
+    else:
+        return support.captured_stderr()
 
 class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
@@ -81,11 +109,12 @@ class TestGeneratedCases(unittest.TestCase):
             temp_input.flush()
 
         a = generate_cases.Generator([self.temp_input_filename])
-        a.parse()
-        a.analyze()
-        if a.errors:
-            raise RuntimeError(f"Found {a.errors} errors")
-        a.write_instructions(self.temp_output_filename, False)
+        with handle_stderr():
+            a.parse()
+            a.analyze()
+            if a.errors:
+                raise RuntimeError(f"Found {a.errors} errors")
+            a.write_instructions(self.temp_output_filename, False)
 
         with open(self.temp_output_filename) as temp_output:
             lines = temp_output.readlines()
@@ -530,6 +559,36 @@ class TestGeneratedCases(unittest.TestCase):
             DISPATCH();
         }
     """
+        self.run_cases_test(input, output)
+
+    def test_macro_push_push(self):
+        input = """
+        op(A, (-- val1)) {
+            val1 = spam();
+        }
+        op(B, (-- val2)) {
+            val2 = spam();
+        }
+        macro(M) = A + B;
+        """
+        output = """
+        TARGET(M) {
+            PyObject *val1;
+            PyObject *val2;
+            // A
+            {
+                val1 = spam();
+            }
+            // B
+            {
+                val2 = spam();
+            }
+            STACK_GROW(2);
+            stack_pointer[-2] = val1;
+            stack_pointer[-1] = val2;
+            DISPATCH();
+        }
+        """
         self.run_cases_test(input, output)
 
 

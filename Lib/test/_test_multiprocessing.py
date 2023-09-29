@@ -79,7 +79,7 @@ except ImportError:
 
 
 if support.check_sanitizer(address=True):
-    # bpo-45200: Skip multiprocessing tests if Python is built with ASAN to
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
     # work around a libasan race condition: dead lock in pthread_create().
     raise unittest.SkipTest("libasan has a pthread_create() dead lock")
 
@@ -329,6 +329,7 @@ class _TestProcess(BaseTestCase):
             p.join()
             self.assertEqual(p.exitcode, 0)
 
+    @support.requires_resource('cpu')
     def test_args_argument(self):
         # bpo-45735: Using list or tuple as *args* in constructor could
         # achieve the same effect.
@@ -556,13 +557,14 @@ class _TestProcess(BaseTestCase):
 
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
-        if os.name != 'nt':
-            self.assertEqual(exitcode, -signal.SIGTERM)
+        self.assertEqual(exitcode, -signal.SIGTERM)
 
     def test_kill(self):
         exitcode = self._kill_process(multiprocessing.Process.kill)
         if os.name != 'nt':
             self.assertEqual(exitcode, -signal.SIGKILL)
+        else:
+            self.assertEqual(exitcode, -signal.SIGTERM)
 
     def test_cpu_count(self):
         try:
@@ -674,6 +676,7 @@ class _TestProcess(BaseTestCase):
 
         close_queue(q)
 
+    @support.requires_resource('walltime')
     def test_many_processes(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -4504,6 +4507,7 @@ class _TestFinalize(BaseTestCase):
         result = [obj for obj in iter(conn.recv, 'STOP')]
         self.assertEqual(result, ['a', 'b', 'd10', 'd03', 'd02', 'd01', 'e'])
 
+    @support.requires_resource('cpu')
     def test_thread_safety(self):
         # bpo-24484: _run_finalizers() should be thread-safe
         def cb():
@@ -4989,6 +4993,7 @@ class TestWait(unittest.TestCase):
     def test_wait_socket_slow(self):
         self.test_wait_socket(True)
 
+    @support.requires_resource('walltime')
     def test_wait_timeout(self):
         from multiprocessing.connection import wait
 
@@ -5017,6 +5022,7 @@ class TestWait(unittest.TestCase):
         sem.release()
         time.sleep(period)
 
+    @support.requires_resource('walltime')
     def test_wait_integer(self):
         from multiprocessing.connection import wait
 
@@ -5369,6 +5375,14 @@ class TestStartMethod(unittest.TestCase):
             self.assertRaises(ValueError, ctx.set_start_method, None)
             self.check_context(ctx)
 
+    def test_context_check_module_types(self):
+        try:
+            ctx = multiprocessing.get_context('forkserver')
+        except ValueError:
+            raise unittest.SkipTest('forkserver should be available')
+        with self.assertRaisesRegex(TypeError, 'module_names must be a list of strings'):
+            ctx.set_forkserver_preload([1, 2, 3])
+
     def test_set_get(self):
         multiprocessing.set_forkserver_preload(PRELOAD)
         count = 0
@@ -5412,6 +5426,56 @@ class TestStartMethod(unittest.TestCase):
             print(out)
             print(err)
             self.fail("failed spawning forkserver or grandchild")
+
+    @unittest.skipIf(sys.platform == "win32",
+                     "Only Spawn on windows so no risk of mixing")
+    @only_run_in_spawn_testsuite("avoids redundant testing.")
+    def test_mixed_startmethod(self):
+        # Fork-based locks cannot be used with spawned process
+        for process_method in ["spawn", "forkserver"]:
+            queue = multiprocessing.get_context("fork").Queue()
+            process_ctx = multiprocessing.get_context(process_method)
+            p = process_ctx.Process(target=close_queue, args=(queue,))
+            err_msg = "A SemLock created in a fork"
+            with self.assertRaisesRegex(RuntimeError, err_msg):
+                p.start()
+
+        # non-fork-based locks can be used with all other start methods
+        for queue_method in ["spawn", "forkserver"]:
+            for process_method in multiprocessing.get_all_start_methods():
+                queue = multiprocessing.get_context(queue_method).Queue()
+                process_ctx = multiprocessing.get_context(process_method)
+                p = process_ctx.Process(target=close_queue, args=(queue,))
+                p.start()
+                p.join()
+
+    @classmethod
+    def _put_one_in_queue(cls, queue):
+        queue.put(1)
+
+    @classmethod
+    def _put_two_and_nest_once(cls, queue):
+        queue.put(2)
+        process = multiprocessing.Process(target=cls._put_one_in_queue, args=(queue,))
+        process.start()
+        process.join()
+
+    def test_nested_startmethod(self):
+        # gh-108520: Regression test to ensure that child process can send its
+        # arguments to another process
+        queue = multiprocessing.Queue()
+
+        process = multiprocessing.Process(target=self._put_two_and_nest_once, args=(queue,))
+        process.start()
+        process.join()
+
+        results = []
+        while not queue.empty():
+            results.append(queue.get())
+
+        # gh-109706: queue.put(1) can write into the queue before queue.put(2),
+        # there is no synchronization in the test.
+        self.assertSetEqual(set(results), set([2, 1]))
 
 
 @unittest.skipIf(sys.platform == "win32",
@@ -6114,7 +6178,8 @@ class ThreadsMixin(BaseMixin):
 # Functions used to create test cases from the base ones in this module
 #
 
-def install_tests_in_module_dict(remote_globs, start_method):
+def install_tests_in_module_dict(remote_globs, start_method,
+                                 only_type=None, exclude_types=False):
     __module__ = remote_globs['__name__']
     local_globs = globals()
     ALL_TYPES = {'processes', 'threads', 'manager'}
@@ -6127,6 +6192,10 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 continue
             assert set(base.ALLOWED_TYPES) <= ALL_TYPES, base.ALLOWED_TYPES
             for type_ in base.ALLOWED_TYPES:
+                if only_type and type_ != only_type:
+                    continue
+                if exclude_types:
+                    continue
                 newname = 'With' + type_.capitalize() + name[1:]
                 Mixin = local_globs[type_.capitalize() + 'Mixin']
                 class Temp(base, Mixin, unittest.TestCase):
@@ -6137,6 +6206,9 @@ def install_tests_in_module_dict(remote_globs, start_method):
                 Temp.__module__ = __module__
                 remote_globs[newname] = Temp
         elif issubclass(base, unittest.TestCase):
+            if only_type:
+                continue
+
             class Temp(base, object):
                 pass
             Temp.__name__ = Temp.__qualname__ = name

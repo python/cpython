@@ -1027,6 +1027,10 @@ x = (
                              "f'{lambda x:}'",
                              "f'{lambda :}'",
                              ])
+        # Ensure the detection of invalid lambdas doesn't trigger detection
+        # for valid lambdas in the second error pass
+        with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
+            compile("lambda name_3=f'{name_4}': {name_3}\n1 $ 1", "<string>", "exec")
 
         # but don't emit the paren warning in general cases
         with self.assertRaisesRegex(SyntaxError, "f-string: expecting a valid expression after '{'"):
@@ -1672,6 +1676,16 @@ print(f'''{{
             _, stdout, _ = assert_python_ok(script)
         self.assertEqual(stdout.decode('utf-8').strip().replace('\r\n', '\n').replace('\r', '\n'),
                          "3\n=3")
+
+    def test_syntax_warning_infinite_recursion_in_file(self):
+        with temp_cwd():
+            script = 'script.py'
+            with open(script, 'w') as f:
+                f.write(r"print(f'\{1}')")
+
+            _, stdout, stderr = assert_python_ok(script)
+            self.assertIn(rb'\1', stdout)
+            self.assertEqual(len(stderr.strip().splitlines()), 2)
 
 if __name__ == '__main__':
     unittest.main()

@@ -9,6 +9,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pystats.h"       // _Py_StatsOn()
 
 #include "osdefs.h"               // DELIM
 
@@ -186,7 +187,11 @@ static const char usage_envvars[] =
 "PYTHONSAFEPATH          : don't prepend a potentially unsafe path to sys.path (-P)\n"
 "PYTHONUNBUFFERED        : disable stdout/stderr buffering (-u)\n"
 "PYTHONVERBOSE           : trace import statements (-v)\n"
-"PYTHONWARNINGS=arg      : warning control (-W arg)\n";
+"PYTHONWARNINGS=arg      : warning control (-W arg)\n"
+#ifdef Py_STATS
+"PYTHONSTATS             : turns on statistics gathering\n"
+#endif
+;
 
 #if defined(MS_WINDOWS)
 #  define PYTHONHOMEHELP "<prefix>\\python{major}{minor}"
@@ -335,21 +340,34 @@ int PyStatus_IsExit(PyStatus status)
 int PyStatus_Exception(PyStatus status)
 { return _PyStatus_EXCEPTION(status); }
 
-PyObject*
+void
 _PyErr_SetFromPyStatus(PyStatus status)
 {
     if (!_PyStatus_IS_ERROR(status)) {
         PyErr_Format(PyExc_SystemError,
-                     "%s() expects an error PyStatus",
-                     _PyStatus_GET_FUNC());
+                     "_PyErr_SetFromPyStatus() status is not an error");
+        return;
     }
-    else if (status.func) {
-        PyErr_Format(PyExc_ValueError, "%s: %s", status.func, status.err_msg);
+
+    const char *err_msg = status.err_msg;
+    if (err_msg == NULL || strlen(err_msg) == 0) {
+        PyErr_Format(PyExc_SystemError,
+                     "_PyErr_SetFromPyStatus() status has no error message");
+        return;
+    }
+
+    if (strcmp(err_msg, _PyStatus_NO_MEMORY_ERRMSG) == 0) {
+        PyErr_NoMemory();
+        return;
+    }
+
+    const char *func = status.func;
+    if (func) {
+        PyErr_Format(PyExc_RuntimeError, "%s: %s", func, err_msg);
     }
     else {
-        PyErr_Format(PyExc_ValueError, "%s", status.err_msg);
+        PyErr_Format(PyExc_RuntimeError, "%s", err_msg);
     }
-    return NULL;
 }
 
 
@@ -617,6 +635,9 @@ config_check_consistency(const PyConfig *config)
     assert(config->int_max_str_digits >= 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
+#ifdef Py_STATS
+    assert(config->_pystats >= 0);
+#endif
     return 1;
 }
 #endif
@@ -938,6 +959,9 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTRLIST(orig_argv);
     COPY_ATTR(_is_python_build);
     COPY_ATTR(int_max_str_digits);
+#ifdef Py_STATS
+    COPY_ATTR(_pystats);
+#endif
 
 #undef COPY_ATTR
 #undef COPY_WSTR_ATTR
@@ -1045,6 +1069,9 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_INT(safe_path);
     SET_ITEM_INT(_is_python_build);
     SET_ITEM_INT(int_max_str_digits);
+#ifdef Py_STATS
+    SET_ITEM_INT(_pystats);
+#endif
 
     return dict;
 
@@ -1064,8 +1091,11 @@ fail:
 static PyObject*
 config_dict_get(PyObject *dict, const char *name)
 {
-    PyObject *item = _PyDict_GetItemStringWithError(dict, name);
-    if (item == NULL && !PyErr_Occurred()) {
+    PyObject *item;
+    if (PyDict_GetItemStringRef(dict, name, &item) < 0) {
+        return NULL;
+    }
+    if (item == NULL) {
         PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
         return NULL;
     }
@@ -1094,7 +1124,8 @@ config_dict_get_int(PyObject *dict, const char *name, int *result)
     if (item == NULL) {
         return -1;
     }
-    int value = _PyLong_AsInt(item);
+    int value = PyLong_AsInt(item);
+    Py_DECREF(item);
     if (value == -1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1117,6 +1148,7 @@ config_dict_get_ulong(PyObject *dict, const char *name, unsigned long *result)
         return -1;
     }
     unsigned long value = PyLong_AsUnsignedLong(item);
+    Py_DECREF(item);
     if (value == (unsigned long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             config_dict_invalid_type(name);
@@ -1139,27 +1171,33 @@ config_dict_get_wstr(PyObject *dict, const char *name, PyConfig *config,
     if (item == NULL) {
         return -1;
     }
+
     PyStatus status;
     if (item == Py_None) {
         status = PyConfig_SetString(config, result, NULL);
     }
     else if (!PyUnicode_Check(item)) {
         config_dict_invalid_type(name);
-        return -1;
+        goto error;
     }
     else {
         wchar_t *wstr = PyUnicode_AsWideCharString(item, NULL);
         if (wstr == NULL) {
-            return -1;
+            goto error;
         }
         status = PyConfig_SetString(config, result, wstr);
         PyMem_Free(wstr);
     }
     if (_PyStatus_EXCEPTION(status)) {
         PyErr_NoMemory();
-        return -1;
+        goto error;
     }
+    Py_DECREF(item);
     return 0;
+
+error:
+    Py_DECREF(item);
+    return -1;
 }
 
 
@@ -1173,6 +1211,7 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
     }
 
     if (!PyList_CheckExact(list)) {
+        Py_DECREF(list);
         config_dict_invalid_type(name);
         return -1;
     }
@@ -1206,10 +1245,12 @@ config_dict_get_wstrlist(PyObject *dict, const char *name, PyConfig *config,
         goto error;
     }
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return 0;
 
 error:
     _PyWideStringList_Clear(&wstrlist);
+    Py_DECREF(list);
     return -1;
 }
 
@@ -1338,6 +1379,9 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_UINT(safe_path);
     GET_UINT(_is_python_build);
     GET_INT(int_max_str_digits);
+#ifdef Py_STATS
+    GET_UINT(_pystats);
+#endif
 
 #undef CHECK_VALUE
 #undef GET_UINT
@@ -2089,7 +2133,13 @@ config_read(PyConfig *config, int compute_path_config)
 
 #ifdef Py_STATS
     if (config_get_xoption(config, L"pystats")) {
-        _py_stats = &_py_stats_struct;
+        config->_pystats = 1;
+    }
+    else if (config_get_env(config, "PYTHONSTATS")) {
+        config->_pystats = 1;
+    }
+    if (config->_pystats < 0) {
+        config->_pystats = 0;
     }
 #endif
 
@@ -2227,6 +2277,13 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
     {
         return _PyStatus_NO_MEMORY();
     }
+
+#ifdef Py_STATS
+    if (config->_pystats) {
+        _Py_StatsOn();
+    }
+#endif
+
     return _PyStatus_OK();
 }
 

@@ -11,7 +11,7 @@
 #include "pycore_pythread.h"
 
 #ifndef DONT_HAVE_STDIO_H
-#include <stdio.h>
+#  include <stdio.h>
 #endif
 
 #include <stdlib.h>

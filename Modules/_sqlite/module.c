@@ -64,6 +64,17 @@ pysqlite_connect(PyObject *module, PyObject *const *args, Py_ssize_t nargsf,
 
     static const int FACTORY_POS = 5;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (nargs > 1 && nargs <= 8) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "Passing more than 1 positional argument to sqlite3.connect()"
+                " is deprecated. Parameters 'timeout', 'detect_types', "
+                "'isolation_level', 'check_same_thread', 'factory', "
+                "'cached_statements' and 'uri' will become keyword-only "
+                "parameters in Python 3.15.", 1))
+        {
+                return NULL;
+        }
+    }
     if (nargs > FACTORY_POS) {
         factory = args[FACTORY_POS];
     }
@@ -233,7 +244,7 @@ load_functools_lru_cache(PyObject *module)
 static PyMethodDef module_methods[] = {
     PYSQLITE_ADAPT_METHODDEF
     PYSQLITE_COMPLETE_STATEMENT_METHODDEF
-    PYSQLITE_CONNECT_METHODDEF
+    {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
     PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF
     PYSQLITE_REGISTER_ADAPTER_METHODDEF
     PYSQLITE_REGISTER_CONVERTER_METHODDEF

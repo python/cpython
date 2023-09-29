@@ -2119,9 +2119,9 @@ Changes to Python's build process and to the C API include:
   the various AST nodes in :file:`Parser/Python.asdl`.  A Python script reads this
   file and generates a set of C structure definitions in
   :file:`Include/Python-ast.h`.  The :c:func:`PyParser_ASTFromString` and
-  :c:func:`PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
+  :c:func:`!PyParser_ASTFromFile`, defined in :file:`Include/pythonrun.h`, take
   Python source as input and return the root of an AST representing the contents.
-  This AST can then be turned into a code object by :c:func:`PyAST_Compile`.  For
+  This AST can then be turned into a code object by :c:func:`!PyAST_Compile`.  For
   more information, read the source code, and then ask questions on python-dev.
 
   The AST code was developed under Jeremy Hylton's management, and implemented by
@@ -2172,7 +2172,7 @@ Changes to Python's build process and to the C API include:
   ``Py_LOCAL(type)`` declares the function as returning a value of the
   specified *type* and uses a fast-calling qualifier.
   ``Py_LOCAL_INLINE(type)`` does the same thing and also requests the
-  function be inlined.  If :c:func:`PY_LOCAL_AGGRESSIVE` is defined before
+  function be inlined.  If macro :c:macro:`!PY_LOCAL_AGGRESSIVE` is defined before
   :file:`python.h` is included, a set of more aggressive optimizations are enabled
   for the module; you should benchmark the results to find out if these
   optimizations actually make the code faster.  (Contributed by Fredrik Lundh at
@@ -2181,7 +2181,7 @@ Changes to Python's build process and to the C API include:
 * ``PyErr_NewException(name, base, dict)`` can now accept a tuple of base
   classes as its *base* argument.  (Contributed by Georg Brandl.)
 
-* The :c:func:`PyErr_Warn` function for issuing warnings is now deprecated in
+* The :c:func:`!PyErr_Warn` function for issuing warnings is now deprecated in
   favour of ``PyErr_WarnEx(category, message, stacklevel)`` which lets you
   specify the number of stack frames separating this function and the caller.  A
   *stacklevel* of 1 is the function calling :c:func:`PyErr_WarnEx`, 2 is the
@@ -2191,7 +2191,7 @@ Changes to Python's build process and to the C API include:
   compiled with a C++ compiler without errors.   (Implemented by Anthony Baxter,
   Martin von Löwis, Skip Montanaro.)
 
-* The :c:func:`PyRange_New` function was removed.  It was never documented, never
+* The :c:func:`!PyRange_New` function was removed.  It was never documented, never
   used in the core code, and had dangerously lax error checking.  In the unlikely
   case that your extensions were using it, you can replace it by something like
   the following::

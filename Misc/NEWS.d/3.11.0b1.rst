@@ -185,7 +185,7 @@ functions leave the current exception unchanged. Patch by Victor Stinner.
 .. section: Core and Builtins
 
 Fix a minor memory leak at exit: release the memory of the
-:class:`generic_alias_iterator` type. Patch by Dong-hee Na.
+:class:`generic_alias_iterator` type. Patch by Donghee Na.
 
 ..
 
@@ -2028,8 +2028,8 @@ https://gitlab.com/warsaw/pynche
 .. nonce: 3mQ54t
 .. section: C API
 
-Deprecate the C functions: :c:func:`PySys_SetArgv`,
-:c:func:`PySys_SetArgvEx`, :c:func:`PySys_SetPath`. Patch by Victor Stinner.
+Deprecate the C functions: :c:func:`!PySys_SetArgv`,
+:c:func:`!PySys_SetArgvEx`, :c:func:`!PySys_SetPath`. Patch by Victor Stinner.
 
 ..
 
@@ -2068,9 +2068,9 @@ casts when the Python C API is used in C++. Patch by Victor Stinner.
 .. nonce: Cx-95G
 .. section: C API
 
-Mark functions as deprecated by :pep:`623`: :c:func:`PyUnicode_AS_DATA`,
-:c:func:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_GET_DATA_SIZE`,
-:c:func:`PyUnicode_GET_SIZE`. Patch by Victor Stinner.
+Mark functions as deprecated by :pep:`623`: :c:func:`!PyUnicode_AS_DATA`,
+:c:func:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_GET_DATA_SIZE`,
+:c:func:`!PyUnicode_GET_SIZE`. Patch by Victor Stinner.
 
 ..
 

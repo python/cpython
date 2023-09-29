@@ -505,6 +505,46 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
         self.confirm(str == domstr)
 
+    def test_toxml_quote_text(self):
+        dom = Document()
+        elem = dom.appendChild(dom.createElement('elem'))
+        elem.appendChild(dom.createTextNode('&<>"'))
+        cr = elem.appendChild(dom.createElement('cr'))
+        cr.appendChild(dom.createTextNode('\r'))
+        crlf = elem.appendChild(dom.createElement('crlf'))
+        crlf.appendChild(dom.createTextNode('\r\n'))
+        lflf = elem.appendChild(dom.createElement('lflf'))
+        lflf.appendChild(dom.createTextNode('\n\n'))
+        ws = elem.appendChild(dom.createElement('ws'))
+        ws.appendChild(dom.createTextNode('\t\n\r '))
+        domstr = dom.toxml()
+        dom.unlink()
+        self.assertEqual(domstr, '<?xml version="1.0" ?>'
+                '<elem>&amp;&lt;&gt;"'
+                '<cr>\r</cr>'
+                '<crlf>\r\n</crlf>'
+                '<lflf>\n\n</lflf>'
+                '<ws>\t\n\r </ws></elem>')
+
+    def test_toxml_quote_attrib(self):
+        dom = Document()
+        elem = dom.appendChild(dom.createElement('elem'))
+        elem.setAttribute("a", '&<>"')
+        elem.setAttribute("cr", "\r")
+        elem.setAttribute("lf", "\n")
+        elem.setAttribute("crlf", "\r\n")
+        elem.setAttribute("lflf", "\n\n")
+        elem.setAttribute("ws", "\t\n\r ")
+        domstr = dom.toxml()
+        dom.unlink()
+        self.assertEqual(domstr, '<?xml version="1.0" ?>'
+                '<elem a="&amp;&lt;&gt;&quot;" '
+                'cr="&#13;" '
+                'lf="&#10;" '
+                'crlf="&#13;&#10;" '
+                'lflf="&#10;&#10;" '
+                'ws="&#9;&#10;&#13; "/>')
+
     def testAltNewline(self):
         str = '<?xml version="1.0" ?>\n<a b="c"/>\n'
         dom = parseString(str)

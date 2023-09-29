@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(pysqlite_connect__doc__,
 "connect($module, /, database, timeout=5.0, detect_types=0,\n"
@@ -18,8 +17,14 @@ PyDoc_STRVAR(pysqlite_connect__doc__,
 "Open a connection to the SQLite database file \'database\'.\n"
 "\n"
 "You can use \":memory:\" to open a database connection to a database that\n"
-"resides in RAM instead of on disk.");
+"resides in RAM instead of on disk.\n"
+"\n"
+"Note: Passing more than 1 positional argument to _sqlite3.connect() is\n"
+"deprecated. Parameters \'timeout\', \'detect_types\', \'isolation_level\',\n"
+"\'check_same_thread\', \'factory\', \'cached_statements\' and \'uri\' will\n"
+"become keyword-only parameters in Python 3.15.\n"
+"");
 
 #define PYSQLITE_CONNECT_METHODDEF    \
     {"connect", _PyCFunction_CAST(pysqlite_connect), METH_FASTCALL|METH_KEYWORDS, pysqlite_connect__doc__},
-/*[clinic end generated code: output=6a8458c9edf8fb7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=03bd99542e3aec9d input=a9049054013a1b77]*/
