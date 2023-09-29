@@ -541,6 +541,15 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
             self.assertEqual(memio.tell(), len(buf))
             self.assertEqual(memio.peek(1), self.EOF)
             self.assertEqual(memio.tell(), len(buf))
+            # Peeking works after writing
+            abc = self.buftype("abc")
+            memio.write(abc)
+            self.assertEqual(memio.peek(), self.EOF)
+            memio.seek(len(buf))
+            self.assertEqual(memio.peek(), abc[:1])
+            self.assertEqual(memio.peek(-1), abc)
+            self.assertEqual(memio.peek(len(abc) + 100), abc)
+            self.assertEqual(memio.tell(), len(buf))
         self.assertRaises(ValueError, memio.peek)
 
     def test_unicode(self):
