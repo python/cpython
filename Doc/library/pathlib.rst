@@ -1381,14 +1381,18 @@ call fails (for example because the path doesn't exist).
       >>> p.resolve()
       PosixPath('/home/antoine/pathlib/setup.py')
 
-   If the path doesn't exist and *strict* is ``True``, :exc:`FileNotFoundError`
-   is raised.  If *strict* is ``False``, the path is resolved as far as possible
-   and any remainder is appended without checking whether it exists.  If an
-   infinite loop is encountered along the resolution path, :exc:`RuntimeError`
-   is raised.
+   If a path doesn't exist or a symlink loop is encountered, and *strict* is
+   ``True``, :exc:`OSError` is raised.  If *strict* is ``False``, the path is
+   resolved as far as possible and any remainder is appended without checking
+   whether it exists.
 
    .. versionchanged:: 3.6
       The *strict* parameter was added (pre-3.6 behavior is strict).
+
+   .. versionchanged:: 3.13
+      Symlink loops are treated like other errors: :exc:`OSError` is raised in
+      strict mode, and no exception is raised in non-strict mode. In previous
+      versions, :exc:`RuntimeError` is raised no matter the value of *strict*.
 
 .. method:: Path.rglob(pattern, *, case_sensitive=None, follow_symlinks=None)
 

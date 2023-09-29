@@ -8,11 +8,13 @@ from .utils import (
     printlist, count, format_duration)
 
 
+# Python uses exit code 1 when an exception is not catched
+# argparse.ArgumentParser.error() uses exit code 2
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
 EXITCODE_NO_TESTS_RAN = 4
 EXITCODE_RERUN_FAIL = 5
-EXITCODE_INTERRUPTED = 130
+EXITCODE_INTERRUPTED = 130   # 128 + signal.SIGINT=2
 
 
 class TestResults:
@@ -25,13 +27,18 @@ class TestResults:
         self.env_changed: TestList = []
         self.run_no_tests: TestList = []
         self.rerun: TestList = []
-        self.bad_results: list[TestResult] = []
+        self.rerun_results: list[TestResult] = []
 
         self.interrupted: bool = False
         self.test_times: list[tuple[float, TestName]] = []
         self.stats = TestStats()
         # used by --junit-xml
         self.testsuite_xml: list[str] = []
+
+    def is_all_good(self):
+        return (not self.bad
+                and not self.skipped
+                and not self.interrupted)
 
     def get_executed(self):
         return (set(self.good) | set(self.bad) | set(self.skipped)
@@ -82,6 +89,7 @@ class TestResults:
                 self.good.append(test_name)
             case State.ENV_CHANGED:
                 self.env_changed.append(test_name)
+                self.rerun_results.append(result)
             case State.SKIPPED:
                 self.skipped.append(test_name)
             case State.RESOURCE_DENIED:
@@ -93,7 +101,7 @@ class TestResults:
             case _:
                 if result.is_failed(fail_env_changed):
                     self.bad.append(test_name)
-                    self.bad_results.append(result)
+                    self.rerun_results.append(result)
                 else:
                     raise ValueError(f"invalid test state: {result.state!r}")
 
@@ -109,12 +117,12 @@ class TestResults:
             self.add_junit(xml_data)
 
     def need_rerun(self):
-        return bool(self.bad_results)
+        return bool(self.rerun_results)
 
     def prepare_rerun(self) -> tuple[TestTuple, FilterDict]:
         tests: TestList = []
         match_tests_dict = {}
-        for result in self.bad_results:
+        for result in self.rerun_results:
             tests.append(result.test_name)
 
             match_tests = result.get_rerun_match_tests()
@@ -125,7 +133,8 @@ class TestResults:
         # Clear previously failed tests
         self.rerun_bad.extend(self.bad)
         self.bad.clear()
-        self.bad_results.clear()
+        self.env_changed.clear()
+        self.rerun_results.clear()
 
         return (tuple(tests), match_tests_dict)
 
@@ -164,23 +173,11 @@ class TestResults:
                 f.write(s)
 
     def display_result(self, tests: TestTuple, quiet: bool, print_slowest: bool):
-        if self.interrupted:
-            print("Test suite interrupted by signal SIGINT.")
-
         omitted = set(tests) - self.get_executed()
         if omitted:
             print()
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
-
-        if self.good and not quiet:
-            print()
-            if (not self.bad
-                and not self.skipped
-                and not self.interrupted
-                and len(self.good) > 1):
-                print("All", end=' ')
-            print(count(len(self.good), "test"), "OK.")
 
         if print_slowest:
             self.test_times.sort(reverse=True)
@@ -189,36 +186,34 @@ class TestResults:
             for test_time, test in self.test_times[:10]:
                 print("- %s: %s" % (test, format_duration(test_time)))
 
-        if self.bad:
-            print()
-            print(count(len(self.bad), "test"), "failed:")
-            printlist(self.bad)
+        all_tests = [
+            (self.bad, "test", "{} failed:"),
+            (self.env_changed, "test", "{} altered the execution environment (env changed):"),
+        ]
+        if not quiet:
+            all_tests.append((self.skipped, "test", "{} skipped:"))
+            all_tests.append((self.resource_denied, "test", "{} skipped (resource denied):"))
+        all_tests.append((self.rerun, "re-run test", "{}:"))
+        all_tests.append((self.run_no_tests, "test", "{} run no tests:"))
 
-        if self.env_changed:
-            print()
-            print("{} altered the execution environment:".format(
-                     count(len(self.env_changed), "test")))
-            printlist(self.env_changed)
+        for tests_list, count_text, title_format in all_tests:
+            if tests_list:
+                print()
+                count_text = count(len(tests_list), count_text)
+                print(title_format.format(count_text))
+                printlist(tests_list)
 
-        if self.skipped and not quiet:
+        if self.good and not quiet:
             print()
-            print(count(len(self.skipped), "test"), "skipped:")
-            printlist(self.skipped)
+            text = count(len(self.good), "test")
+            text = f"{text} OK."
+            if (self.is_all_good() and len(self.good) > 1):
+                text = f"All {text}"
+            print(text)
 
-        if self.resource_denied and not quiet:
+        if self.interrupted:
             print()
-            print(count(len(self.resource_denied), "test"), "skipped (resource denied):")
-            printlist(self.resource_denied)
-
-        if self.rerun:
-            print()
-            print("%s:" % count(len(self.rerun), "re-run test"))
-            printlist(self.rerun)
-
-        if self.run_no_tests:
-            print()
-            print(count(len(self.run_no_tests), "test"), "run no tests:")
-            printlist(self.run_no_tests)
+            print("Test suite interrupted by signal SIGINT.")
 
     def display_summary(self, first_runtests: RunTests, filtered: bool):
         # Total tests
