@@ -1271,7 +1271,7 @@ are always available.  They are listed here in alphabetical order.
 
    * ``'xmlcharrefreplace'`` is only supported when writing to a file.
      Characters not supported by the encoding are replaced with the
-     appropriate XML character reference ``&#nnn;``.
+     appropriate XML character reference :samp:`&#{nnn};`.
 
    * ``'backslashreplace'`` replaces malformed data by Python's backslashed
      escape sequences.

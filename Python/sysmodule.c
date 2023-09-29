@@ -2039,11 +2039,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*[clinic input]
 sys._debugmallocstats
 
@@ -2070,10 +2065,6 @@ sys__debugmallocstats_impl(PyObject *module)
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 
@@ -2297,11 +2288,6 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     return Py_NewRef(r);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2369,10 +2355,6 @@ PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
     }
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 
 static PyMethodDef sys_methods[] = {
@@ -3502,7 +3484,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
     } else {
-        PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
+        if (PyDict_SetItemString(sysdict, "pycache_prefix", Py_None) < 0) {
+            return -1;
+        }
     }
 
     COPY_LIST("argv", config->argv);
@@ -3516,7 +3500,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
         SET_SYS_FROM_WSTR("_stdlib_dir", stdlibdir);
     }
     else {
-        PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None);
+        if (PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None) < 0) {
+            return -1;
+        }
     }
 
 #undef SET_SYS_FROM_WSTR
@@ -3526,6 +3512,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     // sys.flags
     PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
     if (flags == NULL) {
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.flags");
+        }
         return -1;
     }
     if (set_flags_from_config(interp, flags) < 0) {

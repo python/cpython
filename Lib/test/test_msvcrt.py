@@ -2,8 +2,6 @@ import os
 import sys
 import unittest
 
-raise unittest.SkipTest("FIXME! broken test see: https://github.com/python/cpython/pull/109004")
-
 from test.support import os_helper
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
@@ -13,7 +11,7 @@ if sys.platform != "win32":
 import _winapi
 import msvcrt;
 
-from _testconsole import write_input
+from _testconsole import write_input, flush_console_input_buffer
 
 
 class TestFileOperations(unittest.TestCase):
@@ -64,6 +62,8 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
+        h = msvcrt.get_osfhandle(sys.stdin.fileno())
+        flush_console_input_buffer(h)
         self.assertEqual(msvcrt.kbhit(), 0)
 
     def test_getch(self):
@@ -71,28 +71,24 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        stdin = open('CONIN$', 'r')
-        old_stdin = sys.stdin
-        try:
-            sys.stdin = stdin
-            write_input(stdin.buffer.raw, c_encoded)
+        with open('CONIN$', 'rb', buffering=0) as stdin:
+            h = msvcrt.get_osfhandle(stdin.fileno())
+            flush_console_input_buffer(h)
+
+            write_input(stdin, c_encoded)
             self.assertEqual(msvcrt.getwch(), c)
-        finally:
-            sys.stdin = old_stdin
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        stdin = open('CONIN$', 'r')
-        old_stdin = sys.stdin
-        try:
-            sys.stdin = stdin
-            write_input(stdin.buffer.raw, c_encoded)
+        with open('CONIN$', 'rb', buffering=0) as stdin:
+            h = msvcrt.get_osfhandle(stdin.fileno())
+            flush_console_input_buffer(h)
+
+            write_input(stdin, c_encoded)
             self.assertEqual(msvcrt.getwche(), c)
-        finally:
-            sys.stdin = old_stdin
 
     def test_putch(self):
         msvcrt.putch(b'c')

@@ -83,9 +83,9 @@
 //       # release
 //       ...
 
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
-
+#ifndef Py_CPYTHON_ATOMIC_H
+#  error "this header file must not be included directly"
+#endif
 
 // --- _Py_atomic_add --------------------------------------------------------
 // Atomically adds `value` to `obj` and returns the previous value
@@ -502,5 +502,19 @@ static inline void _Py_atomic_fence_release(void);
 #  error "no available pyatomic implementation for this platform/compiler"
 #endif
 
-#endif  /* Py_ATOMIC_H */
 
+// --- aliases ---------------------------------------------------------------
+
+#if SIZEOF_LONG == 8
+# define _Py_atomic_load_ulong _Py_atomic_load_uint64
+# define _Py_atomic_load_ulong_relaxed _Py_atomic_load_uint64_relaxed
+# define _Py_atomic_store_ulong _Py_atomic_store_uint64
+# define _Py_atomic_store_ulong_relaxed _Py_atomic_store_uint64_relaxed
+#elif SIZEOF_LONG == 4
+# define _Py_atomic_load_ulong _Py_atomic_load_uint32
+# define _Py_atomic_load_ulong_relaxed _Py_atomic_load_uint32_relaxed
+# define _Py_atomic_store_ulong _Py_atomic_store_uint32
+# define _Py_atomic_store_ulong_relaxed _Py_atomic_store_uint32_relaxed
+#else
+# error "long must be 4 or 8 bytes in size"
+#endif  // SIZEOF_LONG
