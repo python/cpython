@@ -493,7 +493,7 @@ _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
     Py_ssize_t n = self->string_size - self->pos;
     if (size < 1 || size > n) {
         size = n;
-        /* size can be negative after truncate() */
+        /* size can be negative after truncate() or seek() */
         if (size < 0) {
             size = 0;
         }
