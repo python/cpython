@@ -758,11 +758,12 @@ Libraries options
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=editline
+.. cmdoption:: --with-readline=readline|editline
 
-   Use ``editline`` library for backend of the :mod:`readline` module.
+   Designate a backend library for the :mod:`readline` module.
 
-   Define the ``WITH_EDITLINE`` macro.
+   * readline: Use readline as the backend.
+   * editline: Use editline as the backend.
 
    .. versionadded:: 3.10
 
