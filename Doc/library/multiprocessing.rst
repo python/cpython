@@ -1049,25 +1049,43 @@ Miscellaneous
 
 .. function:: get_context(method=None)
 
-   Return a context object with the same attributes as the :mod:`multiprocessing` module.
+   Return a context object with the same attributes as the 
+   :mod:`multiprocessing` module.
 
-   If *method* is ``None``, the default context is returned. Be aware that calling this function with *method=None* sets the default context globally, potentially affecting future usage of :func:`set_start_method`. To change the method later, it is recommended to explicitly specify a method other than ``None`` when calling this function. Otherwise, it may lead to unexpected behavior.
+   If *method* is ``None``, the default context is returned. Be aware that
+   calling this function with *method=None* sets the default context globally,
+   potentially affecting future usage of :func:`set_start_method`. To change
+   the method later, it is recommended to explicitly specify a method other
+   than ``None`` when calling this function. Otherwise, it may lead to
+   unexpected behavior.
 
-   *method* should be one of the following: ``'fork'``, ``'spawn'``, or ``'forkserver'``. A :exc:`ValueError` is raised if the specified start method is unavailable. See :ref:`multiprocessing-start-methods`.
+   *method* should be one of the following: ``'fork'``, ``'spawn'``, or
+   ``'forkserver'``. A :exc:`ValueError` is raised if the specified start
+   method is unavailable. See :ref:`multiprocessing-start-methods`.
 
    .. versionadded:: 3.4
 
 .. function:: get_start_method(allow_none=False)
 
-   Return the name of the start method used for initiating processes.
+   Return the name of start method used for starting processes.
 
-   If the start method has not been explicitly set (e.g., using :func:`set_start_method`) and *allow_none* is false, then the start method is fixed to the default, and the name of the default method is returned. If the start method has not been explicitly set and *allow_none* is true, then ``None`` is returned, indicating that the method has not been explicitly set.
+   If the start method has not been explicitly set
+   (e.g., using :func:`set_start_method`) and *allow_none* is false, then the
+   start method is fixed to the default, and the name of the default method
+   is returned. If the start method has not been explicitly set and
+   *allow_none* is true, then ``None`` is returned, indicating that
+   the method has not been explicitly set.
 
-   The return value can be one of the following: ``'fork'``, ``'spawn'``, ``'forkserver'``, or ``None``.
+   The return value can be one of the following: ``'fork'``, ``'spawn'``,
+   ``'forkserver'``, or ``None``.
 
-   .. note:: Exercise caution when changing the start method using ``multiprocessing.set_start_method`` after using ``multiprocessing.get_start_method`` with *allow_none* set to ``False``, as it may raise a ``RuntimeError``.
+   .. note:: Exercise caution when changing the start method using 
+      ``multiprocessing.set_start_method`` after using
+      ``multiprocessing.get_start_method`` with *allow_none* set to
+      ``False``, as it may raise a ``RuntimeError``.
 
-   See :ref:`multiprocessing-start-methods` for more information on multiprocessing start methods and their implications.
+   See :ref:`multiprocessing-start-methods` for more information
+   on multiprocessing start methods and their implications.
 
 .. versionchanged:: 3.8
 
