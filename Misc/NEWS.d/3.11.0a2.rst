@@ -1234,7 +1234,7 @@ defined:
 * :c:func:`PyMarshal_WriteObjectToString`
 * the ``Py_MARSHAL_VERSION`` macro
 
-These are not part of the :ref:`limited API <stable-abi-list>`.
+These are not part of the :ref:`limited API <limited-api-list>`.
 
 Patch by Victor Stinner.
 
