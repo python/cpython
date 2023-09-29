@@ -290,7 +290,7 @@ html_context = {
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-html_last_updated_fmt = '%b %d, %Y (%H:%M)'
+html_last_updated_fmt = '%b %d, %Y (%H:%M UTC)'
 
 # Path to find HTML templates.
 templates_path = ['tools/templates']
