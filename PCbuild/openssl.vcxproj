@@ -67,14 +67,14 @@
 set VCINSTALLDIR=$(VCInstallDir)
 if not exist "$(IntDir.TrimEnd('\'))" mkdir "$(IntDir.TrimEnd('\'))"
 cd /D "$(IntDir.TrimEnd('\'))"
-rem $(Perl) "$(opensslDir)\configure" $(OpenSSLPlatform) no-asm
+$(Perl) "$(opensslDir)\configure" $(OpenSSLPlatform) no-asm
 nmake
 </NMakeBuildCommandLine>
   </PropertyGroup>
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
-  <Target Name="_PatchUplink" BeforeTargets="Build" Condition="false">
+  <Target Name="_PatchUplink" BeforeTargets="Build">
     <PropertyGroup>
       <Uplink>$(opensslDir)\ms\uplink.c</Uplink>
       <BeforePatch>((h = GetModuleHandle(NULL)) == NULL)</BeforePatch>
