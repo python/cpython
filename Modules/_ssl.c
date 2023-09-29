@@ -6222,7 +6222,19 @@ sslmodule_init_lock(PyObject *module)
     return 0;
 }
 
+#ifdef MS_WINDOWS
+static int
+sslmodule_init_applink(PyObject *module)
+{
+    OPENSSL_ProvideApplink();
+    return 0;
+}
+#endif
+
 static PyModuleDef_Slot sslmodule_slots[] = {
+#ifdef MS_WINDOWS
+    {Py_mod_exec, sslmodule_init_applink},
+#endif
     {Py_mod_exec, sslmodule_init_types},
     {Py_mod_exec, sslmodule_init_exceptions},
     {Py_mod_exec, sslmodule_init_socketapi},

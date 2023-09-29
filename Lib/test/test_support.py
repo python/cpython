@@ -812,6 +812,8 @@ class TestSupport(unittest.TestCase):
         if not os.path.exists(src_dir):
             self.skipTest(f"cannot access Python source code directory:"
                           f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
         landmark = os.path.join(src_dir, 'Modules')
         if not os.path.exists(landmark):
             self.skipTest(f"cannot access Python source code directory:"

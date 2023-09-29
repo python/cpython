@@ -99,7 +99,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ssl.c" />
-    <ClCompile Include="$(opensslIncludeDir)\applink.c">
+    <ClCompile Include="$(opensslDir)\ms\applink.c">
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemGroup>
