@@ -71,8 +71,15 @@ class SymbolTable:
             return "function"
         if self._table.type == _symtable.TYPE_CLASS:
             return "class"
-        assert self._table.type in (1, 2, 3), \
-               "unexpected type: {0}".format(self._table.type)
+        if self._table.type == _symtable.TYPE_ANNOTATION:
+            return "annotation"
+        if self._table.type == _symtable.TYPE_TYPE_VAR_BOUND:
+            return "TypeVar bound"
+        if self._table.type == _symtable.TYPE_TYPE_ALIAS:
+            return "type alias"
+        if self._table.type == _symtable.TYPE_TYPE_PARAM:
+            return "type parameter"
+        assert False, f"unexpected type: {self._table.type}"
 
     def get_id(self):
         """Return an identifier for the table.
