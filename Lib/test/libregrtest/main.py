@@ -11,18 +11,18 @@ from test.support import os_helper
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
+from .pgo import setup_pgo_tests
 from .result import State
+from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
-from .pgo import setup_pgo_tests
-from .results import TestResults
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
-    MS_WINDOWS)
+    MS_WINDOWS, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -525,10 +525,23 @@ class Regrtest:
         try:
             if hasattr(os, 'execv') and not MS_WINDOWS:
                 os.execv(cmd[0], cmd)
-                # execv() do no return and so we don't get to this line on success
+                # On success, execv() do no return.
+                # On error, it raises an OSError.
             else:
                 import subprocess
-                proc = subprocess.run(cmd)
+                with subprocess.Popen(cmd) as proc:
+                    try:
+                        proc.wait()
+                    except KeyboardInterrupt:
+                        # There is no need to call proc.terminate(): on CTRL+C,
+                        # SIGTERM is also sent to the child process.
+                        try:
+                            proc.wait(timeout=EXIT_TIMEOUT)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
+                            sys.exit(EXITCODE_INTERRUPTED)
+
                 sys.exit(proc.returncode)
         except Exception as exc:
             print_warning(f"Failed to change Python options: {exc!r}\n"
