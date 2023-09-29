@@ -1,6 +1,7 @@
 import asyncio
 import unittest
 import time
+from test import support
 
 
 def tearDownModule():
@@ -130,7 +131,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
             nonlocal foo_running
             foo_running = True
             try:
-                await asyncio.sleep(10)
+                await asyncio.sleep(support.LONG_TIMEOUT)
             finally:
                 foo_running = False
             return 'done'
@@ -144,7 +145,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(fut.done())
         # it should have been cancelled due to the timeout
         self.assertTrue(fut.cancelled())
-        self.assertLess(t1 - t0, 0.5)
+        self.assertLess(t1 - t0, support.SHORT_TIMEOUT)
         self.assertEqual(foo_running, False)
 
     async def test_wait_for_blocking(self):

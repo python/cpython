@@ -414,3 +414,61 @@ class Analyzer:
                 case _:
                     assert_never(uop)
         return components
+
+    def report_non_viable_uops(self, jsonfile: str) -> None:
+        print("The following ops are not viable uops:")
+        skips = {
+            "CACHE",
+            "RESERVED",
+            "INTERPRETER_EXIT",
+            "JUMP_BACKWARD",
+            "LOAD_FAST_LOAD_FAST",
+            "LOAD_CONST_LOAD_FAST",
+            "STORE_FAST_STORE_FAST",
+            "_BINARY_OP_INPLACE_ADD_UNICODE",
+            "POP_JUMP_IF_TRUE",
+            "POP_JUMP_IF_FALSE",
+            "_ITER_JUMP_LIST",
+            "_ITER_JUMP_TUPLE",
+            "_ITER_JUMP_RANGE",
+        }
+        try:
+            # Secret feature: if bmraw.json exists, print and sort by execution count
+            counts = load_execution_counts(jsonfile)
+        except FileNotFoundError as err:
+            counts = {}
+        non_viable = [
+            instr
+            for instr in self.instrs.values()
+            if instr.name not in skips
+            and not instr.name.startswith("INSTRUMENTED_")
+            and not instr.is_viable_uop()
+        ]
+        non_viable.sort(key=lambda instr: (-counts.get(instr.name, 0), instr.name))
+        for instr in non_viable:
+            if instr.name in counts:
+                scount = f"{counts[instr.name]:,}"
+            else:
+                scount = ""
+            print(f"    {scount:>15} {instr.name:<35}", end="")
+            if instr.name in self.families:
+                print("      (unspecialized)", end="")
+            elif instr.family is not None:
+                print(f" (specialization of {instr.family.name})", end="")
+            print()
+
+
+def load_execution_counts(jsonfile: str) -> dict[str, int]:
+    import json
+
+    with open(jsonfile) as f:
+        jsondata = json.load(f)
+
+    # Look for keys like "opcode[LOAD_FAST].execution_count"
+    prefix = "opcode["
+    suffix = "].execution_count"
+    res: dict[str, int] = {}
+    for key, value in jsondata.items():
+        if key.startswith(prefix) and key.endswith(suffix):
+            res[key[len(prefix) : -len(suffix)]] = value
+    return res

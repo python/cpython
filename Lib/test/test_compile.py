@@ -1252,6 +1252,31 @@ class TestSpecifics(unittest.TestCase):
             return a, b
         self.assertEqual(f(), (54, 96))
 
+    def test_duplicated_small_exit_block(self):
+        # See gh-109627
+        def f():
+            while element and something:
+                try:
+                    return something
+                except:
+                    pass
+
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

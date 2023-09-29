@@ -418,7 +418,7 @@ trigger a ``DeprecationWarning`` and have been marked for removal in Python
 .. section: Library
 
 Update error message when constructing invalid inspect.Parameters Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
