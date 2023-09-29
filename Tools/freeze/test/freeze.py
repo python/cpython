@@ -27,8 +27,17 @@ class UnsupportedError(Exception):
     """The operation isn't supported."""
 
 
+def _run(cmd, cwd=None):
+    print('+', shlex.join(cmd))
+    return subprocess.run(
+        cmd,
+        cwd=cwd,
+        check=True,
+    )
+
+
 def _run_quiet(cmd, cwd=None):
-    #print(f'# {" ".join(shlex.quote(a) for a in cmd)}')
+    print('+', shlex.join(cmd))
     try:
         return subprocess.run(
             cmd,
@@ -125,7 +134,7 @@ def prepare(script=None, outdir=None):
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
-    _run_quiet(cmd, builddir)
+    _run(cmd, builddir)
 
     if not MAKE:
         raise UnsupportedError('make')
