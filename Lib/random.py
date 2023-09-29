@@ -164,8 +164,8 @@ class Random(_random.Random):
             a = int.from_bytes(a + _sha512(a).digest())
 
         elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
-            raise TypeError('The only supported seed types are: None, '
-                            'int, float, str, bytes, and bytearray.')
+            raise TypeError('The only supported seed types are:\n'
+                            'None, int, float, str, bytes, and bytearray.')
 
         super().seed(a)
         self.gauss_next = None
