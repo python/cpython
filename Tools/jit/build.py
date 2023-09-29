@@ -921,7 +921,7 @@ class x86_64_unknown_linux_gnu(ELF):
                 "Addend": int(addend),
                 "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_PLT32"},
+                "Type": {"Value": "R_X86_64_PC32" | "R_X86_64_PLT32"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
