@@ -760,7 +760,7 @@ Libraries options
 
 .. cmdoption:: --with-readline=readline|editline
 
-   Desinate a backend library of the :mod:`readline` module.
+   Designate a backend library for the :mod:`readline` module.
 
    * readline: Use readline as the backend.
    * editline: Use editline as the backend.
