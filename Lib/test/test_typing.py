@@ -9373,6 +9373,10 @@ class AllTests(BaseTestCase):
         self.assertIn('SupportsComplex', a)
 
     def test_all_exported_names(self):
+        # ensure all dynamically created objects are actualised
+        for name in typing.__all__:
+            getattr(typing, name)
+
         actual_all = set(typing.__all__)
         computed_all = {
             k for k, v in vars(typing).items()

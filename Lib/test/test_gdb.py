@@ -4,7 +4,6 @@
 # Lib/test/test_jit_gdb.py
 
 import os
-import platform
 import re
 import subprocess
 import sys

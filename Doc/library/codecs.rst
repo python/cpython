@@ -345,9 +345,10 @@ The following error handlers can be used with all Python
 +-------------------------+-----------------------------------------------+
 | ``'backslashreplace'``  | Replace with backslashed escape sequences.    |
 |                         | On encoding, use hexadecimal form of Unicode  |
-|                         | code point with formats ``\xhh`` ``\uxxxx``   |
-|                         | ``\Uxxxxxxxx``. On decoding, use hexadecimal  |
-|                         | form of byte value with format ``\xhh``.      |
+|                         | code point with formats :samp:`\\x{hh}`       |
+|                         | :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.      |
+|                         | On decoding, use hexadecimal form of byte     |
+|                         | value with format :samp:`\\x{hh}`.            |
 |                         | Implemented in                                |
 |                         | :func:`backslashreplace_errors`.              |
 +-------------------------+-----------------------------------------------+
@@ -373,8 +374,9 @@ The following error handlers are only applicable to encoding (within
 +=========================+===============================================+
 | ``'xmlcharrefreplace'`` | Replace with XML/HTML numeric character       |
 |                         | reference, which is a decimal form of Unicode |
-|                         | code point with format ``&#num;`` Implemented |
-|                         | in :func:`xmlcharrefreplace_errors`.          |
+|                         | code point with format :samp:`&#{num};`.      |
+|                         | Implemented in                                |
+|                         | :func:`xmlcharrefreplace_errors`.             |
 +-------------------------+-----------------------------------------------+
 | ``'namereplace'``       | Replace with ``\N{...}`` escape sequences,    |
 |                         | what appears in the braces is the Name        |
@@ -478,8 +480,9 @@ functions:
 
    Malformed data is replaced by a backslashed escape sequence.
    On encoding, use the hexadecimal form of Unicode code point with formats
-   ``\xhh`` ``\uxxxx`` ``\Uxxxxxxxx``. On decoding, use the hexadecimal form of
-   byte value with format ``\xhh``.
+   :samp:`\\x{hh}` :samp:`\\u{xxxx}` :samp:`\\U{xxxxxxxx}`.
+   On decoding, use the hexadecimal form of
+   byte value with format :samp:`\\x{hh}`.
 
    .. versionchanged:: 3.5
       Works with decoding and translating.
@@ -492,7 +495,7 @@ functions:
 
    The unencodable character is replaced by an appropriate XML/HTML numeric
    character reference, which is a decimal form of Unicode code point with
-   format ``&#num;`` .
+   format :samp:`&#{num};` .
 
 
 .. function:: namereplace_errors(exception)
@@ -1346,9 +1349,10 @@ encodings.
 |                    |         | supported.                |
 +--------------------+---------+---------------------------+
 | raw_unicode_escape |         | Latin-1 encoding with     |
-|                    |         | ``\uXXXX`` and            |
-|                    |         | ``\UXXXXXXXX`` for other  |
-|                    |         | code points. Existing     |
+|                    |         | :samp:`\\u{XXXX}` and     |
+|                    |         | :samp:`\\U{XXXXXXXX}``    |
+|                    |         | for other code points.    |
+|                    |         | Existing                  |
 |                    |         | backslashes are not       |
 |                    |         | escaped in any way.       |
 |                    |         | It is used in the Python  |

@@ -41,7 +41,6 @@ from test.support import (TestFailed,
                           darwin_malloc_err_warning, is_emscripten)
 from test.support.import_helper import import_fresh_module
 from test.support import threading_helper
-from test.support import warnings_helper
 import random
 import inspect
 import threading
