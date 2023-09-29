@@ -8203,8 +8203,14 @@ PyInit__testcapi(void)
 #else
     v = Py_False;
 #endif
-    Py_INCREF(v);
-    PyModule_AddObject(m, "WITH_PYMALLOC", v);
+    PyModule_AddObject(m, "WITH_PYMALLOC", Py_NewRef(v));
+
+#ifdef USE_STACKCHECK
+    v = Py_True;
+#else
+    v = Py_False;
+#endif
+    PyModule_AddObject(m, "USE_STACKCHECK", Py_NewRef(v));
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
