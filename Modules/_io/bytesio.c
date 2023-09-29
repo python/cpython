@@ -416,7 +416,9 @@ static PyObject *
 read_bytes(bytesio *self, Py_ssize_t size)
 {
     PyObject *bytes = peek_bytes(self, size);
-    self->pos += size;
+    if (bytes != NULL) {
+        self->pos += size;
+    }
     return bytes;
 }
 
