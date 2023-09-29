@@ -1039,12 +1039,8 @@ CFLAGS = [
     f"-ffreestanding",  # XXX
     # We don't need this (and it causes weird relocations):
     f"-fno-asynchronous-unwind-tables",  # XXX
-    # # Disable stack-smashing canaries, which use magic symbols:
-    # f"-fno-stack-protector",  # XXX
     # The GHC calling convention uses %rbp as an argument-passing register:
     f"-fomit-frame-pointer",  # XXX
-    # # Disable debug info:
-    # f"-g0",  # XXX
 ]
 
 
@@ -1220,16 +1216,12 @@ class Compiler:
 
 def main(host: str) -> None:
     for engine, ghccc, cflags in [
-        (aarch64_apple_darwin, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (aarch64_apple_darwin, False, [f"-I{ROOT}"]),
         (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
         (i686_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
         (x86_64_apple_darwin, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
         (x86_64_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
-        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=large"]),  # XXX
-        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),  # XXX
-        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=medium"]),  # XXX
-        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fno-pic", "-mcmodel=medium"]),  # XXX
-        # (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}", "-fpic", "-mcmodel=small"]),  # XXX
+        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"]),
     ]:
         if engine.pattern.fullmatch(host):
             break
