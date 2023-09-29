@@ -11018,9 +11018,9 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
 
 done:
     #if !defined(HAVE_LARGEFILE_SUPPORT)
-        return Py_BuildValue("l", sbytes);
+        return PyLong_FromLong(sbytes);
     #else
-        return Py_BuildValue("L", sbytes);
+        return PyLong_FromLongLong(sbytes);
     #endif
 
 #else
@@ -11033,7 +11033,7 @@ done:
         } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
         if (ret < 0)
             return (!async_err) ? posix_error() : NULL;
-        return Py_BuildValue("n", ret);
+        return PyLong_FromSsize_t(ret);
     }
 #endif
     off_t offset;
@@ -11054,7 +11054,7 @@ done:
         return (!async_err) ? posix_error() : NULL;
 
     if (offset >= st.st_size) {
-        return Py_BuildValue("i", 0);
+        return PyLong_FromLong(0);
     }
 
     // On illumos specifically sendfile() may perform a partial write but
@@ -11080,7 +11080,7 @@ done:
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     if (ret < 0)
         return (!async_err) ? posix_error() : NULL;
-    return Py_BuildValue("n", ret);
+    return PyLong_FromSsize_t(ret);
 #endif
 }
 #endif /* HAVE_SENDFILE */
