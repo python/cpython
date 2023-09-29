@@ -946,6 +946,7 @@ class TestReplace(unittest.TestCase):
         for Point in (PointFromCall, PointFromInheritance, PointFromClass):
             with self.subTest(Point=Point):
                 p = Point(11, 22)
+                self.assertIsInstance(p, Point)
                 self.assertEqual(copy.replace(p), (11, 22))
                 self.assertEqual(copy.replace(p, x=1), (1, 22))
                 self.assertEqual(copy.replace(p, y=2), (11, 2))
