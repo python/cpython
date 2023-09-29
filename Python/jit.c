@@ -192,13 +192,6 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             break;
         }
-        case HoleKind_REL_64: {
-            uint64_t *addr = (uint64_t *)location;
-            uint64_t instruction = *addr;
-            instruction = value + addend - (uintptr_t)location;
-            *addr = instruction;
-            break;
-        }
         default: {
             printf("XXX: %d!\n", kind);
             Py_UNREACHABLE();
