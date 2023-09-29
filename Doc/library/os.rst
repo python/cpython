@@ -3807,9 +3807,9 @@ to execute a function twice a second:
    try:
        # Process timer events four times.
        for _ in range(4):
-          # read() will block until the timer expires
-          _ = os.read(fd, 8)
-          print("Timer expired")
+           # read() will block until the timer expires
+           _ = os.read(fd, 8)
+           print("Timer expired")
    finally:
        # Remember to close the timer file descriptor!
        os.close(fd)
@@ -3846,7 +3846,7 @@ descriptors to wait until the file descriptor is ready for reading:
    # stop
    # Connection closed by foreign host.
    #
-   sock =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    sock.bind(("127.0.0.1", 1234))
    sock.setblocking(False)
    sock.listen(1)
