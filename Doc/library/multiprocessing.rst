@@ -1082,8 +1082,8 @@ Miscellaneous
    *allow_none* is true, then ``None`` is returned, indicating that
    the method has not been explicitly set.
 
-   The return value can be one of the following: ``'fork'``, ``'spawn'``,
-   ``'forkserver'``, or ``None``.
+   The return value can be ``'fork'``, ``'spawn'``, ``'forkserver'``
+   or ``None``.
 
    Exercise caution when changing the start method using 
    ``multiprocessing.set_start_method`` after using
