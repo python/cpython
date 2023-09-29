@@ -606,13 +606,13 @@ Another way to handle this is with the following example::
        print(_(a))
 
 In this case, you are marking translatable strings with the function
-:func:`N_`, which won't conflict with any definition of :func:`!_`.
+:func:`!N_`, which won't conflict with any definition of :func:`!_`.
 However, you will need to teach your message extraction program to
-look for translatable strings marked with :func:`N_`. :program:`xgettext`,
+look for translatable strings marked with :func:`!N_`. :program:`xgettext`,
 :program:`pygettext`, ``pybabel extract``, and :program:`xpot` all
 support this through the use of the :option:`!-k` command-line switch.
-The choice of :func:`N_` here is totally arbitrary; it could have just
-as easily been :func:`MarkThisStringForTranslation`.
+The choice of :func:`!N_` here is totally arbitrary; it could have just
+as easily been :func:`!MarkThisStringForTranslation`.
 
 
 Acknowledgements
