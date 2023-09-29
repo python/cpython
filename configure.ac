@@ -1489,6 +1489,23 @@ fi
 AC_SUBST([ABIFLAGS])
 ABIFLAGS=""
 
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],
@@ -5676,6 +5693,7 @@ AC_C_BIGENDIAN
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -5821,6 +5839,7 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
+AH_TEMPLATE([WITH_APPLE_EDITLINE], [Define to build the readline module against Apple BSD editline.])
 
 AC_ARG_WITH(
   [readline],
@@ -5835,6 +5854,15 @@ AC_ARG_WITH(
     )
   ],
   [with_readline=readline]
+)
+
+# gh-105323: Need to handle the macOS editline as an alias of readline.
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [Darwin/*], [AC_CHECK_TYPE([Function],
+                             [AC_DEFINE([WITH_APPLE_EDITLINE])],
+                             [],
+                             [@%:@include <readline/readline.h>])],
+  []
 )
 
 AS_VAR_IF([with_readline], [readline], [
@@ -6953,21 +6981,6 @@ AC_ARG_ENABLE([test-modules],
 ])
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
-
-# Check for --disable-gil
-# --disable-gil
-AC_MSG_CHECKING([for --disable-gil])
-AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
-  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
-)
-AC_MSG_RESULT([$disable_gil])
-
-if test "$disable_gil" = "yes"
-then
-  AC_DEFINE([Py_NOGIL], [1],
-            [Define if you want to disable the GIL])
-fi
 
 # gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
 # On Linux aarch64, GCC may require programs and libraries to be linked

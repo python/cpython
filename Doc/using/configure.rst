@@ -99,8 +99,8 @@ General Options
 
 .. cmdoption:: --enable-loadable-sqlite-extensions
 
-   Support loadable extensions in the :mod:`_sqlite` extension module (default
-   is no).
+   Support loadable extensions in the :mod:`!_sqlite` extension module (default
+   is no) of the :mod:`sqlite3` module.
 
    See the :meth:`sqlite3.Connection.enable_load_extension` method of the
    :mod:`sqlite3` module.
@@ -198,7 +198,7 @@ General Options
    Some Linux distribution packaging policies recommend against bundling
    dependencies. For example, Fedora installs wheel packages in the
    ``/usr/share/python-wheels/`` directory and don't install the
-   :mod:`ensurepip._bundled` package.
+   :mod:`!ensurepip._bundled` package.
 
    .. versionadded:: 3.10
 
@@ -469,7 +469,7 @@ Install Options
 .. cmdoption:: --disable-test-modules
 
    Don't build nor install test modules, like the :mod:`test` package or the
-   :mod:`_testcapi` extension module (built and installed by default).
+   :mod:`!_testcapi` extension module (built and installed by default).
 
    .. versionadded:: 3.10
 
@@ -615,7 +615,7 @@ Effects of a debug build:
 * Display all warnings by default: the list of default warning filters is empty
   in the :mod:`warnings` module.
 * Add ``d`` to :data:`sys.abiflags`.
-* Add :func:`sys.gettotalrefcount` function.
+* Add :func:`!sys.gettotalrefcount` function.
 * Add :option:`-X showrefcount <-X>` command line option.
 * Add :option:`-d` command line option and :envvar:`PYTHONDEBUG` environment
   variable to debug the parser.
@@ -637,7 +637,7 @@ Effects of a debug build:
   * Check that deallocator functions don't change the current exception.
   * The garbage collector (:func:`gc.collect` function) runs some basic checks
     on objects consistency.
-  * The :c:macro:`Py_SAFE_DOWNCAST()` macro checks for integer underflow and
+  * The :c:macro:`!Py_SAFE_DOWNCAST()` macro checks for integer underflow and
     overflow when downcasting from wide types to narrow types.
 
 See also the :ref:`Python Development Mode <devmode>` and the
@@ -664,7 +664,7 @@ Debug options
    Effects:
 
    * Define the ``Py_TRACE_REFS`` macro.
-   * Add :func:`sys.getobjects` function.
+   * Add :func:`!sys.getobjects` function.
    * Add :envvar:`PYTHONDUMPREFS` environment variable.
 
    The :envvar:`PYTHONDUMPREFS` environment variable can be used to dump
@@ -748,7 +748,7 @@ Libraries options
 
 .. cmdoption:: --with-system-expat
 
-   Build the :mod:`pyexpat` module using an installed ``expat`` library
+   Build the :mod:`!pyexpat` module using an installed ``expat`` library
    (default is no).
 
 .. cmdoption:: --with-system-libmpdec
@@ -758,11 +758,12 @@ Libraries options
 
    .. versionadded:: 3.3
 
-.. cmdoption:: --with-readline=editline
+.. cmdoption:: --with-readline=readline|editline
 
-   Use ``editline`` library for backend of the :mod:`readline` module.
+   Designate a backend library for the :mod:`readline` module.
 
-   Define the ``WITH_EDITLINE`` macro.
+   * readline: Use readline as the backend.
+   * editline: Use editline as the backend.
 
    .. versionadded:: 3.10
 
@@ -964,9 +965,18 @@ Main Makefile targets
   You can use the configure :option:`--enable-optimizations` option to make
   this the default target of the ``make`` command (``make all`` or just
   ``make``).
-* ``make buildbottest``: Build Python and run the Python test suite, the same
-  way than buildbots test Python. Set ``TESTTIMEOUT`` variable (in seconds)
-  to change the test timeout (1200 by default: 20 minutes).
+
+* ``make test``: Build Python and run the Python test suite with ``--fast-ci``
+  option. Variables:
+
+  * ``TESTOPTS``: additional regrtest command line options.
+  * ``TESTPYTHONOPTS``: additional Python command line options.
+  * ``TESTTIMEOUT``: timeout in seconds (default: 20 minutes).
+
+* ``make buildbottest``: Similar to ``make test``, but use ``--slow-ci``
+  option and default timeout of 20 minutes, instead of ``--fast-ci`` option
+  and a default timeout of 10 minutes.
+
 * ``make install``: Build and install Python.
 * ``make regen-all``: Regenerate (almost) all generated files;
   ``make regen-stdlib-module-names`` and ``autoconf`` must be run separately
@@ -1012,7 +1022,7 @@ differently depending if the ``Py_BUILD_CORE_MODULE`` macro is defined:
 * Use ``Py_IMPORTED_SYMBOL`` otherwise.
 
 If the ``Py_BUILD_CORE_BUILTIN`` macro is used by mistake on a C extension
-built as a shared library, its ``PyInit_xxx()`` function is not exported,
+built as a shared library, its :samp:`PyInit_{xxx}()` function is not exported,
 causing an :exc:`ImportError` on import.
 
 
@@ -1033,8 +1043,8 @@ Preprocessor flags
 
 .. envvar:: CPPFLAGS
 
-   (Objective) C/C++ preprocessor flags, e.g. ``-I<include dir>`` if you have
-   headers in a nonstandard directory ``<include dir>``.
+   (Objective) C/C++ preprocessor flags, e.g. :samp:`-I{include_dir}` if you have
+   headers in a nonstandard directory *include_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the
@@ -1223,8 +1233,8 @@ Linker flags
 
 .. envvar:: LDFLAGS
 
-   Linker flags, e.g. ``-L<lib dir>`` if you have libraries in a nonstandard
-   directory ``<lib dir>``.
+   Linker flags, e.g. :samp:`-L{lib_dir}` if you have libraries in a nonstandard
+   directory *lib_dir*.
 
    Both :envvar:`CPPFLAGS` and :envvar:`LDFLAGS` need to contain the shell's
    value to be able to build extension modules using the

@@ -1272,6 +1272,16 @@ class TestSpecifics(unittest.TestCase):
             else:
                 1 if 1 else 1
 
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
+
+    def test_remove_redundant_nop_edge_case(self):
+        # See gh-109889
+        def f():
+            a if (1 if b else c) else d
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
