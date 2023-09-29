@@ -485,12 +485,10 @@ static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
 /*[clinic end generated code: output=fa4d8ce28b35db9b input=cb06614a3ed0496e]*/
 {
-    Py_ssize_t n;
-
     CHECK_CLOSED(self);
 
     /* adjust invalid sizes */
-    n = self->string_size - self->pos;
+    Py_ssize_t n = self->string_size - self->pos;
     if (size < 1 || size > n) {
         size = n;
         /* size can be negative after truncate() */
