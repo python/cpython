@@ -216,6 +216,52 @@ class ProcessPoolExecutorTest(ExecutorTest):
                     list(executor.map(mul, [(2, 3)] * 10))
             executor.shutdown()
 
+    def test_wakeup(self):
+        # gh-105829: Check that calling _ExecutorManagerThread wakeup() many
+        # times in ProcessPoolExecutor.submit() does not block if the
+        # _ThreadWakeup pipe becomes full.
+
+        def get_pipe_size(connection):
+            try:
+                import fcntl
+                return fcntl.fcntl(connection.fileno(), fcntl.F_GETPIPE_SZ)
+            except ImportError:
+                # Assume 64 KiB pipe if we fail, makes test take longer
+                return 65_536
+
+        executor = self.executor
+        with executor:
+            # Summit a job to start the executor manager thread
+            # future = self.executor.submit(str, 12)
+            # future.result()
+
+            # Wrap _ThreadWakeup.wakeup() to count how many times it has been
+            # called
+            thread_wakeup = executor._executor_manager_thread_wakeup
+            orig_wakeup = thread_wakeup.wakeup
+            nwakeup = 0
+            def wrap_wakeup():
+                nonlocal nwakeup
+                nwakeup += 1
+                orig_wakeup()
+            thread_wakeup.wakeup = wrap_wakeup
+
+            # Use longer "wakeup message" to make the hang more likely
+            # and to speed up the test
+            njob = self.worker_count * 2  # at least 2 jobs per worker
+            pipe_size = get_pipe_size(thread_wakeup._writer)
+            msg_len = min(pipe_size // njob, 512)
+            thread_wakeup._wakeup_msg = b'x' * msg_len
+            msg_size = 4 + len(thread_wakeup._wakeup_msg)
+
+            njob = pipe_size // msg_size
+            job_data = range(njob)
+            if support.verbose:
+                print(f"run {njob:,} jobs")
+
+            self.assertEqual(len(list(executor.map(int, job_data))), njob)
+            self.assertGreaterEqual(nwakeup, njob)
+
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,

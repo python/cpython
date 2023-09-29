@@ -66,9 +66,13 @@ _global_shutdown = False
 
 
 class _ThreadWakeup:
+    # Constant overriden by tests to make them faster
+    _wakeup_msg = b'x'
+
     def __init__(self):
         self._closed = False
         self._reader, self._writer = mp.Pipe(duplex=False)
+        self._awaken = False
 
     def close(self):
         # Please note that we do not take the shutdown lock when
@@ -76,19 +80,29 @@ class _ThreadWakeup:
         # only be called safely from the same thread as all calls to
         # clear() even if you hold the shutdown lock. Otherwise we
         # might try to read from the closed pipe.
-        if not self._closed:
-            self._closed = True
-            self._writer.close()
-            self._reader.close()
+        if self._closed:
+            return
+        self._closed = True
+        self._writer.close()
+        self._reader.close()
 
     def wakeup(self):
-        if not self._closed:
-            self._writer.send_bytes(b"")
+        if self._closed:
+            return
+        if self._awaken:
+            # gh-105829: Send a single message to not block if the pipe is
+            # full. wait_result_broken_or_wakeup() ignores the message anyway,
+            # it just calls clear().
+            return
+        self._awaken = True
+        self._writer.send_bytes(self._wakeup_msg)
 
     def clear(self):
-        if not self._closed:
-            while self._reader.poll():
-                self._reader.recv_bytes()
+        if self._closed:
+            return
+        while self._reader.poll():
+            self._reader.recv_bytes()
+        self._awaken = False
 
 
 def _python_exit():
