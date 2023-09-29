@@ -1230,26 +1230,7 @@ class Path(PurePath):
         normalizing it.
         """
 
-        def check_eloop(e):
-            winerror = getattr(e, 'winerror', 0)
-            if e.errno == ELOOP or winerror == _WINERROR_CANT_RESOLVE_FILENAME:
-                raise RuntimeError("Symlink loop from %r" % e.filename)
-
-        try:
-            s = os.path.realpath(self, strict=strict)
-        except OSError as e:
-            check_eloop(e)
-            raise
-        p = self.with_segments(s)
-
-        # In non-strict mode, realpath() doesn't raise on symlink loops.
-        # Ensure we get an exception by calling stat()
-        if not strict:
-            try:
-                p.stat()
-            except OSError as e:
-                check_eloop(e)
-        return p
+        return self.with_segments(os.path.realpath(self, strict=strict))
 
     def owner(self):
         """

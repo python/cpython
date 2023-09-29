@@ -92,6 +92,13 @@ arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
+
+arg_parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Print list of non-viable uops and exit",
+    action="store_true",
+)
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
 )
@@ -865,6 +872,10 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
+    if args.verbose:
+        # Load execution counts from bmraw.json, if it exists
+        a.report_non_viable_uops("bmraw.json")
+        return
 
     # These raise OSError if output can't be written
     a.write_instructions(args.output, args.emit_line_directives)

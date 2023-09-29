@@ -1,6 +1,5 @@
 """Tests for events.py."""
 
-import collections.abc
 import concurrent.futures
 import functools
 import io
@@ -294,10 +293,11 @@ class EventLoopTestsMixin:
     # 15.6 msec, we use fairly long sleep times here (~100 msec).
 
     def test_run_until_complete(self):
+        delay = 0.100
         t0 = self.loop.time()
-        self.loop.run_until_complete(asyncio.sleep(0.1))
-        t1 = self.loop.time()
-        self.assertTrue(0.08 <= t1-t0 <= 0.8, t1-t0)
+        self.loop.run_until_complete(asyncio.sleep(delay))
+        dt = self.loop.time() - t0
+        self.assertGreaterEqual(dt, delay - test_utils.CLOCK_RES)
 
     def test_run_until_complete_stopped(self):
 
@@ -1718,7 +1718,6 @@ class EventLoopTestsMixin:
         self.loop._run_once = _run_once
 
         async def wait():
-            loop = self.loop
             await asyncio.sleep(1e-2)
             await asyncio.sleep(1e-4)
             await asyncio.sleep(1e-6)
@@ -2335,8 +2334,6 @@ class HandleTests(test_utils.TestCase):
         h = loop.call_later(0, noop)
         check_source_traceback(h)
 
-    @unittest.skipUnless(hasattr(collections.abc, 'Coroutine'),
-                         'No collections.abc.Coroutine')
     def test_coroutine_like_object_debug_formatting(self):
         # Test that asyncio can format coroutines that are instances of
         # collections.abc.Coroutine, but lack cr_core or gi_code attributes
