@@ -2287,6 +2287,16 @@ with the :class:`Pool` class.
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
+      It is important to distinguish between *maxtasksperchild* in the
+      :class:`Pool` class and *chunksize*. Whereas *maxtasksperchild* denotes
+      how many tasks can be run at once before those resources are freed,
+      *chunksize* defines how many separate chunks in which to split all of the
+      iterations of the function. In order for each iteration of the function to
+      be executed separately, *chunksize* needs to be set to 1.
+
+      Whereas :meth:`imap` defaults to a *chunksize* of 1, :meth:`map` defaults
+      to ``None`` and needs to be declared explicitly.
+
       Note that it may cause high memory usage for very long iterables. Consider
       using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
       option for better efficiency.
