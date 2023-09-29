@@ -2401,6 +2401,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(hist, [0,1])
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_long_chain_of_empty_iterables(self):
         # Make sure itertools.chain doesn't run into recursion limits when
         # dealing with long chains of empty iterables. Even with a high

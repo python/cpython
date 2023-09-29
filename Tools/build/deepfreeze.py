@@ -21,8 +21,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 verbose = False
 
-# This must be kept in sync with opcode.py
-RESUME = 151
+# This must be kept in sync with Tools/cases_generator/generate_cases.py
+RESUME = 149
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
@@ -297,10 +297,12 @@ class Printer:
             self.write(f".co_linetable = {co_linetable},")
             self.write(f"._co_cached = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
-            for i, op in enumerate(code.co_code[::2]):
+            first_traceable = 0
+            for op in code.co_code[::2]:
                 if op == RESUME:
-                    self.write(f"._co_firsttraceable = {i},")
                     break
+                first_traceable += 1
+            self.write(f"._co_firsttraceable = {first_traceable},")
         name_as_code = f"(PyCodeObject *)&{name}"
         self.finis.append(f"_PyStaticCode_Fini({name_as_code});")
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")

@@ -1,0 +1,2 @@
+Fix bug where the compiler does not assign a new jump target label to a
+duplicated small exit block.

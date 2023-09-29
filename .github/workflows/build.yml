@@ -42,7 +42,7 @@ jobs:
       run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check for source changes
         id: check
         run: |
@@ -63,7 +63,7 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc|^\.pre-commit-config\.yaml$|\.ruff\.toml$)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
           # Check if we should run hypothesis tests
@@ -111,13 +111,15 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
           key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -174,13 +176,13 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build CPython
       run: .\PCbuild\build.bat -e -d -p Win32
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
 
   build_win_amd64:
     name: 'Windows (x64)'
@@ -191,7 +193,7 @@ jobs:
     env:
        IncludeUwp: 'true'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Register MSVC problem matcher
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
@@ -199,7 +201,22 @@ jobs:
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
     - name: Tests
-      run: .\PCbuild\rt.bat -p x64 -d -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
+      run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci
+
+  build_win_arm64:
+    name: 'Windows (arm64)'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    env:
+       IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e -d -p arm64
 
   build_macos:
     name: 'macOS'
@@ -213,7 +230,7 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
@@ -235,7 +252,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: make test
 
   build_ubuntu:
     name: 'Ubuntu'
@@ -244,10 +261,10 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1u
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -302,7 +319,7 @@ jobs:
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
     - name: Tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: xvfb-run make test
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -313,14 +330,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        openssl_ver: [1.1.1u, 3.0.9, 3.1.1]
+        openssl_ver: [1.1.1w, 3.0.11, 3.1.3]
     env:
       OPENSSL_VER: ${{ matrix.openssl_ver }}
       MULTISSL_DIR: ${{ github.workspace }}/multissl
       OPENSSL_DIR: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
@@ -365,10 +382,10 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_hypothesis == 'true'
     env:
-      OPENSSL_VER: 1.1.1u
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     - name: Install Dependencies
@@ -431,7 +448,7 @@ jobs:
         VENV_PYTHON=$VENV_LOC/bin/python
         echo "HYPOVENV=${VENV_LOC}" >> $GITHUB_ENV
         echo "VENV_PYTHON=${VENV_PYTHON}" >> $GITHUB_ENV
-        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -U hypothesis
+        ./python -m venv $VENV_LOC && $VENV_PYTHON -m pip install -r ${GITHUB_WORKSPACE}/Tools/requirements-hypothesis.txt
     - name: 'Restore Hypothesis database'
       id: cache-hypothesis-database
       uses: actions/cache@v3
@@ -474,11 +491,11 @@ jobs:
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
-      OPENSSL_VER: 1.1.1u
+      OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
       ASAN_OPTIONS: detect_leaks=0:allocator_may_return_null=1:handle_segv=0
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Restore config.cache
       uses: actions/cache@v3
       with:
@@ -518,7 +535,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: xvfb-run make buildbottest TESTOPTS="-j4 -uall,-cpu"
+      run: xvfb-run make test
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
@@ -530,6 +547,7 @@ jobs:
     - check_generated_files
     - build_win32
     - build_win_amd64
+    - build_win_arm64
     - build_macos
     - build_ubuntu
     - build_ubuntu_ssltests
@@ -546,6 +564,7 @@ jobs:
           build_macos,
           build_ubuntu_ssltests,
           build_win32,
+          build_win_arm64,
           test_hypothesis,
         allowed-skips: >-
           ${{
@@ -561,6 +580,7 @@ jobs:
             check_generated_files,
             build_win32,
             build_win_amd64,
+            build_win_arm64,
             build_macos,
             build_ubuntu,
             build_ubuntu_ssltests,

@@ -1,0 +1,1 @@
+Add the new ``exceptions`` command to the Pdb debugger. It makes it possible to move between chained exceptions when using post mortem debugging.

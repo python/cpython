@@ -1766,7 +1766,7 @@ class PathTest(unittest.TestCase):
         # __iter__ on something that is not a directory.
         p = self.cls(BASE, 'fileA')
         with self.assertRaises(OSError) as cm:
-            next(p.iterdir())
+            p.iterdir()
         # ENOENT or EINVAL under Windows, ENOTDIR otherwise
         # (see issue #12802).
         self.assertIn(cm.exception.errno, (errno.ENOTDIR,
@@ -3178,10 +3178,11 @@ class PosixPathTest(PathTest):
         self.assertEqual(str(P('//a').absolute()), '//a')
         self.assertEqual(str(P('//a/b').absolute()), '//a/b')
 
-    def _check_symlink_loop(self, *args, strict=True):
+    def _check_symlink_loop(self, *args):
         path = self.cls(*args)
-        with self.assertRaises(RuntimeError):
-            print(path.resolve(strict))
+        with self.assertRaises(OSError) as cm:
+            path.resolve(strict=True)
+        self.assertEqual(cm.exception.errno, errno.ELOOP)
 
     @unittest.skipIf(
         is_emscripten or is_wasi,
@@ -3240,7 +3241,8 @@ class PosixPathTest(PathTest):
         os.symlink('linkZ/../linkZ', join('linkZ'))
         self._check_symlink_loop(BASE, 'linkZ')
         # Non-strict
-        self._check_symlink_loop(BASE, 'linkZ', 'foo', strict=False)
+        p = self.cls(BASE, 'linkZ', 'foo')
+        self.assertEqual(p.resolve(strict=False), p)
         # Loops with absolute symlinks.
         os.symlink(join('linkU/inside'), join('linkU'))
         self._check_symlink_loop(BASE, 'linkU')
@@ -3249,7 +3251,8 @@ class PosixPathTest(PathTest):
         os.symlink(join('linkW/../linkW'), join('linkW'))
         self._check_symlink_loop(BASE, 'linkW')
         # Non-strict
-        self._check_symlink_loop(BASE, 'linkW', 'foo', strict=False)
+        q = self.cls(BASE, 'linkW', 'foo')
+        self.assertEqual(q.resolve(strict=False), q)
 
     def test_glob(self):
         P = self.cls

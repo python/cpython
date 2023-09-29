@@ -1,13 +1,15 @@
 /* Path configuration like module_search_path (sys.path) */
 
 #include "Python.h"
-#include "marshal.h"              // PyMarshal_ReadObjectFromString
-#include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_fileutils.h"     // _Py_wgetcwd()
 #include "pycore_pathconfig.h"
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
+
+#include "marshal.h"              // PyMarshal_ReadObjectFromString
+#include "osdefs.h"               // DELIM
+
 #ifdef MS_WINDOWS
 #  include <windows.h>            // GetFullPathNameW(), MAX_PATH
 #  include <pathcch.h>
