@@ -58,7 +58,7 @@ class-based API instead.
 
    Return the localized translation of *message*, based on the current global
    domain, language, and locale directory.  This function is usually aliased as
-   :func:`_` in the local namespace (see examples below).
+   :func:`!_` in the local namespace (see examples below).
 
 
 .. function:: dgettext(domain, message)
@@ -119,7 +119,7 @@ greater convenience than the GNU :program:`gettext` API.  It is the recommended
 way of localizing your Python applications and modules.  :mod:`!gettext` defines
 a :class:`GNUTranslations` class which implements the parsing of GNU :file:`.mo` format
 files, and has methods for returning strings. Instances of this class can also
-install themselves in the built-in namespace as the function :func:`_`.
+install themselves in the built-in namespace as the function :func:`!_`.
 
 
 .. function:: find(domain, localedir=None, languages=None, all=False)
@@ -177,19 +177,19 @@ install themselves in the built-in namespace as the function :func:`_`.
 
 .. function:: install(domain, localedir=None, *, names=None)
 
-   This installs the function :func:`_` in Python's builtins namespace, based on
+   This installs the function :func:`!_` in Python's builtins namespace, based on
    *domain* and *localedir* which are passed to the function :func:`translation`.
 
    For the *names* parameter, please see the description of the translation
    object's :meth:`~NullTranslations.install` method.
 
    As seen below, you usually mark the strings in your application that are
-   candidates for translation, by wrapping them in a call to the :func:`_`
+   candidates for translation, by wrapping them in a call to the :func:`!_`
    function, like this::
 
       print(_('This string will be translated.'))
 
-   For convenience, you want the :func:`_` function to be installed in Python's
+   For convenience, you want the :func:`!_` function to be installed in Python's
    builtins namespace, so it is easily accessible in all modules of your
    application.
 
@@ -276,20 +276,20 @@ are the methods of :class:`!NullTranslations`:
 
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
-      addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
+      addition to :func:`!_`.  Supported names are ``'gettext'``, ``'ngettext'``,
       ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
-      the :func:`_` function available to your application.  Because it affects
+      the :func:`!_` function available to your application.  Because it affects
       the entire application globally, and specifically the built-in namespace,
-      localized modules should never install :func:`_`. Instead, they should use
-      this code to make :func:`_` available to their module::
+      localized modules should never install :func:`!_`. Instead, they should use
+      this code to make :func:`!_` available to their module::
 
          import gettext
          t = gettext.translation('mymodule', ...)
          _ = t.gettext
 
-      This puts :func:`_` only in the module's global namespace and so only
+      This puts :func:`!_` only in the module's global namespace and so only
       affects calls within this module.
 
       .. versionchanged:: 3.8
@@ -432,7 +432,7 @@ take the following steps:
 
 In order to prepare your code for I18N, you need to look at all the strings in
 your files.  Any string that needs to be translated should be marked by wrapping
-it in ``_('...')`` --- that is, a call to the function :func:`_`.  For example::
+it in ``_('...')`` --- that is, a call to the function :func:`_ <gettext>`.  For example::
 
    filename = 'mylog.txt'
    message = _('writing a log message')
@@ -504,7 +504,7 @@ module::
 Localizing your application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are localizing your application, you can install the :func:`_` function
+If you are localizing your application, you can install the :func:`!_` function
 globally into the built-in namespace, usually in the main driver file of your
 application.  This will let all your application-specific files just use
 ``_('...')`` without having to explicitly install it in each file.
@@ -581,13 +581,13 @@ Here is one way you can handle this situation::
    for a in animals:
        print(_(a))
 
-This works because the dummy definition of :func:`_` simply returns the string
+This works because the dummy definition of :func:`!_` simply returns the string
 unchanged.  And this dummy definition will temporarily override any definition
-of :func:`_` in the built-in namespace (until the :keyword:`del` command). Take
-care, though if you have a previous definition of :func:`_` in the local
+of :func:`!_` in the built-in namespace (until the :keyword:`del` command). Take
+care, though if you have a previous definition of :func:`!_` in the local
 namespace.
 
-Note that the second use of :func:`_` will not identify "a" as being
+Note that the second use of :func:`!_` will not identify "a" as being
 translatable to the :program:`gettext` program, because the parameter
 is not a string literal.
 
