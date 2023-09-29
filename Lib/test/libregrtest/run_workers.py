@@ -42,7 +42,10 @@ MAIN_PROCESS_TIMEOUT = 5 * 60.0
 assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
-JOIN_TIMEOUT = 30.0   # seconds
+WAIT_COMPLETED_TIMEOUT = 30.0   # seconds
+
+# Time to wait a killed process (in seconds)
+WAIT_KILLED_TIMEOUT = 60.0
 
 
 # We do not use a generator so multiple threads can call next().
@@ -138,7 +141,7 @@ class WorkerThread(threading.Thread):
         if USE_PROCESS_GROUP:
             what = f"{self} process group"
         else:
-            what = f"{self}"
+            what = f"{self} process"
 
         print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
@@ -390,10 +393,10 @@ class WorkerThread(threading.Thread):
         popen = self._popen
 
         try:
-            popen.wait(JOIN_TIMEOUT)
+            popen.wait(WAIT_COMPLETED_TIMEOUT)
         except (subprocess.TimeoutExpired, OSError) as exc:
             print_warning(f"Failed to wait for {self} completion "
-                          f"(timeout={format_duration(JOIN_TIMEOUT)}): "
+                          f"(timeout={format_duration(WAIT_COMPLETED_TIMEOUT)}): "
                           f"{exc!r}")
 
     def wait_stopped(self, start_time: float) -> None:
@@ -414,7 +417,7 @@ class WorkerThread(threading.Thread):
                 break
             dt = time.monotonic() - start_time
             self.log(f"Waiting for {self} thread for {format_duration(dt)}")
-            if dt > JOIN_TIMEOUT:
+            if dt > WAIT_KILLED_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
 
