@@ -1049,7 +1049,7 @@ Miscellaneous
 
 .. function:: get_context(method=None)
 
-   Return a context object with the same attributes as the 
+   Return a context object with the same attributes as the
    :mod:`multiprocessing` module.
 
    If *method* is ``None``, the default context is returned. Be aware that
@@ -1079,10 +1079,10 @@ Miscellaneous
    The return value can be one of the following: ``'fork'``, ``'spawn'``,
    ``'forkserver'``, or ``None``.
 
-   .. note:: Exercise caution when changing the start method using 
-      ``multiprocessing.set_start_method`` after using
-      ``multiprocessing.get_start_method`` with *allow_none* set to
-      ``False``, as it may raise a ``RuntimeError``.
+   Exercise caution when changing the start method using 
+   ``multiprocessing.set_start_method`` after using
+   ``multiprocessing.get_start_method`` with *allow_none* set to
+   ``False``, as it may raise a ``RuntimeError``.
 
    See :ref:`multiprocessing-start-methods` for more information
    on multiprocessing start methods and their implications.
