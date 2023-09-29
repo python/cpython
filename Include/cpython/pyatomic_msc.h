@@ -25,14 +25,40 @@ static inline int8_t
 _Py_atomic_add_int8(int8_t *obj, int8_t value)
 {
     _Py_atomic_ASSERT_ARG_TYPE(char);
+#if defined(_M_ARM64) && _MSC_VER < 1937
+    // GH-110105: Some MSVC versions miscompile _InterlockedExchangeAdd8 on
+    // ARM64, missing a sign extension when loading obj, which leads to an
+    // incorrect return value if `obj` and `value` are both negative.
+    int8_t old_value = _Py_atomic_load_int8_relaxed(obj);
+    for (;;) {
+        int8_t new_value = old_value + value;
+        if (_Py_atomic_compare_exchange_int8(obj, &old_value, new_value)) {
+            return old_value;
+        }
+    }
+#else
     return (int8_t)_InterlockedExchangeAdd8((volatile char *)obj, (char)value);
+#endif
 }
 
 static inline int16_t
 _Py_atomic_add_int16(int16_t *obj, int16_t value)
 {
     _Py_atomic_ASSERT_ARG_TYPE(short);
+#if defined(_M_ARM64) && _MSC_VER < 1937
+    // GH-110105: Some MSVC versions miscompile _InterlockedExchangeAdd16 on
+    // ARM64, missing a sign extension when loading obj, which leads to an
+    // incorrect return value if `obj` and `value` are both negative.
+    int16_t old_value = _Py_atomic_load_int16_relaxed(obj);
+    for (;;) {
+        int16_t new_value = old_value + value;
+        if (_Py_atomic_compare_exchange_int16(obj, &old_value, new_value)) {
+            return old_value;
+        }
+    }
+#else
     return (int16_t)_InterlockedExchangeAdd16((volatile short *)obj, (short)value);
+#endif
 }
 
 static inline int32_t
