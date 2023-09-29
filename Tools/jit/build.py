@@ -441,57 +441,49 @@ class COFF(Engine):
             self.relocations_todo.append((before, relocation))
 
 
-class x86_64_pc_windows_msvc(COFF):
-    pattern = re.compile(r"x86_64-pc-windows-msvc")
-
-    def _handle_relocation(
-        self,
-        base: int,
-        relocation: dict[str, typing.Any],
-    ) -> Hole | None:
-        match relocation:
-            case {
-                "Offset": int(offset),
-                "Symbol": str(symbol),
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                # assert not what, what
-                addend = what
-                self.body[where] = [0] * 8
-                return Hole(HoleKind.ABS_64, symbol, offset, addend)
-            case _:
-                raise NotImplementedError(relocation)
-
-
-class i686_pc_windows_msvc(COFF):
-    pattern = re.compile(r"i686-pc-windows-msvc")
-    SYMBOL_PREFIX = "_"
-
-    def _handle_relocation(
-        self,
-        base: int,
-        relocation: dict[str, typing.Any],
-    ) -> Hole | None:
-        match relocation:
-            case {
-                "Offset": int(offset),
-                "Symbol": str(symbol),
-                "Type": {"Value": "IMAGE_REL_I386_DIR32"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                # assert not what, what
-                addend = what
-                self.body[where] = [0] * 4
-                # assert symbol.startswith(self.SYMBOL_PREFIX)
-                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
-                return Hole(HoleKind.ABS_32, symbol, offset, addend)
-            case _:
-                raise NotImplementedError(relocation)
+class ELF(Engine):
+    def _handle_section(self, section: ELFSection) -> None:
+        type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+        if type == "SHT_RELA":
+            assert "SHF_INFO_LINK" in flags, flags
+            before = self.body_offsets[section["Info"]]
+            assert not section["Symbols"]
+            for relocation in unwrap(section["Relocations"], "Relocation"):
+                self.relocations_todo.append((before, relocation))
+        elif type == "SHT_PROGBITS":
+            before = self.body_offsets[section["Index"]] = len(self.body)
+            if "SHF_ALLOC" not in flags:
+                return
+            elif flags & {"SHF_EXECINSTR", "SHF_MERGE", "SHF_WRITE"} == {"SHF_MERGE"}:
+                # XXX: Merge these
+                section_data = section["SectionData"]
+                self.data_size += len(section_data["Bytes"])
+                self.body.extend(section_data["Bytes"])
+            elif flags & {"SHF_EXECINSTR"}:
+                # XXX: Merge these
+                assert not self.data_size
+                section_data = section["SectionData"]
+                self.body.extend(section_data["Bytes"])
+            else:
+                section_data = section["SectionData"]
+                self.data_size += len(section_data["Bytes"])
+                self.body.extend(section_data["Bytes"])
+            assert not section["Relocations"]
+            for symbol in unwrap(section["Symbols"], "Symbol"):
+                offset = before + symbol["Value"]
+                name = symbol["Name"]["Value"]
+                # assert name.startswith(self.SYMBOL_PREFIX)  # XXX
+                name = name.removeprefix(self.SYMBOL_PREFIX)  # XXX
+                assert name not in self.body_symbols
+                self.body_symbols[name] = offset
+        else:
+            assert type in {
+                "SHT_LLVM_ADDRSIG",
+                "SHT_NULL",
+                "SHT_STRTAB",
+                "SHT_SYMTAB",
+            }, type
 
 
 class MachO(Engine):
@@ -656,129 +648,6 @@ class aarch64_apple_darwin(MachO):
                 raise NotImplementedError(relocation)
 
 
-class x86_64_apple_darwin(MachO):
-    pattern = re.compile(r"x86_64-apple-darwin.*")
-
-    def _handle_relocation(
-        self,
-        base: int,
-        relocation: dict[str, typing.Any],
-    ) -> Hole | None:
-        match relocation:
-            case {
-                "Length": 2,
-                "Offset": int(offset),
-                "PCRel": 1,
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                addend = what
-                self.body[where] = [0] * 4
-                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
-                return Hole(HoleKind.REL_32, symbol, offset, addend - 4)
-            case {
-                "Length": 2,
-                "Offset": int(offset),
-                "PCRel": 1,
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                addend = what
-                self.body[where] = [0] * 4
-                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
-                if (symbol, addend) not in self.got_entries:
-                    self.got_entries.append((symbol, addend))
-                addend = (
-                    len(self.body)
-                    + self.got_entries.index((symbol, addend)) * 8
-                    - offset
-                    - 4
-                )
-                self.body[where] = addend.to_bytes(4, sys.byteorder)
-                return None
-            case {
-                "Length": 2,
-                "Offset": int(offset),
-                "PCRel": 1,
-                "Section": {"Value": str(section)},
-                "Type": {"Value": "X86_64_RELOC_SIGNED"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                addend = what
-                self.body[where] = [0] * 4
-                section = section.removeprefix(self.SYMBOL_PREFIX)
-                return Hole(HoleKind.REL_32, section, offset, addend - 4)
-            case {
-                "Length": 3,
-                "Offset": int(offset),
-                "PCRel": 0,
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                addend = what
-                self.body[where] = [0] * 8
-                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
-                return Hole(HoleKind.ABS_64, symbol, offset, addend)
-            case _:
-                raise NotImplementedError(relocation)
-
-
-class ELF(Engine):
-    def _handle_section(self, section: ELFSection) -> None:
-        type = section["Type"]["Value"]
-        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
-        if type == "SHT_RELA":
-            assert "SHF_INFO_LINK" in flags, flags
-            before = self.body_offsets[section["Info"]]
-            assert not section["Symbols"]
-            for relocation in unwrap(section["Relocations"], "Relocation"):
-                self.relocations_todo.append((before, relocation))
-        elif type == "SHT_PROGBITS":
-            before = self.body_offsets[section["Index"]] = len(self.body)
-            if "SHF_ALLOC" not in flags:
-                return
-            elif flags & {"SHF_EXECINSTR", "SHF_MERGE", "SHF_WRITE"} == {"SHF_MERGE"}:
-                # XXX: Merge these
-                section_data = section["SectionData"]
-                self.data_size += len(section_data["Bytes"])
-                self.body.extend(section_data["Bytes"])
-            elif flags & {"SHF_EXECINSTR"}:
-                # XXX: Merge these
-                assert not self.data_size
-                section_data = section["SectionData"]
-                self.body.extend(section_data["Bytes"])
-            else:
-                section_data = section["SectionData"]
-                self.data_size += len(section_data["Bytes"])
-                self.body.extend(section_data["Bytes"])
-            assert not section["Relocations"]
-            for symbol in unwrap(section["Symbols"], "Symbol"):
-                offset = before + symbol["Value"]
-                name = symbol["Name"]["Value"]
-                # assert name.startswith(self.SYMBOL_PREFIX)  # XXX
-                name = name.removeprefix(self.SYMBOL_PREFIX)  # XXX
-                assert name not in self.body_symbols
-                self.body_symbols[name] = offset
-        else:
-            assert type in {
-                "SHT_LLVM_ADDRSIG",
-                "SHT_NULL",
-                "SHT_STRTAB",
-                "SHT_SYMTAB",
-            }, type
-
-
 class aarch64_unknown_linux_gnu(ELF):
     pattern = re.compile(r"aarch64-.*-linux-gnu")
 
@@ -898,6 +767,162 @@ class aarch64_unknown_linux_gnu(ELF):
                 raise NotImplementedError(relocation)
 
 
+class i686_pc_windows_msvc(COFF):
+    pattern = re.compile(r"i686-pc-windows-msvc")
+    SYMBOL_PREFIX = "_"
+
+    def _handle_relocation(
+        self,
+        base: int,
+        relocation: dict[str, typing.Any],
+    ) -> Hole | None:
+        match relocation:
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_I386_DIR32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.ABS_32, symbol, offset, addend)
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_I386_REL32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.ABS_32, symbol, offset, addend - 4)
+            case _:
+                raise NotImplementedError(relocation)
+
+
+class x86_64_apple_darwin(MachO):
+    pattern = re.compile(r"x86_64-apple-darwin.*")
+
+    def _handle_relocation(
+        self,
+        base: int,
+        relocation: dict[str, typing.Any],
+    ) -> Hole | None:
+        match relocation:
+            case {
+                "Length": 2,
+                "Offset": int(offset),
+                "PCRel": 1,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_32, symbol, offset, addend - 4)
+            case {
+                "Length": 2,
+                "Offset": int(offset),
+                "PCRel": 1,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], "little", signed=False)
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
+                if (symbol, addend) not in self.got_entries:
+                    self.got_entries.append((symbol, addend))
+                addend = (
+                    len(self.body)
+                    + self.got_entries.index((symbol, addend)) * 8
+                    - offset
+                    - 4
+                )
+                self.body[where] = addend.to_bytes(4, sys.byteorder)
+                return None
+            case {
+                "Length": 2,
+                "Offset": int(offset),
+                "PCRel": 1,
+                "Section": {"Value": str(section)},
+                "Type": {"Value": "X86_64_RELOC_SIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                addend = what
+                self.body[where] = [0] * 4
+                section = section.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_32, section, offset, addend - 4)
+            case {
+                "Length": 3,
+                "Offset": int(offset),
+                "PCRel": 0,
+                "Symbol": {"Value": str(symbol)},
+                "Type": {"Value": "X86_64_RELOC_UNSIGNED"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                addend = what
+                self.body[where] = [0] * 8
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
+                return Hole(HoleKind.ABS_64, symbol, offset, addend)
+            case _:
+                raise NotImplementedError(relocation)
+
+
+class x86_64_pc_windows_msvc(COFF):
+    pattern = re.compile(r"x86_64-pc-windows-msvc")
+
+    def _handle_relocation(
+        self,
+        base: int,
+        relocation: dict[str, typing.Any],
+    ) -> Hole | None:
+        match relocation:
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64"},
+            }:
+                offset += base
+                where = slice(offset, offset + 8)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                addend = what
+                self.body[where] = [0] * 8
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
+                return Hole(HoleKind.ABS_64, symbol, offset, addend)
+            case {
+                "Offset": int(offset),
+                "Symbol": str(symbol),
+                "Type": {"Value": "IMAGE_REL_AMD64_REL32"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], sys.byteorder)
+                assert not what, what
+                addend = what
+                self.body[where] = [0] * 4
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_32, symbol, offset, addend - 4)
+            case _:
+                raise NotImplementedError(relocation)
+
+
 class x86_64_unknown_linux_gnu(ELF):
     pattern = re.compile(r"x86_64-.*-linux-gnu")
 
@@ -911,125 +936,48 @@ class x86_64_unknown_linux_gnu(ELF):
                 "Addend": int(addend),
                 "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_32" | "R_X86_64_32S"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
-                return Hole(HoleKind.ABS_32, symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
                 "Type": {"Value": "R_X86_64_64"},
             }:
                 offset += base
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(self.body[where], sys.byteorder)
                 assert not what, what
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
                 return Hole(HoleKind.ABS_64, symbol, offset, addend)
             case {
                 "Addend": int(addend),
                 "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_GOT64"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
-                if (symbol, addend) not in self.got_entries:
-                    self.got_entries.append((symbol, addend))
-                addend = self.got_entries.index((symbol, addend)) * 8
-                self.body[where] = addend.to_bytes(8, sys.byteorder)
-                return None
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_GOTOFF64"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
-                addend += offset - len(self.body)
-                return Hole(HoleKind.REL_64, symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
-                "Type": {"Value": "R_X86_64_GOTPC64"},
-            }:
-                offset += base
-                where = slice(offset, offset + 8)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
-                addend += len(self.body) - offset
-                self.body[where] = addend.to_bytes(8, sys.byteorder)
-                return None
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
-                "Type": {"Value": "R_X86_64_GOTPC32"},
+                "Type": {"Value": "R_X86_64_PLT32"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
                 what = int.from_bytes(self.body[where], sys.byteorder)
                 assert not what, what
-                addend += len(self.body) - offset
-                self.body[where] = (addend % (1 << 32)).to_bytes(4, sys.byteorder)
-                return None
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_REX_GOTPCRELX"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
-                if (symbol, 0) not in self.got_entries:
-                    self.got_entries.append((symbol, 0))
-                addend += len(self.body) + self.got_entries.index((symbol, 0)) * 8 - offset
-                self.body[where] = (addend % (1 << 32)).to_bytes(4, sys.byteorder)
-                return None
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_X86_64_PC32" | "R_X86_64_PLT32"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
+                symbol = remove_prefix(symbol, self.SYMBOL_PREFIX)
                 return Hole(HoleKind.REL_32, symbol, offset, addend)
             case _:
                 raise NotImplementedError(relocation)
 
 
 CFLAGS = [
+    f"-O3",
+    # Keep library calls from sneaking in:
+    f"-ffreestanding",  # XXX
+    # We don't need this (and it causes weird relocations):
+    f"-fno-asynchronous-unwind-tables",  # XXX
+    # Position-independent code adds indirection to every load:
+    f"-fno-pic",
+    # The GHC calling convention uses %rbp as an argument-passing register:
+    f"-fomit-frame-pointer",  # XXX
+]
+
+CPPFLAGS = [
     f"-DPy_BUILD_CORE",
     f"-D_PyJIT_ACTIVE",
     f"-I{INCLUDE}",
     f"-I{INCLUDE_INTERNAL}",
     f"-I{PYTHON}",
-    f"-O3",
-    f"-Wno-unreachable-code",
-    f"-Wno-unused-but-set-variable",
-    f"-Wno-unused-command-line-argument",
-    f"-Wno-unused-label",
-    f"-Wno-unused-variable",
-    # Keep library calls from sneaking in:
-    f"-ffreestanding",  # XXX
-    # We don't need this (and it causes weird relocations):
-    f"-fno-asynchronous-unwind-tables",  # XXX
-    # The GHC calling convention uses %rbp as an argument-passing register:
-    f"-fomit-frame-pointer",  # XXX
 ]
 
 
@@ -1064,7 +1012,7 @@ class Compiler:
         defines = [f"-D_JIT_OPCODE={opname}"]
         ll = pathlib.Path(tempdir, f"{opname}.ll").resolve()
         o = pathlib.Path(tempdir, f"{opname}.o").resolve()
-        await run(self._clang, *CFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
+        await run(self._clang, *CFLAGS, *CPPFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
         self._use_ghccc(ll)
         await run(self._clang, *CFLAGS, "-c", "-o", o, ll)
         self._stencils_built[opname] = await self._parser(
@@ -1204,20 +1152,21 @@ class Compiler:
 
 
 def main(host: str) -> None:
-    for engine, ghccc, cflags in [
-        (aarch64_apple_darwin, False, [f"-I{ROOT}"]),
-        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}"]),
-        (i686_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
-        (x86_64_apple_darwin, True, [f"-I{ROOT}"]),
-        (x86_64_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
-        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"]),
+    for engine, ghccc, cppflags, cflags in [
+        (aarch64_apple_darwin, False, [f"-I{ROOT}"], ["-mcmodel=small"]),
+        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}"], ["-mcmodel=large"]),
+        (i686_pc_windows_msvc, True, [f"-I{PC}"], ["-mcmodel=small"]),
+        (x86_64_apple_darwin, True, [f"-I{ROOT}"], ["-mcmodel=medium"]),
+        (x86_64_pc_windows_msvc, True, [f"-I{PC}"], ["-mcmodel=medium"]),
+        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"], ["-mcmodel=medium"]),
     ]:
         if engine.pattern.fullmatch(host):
             break
     else:
         raise NotImplementedError(host)
     CFLAGS.extend(cflags)  # XXX
-    CFLAGS.append("-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG")
+    CPPFLAGS.extend(cppflags)  # XXX
+    CPPFLAGS.append("-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG")
     CFLAGS.append(f"--target={host}")
     hasher = hashlib.sha256(host.encode())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
