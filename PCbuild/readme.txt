@@ -293,3 +293,23 @@ project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
 for different configurations.
+
+Add a new project
+-----------------
+
+For example, add a new _testclinic_limited project to build a new
+_testclinic_limited extension, the file Modules/_testclinic_limited.c:
+
+* In PCbuild/, copy _asyncio.vcxproj to _testclinic_limited.vcxproj,
+  replace RootNamespace value with `_testclinic_limited`, replace
+  `_asyncio.c` with `_testclinic_limited.c`.
+* Open Visual Studio, open PCbuild\pcbuild.sln solution, add the
+  PCbuild\_testclinic_limited.vcxproj project to the solution ("add existing
+  project).
+* Add a dependency on the python project to the new _testclinic_limited
+  project.
+* Save and exit Visual Studio.
+* Add `;_testclinic_limited` to `<TestModules Include="...">` in
+  PCbuild\pcbuild.proj.
+* Build Python from scratch (clean the solution) to check that the new project
+  is built successfully.
