@@ -42,7 +42,7 @@ Examining Symbol Tables
       ``'type alias'``, and ``'type parameter'``. The latter four refer to
       different flavors of :ref:`annotation scopes <annotation-scopes>`.
 
-      .. versionchanged:: 3.12::
+      .. versionchanged:: 3.12
          Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
          and ``'type parameter'`` as possible return values.
 
