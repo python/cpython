@@ -732,15 +732,17 @@ class TestSupport(unittest.TestCase):
             with support.infinite_recursion(max_depth=25):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # Use limit-2 since f-string seems to consume 2 frames.
-                test_recursive(2, limit - 2)
+                # Use limit-3 since f-string seems to consume 2 frames
+                # and -1 for USE_STACKCHECK.
+                test_recursive(2, limit - 3)
 
             # depth up to 500
             with support.infinite_recursion(max_depth=500):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # limit-2 since f-string seems to consume 2 frames
-                test_recursive(2, limit - 2)
+                # Use limit-3 since f-string seems to consume 2 frames
+                # and -1 for USE_STACKCHECK.
+                test_recursive(2, limit - 3)
         """)
         script_helper.assert_python_ok("-c", code)
 

@@ -2243,7 +2243,8 @@ def get_recursion_available():
     """
     limit = sys.getrecursionlimit()
     depth = get_recursion_depth()
-    return limit - depth
+    # -1 for USE_STACKCHECK
+    return max(limit - depth - 1, 0)
 
 @contextlib.contextmanager
 def set_recursion_limit(limit):
