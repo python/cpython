@@ -336,7 +336,14 @@ class _ExecutorManagerThread(threading.Thread):
         # Main loop for the executor manager thread.
 
         while True:
-            self.add_call_item_to_queue()
+            # gh-109047: During Python finalization, self.call_queue.put()
+            # creation of a thread can fail with RuntimeError.
+            try:
+                self.add_call_item_to_queue()
+            except BaseException as exc:
+                cause = format_exception(exc)
+                self.terminate_broken(cause)
+                return
 
             result_item, is_broken, cause = self.wait_result_broken_or_wakeup()
 
@@ -420,8 +427,8 @@ class _ExecutorManagerThread(threading.Thread):
             try:
                 result_item = result_reader.recv()
                 is_broken = False
-            except BaseException as e:
-                cause = format_exception(type(e), e, e.__traceback__)
+            except BaseException as exc:
+                cause = format_exception(exc)
 
         elif wakeup_reader in ready:
             is_broken = False
@@ -464,7 +471,7 @@ class _ExecutorManagerThread(threading.Thread):
         return (_global_shutdown or executor is None
                 or executor._shutdown_thread)
 
-    def terminate_broken(self, cause):
+    def _terminate_broken(self, cause):
         # Terminate the executor because it is in a broken state. The cause
         # argument can be used to display more information on the error that
         # lead the executor into becoming broken.
@@ -489,7 +496,14 @@ class _ExecutorManagerThread(threading.Thread):
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
-            work_item.future.set_exception(bpe)
+            try:
+                work_item.future.set_exception(bpe)
+            except _base.InvalidStateError:
+                # set_exception() fails if the future is cancelled: ignore it.
+                # Trying to check if the future is cancelled before calling
+                # set_exception() would leave a race condition if the future is
+                # cancelled between the check and set_exception().
+                pass
             # Delete references to object. See issue16284
             del work_item
         self.pending_work_items.clear()
@@ -499,12 +513,14 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
-        # Prevent queue writing to a pipe which is no longer read.
-        # https://github.com/python/cpython/issues/94777
-        self.call_queue._reader.close()
+        self.call_queue._terminate_broken()
 
         # clean up resources
-        self.join_executor_internals()
+        self._join_executor_internals(broken=True)
+
+    def terminate_broken(self, cause):
+        with self.shutdown_lock:
+            self._terminate_broken(cause)
 
     def flag_executor_shutting_down(self):
         # Flag the executor as shutting down and cancel remaining tasks if
@@ -547,15 +563,24 @@ class _ExecutorManagerThread(threading.Thread):
                     break
 
     def join_executor_internals(self):
-        self.shutdown_workers()
+        with self.shutdown_lock:
+            self._join_executor_internals()
+
+    def _join_executor_internals(self, broken=False):
+        # If broken, call_queue was closed and so can no longer be used.
+        if not broken:
+            self.shutdown_workers()
+
         # Release the queue's resources as soon as possible.
         self.call_queue.close()
         self.call_queue.join_thread()
-        with self.shutdown_lock:
-            self.thread_wakeup.close()
+        self.thread_wakeup.close()
+
         # If .join() is not called on the created processes then
         # some ctx.Queue methods may deadlock on Mac OS X.
         for p in self.processes.values():
+            if broken:
+                p.terminate()
             p.join()
 
     def get_n_children_alive(self):
