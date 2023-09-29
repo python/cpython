@@ -1,0 +1,2 @@
+Remove ``make testall`` target: use ``make buildbottest`` instead. Patch by
+Victor Stinner.
