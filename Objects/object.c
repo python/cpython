@@ -28,10 +28,6 @@
 #  error "Py_LIMITED_API macro must not be defined"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Defined in tracemalloc.c */
 extern void _PyMem_DumpTraceback(int fd, const void *ptr);
 
@@ -2808,7 +2804,3 @@ int Py_IsFalse(PyObject *x)
 {
     return Py_Is(x, Py_False);
 }
-
-#ifdef __cplusplus
-}
-#endif
