@@ -569,7 +569,6 @@ class aarch64_apple_darwin(MachO):
                 assert what & 0x9F000000 == 0x90000000, what
                 addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
                 addend = sign_extend_64(addend, 33)
-                # assert symbol.startswith(self.SYMBOL_PREFIX), symbol
                 symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 if (symbol, addend) not in self.got_entries:
                     self.got_entries.append((symbol, addend))
@@ -595,7 +594,6 @@ class aarch64_apple_darwin(MachO):
                         if what & 0x04800000 == 0x04800000:
                             implicit_shift = 4
                 addend <<= implicit_shift
-                # assert symbol.startswith(self.SYMBOL_PREFIX), symbol
                 symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 if (symbol, addend) not in self.got_entries:
                     self.got_entries.append((symbol, addend))
@@ -615,7 +613,6 @@ class aarch64_apple_darwin(MachO):
                 assert what & 0x9F000000 == 0x90000000, what
                 addend = ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
                 addend = sign_extend_64(addend, 33)
-                # assert symbol.startswith(self.SYMBOL_PREFIX), symbol
                 symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.REL_21, symbol, offset, addend)
             case {
@@ -640,22 +637,8 @@ class aarch64_apple_darwin(MachO):
                         if what & 0x04800000 == 0x04800000:
                             implicit_shift = 4
                 addend <<= implicit_shift
-                # assert symbol.startswith(self.SYMBOL_PREFIX), symbol
                 symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.ABS_12, symbol, offset, addend)
-            case {
-                "Length": 3 as length,
-                "Offset": int(offset),
-                "PCRel": 0 as pcrel,
-                "Section": {"Value": str(section)},
-                "Type": {"Value": "ARM64_RELOC_UNSIGNED"},
-            }:
-                offset += base
-                where = slice(offset, offset + (1 << length))
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                addend = what
-                section = remove_prefix(section, self.SYMBOL_PREFIX)
-                return Hole(HoleKind.ABS_64, section, offset, addend)
             case {
                 "Length": 3 as length,
                 "Offset": int(offset),
@@ -814,7 +797,7 @@ class aarch64_unknown_linux_gnu(ELF):
                 offset += base
                 where = slice(offset, offset + 8)
                 what = int.from_bytes(self.body[where], sys.byteorder)
-                assert not what, what
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.ABS_64, symbol, offset, addend)
             case {
                 "Addend": 0,
@@ -832,12 +815,49 @@ class aarch64_unknown_linux_gnu(ELF):
                 if (symbol, addend) not in self.got_entries:
                     self.got_entries.append((symbol, addend))
                 addend = len(self.body) + self.got_entries.index((symbol, addend)) * 8
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.REL_21, "_JIT_BASE", offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {'Value': str(symbol)},
+                "Type": {"Value": "R_AARCH64_ADD_ABS_LO12_NC"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x3B000000 == 0x39000000 or what & 0x11C00000 == 0x11000000, what
+                addend += (what & 0x003FFC00) >> 10
+                implicit_shift = 0
+                if what & 0x3B000000 == 0x39000000:
+                    implicit_shift = (what >> 30) & 0x3
+                    if implicit_shift == 0:
+                        if what & 0x04800000 == 0x04800000:
+                            implicit_shift = 4
+                addend <<= implicit_shift
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.ABS_12, symbol, offset, addend)
+            case {
+                "Addend": int(addend),
+                "Offset": int(offset),
+                "Symbol": {'Value': str(symbol)},
+                "Type": {"Value": "R_AARCH64_ADR_PREL_PG_HI21"},
+            }:
+                offset += base
+                where = slice(offset, offset + 4)
+                what = int.from_bytes(self.body[where], "little", signed=False)
+                # XXX: This nonsense...
+                assert what & 0x9F000000 == 0x90000000, what
+                addend += ((what & 0x60000000) >> 29) | ((what & 0x01FFFFE0) >> 3) << 12
+                addend = sign_extend_64(addend, 33)
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
+                return Hole(HoleKind.REL_21, symbol, offset, addend)
             case {
                 "Addend": 0,
                 "Offset": int(offset),
                 "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_AARCH64_CALL26" | "R_AARCH64_JUMP26"},  # XXX
+                "Type": {"Value": "R_AARCH64_CALL26" | "R_AARCH64_JUMP26"},
             }:
                 offset += base
                 where = slice(offset, offset + 4)
@@ -848,6 +868,7 @@ class aarch64_unknown_linux_gnu(ELF):
                 ), what
                 addend = (what & 0x03FFFFFF) << 2
                 addend = sign_extend_64(addend, 28)
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.REL_26, symbol, offset, addend)
             case {
                 "Addend": 0,
@@ -871,51 +892,8 @@ class aarch64_unknown_linux_gnu(ELF):
                 if (symbol, addend) not in self.got_entries:
                     self.got_entries.append((symbol, addend))
                 addend = len(self.body) + self.got_entries.index((symbol, addend)) * 8
+                symbol = symbol.removeprefix(self.SYMBOL_PREFIX)
                 return Hole(HoleKind.ABS_12, "_JIT_BASE", offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_AARCH64_MOVW_UABS_G0_NC"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                assert ((what >> 5) & 0xFFFF) == 0, what
-                return Hole(HoleKind.ABS_16_A, symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_AARCH64_MOVW_UABS_G1_NC"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                assert ((what >> 5) & 0xFFFF) == 0, what
-                return Hole(HoleKind.ABS_16_B, symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_AARCH64_MOVW_UABS_G2_NC"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                assert ((what >> 5) & 0xFFFF) == 0, what
-                return Hole(HoleKind.ABS_16_C, symbol, offset, addend)
-            case {
-                "Addend": int(addend),
-                "Offset": int(offset),
-                "Symbol": {"Value": str(symbol)},
-                "Type": {"Value": "R_AARCH64_MOVW_UABS_G3"},
-            }:
-                offset += base
-                where = slice(offset, offset + 4)
-                what = int.from_bytes(self.body[where], "little", signed=False)
-                assert ((what >> 5) & 0xFFFF) == 0, what
-                return Hole(HoleKind.ABS_16_D, symbol, offset, addend)
             case _:
                 raise NotImplementedError(relocation)
 
@@ -1228,7 +1206,7 @@ class Compiler:
 def main(host: str) -> None:
     for engine, ghccc, cflags in [
         (aarch64_apple_darwin, False, [f"-I{ROOT}"]),
-        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}", "-fno-pic", "-mcmodel=large"]),
+        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}"]),
         (i686_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
         (x86_64_apple_darwin, True, [f"-I{ROOT}"]),
         (x86_64_pc_windows_msvc, True, [f"-I{PC}", "-fno-pic", "-mcmodel=large"]),
