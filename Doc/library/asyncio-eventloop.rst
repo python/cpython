@@ -607,7 +607,7 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:const:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :py:const:`~socket.SO_REUSEADDR` poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,7 +616,7 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:const:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :py:const:`~socket.SO_REUSEPORT` is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
