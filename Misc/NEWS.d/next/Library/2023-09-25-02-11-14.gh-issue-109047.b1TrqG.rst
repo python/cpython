@@ -1,0 +1,4 @@
+:mod:`concurrent.futures`: The *executor manager thread* now catches exceptions
+when adding an item to the *call queue*. During Python finalization, creating a
+new thread can now raise :exc:`RuntimeError`. Catch the exception and call
+``terminate_broken()`` in this case. Patch by Victor Stinner.
