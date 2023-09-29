@@ -63,6 +63,7 @@ typedef struct _PyInterpreterFrame {
     // example, it may be an inline CACHE entry, an instruction we just jumped
     // over, or (in the case of a newly-created frame) a totally invalid value:
     _Py_CODEUNIT *prev_instr;
+    _Py_CODEUNIT *prev_traced_instr;
     /* The instruction that is currently executing (possibly not started yet). */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
@@ -173,6 +174,7 @@ _PyFrame_Initialize(
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
+    frame->prev_traced_instr = NULL;
     frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->return_offset = 0;
@@ -339,6 +341,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
+    frame->prev_traced_instr = NULL;
     frame->prev_instr = _PyCode_CODE(code) + previous_instr;
     frame->instr_ptr = _PyCode_CODE(code) + previous_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;

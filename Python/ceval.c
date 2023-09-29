@@ -791,8 +791,9 @@ resume_frame:
         case INSTRUMENTED_LINE:
 #endif
     {
-        _Py_CODEUNIT *prev = frame->prev_instr;
-        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_instr = next_instr;
+        DUMP_FRAME("INSTRUMENTED_LINE");
+        _Py_CODEUNIT *prev = frame->prev_traced_instr;
+        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_instr = frame->prev_traced_instr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(
                 tstate, frame, here, prev);
@@ -801,7 +802,7 @@ resume_frame:
             next_instr = here+1;
             goto error;
         }
-        next_instr = frame->prev_instr;
+        next_instr = frame->prev_traced_instr;
         if (next_instr != here) {
             DISPATCH();
         }
