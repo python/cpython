@@ -21,10 +21,6 @@
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* External C interface */
 
 PyObject *
@@ -529,6 +525,13 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
-#ifdef __cplusplus
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
 }
-#endif
