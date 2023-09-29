@@ -774,8 +774,8 @@ than raw I/O does.
       At least one byte of data is returned if not at EOF.
       Return an empty :class:`bytes` object at EOF.
       At most one single read on the underlying raw stream is done to satisfy the call.
-      The exact number of bytes returned is unspecified
-      (*size* is ignored).
+      The *size* argument is ignored.
+      The number of read bytes depends on the buffer size and the current position in the internal buffer.
 
    .. method:: read(size=-1, /)
 
