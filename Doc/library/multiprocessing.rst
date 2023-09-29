@@ -1055,7 +1055,7 @@ Miscellaneous
 
 .. function:: get_context(method=None)
 
-   Return a context object with the same attributes as the
+   Return a context object which has the same attributes as the
    :mod:`multiprocessing` module.
 
    If *method* is ``None``, the default context is returned. Be aware that
