@@ -2266,7 +2266,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
