@@ -1253,7 +1253,7 @@ class _PathBase(PurePath):
         Return the path to which the symbolic link points.
         """
         self._unsupported("readlink")
-    readlink._unsupported = True
+    readlink._supported = False
 
     def _split_stack(self):
         """
@@ -1275,7 +1275,9 @@ class _PathBase(PurePath):
         except UnsupportedOperation:
             path = self
 
-        querying = strict or not getattr(self.readlink, '_unsupported', False)
+        # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
+        # and (in non-strict mode) we can improve performance by not calling `stat()`.
+        querying = strict or getattr(self.readlink, '_supported', True)
         link_count = 0
         stat_cache = {}
         target_cache = {}
@@ -1291,7 +1293,8 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
-            lookup_path = path
+            # Join the current part onto the path.
+            path_parent = path
             path = path._make_child_relpath(part)
             if querying and part != '..':
                 path._resolving = True
@@ -1309,7 +1312,12 @@ class _PathBase(PurePath):
                         if target is None:
                             target = target_cache[path] = path.readlink()
                         target, target_parts = target._split_stack()
-                        path = target if target.root else lookup_path
+                        # If the symlink target is absolute (like '/etc/hosts'), set the current
+                        # path to its uppermost parent (like '/'). If not, the symlink target is
+                        # relative to the symlink parent, which we recorded earlier.
+                        path = target if target.root else path_parent
+                        # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
+                        # the stack of unresolved path parts.
                         parts.extend(target_parts)
                     elif parts and not S_ISDIR(st.st_mode):
                         raise NotADirectoryError(ENOTDIR, "Not a directory", str(path))
