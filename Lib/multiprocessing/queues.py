@@ -167,7 +167,7 @@ class Queue(object):
         # gh-107219: Close the connection writer which can unblock
         # Queue._feed() if it was stuck in send_bytes().
         if sys.platform == 'win32':
-            self.call_queue._writer.close()
+            self._writer.close()
 
         self.close()
         self.join_thread()
