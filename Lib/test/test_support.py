@@ -527,6 +527,7 @@ class TestSupport(unittest.TestCase):
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
+            ['-X', 'uops'],
         ):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'args_from_interpreter_flags')
