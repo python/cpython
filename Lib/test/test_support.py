@@ -812,7 +812,7 @@ class TestSupport(unittest.TestCase):
         if not os.path.exists(src_dir):
             self.skipTest(f"cannot access Python source code directory:"
                           f" {src_dir!r}")
-        landmark = os.path.join(src_dir, 'Lib', 'os.py')
+        landmark = os.path.join(src_dir, 'Modules')
         if not os.path.exists(landmark):
             self.skipTest(f"cannot access Python source code directory:"
                           f" {landmark!r} landmark is missing")
