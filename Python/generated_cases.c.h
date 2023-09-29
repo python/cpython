@@ -962,7 +962,6 @@
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
                     monitor_reraise(tstate, frame, next_instr-1);
-                    DUMP_FRAME("goto exception_unwind");
                     goto exception_unwind;
                 }
                 break;
@@ -980,9 +979,7 @@
             assert(frame == &entry_frame);
             assert(_PyFrame_IsIncomplete(frame));
             /* Restore previous frame and return. */
-            DUMP_FRAME("INTERPRETER_EXIT1");
             tstate->current_frame = frame->previous;
-if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->current_frame=%p tstate->current_frame->prev_instr=%p tstate->current_frame->instr_ptr=%p new_return_offset=%d \n", tstate->current_frame, tstate->current_frame->prev_instr, tstate->current_frame->instr_ptr, tstate->current_frame->new_return_offset);
             assert(!_PyErr_Occurred(tstate));
             tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             return retval;
@@ -993,11 +990,9 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-    DUMP_FRAME("_SAVE_CURRENT_IP[1]");
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
-    DUMP_FRAME("_SAVE_CURRENT_IP[2]");
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1018,16 +1013,13 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-    DUMP_FRAME("_POP_FRAME[1]");
                 frame->prev_instr += frame->return_offset;
                 frame->instr_ptr += frame->new_return_offset;
                 frame->new_return_offset = 0;
     
-    DUMP_FRAME("_POP_FRAME[2]");
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    DUMP_FRAME("_POP_FRAME[3]");
     
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -1073,11 +1065,9 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-    DUMP_FRAME("_SAVE_CURRENT_IP[1]");
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
-    DUMP_FRAME("_SAVE_CURRENT_IP[2]");
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1097,16 +1087,13 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-    DUMP_FRAME("_POP_FRAME[1]");
                 frame->prev_instr += frame->return_offset;
                 frame->instr_ptr += frame->new_return_offset;
                 frame->new_return_offset = 0;
     
-    DUMP_FRAME("_POP_FRAME[2]");
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
-    DUMP_FRAME("_POP_FRAME[3]");
     
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -1294,7 +1281,6 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
                 frame->return_offset = oparg;
                 frame->yield_offset = next_instr - frame->instr_ptr;
                 frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
-                DUMP_FRAME("SEND (to gen_frame)");
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1388,13 +1374,7 @@ if (frame->previous) if (VERBOSE) fprintf(stderr, "INTERPRETER_EXIT2: tstate->cu
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
-if (VERBOSE) {
-fprintf(stderr, "YIELD VALUE: ");
-_PyObject_Dump(retval);
-fprintf(stderr, "\n");
-}
             _PyFrame_StackPush(frame, retval);
-DUMP_FRAME(">> YIELD_VALUE");
             frame->instr_ptr += frame->yield_offset;
             frame->new_return_offset =  frame->yield_offset = 0;
             frame->prev_instr = frame->instr_ptr - 1;
@@ -3961,11 +3941,9 @@ DUMP_FRAME(">> YIELD_VALUE");
             next_instr += 3;
             {
                 #if TIER_ONE
-    DUMP_FRAME("_SAVE_CURRENT_IP[1]");
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
-    DUMP_FRAME("_SAVE_CURRENT_IP[2]");
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -3985,7 +3963,6 @@ DUMP_FRAME(">> YIELD_VALUE");
                 STORE_SP();
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-    DUMP_FRAME("_PUSH_FRAME");
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
@@ -4046,11 +4023,9 @@ DUMP_FRAME(">> YIELD_VALUE");
             next_instr += 3;
             {
                 #if TIER_ONE
-    DUMP_FRAME("_SAVE_CURRENT_IP[1]");
                 frame->prev_instr = next_instr - 1;
                 assert(frame->new_return_offset == 0);
                 frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
-    DUMP_FRAME("_SAVE_CURRENT_IP[2]");
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -4070,7 +4045,6 @@ DUMP_FRAME(">> YIELD_VALUE");
                 STORE_SP();
                 new_frame->previous = frame;
                 CALL_STAT_INC(inlined_py_calls);
-    DUMP_FRAME("_PUSH_FRAME");
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
