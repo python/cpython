@@ -1,4 +1,4 @@
 Windows builds now use OpenSSL 1.1.1w. Note that OpenSSL 1.1 has reached its
-end of life and no future fixes will be mode, and this version of Python is
+end of life and no future fixes will be made, and this version of Python is
 no longer receiving maintenance fixes and will not be updated to OpenSSL
 3.0.
