@@ -62,8 +62,8 @@ class SymbolTable:
     def get_type(self):
         """Return the type of the symbol table.
 
-        The values returned are 'class', 'module' and
-        'function'.
+        The values returned are 'class', 'module', 'function',
+        'annotation', 'TypeVar bound', 'type alias', and 'type parameter'.
         """
         if self._table.type == _symtable.TYPE_MODULE:
             return "module"
