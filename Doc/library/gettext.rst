@@ -98,7 +98,7 @@ class-based API instead.
    .. versionadded:: 3.8
 
 
-Note that GNU :program:`gettext` also defines a :func:`dcgettext` method, but
+Note that GNU :program:`gettext` also defines a :func:`!dcgettext` method, but
 this was deemed not useful and so it is currently unimplemented.
 
 Here's an example of typical usage for this API::
