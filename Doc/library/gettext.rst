@@ -150,7 +150,7 @@ install themselves in the built-in namespace as the function :func:`!_`.
 
 .. function:: translation(domain, localedir=None, languages=None, class_=None, fallback=False)
 
-   Return a :class:`*Translations` instance based on the *domain*, *localedir*,
+   Return a ``*Translations`` instance based on the *domain*, *localedir*,
    and *languages*, which are first passed to :func:`find` to get a list of the
    associated :file:`.mo` file paths.  Instances with identical :file:`.mo` file
    names are cached.  The actual class instantiated is *class_* if
@@ -311,7 +311,7 @@ initialize the "protected" :attr:`_charset` instance variable, defaulting to
 ids and message strings read from the catalog are converted to Unicode using
 this encoding, else ASCII is assumed.
 
-Since message ids are read as Unicode strings too, all :meth:`*gettext` methods
+Since message ids are read as Unicode strings too, all ``*gettext()`` methods
 will assume message ids as Unicode strings, not byte strings.
 
 The entire set of key/value pairs are placed into a dictionary and set as the
