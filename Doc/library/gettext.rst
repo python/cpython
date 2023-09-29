@@ -155,10 +155,7 @@ install themselves in the built-in namespace as the function :func:`!_`.
    associated :file:`.mo` file paths.  Instances with identical :file:`.mo` file
    names are cached.  The actual class instantiated is *class_* if
    provided, otherwise :class:`GNUTranslations`.  The class's constructor must
-   take a single :term:`file object` argument.  If provided, *codeset* will change
-   the charset used to encode translated strings in the
-   :meth:`~NullTranslations.lgettext` and :meth:`~NullTranslations.lngettext`
-   methods.
+   take a single :term:`file object` argument.
 
    If multiple files are found, later files are used as fallbacks for earlier ones.
    To allow setting the fallback, :func:`copy.copy` is used to clone each
@@ -277,7 +274,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`!_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
+      ``'pgettext'``, and ``'npgettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`!_` function available to your application.  Because it affects
