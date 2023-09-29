@@ -45,7 +45,7 @@ Functions and classes provided:
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`with` statement context managers, without needing to
-   create a class or separate :meth:`__enter__` and :meth:`__exit__` methods.
+   create a class or separate :meth:`__enter__` and :meth:`~object.__exit__` methods.
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
@@ -543,7 +543,7 @@ Functions and classes provided:
 
    .. method:: enter_context(cm)
 
-      Enters a new context manager and adds its :meth:`__exit__` method to
+      Enters a new context manager and adds its :meth:`~object.__exit__` method to
       the callback stack. The return value is the result of the context
       manager's own :meth:`__enter__` method.
 
@@ -556,18 +556,18 @@ Functions and classes provided:
 
    .. method:: push(exit)
 
-      Adds a context manager's :meth:`__exit__` method to the callback stack.
+      Adds a context manager's :meth:`~object.__exit__` method to the callback stack.
 
       As ``__enter__`` is *not* invoked, this method can be used to cover
       part of an :meth:`__enter__` implementation with a context manager's own
-      :meth:`__exit__` method.
+      :meth:`~object.__exit__` method.
 
       If passed an object that is not a context manager, this method assumes
       it is a callback with the same signature as a context manager's
-      :meth:`__exit__` method and adds it directly to the callback stack.
+      :meth:`~object.__exit__` method and adds it directly to the callback stack.
 
       By returning true values, these callbacks can suppress exceptions the
-      same way context manager :meth:`__exit__` methods can.
+      same way context manager :meth:`~object.__exit__` methods can.
 
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.

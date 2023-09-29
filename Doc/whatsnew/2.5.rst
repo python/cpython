@@ -575,7 +575,7 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`__enter__` and :meth:`~object.__exit__`
 methods.
 
 The object's :meth:`__enter__` is called before *with-block* is executed and
@@ -583,7 +583,7 @@ therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -652,7 +652,7 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`__enter__` and :meth:`~object.__exit__`
   methods.
 
 * The context manager's :meth:`__enter__` method is called.  The value returned
@@ -669,7 +669,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -715,7 +715,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -751,7 +751,7 @@ exactly one value.  The code up to the :keyword:`yield` will be executed as the
 :meth:`__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
 :keyword:`!as` clause, if any.  The code after the :keyword:`yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`!yield` statement.
 
 Our database example from the previous section could be written  using this
