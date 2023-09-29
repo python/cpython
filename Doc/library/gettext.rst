@@ -401,7 +401,7 @@ version has a slightly different API.  Its documented usage was::
    _ = cat.gettext
    print(_('hello world'))
 
-For compatibility with this older module, the function :func:`Catalog` is an
+For compatibility with this older module, the function :func:`!Catalog` is an
 alias for the :func:`translation` function described above.
 
 One difference between this module and Henstridge's: his catalog objects
