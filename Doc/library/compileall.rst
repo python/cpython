@@ -29,7 +29,7 @@ compile Python sources.
 
    Positional arguments are files to compile or directories that contain
    source files, traversed recursively.  If no argument is given, behave as if
-   the command line was ``-l <directories from sys.path>``.
+   the command line was :samp:`-l {<directories from sys.path>}`.
 
 .. cmdoption:: -l
 

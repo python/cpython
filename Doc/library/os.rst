@@ -88,8 +88,8 @@ startup by the :c:func:`PyConfig_Read` function: see
    On some systems, conversion using the file system encoding may fail. In this
    case, Python uses the :ref:`surrogateescape encoding error handler
    <surrogateescape>`, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again translated to the
-   original byte on encoding.
+   Unicode character U+DC\ *xx* on decoding, and these are again
+   translated to the original byte on encoding.
 
 
 The :term:`file system encoding <filesystem encoding and error handler>` must
