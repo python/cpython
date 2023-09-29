@@ -1055,7 +1055,7 @@ _Py_call_instrumentation_jump(
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
-    assert(frame->prev_instr == instr);
+    assert(frame->instr_ptr == instr);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
@@ -1068,9 +1068,9 @@ _Py_call_instrumentation_jump(
     if (err) {
         return NULL;
     }
-    if (frame->prev_instr != instr) {
+    if (frame->instr_ptr != instr) {
         /* The callback has caused a jump (by setting the line number) */
-        return frame->prev_instr;
+        return frame->instr_ptr;
     }
     return target;
 }
