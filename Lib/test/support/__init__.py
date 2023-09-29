@@ -2243,7 +2243,16 @@ def get_recursion_available():
     """
     limit = sys.getrecursionlimit()
     depth = get_recursion_depth()
-    return limit - depth
+
+    try:
+        from _testcapi import USE_STACKCHECK
+    except ImportError:
+        USE_STACKCHECK = False
+
+    if USE_STACKCHECK:
+        return max(limit - depth - 1, 0)
+    else:
+        return limit - depth
 
 @contextlib.contextmanager
 def set_recursion_limit(limit):

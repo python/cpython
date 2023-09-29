@@ -704,6 +704,10 @@ class TestSupport(unittest.TestCase):
         code = textwrap.dedent("""
             from test import support
             import sys
+            try:
+                from _testcapi import USE_STACKCHECK
+            except ImportError:
+                USE_STACKCHECK = False
 
             def check(cond):
                 if not cond:
@@ -728,19 +732,24 @@ class TestSupport(unittest.TestCase):
                 check(get_depth == depth)
                 test_recursive(depth + 1, limit)
 
+            if USE_STACKCHECK:
+                # f-string consumes 2 frames and -1 for USE_STACKCHECK
+                IGNORE = 3
+            else:
+                # f-string consumes 2 frames
+                IGNORE = 2
+
             # depth up to 25
             with support.infinite_recursion(max_depth=25):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # Use limit-2 since f-string seems to consume 2 frames.
-                test_recursive(2, limit - 2)
+                test_recursive(2, limit - IGNORE)
 
             # depth up to 500
             with support.infinite_recursion(max_depth=500):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # limit-2 since f-string seems to consume 2 frames
-                test_recursive(2, limit - 2)
+                test_recursive(2, limit - IGNORE)
         """)
         script_helper.assert_python_ok("-c", code)
 
