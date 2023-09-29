@@ -163,7 +163,6 @@ Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
 Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
-Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
 Doc/tutorial/introduction.rst
 Doc/using/cmdline.rst
