@@ -571,7 +571,11 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)

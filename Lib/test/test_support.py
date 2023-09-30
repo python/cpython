@@ -797,7 +797,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored | {'build', 'venv'})
 
-        # An other directory
+        # Another directory
         path = os.path.join(src_dir, 'Objects')
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored)
