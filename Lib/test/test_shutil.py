@@ -2323,7 +2323,7 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     # See GH-109590
     @unittest.skipUnless(sys.platform == "win32", 'test specific to Windows')
-    def test_pathext_enforced_for_execute(self):
+    def test_pathext_preferred_for_execute(self):
         with os_helper.EnvironmentVarGuard() as env:
             env["PATH"] = self.temp_dir if isinstance(self.temp_dir, str) else self.temp_dir.decode()
             env["PATHEXT"] = ".test"
@@ -2332,10 +2332,18 @@ class TestWhich(BaseTest, unittest.TestCase):
             open(exe, 'w').close()
             os.chmod(exe, 0o755)
 
-            # default does not match since .exe is not in PATHEXT
-            self.assertIsNone(shutil.which(self.to_text_type("test.exe")))
+            # default behavior allows a direct match if nothing in PATHEXT matches
+            self.assertEqual(shutil.which(self.to_text_type("test.exe")), exe)
 
-            # but if we don't use os.X_OK we're ok not matching PATHEXT
+            dot_test = os.path.join(self.temp_dir, self.to_text_type("test.exe.test"))
+            open(dot_test, 'w').close()
+            os.chmod(dot_test, 0o755)
+
+            # now we have a PATHEXT match, so it take precedence
+            self.assertEqual(shutil.which(self.to_text_type("test.exe")), dot_test)
+
+            # but if we don't use os.X_OK we don't change the order based off PATHEXT
+            # and therefore get the direct match.
             self.assertEqual(shutil.which(self.to_text_type("test.exe"), mode=os.F_OK), exe)
 
     # See GH-109590
@@ -2355,7 +2363,6 @@ class TestWhich(BaseTest, unittest.TestCase):
 
             # even though .exe2 is preferred in PATHEXT, we matched directly to test.exe
             self.assertEqual(shutil.which(self.to_text_type("test.exe")), exe)
-
             self.assertEqual(shutil.which(self.to_text_type("test")), exe2)
 
 
