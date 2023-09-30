@@ -846,7 +846,6 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
-    @unittest.skip("fails with instr_ptr")
     def test_setting_lineno_one_undefined(self):
         code = textwrap.dedent("""\
             def f():
@@ -881,7 +880,6 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
-    @unittest.skip("fails with instr_ptr")
     def test_setting_lineno_two_undefined(self):
         code = textwrap.dedent("""\
             def f():

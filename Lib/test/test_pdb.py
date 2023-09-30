@@ -117,7 +117,7 @@ def test_pdb_basic_commands():
     ...     'args',       # display function args
     ...     'continue',
     ... ]):
-    ...    test_function()    # doctest: +SKIP
+    ...    test_function()
     > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
     (Pdb) step
