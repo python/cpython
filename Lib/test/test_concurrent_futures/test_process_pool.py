@@ -224,10 +224,14 @@ class ProcessPoolExecutorTest(ExecutorTest):
         def get_pipe_size(connection):
             try:
                 import fcntl
-                return fcntl.fcntl(connection.fileno(), fcntl.F_GETPIPE_SZ)
+                if hasattr(fcntl, 'F_GETPIPE_SZ'):
+                    return fcntl.fcntl(connection.fileno(),
+                                       fcntl.F_GETPIPE_SZ)
             except ImportError:
-                # Assume 64 KiB pipe if we fail, makes test take longer
-                return 65_536
+                pass
+
+            # Assume 64 KiB pipe if we fail, makes test take longer
+            return 65_536
 
         executor = self.executor
         with executor:
