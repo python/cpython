@@ -428,6 +428,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('*'), r'(?s:[^/]+)\Z')
         self.assertEqual(fn('?'), r'(?s:[^/])\Z')
         self.assertEqual(fn('**'), r'(?s:.*)\Z')
+        self.assertEqual(fn('**/**'), r'(?s:.*)\Z')
         self.assertRaises(ValueError, fn, '***')
         self.assertRaises(ValueError, fn, 'a**')
         self.assertRaises(ValueError, fn, '**b')
@@ -437,7 +438,7 @@ class GlobTests(unittest.TestCase):
         def fn(pat):
             return glob.translate(pat, recursive=True, include_hidden=True, seps=['/', '\\'])
         self.assertEqual(fn('foo/bar\\baz'), r'(?s:foo[/\\]bar[/\\]baz)\Z')
-        self.assertEqual(fn('**/**'), r'(?s:(?:.+[/\\])?.*)\Z')
+        self.assertEqual(fn('**/*'), r'(?s:(?:.+[/\\])?[^/\\]+)\Z')
 
 
 @skip_unless_symlink

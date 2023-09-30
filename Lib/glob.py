@@ -293,7 +293,11 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             continue
         if recursive:
             if part == '**':
-                results.append(any_segments if idx < last_part_idx else any_last_segments)
+                if idx < last_part_idx:
+                    if parts[idx + 1] != '**':
+                        results.append(any_segments)
+                else:
+                    results.append(any_last_segments)
                 continue
             elif '**' in part:
                 raise ValueError("Invalid pattern: '**' can only be an entire path component")
