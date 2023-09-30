@@ -989,6 +989,10 @@ Porting to Python 3.13
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
   functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
+  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
+  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
+  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
+  ``<pthread.h>`` header files can be included.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,
