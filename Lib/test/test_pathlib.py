@@ -3614,6 +3614,7 @@ class PosixPathTest(PathTest):
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
 
     def test_from_uri_pathname2url(self):
         P = self.cls
@@ -3758,6 +3759,7 @@ class WindowsPathTest(PathTest):
         self.assertRaises(ValueError, P.from_uri, 'c:/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
         self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
 
     def test_from_uri_pathname2url(self):
         P = self.cls
