@@ -24,6 +24,104 @@
 #  endif
 #endif
 
+/* --- PyConfig spec ---------------------------------------------- */
+
+typedef enum {
+    PyConfig_MEMBER_INT = 0,
+    PyConfig_MEMBER_UINT = 1,
+    PyConfig_MEMBER_ULONG = 2,
+
+    PyConfig_MEMBER_WSTR = 10,
+    PyConfig_MEMBER_WSTR_OPT = 11,
+    PyConfig_MEMBER_WSTR_LIST = 12,
+} PyConfigMemberType;
+
+typedef struct {
+    const char *name;
+    size_t offset;
+    PyConfigMemberType type;
+} PyConfigSpec;
+
+#define SPEC(MEMBER, TYPE) \
+    {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE}
+
+static const PyConfigSpec PYCONFIG_SPEC[] = {
+    SPEC(_config_init, UINT),
+    SPEC(isolated, UINT),
+    SPEC(use_environment, UINT),
+    SPEC(dev_mode, UINT),
+    SPEC(install_signal_handlers, UINT),
+    SPEC(use_hash_seed, UINT),
+    SPEC(hash_seed, ULONG),
+    SPEC(faulthandler, UINT),
+    SPEC(tracemalloc, UINT),
+    SPEC(perf_profiling, UINT),
+    SPEC(import_time, UINT),
+    SPEC(code_debug_ranges, UINT),
+    SPEC(show_ref_count, UINT),
+    SPEC(dump_refs, UINT),
+    SPEC(dump_refs_file, WSTR_OPT),
+    SPEC(malloc_stats, UINT),
+    SPEC(filesystem_encoding, WSTR),
+    SPEC(filesystem_errors, WSTR),
+    SPEC(pycache_prefix, WSTR_OPT),
+    SPEC(parse_argv, UINT),
+    SPEC(orig_argv, WSTR_LIST),
+    SPEC(argv, WSTR_LIST),
+    SPEC(xoptions, WSTR_LIST),
+    SPEC(warnoptions, WSTR_LIST),
+    SPEC(site_import, UINT),
+    SPEC(bytes_warning, UINT),
+    SPEC(warn_default_encoding, UINT),
+    SPEC(inspect, UINT),
+    SPEC(interactive, UINT),
+    SPEC(optimization_level, UINT),
+    SPEC(parser_debug, UINT),
+    SPEC(write_bytecode, UINT),
+    SPEC(verbose, UINT),
+    SPEC(quiet, UINT),
+    SPEC(user_site_directory, UINT),
+    SPEC(configure_c_stdio, UINT),
+    SPEC(buffered_stdio, UINT),
+    SPEC(stdio_encoding, WSTR),
+    SPEC(stdio_errors, WSTR),
+#ifdef MS_WINDOWS
+    SPEC(legacy_windows_stdio, UINT),
+#endif
+    SPEC(check_hash_pycs_mode, WSTR),
+    SPEC(use_frozen_modules, UINT),
+    SPEC(safe_path, UINT),
+    SPEC(int_max_str_digits, INT),
+    SPEC(pathconfig_warnings, UINT),
+    SPEC(program_name, WSTR),
+    SPEC(pythonpath_env, WSTR_OPT),
+    SPEC(home, WSTR_OPT),
+    SPEC(platlibdir, WSTR),
+    SPEC(module_search_paths_set, UINT),
+    SPEC(module_search_paths, WSTR_LIST),
+    SPEC(stdlib_dir, WSTR_OPT),
+    SPEC(executable, WSTR_OPT),
+    SPEC(base_executable, WSTR_OPT),
+    SPEC(prefix, WSTR_OPT),
+    SPEC(base_prefix, WSTR_OPT),
+    SPEC(exec_prefix, WSTR_OPT),
+    SPEC(base_exec_prefix, WSTR_OPT),
+    SPEC(skip_source_first_line, UINT),
+    SPEC(run_command, WSTR_OPT),
+    SPEC(run_module, WSTR_OPT),
+    SPEC(run_filename, WSTR_OPT),
+    SPEC(_install_importlib, UINT),
+    SPEC(_init_main, UINT),
+    SPEC(_is_python_build, UINT),
+#ifdef Py_STATS
+    SPEC(_pystats, UINT),
+#endif
+    {NULL, 0, 0},
+};
+
+#undef SPEC
+
+
 /* --- Command line options --------------------------------------- */
 
 /* Short usage message (with %s for argv0) */
@@ -869,103 +967,47 @@ PyConfig_SetBytesString(PyConfig *config, wchar_t **config_str,
 PyStatus
 _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
-    PyStatus status;
-
     PyConfig_Clear(config);
 
-#define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
-#define COPY_WSTR_ATTR(ATTR) \
-    do { \
-        status = PyConfig_SetString(config, &config->ATTR, config2->ATTR); \
-        if (_PyStatus_EXCEPTION(status)) { \
-            return status; \
-        } \
-    } while (0)
-#define COPY_WSTRLIST(LIST) \
-    do { \
-        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0) { \
-            return _PyStatus_NO_MEMORY(); \
-        } \
-    } while (0)
-
-    COPY_ATTR(_config_init);
-    COPY_ATTR(isolated);
-    COPY_ATTR(use_environment);
-    COPY_ATTR(dev_mode);
-    COPY_ATTR(install_signal_handlers);
-    COPY_ATTR(use_hash_seed);
-    COPY_ATTR(hash_seed);
-    COPY_ATTR(_install_importlib);
-    COPY_ATTR(faulthandler);
-    COPY_ATTR(tracemalloc);
-    COPY_ATTR(perf_profiling);
-    COPY_ATTR(import_time);
-    COPY_ATTR(code_debug_ranges);
-    COPY_ATTR(show_ref_count);
-    COPY_ATTR(dump_refs);
-    COPY_ATTR(dump_refs_file);
-    COPY_ATTR(malloc_stats);
-
-    COPY_WSTR_ATTR(pycache_prefix);
-    COPY_WSTR_ATTR(pythonpath_env);
-    COPY_WSTR_ATTR(home);
-    COPY_WSTR_ATTR(program_name);
-
-    COPY_ATTR(parse_argv);
-    COPY_WSTRLIST(argv);
-    COPY_WSTRLIST(warnoptions);
-    COPY_WSTRLIST(xoptions);
-    COPY_WSTRLIST(module_search_paths);
-    COPY_ATTR(module_search_paths_set);
-    COPY_WSTR_ATTR(stdlib_dir);
-
-    COPY_WSTR_ATTR(executable);
-    COPY_WSTR_ATTR(base_executable);
-    COPY_WSTR_ATTR(prefix);
-    COPY_WSTR_ATTR(base_prefix);
-    COPY_WSTR_ATTR(exec_prefix);
-    COPY_WSTR_ATTR(base_exec_prefix);
-    COPY_WSTR_ATTR(platlibdir);
-
-    COPY_ATTR(site_import);
-    COPY_ATTR(bytes_warning);
-    COPY_ATTR(warn_default_encoding);
-    COPY_ATTR(inspect);
-    COPY_ATTR(interactive);
-    COPY_ATTR(optimization_level);
-    COPY_ATTR(parser_debug);
-    COPY_ATTR(write_bytecode);
-    COPY_ATTR(verbose);
-    COPY_ATTR(quiet);
-    COPY_ATTR(user_site_directory);
-    COPY_ATTR(configure_c_stdio);
-    COPY_ATTR(buffered_stdio);
-    COPY_WSTR_ATTR(filesystem_encoding);
-    COPY_WSTR_ATTR(filesystem_errors);
-    COPY_WSTR_ATTR(stdio_encoding);
-    COPY_WSTR_ATTR(stdio_errors);
-#ifdef MS_WINDOWS
-    COPY_ATTR(legacy_windows_stdio);
-#endif
-    COPY_ATTR(skip_source_first_line);
-    COPY_WSTR_ATTR(run_command);
-    COPY_WSTR_ATTR(run_module);
-    COPY_WSTR_ATTR(run_filename);
-    COPY_WSTR_ATTR(check_hash_pycs_mode);
-    COPY_ATTR(pathconfig_warnings);
-    COPY_ATTR(_init_main);
-    COPY_ATTR(use_frozen_modules);
-    COPY_ATTR(safe_path);
-    COPY_WSTRLIST(orig_argv);
-    COPY_ATTR(_is_python_build);
-    COPY_ATTR(int_max_str_digits);
-#ifdef Py_STATS
-    COPY_ATTR(_pystats);
-#endif
-
-#undef COPY_ATTR
-#undef COPY_WSTR_ATTR
-#undef COPY_WSTRLIST
+    PyStatus status;
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        char *member = (char *)config + spec->offset;
+        char *member2 = (char *)config2 + spec->offset;
+        switch (spec->type) {
+        case PyConfig_MEMBER_INT:
+        case PyConfig_MEMBER_UINT:
+        {
+            *(int*)member = *(int*)member2;
+            break;
+        }
+        case PyConfig_MEMBER_ULONG:
+        {
+            *(unsigned long*)member = *(unsigned long*)member2;
+            break;
+        }
+        case PyConfig_MEMBER_WSTR:
+        case PyConfig_MEMBER_WSTR_OPT:
+        {
+            const wchar_t *str = *(const wchar_t**)member2;
+            status = PyConfig_SetString(config, (wchar_t**)member, str);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+            break;
+        }
+        case PyConfig_MEMBER_WSTR_LIST:
+        {
+            if (_PyWideStringList_Copy((PyWideStringList*)member,
+                                       (const PyWideStringList*)member2) < 0) {
+                return _PyStatus_NO_MEMORY();
+            }
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+        }
+    }
     return _PyStatus_OK();
 }
 
@@ -978,113 +1020,58 @@ _PyConfig_AsDict(const PyConfig *config)
         return NULL;
     }
 
-#define SET_ITEM(KEY, EXPR) \
-        do { \
-            PyObject *obj = (EXPR); \
-            if (obj == NULL) { \
-                goto fail; \
-            } \
-            int res = PyDict_SetItemString(dict, (KEY), obj); \
-            Py_DECREF(obj); \
-            if (res < 0) { \
-                goto fail; \
-            } \
-        } while (0)
-#define SET_ITEM_INT(ATTR) \
-    SET_ITEM(#ATTR, PyLong_FromLong(config->ATTR))
-#define SET_ITEM_UINT(ATTR) \
-    SET_ITEM(#ATTR, PyLong_FromUnsignedLong(config->ATTR))
-#define FROM_WSTRING(STR) \
-    ((STR != NULL) ? \
-        PyUnicode_FromWideChar(STR, -1) \
-        : Py_NewRef(Py_None))
-#define SET_ITEM_WSTR(ATTR) \
-    SET_ITEM(#ATTR, FROM_WSTRING(config->ATTR))
-#define SET_ITEM_WSTRLIST(LIST) \
-    SET_ITEM(#LIST, _PyWideStringList_AsList(&config->LIST))
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        char *member = (char *)config + spec->offset;
+        PyObject *obj;
+        switch (spec->type) {
+        case PyConfig_MEMBER_INT:
+        case PyConfig_MEMBER_UINT:
+        {
+            int value = *(int*)member;
+            obj = PyLong_FromLong(value);
+            break;
+        }
+        case PyConfig_MEMBER_ULONG:
+        {
+            unsigned long value = *(unsigned long*)member;
+            obj = PyLong_FromUnsignedLong(value);
+            break;
+        }
+        case PyConfig_MEMBER_WSTR:
+        case PyConfig_MEMBER_WSTR_OPT:
+        {
+            const wchar_t *wstr = *(const wchar_t**)member;
+            if (wstr != NULL) {
+                obj = PyUnicode_FromWideChar(wstr, -1);
+            }
+            else {
+                obj = Py_NewRef(Py_None);
+            }
+            break;
+        }
+        case PyConfig_MEMBER_WSTR_LIST:
+        {
+            const PyWideStringList *list = (const PyWideStringList*)member;
+            obj = _PyWideStringList_AsList(list);
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+        }
 
-    SET_ITEM_INT(_config_init);
-    SET_ITEM_INT(isolated);
-    SET_ITEM_INT(use_environment);
-    SET_ITEM_INT(dev_mode);
-    SET_ITEM_INT(install_signal_handlers);
-    SET_ITEM_INT(use_hash_seed);
-    SET_ITEM_UINT(hash_seed);
-    SET_ITEM_INT(faulthandler);
-    SET_ITEM_INT(tracemalloc);
-    SET_ITEM_INT(perf_profiling);
-    SET_ITEM_INT(import_time);
-    SET_ITEM_INT(code_debug_ranges);
-    SET_ITEM_INT(show_ref_count);
-    SET_ITEM_INT(dump_refs);
-    SET_ITEM_INT(malloc_stats);
-    SET_ITEM_WSTR(filesystem_encoding);
-    SET_ITEM_WSTR(filesystem_errors);
-    SET_ITEM_WSTR(pycache_prefix);
-    SET_ITEM_WSTR(program_name);
-    SET_ITEM_INT(parse_argv);
-    SET_ITEM_WSTRLIST(argv);
-    SET_ITEM_WSTRLIST(xoptions);
-    SET_ITEM_WSTRLIST(warnoptions);
-    SET_ITEM_WSTR(pythonpath_env);
-    SET_ITEM_WSTR(home);
-    SET_ITEM_INT(module_search_paths_set);
-    SET_ITEM_WSTRLIST(module_search_paths);
-    SET_ITEM_WSTR(stdlib_dir);
-    SET_ITEM_WSTR(executable);
-    SET_ITEM_WSTR(base_executable);
-    SET_ITEM_WSTR(prefix);
-    SET_ITEM_WSTR(base_prefix);
-    SET_ITEM_WSTR(exec_prefix);
-    SET_ITEM_WSTR(base_exec_prefix);
-    SET_ITEM_WSTR(platlibdir);
-    SET_ITEM_INT(site_import);
-    SET_ITEM_INT(bytes_warning);
-    SET_ITEM_INT(warn_default_encoding);
-    SET_ITEM_INT(inspect);
-    SET_ITEM_INT(interactive);
-    SET_ITEM_INT(optimization_level);
-    SET_ITEM_INT(parser_debug);
-    SET_ITEM_INT(write_bytecode);
-    SET_ITEM_INT(verbose);
-    SET_ITEM_INT(quiet);
-    SET_ITEM_INT(user_site_directory);
-    SET_ITEM_INT(configure_c_stdio);
-    SET_ITEM_INT(buffered_stdio);
-    SET_ITEM_WSTR(stdio_encoding);
-    SET_ITEM_WSTR(stdio_errors);
-#ifdef MS_WINDOWS
-    SET_ITEM_INT(legacy_windows_stdio);
-#endif
-    SET_ITEM_INT(skip_source_first_line);
-    SET_ITEM_WSTR(run_command);
-    SET_ITEM_WSTR(run_module);
-    SET_ITEM_WSTR(run_filename);
-    SET_ITEM_INT(_install_importlib);
-    SET_ITEM_WSTR(check_hash_pycs_mode);
-    SET_ITEM_INT(pathconfig_warnings);
-    SET_ITEM_INT(_init_main);
-    SET_ITEM_WSTRLIST(orig_argv);
-    SET_ITEM_INT(use_frozen_modules);
-    SET_ITEM_INT(safe_path);
-    SET_ITEM_INT(_is_python_build);
-    SET_ITEM_INT(int_max_str_digits);
-#ifdef Py_STATS
-    SET_ITEM_INT(_pystats);
-#endif
-
+        if (obj == NULL) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        int res = PyDict_SetItemString(dict, spec->name, obj);
+        Py_DECREF(obj);
+        if (res < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
     return dict;
-
-fail:
-    Py_DECREF(dict);
-    return NULL;
-
-#undef FROM_WSTRING
-#undef SET_ITEM
-#undef SET_ITEM_INT
-#undef SET_ITEM_UINT
-#undef SET_ITEM_WSTR
-#undef SET_ITEM_WSTRLIST
 }
 
 
@@ -1263,131 +1250,81 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
         return -1;
     }
 
-#define CHECK_VALUE(NAME, TEST) \
-    if (!(TEST)) { \
-        config_dict_invalid_value(NAME); \
-        return -1; \
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        char *member = (char *)config + spec->offset;
+        switch (spec->type) {
+        case PyConfig_MEMBER_INT:
+            if (config_dict_get_int(dict, spec->name, (int*)member) < 0) {
+                return -1;
+            }
+            break;
+        case PyConfig_MEMBER_UINT:
+        {
+            int value;
+            if (config_dict_get_int(dict, spec->name, &value) < 0) {
+                return -1;
+            }
+            if (value < 0) {
+                config_dict_invalid_value(spec->name);
+                return -1;
+            }
+            *(int*)member = value;
+            break;
+        }
+        case PyConfig_MEMBER_ULONG:
+        {
+            if (config_dict_get_ulong(dict, spec->name,
+                                      (unsigned long*)member) < 0) {
+                return -1;
+            }
+            break;
+        }
+        case PyConfig_MEMBER_WSTR:
+        {
+            wchar_t **wstr = (wchar_t**)member;
+            if (config_dict_get_wstr(dict, spec->name, config, wstr) < 0) {
+                return -1;
+            }
+            if (*wstr == NULL) {
+                config_dict_invalid_value(spec->name);
+                return -1;
+            }
+            break;
+        }
+        case PyConfig_MEMBER_WSTR_OPT:
+        {
+            wchar_t **wstr = (wchar_t**)member;
+            if (config_dict_get_wstr(dict, spec->name, config, wstr) < 0) {
+                return -1;
+            }
+            break;
+        }
+        case PyConfig_MEMBER_WSTR_LIST:
+        {
+            if (config_dict_get_wstrlist(dict, spec->name, config,
+                                         (PyWideStringList*)member) < 0) {
+                return -1;
+            }
+            break;
+        }
+        default:
+            Py_UNREACHABLE();
+        }
     }
-#define GET_UINT(KEY) \
-    do { \
-        if (config_dict_get_int(dict, #KEY, &config->KEY) < 0) { \
-            return -1; \
-        } \
-        CHECK_VALUE(#KEY, config->KEY >= 0); \
-    } while (0)
-#define GET_INT(KEY) \
-    do { \
-        if (config_dict_get_int(dict, #KEY, &config->KEY) < 0) { \
-            return -1; \
-        } \
-    } while (0)
-#define GET_WSTR(KEY) \
-    do { \
-        if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
-            return -1; \
-        } \
-        CHECK_VALUE(#KEY, config->KEY != NULL); \
-    } while (0)
-#define GET_WSTR_OPT(KEY) \
-    do { \
-        if (config_dict_get_wstr(dict, #KEY, config, &config->KEY) < 0) { \
-            return -1; \
-        } \
-    } while (0)
-#define GET_WSTRLIST(KEY) \
-    do { \
-        if (config_dict_get_wstrlist(dict, #KEY, config, &config->KEY) < 0) { \
-            return -1; \
-        } \
-    } while (0)
 
-    GET_UINT(_config_init);
-    CHECK_VALUE("_config_init",
-                config->_config_init == _PyConfig_INIT_COMPAT
-                || config->_config_init == _PyConfig_INIT_PYTHON
-                || config->_config_init == _PyConfig_INIT_ISOLATED);
-    GET_UINT(isolated);
-    GET_UINT(use_environment);
-    GET_UINT(dev_mode);
-    GET_UINT(install_signal_handlers);
-    GET_UINT(use_hash_seed);
-    if (config_dict_get_ulong(dict, "hash_seed", &config->hash_seed) < 0) {
+    if (!(config->_config_init == _PyConfig_INIT_COMPAT
+          || config->_config_init == _PyConfig_INIT_PYTHON
+          || config->_config_init == _PyConfig_INIT_ISOLATED))
+    {
+        config_dict_invalid_value("_config_init");
         return -1;
     }
-    CHECK_VALUE("hash_seed", config->hash_seed <= MAX_HASH_SEED);
-    GET_UINT(faulthandler);
-    GET_UINT(tracemalloc);
-    GET_UINT(perf_profiling);
-    GET_UINT(import_time);
-    GET_UINT(code_debug_ranges);
-    GET_UINT(show_ref_count);
-    GET_UINT(dump_refs);
-    GET_UINT(malloc_stats);
-    GET_WSTR(filesystem_encoding);
-    GET_WSTR(filesystem_errors);
-    GET_WSTR_OPT(pycache_prefix);
-    GET_UINT(parse_argv);
-    GET_WSTRLIST(orig_argv);
-    GET_WSTRLIST(argv);
-    GET_WSTRLIST(xoptions);
-    GET_WSTRLIST(warnoptions);
-    GET_UINT(site_import);
-    GET_UINT(bytes_warning);
-    GET_UINT(warn_default_encoding);
-    GET_UINT(inspect);
-    GET_UINT(interactive);
-    GET_UINT(optimization_level);
-    GET_UINT(parser_debug);
-    GET_UINT(write_bytecode);
-    GET_UINT(verbose);
-    GET_UINT(quiet);
-    GET_UINT(user_site_directory);
-    GET_UINT(configure_c_stdio);
-    GET_UINT(buffered_stdio);
-    GET_WSTR(stdio_encoding);
-    GET_WSTR(stdio_errors);
-#ifdef MS_WINDOWS
-    GET_UINT(legacy_windows_stdio);
-#endif
-    GET_WSTR(check_hash_pycs_mode);
 
-    GET_UINT(pathconfig_warnings);
-    GET_WSTR(program_name);
-    GET_WSTR_OPT(pythonpath_env);
-    GET_WSTR_OPT(home);
-    GET_WSTR(platlibdir);
-
-    // Path configuration output
-    GET_UINT(module_search_paths_set);
-    GET_WSTRLIST(module_search_paths);
-    GET_WSTR_OPT(stdlib_dir);
-    GET_WSTR_OPT(executable);
-    GET_WSTR_OPT(base_executable);
-    GET_WSTR_OPT(prefix);
-    GET_WSTR_OPT(base_prefix);
-    GET_WSTR_OPT(exec_prefix);
-    GET_WSTR_OPT(base_exec_prefix);
-
-    GET_UINT(skip_source_first_line);
-    GET_WSTR_OPT(run_command);
-    GET_WSTR_OPT(run_module);
-    GET_WSTR_OPT(run_filename);
-
-    GET_UINT(_install_importlib);
-    GET_UINT(_init_main);
-    GET_UINT(use_frozen_modules);
-    GET_UINT(safe_path);
-    GET_UINT(_is_python_build);
-    GET_INT(int_max_str_digits);
-#ifdef Py_STATS
-    GET_UINT(_pystats);
-#endif
-
-#undef CHECK_VALUE
-#undef GET_UINT
-#undef GET_INT
-#undef GET_WSTR
-#undef GET_WSTR_OPT
+    if (config->hash_seed > MAX_HASH_SEED) {
+        config_dict_invalid_value("hash_seed");
+        return -1;
+    }
     return 0;
 }
 
