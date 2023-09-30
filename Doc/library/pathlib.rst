@@ -876,15 +876,8 @@ call fails (for example because the path doesn't exist).
        >>> p = Path.from_uri('file:/c|/windows')
        WindowsPath('c:/windows')
 
-   URIs with no slash after the scheme (and no drive letter) are parsed as
-   relative paths::
-
-       >>> p = Path.from_uri('file:foo/bar')
-       WindowsPath('foo/bar')
-
-   Users may wish to test the result with :meth:`~PurePath.is_absolute` and
-   reject relative paths, as these are not portable across processes with
-   different working directories.
+   :exc:`ValueError` is raised if the URI does not start with ``file:``, or
+   the parsed path isn't absolute.
 
    :func:`os.fsdecode` is used to decode percent-escaped byte sequences, and
    so file URIs are not portable across machines with different

@@ -1670,21 +1670,26 @@ class Path(_PathBase):
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
-        uri = uri.removeprefix('file:')
-        if uri[:3] == '///':
+        if not uri.startswith('file:'):
+            raise ValueError(f"URI does not start with 'file:': {uri!r}")
+        path = uri[5:]
+        if path[:3] == '///':
             # Remove empty authority
-            uri = uri[2:]
-        elif uri[:12] == '//localhost/':
+            path = path[2:]
+        elif path[:12] == '//localhost/':
             # Remove 'localhost' authority
-            uri = uri[11:]
-        if uri[:1] == '/' and (uri[2:3] in ':|' or uri[1:3] == '//'):
+            path = path[11:]
+        if path[:3] == '///' or (path[:1] == '/' and path[2:3] == ':'):
             # Remove slash before DOS device/UNC path
-            uri = uri[1:]
-        if uri[1:2] == '|':
+            path = path[1:]
+        if path[1:2] == '|':
             # Replace bar with colon in DOS drive
-            uri = uri[:1] + ':' + uri[2:]
+            path = path[:1] + ':' + path[2:]
         from urllib.parse import unquote_to_bytes
-        return cls(os.fsdecode(unquote_to_bytes(uri)))
+        path = cls(os.fsdecode(unquote_to_bytes(path)))
+        if not path.is_absolute():
+            raise ValueError(f"URI is not absolute: {uri!r}")
+        return path
 
 
 class PosixPath(Path, PurePosixPath):
