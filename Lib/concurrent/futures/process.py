@@ -72,37 +72,41 @@ class _ThreadWakeup:
     def __init__(self):
         self._closed = False
         self._reader, self._writer = mp.Pipe(duplex=False)
+        # True if self._wakeup_msg was sent to self._writer once.
+        # Cleared by clear() method.
         self._awaken = False
+        # Lock to protect _ThreadWakeup and make it thread safe. Use the lock
+        # to serialize method calls to make sure that the reader and the writer
+        # remains usable (at not closed) during a method call.
+        self._lock = threading.Lock()
 
     def close(self):
-        # Please note that we do not take the shutdown lock when
-        # calling clear() (to avoid deadlocking) so this method can
-        # only be called safely from the same thread as all calls to
-        # clear() even if you hold the shutdown lock. Otherwise we
-        # might try to read from the closed pipe.
-        if self._closed:
-            return
-        self._closed = True
-        self._writer.close()
-        self._reader.close()
+        with self._lock:
+            if self._closed:
+                return
+            self._closed = True
+            self._writer.close()
+            self._reader.close()
 
     def wakeup(self):
-        if self._closed:
-            return
-        if self._awaken:
-            # gh-105829: Send a single message to not block if the pipe is
-            # full. wait_result_broken_or_wakeup() ignores the message anyway,
-            # it just calls clear().
-            return
-        self._awaken = True
-        self._writer.send_bytes(self._wakeup_msg)
+        with self._lock:
+            if self._closed:
+                return
+            if self._awaken:
+                # gh-105829: Send a single message to not block if the pipe is
+                # full. wait_result_broken_or_wakeup() ignores the message anyway,
+                # it just calls clear().
+                return
+            self._awaken = True
+            self._writer.send_bytes(self._wakeup_msg)
 
     def clear(self):
-        if self._closed:
-            return
-        while self._reader.poll():
-            self._reader.recv_bytes()
-        self._awaken = False
+        with self._lock:
+            if self._closed:
+                return
+            while self._reader.poll():
+                self._reader.recv_bytes()
+            self._awaken = False
 
 
 def _python_exit():
@@ -110,7 +114,6 @@ def _python_exit():
     _global_shutdown = True
     items = list(_threads_wakeups.items())
     for _, thread_wakeup in items:
-        # call not protected by ProcessPoolExecutor._shutdown_lock
         thread_wakeup.wakeup()
     for t, _ in items:
         t.join()
@@ -181,10 +184,8 @@ class _CallItem(object):
 
 class _SafeQueue(Queue):
     """Safe Queue set exception to the future object linked to a job"""
-    def __init__(self, max_size=0, *, ctx, pending_work_items, shutdown_lock,
-                 thread_wakeup):
+    def __init__(self, max_size=0, *, ctx, pending_work_items, thread_wakeup):
         self.pending_work_items = pending_work_items
-        self.shutdown_lock = shutdown_lock
         self.thread_wakeup = thread_wakeup
         super().__init__(max_size, ctx=ctx)
 
@@ -193,8 +194,7 @@ class _SafeQueue(Queue):
             tb = format_exception(type(e), e, e.__traceback__)
             e.__cause__ = _RemoteTraceback('\n"""\n{}"""'.format(''.join(tb)))
             work_item = self.pending_work_items.pop(obj.work_id, None)
-            with self.shutdown_lock:
-                self.thread_wakeup.wakeup()
+            self.thread_wakeup.wakeup()
             # work_item can be None if another process terminated. In this
             # case, the executor_manager_thread fails all work_items
             # with BrokenProcessPool
@@ -318,13 +318,10 @@ class _ExecutorManagerThread(threading.Thread):
         # When the executor gets garbage collected, the weakref callback
         # will wake up the queue management thread so that it can terminate
         # if there is no pending work item.
-        def weakref_cb(_,
-                       thread_wakeup=self.thread_wakeup,
-                       shutdown_lock=self.shutdown_lock):
+        def weakref_cb(_, thread_wakeup=self.thread_wakeup):
             mp.util.debug('Executor collected: triggering callback for'
                           ' QueueManager wakeup')
-            with shutdown_lock:
-                thread_wakeup.wakeup()
+            thread_wakeup.wakeup()
 
         self.executor_reference = weakref.ref(executor, weakref_cb)
 
@@ -452,11 +449,6 @@ class _ExecutorManagerThread(threading.Thread):
         elif wakeup_reader in ready:
             is_broken = False
 
-        # No need to hold the _shutdown_lock here because:
-        # 1. we're the only thread to use the wakeup reader
-        # 2. we're also the only thread to call thread_wakeup.close()
-        # 3. we want to avoid a possible deadlock when both reader and writer
-        #    would block (gh-105829)
         self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
@@ -728,6 +720,12 @@ class ProcessPoolExecutor(_base.Executor):
         # Map of pids to processes
         self._processes = {}
 
+        # The shutdown lock protects ProcessPoolExecutor. It is used to shut
+        # down the pool and to mark the pool as broken in a reliable way. It
+        # makes sure that pool remains usable during submit(). It is also used
+        # by _ExecutorManagerThread to adjust the process count if a worker
+        # process exited.
+        #
         # Shutdown is a two-step process.
         self._shutdown_thread = False
         self._shutdown_lock = threading.Lock()
@@ -743,11 +741,6 @@ class ProcessPoolExecutor(_base.Executor):
         # _result_queue to send wakeup signals to the executor_manager_thread
         # as it could result in a deadlock if a worker process dies with the
         # _result_queue write lock still acquired.
-        #
-        # _shutdown_lock must be locked to access _ThreadWakeup.close() and
-        # .wakeup(). Care must also be taken to not call clear or close from
-        # more than one thread since _ThreadWakeup.clear() is not protected by
-        # the _shutdown_lock
         self._executor_manager_thread_wakeup = _ThreadWakeup()
 
         # Create communication channels for the executor
@@ -758,7 +751,6 @@ class ProcessPoolExecutor(_base.Executor):
         self._call_queue = _SafeQueue(
             max_size=queue_size, ctx=self._mp_context,
             pending_work_items=self._pending_work_items,
-            shutdown_lock=self._shutdown_lock,
             thread_wakeup=self._executor_manager_thread_wakeup)
         # Killed worker processes can produce spurious "broken pipe"
         # tracebacks in the queue's own worker thread. But we detect killed
@@ -812,6 +804,8 @@ class ProcessPoolExecutor(_base.Executor):
         self._processes[p.pid] = p
 
     def submit(self, fn, /, *args, **kwargs):
+        # The lock makes sure that the pool remains usable while we are
+        # submitting the task.
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
