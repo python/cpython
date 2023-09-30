@@ -1,0 +1,3 @@
+:mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+default number of worker threads and processes. Patch by Victor Stinner.

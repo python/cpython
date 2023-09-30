@@ -188,6 +188,10 @@ And::
       ThreadPoolExecutor now reuses idle worker threads before starting
       *max_workers* worker threads too.
 
+   .. versionchanged:: 3.8
+      Default value of *max_workers* is changed to
+      ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
 
 .. _threadpoolexecutor-example:
 
@@ -243,7 +247,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
-   given, it will default to the number of processors on the machine.
+   given, it will default to :func:`os.process_cpu_count`.
    If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
    On Windows, *max_workers* must be less than or equal to ``61``. If it is not
