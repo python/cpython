@@ -1139,7 +1139,6 @@ if name == 'nt':
 
 
 def _is_cpu_overrided():
-    is_overrided = False
     env_opt = environ.get('PYTHONCPUCOUNT', None)
     xopt = sys._xoptions.get('cpu_count', None)
     if not any((env_opt, xopt)):
