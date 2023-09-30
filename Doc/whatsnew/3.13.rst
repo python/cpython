@@ -166,8 +166,8 @@ opcode
 os
 --
 
-* :func:`os.cpu_count` can be overrided  through the new
-  environment variable :envvar:`PYTHONCPUCOUNT` or the new command-line option
+* :func:`os.cpu_count` and :func:`os.process_cpu_count` can be overrided through
+  the new environment variable :envvar:`PYTHONCPUCOUNT` or the new command-line option
   :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
   CPU resources of a container system.(Contributed by Donghee Na in :gh:`109595`)
 

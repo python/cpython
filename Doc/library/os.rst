@@ -5218,6 +5218,9 @@ Miscellaneous System Information
    The :func:`cpu_count` function can be used to get the number of logical CPUs
    in the **system**.
 
+   If :samp:`-X cpu_count={n}` is given or :envvar:`PYTHONCPUCOUNT` is set,
+   :func:`process_cpu_count` returns the overrided value *n*.
+
    See also the :func:`sched_getaffinity` functions.
 
    .. versionadded:: 3.13
