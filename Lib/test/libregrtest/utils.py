@@ -355,11 +355,13 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
             if not support.is_wasi:
                 tmp_dir = sysconfig.get_config_var('abs_builddir')
                 if tmp_dir is None:
-                    # bpo-30284: On Windows, only srcdir is available. Using
-                    # abs_builddir mostly matters on UNIX when building Python
-                    # out of the source tree, especially when the source tree
-                    # is read only.
-                    tmp_dir = sysconfig.get_config_var('srcdir')
+                    tmp_dir = sysconfig.get_config_var('abs_srcdir')
+                    if not tmp_dir:
+                        # gh-74470: On Windows, only srcdir is available. Using
+                        # abs_builddir mostly matters on UNIX when building
+                        # Python out of the source tree, especially when the
+                        # source tree is read only.
+                        tmp_dir = sysconfig.get_config_var('srcdir')
                 tmp_dir = os.path.join(tmp_dir, 'build')
             else:
                 # WASI platform
@@ -539,7 +541,7 @@ def display_header(use_resources: tuple[str, ...]):
         print(f"== resources ({len(use_resources)}): "
               f"{', '.join(sorted(use_resources))}")
     else:
-        print(f"== resources: (all disabled, use -u option)")
+        print("== resources: (all disabled, use -u option)")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.

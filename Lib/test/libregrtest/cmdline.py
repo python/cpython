@@ -4,8 +4,6 @@ import shlex
 import sys
 from test.support import os_helper
 
-from .utils import MS_WINDOWS
-
 
 USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]
@@ -414,17 +412,16 @@ def _parse_args(args, **kwargs):
         # Similar to options:
         #
         #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
-        #     --slowest --verbose3 --nowindows
+        #     --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
         ns.randomize = True
         ns.fail_env_changed = True
         ns.fail_rerun = True
-        ns.rerun = True
+        if ns.python is None:
+            ns.rerun = True
         ns.print_slow = True
         ns.verbose3 = True
-        if MS_WINDOWS:
-            ns.nowindows = True  # Silence alerts under Windows
     else:
         ns._add_python_opts = False
 
