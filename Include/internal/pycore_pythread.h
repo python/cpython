@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
 // Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
 #if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
                             && !defined(_POSIX_SEMAPHORES))
@@ -44,6 +43,8 @@ extern "C" {
 
 
 #if defined(HAVE_PTHREAD_STUBS)
+#include <stdbool.h>              // bool
+
 // pthread_key
 struct py_stub_tls_entry {
     bool in_use;
