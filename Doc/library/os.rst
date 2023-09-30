@@ -4029,7 +4029,7 @@ descriptors to wait until the file descriptor is ready for reading:
 
    - :const:`time.CLOCK_REALTIME`
    - :const:`time.CLOCK_MONOTONIC`
-   - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15)
+   - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
 
    If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
    real-time clock is used. If system clock is changed, timer setting need
