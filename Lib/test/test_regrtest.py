@@ -788,14 +788,6 @@ class ProgramsTestCase(BaseTestCase):
         args = [*self.python_args, script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
 
-    @unittest.skipUnless(sysconfig.is_python_build(),
-                         'run_tests.py script is not installed')
-    def test_tools_script_run_tests(self):
-        # Tools/scripts/run_tests.py
-        script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
-        args = [script, *self.regrtest_args, *self.tests]
-        self.run_tests(args)
-
     def run_batch(self, *args):
         proc = self.run_command(args)
         self.check_output(proc.stdout)
