@@ -1141,9 +1141,10 @@ if name == 'nt':
 if _exists('sched_getaffinity'):
     def process_cpu_count():
         """
-        Get the number of logical CPUs usable by the current process.
+        Get the number of CPUs of the current process.
 
-        Return None if indeterminable.
+        Return the number of logical CPUs usable by the calling thread of the
+        current process. Return None if indeterminable.
         """
         return len(sched_getaffinity(0))
 else:
