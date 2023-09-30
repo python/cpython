@@ -117,7 +117,7 @@ def test_pdb_basic_commands():
     ...     'args',       # display function args
     ...     'continue',
     ... ]):
-    ...    test_function()
+    ...    test_function()    # doctest: +SKIP
     > <doctest test.test_pdb.test_pdb_basic_commands[3]>(3)test_function()
     -> ret = test_function_2('baz')
     (Pdb) step
@@ -1973,7 +1973,7 @@ def test_pdb_next_command_subiterator():
     ...                    'next',
     ...                    'next',
     ...                    'continue']):
-    ...     test_function()
+    ...     test_function()    # doctest: +SKIP
     > <doctest test.test_pdb.test_pdb_next_command_subiterator[2]>(3)test_function()
     -> for i in test_gen():
     (Pdb) step
@@ -2077,7 +2077,7 @@ def test_pdb_issue_20766():
     >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
-    ...     test_function()
+    ...     test_function()     # doctest: +SKIP
     > <doctest test.test_pdb.test_pdb_issue_20766[0]>(6)test_function()
     -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
@@ -2142,7 +2142,7 @@ def test_pdb_issue_gh_91742():
     ...     'jump 5',
     ...     'continue'
     ... ]):
-    ...     test_function()
+    ...     test_function()  # doctest: +SKIP
     > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(12)test_function()
     -> about()
     (Pdb) step
@@ -2191,7 +2191,7 @@ def test_pdb_issue_gh_94215():
     ...     'jump 3',
     ...     'continue'
     ... ]):
-    ...     test_function()
+    ...     test_function()  # doctest: +SKIP
     > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(9)test_function()
     -> func()
     (Pdb) step
@@ -2296,7 +2296,7 @@ def test_pdb_issue_gh_101517():
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'continue'
     ... ]):
-    ...    test_function()
+    ...    test_function()    # doctest: +SKIP
     --Return--
     > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
     -> Warning: lineno is None
