@@ -163,6 +163,13 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
+os
+--
+
+* Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+  usable by the calling thread of the current process.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 pathlib
 -------
 
