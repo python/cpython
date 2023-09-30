@@ -1138,7 +1138,18 @@ if name == 'nt':
         )
 
 
-if _exists('sched_getaffinity'):
+def _is_cpu_overrided():
+    is_overrided = False
+    env_opt = environ.get('PYTHONCPUCOUNT', None)
+    xopt = sys._xoptions.get('cpu_count', None)
+    if not any((env_opt, xopt)):
+        return False
+    if xopt == 'default':
+        return False
+    return True
+
+
+if _exists('sched_getaffinity') and not _is_cpu_overrided():
     def process_cpu_count():
         """
         Get the number of CPUs of the current process.
