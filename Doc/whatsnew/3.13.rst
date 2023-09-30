@@ -142,6 +142,13 @@ doctest
   :attr:`doctest.TestResults.skipped` attributes.
   (Contributed by Victor Stinner in :gh:`108794`.)
 
+glob
+----
+
+* Add :func:`glob.translate` function that converts a path specification with
+  shell-style wildcards to a regular expression.
+  (Contributed by Barney Gale in :gh:`72904`.)
+
 io
 --
 
