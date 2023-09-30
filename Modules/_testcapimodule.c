@@ -5,19 +5,13 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* This module tests the public (Include/ and Include/cpython/) C API.
-   The internal C API must not be used here: use _testinternalcapi for that.
+// Include parts.h first since it takes care of NDEBUG and Py_BUILD_CORE macros
+// and including Python.h.
+//
+// Several parts of this module are broken out into files in _testcapi/.
+// Include definitions from there.
+#include "_testcapi/parts.h"
 
-   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   macro defined, but only the public C API must be tested here. */
-
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
-
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
@@ -29,17 +23,10 @@
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
 
-#ifdef Py_BUILD_CORE
-#  error "_testcapi must test the public Python C API, not CPython internal C API"
-#endif
-
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
-// Several parts of this module are broken out into files in _testcapi/.
-// Include definitions from there.
-#include "_testcapi/parts.h"
 #include "_testcapi/util.h"
 
 

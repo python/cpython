@@ -306,7 +306,7 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     if (opcode == ENTER_EXECUTOR) {
         int exec_index = _PyCode_CODE(code)[offset].op.arg;
         _PyExecutorObject *exec = code->co_executors->executors[exec_index];
-        opcode = exec->vm_data.opcode;
+        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
 
     }
     assert(opcode != ENTER_EXECUTOR);

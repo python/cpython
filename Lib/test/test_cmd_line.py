@@ -799,6 +799,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()

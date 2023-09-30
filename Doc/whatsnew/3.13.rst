@@ -132,7 +132,7 @@ dbm
 
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
-  (Contributed by Dong-hee Na in :gh:`107122`.)
+  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
@@ -170,6 +170,9 @@ os
   environment variable :envvar:`PYTHONCPUCOUNT` or the new command-line option
   :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
   CPU resources of a container system.(Contributed by Donghee Na in :gh:`109595`)
+* Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+  usable by the calling thread of the current process.
+  (Contributed by Victor Stinner in :gh:`109649`.)
 
 pathlib
 -------
@@ -273,10 +276,12 @@ Deprecated
   security and functionality bugs.  This includes removal of the ``--cgi``
   flag to the ``python -m http.server`` command line in 3.15.
 
-* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* :mod:`typing`:
+
+  * Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+    the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+    be disallowed in Python 3.15. Use the class-based syntax or the functional
+    syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
 
   * When using the functional syntax to create a :class:`typing.NamedTuple`
     class or a :class:`typing.TypedDict` class, failing to pass a value to the
@@ -994,7 +999,12 @@ Porting to Python 3.13
 
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
-  functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
+  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
+  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
+  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
+  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
+  ``<pthread.h>`` header files can be included.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,

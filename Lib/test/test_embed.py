@@ -456,6 +456,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
+        'dump_refs_file': None,
         'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
