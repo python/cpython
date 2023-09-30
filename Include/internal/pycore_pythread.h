@@ -9,29 +9,29 @@ extern "C" {
 #endif
 
 
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-#  ifdef HAVE_PTHREAD_H
-#    include <pthread.h>            // _POSIX_THREADS
-#  endif
-# ifndef _POSIX_THREADS
-/* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implemented to support python
-   threads.
+// Get _POSIX_THREADS and _POSIX_SEMAPHORES macros if available
+#if (defined(HAVE_UNISTD_H) && !defined(_POSIX_THREADS) \
+                            && !defined(_POSIX_SEMAPHORES))
+#  include <unistd.h>             // _POSIX_THREADS, _POSIX_SEMAPHORES
+#endif
+#if (defined(HAVE_PTHREAD_H) && !defined(_POSIX_THREADS) \
+                             && !defined(_POSIX_SEMAPHORES))
+   // This means pthreads are not implemented in libc headers, hence the macro
+   // not present in <unistd.h>. But they still can be implemented as an
+   // external library (e.g. gnu pth in pthread emulation)
+#  include <pthread.h>            // _POSIX_THREADS, _POSIX_SEMAPHORES
+#endif
+#if !defined(_POSIX_THREADS) && defined(__hpux) && defined(_SC_THREADS)
+   // Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
+   // enough of the POSIX threads package is implemented to support Python
+   // threads.
+   //
+   // This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
+   // a check of __ia64 to verify that we're running on an ia64 system instead
+   // of a pa-risc system.
+#  define _POSIX_THREADS
+#endif
 
-   This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
-   a check of __ia64 to verify that we're running on an ia64 system instead
-   of a pa-risc system.
-*/
-#  ifdef __hpux
-#   ifdef _SC_THREADS
-#    define _POSIX_THREADS
-#   endif
-#  endif
-# endif /* _POSIX_THREADS */
-#endif /* _POSIX_THREADS */
 
 #if defined(_POSIX_THREADS) || defined(HAVE_PTHREAD_STUBS)
 #  define _USE_PTHREADS
