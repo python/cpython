@@ -4,9 +4,6 @@
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _PyRuntime
 
-#undef HAVE_GETRANDOM
-#undef HAVE_GETENTROPY
-
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // close()
 #endif
