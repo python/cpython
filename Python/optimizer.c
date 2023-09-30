@@ -628,6 +628,14 @@ pop_jump_if_bool:
                 break;
             }
 
+            case YIELD_VALUE:
+            {
+                RESERVE(1, 0);
+                ADD_TO_TRACE(YIELD_VALUE, oparg, 0);
+                DPRINTF(2, "Bailing on YIELD_VALUE\n");
+                goto done;  // Break out of loop
+            }
+
             default:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];

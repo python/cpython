@@ -90,7 +90,9 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 oparg,
                 operand,
-                (int)(stack_pointer - _PyFrame_Stackbase(frame)));
+                frame->f_executable == Py_None
+                    ? -1
+                    : (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
         OPT_STAT_INC(uops_executed);
         UOP_EXE_INC(opcode);
@@ -129,7 +131,8 @@ pop_1_error:
 error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from tstate->current_frame.
-    DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    DPRINTF(2, "ERROR: [Opcode %s, oparg %d, operand %" PRIu64 "]\n",
+            _PyOpcode_uop_name[opcode], oparg, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
@@ -138,7 +141,8 @@ error:
 deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
-    DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    DPRINTF(2, "DEOPT: [Opcode %s, oparg %d, operand %" PRIu64 "]\n",
+            _PyOpcode_uop_name[opcode], oparg, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);

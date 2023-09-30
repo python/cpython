@@ -216,6 +216,11 @@
             break;
         }
 
+        case YIELD_VALUE: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case POP_EXCEPT: {
             STACK_SHRINK(1);
             break;

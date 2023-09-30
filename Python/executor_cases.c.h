@@ -825,6 +825,50 @@
             break;
         }
 
+        case YIELD_VALUE: {
+            PyObject *retval;
+            retval = stack_pointer[-1];
+            // NOTE: It's important that YIELD_VALUE never raises an exception!
+            // The compiler treats any exception raised here as a failed close()
+            // or throw() call.
+            assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            #if TIER_TWO
+            // If we yield to an entry frame, we must deopt; otherwise
+            // LOAD_IP() below will crash, as f_executable == Py_None.
+            // XXX TODO: These Tier-specific semantics shouldn't happen.
+            DEOPT_IF(frame->previous->f_executable == Py_None, YIELD_VALUE);
+            #endif
+            PyGenObject *gen = _PyFrame_GetGenerator(frame);
+            gen->gi_frame_state = FRAME_SUSPENDED;
+            _PyFrame_SetStackPointer(frame, stack_pointer - 1);
+            tstate->exc_info = gen->gi_exc_state.previous_item;
+            gen->gi_exc_state.previous_item = NULL;
+            _Py_LeaveRecursiveCallPy(tstate);
+            _PyInterpreterFrame *gen_frame = frame;
+            frame = tstate->current_frame = frame->previous;
+            gen_frame->previous = NULL;
+            _PyFrame_StackPush(frame, retval);
+            LOAD_SP();
+            LOAD_IP();
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
+            }
+#endif
+            #if TIER_TWO
+            // Like _EXIT_TRACE, but without backing up prev_instr.
+            // XXX TODO: These Tier-specific semantics shouldn't happen.
+            STORE_SP();  // Since LOAD_SP() destroyed frame->stack_pointer
+            Py_DECREF(self);
+            return frame;
+            #endif
+            break;
+        }
+
         case POP_EXCEPT: {
             PyObject *exc_value;
             exc_value = stack_pointer[-1];
