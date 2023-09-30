@@ -5,7 +5,9 @@ import math
 import os.path
 import platform
 import random
+import shlex
 import signal
+import subprocess
 import sys
 import sysconfig
 import tempfile
@@ -523,7 +525,18 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def display_header(use_resources: tuple[str, ...]):
+def get_host_runner():
+    if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
+        hostrunner = sysconfig.get_config_var("HOSTRUNNER")
+    return hostrunner
+
+
+def is_cross_compiled():
+    return ('_PYTHON_HOST_PLATFORM' in os.environ)
+
+
+def display_header(use_resources: tuple[str, ...],
+                   python_cmd: tuple[str, ...] | None):
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
@@ -537,12 +550,34 @@ def display_header(use_resources: tuple[str, ...]):
     print("== encodings: locale=%s, FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))
 
-
     if use_resources:
         print(f"== resources ({len(use_resources)}): "
               f"{', '.join(sorted(use_resources))}")
     else:
         print("== resources: (all disabled, use -u option)")
+
+    cross_compile = is_cross_compiled()
+    if cross_compile:
+        print("== cross compiled: Yes")
+    if python_cmd:
+        cmd = shlex.join(python_cmd)
+        print(f"== host python: {cmd}")
+
+        get_cmd = [*python_cmd, '-m', 'platform']
+        proc = subprocess.run(
+            get_cmd,
+            stdout=subprocess.PIPE,
+            text=True,
+            cwd=os_helper.SAVEDCWD)
+        stdout = proc.stdout.replace('\n', ' ').strip()
+        if stdout:
+            print(f"== host platform: {stdout}")
+        elif proc.returncode:
+            print(f"== host platform: <command failed with exit code {proc.returncode}>")
+    else:
+        hostrunner = get_host_runner()
+        if hostrunner:
+            print(f"== host runner: {hostrunner}")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.
