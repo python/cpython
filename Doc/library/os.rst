@@ -4016,10 +4016,10 @@ descriptors to wait until the file descriptor is ready for reading:
       - :func:`~select.select`
       - :func:`~select.poll`.
 
-   The file descriptor's :func:`read` method can be called with a buffer size of 8.
-   If the timer has already expired one or more times, :func:`read` returns
-   the number of expirations with the host's endianness,
-   which may be converted to an :class:`int` by ``int.from_bytes(x, byteorder=sys.byteorder)``.
+   The file descriptor's :func:`read` method can be called with a buffer size
+   of 8. If the timer has already expired one or more times, :func:`read`
+   returns the number of expirations with the host's endianness, which may be
+   converted to an :class:`int` by ``int.from_bytes(x, byteorder=sys.byteorder)``.
 
    :func:`~select.select` and :func:`~select.poll` can be used to wait until
    timer expires and the file descriptor is readable.
@@ -4031,12 +4031,14 @@ descriptors to wait until the file descriptor is ready for reading:
    - :const:`time.CLOCK_MONOTONIC`
    - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15)
 
-   If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide real-time clock
-   is used. If system clock is changed, timer setting need to be updated.
-   To cancel timer when system clock is changed, see :const:`TFD_TIMER_CANCEL_ON_SET`.
+   If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
+   real-time clock is used. If system clock is changed, timer setting need
+   to be updated. To cancel timer when system clock is changed, see
+   :const:`TFD_TIMER_CANCEL_ON_SET`.
 
-   If *clockid* is :const:`time.CLOCK_MONOTONIC`, A nonsettable monotonically increasing
-   clock is used. Even if system clock is changed, timer setting will be not affected.
+   If *clockid* is :const:`time.CLOCK_MONOTONIC`, a non-settable monotonically
+   increasing clock is used. Even if the system clock is changed, the timer
+   setting will not be affected.
 
    If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
    except it includes any time that the system is suspended.
@@ -4048,12 +4050,14 @@ descriptors to wait until the file descriptor is ready for reading:
    - :const:`TFD_NONBLOCK`
    - :const:`TFD_CLOEXEC`
 
-   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until the timer expires.
-   If it is set as a flag, :func:`read` doesn't block, but If there hasn't been an expiration
-   since the last call to read, :func:`read` raises :class:`OSError` with ``errno`` is set
-   to :const:`errno.EAGAIN`.
+   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until
+   the timer expires. If it is set as a flag, :func:`read` doesn't block, but
+   If there hasn't been an expiration since the last call to read,
+   :func:`read` raises :class:`OSError` with ``errno`` is set to
+   :const:`errno.EAGAIN`.
 
-   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
+   If :const:`TFD_CLOEXEC` is set as a flag, the close-on-exec flag is set
+   for the new file descriptor.
 
    The file descriptor must be closed with :func:`os.close` when it is no
    longer needed, or else the file descriptor will be leaked.
@@ -4098,13 +4102,15 @@ descriptors to wait until the file descriptor is ready for reading:
    If *interval* is less than zero, it raises :class:`OSError` with ``errno``
    set to :const:`errno.EINVAL`
 
-   If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with :const:`TFD_TIMER_ABSTIME`
-   and the clock for this timer is :const:`time.CLOCK_REALTIME`, the timer is marked as
-   cancelable when if the real-time clock is changed discontinuously. Reading the descriptor
-   is aborted with with the error ECANCELED.
+   If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with
+   :const:`TFD_TIMER_ABSTIME` and the clock for this timer is
+   :const:`time.CLOCK_REALTIME`, the timer is marked as cancelable if the
+   real-time clock is changed discontinuously. Reading the descriptor is
+   aborted with the error ECANCELED.
 
-   Linux manages system clock as UTC. A daylight-savings time transition is done
-   by changing time offset only and doesn't cause discontinuous system clock change.
+   Linux manages system clock as UTC. A daylight-savings time transition is
+   done by changing time offset only and doesn't cause discontinuous system
+   clock change.
 
    Discontinuous system clock change will be caused by the following events:
 
@@ -4117,8 +4123,9 @@ descriptors to wait until the file descriptor is ready for reading:
 
    .. seealso::
 
-      :manpage:`timerfd_create(2)`, :manpage:`timerfd_settime(2)`, :manpage:`settimeofday(2)`, 
-      :manpage:`clock_settime(2)`, and :manpage:`date(1)`.
+      :manpage:`timerfd_create(2)`, :manpage:`timerfd_settime(2)`,
+      :manpage:`settimeofday(2)`, :manpage:`clock_settime(2)`,
+      and :manpage:`date(1)`.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -4143,7 +4150,8 @@ descriptors to wait until the file descriptor is ready for reading:
    regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
 
    ``interval`` denotes the timer's interval.
-   If zero, the timer will only fire once, after ``next_expiration`` seconds have elapsed.
+   If zero, the timer will only fire once, after ``next_expiration`` seconds
+   have elapsed.
 
    .. seealso:: :manpage:`timerfd_gettime(2)`
 
@@ -4163,8 +4171,8 @@ descriptors to wait until the file descriptor is ready for reading:
 .. data:: TFD_NONBLOCK
 
    A flag for the :func:`timerfd_create` function,
-   which sets the :const:`O_NONBLOCK` status flag for the new timer file descriptor.
-   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
+   which sets the :const:`O_NONBLOCK` status flag for the new timer file
+   descriptor. If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -4173,7 +4181,8 @@ descriptors to wait until the file descriptor is ready for reading:
 .. data:: TFD_CLOEXEC
 
    A flag for the :func:`timerfd_create` function,
-   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file descriptor.
+   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file
+   descriptor.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -4182,8 +4191,8 @@ descriptors to wait until the file descriptor is ready for reading:
 .. data:: TFD_TIMER_ABSTIME
 
    A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
-   If this flag is set, *initial* is interpreted as an absolute value on the timer's clock
-   (in UTC seconds or nanoseconds since the Unix Epoch).
+   If this flag is set, *initial* is interpreted as an absolute value on the
+   timer's clock (in UTC seconds or nanoseconds since the Unix Epoch).
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
@@ -4191,9 +4200,10 @@ descriptors to wait until the file descriptor is ready for reading:
 
 .. data:: TFD_TIMER_CANCEL_ON_SET
 
-   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions
-   along with :const:`TFD_TIMER_ABSTIME`.
-   The timer is cancelled when the time of the underlying clock changes discontinuously.
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns`
+   functions along with :const:`TFD_TIMER_ABSTIME`.
+   The timer is cancelled when the time of the underlying clock changes
+   discontinuously.
 
    .. availability:: Linux >= 2.6.27 with glibc >= 2.8
 
