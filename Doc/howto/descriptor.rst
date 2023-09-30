@@ -1420,10 +1420,6 @@ Using the non-data descriptor protocol, a pure Python version of
         def __get__(self, obj, cls=None):
             if cls is None:
                 cls = type(obj)
-            if hasattr(type(self.f), '__get__'):
-                # This code path was added in Python 3.9
-                # and was deprecated in Python 3.11.
-                return self.f.__get__(cls, cls)
             return MethodType(self.f, cls)
 
 .. testcode::
@@ -1480,24 +1476,6 @@ Using the non-data descriptor protocol, a pure Python version of
     >>> f(T, 11, 22)
     ('T', 11, 22)
 
-
-The code path for ``hasattr(type(self.f), '__get__')`` was added in
-Python 3.9 and makes it possible for :func:`classmethod` to support
-chained decorators.  For example, a classmethod and property could be
-chained together.  In Python 3.11, this functionality was deprecated.
-
-.. testcode::
-
-    class G:
-        @classmethod
-        @property
-        def __doc__(cls):
-            return f'A doc for {cls.__name__!r}'
-
-.. doctest::
-
-    >>> G.__doc__
-    "A doc for 'G'"
 
 The :func:`functools.update_wrapper` call in ``ClassMethod`` adds a
 ``__wrapped__`` attribute that refers to the underlying function.  Also
