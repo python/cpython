@@ -1679,7 +1679,7 @@ class Path(_PathBase):
         elif path[:12] == '//localhost/':
             # Remove 'localhost' authority
             path = path[11:]
-        if path[:3] == '///' or (path[:1] == '/' and path[2:3] == ':'):
+        if path[:3] == '///' or (path[:1] == '/' and path[2:3] in ':|'):
             # Remove slash before DOS device/UNC path
             path = path[1:]
         if path[1:2] == '|':

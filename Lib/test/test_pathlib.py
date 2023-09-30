@@ -3221,23 +3221,6 @@ class PathTest(DummyPathTest):
         with self.assertWarns(DeprecationWarning):
             self.cls(foo="bar")
 
-    def test_from_uri_common(self):
-        P = self.cls
-        self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
-        self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
-        self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
-        self.assertRaises(ValueError, P.from_uri, 'foo/bar')
-        self.assertRaises(ValueError, P.from_uri, '/foo/bar')
-        self.assertRaises(ValueError, P.from_uri, '//foo/bar')
-        self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
-
-    def test_from_uri_pathname2url_common(self):
-        P = self.cls
-        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
-
 
 class WalkTests(unittest.TestCase):
 
@@ -3620,6 +3603,23 @@ class PosixPathTest(PathTest):
                 self.fail("Bad file descriptor not handled.")
             raise
 
+    def test_from_uri(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        self.assertRaises(ValueError, P.from_uri, 'foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '/foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '//foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+
+    def test_from_uri_pathname2url(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+
 
 @only_nt
 class WindowsPathTest(PathTest):
@@ -3753,6 +3753,11 @@ class WindowsPathTest(PathTest):
         # Localhost paths
         self.assertEqual(P.from_uri('file://localhost/c:/path/to/file'), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file://localhost/c|/path/to/file'), P('c:/path/to/file'))
+        # Invalid paths
+        self.assertRaises(ValueError, P.from_uri, 'foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'c:/foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '//foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
 
     def test_from_uri_pathname2url(self):
         P = self.cls
