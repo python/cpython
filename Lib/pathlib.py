@@ -83,7 +83,10 @@ def _compile_pattern(pat, sep, case_sensitive):
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
     regex = glob.translate(pat, recursive=True, include_hidden=True, seps=sep)
-    return re.compile(r'(\.\Z)?+' + regex, flags).match
+    # The string representation of an empty path is a single dot ('.'). Empty
+    # paths shouldn't match wildcards, so we consume it with an atomic group.
+    regex = r'(\.\Z)?+' + regex
+    return re.compile(regex, flags).match
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
