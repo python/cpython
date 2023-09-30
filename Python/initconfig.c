@@ -92,7 +92,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(use_frozen_modules, UINT),
     SPEC(safe_path, UINT),
     SPEC(int_max_str_digits, INT),
-    SPEC(int_cpu_coumt, INT),
+    SPEC(cpu_count, INT),
     SPEC(pathconfig_warnings, UINT),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
