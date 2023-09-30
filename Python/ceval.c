@@ -795,7 +795,7 @@ resume_frame:
             next_instr = here+1;
             goto error;
         }
-        next_instr = frame->prev_traced_instr;
+        next_instr = frame->instr_ptr;
         if (next_instr != here) {
             DISPATCH();
         }
