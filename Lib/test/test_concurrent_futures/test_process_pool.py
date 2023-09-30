@@ -254,7 +254,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             thread_wakeup._wakeup_msg = b'x' * msg_len
             msg_size = 4 + len(thread_wakeup._wakeup_msg)
 
-            njob = pipe_size // msg_size
+            njob = pipe_size // msg_size + 10  # Add some margin
             job_data = range(njob)
             if support.verbose:
                 print(f"run {njob:,} jobs")
