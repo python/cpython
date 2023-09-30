@@ -1837,7 +1837,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
-TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
+TESTRUNNER=	$(TESTPYTHON) -m test
 TESTTIMEOUT=
 
 # Remove "test_python_*" directories of previous failed test jobs.
@@ -1874,11 +1874,6 @@ buildbottest: all
 		pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
 	fi
 	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
-
-# Like buildbottest, but run Python tests with HOSTRUNNER directly.
-.PHONY: hostrunnertest
-hostrunnertest: all
-	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 .PHONY: pythoninfo
 pythoninfo: all
