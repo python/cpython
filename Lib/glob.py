@@ -267,10 +267,10 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """
     if not seps:
         if os.path.altsep:
-            seps = [os.path.sep, os.path.altsep]
+            seps = (os.path.sep, os.path.altsep)
         else:
             seps = os.path.sep
-    escaped_seps = ''.join(re.escape(sep) for sep in seps)
+    escaped_seps = ''.join(map(re.escape, seps))
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
     if include_hidden:
@@ -281,8 +281,8 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     else:
         one_last_segment = f'[^{escaped_seps}.]{not_sep}*'
         one_segment = f'{one_last_segment}{any_sep}'
-        any_segments = fr'(?:{one_segment})*'
-        any_last_segments = fr'{any_segments}(?:{one_last_segment})?'
+        any_segments = f'(?:{one_segment})*'
+        any_last_segments = f'{any_segments}(?:{one_last_segment})?'
 
     results = []
     parts = re.split(any_sep, pat)
