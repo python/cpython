@@ -380,7 +380,7 @@ Implement :pep:`572` (assignment expressions). Patch by Emily Morehouse.
 .. nonce: voIdcp
 .. section: Core and Builtins
 
-Speed up :class:`namedtuple` attribute access by 1.6x using a C fast-path
+Speed up :func:`namedtuple` attribute access by 1.6x using a C fast-path
 for the name descriptors. Patch by Pablo Galindo.
 
 ..
