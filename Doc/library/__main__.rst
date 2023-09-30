@@ -239,8 +239,8 @@ Idiomatic Usage
 ^^^^^^^^^^^^^^^
 
 The contents of ``__main__.py`` typically isn't fenced with
-``if __name__ == '__main__'`` blocks.  Instead, those files are kept short,
-functions to execute from other modules.  Those other modules can then be
+``if __name__ == '__main__'`` blocks.  Instead, those files are kept
+short and import functions to execute from other modules.  Those other modules can then be
 easily unit-tested and are properly reusable.
 
 If used, an ``if __name__ == '__main__'`` block will still work as expected
