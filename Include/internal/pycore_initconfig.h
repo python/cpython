@@ -182,6 +182,12 @@ PyAPI_FUNC(int) _PyConfig_FromDict(PyConfig *config, PyObject *dict);
 PyAPI_FUNC(PyObject*) _Py_Get_Getpath_CodeObject(void);
 PyAPI_FUNC(PyObject*) _Py_GetConfigsAsDict(void);
 
+PyAPI_FUNC(int) _PyConfig_Parse(
+    PyObject *config_dict,
+    // UTF-8 encoded string
+    const char *config_str
+);
+
 #ifdef __cplusplus
 }
 #endif

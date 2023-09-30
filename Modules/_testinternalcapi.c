@@ -342,6 +342,77 @@ error:
 
 
 static PyObject *
+test_parse_config_text(PyObject *Py_UNUSED(self), PyObject *config_obj)
+{
+    const char *config_utf8 = PyUnicode_AsUTF8(config_obj);
+    if (config_utf8 == NULL) {
+        return NULL;
+    }
+
+    PyObject *config_dict = PyDict_New();
+    if (config_dict == NULL) {
+        return NULL;
+    }
+
+    if (_PyConfig_Parse(config_dict, config_utf8) < 0) {
+        Py_DECREF(config_dict);
+        return NULL;
+    }
+    return config_dict;
+}
+
+
+static PyObject *
+test_set_config_text(PyObject *Py_UNUSED(self), PyObject *config_obj)
+{
+    if (!PyUnicode_Check(config_obj)) {
+        PyErr_Format(PyExc_TypeError, "expected str, got %s",
+                     Py_TYPE(config_obj)->tp_name);
+        return NULL;
+    }
+
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    PyObject *config_dict = NULL;
+
+    // Set config from the dict
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        goto error;
+    }
+    config_dict = _PyConfig_AsDict(&config);
+    if (config_dict == NULL) {
+        goto error;
+    }
+
+    // Parse config text
+    const char *config_utf8 = PyUnicode_AsUTF8(config_obj);
+    if (config_utf8 == NULL) {
+        goto error;
+    }
+    if (_PyConfig_Parse(config_dict, config_utf8) < 0) {
+        goto error;
+    }
+
+    // Set config from dict
+    if (_PyConfig_FromDict(&config, config_dict) < 0) {
+        goto error;
+    }
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        goto error;
+    }
+
+    PyConfig_Clear(&config);
+    Py_DECREF(config_dict);
+    Py_RETURN_NONE;
+
+error:
+    PyConfig_Clear(&config);
+    Py_DECREF(config_dict);
+    return NULL;
+}
+
+
+static PyObject *
 test_reset_path_config(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(arg))
 {
     _PyPathConfig_ClearGlobal();
@@ -1536,6 +1607,8 @@ static PyMethodDef module_functions[] = {
     {"test_hashtable", test_hashtable, METH_NOARGS},
     {"get_config", test_get_config, METH_NOARGS},
     {"set_config", test_set_config, METH_O},
+    {"parse_config_text", test_parse_config_text, METH_O},
+    {"set_config_text", test_set_config_text, METH_O},
     {"reset_path_config", test_reset_path_config, METH_NOARGS},
     {"test_edit_cost", test_edit_cost, METH_NOARGS},
     {"test_bytes_find", test_bytes_find, METH_NOARGS},

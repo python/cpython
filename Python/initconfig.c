@@ -3089,3 +3089,337 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 
     _PyErr_SetRaisedException(tstate, exc);
 }
+
+
+typedef struct {
+    const char *key;
+    size_t key_len;
+    const char *value;
+    size_t value_len;
+} TextConfigEntry;
+
+
+static inline int
+config_is_space(char ch)
+{
+    return (ch == ' ' || ch == '\t');
+}
+
+
+static inline int
+config_is_space_ucs4(Py_UCS4 ch)
+{
+    return (ch == ' ' || ch == '\t');
+}
+
+
+static void
+config_strip_spaces(const char **str, size_t *len)
+{
+    // lstrip()
+    while (config_is_space((*str)[0])) {
+        (*str)++;
+        (*len)--;
+        if (*len == 0) {
+            return;
+        }
+    }
+
+    // rstrip()
+    while (config_is_space((*str)[*len - 1])) {
+        (*len)--;
+        if (*len == 0) {
+            return;
+        }
+    }
+}
+
+static int
+config_parse_line(const char **line, TextConfigEntry *entry)
+{
+    const char *current_line = *line;
+    const char *str = current_line;
+    const char *next_line = current_line;
+    const char *start = str;
+    const char *end = NULL;
+    int only_space = 1;
+    int comment = 0;
+    entry->key = NULL;
+    for (;;) {
+        char ch = *str;
+        if (ch == '\n') {
+            if (entry->key) {
+                next_line = str + 1;
+                break;
+            }
+            if (!only_space) {
+                goto invalid_line;
+            }
+            current_line = str + 1;
+            start = current_line;
+            comment = 0;
+        }
+        else if (comment) {
+            // ignore comment
+        }
+        else if (ch == '=' && entry->key == NULL) {
+            if (str == start) {
+                goto invalid_line;
+            }
+            entry->key = start;
+            entry->key_len = (str - start);
+            config_strip_spaces(&entry->key, &entry->key_len);
+            start = str + 1;
+        }
+        else if (ch == '\0') {
+            if (!entry->key) {
+                *line = str;
+                return 0;
+            }
+            next_line = str;
+            break;
+        }
+        else if (ch == '#') {
+            if (entry->key) {
+                if (end == NULL) {
+                    end = str;
+                }
+            }
+            else {
+                comment = 1;
+            }
+        }
+        else if (config_is_space(ch)) {
+            only_space = 0;
+        }
+        str++;
+    }
+
+    if (!entry->key) {
+        goto invalid_line;
+    }
+    entry->value = start;
+    if (end != NULL) {
+        entry->value_len = (end - start);
+    }
+    else {
+        entry->value_len = (str - start);
+    }
+    config_strip_spaces(&entry->value, &entry->value_len);
+    *line = next_line;
+    return 1;
+
+invalid_line:
+    // FIXME: cut to next \n
+    end = strchr(current_line, '\n');
+    size_t len;
+    if (end != NULL) {
+        len = end - current_line;
+    }
+    else {
+        len = strlen(current_line);
+    }
+    PyObject *obj = PyUnicode_FromStringAndSize(current_line, len);
+    if (obj != NULL) {
+        PyErr_Format(PyExc_ValueError, "invalid line: %R", obj);
+        Py_DECREF(obj);
+    }
+    return -1;
+}
+
+
+static const PyConfigSpec*
+config_get_spec(PyObject *key)
+{
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (PyUnicode_CompareWithASCIIString(key, spec->name) == 0) {
+            return spec;
+        }
+    }
+    return NULL;
+}
+
+
+static PyObject*
+config_parse_str(PyObject *key, PyObject *value)
+{
+    Py_ssize_t len = PyUnicode_GetLength(value);
+    if (len < 2) {
+        goto invalid;
+    }
+    Py_UCS4 ch = PyUnicode_ReadChar(value, 0);
+    if (ch != '\'' && ch != '"') {
+        goto invalid;
+    }
+    if (PyUnicode_ReadChar(value, len - 1) != ch) {
+        goto invalid;
+    }
+    return PyUnicode_Substring(value, 1, len - 1);
+
+invalid:
+    PyErr_Format(PyExc_ValueError,
+                 "invalid config string value %S, missing quotes: %S",
+                 key, value);
+    return NULL;
+}
+
+
+static PyObject*
+config_parse_list(PyObject *key, PyObject *value)
+{
+    PyObject *list = NULL;
+    Py_ssize_t len = PyUnicode_GetLength(value);
+    if (len < 2) {
+        goto invalid;
+    }
+    if (PyUnicode_ReadChar(value, 0) != '['
+        || PyUnicode_ReadChar(value, len - 1) != ']')
+    {
+        goto invalid;
+    }
+
+    list = PyList_New(0);
+    Py_UCS4 start_ch = 0;
+    Py_ssize_t start = 0;
+    int need_comma = 0;
+    for (Py_ssize_t i=1; i < len - 1; i++) {
+        Py_UCS4 ch = PyUnicode_ReadChar(value, i);
+        if (start_ch) {
+            if (ch == start_ch) {
+                // string end
+                PyObject *item = PyUnicode_Substring(value, start, i);
+                if (item == NULL) {
+                    goto error;
+                }
+                int res = PyList_Append(list, item);
+                Py_DECREF(item);
+                if (res < 0) {
+                    goto error;
+                }
+
+                start = 0;
+                start_ch = 0;
+                need_comma = 1;
+            }
+        }
+        else if (need_comma) {
+            if (config_is_space_ucs4(ch)) {
+                // ignore space
+            }
+            else if (ch == ',') {
+                need_comma = 0;
+            }
+            else {
+                goto invalid;
+            }
+        }
+        else {
+            if (config_is_space_ucs4(ch)) {
+                // ignore space
+            }
+            else if (ch == '\'' || ch == '"') {
+                // string start
+                start = i + 1;
+                start_ch = ch;
+            }
+            else {
+                goto invalid;
+            }
+        }
+    }
+    if (start_ch) {
+        goto invalid;
+    }
+    return list;
+
+invalid:
+    PyErr_Format(PyExc_ValueError,
+                 "invalid config string list value %S: %S",
+                 key, value);
+
+error:
+    Py_XDECREF(list);
+    return NULL;
+}
+
+
+static PyObject*
+config_parse_entry(const PyConfigSpec *spec, PyObject *key, PyObject *value)
+{
+    switch (spec->type) {
+    case PyConfig_MEMBER_INT:
+    case PyConfig_MEMBER_UINT:
+    case PyConfig_MEMBER_ULONG:
+        return PyObject_CallOneArg((PyObject*)&PyLong_Type, value);
+    case PyConfig_MEMBER_WSTR_OPT:
+        if (PyUnicode_GetLength(value) == 0) {
+            return Py_NewRef(Py_None);
+        }
+        // fall through
+    case PyConfig_MEMBER_WSTR:
+        return config_parse_str(key, value);
+    case PyConfig_MEMBER_WSTR_LIST:
+        return config_parse_list(key, value);
+    default:
+        Py_UNREACHABLE();
+    }
+}
+
+
+static int
+config_set_entry(PyObject *config_dict, TextConfigEntry *entry)
+{
+    PyObject *key = PyUnicode_FromStringAndSize(entry->key, entry->key_len);
+    if (key == NULL) {
+        return -1;
+    }
+
+    const PyConfigSpec *spec = config_get_spec(key);
+    if (spec == NULL) {
+        PyErr_Format(PyExc_ValueError, "unknown config key: %R", key);
+        Py_DECREF(key);
+        return -1;
+    }
+
+    PyObject *value_str = PyUnicode_FromStringAndSize(entry->value, entry->value_len);
+    if (value_str == NULL) {
+        Py_DECREF(key);
+        return -1;
+    }
+
+    PyObject *value = config_parse_entry(spec, key, value_str);
+    Py_DECREF(value_str);
+    if (value == NULL) {
+        Py_DECREF(key);
+        return -1;
+    }
+
+    int res = PyDict_SetItem(config_dict, key, value);
+    Py_DECREF(key);
+    Py_DECREF(value);
+    return res;
+}
+
+
+int
+_PyConfig_Parse(PyObject *config_dict, const char *config_str)
+{
+    while (1) {
+        TextConfigEntry entry;
+        int res = config_parse_line(&config_str, &entry);
+        if (res < 0) {
+            goto error;
+        }
+        if (res == 0) {
+            break;
+        }
+        if (config_set_entry(config_dict, &entry) < 0) {
+            goto error;
+        }
+    }
+    return 0;
+
+error:
+    return -1;
+}
