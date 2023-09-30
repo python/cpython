@@ -62,8 +62,7 @@
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->instr_ptr = next_instr; \
-        frame->prev_instr = next_instr++; \
+        frame->instr_ptr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
@@ -71,10 +70,9 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
-if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
-        frame->instr_ptr = next_instr; \
-        frame->prev_instr = next_instr++; \
-if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
+if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
+        frame->instr_ptr = next_instr++; \
+if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
     } while(0)
 #endif
 
@@ -114,7 +112,6 @@ if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->prev_instr=%p frame->instr
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
@@ -396,10 +393,8 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #if TIER_ONE
 
 #define LOAD_IP() do { \
-        assert(frame->prev_instr + 1 == frame->instr_ptr); \
         frame->instr_ptr += frame->new_return_offset; \
         frame->new_return_offset = 0; \
-if (VERBOSE) fprintf(stderr, "LOAD_IP: frame=%p frame->prev_instr=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d\n", frame, frame->prev_instr, frame->instr_ptr, next_instr, frame->new_return_offset); \
         next_instr = frame->instr_ptr; \
     } while (0)
 

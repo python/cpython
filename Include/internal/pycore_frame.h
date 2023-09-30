@@ -62,19 +62,15 @@ typedef struct _PyInterpreterFrame {
     // frame. Rather, it is the code unit *prior to* the *next* instruction. For
     // example, it may be an inline CACHE entry, an instruction we just jumped
     // over, or (in the case of a newly-created frame) a totally invalid value:
-    _Py_CODEUNIT *prev_instr;
     _Py_CODEUNIT *prev_traced_instr;
     /* The instruction that is currently executing (possibly not started yet). */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    /* The return_offset determines where a `RETURN` should go in the caller,
-     * relative to `prev_instr`.
-     * It is only meaningful to the callee,
-     * so it needs to be set in any CALL (to a Python function)
-     * or SEND (to a coroutine or generator).
-     * If there is no callee, then it is meaningless. */
+    /* The yield_offset determines where a `YIELD_VALUE` should go in the caller,
+     * relative to `instr_ptr`.
+     * It must be set by SEND, SEND_GEN, FOR_ITER_GEN and used by YIELD_VALUE.
+     */
     uint16_t yield_offset;
-    uint16_t return_offset;
     /* The new_return_offset determines where a `RETURN` should go in the caller,
      * relative to `instr_ptr`.
      * It is only meaningful to the callee,
@@ -90,38 +86,19 @@ typedef struct _PyInterpreterFrame {
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)(((IF)->instr_ptr) - _PyCode_CODE(_PyFrame_GetCode(IF))))
 
-#define _OldPyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->prev_instr - _PyCode_CODE(_PyFrame_GetCode(IF))))
-
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     assert(PyCode_Check(f->f_executable));
     return (PyCodeObject *)f->f_executable;
 }
 
-
 static void
 dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
     if (frame) {
-        fprintf(stderr, "%s: frame=%p frame->prev_instr=%p frame->instr_ptr=%p ",
-                title, frame, frame->prev_instr, frame->instr_ptr);
+        fprintf(stderr, "%s: frame=%p frame->instr_ptr=%p ",
+                title, frame, frame->instr_ptr);
         fprintf(stderr, "new_return_offset=%d yield_offset=%d  \n",
                 frame->new_return_offset, frame->yield_offset);
     }
-}
-
-
-static void
-check_lasti_values(_PyInterpreterFrame *f, bool raise, const char* filename, int line) {
-    int new_addr = _PyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
-    int addr = _OldPyInterpreterFrame_LASTI(f) * sizeof(_Py_CODEUNIT);
-    int new = PyCode_Addr2Line(_PyFrame_GetCode(f), new_addr);
-    int old = PyCode_Addr2Line(_PyFrame_GetCode(f), addr);
-
-    if (old != new) {
-        fprintf(stderr, "f=%p f->prev_instr=%p f->instr_ptr=%p old=%d new=%d\n", f, f->prev_instr, f->instr_ptr, old, new);
-        fprintf(stderr, "%s : %d\n", filename, line);
-    }
-    if (true || raise) assert(old == new);
 }
 
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
@@ -175,9 +152,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->prev_traced_instr = NULL;
-    frame->prev_instr = _PyCode_CODE(code) - 1;
     frame->instr_ptr = _PyCode_CODE(code);
-    frame->return_offset = 0;
     frame->new_return_offset = 0;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
@@ -342,10 +317,8 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
     frame->prev_traced_instr = NULL;
-    frame->prev_instr = _PyCode_CODE(code) + previous_instr;
     frame->instr_ptr = _PyCode_CODE(code) + previous_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
-    frame->return_offset = 0;
     frame->new_return_offset = 0;
     frame->yield_offset = 0;
     return frame;

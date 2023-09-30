@@ -234,16 +234,7 @@ _PyTraceBack_FromFrame(PyObject *tb_next, PyFrameObject *frame)
 {
     assert(tb_next == NULL || PyTraceBack_Check(tb_next));
     assert(frame != NULL);
-    int new_addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
-    int addr = _OldPyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
-    int newline = PyCode_Addr2Line(_PyFrame_GetCode(frame->f_frame), new_addr);
-    int line = PyCode_Addr2Line(_PyFrame_GetCode(frame->f_frame), addr);
-if (true || line != newline) {
-    if (VERBOSE) fprintf(stderr, "frame=%p frame->prev_instr=%p frame->instr_ptr=%p frame->new_return_offset=%d frame->yield_offset=%d line=%d newline=%d %s\n",
-            frame->f_frame, frame->f_frame->prev_instr, frame->f_frame->instr_ptr, frame->f_frame->new_return_offset, frame->f_frame->yield_offset, line, newline, newline - line ? "XXX" : "");
-    if (VERBOSE) fprintf(stderr, "_PyFrame_GetCode(frame->f_frame)=%p  addr = %d  new_addr = %d\n", _PyFrame_GetCode(frame->f_frame), addr, new_addr);
-}
-    assert(line == newline);
+    int addr = _PyInterpreterFrame_LASTI(frame->f_frame) * sizeof(_Py_CODEUNIT);
     return tb_create_raw((PyTracebackObject *)tb_next, frame, addr,
                          PyFrame_GetLineNumber(frame));
 }

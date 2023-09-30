@@ -692,14 +692,11 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
-
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
-
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3105,27 +3102,23 @@
         }
 
         case _SET_IP: {
-            frame->prev_instr = ip_offset + oparg;
             frame->instr_ptr = ip_offset + oparg;
             break;
         }
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
             assert(frame->new_return_offset == 0);
             frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
             #endif
             #if TIER_TWO
             // Relies on a preceding _SET_IP
-            frame->prev_instr--;
             #endif
             break;
         }
 
         case _EXIT_TRACE: {
-            frame->prev_instr--;  // Back up to just before destination
-            frame->instr_ptr--;
+            frame->instr_ptr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;

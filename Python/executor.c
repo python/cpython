@@ -49,7 +49,6 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     #define DPRINTF(level, ...)
 #endif
 
-    assert(frame->prev_instr + 1 == frame->instr_ptr);
     DPRINTF(3,
             "Entering _PyUopExecute for %s (%s:%d) at byte offset %ld\n",
             PyUnicode_AsUTF8(_PyFrame_GetCode(frame)->co_qualname),
@@ -123,8 +122,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    frame->prev_instr--;  // Back up to just before destination
-    frame->instr_ptr--;
+    frame->instr_ptr--; // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;

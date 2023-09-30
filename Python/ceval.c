@@ -690,11 +690,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
     entry_frame.f_executable = Py_None;
-    entry_frame.prev_instr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.return_offset = 0;
     entry_frame.yield_offset = 0;
     entry_frame.new_return_offset = 0;
     /* Push frame */
@@ -717,7 +715,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-        assert (frame->instr_ptr == frame->prev_instr + 1);
         monitor_throw(tstate, frame, frame->instr_ptr - 1);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
@@ -781,10 +778,6 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
-    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->prev_instr before it is updated,
-     * as happens in the standard instruction prologue.
-     */
 #if USE_COMPUTED_GOTOS
         TARGET_INSTRUMENTED_LINE:
 #else
@@ -793,7 +786,7 @@ resume_frame:
     {
         DUMP_FRAME("INSTRUMENTED_LINE");
         _Py_CODEUNIT *prev = frame->prev_traced_instr;
-        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_instr = frame->prev_traced_instr = next_instr;
+        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_traced_instr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(
                 tstate, frame, here, prev);
@@ -908,7 +901,6 @@ if (VERBOSE) fprintf(stderr, "Exception Handler: %d\n", handler);
                 Py_XDECREF(v);
             }
             if (lasti) {
-                check_lasti_values(frame, false, __FILE__, __LINE__);
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
                 PyObject *lasti = PyLong_FromLong(frame_lasti);
                 if (lasti == NULL) {

@@ -182,7 +182,6 @@ dummy_func(
                         tstate, oparg > 0, frame, next_instr-1);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 ERROR_IF(err, error);
-                assert(frame->prev_instr == frame->instr_ptr);
                 if (frame->instr_ptr != next_instr-1) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
@@ -657,7 +656,6 @@ dummy_func(
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
@@ -792,14 +790,11 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
-
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
-
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -810,7 +805,7 @@ dummy_func(
 
         macro(RETURN_VALUE) =
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -827,7 +822,6 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
             _PyFrame_StackPush(frame, retval);
@@ -837,7 +831,7 @@ dummy_func(
         macro(RETURN_CONST) =
             LOAD_CONST +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -855,7 +849,6 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             frame->instr_ptr += frame->new_return_offset;
             frame->new_return_offset = 0;
             _PyFrame_StackPush(frame, retval);
@@ -994,7 +987,6 @@ dummy_func(
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-                frame->return_offset = oparg;
                 frame->yield_offset = next_instr - frame->instr_ptr;
                 frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
                 DISPATCH_INLINED(gen_frame);
@@ -1035,7 +1027,6 @@ dummy_func(
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-            frame->return_offset = oparg;
             frame->yield_offset = next_instr - frame->instr_ptr;
             frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
             DISPATCH_INLINED(gen_frame);
@@ -1075,14 +1066,12 @@ dummy_func(
             gen->gi_exc_state.previous_item = NULL;
             _Py_LeaveRecursiveCallPy(tstate);
             _PyInterpreterFrame *gen_frame = frame;
-            gen_frame->prev_instr = next_instr - 1;
             gen_frame->instr_ptr = next_instr;
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
             frame->instr_ptr += frame->yield_offset;
             frame->new_return_offset =  frame->yield_offset = 0;
-            frame->prev_instr = frame->instr_ptr - 1;
             goto resume_frame;
         }
 
@@ -1096,9 +1085,8 @@ dummy_func(
             if (oparg) {
                 PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
-                    frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
-                    assert(!_PyErr_Occurred(tstate));
                     frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
+                    assert(!_PyErr_Occurred(tstate));
                 }
                 else {
                     assert(PyLong_Check(lasti));
@@ -2013,7 +2001,6 @@ dummy_func(
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->return_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
@@ -2041,7 +2028,6 @@ dummy_func(
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->return_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
@@ -2316,7 +2302,6 @@ dummy_func(
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
-            frame->prev_instr = next_instr - 1;
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
@@ -2685,7 +2670,6 @@ dummy_func(
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            frame->return_offset = oparg;
             frame->yield_offset = next_instr - frame->instr_ptr;
             frame->new_return_offset = oparg + next_instr - frame->instr_ptr;
             DISPATCH_INLINED(gen_frame);
@@ -2975,7 +2959,6 @@ dummy_func(
                 Py_DECREF(callable);
                 callable = method;
             }
-
             // Check if the call can be inlined or not
             if (Py_TYPE(callable) == &PyFunction_Type &&
                 tstate->interp->eval_frame == NULL &&
@@ -2995,7 +2978,6 @@ dummy_func(
                     goto error;
                 }
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-                frame->return_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
             }
@@ -3026,9 +3008,7 @@ dummy_func(
             for (int i = 0; i < total_args; i++) {
                 Py_DECREF(args[i]);
             }
-
             ERROR_IF(res == NULL, error);
-            frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = 0;
             CHECK_EVAL_BREAKER();
@@ -3087,7 +3067,6 @@ dummy_func(
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             assert(tstate->interp->eval_frame == NULL);
@@ -3115,7 +3094,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3125,7 +3104,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->prev_instr
+            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3159,7 +3138,6 @@ dummy_func(
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
@@ -3238,8 +3216,6 @@ dummy_func(
                 init_frame->localsplus[i+1] = args[i];
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            frame->return_offset = 0;
             frame->yield_offset = 0;
             frame->new_return_offset = next_instr - frame->instr_ptr;
             STACK_SHRINK(oparg+2);
@@ -3611,7 +3587,6 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->return_offset = 0;
                 frame->yield_offset = 0;
                 frame->new_return_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
@@ -3711,7 +3686,6 @@ dummy_func(
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->return_offset = 0;
                     frame->yield_offset = 0;
                     frame->new_return_offset = next_instr - frame->instr_ptr;
                     DISPATCH_INLINED(new_frame);
@@ -3979,25 +3953,21 @@ dummy_func(
         }
 
         op(_SET_IP, (--)) {
-            frame->prev_instr = ip_offset + oparg;
             frame->instr_ptr = ip_offset + oparg;
         }
 
         op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
             assert(frame->new_return_offset == 0);
             frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
             #endif
             #if TIER_TWO
             // Relies on a preceding _SET_IP
-            frame->prev_instr--;
             #endif
         }
 
         op(_EXIT_TRACE, (--)) {
-            frame->prev_instr--;  // Back up to just before destination
-            frame->instr_ptr--;
+            frame->instr_ptr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             return frame;
