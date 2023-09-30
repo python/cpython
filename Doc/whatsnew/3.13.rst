@@ -170,7 +170,8 @@ pathlib
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
 
-* Add :meth:`pathlib.Path.from_uri` classmethod.
+* Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
+  object from a 'file' URI (``file:/``).
   (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
