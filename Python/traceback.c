@@ -20,13 +20,14 @@
 #include "frameobject.h"          // PyFrame_New()
 
 #include "osdefs.h"               // SEP
-#ifdef HAVE_FCNTL_H
-#  include <fcntl.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // lseek()
 #endif
 
-#define OFF(x) offsetof(PyTracebackObject, x)
 
+#define OFF(x) offsetof(PyTracebackObject, x)
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
+
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100

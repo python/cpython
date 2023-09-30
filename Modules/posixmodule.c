@@ -24,6 +24,10 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // symlink()
+#endif
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
@@ -36,7 +40,6 @@
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
-
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -283,10 +286,6 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
-#endif
-
-#ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
