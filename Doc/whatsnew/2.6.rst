@@ -1850,8 +1850,8 @@ changes, or look through the Subversion logs for all the details.
   special values and floating-point exceptions in a manner consistent
   with Annex 'G' of the C99 standard.
 
-* A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
-  fieldnames)` is a factory function that creates subclasses of the standard tuple
+* A new data type in the :mod:`collections` module: ``namedtuple(typename, fieldnames)``
+  is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
 
      >>> var_type = collections.namedtuple('variable',
@@ -1873,7 +1873,7 @@ changes, or look through the Subversion logs for all the details.
      variable(id=1, name='amplitude', type='int', size=4)
 
   Several places in the standard library that returned tuples have
-  been modified to return :class:`namedtuple` instances.  For example,
+  been modified to return :func:`namedtuple` instances.  For example,
   the :meth:`Decimal.as_tuple` method now returns a named tuple with
   :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 
