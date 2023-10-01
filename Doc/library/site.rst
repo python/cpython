@@ -109,6 +109,9 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
+:mod:`sitecustomize`
+--------------------
+
 .. module:: sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
@@ -121,6 +124,9 @@ it is silently ignored.  If Python is started without output streams available, 
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
 attempted output from :mod:`sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
+
+:mod:`usercustomize`
+--------------------
 
 .. module:: usercustomize
 
