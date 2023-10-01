@@ -1,3 +1,5 @@
-Add :samp:`-Xcpu_count={n}` command line option to override CPU count of :func:`os.cpu_count`.
-This option is useful for users who need to limit CPU resources of a container system.
+Add :samp:`-Xcpu_count={n}` command line option to override return results of
+:func:`os.cpu_count` and :func:`os.process_cpu_count`.
+This option is useful for users who need to limit CPU resources of a container system
+without having to modify the container (application code).
 Patch by Donghee Na.
