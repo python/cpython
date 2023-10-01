@@ -231,7 +231,7 @@ The following implementation-specific options are available:\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
     The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
--X cpu_count=n: override CPU count of os.cpu_count().\n\
+-X cpu_count=[n|default]: override CPU count of os.cpu_count() and os.process_cpu_count().\n\
     This helps for users who need to limit CPU resources of a container system."
 
 #ifdef Py_STATS
@@ -1628,8 +1628,11 @@ config_init_cpu_count(PyConfig *config)
     const char *env = config_get_env(config, "PYTHONCPUCOUNT");
     if (env) {
         int cpu_count = -1;
-        if (_Py_str_to_int(env, &cpu_count) != 0) {
+        if (strcmp(env, "default") == 0) {
             cpu_count = -1;
+        }
+        else if (_Py_str_to_int(env, &cpu_count) != 0) {
+            goto error;
         }
         if (cpu_count >= 1) {
             config->cpu_count = cpu_count;
