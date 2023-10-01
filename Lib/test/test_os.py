@@ -3954,10 +3954,22 @@ class TimerfdTests(unittest.TestCase):
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
 
-        # non-blocking read() raises OSError with errno is EAGAIN
+        # 0.1 second later
+        initial_expiration = 0.1
+        _, _ = os.timerfd_settime(fd, initial=initial_expiration, interval=0)
+
+        # read() raises OSError with errno is EAGAIN for non-blocking timer.
         with self.assertRaises(OSError) as ctx:
             _ = os.read(fd, size)
         self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+
+        # Wait more than 0.1 seconds
+        time.sleep(initial_expiration + 0.1)
+
+        # confirm if timerfd is readable and read() returns 1 as bytes.
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, 1)
 
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
