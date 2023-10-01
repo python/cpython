@@ -924,6 +924,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # derived class fields overwrite base class fields, but the order
     # is defined by the base class, which is found first.
     fields = {}
+    fn_defs = [] # store txt defs to exec combined
 
     if cls.__module__ in sys.modules:
         globals = sys.modules[cls.__module__].__dict__
@@ -1058,8 +1059,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
 
-        _set_new_attribute(cls, '__init__',
-                           _init_fn(all_init_fields,
+        fn_defs.append(_init_fn(all_init_fields,
                                     std_init_fields,
                                     kw_only_init_fields,
                                     frozen,
@@ -1069,7 +1069,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     # if possible.
                                     '__dataclass_self__' if 'self' in fields
                                             else 'self',
-                                    globals,
                                     slots,
                           ))
     _set_new_attribute(cls, '__replace__', _replace)
@@ -1080,7 +1079,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
 
     if repr:
         flds = [f for f in field_list if f.repr]
-        _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))
+        fn_defs.append(_repr_fn(flds))
 
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
@@ -1091,41 +1090,35 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         body =  [f'if other.__class__ is self.__class__:',
                  f' return {field_comparisons}',
                  f'return NotImplemented']
-        func = _create_fn('__eq__',
-                          ('self', 'other'),
-                          body,
-                          globals=globals)
-        _set_new_attribute(cls, '__eq__', func)
+        fn_defs.append(_create_fn_def('__eq__',('self', 'other'), body,))
 
     if order:
         # Create and set the ordering methods.
         flds = [f for f in field_list if f.compare]
         self_tuple = _tuple_str('self', flds)
         other_tuple = _tuple_str('other', flds)
-        for name, op in [('__lt__', '<'),
-                         ('__le__', '<='),
-                         ('__gt__', '>'),
-                         ('__ge__', '>='),
-                         ]:
-            if _set_new_attribute(cls, name,
-                                  _cmp_fn(name, op, self_tuple, other_tuple,
-                                          globals=globals)):
-                raise TypeError(f'Cannot overwrite attribute {name} '
-                                f'in class {cls.__name__}. Consider using '
-                                'functools.total_ordering')
+        order_flds = {'__lt__' : '<',
+                      '__le__' : '<=',
+                      '__gt__' : '>',
+                      '__ge__' : '>=',
+                      }
+        for name, op in order_flds.items():
+                fn_defs.append(_cmp_fn(name, op, self_tuple, other_tuple))
 
     if frozen:
-        for fn in _frozen_get_del_attr(cls, field_list, globals):
-            if _set_new_attribute(cls, fn.__name__, fn):
-                raise TypeError(f'Cannot overwrite attribute {fn.__name__} '
-                                f'in class {cls.__name__}')
+        fn_defs.extend(_frozen_get_del_attr(cls, field_list))
 
     # Decide if/how we're going to create a hash function.
     hash_action = _hash_action[bool(unsafe_hash),
                                bool(eq),
                                bool(frozen),
                                has_explicit_hash]
-    if hash_action:
+
+    if hash_action == _hash_add:
+        flds = [f for f in field_list if (f.compare if f.hash is None else f.hash)]
+        fn_defs.append(_hash_fn(field_list))
+        hash_action = None # assign when iterating
+
         # No need to call _set_new_attribute here, since by the time
         # we're here the overwriting is unconditional.
         cls.__hash__ = hash_action(cls, field_list, globals)
