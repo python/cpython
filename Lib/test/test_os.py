@@ -3928,6 +3928,7 @@ class TimerfdTests(unittest.TestCase):
     def timerfd_create(self, *args, **kwargs):
         fd = os.timerfd_create(*args, **kwargs)
         self.assertGreaterEqual(fd, 0)
+        self.assertFalse(os.get_inheritable(fd))
         return fd
 
     def test_timerfd_initval(self):
