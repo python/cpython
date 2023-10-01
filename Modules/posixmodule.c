@@ -10154,6 +10154,7 @@ os_timerfd_create_impl(PyObject *module, int clockid, int flags)
 {
     int fd;
     Py_BEGIN_ALLOW_THREADS
+    flags |= TFD_CLOEXEC;  // PEP 446: always create non-inheritable FD
     fd = timerfd_create(clockid, flags);
     Py_END_ALLOW_THREADS
     if (fd == -1) {
