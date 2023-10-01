@@ -26,7 +26,6 @@ import abc
 import sys
 import stat as st
 
-from posix import _get_cpu_count_config
 from _collections_abc import _check_methods
 
 GenericAlias = type(list[int])
@@ -56,6 +55,7 @@ if 'posix' in _names:
     from posix import *
     try:
         from posix import _exit
+        from posix import _get_cpu_count_config
         __all__.append('_exit')
     except ImportError:
         pass
