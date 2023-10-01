@@ -3960,6 +3960,7 @@ class TimerfdTests(unittest.TestCase):
         self.assertEqual(ctx.exception.errno, errno.EAGAIN)
 
     def test_timerfd_negative(self):
+        one_sec_in_nsec = 10**9
         fd = os.timerfd_create(time.CLOCK_REALTIME)
         self.assertNotEqual(fd, -1)
         self.addCleanup(os.close, fd)
@@ -3973,8 +3974,8 @@ class TimerfdTests(unittest.TestCase):
                     self.assertEqual(context.exception.errno, errno.EINVAL)
 
                     with self.assertRaises(OSError) as context:
-                        initial_ns = int( (10**9) * initial )
-                        interval_ns = int( (10**9) * interval )
+                        initial_ns = int( one_sec_in_nsec * initial )
+                        interval_ns = int( one_sec_in_nsec * interval )
                         _, _ = os.timerfd_settime_ns(fd, flags=flags, initial=initial_ns, interval=interval_ns)
                     self.assertEqual(context.exception.errno, errno.EINVAL)
 

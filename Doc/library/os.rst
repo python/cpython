@@ -3855,7 +3855,8 @@ descriptors to wait until the file descriptor is ready for reading:
    # Start the timer with os.timerfd_settime_ns() in nanoseconds.
    # Timer 1 fires every 0.25 seconds; timer 2 every 0.5 seconds; etc
    for i, fd in enumerate(fds, start=1):
-       i = i * 10**9
+       one_sec_in_nsec = 10**9
+       i = i * one_sec_in_nsec
        os.timerfd_settime_ns(fd, initial=i//4, interval=i//4)
 
    timeout = 3
