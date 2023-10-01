@@ -446,8 +446,7 @@ def _tuple_str(obj_name, fields):
     return f'({",".join([f"{obj_name}.{f.name}" for f in fields])},)'
 
 
-def _create_fn(name, args, body, *, globals=None, locals=None,
-               return_type=MISSING):
+def _create_fn_def(name, args, body, *, locals=None, return_type=MISSING):
     # Note that we may mutate locals. Callers beware!
     # The only callers are internal to this module, so no
     # worries about external callers.
@@ -455,24 +454,31 @@ def _create_fn(name, args, body, *, globals=None, locals=None,
         locals = {}
     return_annotation = ''
     if return_type is not MISSING:
-        locals['__dataclass_return_type__'] = return_type
-        return_annotation = '->__dataclass_return_type__'
+        fn_name = name.replace("__", "")
+        locals[f'__dataclass_{fn_name}_return_type__'] = return_type
+        return_annotation = f'->__dataclass_{fn_name}_return_type__'
     args = ','.join(args)
     body = '\n'.join(f'  {b}' for b in body)
 
     # Compute the text of the entire function.
-    txt = f' def {name}({args}){return_annotation}:\n{body}'
+    txt = f'def {name}({args}){return_annotation}:\n{body}'
 
+    return (name, txt, locals)
+
+def _exec_fn_defs(fn_defs, globals=None):
     # Free variables in exec are resolved in the global namespace.
     # The global namespace we have is user-provided, so we can't modify it for
     # our purposes. So we put the things we need into locals and introduce a
     # scope to allow the function we're creating to close over them.
-    local_vars = ', '.join(locals.keys())
-    txt = f"def __create_fn__({local_vars}):\n{txt}\n return {name}"
+    locals_dict = {k: v for _, _, locals_ in fn_defs
+                        for k, v in locals_.items()}
+    local_vars = ', '.join(locals_dict.keys())
+    fn_names = ", ".join(name for name, _, _ in fn_defs)
+    txt = "\n".join(f" {txt}" for _, txt, _ in fn_defs)
+    txt = f"def __create_fn__({local_vars}):\n{txt}\n return {fn_names}"
     ns = {}
     exec(txt, globals, ns)
-    return ns['__create_fn__'](**locals)
-
+    return ns['__create_fn__'](**locals_dict)
 
 def _field_assign(frozen, name, value, self_name):
     # If we're a frozen class, then assign to our fields in __init__
