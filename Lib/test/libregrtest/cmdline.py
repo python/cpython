@@ -27,8 +27,11 @@ EPILOG = """\
 Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer; this is useful for reproducing troublesome
-test orders.
+int seed value for the randomizer. The randseed value will be used
+to set seeds for all random usages in tests
+(including randomizing the tests order if -r is set).
+By default we always set random seed, but do not randomize test order.
+Use --no-use-randseed to disable random seeding.
 
 -s On the first invocation of regrtest using -s, the first test file found
 or the first test file given on the command line is run, and the name of
@@ -156,6 +159,7 @@ class Namespace(argparse.Namespace):
         self.list_tests = False
         self.single = False
         self.randomize = False
+        self.use_random_seed = True
         self.fromfile = None
         self.fail_env_changed = False
         self.use_resources = None
@@ -229,6 +233,13 @@ def _create_parser():
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a global random seed')
+    group.add_argument('--use-randseed',
+                       dest='use_random_seed',
+                       action=argparse.BooleanOptionalAction,
+                       help='control if random should be seeded')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -249,10 +260,6 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED',
-                       dest='random_seed', type=int,
-                       help='pass a random seed to reproduce a previous '
-                            'random run')
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -483,6 +490,11 @@ def _parse_args(args, **kwargs):
                         ns.use_resources.remove(r)
                 elif r not in ns.use_resources:
                     ns.use_resources.append(r)
+    if not ns.use_random_seed:
+        if ns.random_seed is not None:
+            parser.error("--no-use-randseed and --randseed=... don't go together")
+        if ns.randomize:
+            parser.error("--no-use-randseed and --randomize don't go together")
     if ns.random_seed is not None:
         ns.randomize = True
     if ns.verbose:

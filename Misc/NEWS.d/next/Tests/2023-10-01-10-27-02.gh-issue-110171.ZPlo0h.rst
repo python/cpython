@@ -1,0 +1,2 @@
+``libregrtest`` now always sets ``random.seed`` unless ``--no-use-randseed``
+is provided.

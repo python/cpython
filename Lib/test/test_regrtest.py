@@ -949,6 +949,22 @@ class ArgsTestCase(BaseTestCase):
         test_random2 = int(match.group(1))
         self.assertEqual(test_random2, test_random)
 
+        # check that random.seed is used by default
+        output = self.run_tests(test, exitcode=EXITCODE_NO_TESTS_RAN)
+        self.assertIsInstance(self.parse_random_seed(output), int)
+
+        # check that --no-use-randseed disables seed
+        output = self.run_tests('--no-use-randseed', test,
+                                exitcode=EXITCODE_NO_TESTS_RAN)
+        with self.assertRaises(AssertionError):
+            self.parse_random_seed(output)
+
+        # check that --no-use-randseed and --randseed are not compatible
+        self.run_tests('--no-use-randseed', f'--randseed={randseed}', test,
+                       exitcode=EXITCODE_BAD_TEST)
+        self.run_tests('--no-use-randseed', '-r', test,
+                       exitcode=EXITCODE_BAD_TEST)
+
     def test_fromfile(self):
         # test --fromfile
         tests = [self.create_test() for index in range(5)]
