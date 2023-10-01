@@ -148,6 +148,14 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '1'
+
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertFalse(regrtest.randomize)
+            self.assertIsNone(regrtest.random_seed)
+
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
         self.assertEqual(ns.random_seed, 12345)
