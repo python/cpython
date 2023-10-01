@@ -109,7 +109,7 @@ class Regrtest:
         self.random_seed: int =  (
             ns.random_seed
             if ns.random_seed is not None
-            else random.Random().getrandbits(32)
+            else random.getrandbits(32)
         )
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
