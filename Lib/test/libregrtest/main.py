@@ -106,8 +106,6 @@ class Regrtest:
         self.fail_env_changed: bool = ns.fail_env_changed
         self.fail_rerun: bool = ns.fail_rerun
         self.forever: bool = ns.forever
-        self.randomize: bool = ns.randomize
-        self.random_seed: int | None = ns.random_seed
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
         if ns.huntrleaks:
@@ -128,6 +126,13 @@ class Regrtest:
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self.tmp_dir: StrPath | None = ns.tempdir
+
+        # Randomize
+        self.randomize: bool = ns.randomize
+        self.random_seed: int | None = ns.random_seed
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            self.randomize = False
+            self.random_seed = None
 
         # tests
         self.first_runtests: RunTests | None = None
