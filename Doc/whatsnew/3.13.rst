@@ -91,6 +91,13 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+  default number of worker threads and processes. Get the CPU affinity
+  if supported.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
 New Modules
 ===========
 

@@ -130,7 +130,7 @@ def prepare(script=None, outdir=None):
     if not MAKE:
         raise UnsupportedError('make')
 
-    cores = os.cpu_count()
+    cores = os.process_cpu_count()
     if cores and cores >= 3:
         # this test is most often run as part of the whole suite with a lot
         # of other tests running in parallel, from 1-2 vCPU systems up to

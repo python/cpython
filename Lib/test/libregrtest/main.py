@@ -426,7 +426,7 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            self.num_workers = (os.cpu_count() or 1) + 2
+            self.num_workers = (os.process_cpu_count() or 1) + 2
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
