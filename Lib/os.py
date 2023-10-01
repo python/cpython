@@ -1137,6 +1137,7 @@ if name == 'nt':
             nt._remove_dll_directory
         )
 
+
 if _exists('sched_getaffinity') and os._get_cpu_config() < 0:
     def process_cpu_count():
         """

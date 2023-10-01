@@ -902,10 +902,14 @@ class CmdLineTest(unittest.TestCase):
         code = "import os; print(os.cpu_count(), os.process_cpu_count())"
         res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
         self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHONCPUCOUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
 
     def test_cpu_count_default(self):
         code = "import os; print(os.cpu_count(), os.process_cpu_count())"
         res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHONCPUCOUNT='1234')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
     def res2int(self, res):
