@@ -1,5 +1,6 @@
 """Capture and report missing cross-references in the documentation."""
 
+import csv
 import os.path
 from collections import Counter
 
@@ -26,7 +27,8 @@ def warn_missing_reference(app, domain, node):
     domain = _rpr(node.get('refdomain', 'std'))
     source = os.path.relpath(get_node_source(node), app.srcdir)
     with open(warnfile, 'a', encoding='utf-8') as f:
-        f.write(f"{domain},{typ},{target},{source}\n")
+        w = csv.writer(f, lineterminator='\n')
+        w.writerow((domain, typ, target, source))
     return False
 
 
@@ -35,18 +37,22 @@ def summarise_warnings(app, exception):
     warnfile_count = os.path.join(app.outdir, 'refwarn_count.csv')
 
     with open(warnfile, 'r', encoding='utf-8') as f:
-        lines = [tuple(line.strip().split(',')[:3]) for line in f]
+        r = csv.reader(f, lineterminator='\n')
+        next(r, None)  # Skip the header
+        lines = [tuple(line[:3]) for line in r]
     prevalence = Counter(lines).most_common()
     with open(warnfile_count, 'w', encoding='utf-8') as f:
-        f.write(f"Count,Domain,Type,Target\n")
-        for (tpl, count) in prevalence:
-            f.write(f"{count},{','.join(tpl)}\n")
+        w = csv.writer(f, lineterminator='\n')
+        w.writerow(('Count', 'Domain', 'Type', 'Target'))
+        w.writerows(((count,) + tpl for tpl, count in prevalence))
 
 
 def setup(app):
     warnfile = os.path.join(app.outdir, 'refwarn.csv')
+    os.makedirs(app.outdir, exist_ok=True)
 
     with open(warnfile, 'w', encoding='utf-8') as f:
-        f.write(f"Domain,Type,Target,Source\n")
+        w = csv.writer(f, lineterminator='\n')
+        w.writerow(('Domain', 'Type', 'Target', 'Source'))
     app.connect('warn-missing-reference', warn_missing_reference)
     app.connect('build-finished', summarise_warnings)
