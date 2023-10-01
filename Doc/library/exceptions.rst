@@ -220,10 +220,16 @@ The following exceptions are the exceptions that are usually raised.
    load a module.  Also raised when the "from list" in ``from ... import``
    has a name that cannot be found.
 
-   The :attr:`name` and :attr:`path` attributes can be set using keyword-only
-   arguments to the constructor. When set they represent the name of the module
-   that was attempted to be imported and the path to any file which triggered
-   the exception, respectively.
+   The optional *name* and *path* keyword-only arguments
+   set the corresponding attributes:
+
+   .. attribute:: name
+
+      The name of the module that was attempted to be imported.
+
+   .. attribute:: path
+
+      The path to any file which triggered the exception.
 
    .. versionchanged:: 3.3
       Added the :attr:`name` and :attr:`path` attributes.
