@@ -10241,10 +10241,8 @@ os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
-    new_value.it_value.tv_sec = initial / ONE_SECOND_IN_NS;
-    new_value.it_value.tv_nsec = initial % ONE_SECOND_IN_NS;
-    new_value.it_interval.tv_sec = interval / ONE_SECOND_IN_NS;
-    new_value.it_interval.tv_nsec = interval % ONE_SECOND_IN_NS;
+    _PyTime_AsTimespec(initial, &new_value.it_value);
+    _PyTime_AsTimespec(interval, &new_value.it_interval);
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
