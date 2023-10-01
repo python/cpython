@@ -3957,6 +3957,12 @@ dummy_func(
             memmove(&stack_pointer[-1 - oparg], &stack_pointer[-oparg], oparg * sizeof(stack_pointer[0]));
         }
 
+        op(_JUMP_IF_INVALID, (--)) {
+            if (!self->base.vm_data.valid) {
+                pc = oparg;
+            }
+        }
+
 
 // END BYTECODES //
 

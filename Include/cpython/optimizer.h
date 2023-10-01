@@ -6,9 +6,23 @@
 extern "C" {
 #endif
 
+typedef struct _PyExecutorLinkListNode {
+    struct _PyExecutorObject *next;
+    struct _PyExecutorObject *previous;
+} _PyExecutorLinkListNode;
+
+/* Bloom filter with k = 6, m = 256 */
+typedef struct _bloom_filter {
+    uint32_t bits[8];
+} _PyBloomFilter;
+
 typedef struct {
     uint8_t opcode;
     uint8_t oparg;
+    uint8_t valid;
+    uint8_t linked;
+    _PyBloomFilter bloom;
+    _PyExecutorLinkListNode links;
 } _PyVMData;
 
 typedef struct _PyExecutorObject {
@@ -16,7 +30,6 @@ typedef struct _PyExecutorObject {
     /* WARNING: execute consumes a reference to self. This is necessary to allow executors to tail call into each other. */
     struct _PyInterpreterFrame *(*execute)(struct _PyExecutorObject *self, struct _PyInterpreterFrame *frame, PyObject **stack_pointer);
     _PyVMData vm_data; /* Used by the VM, but opaque to the optimizer */
-    bool valid; /* This should be set to true by the optimizer */
     /* Data needed by the executor goes here, but is opaque to the VM */
 } _PyExecutorObject;
 
@@ -45,6 +58,11 @@ int
 _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer);
 
 extern _PyOptimizerObject _PyOptimizer_Default;
+
+void _Py_ExecutorInit(_PyExecutorObject *);
+void _Py_ExecutorClear(_PyExecutorObject *);
+PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
+PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

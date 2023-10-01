@@ -220,9 +220,15 @@ typedef struct {
 
 static void
 counter_dealloc(_PyCounterExecutorObject *self) {
+    _Py_ExecutorClear((_PyExecutorObject *)self);
     Py_DECREF(self->optimizer);
     PyObject_Free(self);
 }
+
+static PyMemberDef counter_members[] = {
+    { "valid", Py_T_UBYTE, offsetof(_PyCounterExecutorObject, executor.vm_data.valid), Py_READONLY, "is valid?" },
+    { NULL }
+};
 
 static PyTypeObject CounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -231,6 +237,7 @@ static PyTypeObject CounterExecutor_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)counter_dealloc,
+    .tp_members = counter_members,
 };
 
 static _PyInterpreterFrame *
@@ -261,7 +268,7 @@ counter_optimize(
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr;
     *exec_ptr = (_PyExecutorObject *)executor;
-    executor->executor.valid = true;
+    _Py_ExecutorInit((_PyExecutorObject *)executor);
     return 1;
 }
 
@@ -289,6 +296,8 @@ static PyTypeObject CounterOptimizer_Type = {
 PyObject *
 PyUnstable_Optimizer_NewCounter(void)
 {
+    PyType_Ready(&CounterExecutor_Type);
+    PyType_Ready(&CounterOptimizer_Type);
     _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&CounterOptimizer_Type);
     if (opt == NULL) {
         return NULL;
@@ -304,6 +313,7 @@ PyUnstable_Optimizer_NewCounter(void)
 
 static void
 uop_dealloc(_PyUOpExecutorObject *self) {
+    _Py_ExecutorClear((_PyExecutorObject *)self);
     PyObject_Free(self);
 }
 
@@ -904,8 +914,8 @@ uop_optimize(
     }
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
+    _Py_ExecutorInit((_PyExecutorObject *)executor);
     *exec_ptr = (_PyExecutorObject *)executor;
-    executor->base.valid = true;
     return 1;
 }
 
@@ -936,4 +946,181 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     // A few lower bits of the counter are reserved for other flags.
     opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
+}
+
+
+/*****************************************
+ *        Executor management
+ ****************************************/
+
+static uint16_t
+address_to_hash(void *ptr, uint32_t seed, uint32_t multiplier) {
+    assert(ptr != NULL);
+    uint16_t uhash = seed;
+    uintptr_t addr = (uintptr_t)ptr;
+    for (int i = 0; i < SIZEOF_VOID_P; i++) {
+        uhash ^= addr & 255;
+        uhash *= multiplier;
+        addr >>= 8;
+    }
+    return uhash;
+}
+
+static const uint32_t multipliers[3] = {
+    _PyHASH_MULTIPLIER,
+    110351524,
+    48271
+};
+
+static const uint32_t seeds[3] = {
+    20221211,
+    2147483647,
+    1051,
+};
+
+static void
+address_to_hashes(void *ptr, _PyBloomFilter *bloom)
+{
+    for (int i = 0; i < 8; i++) {
+        bloom->bits[i] = 0;
+    }
+    /* Set k (6) bits */
+    for (int i = 0; i < 3; i++) {
+        uint16_t hash = address_to_hash(ptr, seeds[i], multipliers[i]);
+        int bit0 = hash & 255;
+        int bit1 = hash >> 8;
+        bloom->bits[bit0 >> 5] |= (1 << (bit0&31));
+        bloom->bits[bit1 >> 5] |= (1 << (bit1&31));
+    }
+}
+
+static void
+add_to_bloom_filter(_PyBloomFilter *bloom, PyObject *obj)
+{
+    _PyBloomFilter hashes;
+    address_to_hashes(obj, &hashes);
+    for (int i = 0; i < 8; i++) {
+        bloom->bits[i] |= hashes.bits[i];
+    }
+}
+
+static bool
+bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
+{
+    for (int i = 0; i < 8; i++) {
+        if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void
+link_executor(_PyExecutorObject *executor)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyExecutorLinkListNode *links = &executor->vm_data.links;
+    _PyExecutorObject *head = interp->executor_list_head;
+    if (head == NULL) {
+        interp->executor_list_head = executor;
+        links->previous = NULL;
+        links->next = NULL;
+    }
+    else {
+        _PyExecutorObject *next = head->vm_data.links.next;
+        links->previous = head;
+        links->next = next;
+        if (next != NULL) {
+            next->vm_data.links.previous = executor;
+        }
+        head->vm_data.links.next = executor;
+    }
+    executor->vm_data.linked = true;
+}
+
+static void
+unlink_executor(_PyExecutorObject *executor)
+{
+    if (!executor->vm_data.linked) {
+        return;
+    }
+    _PyExecutorLinkListNode *links = &executor->vm_data.links;
+    _PyExecutorObject *next = links->next;
+    _PyExecutorObject *prev = links->previous;
+    if (next != NULL) {
+        next->vm_data.links.previous = prev;
+    }
+    else if (prev == NULL) {
+        // Both are NULL, so this must be the list head.
+        PyInterpreterState *interp = PyInterpreterState_Get();
+        assert(interp->executor_list_head == executor);
+        interp->executor_list_head = executor->vm_data.links.next;
+    }
+    if (prev != NULL) {
+        prev->vm_data.links.next = next;
+    }
+    executor->vm_data.linked = false;
+}
+
+/* This must be called by optimizers before using the executor */
+void
+_Py_ExecutorInit(_PyExecutorObject *executor)
+{
+    executor->vm_data.valid = true;
+    for (int i = 0; i < 8; i++) {
+        executor->vm_data.bloom.bits[i] = 0;
+    }
+    link_executor(executor);
+}
+
+/* This must be called by executors during dealloc */
+void
+_Py_ExecutorClear(_PyExecutorObject *executor)
+{
+    unlink_executor(executor);
+}
+
+void
+_Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
+{
+    assert(executor->vm_data.valid = true);
+    add_to_bloom_filter(&executor->vm_data.bloom, obj);
+}
+
+/* Invalidate all executors that depend on `obj`
+ * May cause other executors to be invalidated as well
+ */
+void
+_Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
+{
+    _PyBloomFilter hashes;
+    address_to_hashes(obj, &hashes);
+    /* Walk the list of executors */
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        assert(exec->vm_data.valid);
+        _PyExecutorObject *next = exec->vm_data.links.next;
+        if (bloom_filter_may_contain(&exec->vm_data.bloom, &hashes)) {
+            exec->vm_data.valid = false;
+            unlink_executor(exec);
+        }
+        exec = next;
+    }
+}
+
+/* Invalidate all executors
+ */
+void
+_Py_Executors_InvalidateAll(PyInterpreterState *interp)
+{
+    /* Walk the list of executors */
+    for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
+        assert(exec->vm_data.valid);
+        _PyExecutorObject *next = exec->vm_data.links.next;
+        exec->vm_data.links.next = NULL;
+        exec->vm_data.links.previous = NULL;
+        exec->vm_data.valid = false;
+        exec->vm_data.linked = false;
+        exec = next;
+    }
+    interp->executor_list_head = NULL;
 }

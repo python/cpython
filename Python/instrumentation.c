@@ -1564,6 +1564,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
     if (code->co_executors != NULL) {
         _PyCode_Clear_Executors(code);
     }
+    _Py_Executors_InvalidateDependency(interp, code);
     int code_len = (int)Py_SIZE(code);
     /* code->_co_firsttraceable >= code_len indicates
      * that no instrumentation can be inserted.

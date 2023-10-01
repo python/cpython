@@ -80,6 +80,7 @@
 #define _JUMP_TO_TOP 352
 #define _SAVE_CURRENT_IP 353
 #define _INSERT 354
+#define _JUMP_IF_INVALID 355
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -633,6 +634,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
             return 0;
         case _INSERT:
             return oparg + 1;
+        case _JUMP_IF_INVALID:
+            return 0;
         default:
             return -1;
     }
@@ -1191,6 +1194,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return 0;
         case _INSERT:
             return oparg + 1;
+        case _JUMP_IF_INVALID:
+            return 0;
         default:
             return -1;
     }
@@ -1538,6 +1543,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [_SAVE_CURRENT_IP] = { true, INSTR_FMT_IX, 0 },
     [_EXIT_TRACE] = { true, INSTR_FMT_IX, 0 },
     [_INSERT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
+    [_JUMP_IF_INVALID] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
 };
 #endif // NEED_OPCODE_METADATA
 
@@ -1745,6 +1751,7 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_JUMP_TO_TOP] = "_JUMP_TO_TOP",
     [_SAVE_CURRENT_IP] = "_SAVE_CURRENT_IP",
     [_INSERT] = "_INSERT",
+    [_JUMP_IF_INVALID] = "_JUMP_IF_INVALID",
 };
 #endif // NEED_OPCODE_METADATA
 

@@ -280,7 +280,8 @@ PyAPI_FUNC(int) PyCode_Addr2Location(PyCodeObject *, int, int *, int *, int *, i
 
 #define PY_FOREACH_CODE_EVENT(V) \
     V(CREATE)                 \
-    V(DESTROY)
+    V(DESTROY)                \
+    V(INSTRUMENT)
 
 typedef enum {
     #define PY_DEF_EVENT(op) PY_CODE_EVENT_##op,
