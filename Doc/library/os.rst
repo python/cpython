@@ -3862,8 +3862,8 @@ descriptors to wait until the file descriptor is ready for reading:
    timeout = 3
    try:
        conn = None
-       isActive = True
-       while isActive:
+       is_active = True
+       while is_active:
            # Wait for the timer to expire for 3 seconds.
            # epoll.poll() returns a list of (fd, event) pairs.
            # fd is a file descriptor.
@@ -3906,7 +3906,7 @@ descriptors to wait until the file descriptor is ready for reading:
                            cmd = data.decode()
                            if cmd.startswith("stop"):
                                print(f"Stopping server")
-                               isActive = False
+                               is_active = False
                            else:
                                print(f"Unknown command: {cmd}")
                        else:
@@ -3962,8 +3962,8 @@ descriptors to wait until the file descriptor is ready for reading:
    timeout = 3
    try:
        conn = None
-       isActive = True
-       while isActive:
+       is_active = True
+       while is_active:
           # Wait for the timer to expire for 3 seconds.
           # select.select() returns a list of file descriptors or objects.
           rfd, wfd, xfd = select.select(select_fds, select_fds, select_fds, timeout)
@@ -3984,7 +3984,7 @@ descriptors to wait until the file descriptor is ready for reading:
                       cmd = data.decode()
                       if cmd.startswith("stop"):
                           print(f"Stopping server")
-                          isActive = False
+                          is_active = False
                       else:
                           print(f"Unknown command: {cmd}")
                   else:
