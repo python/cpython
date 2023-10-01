@@ -1432,11 +1432,6 @@ Using the non-data descriptor protocol, a pure Python version of
             "Class method that returns a tuple"
             return (cls.__name__, x, y)
 
-        @ClassMethod
-        @property
-        def __doc__(cls):
-            return f'A doc for {cls.__name__!r}'
-
 
 .. doctest::
     :hide:
@@ -1448,10 +1443,6 @@ Using the non-data descriptor protocol, a pure Python version of
     >>> t = T()
     >>> t.cm(11, 22)
     ('T', 11, 22)
-
-    # Check the alternate path for chained descriptors
-    >>> T.__doc__
-    "A doc for 'T'"
 
     # Verify that T uses our emulation
     >>> type(vars(T)['cm']).__name__
