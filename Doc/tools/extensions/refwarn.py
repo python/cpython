@@ -4,9 +4,9 @@ import os.path
 from collections import Counter
 
 
-def r(x):
+def _rpr(obj, /):
     """Return the repr without the enclosing quotation marks."""
-    return repr(x)[1:-1]
+    return repr(obj)[1:-1]
 
 
 def get_node_source(node):
@@ -21,9 +21,9 @@ def get_node_source(node):
 def warn_missing_reference(app, domain, node):
     warnfile = os.path.join(app.outdir, 'refwarn.csv')
 
-    typ = r(node['reftype'])
-    target = r(node['reftarget'])
-    domain = r(node.get('refdomain', 'std'))
+    typ = _rpr(node['reftype'])
+    target = _rpr(node['reftarget'])
+    domain = _rpr(node.get('refdomain', 'std'))
     source = os.path.relpath(get_node_source(node), app.srcdir)
     with open(warnfile, 'a', encoding='utf-8') as f:
         f.write(f"{domain},{typ},{target},{source}\n")
