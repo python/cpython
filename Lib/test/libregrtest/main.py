@@ -212,6 +212,7 @@ class Regrtest:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
+        random.seed(self.random_seed)
         if self.randomize:
             random.shuffle(selected)
 
