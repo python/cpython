@@ -1625,7 +1625,7 @@ config_read_env_vars(PyConfig *config)
 static PyStatus
 config_init_cpu_count(PyConfig *config)
 {
-    const char *env = config_get_env(config, "PYTHONCPUCOUNT");
+    const char *env = config_get_env(config, "PYTHON_CPU_COUNT");
     if (env) {
         int cpu_count = -1;
         if (strcmp(env, "default") == 0) {
