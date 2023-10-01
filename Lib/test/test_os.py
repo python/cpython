@@ -3925,9 +3925,13 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
+    def timerfd_create(self, *args, **kwargs):
+        fd = os.timerfd_create(*args, **kwargs)
+        self.assertGreaterEqual(fd, 0)
+        return fd
+
     def test_timerfd_initval(self):
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         initial_expiration = 0.25
@@ -3950,9 +3954,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_non_blocking(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-        self.assertNotEqual(fd, -1)
-        self.addCleanup(os.close, fd)
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
 
         # 0.1 second later
         initial_expiration = 0.1
@@ -3973,8 +3975,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         # Any of 'initial' and 'interval' is negative value.
@@ -3993,8 +3994,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_interval(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         # 1 second
@@ -4028,8 +4028,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_TFD_TIMER_ABSTIME(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         now = time.clock_gettime(time.CLOCK_REALTIME)
@@ -4058,8 +4057,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_select(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
         self.addCleanup(os.close, fd)
 
         rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
@@ -4087,8 +4085,7 @@ class TimerfdTests(unittest.TestCase):
 
     def test_timerfd_epoll(self):
         size = 8  # read 8 bytes
-        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
         self.addCleanup(os.close, fd)
 
         ep = select.epoll()
@@ -4126,8 +4123,7 @@ class TimerfdTests(unittest.TestCase):
     def test_timerfd_ns_initval(self):
         one_sec_in_nsec = 10**9
         limit_error = one_sec_in_nsec // 10**3
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         # 1st call
@@ -4153,8 +4149,7 @@ class TimerfdTests(unittest.TestCase):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
         limit_error = one_sec_in_nsec // 10**3
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         # 1 second
@@ -4191,8 +4186,7 @@ class TimerfdTests(unittest.TestCase):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
         limit_error = one_sec_in_nsec // 10**3
-        fd = os.timerfd_create(time.CLOCK_REALTIME)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
         self.addCleanup(os.close, fd)
 
         now_ns = time.clock_gettime_ns(time.CLOCK_REALTIME)
@@ -4223,8 +4217,7 @@ class TimerfdTests(unittest.TestCase):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
 
-        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
         self.addCleanup(os.close, fd)
 
         rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
@@ -4253,8 +4246,7 @@ class TimerfdTests(unittest.TestCase):
     def test_timerfd_ns_epoll(self):
         size = 8  # read 8 bytes
         one_sec_in_nsec = 10**9
-        fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-        self.assertNotEqual(fd, -1)
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
         self.addCleanup(os.close, fd)
 
         ep = select.epoll()
