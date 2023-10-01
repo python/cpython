@@ -572,7 +572,7 @@ def _init_param(f):
 
 
 def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
-             self_name, globals, slots):
+             self_name, slots):
     # fields contains both real fields and InitVar pseudo-fields.
 
     # Make sure we don't have fields without defaults following fields
@@ -622,68 +622,61 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
         # (instead of just concatenting the lists together).
         _init_params += ['*']
         _init_params += [_init_param(f) for f in kw_only_fields]
-    return _create_fn('__init__',
+    return _create_fn_def('__init__',
                       [self_name] + _init_params,
                       body_lines,
                       locals=locals,
-                      globals=globals,
                       return_type=None)
 
 
-def _repr_fn(fields, globals):
-    fn = _create_fn('__repr__',
+def _repr_fn(fields):
+   return _create_fn_def('__repr__',
                     ('self',),
                     ['return f"{self.__class__.__qualname__}(' +
                      ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                 for f in fields]) +
-                     ')"'],
-                     globals=globals)
-    return _recursive_repr(fn)
+                     ')"'],)
 
 
-def _frozen_get_del_attr(cls, fields, globals):
+def _frozen_get_del_attr(cls, fields):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
     condition = 'type(self) is cls'
     if fields:
         condition += ' or name in {' + ', '.join(repr(f.name) for f in fields) + '}'
-    return (_create_fn('__setattr__',
+    return (_create_fn_def('__setattr__',
                       ('self', 'name', 'value'),
                       (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
-                       locals=locals,
-                       globals=globals),
-            _create_fn('__delattr__',
+                       locals=locals),
+            _create_fn_def('__delattr__',
                       ('self', 'name'),
                       (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
-                       locals=locals,
-                       globals=globals),
+                       locals=locals),
             )
 
 
-def _cmp_fn(name, op, self_tuple, other_tuple, globals):
+def _cmp_fn(name, op, self_tuple, other_tuple):
     # Create a comparison function.  If the fields in the object are
     # named 'x' and 'y', then self_tuple is the string
     # '(self.x,self.y)' and other_tuple is the string
     # '(other.x,other.y)'.
 
-    return _create_fn(name,
+    return _create_fn_def(name,
                       ('self', 'other'),
                       [ 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
-                        'return NotImplemented'],
-                      globals=globals)
+                        'return NotImplemented'],)
 
 
-def _hash_fn(fields, globals):
+def _hash_fn(fields):
     self_tuple = _tuple_str('self', fields)
-    return _create_fn('__hash__',
+    return _create_fn_def('__hash__',
                       ('self',),
-                      [f'return hash({self_tuple})'],
-                      globals=globals)
+                      [f'return hash({self_tuple})'],)
 
 
 def _is_classvar(a_type, typing):
@@ -861,7 +854,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
     return f
 
 def _set_qualname(cls, value):
-    # Ensure that the functions returned from _create_fn uses the proper
+    # Ensure that the functions returned from _exec_fn_defs uses the proper
     # __qualname__ (the class they belong to).
     if isinstance(value, FunctionType):
         value.__qualname__ = f"{cls.__qualname__}.{value.__name__}"
