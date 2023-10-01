@@ -396,6 +396,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
 
+
+def config_dev_mode(preconfig, config):
+    preconfig['allocator'] = PYMEM_ALLOCATOR_DEBUG
+    config['dev_mode'] = 1
+    config['warnoptions'] = ['default']
+    config['faulthandler'] = 1
+
+
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
     UTF8_MODE_ERRORS = ('surrogatepass' if MS_WINDOWS else 'surrogateescape')
@@ -515,7 +523,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'check_hash_pycs_mode': 'default',
         'pathconfig_warnings': 1,
         '_init_main': 1,
-        'use_frozen_modules': not support.Py_DEBUG,
+        'use_frozen_modules': int(not support.Py_DEBUG),
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
@@ -998,33 +1006,26 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_COMPAT)
 
     def test_init_dev_mode(self):
-        preconfig = {
-            'allocator': PYMEM_ALLOCATOR_DEBUG,
-        }
+        preconfig = {}
         config = {
-            'faulthandler': 1,
             'dev_mode': 1,
-            'warnoptions': ['default'],
         }
+        config_dev_mode(preconfig, config)
         self.check_all_configs("test_init_dev_mode", config, preconfig,
                                api=API_PYTHON)
 
     def test_preinit_parse_argv(self):
         # Pre-initialize implicitly using argv: make sure that -X dev
         # is used to configure the allocation in preinitialization
-        preconfig = {
-            'allocator': PYMEM_ALLOCATOR_DEBUG,
-        }
+        preconfig = {}
         config = {
             'argv': ['script.py'],
             'orig_argv': ['python3', '-X', 'dev', '-P', 'script.py'],
             'run_filename': os.path.abspath('script.py'),
-            'dev_mode': 1,
-            'faulthandler': 1,
-            'warnoptions': ['default'],
             'xoptions': ['dev'],
             'safe_path': 1,
         }
+        config_dev_mode(preconfig, config)
         self.check_all_configs("test_preinit_parse_argv", config, preconfig,
                                api=API_PYTHON)
 
@@ -1625,16 +1626,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'ignore:::PySys_AddWarnOption2',  # PySys_AddWarnOption()
             'ignore:::PyConfig_BeforeRead',   # PyConfig.warnoptions
             'ignore:::PyConfig_AfterRead']    # PyWideStringList_Append()
-        preconfig = dict(allocator=PYMEM_ALLOCATOR_DEBUG)
+        preconfig = {}
         config = {
-            'dev_mode': 1,
-            'faulthandler': 1,
             'bytes_warning': 1,
-            'warnoptions': warnoptions,
             'orig_argv': ['python3',
                           '-Wignore:::cmdline1',
                           '-Wignore:::cmdline2'],
         }
+        config_dev_mode(preconfig, config)
+        config['warnoptions'] = warnoptions
         self.check_all_configs("test_init_warnoptions", config, preconfig,
                                api=API_PYTHON)
 
@@ -1646,6 +1646,21 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_all_configs("test_init_set_config", config,
                                api=API_ISOLATED)
+
+    def test_initconfig_api(self):
+        preconfig = {}
+        config = {
+            'dev_mode': 1,
+            'pycache_prefix': 'conf_pycache_prefix',
+            'argv': ['-c'],
+            'orig_argv': ['./_testembed', '-c', 'pass'],
+            'run_command': 'pass\n',
+            'xoptions': ['faulthandler'],
+            'faulthandler': 1,
+        }
+        config_dev_mode(preconfig, config)
+        self.check_all_configs("test_initconfig_api", config, preconfig,
+                               api=API_PYTHON)
 
     def test_get_argc_argv(self):
         self.run_embedded_interpreter("test_get_argc_argv")

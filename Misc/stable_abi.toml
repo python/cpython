@@ -2481,3 +2481,29 @@
 [function._Py_SetRefcnt]
     added = '3.13'
     abi_only = true
+[function.PyInitConfig_Python_New]
+    added = '3.13'
+[function.PyInitConfig_Isolated_New]
+    added = '3.13'
+[function.PyInitConfig_Free]
+    added = '3.13'
+[function.PyInitConfig_SetInt]
+    added = '3.13'
+[function.PyInitConfig_SetStr]
+    added = '3.13'
+[function.PyInitConfig_SetStrList]
+    added = '3.13'
+[function.PyInitConfig_SetWStr]
+    added = '3.13'
+[function.PyInitConfig_SetWStrList]
+    added = '3.13'
+[function.PyInitConfig_Exception]
+    added = '3.13'
+[function.PyInitConfig_GetError]
+    added = '3.13'
+[function.PyInitConfig_GetExitCode]
+    added = '3.13'
+[function.Py_InitializeFromInitConfig]
+    added = '3.13'
+[function.Py_ExitWithInitConfig]
+    added = '3.13'

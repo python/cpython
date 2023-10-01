@@ -1274,6 +1274,24 @@ New Features
 * Add :c:func:`Py_HashPointer` function to hash a pointer.
   (Contributed by Victor Stinner in :gh:`111545`.)
 
+* Add functions to the limited C API to configure the Python initialization:
+
+  * :c:func:`PyInitConfig_Python_New`
+  * :c:func:`PyInitConfig_Isolated_New`
+  * :c:func:`PyInitConfig_Free`
+  * :c:func:`PyInitConfig_SetInt`
+  * :c:func:`PyInitConfig_SetStr`
+  * :c:func:`PyInitConfig_SetWStr`
+  * :c:func:`PyInitConfig_SetStrList`
+  * :c:func:`PyInitConfig_SetWStrList`
+  * :c:func:`PyInitConfig_Exception`
+  * :c:func:`PyInitConfig_GetError`
+  * :c:func:`PyInitConfig_GetExitCode`
+  * :c:func:`Py_InitializeFromInitConfig`
+  * :c:func:`Py_ExitWithInitConfig`
+
+  (Contributed by Victor Stinner in :gh:`107954`.)
+
 
 Porting to Python 3.13
 ----------------------

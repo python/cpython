@@ -1798,6 +1798,63 @@ static int test_init_set_config(void)
 }
 
 
+static int test_initconfig_api(void)
+{
+    PyInitConfig *config = PyInitConfig_Python_New();
+    if (config == NULL) {
+        printf("Init allocation error\n");
+        return 1;
+    }
+
+    if (PyInitConfig_SetInt(config, "dev_mode", 1) < 0) {
+        goto error;
+    }
+
+    // Set a list of wide strings (argv)
+    wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
+    if (PyInitConfig_SetWStrList(config, "argv",
+                                 Py_ARRAY_LENGTH(argv), argv) < 0) {
+        goto error;
+    }
+
+    if (PyInitConfig_SetInt(config, "hash_seed", 10) < 0) {
+        goto error;
+    }
+
+    // Set a wide string (program_name)
+    if (PyInitConfig_SetWStr(config, "program_name", PROGRAM_NAME) < 0) {
+        goto error;
+    }
+
+    // Set a bytes string (pycache_prefix)
+    if (PyInitConfig_SetStr(config, "pycache_prefix",
+                            "conf_pycache_prefix") < 0) {
+        goto error;
+    }
+
+    // Set a list of bytes strings (xoptions)
+    char* xoptions[] = {"faulthandler"};
+    if (PyInitConfig_SetStrList(config, "xoptions",
+                                Py_ARRAY_LENGTH(xoptions), xoptions) < 0) {
+        goto error;
+    }
+
+
+    if (Py_InitializeFromInitConfig(config) < 0) {
+        goto error;
+    }
+    PyInitConfig_Free(config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+
+error:
+    printf("Init failed:\n");
+    Py_ExitWithInitConfig(config);
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -2200,6 +2257,7 @@ static struct TestCase TestCases[] = {
     {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
     {"test_init_set_config", test_init_set_config},
+    {"test_initconfig_api", test_initconfig_api},
     {"test_run_main", test_run_main},
     {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},

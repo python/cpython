@@ -1,8 +1,5 @@
-#ifndef Py_PYCORECONFIG_H
-#define Py_PYCORECONFIG_H
-#ifndef Py_LIMITED_API
-#ifdef __cplusplus
-extern "C" {
+#ifndef Py_CPYTHON_INITCONFIG_H
+#  error "this header file must not be included directly"
 #endif
 
 /* --- PyStatus ----------------------------------------------- */
@@ -263,9 +260,3 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
 
    See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* !Py_LIMITED_API */
-#endif /* !Py_PYCORECONFIG_H */

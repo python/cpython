@@ -24,6 +24,9 @@
 #  endif
 #endif
 
+// Forward declarations
+typedef struct PyConfigSpec PyConfigSpec;
+
 /* --- PyConfig spec ---------------------------------------------- */
 
 typedef enum {
@@ -36,11 +39,11 @@ typedef enum {
     PyConfig_MEMBER_WSTR_LIST = 12,
 } PyConfigMemberType;
 
-typedef struct {
+struct PyConfigSpec {
     const char *name;
     size_t offset;
     PyConfigMemberType type;
-} PyConfigSpec;
+};
 
 #define SPEC(MEMBER, TYPE) \
     {#MEMBER, offsetof(PyConfig, MEMBER), PyConfig_MEMBER_##TYPE}
@@ -985,13 +988,20 @@ config_set_bytes_string(PyConfig *config, wchar_t **config_str,
 
 
 /* Decode str using Py_DecodeLocale() and set the result into *config_str.
-   Pre-initialize Python if needed to ensure that encodings are properly
+   Preinitialize Python if needed to ensure that encodings are properly
    configured. */
 PyStatus
 PyConfig_SetBytesString(PyConfig *config, wchar_t **config_str,
                         const char *str)
 {
     return CONFIG_SET_BYTES_STR(config, config_str, str, "string");
+}
+
+
+static inline void*
+config_spec_get_member(const PyConfigSpec *spec, const PyConfig *config)
+{
+    return (char *)config + spec->offset;
 }
 
 
@@ -1003,18 +1013,18 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     PyStatus status;
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
-        char *member = (char *)config + spec->offset;
-        char *member2 = (char *)config2 + spec->offset;
+        char *member = config_spec_get_member(spec, config);
+        const char *member2 = config_spec_get_member(spec, (PyConfig*)config2);
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
         case PyConfig_MEMBER_UINT:
         {
-            *(int*)member = *(int*)member2;
+            *(int*)member = *(const int*)member2;
             break;
         }
         case PyConfig_MEMBER_ULONG:
         {
-            *(unsigned long*)member = *(unsigned long*)member2;
+            *(unsigned long*)member = *(const unsigned long*)member2;
             break;
         }
         case PyConfig_MEMBER_WSTR:
@@ -1053,7 +1063,8 @@ _PyConfig_AsDict(const PyConfig *config)
 
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
-        char *member = (char *)config + spec->offset;
+        char *member = config_spec_get_member(spec, config);
+
         PyObject *obj;
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
@@ -1095,6 +1106,7 @@ _PyConfig_AsDict(const PyConfig *config)
             Py_DECREF(dict);
             return NULL;
         }
+
         int res = PyDict_SetItemString(dict, spec->name, obj);
         Py_DECREF(obj);
         if (res < 0) {
@@ -1114,7 +1126,7 @@ config_dict_get(PyObject *dict, const char *name)
         return NULL;
     }
     if (item == NULL) {
-        PyErr_Format(PyExc_ValueError, "missing config key: %s", name);
+        PyErr_Format(PyExc_ValueError, "missing config option: %s", name);
         return NULL;
     }
     return item;
@@ -1283,7 +1295,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
 
     const PyConfigSpec *spec = PYCONFIG_SPEC;
     for (; spec->name != NULL; spec++) {
-        char *member = (char *)config + spec->offset;
+        char *member = config_spec_get_member(spec, config);
         switch (spec->type) {
         case PyConfig_MEMBER_INT:
             if (config_dict_get_int(dict, spec->name, (int*)member) < 0) {
@@ -3219,4 +3231,316 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     }
 
     _PyErr_SetRaisedException(tstate, exc);
+}
+
+
+// --- PyInitConfig API ---------------------------------------------------
+
+struct PyInitConfig {
+    PyConfig config;
+    PyStatus status;
+};
+
+static PyInitConfig*
+initconfig_alloc(void)
+{
+    return calloc(1, sizeof(PyInitConfig));
+}
+
+
+PyInitConfig*
+PyInitConfig_Python_New(void)
+{
+    PyInitConfig *config = initconfig_alloc();
+    if (config == NULL) {
+        return NULL;
+    }
+    PyConfig_InitPythonConfig(&config->config);
+    return config;
+}
+
+
+PyInitConfig*
+PyInitConfig_Isolated_New(void)
+{
+    PyInitConfig *config = initconfig_alloc();
+    if (config == NULL) {
+        return NULL;
+    }
+    PyConfig_InitIsolatedConfig(&config->config);
+    return config;
+}
+
+
+void
+PyInitConfig_Free(PyInitConfig *config)
+{
+    free(config);
+}
+
+
+static void
+initconfig_set_error(PyInitConfig *config, const char *err_msg)
+{
+    config->status = _PyStatus_ERR(err_msg);
+}
+
+
+static const PyConfigSpec*
+config_get_spec(const char *name)
+{
+    const PyConfigSpec *spec = PYCONFIG_SPEC;
+    for (; spec->name != NULL; spec++) {
+        if (strcmp(name, spec->name) == 0) {
+            return spec;
+        }
+    }
+    return NULL;
+}
+
+
+static const PyConfigSpec*
+initconfig_prepare_set(PyInitConfig *config, const char *name, int preconfig)
+{
+    if (config == NULL) {
+        initconfig_set_error(config, "config argument is NULL");
+        return NULL;
+    }
+    if (name == NULL) {
+        initconfig_set_error(config, "config option name is NULL");
+        return NULL;
+    }
+
+    const PyConfigSpec *spec = config_get_spec(name);
+    if (spec == NULL) {
+        initconfig_set_error(config, "unknown config option name");
+        return NULL;
+    }
+
+    if (preconfig) {
+        config->status = _Py_PreInitializeFromConfig(&config->config, NULL);
+        if (_PyStatus_EXCEPTION(config->status)) {
+            return NULL;
+        }
+    }
+
+    return spec;
+}
+
+
+int
+PyInitConfig_SetInt(PyInitConfig *config, const char *name, int64_t value)
+{
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 0);
+    if (spec == NULL) {
+        return -1;
+    }
+
+    if (spec->type == PyConfig_MEMBER_INT) {
+        if (value < (int64_t)INT_MIN || INT_MAX < (int64_t)value) {
+            initconfig_set_error(config,
+                "config option value is out of int range");
+            return -1;
+        }
+        int int_value = (int)value;
+
+        int *member = config_spec_get_member(spec, &config->config);
+        *member = int_value;
+    }
+    else if (spec->type == PyConfig_MEMBER_UINT) {
+        if (value < 0 || UINT_MAX < (int64_t)value) {
+            initconfig_set_error(config,
+                "config option value is out of unsigned int range");
+            return -1;
+        }
+        int int_value = (int)value;
+
+        int *member = config_spec_get_member(spec, &config->config);
+        *member = int_value;
+    }
+    else if (spec->type == PyConfig_MEMBER_ULONG) {
+        if (value < 0 || ULONG_MAX < (int64_t)value) {
+            initconfig_set_error(config,
+                "config option value is out of unsigned long range");
+            return -1;
+        }
+        unsigned long ulong_value = (unsigned long)value;
+
+        unsigned long *member = config_spec_get_member(spec, &config->config);
+        *member = ulong_value;
+    }
+    else {
+        initconfig_set_error(config, "config option type is not int");
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyInitConfig_SetWStr(PyInitConfig *config, const char *name,
+                     const wchar_t *value)
+{
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    if (spec == NULL) {
+        return -1;
+    }
+
+    if (spec->type != PyConfig_MEMBER_WSTR
+            && spec->type != PyConfig_MEMBER_WSTR_OPT) {
+        initconfig_set_error(config, "config option type is not string");
+        return -1;
+    }
+
+    if (value == NULL && spec->type != PyConfig_MEMBER_WSTR_OPT) {
+        initconfig_set_error(config, "config option string cannot be NULL");
+    }
+
+    wchar_t **member = config_spec_get_member(spec, &config->config);
+    config->status = PyConfig_SetString(&config->config, member, value);
+
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyInitConfig_SetStr(PyInitConfig *config, const char *name,
+                    const char* value)
+{
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    if (spec == NULL) {
+        return -1;
+    }
+
+    if (spec->type != PyConfig_MEMBER_WSTR
+            && spec->type != PyConfig_MEMBER_WSTR_OPT) {
+        initconfig_set_error(config, "config option type is not string");
+        return -1;
+    }
+
+    if (value == NULL && spec->type != PyConfig_MEMBER_WSTR_OPT) {
+        initconfig_set_error(config, "config option string cannot be NULL");
+    }
+
+    wchar_t **member = config_spec_get_member(spec, &config->config);
+    config->status = PyConfig_SetBytesString(&config->config, member, value);
+
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyInitConfig_SetWStrList(PyInitConfig *config, const char *name,
+                         size_t length, wchar_t * const *items)
+{
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    if (spec == NULL) {
+        return -1;
+    }
+
+    if (spec->type != PyConfig_MEMBER_WSTR_LIST) {
+        initconfig_set_error(config, "config option type is not strings list");
+        return -1;
+    }
+
+    PyWideStringList *member = config_spec_get_member(spec, &config->config);
+    config->status = PyConfig_SetWideStringList(&config->config, member,
+                                                length, (wchar_t**)items);
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+PyInitConfig_SetStrList(PyInitConfig *config, const char *name,
+                        size_t length, char * const *items)
+{
+    const PyConfigSpec *spec = initconfig_prepare_set(config, name, 1);
+    if (spec == NULL) {
+        return -1;
+    }
+
+    if (spec->type != PyConfig_MEMBER_WSTR_LIST) {
+        initconfig_set_error(config, "config option type is not strings list");
+        return -1;
+    }
+    PyWideStringList *list = config_spec_get_member(spec, &config->config);
+
+    config->status = _PyWideStringList_FromBytes(list, length, items);
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+int
+Py_InitializeFromInitConfig(PyInitConfig *config)
+{
+    config->status = Py_InitializeFromConfig(&config->config);
+    if (_PyStatus_EXCEPTION(config->status)) {
+        return -1;
+    }
+    return 0;
+}
+
+
+void
+Py_ExitWithInitConfig(PyInitConfig *config)
+{
+    if (_PyStatus_IS_ERROR(config->status)) {
+        printf("Python initialization error: %s\n",
+               config->status.err_msg);
+    }
+
+    PyInitConfig_Free(config);
+
+    if (_PyStatus_EXCEPTION(config->status)) {
+        Py_ExitStatusException(config->status);
+    }
+    else {
+        exit(1);
+    }
+}
+
+
+int
+PyInitConfig_Exception(PyInitConfig* config)
+{
+    return _PyStatus_EXCEPTION(config->status);
+}
+
+
+int
+PyInitConfig_GetError(PyInitConfig* config, const char **perr_msg)
+{
+    if (_PyStatus_IS_ERROR(config->status) && config->status.err_msg != NULL) {
+        *perr_msg = config->status.err_msg;
+        return 1;
+    }
+    else {
+        *perr_msg = NULL;
+        return 0;
+    }
+}
+
+
+int
+PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode)
+{
+    if (_PyStatus_IS_EXIT(config->status)) {
+        *exitcode = config->status.exitcode;
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }

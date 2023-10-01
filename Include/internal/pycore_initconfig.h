@@ -62,6 +62,10 @@ extern int _PyWideStringList_Copy(PyWideStringList *list,
 extern PyStatus _PyWideStringList_Extend(PyWideStringList *list,
     const PyWideStringList *list2);
 extern PyObject* _PyWideStringList_AsList(const PyWideStringList *list);
+extern PyStatus _PyWideStringList_FromBytes(
+    PyWideStringList *list,
+    Py_ssize_t length,
+    char * const *items);
 
 
 /* --- _PyArgv ---------------------------------------------------- */
