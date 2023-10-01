@@ -106,8 +106,11 @@ class Regrtest:
         self.fail_rerun: bool = ns.fail_rerun
         self.forever: bool = ns.forever
         self.randomize: bool = ns.randomize
-        self.random_seed: int | None = ns.random_seed
-        self.use_random_seed: bool = ns.use_random_seed
+        self.random_seed: int =  (
+            ns.random_seed
+            if ns.random_seed is not None
+            else random.randrange(100_000_000)
+        )
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
         if ns.huntrleaks:
@@ -209,12 +212,8 @@ class Regrtest:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
-        if self.use_random_seed:
-            if self.random_seed is None:
-                self.random_seed = random.randrange(100_000_000)
-            random.seed(self.random_seed)
-            if self.randomize:
-                random.shuffle(selected)
+        if self.randomize:
+            random.shuffle(selected)
 
         return (tuple(selected), tests)
 
@@ -435,8 +434,7 @@ class Regrtest:
                    or tests or self.cmdline_args)):
             display_header(self.use_resources)
 
-        if self.use_random_seed:
-            print("Using random seed", self.random_seed)
+        print("Using random seed", self.random_seed)
 
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
