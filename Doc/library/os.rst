@@ -3828,15 +3828,6 @@ descriptors to wait until the file descriptor is ready for reading:
    # Create an epoll object
    ep = select.epoll()
 
-   # Create timer file descriptors in non-blocking mode.
-   num = 3
-   fds = []
-   for _ in range(num):
-       fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-       fds.append(fd)
-       # Register the timer file descriptor for read events
-       ep.register(fd, select.EPOLLIN)
-
    # In this example, use loopback address to send "stop" command to the server.
    #
    # $ telnet 127.0.0.1 1234
@@ -3851,6 +3842,15 @@ descriptors to wait until the file descriptor is ready for reading:
    sock.setblocking(False)
    sock.listen(1)
    ep.register(sock, select.EPOLLIN)
+
+   # Create timer file descriptors in non-blocking mode.
+   num = 3
+   fds = []
+   for _ in range(num):
+       fd = os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+       fds.append(fd)
+       # Register the timer file descriptor for read events
+       ep.register(fd, select.EPOLLIN)
 
    # Start the timer with os.timerfd_settime_ns() in nanoseconds.
    # Timer 1 fires every 0.25 seconds; timer 2 every 0.5 seconds; etc
@@ -3934,11 +3934,6 @@ descriptors to wait until the file descriptor is ready for reading:
 
    import os, time, select, socket, sys
 
-   # Create timer file descriptors in non-blocking mode.
-   num = 3
-   fds = [os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
-          for _ in range(num)]
-
    # In this example, use loopback address to send "stop" command to the server.
    #
    # $ telnet 127.0.0.1 1234
@@ -3952,6 +3947,11 @@ descriptors to wait until the file descriptor is ready for reading:
    sock.bind(("127.0.0.1", 1234))
    sock.setblocking(False)
    sock.listen(1)
+
+   # Create timer file descriptors in non-blocking mode.
+   num = 3
+   fds = [os.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+          for _ in range(num)]
    select_fds = fds + [sock]
 
    # Start the timers with os.timerfd_settime() in seconds.
