@@ -27,7 +27,6 @@
         }
 
         TARGET(RESUME_CHECK) {
-            PREDICTED(RESUME_CHECK);
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -283,7 +282,6 @@
         }
 
         TARGET(TO_BOOL_BOOL) {
-            PREDICTED(TO_BOOL_BOOL);
             PyObject *value;
             value = stack_pointer[-1];
             DEOPT_IF(!PyBool_Check(value), TO_BOOL);
@@ -293,7 +291,6 @@
         }
 
         TARGET(TO_BOOL_INT) {
-            PREDICTED(TO_BOOL_INT);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -313,7 +310,6 @@
         }
 
         TARGET(TO_BOOL_LIST) {
-            PREDICTED(TO_BOOL_LIST);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -327,7 +323,6 @@
         }
 
         TARGET(TO_BOOL_NONE) {
-            PREDICTED(TO_BOOL_NONE);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -341,7 +336,6 @@
         }
 
         TARGET(TO_BOOL_STR) {
-            PREDICTED(TO_BOOL_STR);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -362,7 +356,6 @@
         }
 
         TARGET(TO_BOOL_ALWAYS_TRUE) {
-            PREDICTED(TO_BOOL_ALWAYS_TRUE);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -390,7 +383,6 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            PREDICTED(BINARY_OP_MULTIPLY_INT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -416,7 +408,6 @@
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            PREDICTED(BINARY_OP_ADD_INT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -442,7 +433,6 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            PREDICTED(BINARY_OP_SUBTRACT_INT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -468,7 +458,6 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            PREDICTED(BINARY_OP_MULTIPLY_FLOAT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -494,7 +483,6 @@
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            PREDICTED(BINARY_OP_ADD_FLOAT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -520,7 +508,6 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            PREDICTED(BINARY_OP_SUBTRACT_FLOAT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -546,7 +533,6 @@
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-            PREDICTED(BINARY_OP_ADD_UNICODE);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -572,7 +558,6 @@
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-            PREDICTED(BINARY_OP_INPLACE_ADD_UNICODE);
             PyObject *right;
             PyObject *left;
             // _GUARD_BOTH_UNICODE
@@ -691,7 +676,6 @@
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
-            PREDICTED(BINARY_SUBSCR_LIST_INT);
             PyObject *sub;
             PyObject *list;
             PyObject *res;
@@ -717,7 +701,6 @@
         }
 
         TARGET(BINARY_SUBSCR_STR_INT) {
-            PREDICTED(BINARY_SUBSCR_STR_INT);
             PyObject *sub;
             PyObject *str;
             PyObject *res;
@@ -742,7 +725,6 @@
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
-            PREDICTED(BINARY_SUBSCR_TUPLE_INT);
             PyObject *sub;
             PyObject *tuple;
             PyObject *res;
@@ -768,7 +750,6 @@
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
-            PREDICTED(BINARY_SUBSCR_DICT);
             PyObject *sub;
             PyObject *dict;
             PyObject *res;
@@ -795,7 +776,6 @@
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            PREDICTED(BINARY_SUBSCR_GETITEM);
             PyObject *sub;
             PyObject *container;
             sub = stack_pointer[-1];
@@ -877,7 +857,6 @@
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
-            PREDICTED(STORE_SUBSCR_LIST_INT);
             PyObject *sub;
             PyObject *list;
             PyObject *value;
@@ -906,7 +885,6 @@
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-            PREDICTED(STORE_SUBSCR_DICT);
             PyObject *sub;
             PyObject *dict;
             PyObject *value;
@@ -1309,7 +1287,6 @@
         }
 
         TARGET(SEND_GEN) {
-            PREDICTED(SEND_GEN);
             PyObject *v;
             PyObject *receiver;
             v = stack_pointer[-1];
@@ -1545,7 +1522,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            PREDICTED(UNPACK_SEQUENCE_TWO_TUPLE);
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1564,7 +1540,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            PREDICTED(UNPACK_SEQUENCE_TUPLE);
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1584,7 +1559,6 @@
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            PREDICTED(UNPACK_SEQUENCE_LIST);
             PyObject *seq;
             PyObject **values;
             seq = stack_pointer[-1];
@@ -1824,7 +1798,6 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-            PREDICTED(LOAD_GLOBAL_MODULE);
             PyObject *res;
             PyObject *null = NULL;
             // _GUARD_GLOBALS_VERSION
@@ -1855,7 +1828,6 @@
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-            PREDICTED(LOAD_GLOBAL_BUILTIN);
             PyObject *res;
             PyObject *null = NULL;
             // _GUARD_GLOBALS_VERSION
@@ -2302,7 +2274,6 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_ATTR) {
-            PREDICTED(LOAD_SUPER_ATTR_ATTR);
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -2327,7 +2298,6 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_METHOD) {
-            PREDICTED(LOAD_SUPER_ATTR_METHOD);
             PyObject *self;
             PyObject *class;
             PyObject *global_super;
@@ -2422,7 +2392,6 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            PREDICTED(LOAD_ATTR_INSTANCE_VALUE);
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2460,7 +2429,6 @@
         }
 
         TARGET(LOAD_ATTR_MODULE) {
-            PREDICTED(LOAD_ATTR_MODULE);
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2488,7 +2456,6 @@
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
-            PREDICTED(LOAD_ATTR_WITH_HINT);
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2530,7 +2497,6 @@
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-            PREDICTED(LOAD_ATTR_SLOT);
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2561,7 +2527,6 @@
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            PREDICTED(LOAD_ATTR_CLASS);
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
@@ -2587,7 +2552,6 @@
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
-            PREDICTED(LOAD_ATTR_PROPERTY);
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -2618,7 +2582,6 @@
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-            PREDICTED(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN);
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -2651,7 +2614,6 @@
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
-            PREDICTED(STORE_ATTR_INSTANCE_VALUE);
             PyObject *owner;
             PyObject *value;
             // _GUARD_TYPE_VERSION_STORE
@@ -2691,7 +2653,6 @@
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
-            PREDICTED(STORE_ATTR_WITH_HINT);
             PyObject *owner;
             PyObject *value;
             owner = stack_pointer[-1];
@@ -2742,7 +2703,6 @@
         }
 
         TARGET(STORE_ATTR_SLOT) {
-            PREDICTED(STORE_ATTR_SLOT);
             PyObject *owner;
             PyObject *value;
             // _GUARD_TYPE_VERSION_STORE
@@ -2805,7 +2765,6 @@
         }
 
         TARGET(COMPARE_OP_FLOAT) {
-            PREDICTED(COMPARE_OP_FLOAT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2829,7 +2788,6 @@
         }
 
         TARGET(COMPARE_OP_INT) {
-            PREDICTED(COMPARE_OP_INT);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -2857,7 +2815,6 @@
         }
 
         TARGET(COMPARE_OP_STR) {
-            PREDICTED(COMPARE_OP_STR);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -3330,7 +3287,6 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            PREDICTED(FOR_ITER_LIST);
             PyObject *iter;
             PyObject *next;
             // _ITER_CHECK_LIST
@@ -3373,7 +3329,6 @@
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            PREDICTED(FOR_ITER_TUPLE);
             PyObject *iter;
             PyObject *next;
             // _ITER_CHECK_TUPLE
@@ -3416,7 +3371,6 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
-            PREDICTED(FOR_ITER_RANGE);
             PyObject *iter;
             PyObject *next;
             // _ITER_CHECK_RANGE
@@ -3457,7 +3411,6 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            PREDICTED(FOR_ITER_GEN);
             PyObject *iter;
             iter = stack_pointer[-1];
             DEOPT_IF(tstate->interp->eval_frame, FOR_ITER);
@@ -3618,7 +3571,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            PREDICTED(LOAD_ATTR_METHOD_WITH_VALUES);
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -3662,7 +3614,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-            PREDICTED(LOAD_ATTR_METHOD_NO_DICT);
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -3693,7 +3644,6 @@
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
-            PREDICTED(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES);
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
@@ -3719,7 +3669,6 @@
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
-            PREDICTED(LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
             PyObject *owner;
             PyObject *attr;
             owner = stack_pointer[-1];
@@ -3740,7 +3689,6 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-            PREDICTED(LOAD_ATTR_METHOD_LAZY_DICT);
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
@@ -3877,7 +3825,6 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            PREDICTED(CALL_BOUND_METHOD_EXACT_ARGS);
             PyObject *null;
             PyObject *callable;
             PyObject *self;
@@ -3975,7 +3922,6 @@
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
-            PREDICTED(CALL_PY_EXACT_ARGS);
             PyObject *self_or_null;
             PyObject *callable;
             PyObject **args;
@@ -4054,7 +4000,6 @@
         }
 
         TARGET(CALL_PY_WITH_DEFAULTS) {
-            PREDICTED(CALL_PY_WITH_DEFAULTS);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4097,7 +4042,6 @@
         }
 
         TARGET(CALL_TYPE_1) {
-            PREDICTED(CALL_TYPE_1);
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4121,7 +4065,6 @@
         }
 
         TARGET(CALL_STR_1) {
-            PREDICTED(CALL_STR_1);
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4147,7 +4090,6 @@
         }
 
         TARGET(CALL_TUPLE_1) {
-            PREDICTED(CALL_TUPLE_1);
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4173,7 +4115,6 @@
         }
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
-            PREDICTED(CALL_ALLOC_AND_ENTER_INIT);
             PyObject **args;
             PyObject *null;
             PyObject *callable;
@@ -4246,7 +4187,6 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            PREDICTED(CALL_BUILTIN_CLASS);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4279,7 +4219,6 @@
         }
 
         TARGET(CALL_BUILTIN_O) {
-            PREDICTED(CALL_BUILTIN_O);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4320,7 +4259,6 @@
         }
 
         TARGET(CALL_BUILTIN_FAST) {
-            PREDICTED(CALL_BUILTIN_FAST);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4365,7 +4303,6 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            PREDICTED(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4404,7 +4341,6 @@
         }
 
         TARGET(CALL_LEN) {
-            PREDICTED(CALL_LEN);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4441,7 +4377,6 @@
         }
 
         TARGET(CALL_ISINSTANCE) {
-            PREDICTED(CALL_ISINSTANCE);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4480,7 +4415,6 @@
         }
 
         TARGET(CALL_LIST_APPEND) {
-            PREDICTED(CALL_LIST_APPEND);
             PyObject **args;
             PyObject *self;
             PyObject *callable;
@@ -4506,7 +4440,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_O) {
-            PREDICTED(CALL_METHOD_DESCRIPTOR_O);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4550,7 +4483,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            PREDICTED(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4592,7 +4524,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
-            PREDICTED(CALL_METHOD_DESCRIPTOR_NOARGS);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;
@@ -4635,7 +4566,6 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
-            PREDICTED(CALL_METHOD_DESCRIPTOR_FAST);
             PyObject **args;
             PyObject *self_or_null;
             PyObject *callable;

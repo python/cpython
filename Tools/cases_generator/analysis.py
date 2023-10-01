@@ -26,7 +26,7 @@ RESERVED_WORDS = {
     "co_names": "Use FRAME_CO_NAMES.",
 }
 
-RE_PREDICTED = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
+RE_GO_TO_INSTR = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
 
 
 class Analyzer:
@@ -196,7 +196,7 @@ class Analyzer:
         for instr in self.instrs.values():
             targets: set[str] = set()
             for line in instr.block_text:
-                if m := re.match(RE_PREDICTED, line):
+                if m := re.match(RE_GO_TO_INSTR, line):
                     targets.add(m.group(1))
             for target in targets:
                 if target_instr := self.instrs.get(target):
