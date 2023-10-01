@@ -188,7 +188,7 @@ And::
       ThreadPoolExecutor now reuses idle worker threads before starting
       *max_workers* worker threads too.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.13
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
 
@@ -304,6 +304,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       :exc:`DeprecationWarning`. Pass a *mp_context* configured to use a
       different start method. See the :func:`os.fork` documentation for
       further explanation.
+
+   .. versionchanged:: 3.13
+      *max_workers* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
 
 .. _processpoolexecutor-example:
 

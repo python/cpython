@@ -2249,6 +2249,10 @@ with the :class:`Pool` class.
    .. versionadded:: 3.4
       *context*
 
+   .. versionchanged:: 3.13
+      *processes* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
+
    .. note::
 
       Worker processes within a :class:`Pool` typically live for the complete
