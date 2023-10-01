@@ -144,7 +144,8 @@ class Instruction:
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -207,6 +208,14 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
+                space, cond = m.groups()
+                target = family.name if family else self.name
+                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+            elif "DEOPT" in line:
+                filename = context.owner.filename
+                lineno = context.owner.tokens[context.begin].line
+                print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -244,7 +253,8 @@ class AbstractInstruction(Instruction):
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         pass
 

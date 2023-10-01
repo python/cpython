@@ -26,7 +26,7 @@ RESERVED_WORDS = {
     "co_names": "Use FRAME_CO_NAMES.",
 }
 
-RE_PREDICTED = r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+RE_PREDICTED = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
 
 
 class Analyzer:

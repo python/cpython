@@ -781,9 +781,17 @@ class Generator(Analyzer):
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(
-                            mac, self.out, self.families.get(mac.name)
-                        )
+                        family = self.families.get(mac.name)
+                        if family is None:
+                            for family in self.families.values():
+                                if mac.name in family.members:
+                                    break
+                            else:
+                                family = None
+                        # A sanctioned exception
+                        if mac.name == "BINARY_OP_INPLACE_ADD_UNICODE":
+                            family = self.families["BINARY_OP"]
+                        stacking.write_macro_instr(mac, self.out, family)
                     case parsing.Pseudo():
                         pass
                     case _:
