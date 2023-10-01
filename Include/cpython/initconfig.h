@@ -267,6 +267,66 @@ PyAPI_FUNC(PyStatus) PyConfig_SetWideStringList(PyConfig *config,
    See also PyConfig.orig_argv. */
 PyAPI_FUNC(void) Py_GetArgcArgv(int *argc, wchar_t ***argv);
 
+
+// --- PyInitConfig ---------------------------------------------------------
+
+typedef struct PyInitConfig PyInitConfig;
+
+// Create a new initialization configuration using the Isolated configuration
+// defaults.
+// It must be freed by PyInitConfig_Free().
+// Return NULL on memory allocation failure.
+PyAPI_FUNC(PyInitConfig*) PyInitConfig_Create(void);
+
+// Free memory of a initialization configuration.
+PyAPI_FUNC(void) PyInitConfig_Free(PyInitConfig *config);
+
+// Set an integer configuration option.
+// Return 0 on success, or return -1 on error.
+PyAPI_FUNC(int) PyInitConfig_SetInt(
+    PyInitConfig *config,
+    const char *name,
+    int64_t value);
+
+// Set a string configuration option from a bytes string.
+//
+// The bytes string is decoded by Py_DecodeLocale(). Preinitialize Python if
+// needed to ensure that encodings are properly configured.
+//
+// Return 0 on success, or return -1 on error.
+PyAPI_FUNC(int) PyInitConfig_SetStr(
+    PyInitConfig *config,
+    const char *name,
+    const char *value);
+
+// Set a string list configuration option from bytes strings.
+//
+// The bytes strings are decoded by Py_DecodeLocale(). Preinitialize Python if
+// needed to ensure that encodings are properly configured.
+//
+// Return 0 on success, or return -1 on error.
+PyAPI_FUNC(int) PyInitConfig_SetStrList(
+    PyInitConfig *config,
+    const char *name,
+    size_t length,
+    char * const *items);
+
+// Initialize Python from the initialization configuration.
+// Return 0 on success.
+// Return -1 if Python wants to exit and on error
+PyAPI_FUNC(int) Py_InitializeFromInitConfig(PyInitConfig *config);
+
+// Get the error message.
+// Set *err_msg and return 1 if an error is set.
+// Set *err_msg to NULL and return 0 otherwise.
+PyAPI_FUNC(int) PyInitConfig_GetError(PyInitConfig* config, const char **err_msg);
+
+// Get the exit code.
+// Set '*exitcode' and return 1 if an exit code is set.
+// Return 0 otherwise.
+PyAPI_FUNC(int) PyInitConfig_GetExitCode(PyInitConfig* config, int *exitcode);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -27,7 +27,8 @@ There are two kinds of configuration:
 The :c:func:`Py_RunMain` function can be used to write a customized Python
 program.
 
-See also :ref:`Initialization, Finalization, and Threads <initialization>`.
+See also :ref:`Initialization, Finalization, and Threads <initialization>`
+and the :ref:`Python Configuration <config-c-api>`.
 
 .. seealso::
    :pep:`587` "Python Initialization Configuration".

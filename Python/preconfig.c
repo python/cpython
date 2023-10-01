@@ -74,33 +74,47 @@ _Py_COMP_DIAG_POP
 
 /* --- _PyArgv ---------------------------------------------------- */
 
+PyStatus
+_PyWideStringList_FromBytes(PyWideStringList *list,
+                            Py_ssize_t length, char * const *items)
+{
+    PyWideStringList wargv = _PyWideStringList_INIT;
+    size_t size = sizeof(wchar_t*) * length;
+    wargv.items = (wchar_t **)PyMem_RawMalloc(size);
+    if (wargv.items == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        size_t len;
+        wchar_t *arg = Py_DecodeLocale(items[i], &len);
+        if (arg == NULL) {
+            _PyWideStringList_Clear(&wargv);
+            return DECODE_LOCALE_ERR("command line arguments", len);
+        }
+        wargv.items[i] = arg;
+        wargv.length++;
+    }
+
+    _PyWideStringList_Clear(list);
+    *list = wargv;
+    return _PyStatus_OK();
+}
+
 /* Decode bytes_argv using Py_DecodeLocale() */
 PyStatus
 _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
 {
-    PyWideStringList wargv = _PyWideStringList_INIT;
     if (args->use_bytes_argv) {
-        size_t size = sizeof(wchar_t*) * args->argc;
-        wargv.items = (wchar_t **)PyMem_RawMalloc(size);
-        if (wargv.items == NULL) {
-            return _PyStatus_NO_MEMORY();
+        PyStatus status;
+        status = _PyWideStringList_FromBytes(list,
+                                             args->argc, args->bytes_argv);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
         }
-
-        for (Py_ssize_t i = 0; i < args->argc; i++) {
-            size_t len;
-            wchar_t *arg = Py_DecodeLocale(args->bytes_argv[i], &len);
-            if (arg == NULL) {
-                _PyWideStringList_Clear(&wargv);
-                return DECODE_LOCALE_ERR("command line arguments", len);
-            }
-            wargv.items[i] = arg;
-            wargv.length++;
-        }
-
-        _PyWideStringList_Clear(list);
-        *list = wargv;
     }
     else {
+        PyWideStringList wargv = _PyWideStringList_INIT;
         wargv.length = args->argc;
         wargv.items = (wchar_t **)args->wchar_argv;
         if (_PyWideStringList_Copy(list, &wargv) < 0) {
