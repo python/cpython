@@ -1119,6 +1119,26 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         fn_defs.append(_hash_fn(field_list))
         hash_action = None # assign when iterating
 
+    # exec functions and assign
+    functions_objects = _exec_fn_defs(fn_defs, globals=globals)
+    for fn in functions_objects:
+        name = fn.__name__
+        if name == '__repr__':
+            fn = _recursive_repr(fn)
+
+        if name == '__hash__':
+            cls.__hash__ = _set_qualname(cls, fn)
+        else:
+            if _set_new_attribute(cls, name, fn):
+                if order and name in order_flds:
+                    raise TypeError(f'Cannot overwrite attribute {name} '
+                                    f'in class {cls.__name__}. Consider using '
+                                    'functools.total_ordering')
+                elif frozen and name in ['__setattr__','__delattr__']:
+                    raise TypeError(f'Cannot overwrite attribute {name} '
+                                    f'in class {cls.__name__}')
+
+    if hash_action: # for _hash_set_none, _hash_exception
         # No need to call _set_new_attribute here, since by the time
         # we're here the overwriting is unconditional.
         cls.__hash__ = hash_action(cls, field_list, globals)
