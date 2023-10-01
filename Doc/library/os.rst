@@ -5188,6 +5188,10 @@ Miscellaneous System Information
    Return the number of logical CPUs in the system. Returns ``None`` if
    undetermined.
 
+   This number is not equivalent to the number of logical CPUs the current
+   process can use. ``len(os.sched_getaffinity(0))`` gets the number of logical
+   CPUs the calling thread of the current process is restricted to
+
    .. versionadded:: 3.4
 
 
