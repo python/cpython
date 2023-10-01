@@ -1517,16 +1517,16 @@ sys_getrecursionlimit_impl(PyObject *module)
 static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
 
 static PyStructSequence_Field windows_version_fields[] = {
-    {"major", PyDoc_STR"Major version number")},
-    {"minor", PyDoc_STR"Minor version number")},
-    {"build", PyDoc_STR"Build number")},
-    {"platform", PyDoc_STR"Operating system platform")},
-    {"service_pack", PyDoc_STR"Latest Service Pack installed on the system")},
-    {"service_pack_major", PyDoc_STR"Service Pack major version number")},
-    {"service_pack_minor", PyDoc_STR"Service Pack minor version number")},
-    {"suite_mask", PyDoc_STR"Bit mask identifying available product suites")},
-    {"product_type", PyDoc_STR"System product type")},
-    {"platform_version", PyDoc_STR"Diagnostic version number")},
+    {"major", PyDoc_STR("Major version number")},
+    {"minor", PyDoc_STR("Minor version number")},
+    {"build", PyDoc_STR("Build number")},
+    {"platform", PyDoc_STR("Operating system platform")},
+    {"service_pack", PyDoc_STR("Latest Service Pack installed on the system")},
+    {"service_pack_major", PyDoc_STR("Service Pack major version number")},
+    {"service_pack_minor", PyDoc_STR("Service Pack minor version number")},
+    {"suite_mask", PyDoc_STR("Bit mask identifying available product suites")},
+    {"product_type", PyDoc_STR("System product type")},
+    {"platform_version", PyDoc_STR("Diagnostic version number")},
     {0}
 };
 
