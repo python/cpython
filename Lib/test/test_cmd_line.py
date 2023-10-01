@@ -879,24 +879,25 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
 
         res = assert_python_ok('-c', code)
+        res2int = self.res2int
         current_max = sys.get_int_max_str_digits()
-        self.assertEqual(self.res2int(res), (current_max, current_max))
+        self.assertEqual(res2int(res), (current_max, current_max))
         res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
-        self.assertEqual(self.res2int(res), (0, 0))
+        self.assertEqual(res2int(res), (0, 0))
         res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)
-        self.assertEqual(self.res2int(res), (4000, 4000))
+        self.assertEqual(res2int(res), (4000, 4000))
         res = assert_python_ok('-X', 'int_max_str_digits=100000', '-c', code)
-        self.assertEqual(self.res2int(res), (100000, 100000))
+        self.assertEqual(res2int(res), (100000, 100000))
 
         res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
-        self.assertEqual(self.res2int(res), (0, 0))
+        self.assertEqual(res2int(res), (0, 0))
         res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
-        self.assertEqual(self.res2int(res), (4000, 4000))
+        self.assertEqual(res2int(res), (4000, 4000))
         res = assert_python_ok(
             '-X', 'int_max_str_digits=6000', '-c', code,
             PYTHONINTMAXSTRDIGITS='4000'
         )
-        self.assertEqual(self.res2int(res), (6000, 6000))
+        self.assertEqual(res2int(res), (6000, 6000))
 
     def test_cpu_count(self):
         code = "import os; print(os.cpu_count(), os.process_cpu_count())"

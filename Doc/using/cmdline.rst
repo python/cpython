@@ -550,9 +550,7 @@ Miscellaneous options
      *n* must be greater than or equal to 1.
      This option is useful for users who need to limit CPU resources of a container system.
      See also :envvar:`PYTHONCPUCOUNT`.
-     If *n* is ``default``, it follows default :func:`os.cpu_count` even if :envvar:`PYTHONCPUCOUNT`
-     is set.
-
+     If *n* is ``default``, :func:`os.cpu_count` and  :func:`os.process_cpu_count` are not overridden.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1076,7 +1074,7 @@ conflict.
 .. envvar:: PYTHONCPUCOUNT
 
    If this variable is set to a positive integer, it overrides
-   :func:`os.cpu_count` and and :func:`os.process_cpu_count` result.
+   :func:`os.cpu_count` and and :func:`os.process_cpu_count` return result.
 
    See also the :option:`-X cpu_count <-X>` command-line option.
 
