@@ -428,6 +428,15 @@ _PyTime_FromSeconds(int seconds)
 
 
 _PyTime_t
+_PyTime_FromSecondsDouble(double seconds)
+{
+    _PyTime_t t = (_PyTime_t)(seconds * SEC_TO_NS);
+    assert((t >= 0 && t <= _PyTime_MAX)
+           || (t < 0 && t >= _PyTime_MIN));
+    return pytime_from_nanoseconds(t);
+}
+
+_PyTime_t
 _PyTime_FromNanoseconds(_PyTime_t ns)
 {
     return pytime_from_nanoseconds(ns);
