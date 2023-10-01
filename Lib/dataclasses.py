@@ -878,9 +878,9 @@ def _set_new_attribute(cls, name, value):
 def _hash_set_none(cls, fields, globals):
     return None
 
-def _hash_add(cls, fields, globals):
-    flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
-    return _set_qualname(cls, _hash_fn(flds, globals))
+class _HASH_ADD:
+    pass
+_hash_add = _HASH_ADD
 
 def _hash_exception(cls, fields, globals):
     # Raise an exception.
