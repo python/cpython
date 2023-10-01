@@ -739,14 +739,10 @@ static PyMethodDef semlock_methods[] = {
  */
 
 static PyMemberDef semlock_members[] = {
-    {"handle", T_SEM_HANDLE, offsetof(SemLockObject, handle), Py_READONLY,
-     PyDoc_STR("")},
-    {"kind", Py_T_INT, offsetof(SemLockObject, kind), Py_READONLY,
-     PyDoc_STR("")},
-    {"maxvalue", Py_T_INT, offsetof(SemLockObject, maxvalue), Py_READONLY,
-     PyDoc_STR("")},
-    {"name", Py_T_STRING, offsetof(SemLockObject, name), Py_READONLY,
-     PyDoc_STR("")},
+    {"handle", T_SEM_HANDLE, offsetof(SemLockObject, handle), Py_READONLY},
+    {"kind", Py_T_INT, offsetof(SemLockObject, kind), Py_READONLY},
+    {"maxvalue", Py_T_INT, offsetof(SemLockObject, maxvalue), Py_READONLY},
+    {"name", Py_T_STRING, offsetof(SemLockObject, name), Py_READONLY},
     {NULL}
 };
 

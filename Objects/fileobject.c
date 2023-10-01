@@ -388,11 +388,11 @@ stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef stdprinter_methods[] = {
-    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS, PyDoc_STR("")},
-    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS, PyDoc_STR("")},
-    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS, PyDoc_STR("")},
-    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS, PyDoc_STR("")},
-    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS, PyDoc_STR("")},
+    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS},
+    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS},
+    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS},
+    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS},
+    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS},
     {NULL,              NULL}  /*sentinel */
 };
 
