@@ -886,7 +886,7 @@ PyConfig
       Configured by the :samp:`-X cpu_count={n}` command line
       flag or the :envvar:`PYTHONCPUCOUNT` environment variable.
 
-      Default: ``-1``, it will follow the original behavior of :func:`cpu_count` and :func:`process_cpu_count.
+      Default: ``-1``, it will follow the original behavior of :func:`cpu_count` and :func:`process_cpu_count`.
 
       .. versionadded:: 3.13
 
