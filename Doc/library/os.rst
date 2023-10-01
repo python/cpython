@@ -4057,8 +4057,7 @@ descriptors to wait until the file descriptor is ready for reading:
    :func:`read` raises :class:`OSError` with ``errno`` is set to
    :const:`errno.EAGAIN`.
 
-   If :const:`TFD_CLOEXEC` is set as a flag, the close-on-exec flag is set
-   for the new file descriptor.
+   :const:`TFD_CLOEXEC` is always set by Python automatically.
 
    The file descriptor must be closed with :func:`os.close` when it is no
    longer needed, or else the file descriptor will be leaked.
