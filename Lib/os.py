@@ -26,6 +26,7 @@ import abc
 import sys
 import stat as st
 
+from posix import _get_cpu_count_config
 from _collections_abc import _check_methods
 
 GenericAlias = type(list[int])
@@ -1138,7 +1139,7 @@ if name == 'nt':
         )
 
 
-if _exists('sched_getaffinity') and posix._get_cpu_count_config() < 0:
+if _exists('sched_getaffinity') and _get_cpu_count_config() < 0:
     def process_cpu_count():
         """
         Get the number of CPUs of the current process.
