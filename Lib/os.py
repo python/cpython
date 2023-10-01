@@ -1137,18 +1137,7 @@ if name == 'nt':
             nt._remove_dll_directory
         )
 
-
-def _is_cpu_overrided():
-    env_opt = environ.get('PYTHONCPUCOUNT', None)
-    xopt = sys._xoptions.get('cpu_count', None)
-    if not any((env_opt, xopt)):
-        return False
-    if xopt == 'default':
-        return False
-    return True
-
-
-if _exists('sched_getaffinity') and not _is_cpu_overrided():
+if _exists('sched_getaffinity') and os._get_cpu_config() < 0:
     def process_cpu_count():
         """
         Get the number of CPUs of the current process.

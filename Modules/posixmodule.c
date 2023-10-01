@@ -14335,6 +14335,19 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
+/*[clinic input]
+os._get_cpu_count_config -> int
+
+Private function for get PyConfig.cpu_count
+[clinic start generated code]*/
+
+static int
+os__get_cpu_count_config_impl(PyObject *module)
+/*[clinic end generated code: output=4796d9e355e66257 input=fd76f60fcec3e42f]*/
+{
+    const PyConfig *config = _Py_GetConfig();
+    return config->cpu_count;
+}
 
 /*[clinic input]
 os.cpu_count
@@ -15982,6 +15995,7 @@ static PyMethodDef posix_methods[] = {
     OS_LISTXATTR_METHODDEF
 
     OS_GET_TERMINAL_SIZE_METHODDEF
+    OS__GET_CPU_COUNT_CONFIG_METHODDEF
     OS_CPU_COUNT_METHODDEF
     OS_GET_INHERITABLE_METHODDEF
     OS_SET_INHERITABLE_METHODDEF
