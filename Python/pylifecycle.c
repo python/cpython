@@ -37,6 +37,9 @@
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
