@@ -1,5 +1,6 @@
 import copy
 import os
+import re
 import time
 import unittest
 
@@ -151,9 +152,9 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(copy.replace(t, user=1, system=2), (1, 2, *range(2, n_fields)))
 
         # unknown fields
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+        with self.assertRaisesRegex(TypeError, 'unexpected field name'):
             copy.replace(t, error=-1)
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+        with self.assertRaisesRegex(TypeError, 'unexpected field name'):
             copy.replace(t, user=1, error=-1)
 
     def test_copy_replace_with_invisible_fields(self):
@@ -182,23 +183,24 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(t3.tm_zone, 'some other zone')
 
         # unknown fields
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+        with self.assertRaisesRegex(TypeError, 'unexpected field name'):
             copy.replace(t, error=2)
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+        with self.assertRaisesRegex(TypeError, 'unexpected field name'):
             copy.replace(t, tm_year=2000, error=2)
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+        with self.assertRaisesRegex(TypeError, 'unexpected field name'):
             copy.replace(t, tm_zone='some other zone', error=2)
 
     def test_copy_replace_with_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
         r = os.stat_result(range(os.stat_result.n_sequence_fields))
-        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+        error_message = re.escape('__replace__() is not supported')
+        with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r)
-        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+        with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r, st_mode=1)
-        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+        with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r, error=2)
-        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+        with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r, st_mode=1, error=2)
 
 
