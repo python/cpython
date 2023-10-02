@@ -72,6 +72,8 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        /* The thread currently executing in the __main__ module, if any. */
+        PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
         long count;
         /* Support for runtime thread stack size tuning.
@@ -92,6 +94,8 @@ struct _is {
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct _gc_runtime_state gc;
 
@@ -214,9 +218,23 @@ _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
     return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
 }
 
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return _Py_atomic_load_ulong_relaxed(&interp->_finalizing_id);
+}
+
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
 
