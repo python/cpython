@@ -394,13 +394,9 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    // Create an identical instance.
-    result = (PyStructSequence *)PyStructSequence_New(Py_TYPE(self));
-    if (result == NULL) {
-        return NULL;
-    }
-    for (i = 0; i < n_fields; ++i) {
-        result->ob_item[i] = Py_NewRef(self->ob_item[i]);
+    result = (PyStructSequence *) PyStructSequence_New(Py_TYPE(self));
+    if (!result) {
+        goto error;
     }
 
     if (kwargs != NULL) {
@@ -409,14 +405,13 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         for (i = 0; i < n_fields; i++) {
             PyObject *key = PyUnicode_FromString(Py_TYPE(self)->tp_members[i].name);
             if (!key) {
-                return NULL;
+                goto error;
             }
             PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);  // borrowed
             Py_DECREF(key);
             if (!ob) {
-                return NULL;
+                goto error;
             }
-            Py_DECREF(result->ob_item[i]);
             result->ob_item[i] = ob;
         }
         // Check if there are any unexpected fields.
@@ -426,11 +421,22 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
                 PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
                 Py_DECREF(names);
             }
-            return NULL;
+            goto error;
+        }
+    }
+    else
+    {
+        // Just create a copy of the original.
+        for (i = 0; i < n_fields; ++i) {
+            result->ob_item[i] = Py_NewRef(self->ob_item[i]);
         }
     }
 
     return result;
+
+error:
+    Py_XDECREF(result);
+    return NULL;
 }
 
 static PyMethodDef structseq_methods[] = {
