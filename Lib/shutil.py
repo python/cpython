@@ -1554,8 +1554,16 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
 
-        # Always try checking the originally given cmd, if it doesn't match, try pathext
-        files = [cmd] + [cmd + ext for ext in pathext]
+        files = ([cmd] + [cmd + ext for ext in pathext])
+
+        # gh-109590. If we are looking for an executable, we need to look
+        # for a PATHEXT match. The first cmd is the direct match
+        # (e.g. python.exe instead of python)
+        # Check that direct match first if and only if the extension is in PATHEXT
+        # Otherwise check it last
+        suffix = os.path.splitext(files[0])[1].upper()
+        if mode & os.X_OK and not any(suffix == ext.upper() for ext in pathext):
+            files.append(files.pop(0))
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
