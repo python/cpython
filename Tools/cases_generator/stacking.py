@@ -367,7 +367,7 @@ def write_macro_instr(
     ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
-        if mac.predicted or (family is not None and mac.name == family.name):
+        if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
         out.static_assert_family_size(mac.name, family, mac.cache_offset)
         try:

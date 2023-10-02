@@ -187,12 +187,19 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.analyze_macros_and_pseudos()
-        self.find_predictions()
         self.map_families()
+        self.mark_predictions()
         self.check_families()
 
-    def find_predictions(self) -> None:
-        """Find the instructions that need PREDICTED() labels."""
+    def mark_predictions(self) -> None:
+        """Mark the instructions that need PREDICTED() labels."""
+        # Start with family heads
+        for family in self.families.values():
+            if family.name in self.instrs:
+                self.instrs[family.name].predicted = True
+            if family.name in self.macro_instrs:
+                self.macro_instrs[family.name].predicted = True
+        # Also look for GO_TO_INSTRUCTION() calls
         for instr in self.instrs.values():
             targets: set[str] = set()
             for line in instr.block_text:
