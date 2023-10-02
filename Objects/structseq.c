@@ -431,7 +431,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         }
     }
 
-    return result;
+    return (PyObject *)result;
 
 error:
     Py_XDECREF(result);
