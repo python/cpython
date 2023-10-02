@@ -236,6 +236,10 @@ class TokenTests(unittest.TestCase):
             check(f"[{num}for x in ()]")
             check(f"{num}spam", error=True)
 
+            # gh-88943: Invalid non-ASCII character following a numerical literal.
+            with self.assertRaisesRegex(SyntaxError, r"invalid character '⁄' \(U\+2044\)"):
+                compile(f"{num}⁄7", "<testcase>", "eval")
+
             with self.assertWarnsRegex(SyntaxWarning, r'invalid \w+ literal'):
                 compile(f"{num}is x", "<testcase>", "eval")
             with warnings.catch_warnings():
