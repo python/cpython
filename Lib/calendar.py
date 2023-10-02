@@ -11,6 +11,8 @@ from enum import IntEnum, global_enum
 import locale as _locale
 from itertools import repeat
 import warnings
+import sqlite3.dbapi2 as dbapi2
+from warnings import warn
 
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
@@ -41,17 +43,26 @@ class IllegalWeekdayError(ValueError):
     def __str__(self):
         return "bad weekday number %r; must be 0 (Monday) to 6 (Sunday)" % self.weekday
 
+# Export symbols from dbapi2
+__all__ = dbapi2.__all__
+
+# Constants for version information
+__version__ = dbapi2.sqlite_version
+__sqlite_version__ = dbapi2.sqlite_version_info
+
+# List of deprecated names
+_deprecated_names = dbapi2._deprecated_names
 
 def __getattr__(name):
-    if name in ('January', 'February'):
-        warnings.warn(f"The '{name}' attribute is deprecated, use '{name.upper()}' instead",
-                      DeprecationWarning, stacklevel=2)
-        if name == 'January':
-            return 1
-        else:
-            return 2
+    if name in _deprecated_names:
+        warn(f"{name} is deprecated and will be removed in Python 3.14",
+             DeprecationWarning, stacklevel=2)
 
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+        # Return the corresponding attribute from the global namespace
+        return globals()[f"_deprecated_{name}"]
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 
 # Constants for months
