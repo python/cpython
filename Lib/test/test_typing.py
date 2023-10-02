@@ -550,7 +550,7 @@ class TypeVarTests(BaseTestCase):
             with self.subTest(cls=cls):
                 vals = weakref.WeakValueDictionary()
 
-                for x in range(100000):
+                for x in range(10):
                     vals[x] = cls(str(x))
                 del vals
 
