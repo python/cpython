@@ -506,7 +506,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            if (PyList_Append(attrs, subject) == -1) {
+            if (PyList_Append(attrs, subject) < 0) {
                 goto fail;
             }
         }
@@ -524,7 +524,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                if (PyList_Append(attrs, attr) == -1) {
+                if (PyList_Append(attrs, attr) < 0) {
                     Py_DECREF(attr);
                     goto fail;
                 }
@@ -540,7 +540,7 @@ _PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
-        if (PyList_Append(attrs, attr) == -1) {
+        if (PyList_Append(attrs, attr) < 0) {
             Py_DECREF(attr);
             goto fail;
         }
