@@ -68,14 +68,17 @@ update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstat
     if (tstate == NULL) {
         return;
     }
-    if (_Py_ThreadCanHandleSignals(interp)) {
+
+    if (_Py_IsMainThread()) {
         int32_t calls_to_do = _Py_atomic_load_int32_relaxed(
             &_PyRuntime.ceval.pending_mainthread.calls_to_do);
         if (calls_to_do) {
             _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
         }
-        if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
-            _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
+        if (_Py_ThreadCanHandleSignals(interp)) {
+            if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+                _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
+            }
         }
     }
     if (tstate->async_exc != NULL) {
