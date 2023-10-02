@@ -5,6 +5,9 @@ import math
 import os.path
 import platform
 import random
+import shlex
+import signal
+import subprocess
 import sys
 import sysconfig
 import tempfile
@@ -28,6 +31,19 @@ WORKER_WORK_DIR_PREFIX = WORK_DIR_PREFIX + 'worker_'
 # Used to protect against threading._shutdown() hang.
 # Must be smaller than buildbot "1200 seconds without output" limit.
 EXIT_TIMEOUT = 120.0
+
+
+ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
+
+# Other resources excluded from --use=all:
+#
+# - extralagefile (ex: test_zipfile64): really too slow to be enabled
+#   "by default"
+# - tzdata: while needed to validate fully test_datetime, it makes
+#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
+#   default (see bpo-30822).
+RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 
 # Types for types hints
@@ -522,7 +538,42 @@ def adjust_rlimit_nofile():
                           f"{new_fd_limit}: {err}.")
 
 
-def display_header(use_resources: tuple[str, ...]):
+def get_host_runner():
+    if (hostrunner := os.environ.get("_PYTHON_HOSTRUNNER")) is None:
+        hostrunner = sysconfig.get_config_var("HOSTRUNNER")
+    return hostrunner
+
+
+def is_cross_compiled():
+    return ('_PYTHON_HOST_PLATFORM' in os.environ)
+
+
+def format_resources(use_resources: tuple[str, ...]):
+    use_resources = set(use_resources)
+    all_resources = set(ALL_RESOURCES)
+
+    # Express resources relative to "all"
+    relative_all = ['all']
+    for name in sorted(all_resources - use_resources):
+        relative_all.append(f'-{name}')
+    for name in sorted(use_resources - all_resources):
+        relative_all.append(f'{name}')
+    all_text = ','.join(relative_all)
+    all_text = f"resources: {all_text}"
+
+    # List of enabled resources
+    text = ','.join(sorted(use_resources))
+    text = f"resources ({len(use_resources)}): {text}"
+
+    # Pick the shortest string (prefer relative to all if lengths are equal)
+    if len(all_text) <= len(text):
+        return all_text
+    else:
+        return text
+
+
+def display_header(use_resources: tuple[str, ...],
+                   python_cmd: tuple[str, ...] | None):
     # Print basic platform information
     print("==", platform.python_implementation(), *sys.version.split())
     print("==", platform.platform(aliased=True),
@@ -532,16 +583,42 @@ def display_header(use_resources: tuple[str, ...]):
 
     cpu_count = os.cpu_count()
     if cpu_count:
+        process_cpu_count = os.process_cpu_count()
+        if process_cpu_count and process_cpu_count != cpu_count:
+            cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
-    print("== encodings: locale=%s, FS=%s"
+    print("== encodings: locale=%s FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))
 
-
     if use_resources:
-        print(f"== resources ({len(use_resources)}): "
-              f"{', '.join(sorted(use_resources))}")
+        text = format_resources(use_resources)
+        print(f"== {text}")
     else:
-        print(f"== resources: (all disabled, use -u option)")
+        print("== resources: all test resources are disabled, "
+              "use -u option to unskip tests")
+
+    cross_compile = is_cross_compiled()
+    if cross_compile:
+        print("== cross compiled: Yes")
+    if python_cmd:
+        cmd = shlex.join(python_cmd)
+        print(f"== host python: {cmd}")
+
+        get_cmd = [*python_cmd, '-m', 'platform']
+        proc = subprocess.run(
+            get_cmd,
+            stdout=subprocess.PIPE,
+            text=True,
+            cwd=os_helper.SAVEDCWD)
+        stdout = proc.stdout.replace('\n', ' ').strip()
+        if stdout:
+            print(f"== host platform: {stdout}")
+        elif proc.returncode:
+            print(f"== host platform: <command failed with exit code {proc.returncode}>")
+    else:
+        hostrunner = get_host_runner()
+        if hostrunner:
+            print(f"== host runner: {hostrunner}")
 
     # This makes it easier to remember what to set in your local
     # environment when trying to reproduce a sanitizer failure.
@@ -581,3 +658,24 @@ def cleanup_temp_dir(tmp_dir: StrPath):
         else:
             print("Remove file: %s" % name)
             os_helper.unlink(name)
+
+WINDOWS_STATUS = {
+    0xC0000005: "STATUS_ACCESS_VIOLATION",
+    0xC00000FD: "STATUS_STACK_OVERFLOW",
+    0xC000013A: "STATUS_CONTROL_C_EXIT",
+}
+
+def get_signal_name(exitcode):
+    if exitcode < 0:
+        signum = -exitcode
+        try:
+            return signal.Signals(signum).name
+        except ValueError:
+            pass
+
+    try:
+        return WINDOWS_STATUS[exitcode]
+    except KeyError:
+        pass
+
+    return None

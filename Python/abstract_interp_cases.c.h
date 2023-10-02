@@ -490,10 +490,6 @@
             break;
         }
 
-        case _GUARD_TYPE_VERSION_STORE: {
-            break;
-        }
-
         case _STORE_ATTR_SLOT: {
             STACK_SHRINK(2);
             break;
