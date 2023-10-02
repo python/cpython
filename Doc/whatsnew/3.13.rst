@@ -91,6 +91,13 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+  default number of worker threads and processes. Get the CPU affinity
+  if supported.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
 New Modules
 ===========
 
@@ -163,12 +170,23 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
+os
+--
+
+* Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+  usable by the calling thread of the current process.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 pathlib
 -------
 
 * Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
+
+* Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
+  object from a 'file' URI (``file:/``).
+  (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
@@ -977,6 +995,12 @@ New Features
   references) now supports the :ref:`Limited API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -988,7 +1012,12 @@ Porting to Python 3.13
 
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
-  functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
+  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
+  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
+  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
+  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
+  ``<pthread.h>`` header files can be included.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,
@@ -1267,3 +1296,6 @@ removed, although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
   * :c:func:`PyThread_ReInitTLS`: no longer needed.
+
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)
