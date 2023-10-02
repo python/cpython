@@ -97,7 +97,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(pythonpath_env, WSTR_OPT),
     SPEC(home, WSTR_OPT),
     SPEC(platlibdir, WSTR),
-    SPEC(sys_path_0, WSTR),
+    SPEC(sys_path_0, WSTR_OPT),
     SPEC(module_search_paths_set, UINT),
     SPEC(module_search_paths, WSTR_LIST),
     SPEC(stdlib_dir, WSTR_OPT),
