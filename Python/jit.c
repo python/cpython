@@ -122,40 +122,11 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             int implicit_shift = 0;
             if ((instruction & 0x3B000000) == 0x39000000) {
                 implicit_shift = ((instruction >> 30) & 0x3);
-                // XXX: We shouldn't have to rewrite these (we *should* be
-                // able to just assert the alignment), but something's up with
-                // aarch64 + ELF (at least with LLVM 14, I haven't tested 15
-                // and 16):
-                switch (implicit_shift) {
-                    case 3:
-                        if ((value & 0x7) == 0) {
-                            break;
-                        }
-                        implicit_shift = 2;
-                        instruction = (instruction & ~(0x3UL << 30)) | (implicit_shift << 30);
-                        // Fall through...
-                    case 2:
-                        if ((value & 0x3) == 0) {
-                            break;
-                        }
-                        implicit_shift = 1;
-                        instruction = (instruction & ~(0x3UL << 30)) | (implicit_shift << 30);
-                        // Fall through...
-                    case 1:
-                        if ((value & 0x1) == 0) {
-                            break;
-                        }
-                        implicit_shift = 0;
-                        instruction = (instruction & ~(0x3UL << 30)) | (implicit_shift << 30);
-                        // Fall through...
-                    case 0:
-                        if ((instruction & 0x04800000) == 0x04800000) {
-                            implicit_shift = 4;
-                            assert(((value & 0xF) == 0));
-                        }
-                        break;
+                if (implicit_shift == 0 && (instruction & 0x04800000) == 0x04800000) {
+                    implicit_shift = 4;
                 }
             }
+            assert(((value & ((1 << implicit_shift) - 1)) == 0));
             value >>= implicit_shift;
             assert((value & ((1 << 12) - 1)) == value);
             instruction = (instruction & 0xFFC003FF) | ((uint32_t)(value << 10) & 0x003FFC00);
