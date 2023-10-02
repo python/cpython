@@ -551,7 +551,7 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
     def test_copy(self):
         addr = self.factory('2001:db8::%scope')
         self.assertEqual(addr, copy.copy(addr))
-        self.assertEqual(addr, copy.deepcopy(addr))        
+        self.assertEqual(addr, copy.deepcopy(addr))
 
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
