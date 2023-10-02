@@ -33,18 +33,9 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define WAIT_LOCK       1
 #define NOWAIT_LOCK     0
 
-/* PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
-   on a lock (see PyThread_acquire_lock_timed() below).
-   PY_TIMEOUT_MAX is the highest usable value (in microseconds) of that
-   type, and depends on the system threading API.
-
-   NOTE: this isn't the same value as `_thread.TIMEOUT_MAX`.  The _thread
-   module exposes a higher-level API, with timeouts expressed in seconds
-   and floating-point numbers allowed.
-*/
+// PY_TIMEOUT_T is the integral type used to specify timeouts when waiting
+// on a lock (see PyThread_acquire_lock_timed() below).
 #define PY_TIMEOUT_T long long
-
-PyAPI_DATA(const long long) PY_TIMEOUT_MAX;
 
 
 /* If microseconds == 0, the call is non-blocking: it returns immediately
@@ -52,8 +43,8 @@ PyAPI_DATA(const long long) PY_TIMEOUT_MAX;
    If microseconds > 0, the call waits up to the specified duration.
    If microseconds < 0, the call waits until success (or abnormal failure)
 
-   microseconds must be less than PY_TIMEOUT_MAX. Behaviour otherwise is
-   undefined.
+   If *microseconds* is greater than PY_TIMEOUT_MAX, clamp the timeout to
+   PY_TIMEOUT_MAX microseconds.
 
    If intr_flag is true and the acquire is interrupted by a signal, then the
    call will return PY_LOCK_INTR.  The caller may reattempt to acquire the
