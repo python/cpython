@@ -60,7 +60,59 @@ static void
 patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t addend)
 {
     switch (kind) {
-        case HoleKind_ABS_12: {
+        case R_386_32: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            instruction = value + addend;
+            *addr = instruction;
+            return;
+        }
+        case R_386_PC32:
+        case R_X86_64_PLT32: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            instruction = value + addend - (uintptr_t)location;
+            *addr = instruction;
+            return;
+        }
+        case R_AARCH64_ABS64:
+        case R_X86_64_64: {
+            uint64_t *addr = (uint64_t *)location;
+            uint64_t instruction = *addr;
+            instruction = value + addend;
+            *addr = instruction;
+            return;
+        }
+        case R_AARCH64_ADR_GOT_PAGE: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert((instruction & 0x9F000000) == 0x90000000);
+            value = (((value + addend) >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
+            assert((value & 0xFFF) == 0);
+            // assert((value & ((1ULL << 33) - 1)) == value);  // XXX: This should be signed.
+            uint32_t lo = ((uint64_t)value << 17) & 0x60000000;
+            uint32_t hi = ((uint64_t)value >> 9) & 0x00FFFFE0;
+            instruction = (instruction & 0x9F00001F) | hi | lo;
+            assert((instruction & 0x9F000000) == 0x90000000);
+            *addr = instruction;
+            return;
+        }
+        case R_AARCH64_CALL26:
+        case R_AARCH64_JUMP26: {
+            uint32_t *addr = (uint32_t *)location;
+            uint32_t instruction = *addr;
+            assert(((instruction & 0xFC000000) == 0x14000000) ||
+                   ((instruction & 0xFC000000) == 0x94000000));
+            value = value + addend - (uintptr_t)location;
+            assert((value & 0x3) == 0);
+            // assert((value & ((1ULL << 29) - 1)) == value);  // XXX: This should be signed.
+            instruction = (instruction & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
+            assert(((instruction & 0xFC000000) == 0x14000000) ||
+                   ((instruction & 0xFC000000) == 0x94000000));
+            *addr = instruction;
+            return;
+        }
+        case R_AARCH64_LD64_GOT_LO12_NC: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction & 0x3B000000) == 0x39000000) ||
@@ -109,98 +161,57 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             assert(((instruction & 0x3B000000) == 0x39000000) ||
                    ((instruction & 0x11C00000) == 0x11000000));
             *addr = instruction;
-            break;
+            return;
         }
-        case HoleKind_ABS_16_A: {
+        case R_AARCH64_MOVW_UABS_G0_NC: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 0);
             instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 0) & 0xFFFF) << 5);
             *addr = instruction;
-            break;
+            return;
         }
-        case HoleKind_ABS_16_B: {
+        case R_AARCH64_MOVW_UABS_G1_NC: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 1);
             instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 16) & 0xFFFF) << 5);
             *addr = instruction;
-            break;
+            return;
         }
-        case HoleKind_ABS_16_C: {
+        case R_AARCH64_MOVW_UABS_G2_NC: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 2);
             instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 32) & 0xFFFF) << 5);
             *addr = instruction;
-            break;
+            return;
         }
-        case HoleKind_ABS_16_D: {
+        case R_AARCH64_MOVW_UABS_G3: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
             assert(((instruction >> 21) & 0x3) == 3);
             instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 48) & 0xFFFF) << 5);
             *addr = instruction;
-            break;
+            return;
         }
-        case HoleKind_ABS_32: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            instruction = value + addend;
-            *addr = instruction;
-            break;
-        }
-        case HoleKind_ABS_64: {
+        case R_X86_64_GOTOFF64: {
             uint64_t *addr = (uint64_t *)location;
             uint64_t instruction = *addr;
-            instruction = value + addend;
-            *addr = instruction;
-            break;
-        }
-        case HoleKind_REL_21: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert((instruction & 0x9F000000) == 0x90000000);
-            value = (((value + addend) >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
-            assert((value & 0xFFF) == 0);
-            // assert((value & ((1ULL << 33) - 1)) == value);  // XXX: This should be signed.
-            uint32_t lo = ((uint64_t)value << 17) & 0x60000000;
-            uint32_t hi = ((uint64_t)value >> 9) & 0x00FFFFE0;
-            instruction = (instruction & 0x9F00001F) | hi | lo;
-            assert((instruction & 0x9F000000) == 0x90000000);
-            *addr = instruction;
-            break;
-        }
-        case HoleKind_REL_26: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction & 0xFC000000) == 0x14000000) ||
-                   ((instruction & 0xFC000000) == 0x94000000));
-            value = value + addend - (uintptr_t)location;
-            assert((value & 0x3) == 0);
-            // assert((value & ((1ULL << 29) - 1)) == value);  // XXX: This should be signed.
-            instruction = (instruction & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
-            assert(((instruction & 0xFC000000) == 0x14000000) ||
-                   ((instruction & 0xFC000000) == 0x94000000));
-            *addr = instruction;
-            break;
-        }
-        case HoleKind_REL_32: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
             instruction = value + addend - (uintptr_t)location;
             *addr = instruction;
-            break;
+            return;
         }
+        case R_X86_64_GOTPC32: 
+        case R_X86_64_REX_GOTPCRELX: 
         default: {
-            printf("XXX: %d!\n", kind);
             Py_UNREACHABLE();
         }
     }
 }
 
 static void
-copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[])
+copy_and_patch(unsigned char *memory, const Stencil *stencil, uint64_t patches[])
 {
     memcpy(memory, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
@@ -209,7 +220,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uintptr_t patches[
     }
     for (size_t i = 0; i < stencil->nloads; i++) {
         const SymbolLoad *load = &stencil->loads[i];
-        uintptr_t value = symbol_addresses[load->symbol];
+        uint64_t value = symbol_addresses[load->symbol];
         patch_one(memory + load->offset, load->kind, value, load->addend);
     }
 }
@@ -297,14 +308,14 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         return NULL;
     }
     unsigned char *head = memory;
-    uintptr_t patches[] = GET_PATCHES();
+    uint64_t patches[] = GET_PATCHES();
     // First, the trampoline:
     _PyUOpInstruction *instruction_continue = &trace[0];
     const Stencil *stencil = &trampoline_stencil;
-    patches[HoleValue_BASE] = (uintptr_t)head;
-    patches[HoleValue_CONTINUE] = (uintptr_t)head + offsets[0];
-    patches[HoleValue_CONTINUE_OPARG] = instruction_continue->oparg;
-    patches[HoleValue_CONTINUE_OPERAND] = instruction_continue->operand;
+    patches[_JIT_BASE] = (uintptr_t)head;
+    patches[_JIT_CONTINUE] = (uintptr_t)head + offsets[0];
+    patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
+    patches[_JIT_CONTINUE_OPERAND] = instruction_continue->operand;
     copy_and_patch(head, stencil, patches);
     head += stencil->nbytes;
     // Then, all of the stencils:
@@ -313,13 +324,13 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         _PyUOpInstruction *instruction_continue = &trace[(i + 1) % size];
         _PyUOpInstruction *instruction_jump = &trace[instruction->oparg % size];
         const Stencil *stencil = &stencils[instruction->opcode];
-        patches[HoleValue_BASE] = (uintptr_t)memory + offsets[i];
-        patches[HoleValue_CONTINUE] = (uintptr_t)memory + offsets[(i + 1) % size];
-        patches[HoleValue_CONTINUE_OPARG] = instruction_continue->oparg;
-        patches[HoleValue_CONTINUE_OPERAND] = instruction_continue->operand;
-        patches[HoleValue_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
-        patches[HoleValue_JUMP_OPARG] = instruction_jump->oparg;
-        patches[HoleValue_JUMP_OPERAND] = instruction_jump->operand;
+        patches[_JIT_BASE] = (uintptr_t)memory + offsets[i];
+        patches[_JIT_CONTINUE] = (uintptr_t)memory + offsets[(i + 1) % size];
+        patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
+        patches[_JIT_CONTINUE_OPERAND] = instruction_continue->operand;
+        patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
+        patches[_JIT_JUMP_OPARG] = instruction_jump->oparg;
+        patches[_JIT_JUMP_OPERAND] = instruction_jump->operand;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
