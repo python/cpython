@@ -8,6 +8,7 @@
 */
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_Pop(()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
@@ -365,9 +366,99 @@ error:
     return NULL;
 }
 
+
+static PyObject *
+structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
+{
+    PyObject *tup = NULL;
+    PyObject *dict = NULL;
+    PyObject *result;
+    Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields, i;
+
+    if (!_PyArg_NoPositional("__replace__", args)) {
+        return NULL;
+    }
+
+    n_fields = REAL_SIZE(self);
+    if (n_fields < 0) {
+        return NULL;
+    }
+    n_visible_fields = VISIBLE_SIZE(self);
+    n_unnamed_fields = UNNAMED_FIELDS(self);
+    if (n_unnamed_fields < 0) {
+        return NULL;
+    }
+    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
+    if (!tup) {
+        goto error;
+    }
+
+    dict = PyDict_New();
+    if (!dict) {
+        goto error;
+    }
+
+    if (kwargs != NULL) {
+        for (i = 0; i < n_visible_fields; i++) {
+            const char *name = Py_TYPE(self)->tp_members[i].name;
+            PyObject *key = PyUnicode_FromString(name);
+            if (!key) {
+                goto error;
+            }
+            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
+            Py_DECREF(key);
+            if (!ob) {
+                goto error;
+            }
+            PyTuple_SetItem(tup, i, ob);
+        }
+        for (i = n_visible_fields; i < n_fields; i++) {
+            const char *name = Py_TYPE(self)->tp_members[i - n_unnamed_fields].name;
+            PyObject *key = PyUnicode_FromString(name);
+            if (!key) {
+                goto error;
+            }
+            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
+            if (PyDict_SetItem(dict, key, ob) < 0) {
+                goto error;
+            }
+        }
+        if (PyDict_Size(kwargs) > 0) {
+            PyObject *names = PyDict_Keys(kwargs);
+            if (names) {
+                PyErr_Format(PyExc_ValueError, "Got unexpected field name(s): %R", names);
+                Py_DECREF(names);
+            }
+            goto error;
+        }
+    }
+    else
+    {
+        for (i = n_visible_fields; i < n_fields; i++) {
+            const char *name = Py_TYPE(self)->tp_members[i - n_unnamed_fields].name;
+            if (PyDict_SetItemString(dict, name, self->ob_item[i]) < 0) {
+                goto error;
+            }
+        }
+    }
+
+    result = structseq_new_impl(Py_TYPE(self), tup, dict);
+
+    Py_DECREF(tup);
+    Py_DECREF(dict);
+
+    return result;
+
+error:
+    Py_XDECREF(tup);
+    Py_XDECREF(dict);
+    return NULL;
+}
+
 static PyMethodDef structseq_methods[] = {
     {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
-    {NULL, NULL}
+    {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS, NULL},
+    {NULL, NULL}  // sentinel
 };
 
 static Py_ssize_t
