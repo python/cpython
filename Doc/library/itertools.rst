@@ -1119,9 +1119,7 @@ The following recipes have a more mathematical flavor:
        # factor(1_000_000_000_000_007) --> 47 59 360620266859
        # factor(1_000_000_000_000_403) --> 1000000000000403
        for prime in sieve(math.isqrt(n) + 1):
-           while True:
-               if n % prime:
-                   break
+           while not n % prime:
                yield prime
                n //= prime
                if n == 1:
