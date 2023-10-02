@@ -388,6 +388,13 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
     if (n_unnamed_fields < 0) {
         return NULL;
     }
+    if (n_unnamed_fields > 0) {
+        PyErr_Format(PyExc_TypeError,
+                     "__replace__() is not supported for %s "
+                     "because it has unnamed field(s)",
+                     Py_TYPE(self)->tp_name);
+        return NULL;
+    }
 
     tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup) {

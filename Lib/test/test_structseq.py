@@ -135,9 +135,32 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(os.stat_result.__match_args__, expected_args)
 
     def test_copy_replace_all_fields_visible(self):
-        t = time.gmtime(0)
-        assert t.n_unnamed_fields == 0 and t.n_sequence_fields == t.n_fields
+        assert os.times_result.n_unnamed_fields == 0 and os.times_result.n_sequence_fields == os.times_result.n_fields
 
+        expected_args = ('user', 'system', 'children_user', 'children_system', 'elapsed')
+        self.assertEqual(os.times_result.__match_args__, expected_args)
+        self.assertEqual(os.times_result.n_fields, len(expected_args))
+
+        n_fields = os.times_result.n_fields  # 5
+        t = os.times_result(range(os.times_result.n_fields))
+
+        # visible fields
+        self.assertEqual(copy.replace(t), tuple(range(n_fields)))
+        self.assertEqual(copy.replace(t, user=1), (1, *range(1, n_fields)))
+        self.assertEqual(copy.replace(t, system=2), (0, 2, *range(2, n_fields)))
+        self.assertEqual(copy.replace(t, user=1, system=2), (1, 2, *range(2, n_fields)))
+
+        # named invisible fields
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, error=-1)
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, user=1, error=-1)
+
+    def test_copy_replace_has_invisible_fields(self):
+        t = time.gmtime(0)
+        assert t.n_unnamed_fields == 0 and t.n_sequence_fields < t.n_fields
+
+        # visible fields
         self.assertEqual(copy.replace(t), (1970, 1, 1, 0, 0, 0, 3, 1, 0))
         self.assertEqual(copy.replace(t, tm_year=2000),
                          (2000, 1, 1, 0, 0, 0, 3, 1, 0))
@@ -145,19 +168,33 @@ class StructSeqTest(unittest.TestCase):
                          (1970, 2, 1, 0, 0, 0, 3, 1, 0))
         self.assertEqual(copy.replace(t, tm_year=2000, tm_mon=2),
                          (2000, 2, 1, 0, 0, 0, 3, 1, 0))
+
+        # named invisible fields
+        with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
+            t.tm_zone = 'some other zone'
+        self.assertHasAttr(t, 'tm_zone')
+        self.assertEqual(copy.replace(t, tm_zone='some other zone').tm_zone,
+                         'some other zone')
+
+        # unknown fields
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, error=2)
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
             copy.replace(t, tm_year=2000, error=2)
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, tm_zone='some other zone', error=2)
 
-    def test_copy_replace_has_invisible_fields(self):
-        assert os.stat_result.n_sequence_fields + os.stat_result.n_unnamed_fields < os.stat_result.n_fields
-        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime_ns': -1})
-        self.assertHasAttr(r, 'st_atime_ns')
-        self.assertEqual(r.st_atime_ns, -1)
-        with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
-            r.st_atime_ns = -2
-        r2 = copy.replace(r, st_atime_ns=-3)
-        self.assertHasAttr(r2, 'st_atime_ns')
-        self.assertEqual(r2.st_atime_ns, -3)
+    def test_copy_replace_has_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+        r = os.stat_result(range(os.stat_result.n_sequence_fields))
+        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+            copy.replace(r)
+        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+            copy.replace(r, st_mode=1)
+        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+            copy.replace(r, error=2)
+        with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
+            copy.replace(r, st_mode=1, error=2)
 
 
 if __name__ == "__main__":
