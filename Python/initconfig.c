@@ -1631,12 +1631,10 @@ config_init_cpu_count(PyConfig *config)
         if (strcmp(env, "default") == 0) {
             cpu_count = -1;
         }
-        else if (_Py_str_to_int(env, &cpu_count) != 0) {
+        else if (_Py_str_to_int(env, &cpu_count) < 0 || cpu_count < 1) {
             goto error;
         }
-        if (cpu_count >= 1) {
-            config->cpu_count = cpu_count;
-        }
+        config->cpu_count = cpu_count;
     }
 
     const wchar_t *xoption = config_get_xoption(config, L"cpu_count");
