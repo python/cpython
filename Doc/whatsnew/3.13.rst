@@ -995,6 +995,12 @@ New Features
   references) now supports the :ref:`Limited API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -1290,3 +1296,6 @@ removed, although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
   * :c:func:`PyThread_ReInitTLS`: no longer needed.
+
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)

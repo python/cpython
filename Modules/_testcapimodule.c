@@ -2923,7 +2923,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 

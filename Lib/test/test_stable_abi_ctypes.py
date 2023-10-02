@@ -35,7 +35,6 @@ class TestStableABIAvailability(unittest.TestCase):
 
 SYMBOL_NAMES = (
 
-    "PY_TIMEOUT_MAX",
     "PyAIter_Check",
     "PyArg_Parse",
     "PyArg_ParseTuple",
