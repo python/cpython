@@ -844,7 +844,7 @@ which incur interpreter overhead.
        return next(islice(iterable, n, None), default)
 
    def quantify(iterable, pred=bool):
-       "Count how many times the predicate is True"
+       "Given a predicate that returns True or False, count the True results."
        return sum(map(pred, iterable))
 
    def all_equal(iterable):
@@ -1028,6 +1028,77 @@ The following recipes have a more mathematical flavor:
        s = list(iterable)
        return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
 
+   def sum_of_squares(it):
+       "Add up the squares of the input values."
+       # sum_of_squares([10, 20, 30]) -> 1400
+       return math.sumprod(*tee(it))
+
+   def transpose(it):
+       "Swap the rows and columns of the input."
+       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
+       return zip(*it, strict=True)
+
+   def matmul(m1, m2):
+       "Multiply two matrices."
+       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) --> (49, 80), (41, 60)
+       n = len(m2[0])
+       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
+
+   def convolve(signal, kernel):
+       """Discrete linear convolution of two iterables.
+
+       The kernel is fully consumed before the calculations begin.
+       The signal is consumed lazily and can be infinite.
+
+       Convolutions are mathematically commutative.
+       If the signal and kernel are swapped,
+       the output will be the same.
+
+       Article:  https://betterexplained.com/articles/intuitive-convolution/
+       Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
+       """
+       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
+       # convolve(data, [1/2, 0, -1/2]) --> 1st derivative estimate
+       # convolve(data, [1, -2, 1]) --> 2nd derivative estimate
+       kernel = tuple(kernel)[::-1]
+       n = len(kernel)
+       padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
+       windowed_signal = sliding_window(padded_signal, n)
+       return map(math.sumprod, repeat(kernel), windowed_signal)
+
+   def polynomial_from_roots(roots):
+       """Compute a polynomial's coefficients from its roots.
+
+          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
+       """
+       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
+       factors = zip(repeat(1), map(operator.neg, roots))
+       return list(functools.reduce(convolve, factors, [1]))
+
+   def polynomial_eval(coefficients, x):
+       """Evaluate a polynomial at a specific value.
+
+       Computes with better numeric stability than Horner's method.
+       """
+       # Evaluate x³ -4x² -17x + 60 at x = 2.5
+       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
+       n = len(coefficients)
+       if not n:
+           return type(x)(0)
+       powers = map(pow, repeat(x), reversed(range(n)))
+       return math.sumprod(coefficients, powers)
+
+   def polynomial_derivative(coefficients):
+       """Compute the first derivative of a polynomial.
+
+          f(x)  =  x³ -4x² -17x + 60
+          f'(x) = 3x² -8x  -17
+       """
+       # polynomial_derivative([1, -4, -17, 60]) -> [3, -8, -17]
+       n = len(coefficients)
+       powers = reversed(range(1, n))
+       return list(map(operator.mul, coefficients, powers))
+
    def sieve(n):
        "Primes less than n."
        # sieve(30) --> 2 3 5 7 11 13 17 19 23 29
@@ -1057,70 +1128,6 @@ The following recipes have a more mathematical flavor:
                    return
        if n > 1:
            yield n
-
-   def sum_of_squares(it):
-       "Add up the squares of the input values."
-       # sum_of_squares([10, 20, 30]) -> 1400
-       return math.sumprod(*tee(it))
-
-   def transpose(it):
-       "Swap the rows and columns of the input."
-       # transpose([(1, 2, 3), (11, 22, 33)]) --> (1, 11) (2, 22) (3, 33)
-       return zip(*it, strict=True)
-
-   def matmul(m1, m2):
-       "Multiply two matrices."
-       # matmul([(7, 5), (3, 5)], [(2, 5), (7, 9)]) --> (49, 80), (41, 60)
-       n = len(m2[0])
-       return batched(starmap(math.sumprod, product(m1, transpose(m2))), n)
-
-   def convolve(signal, kernel):
-       """Linear convolution of two iterables.
-
-       Article:  https://betterexplained.com/articles/intuitive-convolution/
-       Video:    https://www.youtube.com/watch?v=KuXjwB4LzSA
-       """
-       # convolve(data, [0.25, 0.25, 0.25, 0.25]) --> Moving average (blur)
-       # convolve(data, [1, -1]) --> 1st finite difference (1st derivative)
-       # convolve(data, [1, -2, 1]) --> 2nd finite difference (2nd derivative)
-       kernel = tuple(kernel)[::-1]
-       n = len(kernel)
-       padded_signal = chain(repeat(0, n-1), signal, repeat(0, n-1))
-       windowed_signal = sliding_window(padded_signal, n)
-       return map(math.sumprod, repeat(kernel), windowed_signal)
-
-   def polynomial_from_roots(roots):
-       """Compute a polynomial's coefficients from its roots.
-
-          (x - 5) (x + 4) (x - 3)  expands to:   x³ -4x² -17x + 60
-       """
-       # polynomial_from_roots([5, -4, 3]) --> [1, -4, -17, 60]
-       factors = zip(repeat(1), map(operator.neg, roots))
-       return list(functools.reduce(convolve, factors, [1]))
-
-   def polynomial_eval(coefficients, x):
-       """Evaluate a polynomial at a specific value.
-
-       Computes with better numeric stability than Horner's method.
-       """
-       # Evaluate x³ -4x² -17x + 60 at x = 2.5
-       # polynomial_eval([1, -4, -17, 60], x=2.5) --> 8.125
-       n = len(coefficients)
-       if n == 0:
-           return x * 0  # coerce zero to the type of x
-       powers = map(pow, repeat(x), reversed(range(n)))
-       return math.sumprod(coefficients, powers)
-
-   def polynomial_derivative(coefficients):
-       """Compute the first derivative of a polynomial.
-
-          f(x)  =  x³ -4x² -17x + 60
-          f'(x) = 3x² -8x  -17
-       """
-       # polynomial_derivative([1, -4, -17, 60]) -> [3, -8, -17]
-       n = len(coefficients)
-       powers = reversed(range(1, n))
-       return list(map(operator.mul, coefficients, powers))
 
    def nth_combination(iterable, r, index):
        "Equivalent to list(combinations(iterable, r))[index]"
@@ -1297,7 +1304,7 @@ The following recipes have a more mathematical flavor:
     >>> polynomial_eval([], Fraction(2, 3))
     Fraction(0, 1)
     >>> polynomial_eval([], Decimal('1.75'))
-    Decimal('0.00')
+    Decimal('0')
     >>> polynomial_eval([11], 7) == 11
     True
     >>> polynomial_eval([11, 2], 7) == 11 * 7 + 2

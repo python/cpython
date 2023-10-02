@@ -22,7 +22,7 @@ extend-exclude = [
     "test_capi/test_unicode.py",
     "test_ctypes/test_arrays.py",
     "test_ctypes/test_functions.py",
-    "test_dataclasses.py",
+    "test_dataclasses/__init__.py",
     "test_descr.py",
     "test_enum.py",
     "test_functools.py",

@@ -404,7 +404,7 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+* Added support of :samp:`\\N\\{{name}\\}` escapes in :mod:`regular expressions <re>`::
 
     >>> notice = 'Copyright © 2019'
     >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
@@ -947,7 +947,7 @@ This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
 notebook.
 
-(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+(Suggested by Raymond Hettinger, implemented by Donghee Na, and
 reviewed by Vinay Sajip in :issue:`33897`.)
 
 
@@ -1714,7 +1714,7 @@ Deprecated
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
   has been deprecated.
-  (Contributed by Dong-hee Na in :issue:`35283`.)
+  (Contributed by Donghee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
   now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
