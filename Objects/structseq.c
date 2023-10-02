@@ -419,9 +419,11 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
                 goto error;
             }
             PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
-            if (PyDict_SetItem(dict, key, ob) < 0) {
+            if (!ob || PyDict_SetItem(dict, key, ob) < 0) {
+                Py_DECREF(key);
                 goto error;
             }
+            Py_DECREF(key);
         }
         if (PyDict_Size(kwargs) > 0) {
             PyObject *names = PyDict_Keys(kwargs);
