@@ -674,7 +674,7 @@ def emit_optimization_stats(stats):
     if "Optimization attempts" not in stats:
         return
 
-    uop_stats = extract_opcode_stats(stats, "uop")
+    uop_stats = extract_opcode_stats(stats, "uops")
 
     with Section("Optimization (Tier 2) stats", summary="statistics about the Tier 2 optimizer"):
         with Section("Overall stats", level=3):
