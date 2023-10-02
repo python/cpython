@@ -14,6 +14,7 @@ import platform
 import random
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import sysconfig
@@ -146,6 +147,14 @@ class ParseArgsTestCase(unittest.TestCase):
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
+
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '1'
+
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertFalse(regrtest.randomize)
+            self.assertIsNone(regrtest.random_seed)
 
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
@@ -376,8 +385,6 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def check_ci_mode(self, args, use_resources, rerun=True):
         ns = cmdline._parse_args(args)
-        if utils.MS_WINDOWS:
-            self.assertTrue(ns.nowindows)
 
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
@@ -787,14 +794,6 @@ class ProgramsTestCase(BaseTestCase):
         # Lib/test/autotest.py
         script = os.path.join(self.testdir, 'autotest.py')
         args = [*self.python_args, script, *self.regrtest_args, *self.tests]
-        self.run_tests(args)
-
-    @unittest.skipUnless(sysconfig.is_python_build(),
-                         'run_tests.py script is not installed')
-    def test_tools_script_run_tests(self):
-        # Tools/scripts/run_tests.py
-        script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
-        args = [script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
 
     def run_batch(self, *args):
@@ -2067,6 +2066,15 @@ class TestUtils(unittest.TestCase):
                          'test_success')
         self.assertIsNone(normalize('setUpModule (test.test_x)', is_error=True))
         self.assertIsNone(normalize('tearDownModule (test.test_module)', is_error=True))
+
+    def test_get_signal_name(self):
+        for exitcode, expected in (
+            (-int(signal.SIGINT), 'SIGINT'),
+            (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (3221225477, "STATUS_ACCESS_VIOLATION"),
+            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+        ):
+            self.assertEqual(utils.get_signal_name(exitcode), expected, exitcode)
 
 
 if __name__ == '__main__':

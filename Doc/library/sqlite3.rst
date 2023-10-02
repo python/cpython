@@ -992,9 +992,8 @@ Connection objects
          Added support for disabling the authorizer using ``None``.
 
       .. versionchanged:: 3.13
-
-      Passing *authorizer_callback* as a keyword argument to is deprecated.
-      The parameter will become positional-only in Python 3.15.
+         Passing *authorizer_callback* as a keyword argument is deprecated.
+         The parameter will become positional-only in Python 3.15.
 
 
    .. method:: set_progress_handler(progress_handler, n)
@@ -1012,9 +1011,8 @@ Connection objects
       exception.
 
       .. versionchanged:: 3.13
-
-      Passing *progress_handler* as a keyword argument to is deprecated.
-      The parameter will become positional-only in Python 3.15.
+         Passing *progress_handler* as a keyword argument is deprecated.
+         The parameter will become positional-only in Python 3.15.
 
 
    .. method:: set_trace_callback(trace_callback)
@@ -1041,9 +1039,8 @@ Connection objects
       .. versionadded:: 3.3
 
       .. versionchanged:: 3.13
-
-      Passing *trace_callback* as a keyword argument to is deprecated.
-      The parameter will become positional-only in Python 3.15.
+         Passing *trace_callback* as a keyword argument is deprecated.
+         The parameter will become positional-only in Python 3.15.
 
 
    .. method:: enable_load_extension(enabled, /)
