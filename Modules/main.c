@@ -26,10 +26,6 @@
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* --- pymain_init() ---------------------------------------------- */
 
 static PyStatus
@@ -760,7 +756,3 @@ Py_BytesMain(int argc, char **argv)
         .wchar_argv = NULL};
     return pymain_main(&args);
 }
-
-#ifdef __cplusplus
-}
-#endif

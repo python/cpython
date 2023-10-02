@@ -37,6 +37,9 @@
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
@@ -59,11 +62,6 @@
 #endif
 
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /* Forward declarations */
@@ -3164,7 +3162,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

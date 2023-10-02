@@ -5141,8 +5141,12 @@ operating system.
 
 .. function:: sched_getaffinity(pid, /)
 
-   Return the set of CPUs the process with PID *pid* (or the current process
-   if zero) is restricted to.
+   Return the set of CPUs the process with PID *pid* is restricted to.
+
+   If *pid* is zero, return the set of CPUs the calling thread of the current
+   process is restricted to.
+
+   See also the :func:`process_cpu_count` function.
 
 
 .. _os-path:
@@ -5183,12 +5187,11 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the **system**. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
-
+   The :func:`process_cpu_count` function can be used to get the number of
+   logical CPUs usable by the calling thread of the **current process**.
 
    .. versionadded:: 3.4
 
@@ -5200,6 +5203,20 @@ Miscellaneous System Information
    unobtainable.
 
    .. availability:: Unix.
+
+
+.. function:: process_cpu_count()
+
+   Get the number of logical CPUs usable by the calling thread of the **current
+   process**. Returns ``None`` if undetermined. It can be less than
+   :func:`cpu_count` depending on the CPU affinity.
+
+   The :func:`cpu_count` function can be used to get the number of logical CPUs
+   in the **system**.
+
+   See also the :func:`sched_getaffinity` functions.
+
+   .. versionadded:: 3.13
 
 
 .. function:: sysconf(name, /)

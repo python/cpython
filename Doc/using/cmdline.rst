@@ -811,7 +811,7 @@ conflict.
 
    Defines the :data:`user base directory <site.USER_BASE>`, which is used to
    compute the path of the :data:`user site-packages directory <site.USER_SITE>`
-   and installation paths for
+   and :ref:`installation paths <sysconfig-user-scheme>` for
    ``python -m pip install --user``.
 
    .. seealso::
