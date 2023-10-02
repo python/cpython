@@ -10430,23 +10430,13 @@ PyDoc_STRVAR(os__get_cpu_count_config__doc__,
 #define OS__GET_CPU_COUNT_CONFIG_METHODDEF    \
     {"_get_cpu_count_config", (PyCFunction)os__get_cpu_count_config, METH_NOARGS, os__get_cpu_count_config__doc__},
 
-static int
+static PyObject *
 os__get_cpu_count_config_impl(PyObject *module);
 
 static PyObject *
 os__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = os__get_cpu_count_config_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return os__get_cpu_count_config_impl(module);
 }
 
 PyDoc_STRVAR(os_cpu_count__doc__,
@@ -12014,4 +12004,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=726046e386a960c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c6a691f8d40bf1e input=a9049054013a1b77]*/
