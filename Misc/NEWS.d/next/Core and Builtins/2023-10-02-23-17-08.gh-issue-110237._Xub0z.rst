@@ -1,0 +1,1 @@
+Check `PyList_Append` for errors in `_PyEval_MatchClass`
