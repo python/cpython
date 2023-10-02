@@ -1291,7 +1291,7 @@ These can be used as types in annotations. They all support subscription using
    completely disables typechecking for a function or class.
 
    The responsibility of how to interpret the metadata
-   lies with the the tool or library encountering an
+   lies with the tool or library encountering an
    ``Annotated`` annotation. A tool or library encountering an ``Annotated`` type
    can scan through the metadata elements to determine if they are of interest
    (e.g., using :func:`isinstance`).
