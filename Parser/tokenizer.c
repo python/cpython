@@ -1648,7 +1648,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
         tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
-    if (is_potential_identifier_char(c)) {
+    if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
         syntaxerror(tok, "invalid %s literal", kind);
         return 0;

@@ -68,6 +68,10 @@ extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
 PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
 
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
 /* Get the current Python thread state.
 
    This function is unsafe: it does not check for error and it can return NULL.

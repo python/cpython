@@ -282,6 +282,10 @@ class SymtableTest(unittest.TestCase):
         self.assertEqual(str(self.top), "<SymbolTable for module ?>")
         self.assertEqual(str(self.spam), "<Function SymbolTable for spam in ?>")
 
+    def test_symtable_entry_repr(self):
+        expected = f"<symtable entry top({self.top.get_id()}), line {self.top.get_lineno()}>"
+        self.assertEqual(repr(self.top._table), expected)
+
 
 if __name__ == '__main__':
     unittest.main()

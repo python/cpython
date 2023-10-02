@@ -443,6 +443,33 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_compile_invalid_namedexpr(self):
+        # gh-109351
+        m = ast.Module(
+            body=[
+                ast.Expr(
+                    value=ast.ListComp(
+                        elt=ast.NamedExpr(
+                            target=ast.Constant(value=1),
+                            value=ast.Constant(value=3),
+                        ),
+                        generators=[
+                            ast.comprehension(
+                                target=ast.Name(id="x", ctx=ast.Store()),
+                                iter=ast.Name(id="y", ctx=ast.Load()),
+                                ifs=[],
+                                is_async=0,
+                            )
+                        ],
+                    )
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -1241,6 +1268,11 @@ class TestSpecifics(unittest.TestCase):
         def f(x):
             while x:
                 0 if 1 else 0
+
+    def test_remove_redundant_nop_edge_case(self):
+        # See gh-109889
+        def f():
+            a if (1 if b else c) else d
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):

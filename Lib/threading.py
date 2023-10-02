@@ -238,6 +238,13 @@ class _RLock:
     def _is_owned(self):
         return self._owner == get_ident()
 
+    # Internal method used for reentrancy checks
+
+    def _recursion_count(self):
+        if self._owner != get_ident():
+            return 0
+        return self._count
+
 _PyRLock = _RLock
 
 

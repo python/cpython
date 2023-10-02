@@ -36,7 +36,7 @@ and the ``dict`` field points to the dictionary.
 
 ## 3.12 pre-header
 
-In 3.12 the the pointer to the list of weak references is added to the
+In 3.12 the pointer to the list of weak references is added to the
 pre-header. In order to make space for it, the ``dict`` and ``values``
 pointers are combined into a single tagged pointer:
 

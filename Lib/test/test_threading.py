@@ -564,6 +564,10 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b'')
 
     @support.requires_fork()
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
+    # work around a libasan race condition: dead lock in pthread_create().
+    @support.skip_if_sanitizer("libasan has a pthread_create() dead lock",
+                               address=True)
     def test_is_alive_after_fork(self):
         # Try hard to trigger #18418: is_alive() could sometimes be True on
         # threads that vanished after a fork.
@@ -1746,6 +1750,9 @@ class EventTests(lock_tests.EventTests):
 class ConditionAsRLockTests(lock_tests.RLockTests):
     # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
+
+    def test_recursion_count(self):
+        self.skipTest("Condition does not expose _recursion_count()")
 
 class ConditionTests(lock_tests.ConditionTests):
     condtype = staticmethod(threading.Condition)

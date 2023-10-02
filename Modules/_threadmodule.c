@@ -486,6 +486,18 @@ PyDoc_STRVAR(rlock_release_save_doc,
 \n\
 For internal use by `threading.Condition`.");
 
+static PyObject *
+rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long tid = PyThread_get_thread_ident();
+    return PyLong_FromUnsignedLong(
+        self->rlock_owner == tid ? self->rlock_count : 0UL);
+}
+
+PyDoc_STRVAR(rlock_recursion_count_doc,
+"_recursion_count() -> int\n\
+\n\
+For internal use by reentrancy checks.");
 
 static PyObject *
 rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -561,6 +573,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
+    {"_recursion_count", (PyCFunction)rlock_recursion_count,
+     METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
@@ -1072,9 +1086,12 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate;
+    PyThreadState *tstate = boot->tstate;
 
-    tstate = boot->tstate;
+    // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
+    // was called, tstate becomes a dangling pointer.
+    assert(_PyThreadState_CheckConsistency(tstate));
+
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
