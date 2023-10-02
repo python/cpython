@@ -40,6 +40,11 @@ _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
             interp == &interp->runtime->_main_interpreter);
 }
 
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
+
 
 static inline const PyConfig *
 _Py_GetMainConfig(void)

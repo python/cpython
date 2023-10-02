@@ -1045,6 +1045,39 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 #endif
 
 
+int
+_PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
+{
+    if (interp->threads.main != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter already running");
+        return -1;
+    }
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    _Py_EnsureTstateNotNULL(tstate);
+    if (tstate->interp != interp) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "current tstate has wrong interpreter");
+        return -1;
+    }
+    interp->threads.main = tstate;
+    return 0;
+}
+
+void
+_PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
+{
+    assert(interp->threads.main == current_fast_get(&_PyRuntime));
+    interp->threads.main = NULL;
+}
+
+int
+_PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
+{
+    return (interp->threads.main != NULL);
+}
+
+
 //----------
 // accessors
 //----------
@@ -2727,6 +2760,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 }
 
+
+/*************/
+/* Other API */
+/*************/
 
 _PyFrameEvalFunction
 _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
