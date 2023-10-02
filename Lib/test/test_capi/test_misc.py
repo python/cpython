@@ -325,6 +325,8 @@ class CAPITest(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
                          'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
     def test_decref_freed_object(self):
         code = """
             import _testcapi
