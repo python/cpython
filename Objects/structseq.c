@@ -371,7 +371,7 @@ static PyObject *
 structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
 {
     PyStructSequence *result = NULL;
-    Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields, i;
+    Py_ssize_t n_fields, n_unnamed_fields, i;
 
     if (!_PyArg_NoPositional("__replace__", args)) {
         return NULL;
@@ -381,7 +381,6 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
     if (n_fields < 0) {
         return NULL;
     }
-    n_visible_fields = VISIBLE_SIZE(self);
     n_unnamed_fields = UNNAMED_FIELDS(self);
     if (n_unnamed_fields < 0) {
         return NULL;
