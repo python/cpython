@@ -150,7 +150,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(copy.replace(t, system=2), (0, 2, *range(2, n_fields)))
         self.assertEqual(copy.replace(t, user=1, system=2), (1, 2, *range(2, n_fields)))
 
-        # named invisible fields
+        # unknown fields
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
             copy.replace(t, error=-1)
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
