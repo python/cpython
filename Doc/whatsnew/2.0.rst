@@ -153,9 +153,9 @@ Lundh.  A detailed explanation of the interface was written up as :pep:`100`,
 significant points about the Unicode interfaces.
 
 In Python source code, Unicode strings are written as ``u"string"``.  Arbitrary
-Unicode characters can be written using a new escape sequence, ``\uHHHH``, where
+Unicode characters can be written using a new escape sequence, :samp:`\\u{HHHH}`, where
 *HHHH* is a 4-digit hexadecimal number from 0000 to FFFF.  The existing
-``\xHHHH`` escape sequence can also be used, and octal escapes can be used for
+:samp:`\\x{HH}` escape sequence can also be used, and octal escapes can be used for
 characters up to U+01FF, which is represented by ``\777``.
 
 Unicode strings, just like regular strings, are an immutable sequence type.

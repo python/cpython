@@ -781,6 +781,21 @@ def python_is_optimized():
     return final_opt not in ('', '-O0', '-Og')
 
 
+def check_cflags_pgo():
+    # Check if Python was built with ./configure --enable-optimizations:
+    # with Profile Guided Optimization (PGO).
+    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    pgo_options = (
+        # GCC
+        '-fprofile-use',
+        # clang: -fprofile-instr-use=code.profclangd
+        '-fprofile-instr-use',
+        # ICC
+        "-prof-use",
+    )
+    return any(option in cflags_nodist for option in pgo_options)
+
+
 _header = 'nP'
 _align = '0n'
 if hasattr(sys, "getobjects"):

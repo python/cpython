@@ -878,7 +878,7 @@ Other Language Changes
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
 * A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
-  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
+  the :const:`__debug__` constant.  (Contributed by Donghee Na in :issue:`45000`.)
 
 * :exc:`SyntaxError` exceptions now have ``end_lineno`` and
   ``end_offset`` attributes.  They will be ``None`` if not determined.
@@ -1255,7 +1255,7 @@ pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
 Add :const:`~os.O_EVTONLY`, :const:`~os.O_FSYNC`, :const:`~os.O_SYMLINK`
 and :const:`~os.O_NOFOLLOW_ANY` for macOS.
-(Contributed by Dong-hee Na in :issue:`43106`.)
+(Contributed by Donghee Na in :issue:`43106`.)
 
 os.path
 -------
@@ -1582,7 +1582,7 @@ Optimizations
 
 * The following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
-  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
+  (Contributed by Donghee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
 
 * :class:`BZ2File` performance is improved by removing internal ``RLock``.
   This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
@@ -1817,7 +1817,7 @@ Removed
   scheduled to be removed in Python 3.6, but such removals were delayed until
   after Python 2.7 EOL. Existing users should copy whatever classes they use
   into their code.
-  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
+  (Contributed by Donghee Na and Terry J. Reedy in :issue:`42299`.)
 
 * Removed the :c:func:`!PyModule_GetWarningsModule` function that was useless
   now due to the :mod:`!_warnings` module was converted to a builtin module in 2.6.

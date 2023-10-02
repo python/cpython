@@ -443,6 +443,33 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_compile_invalid_namedexpr(self):
+        # gh-109351
+        m = ast.Module(
+            body=[
+                ast.Expr(
+                    value=ast.ListComp(
+                        elt=ast.NamedExpr(
+                            target=ast.Constant(value=1),
+                            value=ast.Constant(value=3),
+                        ),
+                        generators=[
+                            ast.comprehension(
+                                target=ast.Name(id="x", ctx=ast.Store()),
+                                iter=ast.Name(id="y", ctx=ast.Load()),
+                                ifs=[],
+                                is_async=0,
+                            )
+                        ],
+                    )
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -1216,6 +1243,31 @@ class TestSpecifics(unittest.TestCase):
             return a
         self.assertEqual(f("x", "y", "z"), "y")
 
+    def test_duplicated_small_exit_block(self):
+        # See gh-109627
+        def f():
+            while element and something:
+                try:
+                    return something
+                except:
+                    pass
+
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
