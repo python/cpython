@@ -995,6 +995,12 @@ New Features
   references) now supports the :ref:`Limited API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
 Porting to Python 3.13
 ----------------------
 

@@ -2123,7 +2123,7 @@ Porting to Python 3.12
   The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
   supported, but does not fully support multiple inheritance
   (:gh:`95589`), and performance may be worse.
-  Classes declaring :c:macro:`Py_TPFLAGS_MANAGED_DICT` should call
+  Classes declaring :c:macro:`Py_TPFLAGS_MANAGED_DICT` must call
   :c:func:`!_PyObject_VisitManagedDict` and :c:func:`!_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
