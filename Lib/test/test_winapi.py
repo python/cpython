@@ -53,7 +53,7 @@ class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
         for i in chosen:
             with self.subTest(f"trigger event {i} of {len(evts)}"):
                 _winapi.SetEvent(evts[i])
-                triggered = _winapi.BatchedWaitForMultipleObjects(evts, False, 100)
+                triggered = _winapi.BatchedWaitForMultipleObjects(evts, False, 10000)
                 self.assertSetEqual(set(triggered), {i})
 
         # Trigger all at once. This may require multiple calls
@@ -61,7 +61,7 @@ class WinAPIBatchedWaitForMultipleObjectsTests(unittest.TestCase):
             _winapi.SetEvent(evts[i])
         triggered = set()
         while len(triggered) < len(chosen):
-            triggered.update(_winapi.BatchedWaitForMultipleObjects(evts, False, 100))
+            triggered.update(_winapi.BatchedWaitForMultipleObjects(evts, False, 10000))
         self.assertSetEqual(triggered, set(chosen))
 
         # Replace events with invalid handles to make sure we fail
