@@ -861,7 +861,6 @@ DTRACE_HEADERS
 DFLAGS
 DTRACE
 WITH_MIMALLOC
-MIMALLOC_OBJS
 MIMALLOC_HEADERS
 GDBM_LIBS
 GDBM_CFLAGS
@@ -16887,13 +16886,10 @@ printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
 
   MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
 
-  MIMALLOC_OBJS='$(MIMALLOC_OBJS)'
-
 fi
 
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
 printf "%s\n" "$with_mimalloc" >&6; }
-
 
 
 

@@ -4556,13 +4556,11 @@ if test "$with_mimalloc" != no; then
   with_mimalloc=yes
   AC_DEFINE([WITH_MIMALLOC], [1], [Define if you want to compile in mimalloc memory allocator.])
   AC_SUBST([MIMALLOC_HEADERS], ['$(MIMALLOC_HEADERS)'])
-  AC_SUBST([MIMALLOC_OBJS], ['$(MIMALLOC_OBJS)'])
 fi
 
 AC_MSG_RESULT([$with_mimalloc])
 AC_SUBST([WITH_MIMALLOC])
 AC_SUBST([MIMALLOC_HEADERS])
-AC_SUBST([MIMALLOC_OBJS])
 
 # Check for Python-specific malloc support
 AC_MSG_CHECKING([for --with-pymalloc])

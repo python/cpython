@@ -7,7 +7,7 @@ import sys
 import sysconfig
 
 
-ALLOWED_PREFIXES = ('Py', '_Py', 'mi_', '_mi_')
+ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
 
