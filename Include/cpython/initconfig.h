@@ -205,6 +205,9 @@ typedef struct PyConfig {
     wchar_t *run_module;
     wchar_t *run_filename;
 
+    /* --- Set by Py_Main() -------------------------- */
+    wchar_t *sys_path_0;
+
     /* --- Private fields ---------------------------- */
 
     // Install importlib? If equals to 0, importlib is not initialized at all.

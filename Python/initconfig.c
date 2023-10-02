@@ -739,6 +739,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
     CLEAR(config->platlibdir);
+    CLEAR(config->sys_path_0);
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
@@ -993,6 +994,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_WSTR_ATTR(exec_prefix);
     COPY_WSTR_ATTR(base_exec_prefix);
     COPY_WSTR_ATTR(platlibdir);
+    COPY_WSTR_ATTR(sys_path_0);
 
     COPY_ATTR(site_import);
     COPY_ATTR(bytes_warning);
@@ -1102,6 +1104,7 @@ _PyConfig_AsDict(const PyConfig *config)
     SET_ITEM_WSTR(exec_prefix);
     SET_ITEM_WSTR(base_exec_prefix);
     SET_ITEM_WSTR(platlibdir);
+    SET_ITEM_WSTR(sys_path_0);
     SET_ITEM_INT(site_import);
     SET_ITEM_INT(bytes_warning);
     SET_ITEM_INT(warn_default_encoding);
@@ -1403,6 +1406,7 @@ _PyConfig_FromDict(PyConfig *config, PyObject *dict)
     GET_WSTR_OPT(pythonpath_env);
     GET_WSTR_OPT(home);
     GET_WSTR(platlibdir);
+    GET_WSTR(sys_path_0);
 
     // Path configuration output
     GET_UINT(module_search_paths_set);
@@ -3165,6 +3169,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  import site = %i\n", config->site_import);
     PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);
+    DUMP_CONFIG("sys.path[0]", sys_path_0);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \
