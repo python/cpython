@@ -1,1 +1,0 @@
-Add :meth:`~object.__class_getitem__` to :class:`types.GeneratorType` and `types.CoroutineType` for type hinting purposes. Patch by James Hilton-Balfe.
