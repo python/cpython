@@ -574,6 +574,22 @@ class TestChannels(TestBase):
         after = set(interpreters.list_all_channels())
         self.assertEqual(after, created)
 
+    def test_shareable(self):
+        rch, sch = interpreters.create_channel()
+
+        self.assertTrue(
+            interpreters.is_shareable(rch))
+        self.assertTrue(
+            interpreters.is_shareable(sch))
+
+        sch.send_nowait(rch)
+        sch.send_nowait(sch)
+        rch2 = rch.recv()
+        sch2 = rch.recv()
+
+        self.assertEqual(rch2, rch)
+        self.assertEqual(sch2, sch)
+
 
 class TestRecvChannelAttrs(TestBase):
 
