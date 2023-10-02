@@ -1,5 +1,4 @@
 role,name,added,ifdef_note,struct_abi_kind
-var,PY_TIMEOUT_MAX,3.2,,
 macro,PY_VECTORCALL_ARGUMENTS_OFFSET,3.12,,
 function,PyAIter_Check,3.10,,
 function,PyArg_Parse,3.2,,
