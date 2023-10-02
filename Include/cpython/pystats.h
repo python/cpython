@@ -100,10 +100,7 @@ typedef struct _uop_stats {
     uint64_t execution_count;
 } UOpStats;
 
-// Note that these should be set to support the largest possible trace length.
-// i.e. log2(MAX_LENGTH) + 1 === (_Py_UOP_HIST_SIZE + _Py_UOP_HIST_BIAS)
-#define _Py_UOP_HIST_SIZE 5
-#define _Py_UOP_HIST_BIAS 2
+#define _Py_UOP_HIST_SIZE 32
 
 typedef struct _optimization_stats {
     uint64_t attempts;

@@ -3008,7 +3008,7 @@
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
-            OPT_HIST(pc, trace_run_length_hist);
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             return frame;
             break;
         }

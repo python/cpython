@@ -79,6 +79,9 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
     int opcode;
     int oparg;
     uint64_t operand;
+#ifdef Py_STATS
+    uint64_t trace_uop_execution_counter = 0;
+#endif
 
     for (;;) {
         opcode = self->trace[pc].opcode;
@@ -94,6 +97,10 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         pc++;
         OPT_STAT_INC(uops_executed);
         UOP_EXE_INC(opcode);
+#ifdef Py_STATS
+        trace_uop_execution_counter++;
+#endif
+
         switch (opcode) {
 
 #include "executor_cases.c.h"
@@ -126,7 +133,7 @@ error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    OPT_HIST(pc, trace_run_length_hist);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -135,7 +142,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
-    OPT_HIST(pc, trace_run_length_hist);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);

@@ -285,7 +285,14 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
 #define UOP_EXE_INC(opname) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].execution_count++; } while (0)
 #define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
-#define OPT_HIST(length, name) do { if (_Py_stats) _Py_stats->optimization_stats.name[_Py_bit_length((length - 1) >> _Py_UOP_HIST_BIAS)]++; } while (0)
+#define OPT_HIST(length, name) \
+    do { \
+        if (_Py_stats) { \
+            int bucket = _Py_bit_length(length - 1); \
+            bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
+            _Py_stats->optimization_stats.name[bucket]++; \
+        } \
+    } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
