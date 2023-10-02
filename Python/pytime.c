@@ -428,15 +428,6 @@ _PyTime_FromSeconds(int seconds)
 
 
 _PyTime_t
-_PyTime_FromSecondsDouble(double seconds)
-{
-    _PyTime_t t = (_PyTime_t)(seconds * SEC_TO_NS);
-    assert((t >= 0 && t <= _PyTime_MAX)
-           || (t < 0 && t >= _PyTime_MIN));
-    return pytime_from_nanoseconds(t);
-}
-
-_PyTime_t
 _PyTime_FromNanoseconds(_PyTime_t ns)
 {
     return pytime_from_nanoseconds(ns);
@@ -642,6 +633,16 @@ _PyTime_AsNanosecondsObject(_PyTime_t t)
     static_assert(sizeof(long long) >= sizeof(_PyTime_t),
                   "_PyTime_t is larger than long long");
     return PyLong_FromLongLong((long long)ns);
+}
+
+_PyTime_t
+_PyTime_FromSecondsDouble(double seconds)
+{
+    _PyTime_t tp;
+    if(pytime_from_double(&tp, seconds, _PyTime_ROUND_FLOOR, SEC_TO_NS) < 0) {
+        return -1;
+    }
+    return tp;
 }
 
 
