@@ -116,23 +116,28 @@ server is the address family.
    :class:`ForkingMixIn` and the Forking classes mentioned below are
    only available on POSIX platforms that support :func:`~os.fork`.
 
-   :meth:`!ForkingMixIn.server_close` waits until all child
-   processes complete, except if
-   :attr:`!ForkingMixIn.block_on_close` attribute is false.
+   .. attribute:: block_on_close
 
-   :meth:`!ThreadingMixIn.server_close` waits until all non-daemon
-   threads complete, except if
-   :attr:`!ThreadingMixIn.block_on_close` attribute is false. Use
-   daemonic threads by setting
-   :data:`!ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
-   complete.
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>`
+      waits until all child processes complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>`
+      waits until all non-daemon threads complete, except if
+      :attr:`block_on_close` attribute is ``False``.
+
+   .. attribute:: daemon_threads
+
+      For :class:`ThreadingMixIn` use daemonic threads by setting
+      :data:`ThreadingMixIn.daemon_threads <daemon_threads>`
+      to ``True`` to not wait until threads complete.
 
    .. versionchanged:: 3.7
 
-      :meth:`!ForkingMixIn.server_close` and
-      :meth:`!ThreadingMixIn.server_close` now waits until all
+      :meth:`ForkingMixIn.server_close <BaseServer.server_close>` and
+      :meth:`ThreadingMixIn.server_close <BaseServer.server_close>` now waits until all
       child processes and non-daemonic threads complete.
-      Add a new :attr:`!ForkingMixIn.block_on_close` class
+      Add a new :attr:`ForkingMixIn.block_on_close <block_on_close>` class
       attribute to opt-in for the pre-3.7 behaviour.
 
 
