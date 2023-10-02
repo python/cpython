@@ -156,7 +156,7 @@ class StructSeqTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
             copy.replace(t, user=1, error=-1)
 
-    def test_copy_replace_has_invisible_fields(self):
+    def test_copy_replace_with_invisible_fields(self):
         t = time.gmtime(0)
         assert t.n_unnamed_fields == 0 and t.n_sequence_fields < t.n_fields
 
@@ -189,7 +189,7 @@ class StructSeqTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
             copy.replace(t, tm_zone='some other zone', error=2)
 
-    def test_copy_replace_has_unnamed_fields(self):
+    def test_copy_replace_with_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
         r = os.stat_result(range(os.stat_result.n_sequence_fields))
         with self.assertRaisesRegex(TypeError, '__replace__() is not supported'):
