@@ -4,6 +4,8 @@ import copy
 import copyreg
 import weakref
 import abc
+import os
+import time
 from operator import le, lt, ge, gt, eq, ne, attrgetter
 
 import unittest
@@ -944,6 +946,28 @@ class TestReplace(unittest.TestCase):
         self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
             copy.replace(p, x=1, error=2)
+
+    def test_structseq(self):
+        t = time.gmtime(0)
+        self.assertEqual(copy.replace(t), (1970, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_year=2000),
+                         (2000, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_mon=2),
+                         (1970, 2, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_year=2000, tm_mon=2),
+                         (2000, 2, 1, 0, 0, 0, 3, 1, 0))
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, tm_year=2000, error=2)
+
+        assert os.stat_result.n_unnamed_fields > 0
+        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime_ns': -1})
+        self.assertHasAttr(r, 'st_atime_ns')
+        self.assertEqual(r.st_atime_ns, -1)
+        with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
+            r.st_atime_ns = -2
+        r2 = copy.replace(r, st_atime_ns=-3)
+        self.assertHasAttr(r2, 'st_atime_ns')
+        self.assertEqual(r2.st_atime_ns, -3)
 
     def test_dataclass(self):
         from dataclasses import dataclass
