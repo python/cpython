@@ -146,6 +146,16 @@ different version number to get that version, or you can run ``python
 ``python -m pip uninstall`` followed by one or more package names will
 remove the packages from the virtual environment.
 
+.. code-block:: bash
+  (tutorial-env) $ python -m pip uninstall requests
+  Found existing installation: requests 2.7.0
+  Uninstalling requests-2.7.0:
+  Would remove:
+    c:\python38\lib\site-packages\requests-2.7.0.dist-info\*
+    c:\python38\lib\site-packages\requests\*
+  Proceed (Y/n)? y
+  Successfully uninstalled requests-2.7.0
+
 ``python -m pip show`` will display information about a particular package:
 
 .. code-block:: bash
