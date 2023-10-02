@@ -19,11 +19,11 @@ extern void _PyMem_RawFree(void *, void *);
 #define PYRAW_ALLOC {NULL, _PyMem_RawMalloc, _PyMem_RawCalloc, _PyMem_RawRealloc, _PyMem_RawFree}
 
 #ifdef WITH_MIMALLOC
-extern void *_PyMem_MiMalloc(void *ctx, size_t size);
-extern void * _PyMem_MiCalloc(void *ctx, size_t nelem, size_t elsize);
-extern void *_PyMem_MiRealloc(void *ctx, void *ptr, size_t size);
+extern void* _PyMem_MiMalloc(void *ctx, size_t size);
+extern void* _PyMem_MiCalloc(void *ctx, size_t nelem, size_t elsize);
+extern void* _PyMem_MiRealloc(void *ctx, void *ptr, size_t size);
 extern void _PyMem_MiFree(void *ctx, void *ptr);
-extern void * _PyObject_MiMalloc(void *ctx, size_t nbytes);
+extern void* _PyObject_MiMalloc(void *ctx, size_t nbytes);
 extern void* _PyObject_MiCalloc(void *ctx, size_t nelem, size_t elsize);
 extern void* _PyObject_MiRealloc(void *ctx, void *ptr, size_t nbytes);
 extern void _PyObject_MiFree(void *ctx, void *ptr);

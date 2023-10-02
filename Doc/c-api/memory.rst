@@ -379,8 +379,8 @@ Default memory allocators:
 ===============================  ====================  ==================  =====================  ====================
 Configuration                    Name                  PyMem_RawMalloc     PyMem_Malloc           PyObject_Malloc
 ===============================  ====================  ==================  =====================  ====================
-Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
-Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
+Release build                    ``"mimalloc"``        ``malloc``          ``mimalloc``           ``mimalloc``
+Debug build                      ``"mimalloc_debug"``  ``malloc`` + debug  ``mimalloc`` + debug   ``mimalloc`` + debug
 Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
 Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
@@ -391,6 +391,8 @@ Legend:
 * ``malloc``: system allocators from the standard C library, C functions:
   :c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`.
 * ``pymalloc``: :ref:`pymalloc memory allocator <pymalloc>`.
+* ``mimalloc``: :ref:`mimalloc memory allocator <mimalloc>`.  The pymalloc
+  allocator will be used if mimalloc support isn't available.
 * "+ debug": with :ref:`debug hooks on the Python memory allocators
   <pymem-debug-hooks>`.
 * "Debug build": :ref:`Python build in debug mode <debug-build>`.
@@ -671,6 +673,18 @@ Customize pymalloc Arena Allocator
 
    Set the arena allocator.
 
+.. _mimalloc:
+
+The mimalloc allocator
+======================
+
+.. versionadded:: 3.13
+
+Python supports the mimalloc allocator when the underlying platform support is available.
+mimalloc "is a general purpose allocator with excellent performance characteristics. 
+Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
+
+When mimalloc support is available it is the default allocator.
 
 tracemalloc C API
 =================
