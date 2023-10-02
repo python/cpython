@@ -2226,6 +2226,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
