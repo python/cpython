@@ -388,11 +388,11 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
     if (n_unnamed_fields < 0) {
         return NULL;
     }
+
     tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
     if (!tup) {
         goto error;
     }
-
     dict = PyDict_New();
     if (!dict) {
         goto error;
@@ -428,7 +428,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         if (PyDict_Size(kwargs) > 0) {
             PyObject *names = PyDict_Keys(kwargs);
             if (names) {
-                PyErr_Format(PyExc_ValueError, "Got unexpected field name(s): %R", names);
+                PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
                 Py_DECREF(names);
             }
             goto error;
