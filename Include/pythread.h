@@ -44,22 +44,7 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 */
 #define PY_TIMEOUT_T long long
 
-#if defined(_POSIX_THREADS)
-   /* PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
-      convert microseconds to nanoseconds. */
-#  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
-#elif defined (NT_THREADS)
-   // WaitForSingleObject() accepts timeout in milliseconds in the range
-   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
-   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
-#  if 0xFFFFFFFELL * 1000 < LLONG_MAX
-#    define PY_TIMEOUT_MAX (0xFFFFFFFELL * 1000)
-#  else
-#    define PY_TIMEOUT_MAX LLONG_MAX
-#  endif
-#else
-#  define PY_TIMEOUT_MAX LLONG_MAX
-#endif
+PyAPI_DATA(const long long) PY_TIMEOUT_MAX;
 
 
 /* If microseconds == 0, the call is non-blocking: it returns immediately
