@@ -24,7 +24,6 @@ extend-exclude = [
     "test_pkg.py",
     "test_subclassinit.py",
     "test_tokenize.py",
-    "test_typing.py",
     "test_yield_from.py",
     "time_hashlib.py",
 ]
