@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 import unittest
@@ -132,6 +133,31 @@ class StructSeqTest(unittest.TestCase):
                          'st_gid', 'st_size')
         self.assertEqual(os.stat_result.n_unnamed_fields, 3)
         self.assertEqual(os.stat_result.__match_args__, expected_args)
+
+    def test_copy_replace_all_fields_visible(self):
+        t = time.gmtime(0)
+        assert t.n_unnamed_fields == 0 and t.n_sequence_fields == t.n_fields
+
+        self.assertEqual(copy.replace(t), (1970, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_year=2000),
+                         (2000, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_mon=2),
+                         (1970, 2, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(copy.replace(t, tm_year=2000, tm_mon=2),
+                         (2000, 2, 1, 0, 0, 0, 3, 1, 0))
+        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
+            copy.replace(t, tm_year=2000, error=2)
+
+    def test_copy_replace_has_invisible_fields(self):
+        assert os.stat_result.n_sequence_fields + os.stat_result.n_unnamed_fields < os.stat_result.n_fields
+        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime_ns': -1})
+        self.assertHasAttr(r, 'st_atime_ns')
+        self.assertEqual(r.st_atime_ns, -1)
+        with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
+            r.st_atime_ns = -2
+        r2 = copy.replace(r, st_atime_ns=-3)
+        self.assertHasAttr(r2, 'st_atime_ns')
+        self.assertEqual(r2.st_atime_ns, -3)
 
 
 if __name__ == "__main__":
