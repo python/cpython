@@ -122,9 +122,9 @@ class _ChannelEnd:
 
     def __init__(self, cid):
         if self._end == 'send':
-            cid = _channels._channel_id(cid, send=True)
+            cid = _channels._channel_id(cid, send=True, force=True)
         elif self._end == 'recv':
-            cid = _channels._channel_id(cid, recv=True)
+            cid = _channels._channel_id(cid, recv=True, force=True)
         else:
             raise NotImplementedError(self._end)
         self._id = cid
