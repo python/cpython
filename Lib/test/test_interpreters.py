@@ -1055,3 +1055,46 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+    def test_send_buffer(self):
+        buf = bytearray(b'spamspamspam')
+        obj = None
+        rch, sch = interpreters.create_channel()
+
+        def f():
+            nonlocal obj
+            while True:
+                try:
+                    obj = rch.recv()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+        t = threading.Thread(target=f)
+        t.start()
+
+        sch.send_buffer(buf)
+        t.join()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)
+
+    def test_send_buffer_nowait(self):
+        buf = bytearray(b'spamspamspam')
+        rch, sch = interpreters.create_channel()
+        sch.send_buffer_nowait(buf)
+        obj = rch.recv()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)
