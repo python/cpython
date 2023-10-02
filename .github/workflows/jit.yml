@@ -74,10 +74,6 @@ jobs:
             compiler: clang
             tier: 2
             exclude: test_tools
-        # exclude:
-        #   # Can't find LLVM 16:
-        #   - target: powerpc64le-unknown-linux-gnu/gcc
-        #     llvm: 16
     env:
       CC: ${{ matrix.compiler }}
       PYTHON_LLVM_VERSION: ${{ matrix.llvm }}

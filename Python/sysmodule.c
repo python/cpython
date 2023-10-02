@@ -40,7 +40,9 @@ Data members:
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
-#include <locale.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getpid()
+#endif
 
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
