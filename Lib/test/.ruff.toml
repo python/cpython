@@ -26,7 +26,6 @@ extend-exclude = [
     "test_keywordonlyarg.py",
     "test_pkg.py",
     "test_subclassinit.py",
-    "test_typing.py",
     "test_unittest/testmock/testpatch.py",
     "test_yield_from.py",
     "time_hashlib.py",

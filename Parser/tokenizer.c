@@ -4,10 +4,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#include <assert.h>
+#include "tokenizer.h"            // struct tok_state
+#include "errcode.h"              // E_OK
 
-#include "tokenizer.h"
-#include "errcode.h"
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // read()
+#endif
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
