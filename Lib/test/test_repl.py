@@ -5,6 +5,7 @@ import os
 import unittest
 import subprocess
 from textwrap import dedent
+from test import support
 from test.support import cpython_only, has_subprocess_support, SuppressCrashReport
 from test.support.script_helper import kill_python
 
@@ -59,6 +60,9 @@ def run_on_interactive_mode(source):
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_no_memory(self):
         # Issue #30696: Fix the interactive interpreter looping endlessly when
         # no memory. Check also that the fix does not break the interactive

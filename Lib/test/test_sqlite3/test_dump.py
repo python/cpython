@@ -1,7 +1,6 @@
 # Author: Paul Kippes <kippesp@gmail.com>
 
 import unittest
-import sqlite3 as sqlite
 
 from .util import memory_database
 from .util import MemoryDatabaseMixin
@@ -130,21 +129,6 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
             "COMMIT;"
         ]
         self.cu.execute("CREATE VIRTUAL TABLE test USING fts4(example)")
-        actual = list(self.cx.iterdump())
-        self.assertEqual(expected, actual)
-
-    def test_dump_unicode_invalid(self):
-        # gh-108590
-        expected = [
-            "BEGIN TRANSACTION;",
-            "CREATE TABLE foo (data TEXT);",
-            "INSERT INTO \"foo\" VALUES('a\x9f');",
-            "COMMIT;",
-        ]
-        self.cu.executescript("""
-            CREATE TABLE foo (data TEXT);
-            INSERT INTO foo VALUES (CAST(X'619f' AS TEXT));
-        """)
         actual = list(self.cx.iterdump())
         self.assertEqual(expected, actual)
 

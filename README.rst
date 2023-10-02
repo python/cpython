@@ -177,7 +177,7 @@ is printed about a failed test or a traceback or core dump is produced,
 something is wrong.
 
 By default, tests are prevented from overusing resources like disk space and
-memory.  To enable these tests, run ``make testall``.
+memory.  To enable these tests, run ``make buildbottest``.
 
 If any tests fail, you can re-run the failing test(s) in verbose mode.  For
 example, if ``test_os`` and ``test_gdb`` failed, you can run::

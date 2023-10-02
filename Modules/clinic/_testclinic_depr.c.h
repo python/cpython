@@ -3,12 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
-#include "pycore_long.h"           // _PyLong_UnsignedShort_Converter()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(depr_star_new__doc__,
 "DeprStarNew(a=None)\n"
@@ -2393,4 +2392,4 @@ depr_multi(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=464aeba97e482f5c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=689b1e2d0872e413 input=a9049054013a1b77]*/

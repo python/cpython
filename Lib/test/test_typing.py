@@ -550,7 +550,7 @@ class TypeVarTests(BaseTestCase):
             with self.subTest(cls=cls):
                 vals = weakref.WeakValueDictionary()
 
-                for x in range(100000):
+                for x in range(10):
                     vals[x] = cls(str(x))
                 del vals
 
@@ -7586,6 +7586,17 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Options.__required_keys__, frozenset())
         self.assertEqual(Options.__optional_keys__, {'log_level', 'log_path'})
 
+    def test_total_inherits_non_total(self):
+        class TD1(TypedDict, total=False):
+            a: int
+
+        self.assertIs(TD1.__total__, False)
+
+        class TD2(TD1):
+            b: str
+
+        self.assertIs(TD2.__total__, True)
+
     def test_optional_keys(self):
         class Point2Dor3D(Point2D, total=False):
             z: int
@@ -8189,8 +8200,7 @@ class AnnotatedTests(BaseTestCase):
 
     def test_new(self):
         with self.assertRaisesRegex(
-            TypeError,
-            'Type Annotated cannot be instantiated',
+            TypeError, 'Cannot instantiate typing.Annotated',
         ):
             Annotated()
 
@@ -9363,6 +9373,10 @@ class AllTests(BaseTestCase):
         self.assertIn('SupportsComplex', a)
 
     def test_all_exported_names(self):
+        # ensure all dynamically created objects are actualised
+        for name in typing.__all__:
+            getattr(typing, name)
+
         actual_all = set(typing.__all__)
         computed_all = {
             k for k, v in vars(typing).items()

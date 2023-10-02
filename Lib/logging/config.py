@@ -83,15 +83,12 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
     formatters = _create_formatters(cp)
 
     # critical section
-    logging._acquireLock()
-    try:
+    with logging._lock:
         _clearExistingHandlers()
 
         # Handlers add themselves to logging._handlers
         handlers = _install_handlers(cp, formatters)
         _install_loggers(cp, handlers, disable_existing_loggers)
-    finally:
-        logging._releaseLock()
 
 
 def _resolve(name):
@@ -516,8 +513,7 @@ class DictConfigurator(BaseConfigurator):
             raise ValueError("Unsupported version: %s" % config['version'])
         incremental = config.pop('incremental', False)
         EMPTY_DICT = {}
-        logging._acquireLock()
-        try:
+        with logging._lock:
             if incremental:
                 handlers = config.get('handlers', EMPTY_DICT)
                 for name in handlers:
@@ -661,8 +657,6 @@ class DictConfigurator(BaseConfigurator):
                     except Exception as e:
                         raise ValueError('Unable to configure root '
                                          'logger') from e
-        finally:
-            logging._releaseLock()
 
     def configure_formatter(self, config):
         """Configure a formatter from a dictionary."""
@@ -988,9 +982,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
         def __init__(self, host='localhost', port=DEFAULT_LOGGING_CONFIG_PORT,
                      handler=None, ready=None, verify=None):
             ThreadingTCPServer.__init__(self, (host, port), handler)
-            logging._acquireLock()
-            self.abort = 0
-            logging._releaseLock()
+            with logging._lock:
+                self.abort = 0
             self.timeout = 1
             self.ready = ready
             self.verify = verify
@@ -1004,9 +997,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                                            self.timeout)
                 if rd:
                     self.handle_request()
-                logging._acquireLock()
-                abort = self.abort
-                logging._releaseLock()
+                with logging._lock:
+                    abort = self.abort
             self.server_close()
 
     class Server(threading.Thread):
@@ -1027,9 +1019,8 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                 self.port = server.server_address[1]
             self.ready.set()
             global _listener
-            logging._acquireLock()
-            _listener = server
-            logging._releaseLock()
+            with logging._lock:
+                _listener = server
             server.serve_until_stopped()
 
     return Server(ConfigSocketReceiver, ConfigStreamHandler, port, verify)
@@ -1039,10 +1030,7 @@ def stopListening():
     Stop the listening server which was created with a call to listen().
     """
     global _listener
-    logging._acquireLock()
-    try:
+    with logging._lock:
         if _listener:
             _listener.abort = 1
             _listener = None
-    finally:
-        logging._releaseLock()

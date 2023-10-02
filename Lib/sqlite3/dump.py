@@ -7,34 +7,12 @@
 # future enhancements, you should normally quote any identifier that
 # is an English language word, even if you do not have to."
 
-
-from contextlib import contextmanager
-
-
 def _quote_name(name):
     return '"{0}"'.format(name.replace('"', '""'))
 
 
 def _quote_value(value):
     return "'{0}'".format(value.replace("'", "''"))
-
-
-def _force_decode(bs, *args, **kwargs):
-    # gh-108590: Don't fail if the database contains invalid Unicode data.
-    try:
-        return bs.decode(*args, **kwargs)
-    except UnicodeDecodeError:
-        return "".join([chr(c) for c in bs])
-
-
-@contextmanager
-def _text_factory(con, factory):
-    saved_factory = con.text_factory
-    con.text_factory = factory
-    try:
-        yield
-    finally:
-        con.text_factory = saved_factory
 
 
 def _iterdump(connection):
@@ -96,9 +74,8 @@ def _iterdump(connection):
             )
         )
         query_res = cu.execute(q)
-        with _text_factory(connection, bytes):
-            for row in query_res:
-                yield("{0};".format(_force_decode(row[0])))
+        for row in query_res:
+            yield("{0};".format(row[0]))
 
     # Now when the type is 'index', 'trigger', or 'view'
     q = """

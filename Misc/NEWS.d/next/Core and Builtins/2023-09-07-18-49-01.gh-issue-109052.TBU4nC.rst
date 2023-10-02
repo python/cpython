@@ -1,0 +1,1 @@
+Use the base opcode when comparing code objects to avoid interference from instrumentation

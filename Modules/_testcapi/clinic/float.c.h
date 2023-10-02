@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_testcapi_float_pack__doc__,
 "float_pack($module, size, d, le, /)\n"
 "--\n"
@@ -85,4 +79,4 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=de6879d0f4987d79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50146051f1341cce input=a9049054013a1b77]*/

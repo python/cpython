@@ -1,0 +1,3 @@
+The :meth:`doctest.DocTestRunner.run` method now counts the number of skipped
+tests. Add :attr:`doctest.DocTestRunner.skips` and
+:attr:`doctest.TestResults.skipped` attributes. Patch by Victor Stinner.

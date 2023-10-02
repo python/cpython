@@ -748,19 +748,49 @@ and 'int' is a type.
 """
 
 
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
+
+
 class TestDocTestFinder(unittest.TestCase):
 
     def test_issue35753(self):
         # This import of `call` should trigger issue35753 when
-        # `support.run_doctest` is called due to unwrap failing,
+        # DocTestFinder.find() is called due to inspect.unwrap() failing,
         # however with a patched doctest this should succeed.
         from unittest.mock import call
         dummy_module = types.ModuleType("dummy")
         dummy_module.__dict__['inject_call'] = call
-        try:
-            support.run_doctest(dummy_module, verbosity=True)
-        except ValueError as e:
-            raise support.TestFailed("Doctest unwrap failed") from e
+        finder = doctest.DocTestFinder()
+        self.assertEqual(finder.find(dummy_module), [])
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'

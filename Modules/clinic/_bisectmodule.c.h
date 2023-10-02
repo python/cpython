@@ -3,11 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(_bisect_bisect_right__doc__,
 "bisect_right($module, /, a, x, lo=0, hi=None, *, key=None)\n"
@@ -434,4 +433,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=839fdddeacdc2ecb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=43ece163c3e972df input=a9049054013a1b77]*/

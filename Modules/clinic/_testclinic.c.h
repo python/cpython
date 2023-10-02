@@ -3,12 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
-#include "pycore_long.h"           // _PyLong_UnsignedShort_Converter()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -3071,4 +3070,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a652e6b1787d3346 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c2a69a08ffdfc466 input=a9049054013a1b77]*/

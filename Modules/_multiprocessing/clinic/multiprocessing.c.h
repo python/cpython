@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
@@ -172,4 +166,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=eb078dff6b6595ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b91c020d4353cc5 input=a9049054013a1b77]*/

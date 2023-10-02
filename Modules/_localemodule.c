@@ -10,35 +10,25 @@ This software comes with no warranty. Use at your own risk.
 ******************************************************************/
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_pymem.h"  // _PyMem_Strdup
+#include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
+#include "pycore_pymem.h"         // _PyMem_Strdup()
 
-#include <stdio.h>
-#include <locale.h>
-#include <string.h>
-#include <ctype.h>
-
+#include <locale.h>               // setlocale()
+#include <string.h>               // strlen()
 #ifdef HAVE_ERRNO_H
-#include <errno.h>
+#  include <errno.h>              // errno
 #endif
-
 #ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
+#  include <langinfo.h>           // nl_langinfo()
 #endif
-
 #ifdef HAVE_LIBINTL_H
-#include <libintl.h>
+#  include <libintl.h>
 #endif
-
-#ifdef HAVE_WCHAR_H
-#include <wchar.h>
-#endif
-
-#if defined(MS_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
+#ifdef MS_WINDOWS
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
 #endif
 
 PyDoc_STRVAR(locale__doc__, "Support for POSIX locales.");

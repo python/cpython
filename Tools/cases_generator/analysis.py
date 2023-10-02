@@ -94,13 +94,8 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
-        n_instrs = 0
-        n_ops = 0
-        for instr in self.instrs.values():
-            if instr.kind == "op":
-                n_ops += 1
-            else:
-                n_instrs += 1
+        n_instrs = len(set(self.instrs) & set(self.macros))
+        n_ops = len(self.instrs) - n_instrs
         print(
             f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
@@ -145,6 +140,9 @@ class Analyzer:
 
             match thing:
                 case parsing.InstDef(name=name):
+                    macro: parsing.Macro | None = None
+                    if thing.kind == "inst":
+                        macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -152,9 +150,12 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        self.everything[
-                            instrs_idx[name]
-                        ] = OverriddenInstructionPlaceHolder(name=name)
+                        placeholder = OverriddenInstructionPlaceHolder(name=name)
+                        self.everything[instrs_idx[name]] = placeholder
+                        if macro is not None:
+                            self.warning(
+                                f"Overriding desugared {macro.name} may not work", thing
+                            )
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -164,6 +165,9 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
+                    if macro is not None:
+                        self.macros[macro.name] = macro
+                        self.everything.append(macro)
                 case parsing.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
@@ -197,9 +201,9 @@ class Analyzer:
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
-                elif target_macro := self.macro_instrs.get(target):
+                if target_macro := self.macro_instrs.get(target):
                     target_macro.predicted = True
-                else:
+                if not target_instr and not target_macro:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
                         instr.inst,  # TODO: Use better location
@@ -263,11 +267,7 @@ class Analyzer:
                     )
 
     def effect_counts(self, name: str) -> tuple[int, int, int]:
-        if instr := self.instrs.get(name):
-            cache = instr.cache_offset
-            input = len(instr.input_effects)
-            output = len(instr.output_effects)
-        elif mac := self.macro_instrs.get(name):
+        if mac := self.macro_instrs.get(name):
             cache = mac.cache_offset
             input, output = 0, 0
             for part in mac.parts:
@@ -365,8 +365,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "SAVE_IP":
-                        # SAVE_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SET_IP":
+                        # _SET_IP in a macro is a no-op in Tier 1
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
@@ -407,9 +407,68 @@ class Analyzer:
                 case parsing.OpName(name):
                     if name not in self.instrs:
                         self.error(f"Unknown instruction {name!r}", macro)
-                    components.append(self.instrs[name])
+                    else:
+                        components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
                     assert_never(uop)
         return components
+
+    def report_non_viable_uops(self, jsonfile: str) -> None:
+        print("The following ops are not viable uops:")
+        skips = {
+            "CACHE",
+            "RESERVED",
+            "INTERPRETER_EXIT",
+            "JUMP_BACKWARD",
+            "LOAD_FAST_LOAD_FAST",
+            "LOAD_CONST_LOAD_FAST",
+            "STORE_FAST_STORE_FAST",
+            "_BINARY_OP_INPLACE_ADD_UNICODE",
+            "POP_JUMP_IF_TRUE",
+            "POP_JUMP_IF_FALSE",
+            "_ITER_JUMP_LIST",
+            "_ITER_JUMP_TUPLE",
+            "_ITER_JUMP_RANGE",
+        }
+        try:
+            # Secret feature: if bmraw.json exists, print and sort by execution count
+            counts = load_execution_counts(jsonfile)
+        except FileNotFoundError as err:
+            counts = {}
+        non_viable = [
+            instr
+            for instr in self.instrs.values()
+            if instr.name not in skips
+            and not instr.name.startswith("INSTRUMENTED_")
+            and not instr.is_viable_uop()
+        ]
+        non_viable.sort(key=lambda instr: (-counts.get(instr.name, 0), instr.name))
+        for instr in non_viable:
+            if instr.name in counts:
+                scount = f"{counts[instr.name]:,}"
+            else:
+                scount = ""
+            print(f"    {scount:>15} {instr.name:<35}", end="")
+            if instr.name in self.families:
+                print("      (unspecialized)", end="")
+            elif instr.family is not None:
+                print(f" (specialization of {instr.family.name})", end="")
+            print()
+
+
+def load_execution_counts(jsonfile: str) -> dict[str, int]:
+    import json
+
+    with open(jsonfile) as f:
+        jsondata = json.load(f)
+
+    # Look for keys like "opcode[LOAD_FAST].execution_count"
+    prefix = "opcode["
+    suffix = "].execution_count"
+    res: dict[str, int] = {}
+    for key, value in jsondata.items():
+        if key.startswith(prefix) and key.endswith(suffix):
+            res[key[len(prefix) : -len(suffix)]] = value
+    return res

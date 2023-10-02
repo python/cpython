@@ -13081,8 +13081,8 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (!tstate) {
         return 0;
     }
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    state->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
 

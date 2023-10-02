@@ -5,54 +5,30 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* This module tests the public (Include/ and Include/cpython/) C API.
-   The internal C API must not be used here: use _testinternalcapi for that.
+// Include parts.h first since it takes care of NDEBUG and Py_BUILD_CORE macros
+// and including Python.h.
+//
+// Several parts of this module are broken out into files in _testcapi/.
+// Include definitions from there.
+#include "_testcapi/parts.h"
 
-   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   macro defined, but only the public C API must be tested here. */
-
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
-
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
 #include <stddef.h>               // offsetof()
-#ifndef MS_WINDOWS
-#  include <unistd.h>
-#endif
 
 #ifdef HAVE_SYS_WAIT_H
 #  include <sys/wait.h>           // W_STOPCODE
-#endif
-
-#ifdef Py_BUILD_CORE
-#  error "_testcapi must test the public Python C API, not CPython internal C API"
 #endif
 
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
-// Several parts of this module are broken out into files in _testcapi/.
-// Include definitions from there.
-#include "_testcapi/parts.h"
+#include "_testcapi/util.h"
 
-#define NULLABLE(x) do { if (x == Py_None) x = NULL; } while (0);
-
-#define RETURN_INT(value) do {          \
-        int _ret = (value);             \
-        if (_ret == -1) {               \
-            return NULL;                \
-        }                               \
-        return PyLong_FromLong(_ret);   \
-    } while (0)
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
@@ -228,10 +204,13 @@ test_dict_inner(int count)
         Py_DECREF(v);
     }
 
+    k = v = UNINITIALIZED_PTR;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         PyObject *o;
         iterations++;
 
+        assert(k != UNINITIALIZED_PTR);
+        assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
         if (o == NULL)
@@ -241,7 +220,10 @@ test_dict_inner(int count)
             return -1;
         }
         Py_DECREF(o);
+        k = v = UNINITIALIZED_PTR;
     }
+    assert(k == UNINITIALIZED_PTR);
+    assert(v == UNINITIALIZED_PTR);
 
     Py_DECREF(dict);
 
@@ -1333,19 +1315,13 @@ static PyObject *
 test_PyBuffer_SizeFromFormat(PyObject *self, PyObject *args)
 {
     const char *format;
-    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "s:test_PyBuffer_SizeFromFormat",
                           &format)) {
         return NULL;
     }
 
-    result = PyBuffer_SizeFromFormat(format);
-    if (result == -1) {
-        return NULL;
-    }
-
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyBuffer_SizeFromFormat(format));
 }
 
 /* Test that the fatal error from not having a current thread doesn't
@@ -1426,104 +1402,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleStringFlags(code, &cflags);
-    Py_EndInterpreter(substate);
-
-    PyThreadState_Swap(mainstate);
-
-    return PyLong_FromLong(r);
-}
-
-/* To run some code in a sub-interpreter. */
-static PyObject *
-run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
-    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
-    PyCompilerFlags cflags = {0};
-
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
-        return NULL;
-    }
-
-    mainstate = PyThreadState_Get();
-
-    PyThreadState_Swap(NULL);
-
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
-    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        PyThreadState_Swap(mainstate);
-        _PyErr_SetFromPyStatus(status);
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-        _PyErr_ChainExceptions1(exc);
-        return NULL;
-    }
-    assert(substate != NULL);
     r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
@@ -2139,6 +2017,26 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_SET_REFCNT(obj,  0);
     /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
     Py_DECREF(obj);
 
     Py_RETURN_NONE;
@@ -3025,7 +2923,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 
@@ -3233,7 +3131,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(Py_REFCNT(obj) == refcnt);
 
     // test PyWeakref_GetRef(), reference is alive
-    PyObject *ref = Py_True;  // marker to check that value was set
+    PyObject *ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 1);
     assert(ref == obj);
     assert(Py_REFCNT(obj) == (refcnt + 1));
@@ -3255,7 +3153,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
 
     // test PyWeakref_GetRef(), reference is dead
-    ref = Py_True;
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(weakref, &ref) == 0);
     assert(ref == NULL);
 
@@ -3267,7 +3165,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
     // test PyWeakref_GetRef(), invalid type
     assert(!PyErr_Occurred());
-    ref = Py_True;
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_TypeError));
     PyErr_Clear();
@@ -3279,7 +3177,7 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     PyErr_Clear();
 
     // test PyWeakref_GetRef(NULL)
-    ref = Py_True;  // marker to check that value was set
+    ref = UNINITIALIZED_PTR;
     assert(PyWeakref_GetRef(NULL, &ref) == -1);
     assert(PyErr_ExceptionMatches(PyExc_SystemError));
     assert(ref == NULL);
@@ -3376,9 +3274,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"run_in_subinterp_with_config",
-     _PyCFunction_CAST(run_in_subinterp_with_config),
-     METH_VARARGS | METH_KEYWORDS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
@@ -3411,6 +3306,7 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
@@ -4034,6 +3930,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -4105,18 +4002,15 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_GC(m) < 0) {
         return NULL;
     }
-
-#ifndef LIMITED_API_AVAILABLE
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
-#else
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
+    if (_PyTestCapi_Init_PyAtomic(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
-#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

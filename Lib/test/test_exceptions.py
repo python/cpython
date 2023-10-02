@@ -1350,6 +1350,7 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
         # See bpo-33930
 
@@ -1484,6 +1485,9 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1652,6 +1656,9 @@ class ExceptionTests(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi

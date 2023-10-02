@@ -163,6 +163,18 @@ PyAPI_FUNC(Py_ssize_t) _Py_UTF8_Edit_Cost(PyObject *str_a, PyObject *str_b,
 
 void _PyErr_FormatNote(const char *format, ...);
 
+/* Context manipulation (PEP 3134) */
+
+Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
+
+// Export for '_zoneinfo' shared extension
+PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
+
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
+    const char *err_msg,
+    PyObject *obj);
+
 #ifdef __cplusplus
 }
 #endif

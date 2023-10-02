@@ -3,11 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_long.h"           // _PyLong_UnsignedLong_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 
 PyDoc_STRVAR(py_blake2s_new__doc__,
 "blake2s(data=b\'\', /, *, digest_size=_blake2.blake2s.MAX_DIGEST_SIZE,\n"
@@ -277,4 +276,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=2188af9910a45497 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90ca2b52b8c40785 input=a9049054013a1b77]*/

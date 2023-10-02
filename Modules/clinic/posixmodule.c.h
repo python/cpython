@@ -3,13 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
-#include "pycore_abstract.h"       // _PyNumber_Index()
-#include "pycore_fileutils.h"      // _PyLong_FileDescriptor_Converter()
-#include "pycore_long.h"           // _PyLong_UnsignedInt_Converter()
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_long.h"          // _PyLong_UnsignedInt_Converter()
 
 PyDoc_STRVAR(os_stat__doc__,
 "stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
@@ -1978,7 +1977,7 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, path)\n"
+"_path_isdir($module, /, s)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
@@ -1987,7 +1986,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path);
+os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2002,7 +2001,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2011,7 +2010,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"s", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_isdir",
@@ -2019,14 +2018,14 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    PyObject *s;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_isdir_impl(module, path);
+    s = args[0];
+    return_value = os__path_isdir_impl(module, s);
 
 exit:
     return return_value;
@@ -10426,11 +10425,9 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
 "\n"
-"Return the number of CPUs in the system; return None if indeterminable.\n"
+"Return the number of logical CPUs in the system.\n"
 "\n"
-"This number is not equivalent to the number of CPUs the current process can\n"
-"use.  The number of usable CPUs can be obtained with\n"
-"``len(os.sched_getaffinity(0))``");
+"Return None if indeterminable.");
 
 #define OS_CPU_COUNT_METHODDEF    \
     {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
@@ -10696,22 +10693,18 @@ PyDoc_STRVAR(os_DirEntry_is_junction__doc__,
 "Return True if the entry is a junction; cached per entry.");
 
 #define OS_DIRENTRY_IS_JUNCTION_METHODDEF    \
-    {"is_junction", _PyCFunction_CAST(os_DirEntry_is_junction), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, os_DirEntry_is_junction__doc__},
+    {"is_junction", (PyCFunction)os_DirEntry_is_junction, METH_NOARGS, os_DirEntry_is_junction__doc__},
 
 static int
-os_DirEntry_is_junction_impl(DirEntry *self, PyTypeObject *defining_class);
+os_DirEntry_is_junction_impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry_is_junction(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_junction(DirEntry *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    if (nargs) {
-        PyErr_SetString(PyExc_TypeError, "is_junction() takes no arguments");
-        goto exit;
-    }
-    _return_value = os_DirEntry_is_junction_impl(self, defining_class);
+    _return_value = os_DirEntry_is_junction_impl(self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11993,4 +11986,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1b34619e5f65adc2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b60de6ddb925bc3 input=a9049054013a1b77]*/

@@ -237,6 +237,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint
+        # Consider these characters as part of the command so when the users type
+        # c.a or c['a'], it won't be recognized as a c(ontinue) command
+        self.identchars = cmd.Cmd.identchars + '=.[](),"\'+-*/%@&|<>~^'
 
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -491,6 +494,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 Pdb._previous_sigint_handler = None
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        if isinstance(tb_or_exc, BaseException):
+            assert tb is not None, "main exception must have a traceback"
         with self._hold_exceptions(_chained_exceptions):
             if self.setup(frame, tb):
                 # no interaction desired at this time (happens if .pdbrc contains
@@ -509,6 +514,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if obj is not None:
             self.message(repr(obj))
 
+    @contextmanager
+    def _disable_tab_completion(self):
+        if self.use_rawinput and self.completekey == 'tab':
+            try:
+                import readline
+            except ImportError:
+                yield
+                return
+            try:
+                readline.parse_and_bind('tab: self-insert')
+                yield
+            finally:
+                readline.parse_and_bind('tab: complete')
+        else:
+            yield
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
@@ -516,28 +537,29 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                buffer = line
-                continue_prompt = "...   "
-                while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
-                    if self.use_rawinput:
-                        try:
-                            line = input(continue_prompt)
-                        except (EOFError, KeyboardInterrupt):
-                            self.lastcmd = ""
-                            print('\n')
-                            return
-                    else:
-                        self.stdout.write(continue_prompt)
-                        self.stdout.flush()
-                        line = self.stdin.readline()
-                        if not len(line):
-                            self.lastcmd = ""
-                            self.stdout.write('\n')
-                            self.stdout.flush()
-                            return
+                with self._disable_tab_completion():
+                    buffer = line
+                    continue_prompt = "...   "
+                    while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                        if self.use_rawinput:
+                            try:
+                                line = input(continue_prompt)
+                            except (EOFError, KeyboardInterrupt):
+                                self.lastcmd = ""
+                                print('\n')
+                                return
                         else:
-                            line = line.rstrip('\r\n')
-                    buffer += '\n' + line
+                            self.stdout.write(continue_prompt)
+                            self.stdout.flush()
+                            line = self.stdin.readline()
+                            if not len(line):
+                                self.lastcmd = ""
+                                self.stdout.write('\n')
+                                self.stdout.flush()
+                                return
+                            else:
+                                line = line.rstrip('\r\n')
+                        buffer += '\n' + line
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -1166,7 +1188,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 rep = repr(exc)
                 if len(rep) > 80:
                     rep = rep[:77] + "..."
-                self.message(f"{prompt} {ix:>3} {rep}")
+                indicator = (
+                    "  -"
+                    if self._chained_exceptions[ix].__traceback__ is None
+                    else f"{ix:>3}"
+                )
+                self.message(f"{prompt} {indicator} {rep}")
         else:
             try:
                 number = int(arg)
@@ -1174,6 +1201,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error("Argument must be an integer")
                 return
             if 0 <= number < len(self._chained_exceptions):
+                if self._chained_exceptions[number].__traceback__ is None:
+                    self.error("This exception does not have a traceback, cannot jump to it")
+                    return
+
                 self._chained_exception_index = number
                 self.setup(None, self._chained_exceptions[number].__traceback__)
                 self.print_stack_entry(self.stack[self.curindex])
@@ -1722,8 +1753,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for alias in keys:
                 self.message("%s = %s" % (alias, self.aliases[alias]))
             return
-        if args[0] in self.aliases and len(args) == 1:
-            self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+        if len(args) == 1:
+            if args[0] in self.aliases:
+                self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+            else:
+                self.error(f"Unknown alias '{args[0]}'")
         else:
             self.aliases[args[0]] = ' '.join(args[1:])
 
@@ -2007,19 +2041,27 @@ def post_mortem(t=None):
     If `t` is an exception object, the `exceptions` command makes it possible to
     list and inspect its chained exceptions (if any).
     """
+    return _post_mortem(t, Pdb())
+
+
+def _post_mortem(t, pdb_instance):
+    """
+    Private version of post_mortem, which allow to pass a pdb instance
+    for testing purposes.
+    """
     # handling the default
     if t is None:
         exc = sys.exception()
         if exc is not None:
             t = exc.__traceback__
 
-    if t is None:
+    if t is None or (isinstance(t, BaseException) and t.__traceback__ is None):
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 
-    p = Pdb()
-    p.reset()
-    p.interaction(None, t)
+    pdb_instance.reset()
+    pdb_instance.interaction(None, t)
+
 
 def pm():
     """Enter post-mortem debugging of the traceback found in sys.last_exc."""
@@ -2039,8 +2081,6 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-usage: pdb.py [-c command] ... [-m module | pyfile] [arg] ...
-
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
 the -m switch.
@@ -2055,34 +2095,44 @@ To let the script run up to a given line X in the debugged file, use
 
 
 def main():
-    import getopt
+    import argparse
 
-    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['help', 'command='])
+    parser = argparse.ArgumentParser(prog="pdb",
+                                     description=_usage,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     allow_abbrev=False)
 
-    if not args:
-        print(_usage)
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-m', metavar='module')
+    group.add_argument('pyfile', nargs='?')
+    parser.add_argument('args', nargs="*")
+
+    if len(sys.argv) == 1:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        parser.print_help()
         sys.exit(2)
 
-    if any(opt in ['-h', '--help'] for opt, optarg in opts):
-        print(_usage)
-        sys.exit()
+    opts = parser.parse_args()
 
-    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
-
-    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
-    cls = _ModuleTarget if module_indicated else _ScriptTarget
-    target = cls(args[0])
+    if opts.m:
+        file = opts.m
+        target = _ModuleTarget(file)
+    else:
+        file = opts.pyfile
+        target = _ScriptTarget(file)
 
     target.check()
 
-    sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(commands)
+    pdb.rcLines.extend(opts.command)
     while True:
         try:
             pdb._run(target)
