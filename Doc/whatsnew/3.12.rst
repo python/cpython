@@ -46,7 +46,7 @@
    researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
-Python 3.12 will be released on October 2, 2023.
+Python 3.12 was released on October 2, 2023.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
