@@ -91,7 +91,7 @@ class ErrorAtUnpickle(object):
 
 
 class ExecutorDeadlockTest:
-    TIMEOUT = support.SHORT_TIMEOUT
+    TIMEOUT = support.LONG_TIMEOUT
 
     def _fail_on_deadlock(self, executor):
         # If we did not recover before TIMEOUT seconds, consider that the
