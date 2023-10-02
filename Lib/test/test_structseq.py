@@ -170,7 +170,7 @@ class StructSeqTest(unittest.TestCase):
                          (2000, 2, 1, 0, 0, 0, 3, 1, 0))
 
         # named invisible fields
-        self.assertHasAttr(t, 'tm_zone')
+        self.assertTrue(hasattr(t, 'tm_zone'), f"{t} has no attribute 'tm_zone'")
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
         t2 = copy.replace(t, tm_zone='some other zone')
