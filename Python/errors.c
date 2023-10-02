@@ -16,11 +16,6 @@
 #  include <stdlib.h>             // _sys_nerr
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward declarations */
 static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
@@ -1918,7 +1913,3 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
     return _PyErr_ProgramDecodedTextObject(filename, lineno, NULL);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -501,3 +501,28 @@ static inline void _Py_atomic_fence_release(void);
 #else
 #  error "no available pyatomic implementation for this platform/compiler"
 #endif
+
+
+// --- aliases ---------------------------------------------------------------
+
+#if SIZEOF_LONG == 8
+# define _Py_atomic_load_ulong(p) \
+    _Py_atomic_load_uint64((uint64_t *)p)
+# define _Py_atomic_load_ulong_relaxed(p) \
+    _Py_atomic_load_uint64_relaxed((uint64_t *)p)
+# define _Py_atomic_store_ulong(p, v) \
+    _Py_atomic_store_uint64((uint64_t *)p, v)
+# define _Py_atomic_store_ulong_relaxed(p, v) \
+    _Py_atomic_store_uint64_relaxed((uint64_t *)p, v)
+#elif SIZEOF_LONG == 4
+# define _Py_atomic_load_ulong(p) \
+    _Py_atomic_load_uint32((uint32_t *)p)
+# define _Py_atomic_load_ulong_relaxed(p) \
+    _Py_atomic_load_uint32_relaxed((uint32_t *)p)
+# define _Py_atomic_store_ulong(p, v) \
+    _Py_atomic_store_uint32((uint32_t *)p, v)
+# define _Py_atomic_store_ulong_relaxed(p, v) \
+    _Py_atomic_store_uint32_relaxed((uint32_t *)p, v)
+#else
+# error "long must be 4 or 8 bytes in size"
+#endif  // SIZEOF_LONG
