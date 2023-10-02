@@ -1218,23 +1218,45 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     PUTS(fd, "\n");
 }
 
+static int
+tstate_is_freed(PyThreadState *tstate)
+{
+    if (_PyMem_IsPtrFreed(tstate)) {
+        return 1;
+    }
+    if (_PyMem_IsPtrFreed(tstate->interp)) {
+        return 1;
+    }
+    return 0;
+}
+
+
+static int
+interp_is_freed(PyInterpreterState *interp)
+{
+    return _PyMem_IsPtrFreed(interp);
+}
+
+
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyInterpreterFrame *frame;
-    unsigned int depth;
-
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = tstate->cframe->current_frame;
+    if (tstate_is_freed(tstate)) {
+        PUTS(fd, "  <tstate is freed>\n");
+        return;
+    }
+
+    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
     if (frame == NULL) {
         PUTS(fd, "  <no Python frame>\n");
         return;
     }
 
-    depth = 0;
+    unsigned int depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
             PUTS(fd, "  ...\n");
@@ -1298,9 +1320,6 @@ const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_tstate)
 {
-    PyThreadState *tstate;
-    unsigned int nthreads;
-
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -1314,6 +1333,10 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
            _PyThreadState_GET() cannot be used. Read the thread specific
            storage (TSS) instead: call PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
+    }
+
+    if (current_tstate != NULL && tstate_is_freed(current_tstate)) {
+        return "tstate is freed";
     }
 
     if (interp == NULL) {
@@ -1330,14 +1353,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     }
     assert(interp != NULL);
 
+    if (interp_is_freed(interp)) {
+        return "interp is freed";
+    }
+
     /* Get the current interpreter from the current thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
     tstate = PyInterpreterState_ThreadHead(interp);
-    nthreads = 0;
+    unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {
