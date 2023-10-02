@@ -261,6 +261,16 @@ class TestInterpreterIsRunning(TestBase):
             self.assertTrue(interp.is_running())
         self.assertFalse(interp.is_running())
 
+    def test_finished(self):
+        r, w = os.pipe()
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            os.write({w}, b'x')
+            """)
+        self.assertFalse(interp.is_running())
+        self.assertEqual(os.read(r, 1), b'x')
+
     def test_from_subinterpreter(self):
         interp = interpreters.create()
         out = _run_output(interp, dedent(f"""
@@ -287,6 +297,31 @@ class TestInterpreterIsRunning(TestBase):
         interp = interpreters.Interpreter(-1)
         with self.assertRaises(ValueError):
             interp.is_running()
+
+    def test_with_only_background_threads(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        DONE = b'D'
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+
+            def task():
+                v = os.read({r_thread}, 1)
+                assert v == {DONE!r}
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            """)
+        self.assertFalse(interp.is_running())
+
+        os.write(w_thread, DONE)
+        interp.run('t.join()')
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
 class TestInterpreterClose(TestBase):
@@ -389,6 +424,37 @@ class TestInterpreterClose(TestBase):
                 interp.close()
             self.assertTrue(interp.is_running())
 
+    def test_subthreads_still_running(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+            import time
+
+            done = False
+
+            def notify_fini():
+                global done
+                done = True
+                t.join()
+            threading._register_atexit(notify_fini)
+
+            def task():
+                while not done:
+                    time.sleep(0.1)
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            """)
+        interp.close()
+
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
+
 
 class TestInterpreterRun(TestBase):
 
@@ -464,6 +530,37 @@ class TestInterpreterRun(TestBase):
         interp = interpreters.create()
         with self.assertRaises(TypeError):
             interp.run(b'print("spam")')
+
+    def test_with_background_threads_still_running(self):
+        r_interp, w_interp = os.pipe()
+        r_thread, w_thread = os.pipe()
+
+        RAN = b'R'
+        DONE = b'D'
+        FINISHED = b'F'
+
+        interp = interpreters.create()
+        interp.run(f"""if True:
+            import os
+            import threading
+
+            def task():
+                v = os.read({r_thread}, 1)
+                assert v == {DONE!r}
+                os.write({w_interp}, {FINISHED!r})
+            t = threading.Thread(target=task)
+            t.start()
+            os.write({w_interp}, {RAN!r})
+            """)
+        interp.run(f"""if True:
+            os.write({w_interp}, {RAN!r})
+            """)
+
+        os.write(w_thread, DONE)
+        interp.run('t.join()')
+        self.assertEqual(os.read(r_interp, 1), RAN)
+        self.assertEqual(os.read(r_interp, 1), RAN)
+        self.assertEqual(os.read(r_interp, 1), FINISHED)
 
     # test_xxsubinterpreters covers the remaining Interpreter.run() behavior.
 
