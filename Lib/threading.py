@@ -1595,7 +1595,7 @@ def _shutdown():
         assert tlock is not None
         if tlock.locked():
             # It should have been released already by
-            # PyInterpreterState_SetNotRunningMain(), but there may be
+            # _PyInterpreterState_SetNotRunningMain(), but there may be
             # embedders that aren't calling that yet.
             tlock.release()
         _main_thread._stop()
