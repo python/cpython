@@ -14347,7 +14347,7 @@ os__get_cpu_count_config_impl(PyObject *module)
 {
     const PyConfig *config = _Py_GetConfig();
     if (config->cpu_count > 0) {
-        return PyUnicode_FromString("overrided");
+        return PyUnicode_FromString("overridden");
     }
     return PyUnicode_FromString("default");
 }
