@@ -170,11 +170,16 @@ class StructSeqTest(unittest.TestCase):
                          (2000, 2, 1, 0, 0, 0, 3, 1, 0))
 
         # named invisible fields
+        self.assertHasAttr(t, 'tm_zone')
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
-        self.assertHasAttr(t, 'tm_zone')
-        self.assertEqual(copy.replace(t, tm_zone='some other zone').tm_zone,
-                         'some other zone')
+        t2 = copy.replace(t, tm_zone='some other zone')
+        self.assertEqual(t, t2)
+        self.assertEqual(t2.tm_zone, 'some other zone')
+        t3 = copy.replace(t, tm_year=2000, tm_zone='some other zone')
+        self.assertEqual(t3, (2000, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(t3.tm_year, 2000)
+        self.assertEqual(t3.tm_zone, 'some other zone')
 
         # unknown fields
         with self.assertRaisesRegex(ValueError, 'unexpected field name'):
