@@ -1,5 +1,6 @@
 import builtins
 import codecs
+import _datetime
 import gc
 import locale
 import operator
@@ -1202,6 +1203,13 @@ class SysModuleTest(unittest.TestCase):
         sys._stats_clear()
         sys._stats_dump()
 
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    def test_disable_gil_abi(self):
+        abi_threaded = 't' in sys.abiflags
+        py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
+        self.assertEqual(py_nogil, abi_threaded)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
@@ -1574,7 +1582,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        # XXX
+        check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
