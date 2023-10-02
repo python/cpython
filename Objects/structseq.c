@@ -401,7 +401,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
     if (kwargs != NULL) {
         // We do not support types with unnamed fields, so we can iterate over
         // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
-        for (i = 0; i < n_fields; i++) {
+        for (i = 0; i < n_fields; ++i) {
             PyObject *key = PyUnicode_FromString(Py_TYPE(self)->tp_members[i].name);
             if (!key) {
                 goto error;
