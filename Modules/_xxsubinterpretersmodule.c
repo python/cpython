@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
 #include "interpreteridobject.h"
 
 
@@ -361,7 +362,7 @@ static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
-    if (PyInterpreterState_SetRunningMain(interp) < 0) {
+    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
         // We skip going through the shared exception.
         return -1;
     }
@@ -395,7 +396,7 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     else {
         Py_DECREF(result);  // We throw away the result.
     }
-    PyInterpreterState_SetNotRunningMain(interp);
+    _PyInterpreterState_SetNotRunningMain(interp);
 
     *sharedexc = no_exception;
     return 0;
@@ -411,7 +412,7 @@ error:
     }
     Py_XDECREF(excval);
     assert(!PyErr_Occurred());
-    PyInterpreterState_SetNotRunningMain(interp);
+    _PyInterpreterState_SetNotRunningMain(interp);
     return -1;
 }
 
@@ -441,7 +442,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
         // exception gets raised in the right one.
         // XXX gh-109860: Drop this redundant check once we stop
         // re-using tstates that might already be in use.
-        if (PyInterpreterState_IsRunningMain(interp)) {
+        if (_PyInterpreterState_IsRunningMain(interp)) {
             PyErr_SetString(PyExc_RuntimeError,
                             "interpreter already running");
             if (shared != NULL) {
@@ -566,7 +567,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (PyInterpreterState_IsRunningMain(interp)) {
+    if (_PyInterpreterState_IsRunningMain(interp)) {
         PyErr_Format(PyExc_RuntimeError, "interpreter running");
         return NULL;
     }
@@ -748,7 +749,7 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
     if (interp == NULL) {
         return NULL;
     }
-    if (PyInterpreterState_IsRunningMain(interp)) {
+    if (_PyInterpreterState_IsRunningMain(interp)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;

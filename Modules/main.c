@@ -594,7 +594,7 @@ pymain_run_python(int *exitcode)
 
     pymain_header(config);
 
-    PyInterpreterState_SetRunningMain(interp);
+    _PyInterpreterState_SetRunningMain(interp);
     assert(!PyErr_Occurred());
 
     if (config->run_command) {
@@ -620,7 +620,7 @@ error:
     *exitcode = pymain_exit_err_print();
 
 done:
-    PyInterpreterState_SetNotRunningMain(interp);
+    _PyInterpreterState_SetNotRunningMain(interp);
     Py_XDECREF(main_importer_path);
 }
 

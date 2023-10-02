@@ -1092,7 +1092,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 
 
 int
-PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
+_PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
     if (interp->threads.main != NULL) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1111,14 +1111,14 @@ PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 }
 
 void
-PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
+_PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
     assert(interp->threads.main == current_fast_get(&_PyRuntime));
     interp->threads.main = NULL;
 }
 
 int
-PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
+_PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
     return (interp->threads.main != NULL);
 }
