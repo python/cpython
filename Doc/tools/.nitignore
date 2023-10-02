@@ -118,7 +118,6 @@ Doc/library/select.rst
 Doc/library/selectors.rst
 Doc/library/shelve.rst
 Doc/library/signal.rst
-Doc/library/site.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/socketserver.rst
@@ -127,7 +126,6 @@ Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
 Doc/library/sunau.rst
-Doc/library/sys_path_init.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
 Doc/library/telnetlib.rst
