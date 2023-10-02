@@ -224,7 +224,8 @@ class SendChannel(_ChannelEnd):
         If the object is immediately received then return True
         (else False).  Otherwise this is the same as send().
         """
-        return _channels.send_buffer(self._id, obj, blocking=False)
+        return _channels.send_buffer(self._id, obj)
+        #return _channels.send_buffer(self._id, obj, blocking=False)
 
     def close(self):
         _channels.close(self._id, send=True)
