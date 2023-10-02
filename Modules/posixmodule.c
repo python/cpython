@@ -10095,23 +10095,14 @@ build_itimerspec(const struct itimerspec* curr_value)
 static PyObject *
 build_itimerspec_ns(const struct itimerspec* curr_value)
 {
-    long long _next_expiration = (long long)curr_value->it_value.tv_sec * ONE_SECOND_IN_NS +
-                    (long long)curr_value->it_value.tv_nsec;
-    PyObject *next_expiration = PyLong_FromLongLong(_next_expiration);
-    if (next_expiration == NULL) {
+    _PyTime_t value, interval;
+    if (_PyTime_FromTimespec(&value, &curr_value->it_value) < 0) {
         return NULL;
     }
-    long long _interval = (long long)curr_value->it_interval.tv_sec * ONE_SECOND_IN_NS +
-                       (long long)curr_value->it_interval.tv_nsec;
-    PyObject *interval = PyLong_FromLongLong(_interval);
-    if (interval == NULL) {
-        Py_DECREF(next_expiration);
+    if (_PyTime_FromTimespec(&interval, &curr_value->it_interval) < 0) {
         return NULL;
     }
-    PyObject *tuple = PyTuple_Pack(2, next_expiration, interval);
-    Py_DECREF(interval);
-    Py_DECREF(next_expiration);
-    return tuple;
+    return Py_BuildValue("LL", value, interval);
 }
 
 /*[clinic input]
