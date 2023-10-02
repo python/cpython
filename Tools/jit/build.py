@@ -376,6 +376,7 @@ class Engine:
                 self.body.append(0)
             addend += 8 * self.got_entries.index((symbol, 0))
             addend += len(self.body)
+            symbol = "_JIT_BASE"
         elif kind == HoleKind.R_X86_64_GOTOFF64:
             addend += offset - len(self.body)
         elif kind in (HoleKind.R_386_32, HoleKind.R_386_PC32):
@@ -384,26 +385,51 @@ class Engine:
         return Hole(kind, symbol, offset, addend)
 
 class aarch64_apple_darwin(Engine):
-    pattern = re.compile(r"aarch64-apple-darwin.*")
+    pattern = r"aarch64-apple-darwin.*"
+    target_front = "aarch64-apple-darwin"
+    target_back = "aarch64-elf"
+    code_model = "large"
+    ghccc = False
 
 class aarch64_unknown_linux_gnu(Engine):
-    pattern = re.compile(r"aarch64-.*-linux-gnu")
+    pattern = r"aarch64-.*-linux-gnu"
+    target_front = "aarch64-unknown-linux-gnu"
+    target_back = "aarch64-elf"
+    code_model = "large"
+    ghccc = False
 
 class i686_pc_windows_msvc(Engine):
-    pattern = re.compile(r"i686-pc-windows-msvc")
+    pattern = r"i686-pc-windows-msvc"
+    target_front = "i686-pc-windows-msvc"
+    target_back = "i686-pc-windows-msvc-elf"
+    code_model = "small"
+    ghccc = True
 
 class x86_64_apple_darwin(Engine):
-    pattern = re.compile(r"x86_64-apple-darwin.*")
+    pattern = r"x86_64-apple-darwin.*"
+    target_front = "x86_64-apple-darwin"
+    target_back = "x86_64-elf"
+    code_model = "medium"
+    ghccc = True
 
 class x86_64_pc_windows_msvc(Engine):
-    pattern = re.compile(r"x86_64-pc-windows-msvc")
+    pattern = r"x86_64-pc-windows-msvc"
+    target_front = "x86_64-pc-windows-msvc"
+    target_back = "x86_64-pc-windows-msvc-elf"
+    code_model = "medium"
+    ghccc = True
 
 class x86_64_unknown_linux_gnu(Engine):
-    pattern = re.compile(r"x86_64-.*-linux-gnu")
+    pattern = r"x86_64-.*-linux-gnu"
+    target_front = "x86_64-unknown-linux-gnu"
+    target_back = "x86_64-elf"
+    code_model = "medium"
+    ghccc = True
 
 
 CFLAGS = [
     "-O3",
+    "-Wno-override-module",
     # Keep library calls from sneaking in:
     "-ffreestanding",  # XXX
     # We don't need this (and it causes weird relocations):
@@ -456,7 +482,7 @@ class Compiler:
         o = pathlib.Path(tempdir, f"{opname}.o").resolve()
         await run(self._clang, *CFLAGS, *CPPFLAGS, "-emit-llvm", "-S", *defines, "-o", ll, c)
         self._use_ghccc(ll)
-        await run(self._clang, *CFLAGS, f"--target=x86_64-elf", "-c", "-o", o, ll)
+        await run(self._clang, *CFLAGS, "-c", "-o", o, ll)
         self._stencils_built[opname] = await self._parser(
             o, self._readobj, self._objdump
         ).parse()
@@ -595,21 +621,23 @@ class Compiler:
 
 
 def main(host: str) -> None:
-    for engine, ghccc, cppflags, cflags in [
-        (aarch64_apple_darwin, False, [f"--target=aarch64-apple-darwin", f"-I{ROOT}"], ["--target=aarch64-elf", "-Wno-override-module", "-mcmodel=large"]),
-        (aarch64_unknown_linux_gnu, False, [f"-I{ROOT}"], ["--target=aarch64-elf", "-mcmodel=large"]),
-        (i686_pc_windows_msvc, True, [f"-I{PC}"], [f"--target=i686-pc-windows-msvc-elf", "-mcmodel=small"]),
-        (x86_64_unknown_linux_gnu, True, [f"-I{ROOT}"], ["--target=x86_64-elf", "-mcmodel=medium"]),
-        (x86_64_apple_darwin, True, [f"--target=x86_64-apple-darwin", f"-I{ROOT}"], ["--target=x86_64-elf", "-Wno-override-module", "-mcmodel=medium"]),
-        (x86_64_pc_windows_msvc, True, [f"-I{PC}"], [f"--target=x86_64-pc-windows-msvc-elf", "-mcmodel=medium"]),
+    for engine, cppflags in [
+        (aarch64_apple_darwin, [f"-I{ROOT}"]),
+        (aarch64_unknown_linux_gnu, [f"-I{ROOT}"]),
+        (i686_pc_windows_msvc, [f"-I{PC}"]),
+        (x86_64_unknown_linux_gnu, [f"-I{ROOT}"]),
+        (x86_64_apple_darwin, [f"-I{ROOT}"]),
+        (x86_64_pc_windows_msvc, [f"-I{PC}"]),
     ]:
-        if engine.pattern.fullmatch(host):
+        if re.fullmatch(engine.pattern, host):
             break
     else:
         raise NotImplementedError(host)
-    CFLAGS.extend(cflags)  # XXX
-    CPPFLAGS.extend(cppflags)  # XXX
+    CPPFLAGS.extend(cppflags)
     CPPFLAGS.append("-D_DEBUG" if sys.argv[2:] == ["-d"] else "-DNDEBUG")
+    CPPFLAGS.append(f"--target={engine.target_front}")
+    CFLAGS.append(f"--target={engine.target_back}")
+    CFLAGS.append(f"-mcmodel={engine.code_model}")
     hasher = hashlib.sha256(host.encode())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
     for file in sorted(TOOLS_JIT.iterdir()):
@@ -619,7 +647,7 @@ def main(host: str) -> None:
         with PYTHON_JIT_STENCILS_H.open() as file:
             if file.readline().removeprefix("// ").removesuffix("\n") == digest:
                 return
-    compiler = Compiler(verbose=True, ghccc=ghccc, parser=engine)
+    compiler = Compiler(verbose=True, ghccc=False, parser=engine)
     asyncio.run(compiler.build())
     with PYTHON_JIT_STENCILS_H.open("w") as file:
         file.write(f"// {digest}\n")
