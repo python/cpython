@@ -370,9 +370,7 @@ error:
 static PyObject *
 structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
 {
-    PyObject *tup = NULL;
-    PyObject *dict = NULL;
-    PyObject *result;
+    PyStructSequence *result = NULL;
     Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields, i;
 
     if (!_PyArg_NoPositional("__replace__", args)) {
@@ -396,72 +394,43 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    tup = _PyTuple_FromArray(self->ob_item, n_visible_fields);
-    if (!tup) {
-        goto error;
+    // Create an identical instance.
+    result = (PyStructSequence *)PyStructSequence_New(Py_TYPE(self));
+    if (result == NULL) {
+        return NULL;
     }
-    dict = PyDict_New();
-    if (!dict) {
-        goto error;
+    for (i = 0; i < n_fields; ++i) {
+        result->ob_item[i] = Py_NewRef(self->ob_item[i]);
     }
 
     if (kwargs != NULL) {
-        for (i = 0; i < n_visible_fields; i++) {
-            const char *name = Py_TYPE(self)->tp_members[i].name;
-            PyObject *key = PyUnicode_FromString(name);
+        // We do not support types with unnamed fields, so we can iterate over
+        // i >= n_visible_fields case without slicing with (i - n_unnamed_fields).
+        for (i = 0; i < n_fields; i++) {
+            PyObject *key = PyUnicode_FromString(Py_TYPE(self)->tp_members[i].name);
             if (!key) {
-                goto error;
+                return NULL;
             }
-            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
+            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);  // borrowed
             Py_DECREF(key);
             if (!ob) {
-                goto error;
+                return NULL;
             }
-            PyTuple_SetItem(tup, i, ob);
+            Py_DECREF(result->ob_item[i]);
+            result->ob_item[i] = ob;
         }
-        for (i = n_visible_fields; i < n_fields; i++) {
-            const char *name = Py_TYPE(self)->tp_members[i - n_unnamed_fields].name;
-            PyObject *key = PyUnicode_FromString(name);
-            if (!key) {
-                goto error;
-            }
-            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
-            if (!ob || PyDict_SetItem(dict, key, ob) < 0) {
-                Py_DECREF(key);
-                goto error;
-            }
-            Py_DECREF(key);
-        }
+        // Check if there are any unexpected fields.
         if (PyDict_Size(kwargs) > 0) {
             PyObject *names = PyDict_Keys(kwargs);
             if (names) {
                 PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
                 Py_DECREF(names);
             }
-            goto error;
+            return NULL;
         }
     }
-    else
-    {
-        for (i = n_visible_fields; i < n_fields; i++) {
-            const char *name = Py_TYPE(self)->tp_members[i - n_unnamed_fields].name;
-            if (PyDict_SetItemString(dict, name, self->ob_item[i]) < 0) {
-                goto error;
-            }
-        }
-    }
-
-    result = structseq_new_impl(Py_TYPE(self), tup, dict);
-
-    Py_DECREF(tup);
-    Py_DECREF(dict);
 
     return result;
-
-error:
-    Py_XDECREF(tup);
-    Py_XDECREF(dict);
-    return NULL;
 }
 
 static PyMethodDef structseq_methods[] = {
