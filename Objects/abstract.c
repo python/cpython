@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
@@ -814,15 +815,15 @@ _buffer_release_call(void *arg)
 }
 
 int
-PyUnstable_Buffer_ReleaseInInterpreter(PyInterpreterState *interp,
-                                       Py_buffer *view)
+_PyBuffer_ReleaseInInterpreter(PyInterpreterState *interp,
+                               Py_buffer *view)
 {
     return _Py_CallInInterpreter(interp, _buffer_release_call, view);
 }
 
 int
-PyUnstable_Buffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
-                                                 Py_buffer *view)
+_PyBuffer_ReleaseInInterpreterAndRawFree(PyInterpreterState *interp,
+                                         Py_buffer *view)
 {
     return _Py_CallInInterpreterAndRawFree(interp, _buffer_release_call, view);
 }

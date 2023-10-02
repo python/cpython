@@ -1,8 +1,14 @@
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "interpreteridobject.h"
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
+#include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
 
 /*
@@ -229,7 +235,7 @@ xibufferview_dealloc(XIBufferViewObject *self)
        since other objects may be using the buffer still. */
     assert(interp != NULL);
 
-    if (PyUnstable_Buffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
+    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
         // XXX Emit a warning?
         PyErr_Clear();
     }

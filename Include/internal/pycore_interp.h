@@ -254,6 +254,9 @@ struct _xidregitem {
     crossinterpdatafunc getdata;
 };
 
+// Export for the _xxinterpchannels module.
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
+
 extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
 extern int _PyInterpreterState_IDIncref(PyInterpreterState *);
 extern void _PyInterpreterState_IDDecref(PyInterpreterState *);
