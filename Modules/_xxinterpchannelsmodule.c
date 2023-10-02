@@ -2480,7 +2480,8 @@ channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
         .module = self,
     };
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&O:channel_send_buffer", kwlist,
                                      channel_id_converter, &cid_data, &obj)) {
         return NULL;
     }
