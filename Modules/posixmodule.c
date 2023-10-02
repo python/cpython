@@ -14336,14 +14336,14 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
 /*[clinic input]
-os._is_cpu_count_overridden() -> bool
+os._get_cpu_count_config
 
 Private function to get PyConfig.cpu_count is overridden or not
 [clinic start generated code]*/
 
 static PyObject *
 os__get_cpu_count_config_impl(PyObject *module)
-/*[clinic end generated code: output=3b0ba7e445c9c6b2 input=c52e5bc863732c21]*/
+/*[clinic end generated code: output=3b0ba7e445c9c6b2 input=312c6ed9a71c441c]*/
 {
     const PyConfig *config = _Py_GetConfig();
     if (config->cpu_count > 0) {

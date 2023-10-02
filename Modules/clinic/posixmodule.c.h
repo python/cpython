@@ -10425,7 +10425,7 @@ PyDoc_STRVAR(os__get_cpu_count_config__doc__,
 "_get_cpu_count_config($module, /)\n"
 "--\n"
 "\n"
-"Private function for get PyConfig.cpu_count");
+"Private function to get PyConfig.cpu_count is overridden or not");
 
 #define OS__GET_CPU_COUNT_CONFIG_METHODDEF    \
     {"_get_cpu_count_config", (PyCFunction)os__get_cpu_count_config, METH_NOARGS, os__get_cpu_count_config__doc__},
@@ -12004,4 +12004,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=7c6a691f8d40bf1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a38f7ef7a5ca4bd7 input=a9049054013a1b77]*/
