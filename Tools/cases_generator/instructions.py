@@ -278,7 +278,9 @@ class MacroInstruction:
     macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
+    # Set later
     predicted: bool = False
+    family: parsing.Family | None = None
 
 
 @dataclasses.dataclass

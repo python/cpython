@@ -232,11 +232,18 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif not self.macro_instrs.get(member):
+                if member_mac := self.macro_instrs.get(member):
+                    assert member_mac.family is None, (member, member_mac.family.name)
+                    member_mac.family = family
+                if not member_instr and not member_mac:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
                     )
+        # A sanctioned exception:
+        # This opcode is a member of the family but it doesn't pass the checks.
+        if mac := self.macro_instrs.get("BINARY_OP_INPLACE_ADD_UNICODE"):
+            mac.family = self.families.get("BINARY_OP")
 
     def check_families(self) -> None:
         """Check each family:

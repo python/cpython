@@ -357,9 +357,7 @@ def write_single_instr(
         raise AssertionError(f"Error writing instruction {instr.name}") from err
 
 
-def write_macro_instr(
-    mac: MacroInstruction, out: Formatter, family: Family | None
-) -> None:
+def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     parts = [
         part
         for part in mac.parts
@@ -369,10 +367,10 @@ def write_macro_instr(
     with out.block(f"TARGET({mac.name})"):
         if mac.predicted:
             out.emit(f"PREDICTED({mac.name});")
-        out.static_assert_family_size(mac.name, family, mac.cache_offset)
+        out.static_assert_family_size(mac.name, mac.family, mac.cache_offset)
         try:
             next_instr_is_set = write_components(
-                parts, out, TIER_ONE, mac.cache_offset, family
+                parts, out, TIER_ONE, mac.cache_offset, mac.family
             )
         except AssertionError as err:
             raise AssertionError(f"Error writing macro {mac.name}") from err
