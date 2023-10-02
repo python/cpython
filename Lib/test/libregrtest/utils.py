@@ -546,6 +546,9 @@ def display_header(use_resources: tuple[str, ...],
 
     cpu_count = os.cpu_count()
     if cpu_count:
+        process_cpu_count = os.process_cpu_count()
+        if process_cpu_count and process_cpu_count != cpu_count:
+            cpu_count = f"{process_cpu_count} (process) / {cpu_count} (system)"
         print("== CPU count:", cpu_count)
     print("== encodings: locale=%s, FS=%s"
           % (locale.getencoding(), sys.getfilesystemencoding()))

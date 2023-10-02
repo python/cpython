@@ -11,6 +11,7 @@ import stat
 import tempfile
 import unittest
 from unittest import mock
+from urllib.request import pathname2url
 
 from test.support import import_helper
 from test.support import set_recursion_limit
@@ -3602,6 +3603,24 @@ class PosixPathTest(PathTest):
                 self.fail("Bad file descriptor not handled.")
             raise
 
+    def test_from_uri(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
+        self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        self.assertRaises(ValueError, P.from_uri, 'foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '/foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '//foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
+
+    def test_from_uri_pathname2url(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
+        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+
 
 @only_nt
 class WindowsPathTest(PathTest):
@@ -3721,6 +3740,31 @@ class WindowsPathTest(PathTest):
             env['HOME'] = 'C:\\Users\\eve'
             check()
 
+    def test_from_uri(self):
+        P = self.cls
+        # DOS drive paths
+        self.assertEqual(P.from_uri('file:c:/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:c|/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:/c|/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:///c|/path/to/file'), P('c:/path/to/file'))
+        # UNC paths
+        self.assertEqual(P.from_uri('file://server/path/to/file'), P('//server/path/to/file'))
+        self.assertEqual(P.from_uri('file:////server/path/to/file'), P('//server/path/to/file'))
+        self.assertEqual(P.from_uri('file://///server/path/to/file'), P('//server/path/to/file'))
+        # Localhost paths
+        self.assertEqual(P.from_uri('file://localhost/c:/path/to/file'), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file://localhost/c|/path/to/file'), P('c:/path/to/file'))
+        # Invalid paths
+        self.assertRaises(ValueError, P.from_uri, 'foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'c:/foo/bar')
+        self.assertRaises(ValueError, P.from_uri, '//foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'file:foo/bar')
+        self.assertRaises(ValueError, P.from_uri, 'http://foo/bar')
+
+    def test_from_uri_pathname2url(self):
+        P = self.cls
+        self.assertEqual(P.from_uri('file:' + pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
+        self.assertEqual(P.from_uri('file:' + pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
 
 
 class PathSubclassTest(PathTest):

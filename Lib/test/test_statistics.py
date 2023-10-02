@@ -2454,6 +2454,11 @@ class TestQuantiles(unittest.TestCase):
             data = random.choices(range(100), k=k)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
+        # Base case with a single data point:  When estimating quantiles from
+        # a sample, we want to be able to add one sample point at a time,
+        # getting increasingly better estimates.
+        self.assertEqual(quantiles([10], n=4), [10.0, 10.0, 10.0])
+        self.assertEqual(quantiles([10], n=4, method='exclusive'), [10.0, 10.0, 10.0])
 
     def test_equal_inputs(self):
         quantiles = statistics.quantiles
@@ -2504,7 +2509,7 @@ class TestQuantiles(unittest.TestCase):
         with self.assertRaises(ValueError):
             quantiles([10, 20, 30], method='X') # method is unknown
         with self.assertRaises(StatisticsError):
-            quantiles([10], n=4)                # not enough data points
+            quantiles([], n=4)                  # not enough data points
         with self.assertRaises(TypeError):
             quantiles([10, None, 30], n=4)      # data is non-numeric
 
