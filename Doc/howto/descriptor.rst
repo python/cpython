@@ -1141,6 +1141,16 @@ roughly equivalent to:
             obj = self.__self__
             return func(obj, *args, **kwargs)
 
+        def __getattribute__(self, name):
+            "Emulate method_getset() in Objects/classobject.c"
+            if name == '__doc__':
+                return self.__func__.__doc__
+            return object.__getattribute__(self, name)
+
+        def __getattr__(self, name):
+            "Emulate method_getattro() in Objects/classobject.c"
+            return getattr(self.__func__, name)
+
 To support automatic creation of methods, functions include the
 :meth:`__get__` method for binding methods during attribute access.  This
 means that functions are non-data descriptors that return bound methods
