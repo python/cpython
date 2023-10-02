@@ -1,3 +1,4 @@
+import errno
 import sys
 import os
 import io
@@ -3798,9 +3799,21 @@ class TestExtractionFilters(unittest.TestCase):
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
-        have_sticky_files = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
-        os.unlink(tmp_filename)
+        try:
+            try:
+                os.chmod(tmp_filename,
+                         os.stat(tmp_filename).st_mode | stat.S_ISVTX)
+            except OSError as exc:
+                if exc.errno == getattr(errno, "EFTYPE", 0):
+                    # gh-108948: On FreeBSD, regular users cannot set
+                    # the sticky bit.
+                    self.skipTest("chmod() failed with EFTYPE: "
+                                  "regular users cannot set sticky bit")
+                else:
+                    raise
+            have_sticky_files = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        finally:
+            os.unlink(tmp_filename)
 
         os.mkdir(tmp_filename)
         os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
