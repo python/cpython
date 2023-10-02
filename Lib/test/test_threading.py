@@ -564,6 +564,10 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(err, b'')
 
     @support.requires_fork()
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
+    # work around a libasan race condition: dead lock in pthread_create().
+    @support.skip_if_sanitizer("libasan has a pthread_create() dead lock",
+                               address=True)
     def test_is_alive_after_fork(self):
         # Try hard to trigger #18418: is_alive() could sometimes be True on
         # threads that vanished after a fork.
