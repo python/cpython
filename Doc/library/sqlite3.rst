@@ -2441,17 +2441,8 @@ the context manager does nothing.
 
 .. note::
    The context manager neither implicitly opens a new transaction
-<<<<<<< HEAD
    nor closes the connection. If you need a context manager, consider
    using :meth:`contextlib.closing`.
-=======
-   nor closes the connection. Using ``contextlib.closing``, the context manager
-   can be used for connection management. In this case, the ``sqlite3``
-   connection is closed without an additional ``sqlite.connect.close()`` after a
-   context manager closes. For default ``sqlite`` context management cases which don't use
-   ``contextlib.closing``, this is intended to perform multiple transactions without3fully
-   closing the connection.
->>>>>>> 57d92ad57df5616716042b6b58c4ddd62542bd9e
 
 .. testcode::
 
