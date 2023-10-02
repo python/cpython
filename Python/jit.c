@@ -63,15 +63,16 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
         case R_386_32: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
-            instruction = value + addend;
+            instruction = (uint32_t)(value + addend);
             *addr = instruction;
             return;
         }
         case R_386_PC32:
+        case R_X86_64_PC32:
         case R_X86_64_PLT32: {
             uint32_t *addr = (uint32_t *)location;
             uint32_t instruction = *addr;
-            instruction = value + addend - (uintptr_t)location;
+            instruction = (uint32_t)(value + addend - (uintptr_t)location);
             *addr = instruction;
             return;
         }
@@ -202,8 +203,9 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t adden
             *addr = instruction;
             return;
         }
-        case R_X86_64_GOTPC32: 
-        case R_X86_64_REX_GOTPCRELX: 
+        case R_X86_64_GOTPC32:
+        case R_X86_64_GOTPCRELX:
+        case R_X86_64_REX_GOTPCRELX:
         default: {
             Py_UNREACHABLE();
         }
@@ -267,7 +269,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         initialized = 1;
     }
     assert(initialized > 0);
-    int *offsets = PyMem_Malloc(size * sizeof(int));
+    size_t *offsets = PyMem_Malloc(size * sizeof(size_t));
     if (offsets == NULL) {
         PyErr_NoMemory();
         return NULL;

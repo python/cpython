@@ -99,10 +99,10 @@ class HoleKind(enum.Enum):
     R_386_32 = enum.auto()
     R_386_PC32 = enum.auto()
     R_AARCH64_ABS64 = enum.auto()
-    R_AARCH64_ADR_GOT_PAGE = enum.auto()  # XXX
+    R_AARCH64_ADR_GOT_PAGE = enum.auto()
     R_AARCH64_CALL26 = enum.auto()
     R_AARCH64_JUMP26 = enum.auto()
-    R_AARCH64_LD64_GOT_LO12_NC = enum.auto()  # XXX
+    R_AARCH64_LD64_GOT_LO12_NC = enum.auto()
     R_AARCH64_MOVW_UABS_G0_NC = enum.auto()
     R_AARCH64_MOVW_UABS_G1_NC = enum.auto()
     R_AARCH64_MOVW_UABS_G2_NC = enum.auto()
@@ -110,6 +110,8 @@ class HoleKind(enum.Enum):
     R_X86_64_64 = enum.auto()
     R_X86_64_GOTOFF64 = enum.auto()
     R_X86_64_GOTPC32 = enum.auto()
+    R_X86_64_GOTPCRELX = enum.auto()
+    R_X86_64_PC32 = enum.auto()
     R_X86_64_PLT32 = enum.auto()
     R_X86_64_REX_GOTPCRELX = enum.auto()
 
@@ -164,7 +166,7 @@ def get_llvm_tool_version(name: str) -> int | None:
 
 
 def find_llvm_tool(tool: str) -> str:
-    versions = {14, 15, 16, 17}
+    versions = {14, 15, 16}
     forced_version = os.getenv("PYTHON_LLVM_VERSION")
     if forced_version:
         versions &= {int(forced_version)}
@@ -357,7 +359,7 @@ class Engine:
         symbol = relocation["Symbol"]["Value"]
         offset = relocation["Offset"] + base
         addend = relocation.get("Addend", 0)  # XXX: SPM for SHT_REL (R_386) vs SHT_RELA
-        if kind in (HoleKind.R_X86_64_GOTPC32, HoleKind.R_X86_64_REX_GOTPCRELX):
+        if kind in (HoleKind.R_X86_64_GOTPC32, HoleKind.R_X86_64_GOTPCRELX, HoleKind.R_X86_64_REX_GOTPCRELX):
             if kind == HoleKind.R_X86_64_GOTPC32:
                 assert symbol == "_GLOBAL_OFFSET_TABLE_", symbol
             else:
@@ -365,7 +367,7 @@ class Engine:
                     self.got_entries.append((symbol, 0))
                 while len(self.body) % 8:
                     self.body.append(0)
-                addend += 8 * self.got_entries.index((symbol, 0)) 
+                addend += 8 * self.got_entries.index((symbol, 0))
             addend += len(self.body)
             self.body[offset : offset + 4] = ((addend - offset) % (1 << 32)).to_bytes(4, "little")
             return None
@@ -570,18 +572,24 @@ class Compiler:
                     loads.append(
                         f"    {{.kind={hole.kind.name:{kind_width}}, .offset=0x{hole.offset:0{offset_width}x}, .addend=0x{hole.addend % (1 << 64):0{addend_width}x}, .symbol={symbols.index(hole.symbol):{symbol_width}}}},  // {hole.symbol}"
                     )
-            lines.append(
-                f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
-            )
-            for hole in holes:
-                lines.append(hole)
-            lines.append(f"}};")
-            lines.append(
-                f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}] = {{"
-            )
-            for load in loads:
-                lines.append(load)
-            lines.append(f"}};")
+            if holes:
+                lines.append(
+                    f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
+                )
+                for hole in holes:
+                    lines.append(hole)
+                lines.append(f"}};")
+            else:
+                lines.append(f"static const Hole {opname}_stencil_holes[{len(holes) + 1}];")
+            if loads:
+                lines.append(
+                    f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}] = {{"
+                )
+                for load in loads:
+                    lines.append(load)
+                lines.append(f"}};")
+            else:
+                lines.append(f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}];")
             lines.append(f"")
         lines.append(f"")
         lines.append(f"static const char *const symbols[{len(symbols)}] = {{")
