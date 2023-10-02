@@ -381,6 +381,11 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
         ret = validate_exprs(state, exp->v.Tuple.elts, ctx, 0);
         break;
     case NamedExpr_kind:
+        if (exp->v.NamedExpr.target->kind != Name_kind) {
+            PyErr_SetString(PyExc_TypeError,
+                            "NamedExpr target must be a Name");
+            return 0;
+        }
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
         break;
     /* This last case doesn't have any checking. */

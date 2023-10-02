@@ -79,7 +79,7 @@ except ImportError:
 
 
 if support.check_sanitizer(address=True):
-    # bpo-45200: Skip multiprocessing tests if Python is built with ASAN to
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
     # work around a libasan race condition: dead lock in pthread_create().
     raise unittest.SkipTest("libasan has a pthread_create() dead lock")
 
@@ -5434,7 +5434,9 @@ class TestStartMethod(unittest.TestCase):
         while not queue.empty():
             results.append(queue.get())
 
-        self.assertEqual(results, [2, 1])
+        # gh-109706: queue.put(1) can write into the queue before queue.put(2),
+        # there is no synchronization in the test.
+        self.assertSetEqual(set(results), set([2, 1]))
 
 
 @unittest.skipIf(sys.platform == "win32",

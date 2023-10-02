@@ -2134,8 +2134,10 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_capi \
 		test/test_cppext \
 		test/test_ctypes \
+		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2225,6 +2227,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \

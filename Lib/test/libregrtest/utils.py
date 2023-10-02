@@ -259,16 +259,8 @@ def get_build_info():
     elif '-flto' in ldflags_nodist:
         optimizations.append('LTO')
 
-    # --enable-optimizations
-    pgo_options = (
-        # GCC
-        '-fprofile-use',
-        # clang: -fprofile-instr-use=code.profclangd
-        '-fprofile-instr-use',
-        # ICC
-        "-prof-use",
-    )
-    if any(option in cflags_nodist for option in pgo_options):
+    if support.check_cflags_pgo():
+        # PGO (--enable-optimizations)
         optimizations.append('PGO')
     if optimizations:
         build.append('+'.join(optimizations))
