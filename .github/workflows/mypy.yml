@@ -7,9 +7,12 @@ on:
       - main
   pull_request:
     paths:
-      - "Tools/clinic/**"
-      - "Tools/cases_generator/**"
       - ".github/workflows/mypy.yml"
+      - "Tools/cases_generator/**"
+      - "Tools/clinic/**"
+      - "Tools/peg_generator/**"
+      - "Tools/requirements-dev.txt"
+      - "Tools/wasm/**"
   workflow_dispatch:
 
 permissions:
@@ -28,12 +31,17 @@ jobs:
   mypy:
     strategy:
       matrix:
-        target: ["Tools/cases_generator", "Tools/clinic"]
+        target: [
+          "Tools/cases_generator",
+          "Tools/clinic",
+          "Tools/peg_generator",
+          "Tools/wasm",
+        ]
     name: Run mypy on ${{ matrix.target }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"

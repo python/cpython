@@ -148,7 +148,6 @@ static PyObject *
 structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
 /*[clinic end generated code: output=baa082e788b171da input=90532511101aa3fb]*/
 {
-    PyObject *ob;
     PyStructSequence *res = NULL;
     Py_ssize_t len, min_len, max_len, i, n_unnamed_fields;
 
@@ -218,21 +217,18 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     Py_DECREF(arg);
     for (; i < max_len; ++i) {
-        if (dict == NULL) {
-            ob = Py_None;
-        }
-        else {
-            ob = _PyDict_GetItemStringWithError(dict,
-                type->tp_members[i-n_unnamed_fields].name);
-            if (ob == NULL) {
-                if (PyErr_Occurred()) {
-                    Py_DECREF(res);
-                    return NULL;
-                }
-                ob = Py_None;
+        PyObject *ob = NULL;
+        if (dict != NULL) {
+            const char *name = type->tp_members[i-n_unnamed_fields].name;
+            if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
+                Py_DECREF(res);
+                return NULL;
             }
         }
-        res->ob_item[i] = Py_NewRef(ob);
+        if (ob == NULL) {
+            ob = Py_NewRef(Py_None);
+        }
+        res->ob_item[i] = ob;
     }
 
     _PyObject_GC_TRACK(res);
@@ -577,9 +573,10 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     Py_ssize_t n_members, n_unnamed_members;
 
 #ifdef Py_TRACE_REFS
-    /* if the type object was chained, unchain it first
+    /* if the type object was traced, remove it first
        before overwriting its storage */
-    if (type->ob_base.ob_base._ob_next) {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyRefchain_IsTraced(interp, (PyObject *)type)) {
         _Py_ForgetReference((PyObject *)type);
     }
 #endif

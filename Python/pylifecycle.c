@@ -17,7 +17,7 @@
 #include "pycore_list.h"          // _PyList_Fini()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
-#include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
+#include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyObject_DebugMallocStats()
@@ -32,13 +32,17 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
-#include <mach-o/loader.h>
+#  include <mach-o/loader.h>
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -58,11 +62,6 @@
 #endif
 
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /* Forward declarations */
@@ -629,10 +628,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
                           PyThreadState **tstate_p)
 {
     PyStatus status;
-    PyInterpreterState *interp = PyInterpreterState_New();
-    if (interp == NULL) {
-        return _PyStatus_ERR("can't make main interpreter");
+    PyInterpreterState *interp;
+    status = _PyInterpreterState_New(NULL, &interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
+    assert(interp != NULL);
     assert(_Py_IsMainInterpreter(interp));
 
     status = _PyConfig_Copy(&interp->config, src_config);
@@ -762,18 +763,30 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->builtins = Py_NewRef(builtins_dict);
 
-    PyObject *isinstance = PyDict_GetItem(builtins_dict, &_Py_ID(isinstance));
-    assert(isinstance);
+    PyObject *isinstance = PyDict_GetItemWithError(builtins_dict, &_Py_ID(isinstance));
+    if (!isinstance) {
+        goto error;
+    }
     interp->callable_cache.isinstance = isinstance;
-    PyObject *len = PyDict_GetItem(builtins_dict, &_Py_ID(len));
-    assert(len);
+
+    PyObject *len = PyDict_GetItemWithError(builtins_dict, &_Py_ID(len));
+    if (!len) {
+        goto error;
+    }
     interp->callable_cache.len = len;
+
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
-    assert(list_append);
+    if (list_append == NULL) {
+        goto error;
+    }
     interp->callable_cache.list_append = list_append;
+
     PyObject *object__getattribute__ = _PyType_Lookup(&PyBaseObject_Type, &_Py_ID(__getattribute__));
-    assert(object__getattribute__);
+    if (object__getattribute__ == NULL) {
+        goto error;
+    }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
+
     if (_PyBuiltins_AddExceptions(bimod) < 0) {
         return _PyStatus_ERR("failed to add exceptions to builtins");
     }
@@ -816,11 +829,6 @@ pycore_interp_init(PyThreadState *tstate)
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-    // Intern strings in deep-frozen modules first so that others
-    // can use it instead of creating a heap allocated string.
-    if (_Py_Deepfreeze_Init() < 0) {
-        return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
 
     status = pycore_init_types(interp);
@@ -1360,17 +1368,17 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         if (verbose) {
             PySys_WriteStderr("# restore sys.%s\n", name);
         }
-        PyObject *value = _PyDict_GetItemStringWithError(interp->sysdict,
-                                                         orig_name);
+        PyObject *value;
+        if (PyDict_GetItemStringRef(interp->sysdict, orig_name, &value) < 0) {
+            PyErr_WriteUnraisable(NULL);
+        }
         if (value == NULL) {
-            if (_PyErr_Occurred(tstate)) {
-                PyErr_WriteUnraisable(NULL);
-            }
-            value = Py_None;
+            value = Py_NewRef(Py_None);
         }
         if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
             PyErr_WriteUnraisable(NULL);
         }
+        Py_DECREF(value);
     }
 }
 
@@ -1629,27 +1637,20 @@ flush_std_files(void)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
     PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    PyObject *tmp;
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(fout) < 0) {
             PyErr_WriteUnraisable(fout);
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(ferr) < 0) {
             PyErr_Clear();
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     return status;
@@ -1728,7 +1729,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
-        _Py_Deepfreeze_Fini();
         _PyPerfTrampoline_Fini();
     }
 
@@ -1944,6 +1944,20 @@ Py_FinalizeEx(void)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+#ifdef Py_TRACE_REFS
+    /* Display addresses (& refcnts) of all objects still alive.
+     * An address can be used to find the repr of the object, printed
+     * above by _Py_PrintReferences. */
+    if (dump_refs) {
+        _Py_PrintReferenceAddresses(tstate->interp, stderr);
+    }
+    if (dump_refs_fp != NULL) {
+        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
+        fclose(dump_refs_fp);
+    }
+#endif /* Py_TRACE_REFS */
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -1954,21 +1968,6 @@ Py_FinalizeEx(void)
 #endif
     _Py_FinalizeAllocatedBlocks(runtime);
 
-#ifdef Py_TRACE_REFS
-    /* Display addresses (& refcnts) of all objects still alive.
-     * An address can be used to find the repr of the object, printed
-     * above by _Py_PrintReferences.
-     */
-
-    if (dump_refs) {
-        _Py_PrintReferenceAddresses(tstate->interp, stderr);
-    }
-
-    if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
-        fclose(dump_refs_fp);
-    }
-#endif /* Py_TRACE_REFS */
 #ifdef WITH_PYMALLOC
     if (malloc_stats) {
         _PyObject_DebugMallocStats(stderr);
@@ -2195,7 +2194,7 @@ _Py_IsInterpreterFinalizing(PyInterpreterState *interp)
 static PyStatus
 add_main_module(PyInterpreterState *interp)
 {
-    PyObject *m, *d, *loader, *ann_dict;
+    PyObject *m, *d, *ann_dict;
     m = PyImport_AddModule("__main__");
     if (m == NULL)
         return _PyStatus_ERR("can't create __main__ module");
@@ -2208,10 +2207,11 @@ add_main_module(PyInterpreterState *interp)
     }
     Py_DECREF(ann_dict);
 
-    if (_PyDict_GetItemStringWithError(d, "__builtins__") == NULL) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__builtins__");
-        }
+    int has_builtins = PyDict_ContainsString(d, "__builtins__");
+    if (has_builtins < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__builtins__");
+    }
+    if (!has_builtins) {
         PyObject *bimod = PyImport_ImportModule("builtins");
         if (bimod == NULL) {
             return _PyStatus_ERR("Failed to retrieve builtins module");
@@ -2227,11 +2227,13 @@ add_main_module(PyInterpreterState *interp)
      * will be set if __main__ gets further initialized later in the startup
      * process.
      */
-    loader = _PyDict_GetItemStringWithError(d, "__loader__");
-    if (loader == NULL || loader == Py_None) {
-        if (PyErr_Occurred()) {
-            return _PyStatus_ERR("Failed to test __main__.__loader__");
-        }
+    PyObject *loader;
+    if (PyDict_GetItemStringRef(d, "__loader__", &loader) < 0) {
+        return _PyStatus_ERR("Failed to test __main__.__loader__");
+    }
+    int has_loader = !(loader == NULL || loader == Py_None);
+    Py_XDECREF(loader);
+    if (!has_loader) {
         PyObject *loader = _PyImport_GetImportlibLoader(interp,
                                                         "BuiltinImporter");
         if (loader == NULL) {
@@ -2621,12 +2623,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     Py_DECREF(exc);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-    if (res == NULL) {
+    if (_PyFile_Flush(ferr) < 0) {
         _PyErr_Clear(tstate);
-    }
-    else {
-        Py_DECREF(res);
     }
 
     return has_tb;
@@ -3139,7 +3137,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

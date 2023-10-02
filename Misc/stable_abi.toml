@@ -1843,6 +1843,10 @@
 [function.PyThread_start_new_thread]
     added = '3.2'
 
+# Not mentioned in PEP 384, was implemented as a macro in Python <= 3.12
+[data.PY_TIMEOUT_MAX]
+    added = '3.2'
+
 # The following were added in PC/python3.def in Python 3.3:
 # 7800f75827b1be557be16f3b18f5170fbf9fae08
 # 9c56409d3353b8cd4cfc19e0467bbe23fd34fc92
@@ -2449,4 +2453,14 @@
 [function.PyDict_GetItemRef]
     added = '3.13'
 [function.PyDict_GetItemStringRef]
+    added = '3.13'
+[function.PyLong_AsInt]
+    added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
     added = '3.13'

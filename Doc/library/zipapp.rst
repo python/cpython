@@ -281,12 +281,7 @@ The steps to create a standalone archive are as follows:
    file - if not, you can just list the dependencies manually on the pip command
    line).
 
-3. Optionally, delete the ``.dist-info`` directories created by pip in the
-   ``myapp`` directory. These hold metadata for pip to manage the packages, and
-   as you won't be making any further use of pip they aren't required -
-   although it won't do any harm if you leave them.
-
-4. Package the application using:
+3. Package the application using:
 
    .. code-block:: shell-session
 

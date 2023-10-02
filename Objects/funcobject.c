@@ -3,7 +3,6 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_code.h"          // _Py_next_func_version
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
@@ -131,7 +130,7 @@ _PyFunction_FromConstructor(PyFrameConstructor *constr)
     op->func_annotations = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
-    _PyFunction_SetVersion(op, 0);
+    op->func_version = 0;
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return op;
@@ -207,7 +206,7 @@ PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname
     op->func_annotations = NULL;
     op->func_typeparams = NULL;
     op->vectorcall = _PyFunction_Vectorcall;
-    _PyFunction_SetVersion(op, 0);
+    op->func_version = 0;
     _PyObject_GC_TRACK(op);
     handle_func_event(PyFunction_EVENT_CREATE, op, NULL);
     return (PyObject *)op;
@@ -252,11 +251,9 @@ When the function version is 0, the `CALL` bytecode is not specialized.
 Code object versions
 --------------------
 
-So where to code objects get their `co_version`? There is a single
-static global counter, `_Py_next_func_version`. This is initialized in
-the generated (!) file `Python/deepfreeze/deepfreeze.c`, to 1 plus the
-number of deep-frozen function objects in that file.
-(In `_bootstrap_python.c` and `freeze_module.c` it is initialized to 1.)
+So where to code objects get their `co_version`?
+There is a per-interpreter counter, `next_func_version`.
+This is initialized to 1 when the interpreter is created.
 
 Code objects get a new `co_version` allocated from this counter upon
 creation. Since code objects are nominally immutable, `co_version` can

@@ -35,6 +35,7 @@ class TestStableABIAvailability(unittest.TestCase):
 
 SYMBOL_NAMES = (
 
+    "PY_TIMEOUT_MAX",
     "PyAIter_Check",
     "PyArg_Parse",
     "PyArg_ParseTuple",
@@ -375,6 +376,7 @@ SYMBOL_NAMES = (
     "PyList_Type",
     "PyLongRangeIter_Type",
     "PyLong_AsDouble",
+    "PyLong_AsInt",
     "PyLong_AsLong",
     "PyLong_AsLongAndOverflow",
     "PyLong_AsLongLong",
@@ -404,6 +406,8 @@ SYMBOL_NAMES = (
     "PyMapping_GetOptionalItemString",
     "PyMapping_HasKey",
     "PyMapping_HasKeyString",
+    "PyMapping_HasKeyStringWithError",
+    "PyMapping_HasKeyWithError",
     "PyMapping_Items",
     "PyMapping_Keys",
     "PyMapping_Length",
@@ -541,6 +545,8 @@ SYMBOL_NAMES = (
     "PyObject_GetTypeData",
     "PyObject_HasAttr",
     "PyObject_HasAttrString",
+    "PyObject_HasAttrStringWithError",
+    "PyObject_HasAttrWithError",
     "PyObject_Hash",
     "PyObject_HashNotImplemented",
     "PyObject_Init",

@@ -15,6 +15,23 @@ extern "C" {
 struct pyruntimestate;
 struct _ceval_runtime_state;
 
+// Export for '_lsprof' shared extension
+PyAPI_FUNC(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+extern int _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
+
+// Helper to look up a builtin object
+// Export for 'array' shared extension
+PyAPI_FUNC(PyObject*) _PyEval_GetBuiltin(PyObject *);
+
+extern PyObject* _PyEval_GetBuiltinId(_Py_Identifier *);
+
+extern void _PyEval_SetSwitchInterval(unsigned long microseconds);
+extern unsigned long _PyEval_GetSwitchInterval(void);
+
+// Export for '_queue' shared extension
+PyAPI_FUNC(int) _PyEval_MakePendingCalls(PyThreadState *);
+
 #ifndef Py_DEFAULT_RECURSION_LIMIT
 #  define Py_DEFAULT_RECURSION_LIMIT 1000
 #endif
@@ -23,12 +40,14 @@ extern void _Py_FinishPendingCalls(PyThreadState *tstate);
 extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
 extern void _PyEval_SignalReceived(PyInterpreterState *interp);
+
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
-    int (*func)(void *),
+    _Py_pending_call_func func,
     void *arg,
     int mainthreadonly);
+
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
@@ -122,7 +141,8 @@ static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
 }
 #endif
 
-// Export for _Py_EnterRecursiveCall()
+// Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
+// static inline function.
 PyAPI_FUNC(int) _Py_CheckRecursiveCall(
     PyThreadState *tstate,
     const char *where);

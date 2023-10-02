@@ -890,7 +890,7 @@ ignored and the environment will be used.
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
 
 .. versionchanged:: 3.13
 
@@ -1200,7 +1200,7 @@ non-standard paths in the registry and user site-packages.
 
       * Adds ``._pth`` file support and removes ``applocal`` option from
         ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
+      * Adds :file:`python{XX}.zip` as a potential landmark when directly adjacent
         to the executable.
 
 .. deprecated::

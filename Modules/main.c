@@ -7,6 +7,7 @@
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -24,10 +25,6 @@
 #define COPYRIGHT \
     "Type \"help\", \"copyright\", \"credits\" or \"license\" " \
     "for more information."
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* --- pymain_init() ---------------------------------------------- */
 
@@ -741,7 +738,3 @@ Py_BytesMain(int argc, char **argv)
         .wchar_argv = NULL};
     return pymain_main(&args);
 }
-
-#ifdef __cplusplus
-}
-#endif

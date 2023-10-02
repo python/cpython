@@ -37,6 +37,7 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "import_from",
     "import_name",
     "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+    "TIER_ONE_ONLY",
 )
 
 
@@ -52,7 +53,6 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
-    kind: typing.Literal["inst", "op"]
     name: str
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -76,7 +76,6 @@ class Instruction:
 
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
-        self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
@@ -123,7 +122,7 @@ class Instruction:
         if "FRAME" in self.name:
             dprint = print
 
-        if self.name == "EXIT_TRACE":
+        if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")

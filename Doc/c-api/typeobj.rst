@@ -528,28 +528,6 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
    This field is inherited by subtypes.
 
 
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
-   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
-
-   Their initialization to ``NULL`` is taken care of by the
-   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
-   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
-   allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly linked list of *all* live objects on the heap.
-
-   This could be used for various debugging purposes; currently the only uses
-   are the :func:`sys.getobjects` function and to print the objects that are
-   still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
-
-
 PyVarObject Slots
 -----------------
 
@@ -1403,7 +1381,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        are allowed to be removed even if the instance is still alive).
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`local_traverse` to have these specific names; don't name them just
+   :c:func:`!local_traverse` to have these specific names; don't name them just
    anything.
 
    Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
@@ -1728,7 +1706,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    treated as read-only.
 
    Some types may not store their dictionary in this slot.
-   Use :c:func:`PyType_GetDict` to retreive the dictionary for an arbitrary
+   Use :c:func:`PyType_GetDict` to retrieve the dictionary for an arbitrary
    type.
 
    .. versionchanged:: 3.12
