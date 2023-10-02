@@ -265,7 +265,7 @@ PyPreConfig
 
       ``PYMEM_ALLOCATOR_MIMALLOC`` and ``PYMEM_ALLOCATOR_MIMALLOC_DEBUG`` are
       not supported if Python is :option:`configured using --without-mimalloc
-      <--without-mimalloc>` or if the underlying atomic support isn't 
+      <--without-mimalloc>` or if the underlying atomic support isn't
       available.
 
       See :ref:`Memory Management <memory>`.

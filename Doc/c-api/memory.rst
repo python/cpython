@@ -681,7 +681,7 @@ The mimalloc allocator
 .. versionadded:: 3.13
 
 Python supports the mimalloc allocator when the underlying platform support is available.
-mimalloc "is a general purpose allocator with excellent performance characteristics. 
+mimalloc "is a general purpose allocator with excellent performance characteristics.
 Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
 
 When mimalloc support is available it is the default allocator.
