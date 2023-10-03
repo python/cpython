@@ -82,6 +82,74 @@ API..  The module does not create any objects that are shared globally.
     PyMem_RawFree(VAR)
 
 
+struct xid_class_registry {
+    size_t count;
+#define MAX_XID_CLASSES 5
+    struct {
+        PyTypeObject *cls;
+    } added[MAX_XID_CLASSES];
+};
+
+static int
+register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
+                   struct xid_class_registry *classes)
+{
+    int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
+    if (res == 0) {
+        assert(classes->count < MAX_XID_CLASSES);
+        Py_INCREF(cls);
+        classes->added[classes->count].cls = cls;
+        classes->count += 1;
+    }
+    return res;
+}
+
+static void
+clear_xid_class_registry(struct xid_class_registry *classes)
+{
+    while (classes->count > 0) {
+        classes->count -= 1;
+        PyTypeObject *cls = classes->added[classes->count].cls;
+        _PyCrossInterpreterData_UnregisterClass(cls);
+        Py_DECREF(cls);
+    }
+}
+
+#define XID_IGNORE_EXC 1
+#define XID_FREE 2
+
+static int
+_release_xid_data(_PyCrossInterpreterData *data, int flags)
+{
+    int ignoreexc = flags & XID_IGNORE_EXC;
+    PyObject *exc;
+    if (ignoreexc) {
+        exc = PyErr_GetRaisedException();
+    }
+    int res;
+    if (flags & XID_FREE) {
+        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+    }
+    else {
+        res = _PyCrossInterpreterData_Release(data);
+    }
+    if (res < 0) {
+        /* The owning interpreter is already destroyed. */
+        if (ignoreexc) {
+            // XXX Emit a warning?
+            PyErr_Clear();
+        }
+    }
+    if (flags & XID_FREE) {
+        /* Either way, we free the data. */
+    }
+    if (ignoreexc) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
+}
+
+
 static PyInterpreterState *
 _get_current_interp(void)
 {
@@ -146,7 +214,8 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
 static PyTypeObject *
-add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
+add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
+             struct xid_class_registry *classes)
 {
     PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
                 NULL, mod, spec, NULL);
@@ -158,46 +227,12 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
         return NULL;
     }
     if (shared != NULL) {
-        if (_PyCrossInterpreterData_RegisterClass(cls, shared)) {
+        if (register_xid_class(cls, shared, classes)) {
             Py_DECREF(cls);
             return NULL;
         }
     }
     return cls;
-}
-
-#define XID_IGNORE_EXC 1
-#define XID_FREE 2
-
-static int
-_release_xid_data(_PyCrossInterpreterData *data, int flags)
-{
-    int ignoreexc = flags & XID_IGNORE_EXC;
-    PyObject *exc;
-    if (ignoreexc) {
-        exc = PyErr_GetRaisedException();
-    }
-    int res;
-    if (flags & XID_FREE) {
-        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
-    }
-    else {
-        res = _PyCrossInterpreterData_Release(data);
-    }
-    if (res < 0) {
-        /* The owning interpreter is already destroyed. */
-        if (ignoreexc) {
-            // XXX Emit a warning?
-            PyErr_Clear();
-        }
-    }
-    if (flags & XID_FREE) {
-        /* Either way, we free the data. */
-    }
-    if (ignoreexc) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
 }
 
 
@@ -315,7 +350,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj,
 }
 
 static int
-register_xid_types(void)
+register_builtin_xid_types(struct xid_class_registry *classes)
 {
     PyTypeObject *cls;
     crossinterpdatafunc func;
@@ -323,7 +358,7 @@ register_xid_types(void)
     // builtin memoryview
     cls = &PyMemoryView_Type;
     func = _memoryview_shared;
-    if (_PyCrossInterpreterData_RegisterClass(cls, func)) {
+    if (register_xid_class(cls, func, classes)) {
         return -1;
     }
 
@@ -334,6 +369,9 @@ register_xid_types(void)
 /* module state *************************************************************/
 
 typedef struct {
+    struct xid_class_registry xid_classes;
+
+    /* Added at runtime by interpreters module. */
     PyTypeObject *send_channel_type;
     PyTypeObject *recv_channel_type;
 
@@ -2191,6 +2229,7 @@ set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     if (state == NULL) {
         return -1;
     }
+    struct xid_class_registry *xid_classes = &state->xid_classes;
 
     if (state->send_channel_type != NULL
         || state->recv_channel_type != NULL)
@@ -2201,10 +2240,10 @@ set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
 
-    if (_PyCrossInterpreterData_RegisterClass(send, _channel_end_shared)) {
+    if (register_xid_class(send, _channel_end_shared, xid_classes)) {
         return -1;
     }
-    if (_PyCrossInterpreterData_RegisterClass(recv, _channel_end_shared)) {
+    if (register_xid_class(recv, _channel_end_shared, xid_classes)) {
         return -1;
     }
 
@@ -2722,6 +2761,7 @@ module_exec(PyObject *mod)
     if (_globals_init() != 0) {
         return -1;
     }
+    struct xid_class_registry *xid_classes = NULL;
 
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
@@ -2733,20 +2773,22 @@ module_exec(PyObject *mod)
     if (state == NULL) {
         goto error;
     }
+    xid_classes = &state->xid_classes;
 
     // ChannelID
     state->ChannelIDType = add_new_type(
-            mod, &ChannelIDType_spec, _channelid_shared);
+            mod, &ChannelIDType_spec, _channelid_shared, xid_classes);
     if (state->ChannelIDType == NULL) {
         goto error;
     }
 
-    state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL);
+    state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL,
+                                           xid_classes);
     if (state->XIBufferViewType == NULL) {
         goto error;
     }
 
-    if (register_xid_types() < 0) {
+    if (register_builtin_xid_types(xid_classes) < 0) {
         goto error;
     }
 
@@ -2757,6 +2799,9 @@ module_exec(PyObject *mod)
     return 0;
 
 error:
+    if (xid_classes != NULL) {
+        clear_xid_class_registry(xid_classes);
+    }
     _globals_fini();
     return -1;
 }
@@ -2781,6 +2826,11 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
+
+    // Before clearing anything, we unregister the various XID types. */
+    clear_xid_class_registry(&state->xid_classes);
+
+    // Now we clear the module state.
     clear_module_state(state);
     return 0;
 }
