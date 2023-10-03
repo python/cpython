@@ -89,8 +89,6 @@ import os as _os
 import re as _re
 import sys as _sys
 
-import warnings
-
 from gettext import gettext as _, ngettext
 
 SUPPRESS = '==SUPPRESS=='
@@ -910,6 +908,7 @@ class BooleanOptionalAction(Action):
         #   parser.add_argument('-f', action=BooleanOptionalAction, type=int)
         for field_name in ('type', 'choices', 'metavar'):
             if locals()[field_name] is not _deprecated_default:
+                import warnings
                 warnings._deprecated(
                     field_name,
                     "{name!r} is deprecated as of Python 3.12 and will be "
@@ -1700,6 +1699,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
+        import warnings
         warnings.warn(
             "Nesting argument groups is deprecated.",
             category=DeprecationWarning,
@@ -1728,6 +1728,7 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._group_actions.remove(action)
 
     def add_mutually_exclusive_group(self, *args, **kwargs):
+        import warnings
         warnings.warn(
             "Nesting mutually exclusive groups is deprecated.",
             category=DeprecationWarning,
