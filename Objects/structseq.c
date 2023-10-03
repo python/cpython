@@ -216,10 +216,62 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         res->ob_item[i] = Py_NewRef(v);
     }
     Py_DECREF(arg);
-    for (; i < max_len; ++i) {
+    if (dict != NULL) {
+        for (i = 0; i < len; ++i) {
+            const char *name = type->tp_members[i < min_len ? i : i - n_unnamed_fields].name;
+            PyObject *ob = NULL;
+            if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
+                Py_DECREF(res);
+                return NULL;
+            }
+            if (ob != NULL) {
+                Py_DECREF(ob);
+                PyErr_Format(PyExc_TypeError,
+                             "%.500s() got multiple values for field '%s'",
+                             type->tp_name, name);
+                Py_DECREF(res);
+                return NULL;
+            }
+        }
+        PyObject *unknown_keys = PySet_New(dict);
+        if (unknown_keys == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        for (i = len; i < max_len; ++i) {
+            PyObject *ob = NULL;
+            const char *name = type->tp_members[i - n_unnamed_fields].name;
+            PyObject *key = PyUnicode_FromString(name);
+            if (!key || PyDict_GetItemRef(dict, key, &ob) < 0) {
+                Py_XDECREF(key);
+                Py_DECREF(res);
+                Py_DECREF(unknown_keys);
+                return NULL;
+            }
+            if (ob != NULL) {
+                Py_DECREF(ob);
+                if (PySet_Discard(unknown_keys, key) < 0) {
+                    Py_DECREF(key);
+                    Py_DECREF(res);
+                    Py_DECREF(unknown_keys);
+                    return NULL;
+                }
+            }
+            Py_DECREF(key);
+        }
+        if (PySet_GET_SIZE(unknown_keys) > 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.500s() got unexpected field name(s): %R",
+                         type->tp_name, unknown_keys);
+            Py_DECREF(res);
+            Py_DECREF(unknown_keys);
+            return NULL;
+        }
+    }
+    for (i = len; i < max_len; ++i) {
         PyObject *ob = NULL;
         if (dict != NULL) {
-            const char *name = type->tp_members[i-n_unnamed_fields].name;
+            const char *name = type->tp_members[i - n_unnamed_fields].name;
             if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
                 Py_DECREF(res);
                 return NULL;
