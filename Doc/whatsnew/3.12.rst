@@ -303,7 +303,7 @@ Let's cover these in detail:
 See :pep:`701` for more details.
 
 As a positive side-effect of how this feature has been implemented (by parsing f-strings
-with :pep:`the PEG parser <617>`, now error messages for f-strings are more precise
+with :pep:`the PEG parser <617>`), now error messages for f-strings are more precise
 and include the exact location of the error. For example, in Python 3.11, the following
 f-string raises a :exc:`SyntaxError`:
 
