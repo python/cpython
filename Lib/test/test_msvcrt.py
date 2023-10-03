@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import unittest
+from textwrap import dedent
 
 from test.support import os_helper
 from test.support.os_helper import TESTFN, TESTFN_ASCII
@@ -60,14 +61,20 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 
 class TestConsoleIO(unittest.TestCase):
+    def run_in_separated_process(self, code):
+        cmd = [sys.executable, '-c', code]
+        subprocess.run(cmd, check=True, capture_output=True,
+                       creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+
     def test_kbhit(self):
         # Run test in a seprated process to avoid stdin conflicts.
         # See: gh-110147
-        cmd = [sys.executable, '-c',
-               'import msvcrt;'
-               'assert msvcrt.kbhit() == 0;'
-               ]
-        subprocess.run(cmd, check=True, capture_output=True)
+        code = dedent('''
+            import msvcrt
+            assert msvcrt.kbhit() == 0
+        ''')
+        self.run_in_separated_process(code)
 
     def test_getch(self):
         msvcrt.ungetch(b'c')
@@ -76,14 +83,14 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwch(self):
         # Run test in a seprated process to avoid stdin conflicts.
         # See: gh-110147
-        cmd = [sys.executable, '-c',
-               'import msvcrt;'
-               'from _testconsole import write_input;'
-               'stdin = open("CONIN$", "rb", buffering=0);'
-               f'write_input(stdin, {c_encoded});'
-               f'assert msvcrt.getwch() == "{c}";'
-               ]
-        subprocess.run(cmd, check=True, capture_output=True)
+        code = dedent(f'''
+            import msvcrt
+            from _testconsole import write_input
+            with open("CONIN$", "rb", buffering=0) as stdin:
+                write_input(stdin, {repr(c_encoded)})
+                assert msvcrt.getwch() == "{c}"
+        ''')
+        self.run_in_separated_process(code)
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
@@ -92,14 +99,14 @@ class TestConsoleIO(unittest.TestCase):
     def test_getwche(self):
         # Run test in a seprated process to avoid stdin conflicts.
         # See: gh-110147
-        cmd = [sys.executable, '-c',
-               'import msvcrt;'
-               'from _testconsole import write_input;'
-               'stdin = open("CONIN$", "rb", buffering=0);'
-               f'write_input(stdin, {c_encoded});'
-               f'assert msvcrt.getwche() == "{c}";'
-               ]
-        subprocess.run(cmd, check=True, capture_output=True)
+        code = dedent(f'''
+            import msvcrt
+            from _testconsole import write_input
+            with open("CONIN$", "rb", buffering=0) as stdin:
+                write_input(stdin, {repr(c_encoded)})
+                assert msvcrt.getwche() == "{c}"
+        ''')
+        self.run_in_separated_process(code)
 
     def test_putch(self):
         msvcrt.putch(b'c')
