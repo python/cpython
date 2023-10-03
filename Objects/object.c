@@ -2512,7 +2512,9 @@ Py_ReprLeave(PyObject *obj)
     /* Count backwards because we always expect obj to be list[-1] */
     while (--i >= 0) {
         if (PyList_GET_ITEM(list, i) == obj) {
-            PyList_SetSlice(list, i, i + 1, NULL);
+            if (PyList_SetSlice(list, i, i + 1, NULL) < 0) {
+                goto finally;
+            }
             break;
         }
     }
