@@ -713,6 +713,12 @@
             break;
         }
 
+        case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(0)), true);
+            break;
+        }
+
         case _CHECK_ATTR_METHOD_LAZY_DICT: {
             break;
         }
