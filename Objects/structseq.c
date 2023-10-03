@@ -414,7 +414,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
             result->ob_item[i] = ob;
         }
         // Check if there are any unexpected fields.
-        if (PyDict_Size(kwargs) > 0) {
+        if (PyDict_GET_SIZE(kwargs) > 0) {
             PyObject *names = PyDict_Keys(kwargs);
             if (names) {
                 PyErr_Format(PyExc_TypeError, "Got unexpected field name(s): %R", names);
