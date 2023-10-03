@@ -767,7 +767,7 @@ def calculate_optimization_stats(stats):
         ("Optimization attempts", attempts, ""),
         ("Traces created", created, format_ratio(created, attempts)),
         ("Traces executed", executed, ""),
-        ("Uops executed", uops, int(uops / executed)),
+        ("Uops executed", uops, int(uops / (executed or 1))),
         ("Trace stack overflow", trace_stack_overflow, ""),
         ("Trace stack underflow", trace_stack_underflow, ""),
         ("Trace too long", trace_too_long, ""),
