@@ -242,6 +242,11 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
+    PyInterpreterState *interp;
+#define ERR_NOT_SET 0
+#define ERR_NO_MEMORY 1
+#define ERR_ALREADY_RUNNING 2
+    int code;
     const char *name;
     const char *msg;
 } _sharedexception;
@@ -263,14 +268,26 @@ _sharedexception_clear(_sharedexception *exc)
 }
 
 static const char *
-_sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
+_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
 {
+    if (sharedexc->interp == NULL) {
+        sharedexc->interp = PyInterpreterState_Get();
+    }
+
+    if (code != ERR_NOT_SET) {
+        assert(exc == NULL);
+        assert(code > 0);
+        sharedexc->code = code;
+        return NULL;
+    }
+
     assert(exc != NULL);
     const char *failure = NULL;
 
     PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
+        code = ERR_NO_MEMORY;
         goto error;
     }
     sharedexc->name = _copy_raw_string(nameobj);
@@ -281,6 +298,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
         } else {
             failure = "unable to encode and copy exception type name";
         }
+        code = ERR_NO_MEMORY;
         goto error;
     }
 
@@ -288,6 +306,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
         PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
         if (msgobj == NULL) {
             failure = "unable to format exception message";
+            code = ERR_NO_MEMORY;
             goto error;
         }
         sharedexc->msg = _copy_raw_string(msgobj);
@@ -298,6 +317,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
             } else {
                 failure = "unable to encode and copy exception message";
             }
+            code = ERR_NO_MEMORY;
             goto error;
         }
     }
@@ -308,7 +328,10 @@ error:
     assert(failure != NULL);
     PyErr_Clear();
     _sharedexception_clear(sharedexc);
-    *sharedexc = no_exception;
+    *sharedexc = (_sharedexception){
+        .interp = sharedexc->interp,
+        .code = code,
+    };
     return failure;
 }
 
@@ -316,6 +339,7 @@ static void
 _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
     if (exc->name != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         if (exc->msg != NULL) {
             PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
         }
@@ -324,9 +348,19 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
         }
     }
     else if (exc->msg != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetString(wrapperclass, exc->msg);
     }
+    else if (exc->code == ERR_NO_MEMORY) {
+        PyErr_NoMemory();
+    }
+    else if (exc->code == ERR_ALREADY_RUNNING) {
+        assert(exc->interp != NULL);
+        assert(_PyInterpreterState_IsRunningMain(exc->interp));
+        _PyInterpreterState_FailIfRunningMain(exc->interp);
+    }
     else {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetNone(wrapperclass);
     }
 }
@@ -362,9 +396,16 @@ static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
+    int errcode = ERR_NOT_SET;
+
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
-        // We skip going through the shared exception.
-        return -1;
+        assert(PyErr_Occurred());
+        // In the case where we didn't switch interpreters, it would
+        // be more efficient to leave the exception in place and return
+        // immediately.  However, life is simpler if we don't.
+        PyErr_Clear();
+        errcode = ERR_ALREADY_RUNNING;
+        goto error;
     }
 
     PyObject *excval = NULL;
@@ -403,16 +444,17 @@ _run_script(PyInterpreterState *interp, const char *codestr,
 
 error:
     excval = PyErr_GetRaisedException();
-    const char *failure = _sharedexception_bind(excval, sharedexc);
+    const char *failure = _sharedexception_bind(excval, errcode, sharedexc);
     if (failure != NULL) {
         fprintf(stderr,
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
-        PyErr_Clear();
     }
     Py_XDECREF(excval);
+    if (errcode != ERR_ALREADY_RUNNING) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
     assert(!PyErr_Occurred());
-    _PyInterpreterState_SetNotRunningMain(interp);
     return -1;
 }
 
@@ -421,6 +463,7 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
                            const char *codestr, PyObject *shareables)
 {
     module_state *state = get_module_state(mod);
+    assert(state != NULL);
 
     _sharedns *shared = _get_shared_ns(shareables);
     if (shared == NULL && PyErr_Occurred()) {
@@ -429,50 +472,30 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
+    PyThreadState *tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
-        // XXX gh-109860: Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-        assert(tstate != NULL);
-        // Hack (until gh-109860): The interpreter's initial thread state
-        // is least likely to break.
-        while(tstate->next != NULL) {
-            tstate = tstate->next;
-        }
-        // We must do this check before switching interpreters, so any
-        // exception gets raised in the right one.
-        // XXX gh-109860: Drop this redundant check once we stop
-        // re-using tstates that might already be in use.
-        if (_PyInterpreterState_IsRunningMain(interp)) {
-            PyErr_SetString(PyExc_RuntimeError,
-                            "interpreter already running");
-            if (shared != NULL) {
-                _sharedns_free(shared);
-            }
-            return -1;
-        }
+        tstate = PyThreadState_New(interp);
+        tstate->_whence = _PyThreadState_WHENCE_EXEC;
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
 
     // Run the script.
-    _sharedexception exc = {NULL, NULL};
+    _sharedexception exc = (_sharedexception){ .interp = interp };
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
     if (save_tstate != NULL) {
+        PyThreadState_Clear(tstate);
         PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
     }
 
     // Propagate any exception out to the caller.
-    if (exc.name != NULL) {
-        assert(state != NULL);
+    if (result < 0) {
+        assert(!PyErr_Occurred());
         _sharedexception_apply(&exc, state->RunFailedError);
-    }
-    else if (result != 0) {
-        if (!PyErr_Occurred()) {
-            // We were unable to allocate a shared exception.
-            PyErr_NoMemory();
-        }
+        assert(PyErr_Occurred());
     }
 
     if (shared != NULL) {
@@ -502,6 +525,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     const PyInterpreterConfig config = isolated
         ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+
     // XXX Possible GILState issues?
     PyThreadState *tstate = NULL;
     PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
@@ -517,6 +541,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     assert(tstate != NULL);
+
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
@@ -526,6 +551,10 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         PyThreadState_Swap(save_tstate);
         return NULL;
     }
+
+    PyThreadState_Clear(tstate);
+    PyThreadState_Delete(tstate);
+
     _PyInterpreterState_RequireIDRef(interp, 1);
     return idobj;
 }
@@ -573,14 +602,8 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    // XXX gh-109860: Using the "head" thread isn't strictly correct.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    assert(tstate != NULL);
-    // Hack (until gh-109860): The interpreter's initial thread state
-    // is least likely to break.
-    while(tstate->next != NULL) {
-        tstate = tstate->next;
-    }
+    PyThreadState *tstate = PyThreadState_New(interp);
+    tstate->_whence = _PyThreadState_WHENCE_INTERP;
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
