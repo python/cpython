@@ -133,7 +133,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
         }
         if (PyList_SetItem(cc, VMIN, v) < 0) {
             goto err;
-        };
+        }
         v = PyLong_FromLong((long)mode.c_cc[VTIME]);
         if (v == NULL) {
             goto err;
@@ -151,6 +151,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
     do { \
         PyObject *l = PyLong_FromLong((long)val); \
         if (l == NULL) { \
+            Py_DECREF(v); \
             goto err; \
         } \
         PyList_SET_ITEM(v, index, l); \
