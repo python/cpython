@@ -2452,6 +2452,20 @@
             break;
         }
 
+        case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            PyObject *owner;
+            PyObject *attr;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert((oparg & 1) == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(owner);
+            attr = Py_NewRef(descr);
+            stack_pointer[-1] = attr;
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
