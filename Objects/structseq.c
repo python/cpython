@@ -216,7 +216,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         res->ob_item[i] = Py_NewRef(v);
     }
     Py_DECREF(arg);
-    if (dict != NULL) {
+    if (dict != NULL && PyDict_GET_SIZE(dict) > 0) {
         Py_ssize_t n_found_keys = 0;
         for (i = min_len; i < max_len; ++i) {
             PyObject *ob = NULL;
@@ -254,8 +254,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
             Py_DECREF(res);
             return NULL;
         }
-    }
-    else {
+    } else {
         for (i = len; i < max_len; ++i) {
             res->ob_item[i] = Py_NewRef(Py_None);
         }
