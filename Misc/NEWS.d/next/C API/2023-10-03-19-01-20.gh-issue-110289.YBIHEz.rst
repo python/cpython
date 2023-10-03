@@ -1,0 +1,1 @@
+Add :c:func:`PyUnicode_EqualToString` function.

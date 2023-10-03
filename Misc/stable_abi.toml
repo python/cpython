@@ -2460,3 +2460,5 @@
     added = '3.13'
 [function.PyMapping_HasKeyStringWithError]
     added = '3.13'
+[function.PyUnicode_EqualToString]
+    added = '3.13'

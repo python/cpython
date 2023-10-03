@@ -770,6 +770,7 @@ SYMBOL_NAMES = (
     "PyUnicode_DecodeUnicodeEscape",
     "PyUnicode_EncodeFSDefault",
     "PyUnicode_EncodeLocale",
+    "PyUnicode_EqualToString",
     "PyUnicode_FSConverter",
     "PyUnicode_FSDecoder",
     "PyUnicode_Find",
