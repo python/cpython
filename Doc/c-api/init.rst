@@ -870,6 +870,8 @@ code, or when embedding the Python interpreter:
    When the current thread state is ``NULL``, this issues a fatal error (so that
    the caller needn't check for ``NULL``).
 
+   See also :c:func:`PyThreadState_GetUnchecked`.
+
 
 .. c:function:: PyThreadState* PyThreadState_GetUnchecked()
 
