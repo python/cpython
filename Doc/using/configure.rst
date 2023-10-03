@@ -518,6 +518,9 @@ also be used to improve performance.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.13
+      Task failure is no longer ignored silently.
+
 .. cmdoption:: --with-lto=[full|thin|no|yes]
 
    Enable Link Time Optimization (LTO) in any build (disabled by default).
