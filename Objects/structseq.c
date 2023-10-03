@@ -218,6 +218,11 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     Py_DECREF(arg);
     if (dict != NULL) {
         for (i = 0; i < len; ++i) {
+            // unnamed fields can be present in both sequence and dict
+            if (i >= min_len - n_unnamed_fields && i < min_len + n_unnamed_fields) {
+                continue;
+            }
+
             const char *name = type->tp_members[i < min_len ? i : i - n_unnamed_fields].name;
             PyObject *ob = NULL;
             if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {

@@ -133,7 +133,21 @@ class StructSeqTest(unittest.TestCase):
 
     def test_reduce(self):
         t = time.gmtime()
-        x = t.__reduce__()
+        cls, (tup, dct) = t.__reduce__()
+        self.assertIs(cls, time.struct_time)
+        self.assertEqual(tup, tuple(t))
+        cls(tup, dct)
+
+    def test_reduce_with_unnamed_fields(self):
+        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
+        self.assertEqual(r.st_atime, 1.0)
+        cls, (tup, dct) = r.__reduce__()
+        self.assertIs(cls, os.stat_result)
+        self.assertEqual(tup, tuple(r))
+        self.assertIn('st_atime', dct)
+        reconstructed = cls(tup, dct)
+        self.assertEqual(reconstructed, r)
+        self.assertAlmostEqual(reconstructed.st_atime, r.st_atime)
 
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing.
