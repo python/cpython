@@ -655,7 +655,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -2050,7 +2051,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
         *tstate_p = NULL;
