@@ -495,6 +495,8 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
+static void _xidregistry_clear(struct _xidregistry *);
+
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
@@ -502,6 +504,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     /* The count is cleared by _Py_FinalizeRefTotal(). */
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
+
+    _xidregistry_clear(&runtime->xidregistry);
 
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
@@ -2571,23 +2575,25 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
    crossinterpdatafunc. It would be simpler and more efficient. */
 
 static int
-_xidregistry_add_type(struct _xidregistry *xidregistry, PyTypeObject *cls,
-                 crossinterpdatafunc getdata)
+_xidregistry_add_type(struct _xidregistry *xidregistry,
+                      PyTypeObject *cls, crossinterpdatafunc getdata)
 {
     // Note that we effectively replace already registered classes
+    // (since first match wins and we're adding to the front of the list)
     // rather than failing.
     struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
     if (newhead == NULL) {
         return -1;
     }
-    // XXX Assign a callback to clear the entry from the registry?
-    newhead->cls = PyWeakref_NewRef((PyObject *)cls, NULL);
+    *newhead = (struct _xidregitem){
+        // XXX Assign a callback to clear the entry from the registry?
+        .cls = PyWeakref_NewRef((PyObject *)cls, NULL),
+        .getdata = getdata,
+    };
     if (newhead->cls == NULL) {
         PyMem_RawFree(newhead);
         return -1;
     }
-    newhead->getdata = getdata;
-    newhead->prev = NULL;
     newhead->next = xidregistry->head;
     if (newhead->next != NULL) {
         newhead->next->prev = newhead;
@@ -2617,6 +2623,20 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
     return next;
 }
 
+static void
+_xidregistry_clear(struct _xidregistry *xidregistry)
+{
+    struct _xidregitem *cur = xidregistry->head;
+    xidregistry->head = NULL;
+    while (cur != NULL) {
+        struct _xidregitem *next = cur->next;
+        /* Release the weakref. */
+        Py_DECREF(cur->cls);
+        PyMem_RawFree(cur);
+        cur = next;
+    }
+}
+
 static struct _xidregitem *
 _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 {
@@ -2629,11 +2649,10 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
         }
         else {
             assert(PyType_Check(registered));
+            Py_DECREF(registered);
             if (registered == (PyObject *)cls) {
-                Py_DECREF(registered);
                 return cur;
             }
-            Py_DECREF(registered);
             cur = cur->next;
         }
     }
@@ -2644,7 +2663,7 @@ static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *xi
 
 int
 _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
-                                       crossinterpdatafunc getdata)
+                                      crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
