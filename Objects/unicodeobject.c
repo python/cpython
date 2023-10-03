@@ -10674,7 +10674,7 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 }
 
 int
-PyUnicode_EqualToString(PyObject *unicode, const char *str)
+PyUnicode_EqualToUTF8(PyObject *unicode, const char *str)
 {
     assert(_PyUnicode_CHECK(unicode));
     assert(str);
@@ -10696,7 +10696,7 @@ PyUnicode_EqualToString(PyObject *unicode, const char *str)
     /* Compare Unicode string and UTF-8 string */
     for (Py_ssize_t i = 0; i < len; i++) {
         ch = PyUnicode_READ(kind, data, i);
-        if (ch == 0x80) {
+        if (ch == 0) {
             return 0;
         }
         else if (ch < 0x80) {

@@ -1001,7 +1001,7 @@ New Features
   :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
   (Contributed by Victor Stinner in :gh:`107073`.)
 
-* Add :c:func:`PyUnicode_EqualToString` function: compare Unicode object with
+* Add :c:func:`PyUnicode_EqualToUTF8` function: compare Unicode object with
   a :c:expr:`const char*` UTF-8 encoded bytes string and return true if they
   are equal or false otherwise.
   This function does not raise exceptions.

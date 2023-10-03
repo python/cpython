@@ -1396,10 +1396,12 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    :c:func:`PyErr_Occurred` to check for errors.
 
 
-.. c:function:: int PyUnicode_EqualToString(PyObject *unicode, const char *string)
+.. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
 
    Compare a Unicode object with a UTF-8 encoded C string and return true
    if they are equal and false otherwise.
+   If the Unicode object contains null or surrogate characters or
+   the C string not encoded to UTF-8 return false.
 
    This function does not raise exceptions.
 

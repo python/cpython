@@ -2460,5 +2460,5 @@
     added = '3.13'
 [function.PyMapping_HasKeyStringWithError]
     added = '3.13'
-[function.PyUnicode_EqualToString]
+[function.PyUnicode_EqualToUTF8]
     added = '3.13'
