@@ -2038,7 +2038,7 @@ dummy_func(
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
-            _GUARD_TYPE_VERSION_STORE +
+            _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES +
             _STORE_ATTR_INSTANCE_VALUE;
 
@@ -2083,12 +2083,6 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        op(_GUARD_TYPE_VERSION_STORE, (type_version/2, owner -- owner)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-        }
-
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
@@ -2100,7 +2094,7 @@ dummy_func(
 
         macro(STORE_ATTR_SLOT) =
             unused/1 +
-            _GUARD_TYPE_VERSION_STORE +
+            _GUARD_TYPE_VERSION +
             _STORE_ATTR_SLOT;
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
