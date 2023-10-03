@@ -340,7 +340,8 @@ validate_code_object(PyCodeObject *code)
 {
     if (code->co_argcount > 0
         || code->co_posonlyargcount > 0
-        || code->co_kwonlyargcount > 0)
+        || code->co_kwonlyargcount > 0
+        || code->co_flags & (CO_VARARGS | CO_VARKEYWORDS))
     {
         PyErr_SetString(PyExc_ValueError, "arguments not supported");
         return -1;
