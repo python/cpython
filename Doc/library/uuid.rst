@@ -294,20 +294,20 @@ The following options are accepted:
    Show the help message and exit.
 
 .. option:: -u <uuid>
-               --uuid <uuid>
+            --uuid <uuid>
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
 .. option:: -n <namespace>
-               --namespace <namespace>
+            --namespace <namespace>
 
    The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
    addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
    Only required for :func:`uuid3` / :func:`uuid5` functions.
 
 .. option:: -N <name>
-               --name <name>
+            --name <name>
 
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.

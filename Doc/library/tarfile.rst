@@ -1157,22 +1157,22 @@ Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
 .. option:: -l <tarfile>
-               --list <tarfile>
+            --list <tarfile>
 
    List files in a tarfile.
 
 .. option:: -c <tarfile> <source1> ... <sourceN>
-               --create <tarfile> <source1> ... <sourceN>
+            --create <tarfile> <source1> ... <sourceN>
 
    Create tarfile from source files.
 
 .. option:: -e <tarfile> [<output_dir>]
-               --extract <tarfile> [<output_dir>]
+            --extract <tarfile> [<output_dir>]
 
    Extract tarfile into the current directory if *output_dir* is not specified.
 
 .. option:: -t <tarfile>
-               --test <tarfile>
+            --test <tarfile>
 
    Test whether the tarfile is valid or not.
 

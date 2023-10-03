@@ -907,22 +907,22 @@ Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
 .. option:: -l <zipfile>
-               --list <zipfile>
+            --list <zipfile>
 
    List files in a zipfile.
 
 .. option:: -c <zipfile> <source1> ... <sourceN>
-               --create <zipfile> <source1> ... <sourceN>
+            --create <zipfile> <source1> ... <sourceN>
 
    Create zipfile from source files.
 
 .. option:: -e <zipfile> <output_dir>
-               --extract <zipfile> <output_dir>
+            --extract <zipfile> <output_dir>
 
    Extract zipfile into target directory.
 
 .. option:: -t <zipfile>
-               --test <zipfile>
+            --test <zipfile>
 
    Test whether the zipfile is valid or not.
 

@@ -189,8 +189,8 @@ Generic options
 ~~~~~~~~~~~~~~~
 
 .. option:: -?
-               -h
-               --help
+            -h
+            --help
 
    Print a short description of all command line options and corresponding
    environment variables and exit.
@@ -216,7 +216,7 @@ Generic options
    .. versionadded:: 3.11
 
 .. option:: -V
-               --version
+            --version
 
    Print the Python version number and exit.  Example output could be:
 

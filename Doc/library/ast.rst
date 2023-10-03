@@ -2488,7 +2488,7 @@ The following options are accepted:
    Show the help message and exit.
 
 .. option:: -m <mode>
-               --mode <mode>
+            --mode <mode>
 
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
@@ -2502,7 +2502,7 @@ The following options are accepted:
    Include attributes such as line numbers and column offsets.
 
 .. option:: -i <indent>
-               --indent <indent>
+            --indent <indent>
 
    Indentation of nodes in AST (number of spaces).
 
