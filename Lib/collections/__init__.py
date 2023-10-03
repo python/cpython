@@ -463,6 +463,14 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
                         'fields with new values')
 
+    def __replace__(self, /, **kwds):
+        result = self._make(_map(kwds.pop, field_names, self))
+        for name in kwds:
+            raise TypeError(f'Got unexpected keyword argument {name!r}')
+        return result
+
+    __replace__.__doc__ = _replace.__doc__
+
     def __repr__(self):
         'Return a nicely formatted representation string'
         return self.__class__.__name__ + repr_fmt % self
@@ -480,6 +488,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         __new__,
         _make.__func__,
         _replace,
+        __replace__,
         __repr__,
         _asdict,
         __getnewargs__,
@@ -495,7 +504,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_field_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
-        '__replace__': _replace,
+        '__replace__': __replace__,
         '_replace': _replace,
         '__repr__': __repr__,
         '_asdict': _asdict,
