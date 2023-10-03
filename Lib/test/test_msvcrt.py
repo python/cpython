@@ -80,29 +80,25 @@ class TestConsoleIO(unittest.TestCase):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getch(), b'c')
 
-    def test_getwch(self):
+    def check_getwch(self, funcname):
         code = dedent(f'''
             import msvcrt
             from _testconsole import write_input
             with open("CONIN$", "rb", buffering=0) as stdin:
                 write_input(stdin, {ascii(c_encoded)})
-                assert msvcrt.getwch() == "{c}"
+                assert msvcrt.{funcname}() == "{c}"
         ''')
         self.run_in_separated_process(code)
+
+    def test_getwch(self):
+        self.check_getwch('getwch')
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        code = dedent(f'''
-            import msvcrt
-            from _testconsole import write_input
-            with open("CONIN$", "rb", buffering=0) as stdin:
-                write_input(stdin, {repr(c_encoded)})
-                assert msvcrt.getwche() == "{c}"
-        ''')
-        self.run_in_separated_process(code)
+        self.check_getwch('getwche')
 
     def test_putch(self):
         msvcrt.putch(b'c')
