@@ -136,7 +136,10 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(os.stat_result.__match_args__, expected_args)
 
     def test_copy_replace_all_fields_visible(self):
-        assert os.times_result.n_unnamed_fields == 0 and os.times_result.n_sequence_fields == os.times_result.n_fields
+        assert (
+            os.times_result.n_unnamed_fields == 0
+            and os.times_result.n_sequence_fields == os.times_result.n_fields
+        )
 
         t = os.times()
 
@@ -154,8 +157,12 @@ class StructSeqTest(unittest.TestCase):
             copy.replace(t, user=1, error=-1)
 
     def test_copy_replace_with_invisible_fields(self):
+        assert (
+            time.struct_time.n_unnamed_fields == 0
+            and time.struct_time.n_sequence_fields < time.struct_time.n_fields
+        )
+
         t = time.gmtime(0)
-        assert t.n_unnamed_fields == 0 and t.n_sequence_fields < t.n_fields
 
         # visible fields
         t2 = copy.replace(t)
@@ -197,7 +204,9 @@ class StructSeqTest(unittest.TestCase):
 
     def test_copy_replace_with_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
+
         r = os.stat_result(range(os.stat_result.n_sequence_fields))
+
         error_message = re.escape('__replace__() is not supported')
         with self.assertRaisesRegex(TypeError, error_message):
             copy.replace(r)
