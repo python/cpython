@@ -217,75 +217,46 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     Py_DECREF(arg);
     if (dict != NULL) {
-        for (i = 0; i < len; ++i) {
-            // unnamed fields can be present in both sequence and dict
-            if (i >= min_len - n_unnamed_fields && i < min_len) {
-                continue;
-            }
-
-            const char *name = type->tp_members[i < min_len ? i : i - n_unnamed_fields].name;
-            PyObject *ob = NULL;
-            if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
-                Py_DECREF(res);
-                return NULL;
-            }
-            if (ob != NULL) {
-                Py_DECREF(ob);
-                PyErr_Format(PyExc_TypeError,
-                             "%.500s() got multiple values for field '%s'",
-                             type->tp_name, name);
-                Py_DECREF(res);
-                return NULL;
-            }
-        }
-        PyObject *unknown_keys = PySet_New(dict);
-        if (unknown_keys == NULL) {
-            Py_DECREF(res);
-            return NULL;
-        }
+        Py_ssize_t n_found_keys = 0;
         for (i = min_len; i < max_len; ++i) {
             PyObject *ob = NULL;
             const char *name = type->tp_members[i - n_unnamed_fields].name;
-            PyObject *key = PyUnicode_FromString(name);
-            if (!key || PyDict_GetItemRef(dict, key, &ob) < 0) {
-                Py_XDECREF(key);
-                Py_DECREF(res);
-                Py_DECREF(unknown_keys);
-                return NULL;
-            }
-            if (ob != NULL) {
-                Py_DECREF(ob);
-                if (PySet_Discard(unknown_keys, key) < 0) {
-                    Py_DECREF(key);
-                    Py_DECREF(res);
-                    Py_DECREF(unknown_keys);
-                    return NULL;
-                }
-            }
-            Py_DECREF(key);
-        }
-        if (PySet_GET_SIZE(unknown_keys) > 0) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.500s() got unexpected field name(s): %R",
-                         type->tp_name, unknown_keys);
-            Py_DECREF(res);
-            Py_DECREF(unknown_keys);
-            return NULL;
-        }
-    }
-    for (i = len; i < max_len; ++i) {
-        PyObject *ob = NULL;
-        if (dict != NULL) {
-            const char *name = type->tp_members[i - n_unnamed_fields].name;
             if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
                 Py_DECREF(res);
                 return NULL;
             }
+            if (i < len) {
+                if (ob != NULL && res->ob_item[i] != NULL) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "%.500s() got multiple values for field '%s'",
+                                 type->tp_name,
+                                 name);
+                    Py_DECREF(ob);
+                    Py_DECREF(res);
+                    return NULL;
+                }
+                continue;
+            }
+            if (ob == NULL) {
+                ob = Py_NewRef(Py_None);
+            }
+            else {
+                ++n_found_keys;
+            }
+            res->ob_item[i] = ob;
         }
-        if (ob == NULL) {
-            ob = Py_NewRef(Py_None);
+        if (PyDict_GET_SIZE(dict) > n_found_keys) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.500s() got unexpected field name(s).",
+                         type->tp_name);
+            Py_DECREF(res);
+            return NULL;
         }
-        res->ob_item[i] = ob;
+    }
+    else {
+        for (i = len; i < max_len; ++i) {
+            res->ob_item[i] = Py_NewRef(Py_None);
+        }
     }
 
     _PyObject_GC_TRACK(res);
