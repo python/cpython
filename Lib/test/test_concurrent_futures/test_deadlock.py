@@ -284,11 +284,12 @@ class ExecutorDeadlockTest:
                 super().wakeup()
 
             def clear(self):
+                super().clear()
                 try:
                     while True:
                         self._dummy_queue.get_nowait()
                 except queue.Empty:
-                    super().clear()
+                    pass
 
         with (unittest.mock.patch.object(futures.process._ExecutorManagerThread,
                                          'run', mock_run),
