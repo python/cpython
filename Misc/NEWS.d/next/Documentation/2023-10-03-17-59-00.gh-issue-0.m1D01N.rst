@@ -1,0 +1,1 @@
+Export the base synchronization class so multiprocessing users can typecheck their code.
