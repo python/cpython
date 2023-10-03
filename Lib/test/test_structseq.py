@@ -159,7 +159,9 @@ class StructSeqTest(unittest.TestCase):
         cls, (tup, dct) = t.__reduce__()
         self.assertIs(cls, time.struct_time)
         self.assertEqual(tup, tuple(t))
-        cls(tup, dct)
+        reconstructed = cls(tup, dct)
+        self.assertEqual(reconstructed, t)
+        self.assertEqual(reconstructed.tm_zone, t.tm_zone)
 
     def test_reduce_with_unnamed_fields(self):
         r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
