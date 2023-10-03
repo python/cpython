@@ -101,7 +101,8 @@ def compile_wasi_python(context, build_python, version):
 
     with contextlib.chdir(build_dir):
         # The path to `configure` MUST be relative, else `python.wasm` is unable
-        # to find the stdlib for unknown reasons.
+        # to find the stdlib due to Python not recognizing that it's being
+        # executed from within a checkout.
         configure = [os.path.relpath(CHECKOUT / 'configure', build_dir),
                      "-C",
                      f"--host={HOST_TRIPLE}",
@@ -111,6 +112,11 @@ def compile_wasi_python(context, build_python, version):
         subprocess.check_call(configure, env=configure_env)
         subprocess.check_call(["make", "--jobs", str(os.cpu_count()), "all"],
                               env=os.environ | env_additions)
+
+    exec_script = build_dir / "python.sh"
+    with exec_script.open("w", encoding="utf-8") as file:
+        file.write(f'#!/bin/sh\nexec {host_runner} "$@"\n')
+    exec_script.chmod(0o755)
 
 
 def main():
