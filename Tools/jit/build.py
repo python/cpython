@@ -583,6 +583,12 @@ class Compiler:
                     task = self._compile(opname, TOOLS_JIT_TEMPLATE, tempdir)
                     group.create_task(task)
 
+def as_i64(value: int, width: int = 0) -> str:
+    value %= 1 << 64
+    width = max(0, width - 3)
+    if value & (1 << 63):
+        return f"-0x{(1 << 64) - value:0{width}x}"
+    return f"+0x{value:0{width}x}"
 
 def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"// $ {sys.executable} {' '.join(sys.argv)}"  # XXX
@@ -608,7 +614,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    const HoleKind kind;"
     yield f"    const uint64_t offset;"
     yield f"    const uint64_t addend;"
-    yield f"    const int symbol;"
+    yield f"    const uint64_t symbol;"
     yield f"}} SymbolLoad;"
     yield f""
     yield f"typedef struct {{"
@@ -642,7 +648,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             (len(f"{hole.offset:x}") for hole in stencil.holes), default=0
         )
         addend_width = max(
-            (len(f"{hole.addend % (1 << 64):x}") for hole in stencil.holes), default=0
+            (len(f"{as_i64(hole.addend)}") for hole in stencil.holes), default=0
         )
         value_width = max(
             (
@@ -654,7 +660,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         )
         symbol_width = max(
             (
-                len(f"{symbols.index(hole.symbol)}")
+                len(f"{hole.symbol}")
                 for hole in stencil.holes
                 if hole.symbol not in HoleValue.__members__
             ),
@@ -667,7 +673,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
                     f"    {{"
                     f".kind={hole.kind:{kind_width}}, "
                     f".offset=0x{hole.offset:0{offset_width}x}, "
-                    f".addend=0x{hole.addend % (1 << 64):0{addend_width}x}, "
+                    f".addend={as_i64(hole.addend, addend_width)}, "
                     f".value={value.name:{value_width}}"
                     f"}},"
                 )
@@ -676,9 +682,9 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
                     f"    {{"
                     f".kind={hole.kind:{kind_width}}, "
                     f".offset=0x{hole.offset:0{offset_width}x}, "
-                    f".addend=0x{hole.addend % (1 << 64):0{addend_width}x}, "
-                    f".symbol={symbols.index(hole.symbol):{symbol_width}}"
-                    f"}},  // {hole.symbol}"
+                    f".addend={as_i64(hole.addend, addend_width)}, "
+                    f".symbol=(uintptr_t)&{hole.symbol:{symbol_width}}"
+                    f"}},"
                 )
         if holes:
             yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
@@ -695,14 +701,6 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         else:
             yield f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}];"
         yield f""
-    yield f""
-    yield f"static const char *const symbols[{len(symbols)}] = {{"
-    for symbol in symbols:
-        yield f'    "{symbol}",'
-    yield f"}};"
-    yield f""
-    yield f"static uint64_t symbol_addresses[{len(symbols)}];"
-    yield f""
     yield f"#define INIT_STENCIL(OP) {{                             \\"
     yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\"
     yield f"    .bytes = OP##_stencil_bytes,                       \\"

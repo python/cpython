@@ -1,8 +1,14 @@
 #include "Python.h"
 #include "pycore_abstract.h"
 #include "pycore_ceval.h"
+#include "pycore_dict.h"
+#include "pycore_intrinsics.h"
+#include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "pycore_pyerrors.h"
+#include "pycore_setobject.h"
+#include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 #include "pycore_jit.h"
 
@@ -12,25 +18,8 @@
 #ifdef MS_WINDOWS
     #include <psapi.h>
     #include <windows.h>
-    FARPROC
-    LOOKUP(LPCSTR symbol)
-    {
-        DWORD cbNeeded;
-        HMODULE hMods[1024];
-        HANDLE hProcess = GetCurrentProcess();
-        if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
-            for (unsigned int i = 0; i < (cbNeeded / sizeof(HMODULE)); i++) {
-                FARPROC value = GetProcAddress(hMods[i], symbol);
-                if (value) {
-                    return value;
-                }
-            }
-        }
-        return NULL;
-    }
 #else
     #include <sys/mman.h>
-    #define LOOKUP(SYMBOL) dlsym(RTLD_DEFAULT, (SYMBOL))
 #endif
 
 #define MB (1 << 20)
@@ -193,7 +182,7 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uint64_t patches[]
     }
     for (size_t i = 0; i < stencil->nloads; i++) {
         const SymbolLoad *load = &stencil->loads[i];
-        uint64_t value = symbol_addresses[load->symbol];
+        uint64_t value = load->symbol;
         patch_one(memory + load->offset, load->kind, value, load->addend);
     }
 }
@@ -207,14 +196,6 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     }
     if (initialized == 0) {
         initialized = -1;
-        for (size_t i = 0; i < Py_ARRAY_LENGTH(symbols); i++) {
-            symbol_addresses[i] = (uintptr_t)LOOKUP(symbols[i]);
-            if (symbol_addresses[i] == 0) {
-                const char *w = "JIT initialization failed (can't find symbol \"%s\")";
-                PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, symbols[i]);
-                return NULL;
-            }
-        }
 #ifdef MS_WINDOWS
         SYSTEM_INFO si;
         GetSystemInfo(&si);
@@ -281,10 +262,10 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         return NULL;
     }
     unsigned char *head = memory;
-    uint64_t patches[] = GET_PATCHES();
     // First, the trampoline:
     _PyUOpInstruction *instruction_continue = &trace[0];
     const Stencil *stencil = &trampoline_stencil;
+    uint64_t patches[] = GET_PATCHES();
     patches[_JIT_BASE] = (uintptr_t)head;
     patches[_JIT_CONTINUE] = (uintptr_t)head + offsets[0];
     patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
@@ -297,6 +278,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         _PyUOpInstruction *instruction_continue = &trace[(i + 1) % size];
         _PyUOpInstruction *instruction_jump = &trace[instruction->oparg % size];
         const Stencil *stencil = &stencils[instruction->opcode];
+        uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BASE] = (uintptr_t)memory + offsets[i];
         patches[_JIT_CONTINUE] = (uintptr_t)memory + offsets[(i + 1) % size];
         patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
