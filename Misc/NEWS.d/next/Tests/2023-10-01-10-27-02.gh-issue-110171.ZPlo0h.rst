@@ -1,1 +1,3 @@
-``libregrtest`` now always sets ``random.seed``.
+``libregrtest`` now always sets and shows ``random.seed``,
+so tests are more reproducible. Use ``--randseed`` flag
+to pass the explicit random seed for tests.
