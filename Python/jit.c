@@ -15,10 +15,7 @@
 #include "ceval_macros.h"
 #include "jit_stencils.h"
 
-#ifdef MS_WINDOWS
-    #include <psapi.h>
-    #include <windows.h>
-#else
+#ifndef MS_WINDOWS
     #include <sys/mman.h>
 #endif
 
@@ -46,121 +43,84 @@ alloc(size_t size)
 static int initialized = 0;
 
 static void
-patch_one(unsigned char *location, HoleKind kind, uint64_t value, uint64_t addend)
+patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
 {
+    uint32_t *addr = (uint32_t *)location;
     switch (kind) {
         case R_386_32: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            instruction = (uint32_t)(value + addend);
-            *addr = instruction;
+            *addr = (uint32_t)patch;
             return;
         }
         case R_386_PC32:
         case R_X86_64_PC32:
         case R_X86_64_PLT32: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            instruction = (uint32_t)(value + addend - (uintptr_t)location);
-            *addr = instruction;
+            patch -= (uintptr_t)location;
+            *addr = (uint32_t)patch;
             return;
         }
         case R_AARCH64_ABS64:
         case R_X86_64_64: {
-            uint64_t *addr = (uint64_t *)location;
-            uint64_t instruction = *addr;
-            instruction = value + addend;
-            *addr = instruction;
+            *(uint64_t *)addr = patch;
             return;
         }
         case R_AARCH64_ADR_GOT_PAGE: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert((instruction & 0x9F000000) == 0x90000000);
-            value = (((value + addend) >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
-            assert((value & 0xFFF) == 0);
-            // assert((value & ((1ULL << 33) - 1)) == value);  // XXX: This should be signed.
-            uint32_t lo = ((uint64_t)value << 17) & 0x60000000;
-            uint32_t hi = ((uint64_t)value >> 9) & 0x00FFFFE0;
-            instruction = (instruction & 0x9F00001F) | hi | lo;
-            assert((instruction & 0x9F000000) == 0x90000000);
-            *addr = instruction;
+            patch = ((patch >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
+            assert((*addr & 0x9F000000) == 0x90000000);
+            assert((patch & 0xFFF) == 0);
+            // assert((patch & ((1ULL << 33) - 1)) == patch);  // XXX: This should be signed.
+            uint32_t lo = (patch << 17) & 0x60000000;
+            uint32_t hi = (patch >> 9) & 0x00FFFFE0;
+            *addr = (*addr & 0x9F00001F) | hi | lo;
             return;
         }
         case R_AARCH64_CALL26:
         case R_AARCH64_JUMP26: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction & 0xFC000000) == 0x14000000) ||
-                   ((instruction & 0xFC000000) == 0x94000000));
-            value = value + addend - (uintptr_t)location;
-            assert((value & 0x3) == 0);
-            // assert((value & ((1ULL << 29) - 1)) == value);  // XXX: This should be signed.
-            instruction = (instruction & 0xFC000000) | ((uint32_t)(value >> 2) & 0x03FFFFFF);
-            assert(((instruction & 0xFC000000) == 0x14000000) ||
-                   ((instruction & 0xFC000000) == 0x94000000));
-            *addr = instruction;
+            patch -= (uintptr_t)location;
+            assert(((*addr & 0xFC000000) == 0x14000000) ||
+                   ((*addr & 0xFC000000) == 0x94000000));
+            assert((patch & 0x3) == 0);
+            // assert((patch & ((1ULL << 29) - 1)) == patch);  // XXX: This should be signed.
+            *addr = (*addr & 0xFC000000) | ((uint32_t)(patch >> 2) & 0x03FFFFFF);
             return;
         }
         case R_AARCH64_LD64_GOT_LO12_NC: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction & 0x3B000000) == 0x39000000) ||
-                   ((instruction & 0x11C00000) == 0x11000000));
-            value = (value + addend) & ((1 << 12) - 1);
-            int implicit_shift = 0;
-            if ((instruction & 0x3B000000) == 0x39000000) {
-                implicit_shift = ((instruction >> 30) & 0x3);
-                if (implicit_shift == 0 && (instruction & 0x04800000) == 0x04800000) {
-                    implicit_shift = 4;
+            patch &= (1 << 12) - 1;
+            assert(((*addr & 0x3B000000) == 0x39000000) ||
+                   ((*addr & 0x11C00000) == 0x11000000));
+            int shift = 0;
+            if ((*addr & 0x3B000000) == 0x39000000) {
+                shift = ((*addr >> 30) & 0x3);
+                if (shift == 0 && (*addr & 0x04800000) == 0x04800000) {
+                    shift = 4;
                 }
             }
-            assert(((value & ((1 << implicit_shift) - 1)) == 0));
-            value >>= implicit_shift;
-            assert((value & ((1 << 12) - 1)) == value);
-            instruction = (instruction & 0xFFC003FF) | ((uint32_t)(value << 10) & 0x003FFC00);
-            assert(((instruction & 0x3B000000) == 0x39000000) ||
-                   ((instruction & 0x11C00000) == 0x11000000));
-            *addr = instruction;
+            assert(((patch & ((1 << shift) - 1)) == 0));
+            *addr = (*addr & 0xFFC003FF) | ((uint32_t)((patch >> shift) << 10) & 0x003FFC00);
             return;
         }
         case R_AARCH64_MOVW_UABS_G0_NC: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction >> 21) & 0x3) == 0);
-            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 0) & 0xFFFF) << 5);
-            *addr = instruction;
+            assert(((*addr >> 21) & 0x3) == 0);
+            *addr = (*addr & 0xFFE0001F) | (((patch >>  0) & 0xFFFF) << 5);
             return;
         }
         case R_AARCH64_MOVW_UABS_G1_NC: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction >> 21) & 0x3) == 1);
-            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 16) & 0xFFFF) << 5);
-            *addr = instruction;
+            assert(((*addr >> 21) & 0x3) == 1);
+            *addr = (*addr & 0xFFE0001F) | (((patch >> 16) & 0xFFFF) << 5);
             return;
         }
         case R_AARCH64_MOVW_UABS_G2_NC: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction >> 21) & 0x3) == 2);
-            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 32) & 0xFFFF) << 5);
-            *addr = instruction;
+            assert(((*addr >> 21) & 0x3) == 2);
+            *addr = (*addr & 0xFFE0001F) | (((patch >> 32) & 0xFFFF) << 5);
             return;
         }
         case R_AARCH64_MOVW_UABS_G3: {
-            uint32_t *addr = (uint32_t *)location;
-            uint32_t instruction = *addr;
-            assert(((instruction >> 21) & 0x3) == 3);
-            instruction = (instruction & 0xFFE0001F) | ((((value + addend) >> 48) & 0xFFFF) << 5);
-            *addr = instruction;
+            assert(((*addr >> 21) & 0x3) == 3);
+            *addr = (*addr & 0xFFE0001F) | (((patch >> 48) & 0xFFFF) << 5);
             return;
         }
         case R_X86_64_GOTOFF64: {
-            uint64_t *addr = (uint64_t *)location;
-            uint64_t instruction = *addr;
-            instruction = value + addend - (uintptr_t)location;
-            *addr = instruction;
+            patch -= (uintptr_t)location;
+            *addr = patch;
             return;
         }
         case R_X86_64_GOTPC32:
@@ -178,12 +138,8 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uint64_t patches[]
     memcpy(memory, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
-        patch_one(memory + hole->offset, hole->kind, patches[hole->value], hole->addend);
-    }
-    for (size_t i = 0; i < stencil->nloads; i++) {
-        const SymbolLoad *load = &stencil->loads[i];
-        uint64_t value = load->symbol;
-        patch_one(memory + load->offset, load->kind, value, load->addend);
+        uint64_t patch = patches[hole->value] + hole->addend;
+        patch_one(memory + hole->offset, hole->kind, patch);
     }
 }
 
@@ -232,13 +188,8 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         offsets[i] = nbytes;
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
-        // XXX: Assert this once we support everything, and move initialization
-        // to interpreter startup. Then we can only fail due to memory stuff:
-        if (stencil->nbytes == 0) {
-            PyMem_Free(offsets);
-            return NULL;
-        }
         nbytes += stencil->nbytes;
+        assert(stencil->nbytes);
     };
     unsigned char *memory = alloc(nbytes);
     if (memory == NULL) {
@@ -270,6 +221,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     patches[_JIT_CONTINUE] = (uintptr_t)head + offsets[0];
     patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
     patches[_JIT_CONTINUE_OPERAND] = instruction_continue->operand;
+    patches[_JIT_ZERO] = 0;
     copy_and_patch(head, stencil, patches);
     head += stencil->nbytes;
     // Then, all of the stencils:
@@ -286,6 +238,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
         patches[_JIT_JUMP_OPARG] = instruction_jump->oparg;
         patches[_JIT_JUMP_OPERAND] = instruction_jump->operand;
+        patches[_JIT_ZERO] = 0;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };

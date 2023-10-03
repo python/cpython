@@ -140,13 +140,15 @@ class HoleValue(enum.Enum):
     _JIT_JUMP = enum.auto()
     _JIT_JUMP_OPARG = enum.auto()
     _JIT_JUMP_OPERAND = enum.auto()
+    _JIT_ZERO = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True)
 class Hole:
-    kind: HoleKind
-    symbol: str
     offset: int
+    kind: HoleKind
+    value: HoleValue
+    symbol: str | None
     addend: int
 
 
@@ -284,7 +286,9 @@ class Engine:
                 continue
             if newhole.symbol in self.body_symbols:
                 addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                newhole = Hole(newhole.kind, "_JIT_BASE", newhole.offset, addend)
+                newhole = Hole(
+                    newhole.offset, newhole.kind, HoleValue._JIT_BASE, None, addend
+                )
             holes.append(newhole)
         offset = got - self.data_size - padding
         if self.data_size:
@@ -295,14 +299,15 @@ class Engine:
         if padding:
             disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
             offset += padding
-        for symbol, got_offset in self.got.items():
-            if symbol in self.body_symbols:
-                addend = self.body_symbols[symbol]
-                symbol = "_JIT_BASE"
+        for s, got_offset in self.got.items():
+            if s in self.body_symbols:
+                addend = self.body_symbols[s]
+                value, symbol = HoleValue._JIT_BASE, None
             else:
+                value, symbol = self._symbol_to_value(s)
                 addend = 0
             # XXX: ABS_32 on 32-bit platforms?
-            holes.append(Hole("R_X86_64_64", symbol, got + got_offset, addend))
+            holes.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
             disassembly.append(f"{offset:x}: &{symbol}")
             offset += 8
         self.body.extend([0] * 8 * len(self.got))
@@ -368,35 +373,44 @@ class Engine:
         while len(self.body) % 8:
             self.body.append(0)
         return len(self.body) + self.got.setdefault(symbol, 8 * len(self.got))
+    
+    @staticmethod
+    def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
+        try:
+            return HoleValue[symbol], None
+        except KeyError:
+            return HoleValue._JIT_ZERO, symbol
 
     def _handle_relocation(self, base: int, relocation: RelocationType) -> Hole | None:
         match relocation:
             case {
                 "Type": {"Value": "R_386_32" | "R_386_PC32" as kind},
-                "Symbol": {"Value": symbol},
+                "Symbol": {"Value": s},
                 "Offset": offset,
             }:
                 offset += base
+                value, symbol = self._symbol_to_value(s)
                 addend = self.read_u32(offset)
             case {
                 "Type": {
                     "Value": "R_AARCH64_ADR_GOT_PAGE"
                     | "R_AARCH64_LD64_GOT_LO12_NC" as kind
                 },
-                "Symbol": {"Value": symbol},
+                "Symbol": {"Value": s},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
-                addend += self._got_lookup(symbol)
-                symbol = "_JIT_BASE"
+                value, symbol = HoleValue._JIT_BASE, None
+                addend += self._got_lookup(s)
             case {
                 "Type": {"Value": "R_X86_64_GOTOFF64" as kind},
-                "Symbol": {"Value": symbol},
+                "Symbol": {"Value": s},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
+                value, symbol = self._symbol_to_value(s)
                 addend += offset - len(self.body)
             case {
                 "Type": {"Value": "R_X86_64_GOTPC32"},
@@ -405,29 +419,30 @@ class Engine:
                 "Addend": addend,
             }:
                 offset += base
-                value = len(self.body) - offset
-                self.write_u32(offset, value + addend)
+                patch = len(self.body) - offset
+                self.write_u32(offset, patch + addend)
                 return None
             case {
                 "Type": {"Value": "R_X86_64_GOTPCRELX" | "R_X86_64_REX_GOTPCRELX"},
-                "Symbol": {"Value": symbol},
+                "Symbol": {"Value": s},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
-                value = self._got_lookup(symbol) - offset
-                self.write_u32(offset, value + addend)
+                patch = self._got_lookup(s) - offset
+                self.write_u32(offset, patch + addend)
                 return None
             case {
                 "Type": {"Value": kind},
-                "Symbol": {"Value": symbol},
+                "Symbol": {"Value": s},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
+                value, symbol = self._symbol_to_value(s)
             case _:
                 raise NotImplementedError(relocation)
-        return Hole(kind, symbol, offset, addend)
+        return Hole(offset, kind, value, symbol, addend)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -583,15 +598,17 @@ class Compiler:
                     task = self._compile(opname, TOOLS_JIT_TEMPLATE, tempdir)
                     group.create_task(task)
 
-def as_i64(value: int, width: int = 0) -> str:
+
+def format_addend(value: int, width: int = 0) -> str:
     value %= 1 << 64
     width = max(0, width - 3)
     if value & (1 << 63):
         return f"-0x{(1 << 64) - value:0{width}x}"
     return f"+0x{value:0{width}x}"
 
+
 def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
-    yield f"// $ {sys.executable} {' '.join(sys.argv)}"  # XXX
+    yield f"// $ {sys.executable} {' '.join(map(shlex.quote, sys.argv))}"  # XXX
     yield f""
     yield f"typedef enum {{"
     for kind in sorted(typing.get_args(HoleKind)):
@@ -604,34 +621,26 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"}} HoleValue;"
     yield f""
     yield f"typedef struct {{"
-    yield f"    const HoleKind kind;"
     yield f"    const uint64_t offset;"
-    yield f"    const uint64_t addend;"
+    yield f"    const HoleKind kind;"
     yield f"    const HoleValue value;"
-    yield f"}} Hole;"
-    yield f""
-    yield f"typedef struct {{"
-    yield f"    const HoleKind kind;"
-    yield f"    const uint64_t offset;"
     yield f"    const uint64_t addend;"
-    yield f"    const uint64_t symbol;"
-    yield f"}} SymbolLoad;"
+    yield f"}} Hole;"
     yield f""
     yield f"typedef struct {{"
     yield f"    const size_t nbytes;"
     yield f"    const unsigned char * const bytes;"
     yield f"    const size_t nholes;"
     yield f"    const Hole * const holes;"
-    yield f"    const size_t nloads;"
-    yield f"    const SymbolLoad * const loads;"
     yield f"}} Stencil;"
     yield f""
     opnames = []
-    symbols = set()
-    for stencil in stencils.values():
-        for hole in stencil.holes:
-            if hole.symbol not in HoleValue.__members__:
-                symbols.add(hole.symbol)
+    symbols = {
+        hole.symbol
+        for stencil in stencils.values()
+        for hole in stencil.holes
+        if hole.symbol is not None
+    }
     symbols = sorted(symbols)
     for opname, stencil in sorted(stencils.items()):
         opnames.append(opname)
@@ -642,50 +651,31 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         body = ",".join(f"0x{byte:02x}" for byte in stencil.body)
         yield f"static const unsigned char {opname}_stencil_bytes[{len(stencil.body)}] = {{{body}}};"
         holes = []
-        loads = []
-        kind_width = max((len(f"{hole.kind}") for hole in stencil.holes), default=0)
-        offset_width = max(
-            (len(f"{hole.offset:x}") for hole in stencil.holes), default=0
-        )
+        kind_width = max((len(hole.kind) for hole in stencil.holes), default=0)
+        offset_width = max((len(f"{hole.offset:x}") for hole in stencil.holes), default=0)
         addend_width = max(
-            (len(f"{as_i64(hole.addend)}") for hole in stencil.holes), default=0
+            (len(format_addend(hole.addend)) for hole in stencil.holes), default=0
         )
-        value_width = max(
-            (
-                len(f"{hole.symbol}")
-                for hole in stencil.holes
-                if hole.symbol in HoleValue.__members__
-            ),
-            default=0,
-        )
+        value_width = max((len(hole.value.name) for hole in stencil.holes), default=0)
         symbol_width = max(
             (
-                len(f"{hole.symbol}")
+                len(f"(uintptr_t)&{hole.symbol}")
                 for hole in stencil.holes
-                if hole.symbol not in HoleValue.__members__
+                if hole.symbol is not None
             ),
             default=0,
         )
-        for hole in stencil.holes:
-            if hole.symbol in HoleValue.__members__:
-                value = HoleValue[hole.symbol]
-                holes.append(
-                    f"    {{"
-                    f".kind={hole.kind:{kind_width}}, "
-                    f".offset=0x{hole.offset:0{offset_width}x}, "
-                    f".addend={as_i64(hole.addend, addend_width)}, "
-                    f".value={value.name:{value_width}}"
-                    f"}},"
-                )
-            else:
-                loads.append(
-                    f"    {{"
-                    f".kind={hole.kind:{kind_width}}, "
-                    f".offset=0x{hole.offset:0{offset_width}x}, "
-                    f".addend={as_i64(hole.addend, addend_width)}, "
-                    f".symbol=(uintptr_t)&{hole.symbol:{symbol_width}}"
-                    f"}},"
-                )
+        for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
+            symbol = f'(uintptr_t)&{hole.symbol}' if hole.symbol is not None else ''
+            addend = format_addend(hole.addend, addend_width)
+            holes.append(
+                f"    {{"
+                f".offset=0x{hole.offset:0{offset_width}x}, "
+                f".kind={hole.kind + ',':{kind_width + 1}} "
+                f".value={hole.value.name + ',':{value_width + 1}} "
+                f".addend={symbol:{symbol_width}}{addend}"
+                f"}},"
+            )
         if holes:
             yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
             for hole in holes:
@@ -693,21 +683,12 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             yield f"}};"
         else:
             yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}];"
-        if loads:
-            yield f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}] = {{"
-            for load in loads:
-                yield load
-            yield f"}};"
-        else:
-            yield f"static const SymbolLoad {opname}_stencil_loads[{len(loads) + 1}];"
         yield f""
     yield f"#define INIT_STENCIL(OP) {{                             \\"
     yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\"
     yield f"    .bytes = OP##_stencil_bytes,                       \\"
     yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1, \\"
     yield f"    .holes = OP##_stencil_holes,                       \\"
-    yield f"    .nloads = Py_ARRAY_LENGTH(OP##_stencil_loads) - 1, \\"
-    yield f"    .loads = OP##_stencil_loads,                       \\"
     yield f"}}"
     yield f""
     yield f"static const Stencil trampoline_stencil = INIT_STENCIL(trampoline);"
@@ -729,13 +710,11 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
 
 def main(host: str) -> None:
     target = get_target(host)
-    hasher = hashlib.sha256()
+    hasher = hashlib.sha256(host.encode())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
     hasher.update(target.pyconfig.read_bytes())
     for file in sorted(TOOLS_JIT.iterdir()):
         hasher.update(file.read_bytes())
-    for flag in CFLAGS + CPPFLAGS:
-        hasher.update(flag.encode())
     digest = hasher.hexdigest()
     if PYTHON_JIT_STENCILS_H.exists():
         with PYTHON_JIT_STENCILS_H.open() as file:
