@@ -1,0 +1,2 @@
+No longer ignore :envvar:`PROFILE_TASK` failure silently: command used by
+Profile Guided Optimization (PGO). Patch by Victor Stinner.
