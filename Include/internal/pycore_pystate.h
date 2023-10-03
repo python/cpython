@@ -44,6 +44,7 @@ _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
 PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
 
 
 static inline const PyConfig *
@@ -132,7 +133,9 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
+PyAPI_FUNC(PyThreadState *) _PyThreadState_New(
+    PyInterpreterState *interp,
+    int whence);
 PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
 // We keep this around exclusively for stable ABI compatibility.
 PyAPI_FUNC(void) _PyThreadState_Init(

@@ -1052,9 +1052,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
 int
 _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 {
-    if (interp->threads.main != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "interpreter already running");
+    if (_PyInterpreterState_FailIfRunningMain(interp) < 0) {
         return -1;
     }
     PyThreadState *tstate = current_fast_get(&_PyRuntime);
@@ -1071,7 +1069,20 @@ _PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
 void
 _PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
 {
-    assert(interp->threads.main == current_fast_get(&_PyRuntime));
+    PyThreadState *tstate = interp->threads.main;
+    assert(tstate == current_fast_get(&_PyRuntime));
+
+    if (tstate->on_delete != NULL) {
+        // The threading module was imported for the first time in this
+        // thread, so it was set as threading._main_thread.  (See gh-75698.)
+        // The thread has finished running the Python program so we mark
+        // the thread object as finished.
+        assert(tstate->_whence != _PyThreadState_WHENCE_THREADING);
+        tstate->on_delete(tstate->on_delete_data);
+        tstate->on_delete = NULL;
+        tstate->on_delete_data = NULL;
+    }
+
     interp->threads.main = NULL;
 }
 
@@ -1079,6 +1090,17 @@ int
 _PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
 {
     return (interp->threads.main != NULL);
+}
+
+int
+_PyInterpreterState_FailIfRunningMain(PyInterpreterState *interp)
+{
+    if (interp->threads.main != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter already running");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1141,8 +1163,10 @@ _PyInterpreterState_IDDecref(PyInterpreterState *interp)
     PyThread_release_lock(interp->id_mutex);
 
     if (refcount == 0 && interp->requires_idref) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        PyThreadState *tstate = _PyThreadState_New(interp,
+                                                   _PyThreadState_WHENCE_INTERP);
+        _PyThreadState_Bind(tstate);
+
         // XXX Possible GILState issues?
         PyThreadState *save_tstate = _PyThreadState_Swap(runtime, tstate);
         Py_EndInterpreter(tstate);
@@ -1296,7 +1320,14 @@ free_threadstate(PyThreadState *tstate)
 {
     // The initial thread state of the interpreter is allocated
     // as part of the interpreter state so should not be freed.
-    if (tstate != &tstate->interp->_initial_thread) {
+    if (tstate == &tstate->interp->_initial_thread) {
+        // Restore to _PyThreadState_INIT.
+        tstate = &tstate->interp->_initial_thread;
+        memcpy(tstate,
+               &initial._main_interpreter._initial_thread,
+               sizeof(*tstate));
+    }
+    else {
         PyMem_RawFree(tstate);
     }
 }
@@ -1311,7 +1342,7 @@ free_threadstate(PyThreadState *tstate)
 
 static void
 init_threadstate(PyThreadState *tstate,
-                 PyInterpreterState *interp, uint64_t id)
+                 PyInterpreterState *interp, uint64_t id, int whence)
 {
     if (tstate->_status.initialized) {
         Py_FatalError("thread state already initialized");
@@ -1323,6 +1354,10 @@ init_threadstate(PyThreadState *tstate,
     // next/prev are set in add_threadstate().
     assert(tstate->next == NULL);
     assert(tstate->prev == NULL);
+
+    assert(tstate->_whence == _PyThreadState_WHENCE_NOTSET);
+    assert(whence >= 0 && whence <= _PyThreadState_WHENCE_EXEC);
+    tstate->_whence = whence;
 
     assert(id > 0);
     tstate->id = id;
@@ -1353,8 +1388,6 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
                 PyThreadState *next)
 {
     assert(interp->threads.head != tstate);
-    assert((next != NULL && tstate->id != 1) ||
-           (next == NULL && tstate->id == 1));
     if (next != NULL) {
         assert(next->prev == NULL || next->prev == tstate);
         next->prev = tstate;
@@ -1365,7 +1398,7 @@ add_threadstate(PyInterpreterState *interp, PyThreadState *tstate,
 }
 
 static PyThreadState *
-new_threadstate(PyInterpreterState *interp)
+new_threadstate(PyInterpreterState *interp, int whence)
 {
     PyThreadState *tstate;
     _PyRuntimeState *runtime = interp->runtime;
@@ -1388,10 +1421,10 @@ new_threadstate(PyInterpreterState *interp)
     PyThreadState *old_head = interp->threads.head;
     if (old_head == NULL) {
         // It's the interpreter's initial thread state.
-        assert(id == 1);
         used_newtstate = 0;
         tstate = &interp->_initial_thread;
     }
+    // XXX Re-use interp->_initial_thread if not in use?
     else {
         // Every valid interpreter must have at least one thread.
         assert(id > 1);
@@ -1404,7 +1437,7 @@ new_threadstate(PyInterpreterState *interp)
                sizeof(*tstate));
     }
 
-    init_threadstate(tstate, interp, id);
+    init_threadstate(tstate, interp, id, whence);
     add_threadstate(interp, tstate, old_head);
 
     HEAD_UNLOCK(runtime);
@@ -1418,7 +1451,8 @@ new_threadstate(PyInterpreterState *interp)
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = new_threadstate(interp);
+    PyThreadState *tstate = new_threadstate(interp,
+                                            _PyThreadState_WHENCE_UNKNOWN);
     if (tstate) {
         bind_tstate(tstate);
         // This makes sure there's a gilstate tstate bound
@@ -1432,16 +1466,16 @@ PyThreadState_New(PyInterpreterState *interp)
 
 // This must be followed by a call to _PyThreadState_Bind();
 PyThreadState *
-_PyThreadState_New(PyInterpreterState *interp)
+_PyThreadState_New(PyInterpreterState *interp, int whence)
 {
-    return new_threadstate(interp);
+    return new_threadstate(interp, whence);
 }
 
 // We keep this for stable ABI compabibility.
 PyThreadState *
 _PyThreadState_Prealloc(PyInterpreterState *interp)
 {
-    return _PyThreadState_New(interp);
+    return _PyThreadState_New(interp, _PyThreadState_WHENCE_UNKNOWN);
 }
 
 // We keep this around for (accidental) stable ABI compatibility.
@@ -1538,6 +1572,12 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->context);
 
     if (tstate->on_delete != NULL) {
+        // For the "main" thread of each interpreter, this is meant
+        // to be done in _PyInterpreterState_SetNotRunningMain().
+        // That leaves threads created by the threading module,
+        // and any threads killed by forking.
+        // However, we also accommodate "main" threads that still
+        // don't call _PyInterpreterState_SetNotRunningMain() yet.
         tstate->on_delete(tstate->on_delete_data);
     }
 
@@ -2198,7 +2238,9 @@ PyGILState_Ensure(void)
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
-        tcur = new_threadstate(runtime->gilstate.autoInterpreterState);
+        // XXX Use PyInterpreterState_EnsureThreadState()?
+        tcur = new_threadstate(runtime->gilstate.autoInterpreterState,
+                               _PyThreadState_WHENCE_GILSTATE);
         if (tcur == NULL) {
             Py_FatalError("Couldn't create thread-state for new thread");
         }
