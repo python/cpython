@@ -1908,7 +1908,7 @@ PyThreadState_SetAsyncExc(unsigned long id, PyObject *exc)
 //---------------------------------
 
 PyThreadState *
-_PyThreadState_UncheckedGet(void)
+PyThreadState_GetUnchecked(void)
 {
     return current_fast_get(&_PyRuntime);
 }
