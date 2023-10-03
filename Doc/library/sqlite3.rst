@@ -2195,9 +2195,9 @@ If there is no open transaction upon leaving the body of the ``with`` statement,
 the context manager is a no-op.
 
 .. note::
-
    The context manager neither implicitly opens a new transaction
-   nor closes the connection.
+   nor closes the connection. If you need a closing context manager, consider
+   using :meth:`contextlib.closing`.
 
 .. testcode::
 
