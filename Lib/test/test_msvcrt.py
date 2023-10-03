@@ -61,6 +61,7 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 
 class TestConsoleIO(unittest.TestCase):
+    @requires_resource('gui')  # CREATE_NEW_CONSOLE will creates a "popup" window.
     def run_in_separated_process(self, code):
         # Run test in a seprated process to avoid stdin conflicts.
         # See: gh-110147
@@ -68,8 +69,6 @@ class TestConsoleIO(unittest.TestCase):
         subprocess.run(cmd, check=True, capture_output=True,
                        creationflags=subprocess.CREATE_NEW_CONSOLE)
 
-
-    @requires_resource('gui')
     def test_kbhit(self):
         code = dedent('''
             import msvcrt
@@ -91,7 +90,6 @@ class TestConsoleIO(unittest.TestCase):
         ''')
         self.run_in_separated_process(code)
 
-    @requires_resource('gui')
     def test_getwch(self):
         self.check_getwch('getwch')
 
@@ -99,7 +97,6 @@ class TestConsoleIO(unittest.TestCase):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
-    @requires_resource('gui')
     def test_getwche(self):
         self.check_getwch('getwche')
 
