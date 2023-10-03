@@ -219,7 +219,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     if (dict != NULL) {
         for (i = 0; i < len; ++i) {
             // unnamed fields can be present in both sequence and dict
-            if (i >= min_len - n_unnamed_fields && i < min_len + n_unnamed_fields) {
+            if (i >= min_len - n_unnamed_fields && i < min_len) {
                 continue;
             }
 
@@ -243,7 +243,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
             Py_DECREF(res);
             return NULL;
         }
-        for (i = len; i < max_len; ++i) {
+        for (i = min_len; i < max_len; ++i) {
             PyObject *ob = NULL;
             const char *name = type->tp_members[i - n_unnamed_fields].name;
             PyObject *key = PyUnicode_FromString(name);

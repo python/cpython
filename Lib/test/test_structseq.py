@@ -109,6 +109,21 @@ class StructSeqTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
             t("123456789", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
 
+    def test_constructor_with_duplicate_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+        n_visible_fields = os.stat_result.n_sequence_fields
+
+        r = os.stat_result(range(n_visible_fields), {'st_atime': -1.0})
+        self.assertEqual(r.st_atime, -1.0)
+        self.assertEqual(r, tuple(range(n_visible_fields)))
+
+        r = os.stat_result((*range(n_visible_fields), -1.0))
+        self.assertEqual(r.st_atime, -1.0)
+        self.assertEqual(r, tuple(range(n_visible_fields)))
+
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'st_atime'"):
+            os.stat_result((*range(n_visible_fields), -1.0), {'st_atime': -1.0})
+
     def test_constructor_with_unknown_fields(self):
         t = time.struct_time
         with self.assertRaisesRegex(TypeError,
