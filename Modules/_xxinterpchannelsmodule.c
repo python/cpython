@@ -1992,6 +1992,7 @@ _get_current_channel_end_type(int end)
                 return NULL;
             }
         }
+        Py_DECREF(highlevel);
         if (end == CHANNEL_SEND) {
             cls = state->send_channel_type;
         }
