@@ -1138,7 +1138,7 @@ if name == 'nt':
         )
 
 
-if _exists('sched_getaffinity') and sys._get_cpu_count_config() != 'overridden':
+if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
     def process_cpu_count():
         """
         Get the number of CPUs of the current process.

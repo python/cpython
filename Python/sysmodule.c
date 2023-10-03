@@ -2291,21 +2291,18 @@ sys__getframemodulename_impl(PyObject *module, int depth)
 }
 
 /*[clinic input]
-sys._get_cpu_count_config
-Private function to get PyConfig.cpu_count is overridden or not
+sys._get_cpu_count_config -> int
+
+Private function for get PyConfig.cpu_count
 [clinic start generated code]*/
 
-static PyObject *
+static int
 sys__get_cpu_count_config_impl(PyObject *module)
-/*[clinic end generated code: output=56db9f22b9ef5580 input=bb27289c04f47ce2]*/
+/*[clinic end generated code: output=36611bb5efad16dc input=80293caef314f45b]*/
 {
     const PyConfig *config = _Py_GetConfig();
-    if (config->cpu_count > 0) {
-        return PyUnicode_FromString("overridden");
-    }
-    return PyUnicode_FromString("default");
+    return config->cpu_count;
 }
-
 
 static PerfMapState perf_map_state;
 
