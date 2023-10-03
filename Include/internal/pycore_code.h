@@ -288,7 +288,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define OPT_HIST(length, name) \
     do { \
         if (_Py_stats) { \
-            int bucket = _Py_bit_length(length - 1); \
+            int bucket = _Py_bit_length(length >= 1 ? length - 1 : 0); \
             bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
