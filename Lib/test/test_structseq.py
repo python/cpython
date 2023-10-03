@@ -97,7 +97,11 @@ class StructSeqTest(unittest.TestCase):
     def test_constructor_with_duplicate_fields(self):
         t = time.struct_time
         self.assertEqual(t("123456789"), tuple("123456789"))
+        self.assertEqual(t("1234567890"), tuple("123456789"))
+        self.assertEqual(t("1234567890").tm_zone, "0")
         self.assertEqual(t("123456789", dict={"tm_zone": "some zone"}), tuple("123456789"))
+        self.assertEqual(t("123456789", dict={"tm_zone": "some zone"}).tm_zone, "some zone")
+
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
             t("123456789", dict={"tm_year": 0})
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
@@ -108,6 +112,10 @@ class StructSeqTest(unittest.TestCase):
             t("123456789", dict={"tm_zone": "some zone", "tm_mon": 1, "error": 0})
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
             t("123456789", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+            t("1234567890", dict={"tm_zone": "some zone"})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+            t("1234567890", dict={"error": 0, "tm_zone": "some zone"})
 
     def test_constructor_with_duplicate_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
