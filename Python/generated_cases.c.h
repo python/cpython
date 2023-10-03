@@ -3725,22 +3725,24 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *self;
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&next_instr[1].cache);
-            PyObject *descr = read_obj(&next_instr[5].cache);
-            assert(oparg & 1);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version, LOAD_ATTR);
-            Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
-            assert(dictoffset > 0);
-            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
-            /* This object has a __dict__, just not yet created */
-            DEOPT_IF(dict != NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            assert(descr != NULL);
-            assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
-            attr = Py_NewRef(descr);
-            self = owner;
+            {
+                uint32_t type_version = read_u32(&next_instr[1].cache);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+            }
+            // _LOAD_ATTR_METHOD_LAZY_DICT
+            {
+                PyObject *descr = read_obj(&next_instr[5].cache);
+                assert(oparg & 1);
+                STAT_INC(LOAD_ATTR, hit);
+                assert(descr != NULL);
+                assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
+                attr = Py_NewRef(descr);
+                self = owner;
+            }
             STACK_GROW(1);
             stack_pointer[-2] = attr;
             stack_pointer[-1] = self;

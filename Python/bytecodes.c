@@ -2877,21 +2877,28 @@ dummy_func(
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, self if (1))) {
-            assert(oparg & 1);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version);
-            Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
+        op(_CHECK_ATTR_METHOD_LAZY_DICT, (owner -- owner)) {
+            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL);
+        }
+
+        op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+            assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
             self = owner;
         }
+
+        macro(LOAD_ATTR_METHOD_LAZY_DICT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            unused/2 +
+            _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, ( -- )) {
             int is_meth = PEEK(oparg + 1) != NULL;

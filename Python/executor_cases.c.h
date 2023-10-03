@@ -2466,6 +2466,35 @@
             break;
         }
 
+        case _CHECK_ATTR_METHOD_LAZY_DICT: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
+            assert(dictoffset > 0);
+            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, _CHECK_ATTR_METHOD_LAZY_DICT);
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert(oparg & 1);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            attr = Py_NewRef(descr);
+            self = owner;
+            STACK_GROW(1);
+            stack_pointer[-2] = attr;
+            stack_pointer[-1] = self;
+            break;
+        }
+
         case _CHECK_CALL_BOUND_METHOD_EXACT_ARGS: {
             PyObject *null;
             PyObject *callable;
