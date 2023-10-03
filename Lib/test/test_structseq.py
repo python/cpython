@@ -138,18 +138,14 @@ class StructSeqTest(unittest.TestCase):
     def test_copy_replace_all_fields_visible(self):
         assert os.times_result.n_unnamed_fields == 0 and os.times_result.n_sequence_fields == os.times_result.n_fields
 
-        expected_args = ('user', 'system', 'children_user', 'children_system', 'elapsed')
-        self.assertEqual(os.times_result.__match_args__, expected_args)
-        self.assertEqual(os.times_result.n_fields, len(expected_args))
-
-        n_fields = os.times_result.n_fields  # 5
-        t = os.times_result(range(os.times_result.n_fields))
+        t = os.times()
 
         # visible fields
-        self.assertEqual(copy.replace(t), tuple(range(n_fields)))
-        self.assertEqual(copy.replace(t, user=1), (1, *range(1, n_fields)))
-        self.assertEqual(copy.replace(t, system=2), (0, 2, *range(2, n_fields)))
-        self.assertEqual(copy.replace(t, user=1, system=2), (1, 2, *range(2, n_fields)))
+        self.assertEqual(copy.replace(t), t)
+        self.assertIsInstance(copy.replace(t), os.times_result)
+        self.assertEqual(copy.replace(t, user=1.5), (1.5, *t[1:]))
+        self.assertEqual(copy.replace(t, system=2.5), (t[0], 2.5, *t[2:]))
+        self.assertEqual(copy.replace(t, user=1.5, system=2.5), (1.5, 2.5, *t[2:]))
 
         # unknown fields
         with self.assertRaisesRegex(TypeError, 'unexpected field name'):
@@ -162,25 +158,34 @@ class StructSeqTest(unittest.TestCase):
         assert t.n_unnamed_fields == 0 and t.n_sequence_fields < t.n_fields
 
         # visible fields
-        self.assertEqual(copy.replace(t), (1970, 1, 1, 0, 0, 0, 3, 1, 0))
-        self.assertEqual(copy.replace(t, tm_year=2000),
-                         (2000, 1, 1, 0, 0, 0, 3, 1, 0))
-        self.assertEqual(copy.replace(t, tm_mon=2),
-                         (1970, 2, 1, 0, 0, 0, 3, 1, 0))
-        self.assertEqual(copy.replace(t, tm_year=2000, tm_mon=2),
-                         (2000, 2, 1, 0, 0, 0, 3, 1, 0))
+        t2 = copy.replace(t)
+        self.assertEqual(t2, (1970, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertIsInstance(t2, time.struct_time)
+        t3 = copy.replace(t, tm_year=2000)
+        self.assertEqual(t3, (2000, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(t3.tm_year, 2000)
+        t4 = copy.replace(t, tm_mon=2)
+        self.assertEqual(t4, (1970, 2, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(t4.tm_mon, 2)
+        t5 = copy.replace(t, tm_year=2000, tm_mon=2)
+        self.assertEqual(t5, (2000, 2, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(t5.tm_year, 2000)
+        self.assertEqual(t5.tm_mon, 2)
 
         # named invisible fields
         self.assertTrue(hasattr(t, 'tm_zone'), f"{t} has no attribute 'tm_zone'")
         with self.assertRaisesRegex(AttributeError, 'readonly attribute'):
             t.tm_zone = 'some other zone'
-        t2 = copy.replace(t, tm_zone='some other zone')
-        self.assertEqual(t, t2)
-        self.assertEqual(t2.tm_zone, 'some other zone')
-        t3 = copy.replace(t, tm_year=2000, tm_zone='some other zone')
-        self.assertEqual(t3, (2000, 1, 1, 0, 0, 0, 3, 1, 0))
-        self.assertEqual(t3.tm_year, 2000)
-        self.assertEqual(t3.tm_zone, 'some other zone')
+        self.assertEqual(t2.tm_zone, t.tm_zone)
+        self.assertEqual(t3.tm_zone, t.tm_zone)
+        self.assertEqual(t4.tm_zone, t.tm_zone)
+        t6 = copy.replace(t, tm_zone='some other zone')
+        self.assertEqual(t, t6)
+        self.assertEqual(t6.tm_zone, 'some other zone')
+        t7 = copy.replace(t, tm_year=2000, tm_zone='some other zone')
+        self.assertEqual(t7, (2000, 1, 1, 0, 0, 0, 3, 1, 0))
+        self.assertEqual(t7.tm_year, 2000)
+        self.assertEqual(t7.tm_zone, 'some other zone')
 
         # unknown fields
         with self.assertRaisesRegex(TypeError, 'unexpected field name'):
