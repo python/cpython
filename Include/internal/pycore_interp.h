@@ -51,7 +51,10 @@ struct _xidregitem;
 struct _xidregitem {
     struct _xidregitem *prev;
     struct _xidregitem *next;
-    PyObject *cls;  // weakref to a PyTypeObject
+    /* This can be a dangling pointer, but only if weakref is set. */
+    PyTypeObject *cls;
+    /* This is NULL for builtin types. */
+    PyObject *weakref;
     crossinterpdatafunc getdata;
 };
 
