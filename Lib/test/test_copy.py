@@ -948,6 +948,7 @@ class TestReplace(unittest.TestCase):
                 p = Point(11, 22)
                 self.assertIsInstance(p, Point)
                 self.assertEqual(copy.replace(p), (11, 22))
+                self.assertIsInstance(copy.replace(p), Point)
                 self.assertEqual(copy.replace(p, x=1), (1, 22))
                 self.assertEqual(copy.replace(p, y=2), (11, 2))
                 self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
