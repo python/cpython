@@ -2432,22 +2432,29 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
+            // _CHECK_ATTR_MODULE
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&next_instr[1].cache);
-            uint16_t index = read_u16(&next_instr[3].cache);
+            {
+                uint32_t type_version = read_u32(&next_instr[1].cache);
             DEOPT_IF(!PyModule_CheckExact(owner), LOAD_ATTR);
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
-            assert(dict != NULL);
+                PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+                assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != type_version, LOAD_ATTR);
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(index < dict->ma_keys->dk_nentries);
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
-            attr = ep->me_value;
+            }
+            // _LOAD_ATTR_MODULE
+            {
+                uint16_t index = read_u16(&next_instr[3].cache);
+                PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+                assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+                assert(index < dict->ma_keys->dk_nentries);
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
+                attr = ep->me_value;
             DEOPT_IF(attr == NULL, LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr);
-            null = NULL;
-            Py_DECREF(owner);
+                STAT_INC(LOAD_ATTR, hit);
+                Py_INCREF(attr);
+                null = NULL;
+                Py_DECREF(owner);
+            }
             STACK_GROW(((oparg & 1) ? 1 : 0));
             stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
             if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }

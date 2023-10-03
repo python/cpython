@@ -474,6 +474,17 @@
             break;
         }
 
+        case _CHECK_ATTR_MODULE: {
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
         case _LOAD_ATTR_SLOT: {
             STACK_GROW(((oparg & 1) ? 1 : 0));
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);

@@ -1887,11 +1887,15 @@ dummy_func(
             _LOAD_ATTR_INSTANCE_VALUE +
             unused/5;  // Skip over rest of cache
 
-        inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
+        op(_CHECK_ATTR_MODULE, (type_version/2, owner -- owner)) {
             DEOPT_IF(!PyModule_CheckExact(owner));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != type_version);
+        }
+
+        op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < dict->ma_keys->dk_nentries);
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
@@ -1902,6 +1906,12 @@ dummy_func(
             null = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_MODULE) =
+            unused/1 +
+            _CHECK_ATTR_MODULE +
+            _LOAD_ATTR_MODULE +
+            unused/5;
 
         inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
             PyTypeObject *tp = Py_TYPE(owner);

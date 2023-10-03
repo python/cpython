@@ -1711,6 +1711,39 @@
             break;
         }
 
+        case _CHECK_ATTR_MODULE: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict != NULL);
+            DEOPT_IF(dict->ma_keys->dk_version != type_version, _CHECK_ATTR_MODULE);
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)operand;
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(index < dict->ma_keys->dk_nentries);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
+            attr = ep->me_value;
+            DEOPT_IF(attr == NULL, _LOAD_ATTR_MODULE);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
         case _LOAD_ATTR_SLOT: {
             PyObject *owner;
             PyObject *attr;
