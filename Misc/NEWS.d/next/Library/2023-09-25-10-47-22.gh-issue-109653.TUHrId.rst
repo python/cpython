@@ -1,4 +1,4 @@
-Reduce the import time of :mod:`email.utils` by around 46%. This results in
-the import time of :mod:`email.message` falling by around 28%, which in turn
-reduces the import time of :mod:`importlib.metadata` by around 5%. Patch by
-ALex Waygood.
+Reduce the import time of :mod:`email.utils` by around 43%. This results in
+the import time of :mod:`email.message` falling by around 18%, which in turn
+reduces the import time of :mod:`importlib.metadata` by around 6%. Patch by
+Alex Waygood.
