@@ -2696,19 +2696,20 @@ f_string_middle:
                 INSIDE_FSTRING_EXPR(current_tok)
         );
 
-        // If we are in a format spec and we found a newline,
-        // it means that the format spec ends here and we should
-        // return to the regular mode.
-        if (in_format_spec && c == '\n') {
-            tok_backup(tok, c);
-            TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
-            p_start = tok->start;
-            p_end = tok->cur;
-            return MAKE_TOKEN(FSTRING_MIDDLE);
-        }
-        if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
+       if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
+            }
+
+            // If we are in a format spec and we found a newline,
+            // it means that the format spec ends here and we should
+            // return to the regular mode.
+            if (in_format_spec && c == '\n') {
+                tok_backup(tok, c);
+                TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                p_start = tok->start;
+                p_end = tok->cur;
+                return MAKE_TOKEN(FSTRING_MIDDLE);
             }
 
             assert(tok->multi_line_start != NULL);

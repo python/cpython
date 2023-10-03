@@ -577,11 +577,28 @@ f'''__{
     NL         '\\n'          (1, 7) (1, 8)
     NAME       'x'           (2, 4) (2, 5)
     OP         ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'a'           (2, 6) (2, 7)
-    NL         '\\n'          (2, 7) (2, 8)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
     OP         '}'           (3, 0) (3, 1)
     FSTRING_MIDDLE '__'          (3, 1) (3, 3)
     FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    OP         '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
     """)
         self.check_tokenize("""\
 f'__{
@@ -2320,11 +2337,30 @@ f'''__{
     LBRACE     '{'           (1, 6) (1, 7)
     NAME       'x'           (2, 4) (2, 5)
     COLON      ':'           (2, 5) (2, 6)
-    FSTRING_MIDDLE 'a'           (2, 6) (2, 7)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
     RBRACE     '}'           (3, 0) (3, 1)
     FSTRING_MIDDLE '__'          (3, 1) (3, 3)
     FSTRING_END "'''"         (3, 3) (3, 6)
     """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    RBRACE     '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+
         self.check_tokenize("""\
 f'__{
     x:d
