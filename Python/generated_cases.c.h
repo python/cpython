@@ -3982,8 +3982,8 @@
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
-                CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
+                CALL_STAT_INC(inlined_py_calls);
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP();
@@ -4060,8 +4060,8 @@
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
-                CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
+                CALL_STAT_INC(inlined_py_calls);
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP();

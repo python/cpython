@@ -106,10 +106,10 @@
 #define DISPATCH_INLINED(NEW_FRAME)                     \
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
-        _PyFrame_SetStackPointer(frame, stack_pointer); \
+        STORE_SP();                                     \
         frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
-        frame = tstate->current_frame = (NEW_FRAME);     \
+        frame = tstate->current_frame = (NEW_FRAME);    \
         CALL_STAT_INC(inlined_py_calls);                \
         goto start_frame;                               \
     } while (0)
