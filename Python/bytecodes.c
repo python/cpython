@@ -3088,6 +3088,7 @@ dummy_func(
             for (int i = 0; i < argcount; i++) {
                 new_frame->localsplus[i] = args[i];
             }
+            frame->return_offset = 0;
         }
 
         // The 'unused' output effect represents the return value
@@ -3096,7 +3097,6 @@ dummy_func(
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
             new_frame->previous = frame;

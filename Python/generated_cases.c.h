@@ -3960,6 +3960,7 @@
                 for (int i = 0; i < argcount; i++) {
                     new_frame->localsplus[i] = args[i];
                 }
+                frame->return_offset = 0;
             }
             // _SAVE_CURRENT_IP
             next_instr += 3;
@@ -3978,7 +3979,6 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                frame->return_offset = 0;
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
@@ -4038,6 +4038,7 @@
                 for (int i = 0; i < argcount; i++) {
                     new_frame->localsplus[i] = args[i];
                 }
+                frame->return_offset = 0;
             }
             // _SAVE_CURRENT_IP
             next_instr += 3;
@@ -4056,7 +4057,6 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                frame->return_offset = 0;
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
