@@ -93,7 +93,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
    The caller must hold the GIL.
 
-   See also PyThreadState_Get() and _PyThreadState_UncheckedGet(). */
+   See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
