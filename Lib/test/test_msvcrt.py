@@ -62,14 +62,14 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 class TestConsoleIO(unittest.TestCase):
     def run_in_separated_process(self, code):
+        # Run test in a seprated process to avoid stdin conflicts.
+        # See: gh-110147
         cmd = [sys.executable, '-c', code]
         subprocess.run(cmd, check=True, capture_output=True,
                        creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
     def test_kbhit(self):
-        # Run test in a seprated process to avoid stdin conflicts.
-        # See: gh-110147
         code = dedent('''
             import msvcrt
             assert msvcrt.kbhit() == 0
@@ -81,8 +81,6 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        # Run test in a seprated process to avoid stdin conflicts.
-        # See: gh-110147
         code = dedent(f'''
             import msvcrt
             from _testconsole import write_input
@@ -97,8 +95,6 @@ class TestConsoleIO(unittest.TestCase):
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        # Run test in a seprated process to avoid stdin conflicts.
-        # See: gh-110147
         code = dedent(f'''
             import msvcrt
             from _testconsole import write_input
