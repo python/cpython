@@ -1744,6 +1744,53 @@
             break;
         }
 
+        case _CHECK_ATTR_WITH_HINT: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            PyTypeObject *tp = Py_TYPE(owner);
+            assert(type_version != 0);
+            DEOPT_IF(tp->tp_version_tag != type_version, _CHECK_ATTR_WITH_HINT);
+            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(_PyDictOrValues_IsValues(dorv), _CHECK_ATTR_WITH_HINT);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            DEOPT_IF(dict == NULL, _CHECK_ATTR_WITH_HINT);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            break;
+        }
+
+        case _LOAD_ATTR_WITH_HINT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t hint = (uint16_t)operand;
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+            if (DK_IS_UNICODE(dict->ma_keys)) {
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                attr = ep->me_value;
+            }
+            else {
+                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                attr = ep->me_value;
+            }
+            DEOPT_IF(attr == NULL, _LOAD_ATTR_WITH_HINT);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
         case _LOAD_ATTR_SLOT: {
             PyObject *owner;
             PyObject *attr;

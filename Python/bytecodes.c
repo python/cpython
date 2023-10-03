@@ -1913,7 +1913,7 @@ dummy_func(
             _LOAD_ATTR_MODULE +
             unused/5;
 
-        inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
+        op(_CHECK_ATTR_WITH_HINT, (type_version/2, owner -- owner)) {
             PyTypeObject *tp = Py_TYPE(owner);
             assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version);
@@ -1923,9 +1923,13 @@ dummy_func(
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            uint16_t hint = index;
+        }
+
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name);
@@ -1942,6 +1946,12 @@ dummy_func(
             null = NULL;
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_WITH_HINT) =
+            unused/1 +
+            _CHECK_ATTR_WITH_HINT +
+            _LOAD_ATTR_WITH_HINT +
+            unused/5;
 
         op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             char *addr = (char *)owner + index;
