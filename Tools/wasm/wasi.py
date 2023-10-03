@@ -32,7 +32,7 @@ def compile_host_python():
 
     with contextlib.chdir(build_dir):
         subprocess.check_call([CHECKOUT / "configure", "-C"])
-        subprocess.check_call(["make", "--jobs", str(os.cpu_count()), "all"])
+        subprocess.check_call(["make", "--jobs", str(os.process_cpu_count()), "all"])
 
     binary = build_dir / "python"
     cmd = [binary, "-c",
@@ -110,7 +110,7 @@ def compile_wasi_python(context, build_python, version):
                      f"--with-build-python={build_python}"]
         configure_env = os.environ | env_additions | wasi_sdk_env(context)
         subprocess.check_call(configure, env=configure_env)
-        subprocess.check_call(["make", "--jobs", str(os.cpu_count()), "all"],
+        subprocess.check_call(["make", "--jobs", str(os.process_cpu_count()), "all"],
                               env=os.environ | env_additions)
 
     exec_script = build_dir / "python.sh"
