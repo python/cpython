@@ -216,8 +216,15 @@ jobs:
       run: .\PCbuild\build.bat -e -d -p arm64
 
   build_macos:
-    name: 'macOS'
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+        - worker_name: "macos-latest"
+          arch_name: "intel"
+        - worker_name: "macos-latest-xlarge"
+          arch_name: "m1"
+    name: "macOS ${{ matrix.arch_name }}"
+    runs-on: ${{ matrix.worker_name }}
     timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
