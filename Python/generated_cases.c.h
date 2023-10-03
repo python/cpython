@@ -2616,7 +2616,7 @@
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
             PyObject *owner;
             PyObject *value;
-            // _GUARD_TYPE_VERSION_STORE
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
             {
                 uint32_t type_version = read_u32(&next_instr[1].cache);
@@ -2705,7 +2705,7 @@
         TARGET(STORE_ATTR_SLOT) {
             PyObject *owner;
             PyObject *value;
-            // _GUARD_TYPE_VERSION_STORE
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
             {
                 uint32_t type_version = read_u32(&next_instr[1].cache);
