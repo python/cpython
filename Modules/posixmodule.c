@@ -571,8 +571,12 @@ run_at_forkers(PyObject *lst, int reverse)
         if (cpy == NULL)
             PyErr_WriteUnraisable(lst);
         else {
-            if (reverse)
-                PyList_Reverse(cpy);
+            if (reverse) {
+                if (PyList_Reverse(cpy) < 0) {
+                    Py_DECREF(cpy);
+                    return;
+                };
+            }
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
