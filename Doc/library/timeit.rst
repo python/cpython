@@ -214,36 +214,36 @@ Where the following options are understood:
 
 .. program:: timeit
 
-.. cmdoption:: -n N, --number=N
+.. option:: -n N, --number=N
 
    how many times to execute 'statement'
 
-.. cmdoption:: -r N, --repeat=N
+.. option:: -r N, --repeat=N
 
    how many times to repeat the timer (default 5)
 
-.. cmdoption:: -s S, --setup=S
+.. option:: -s S, --setup=S
 
    statement to be executed once initially (default ``pass``)
 
-.. cmdoption:: -p, --process
+.. option:: -p, --process
 
    measure process time, not wallclock time, using :func:`time.process_time`
    instead of :func:`time.perf_counter`, which is the default
 
    .. versionadded:: 3.3
 
-.. cmdoption:: -u, --unit=U
+.. option:: -u, --unit=U
 
    specify a time unit for timer output; can select ``nsec``, ``usec``, ``msec``, or ``sec``
 
    .. versionadded:: 3.5
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    print raw timing results; repeat for more digits precision
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    print a short usage message and exit
 
