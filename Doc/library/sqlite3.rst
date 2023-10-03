@@ -2406,9 +2406,9 @@ or if :attr:`~Connection.autocommit` is ``True``,
 the context manager does nothing.
 
 .. note::
-
    The context manager neither implicitly opens a new transaction
-   nor closes the connection.
+   nor closes the connection. If you need a closing context manager, consider
+   using :meth:`contextlib.closing`.
 
 .. testcode::
 
