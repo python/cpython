@@ -21,7 +21,7 @@ from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
                           requires_venv_with_pip, TEST_HOME_DIR,
-                          requires_resource)
+                          requires_resource, copy_python_src_ignore)
 from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
 import unittest
 import venv
@@ -559,6 +559,7 @@ class BasicTest(BaseTest):
                                     platlibdir,
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
+
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -568,14 +569,19 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)
                     if os.path.isfile(fn):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
-                        shutil.copytree(fn, os.path.join(libdir, name))
+                        shutil.copytree(fn, os.path.join(libdir, name),
+                                        ignore=copy_python_src_ignore)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)

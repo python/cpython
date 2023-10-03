@@ -29,16 +29,12 @@ to avoid the expense of doing their own locking).
 -------------------------------------------------------------------------- */
 
 #ifdef HAVE_DLOPEN
-#ifdef HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
-#if !HAVE_DECL_RTLD_LAZY
-#define RTLD_LAZY 1
-#endif
-#endif
-
-#ifdef __cplusplus
-extern "C" {
+#  ifdef HAVE_DLFCN_H
+#    include <dlfcn.h>
+#  endif
+#  if !HAVE_DECL_RTLD_LAZY
+#    define RTLD_LAZY 1
+#  endif
 #endif
 
 
@@ -1093,6 +1089,39 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 #endif
+
+
+int
+_PyInterpreterState_SetRunningMain(PyInterpreterState *interp)
+{
+    if (interp->threads.main != NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "interpreter already running");
+        return -1;
+    }
+    PyThreadState *tstate = current_fast_get(&_PyRuntime);
+    _Py_EnsureTstateNotNULL(tstate);
+    if (tstate->interp != interp) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "current tstate has wrong interpreter");
+        return -1;
+    }
+    interp->threads.main = tstate;
+    return 0;
+}
+
+void
+_PyInterpreterState_SetNotRunningMain(PyInterpreterState *interp)
+{
+    assert(interp->threads.main == current_fast_get(&_PyRuntime));
+    interp->threads.main = NULL;
+}
+
+int
+_PyInterpreterState_IsRunningMain(PyInterpreterState *interp)
+{
+    return (interp->threads.main != NULL);
+}
 
 
 //----------
@@ -2805,6 +2834,10 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 }
 
 
+/*************/
+/* Other API */
+/*************/
+
 _PyFrameEvalFunction
 _PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 {
@@ -2964,14 +2997,24 @@ _PyThreadState_MustExit(PyThreadState *tstate)
        tstate->interp->runtime to support calls from Python daemon threads.
        After Py_Finalize() has been called, tstate can be a dangling pointer:
        point to PyThreadState freed memory. */
+    unsigned long finalizing_id = _PyRuntimeState_GetFinalizingID(&_PyRuntime);
     PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
     if (finalizing == NULL) {
+        // XXX This isn't completely safe from daemon thraeds,
+        // since tstate might be a dangling pointer.
         finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
+        finalizing_id = _PyInterpreterState_GetFinalizingID(tstate->interp);
     }
-    return (finalizing != NULL && finalizing != tstate);
+    // XXX else check &_PyRuntime._main_interpreter._initial_thread
+    if (finalizing == NULL) {
+        return 0;
+    }
+    else if (finalizing == tstate) {
+        return 0;
+    }
+    else if (finalizing_id == PyThread_get_thread_ident()) {
+        /* gh-109793: we must have switched interpreters. */
+        return 0;
+    }
+    return 1;
 }
-
-
-#ifdef __cplusplus
-}
-#endif
