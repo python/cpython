@@ -218,7 +218,7 @@ struct _ts {
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
-PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
 
 // Disable tracing and profiling.
