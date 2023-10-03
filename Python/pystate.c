@@ -2591,9 +2591,6 @@ static int
 _xidregistry_add_type(struct _xidregistry *xidregistry,
                       PyTypeObject *cls, crossinterpdatafunc getdata)
 {
-    // Note that we effectively replace already registered classes
-    // (since first match wins and we're adding to the front of the list)
-    // rather than failing.
     struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
     if (newhead == NULL) {
         return -1;
@@ -2601,6 +2598,7 @@ _xidregistry_add_type(struct _xidregistry *xidregistry,
     *newhead = (struct _xidregitem){
         // We do not keep a reference, to avoid keeping the class alive.
         .cls = cls,
+        .refcount = 1,
         .getdata = getdata,
     };
     if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
@@ -2716,13 +2714,23 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
         return -1;
     }
 
+    int res = 0;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
 
     _ensure_builtins_xid(interp, xidregistry);
-    int res = _xidregistry_add_type(xidregistry, cls, getdata);
 
+    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    if (matched != NULL) {
+        assert(matched->getdata == getdata);
+        matched->refcount += 1;
+        goto finally;
+    }
+
+    res = _xidregistry_add_type(xidregistry, cls, getdata);
+
+finally:
     PyThread_release_lock(xidregistry->mutex);
     return res;
 }
@@ -2737,7 +2745,11 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
-        (void)_xidregistry_remove_entry(xidregistry, matched);
+        assert(matched->refcount > 0);
+        matched->refcount -= 1;
+        if (matched->refcount == 0) {
+            (void)_xidregistry_remove_entry(xidregistry, matched);
+        }
         res = 1;
     }
 

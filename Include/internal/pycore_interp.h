@@ -55,6 +55,7 @@ struct _xidregitem {
     PyTypeObject *cls;
     /* This is NULL for builtin types. */
     PyObject *weakref;
+    size_t refcount;
     crossinterpdatafunc getdata;
 };
 
