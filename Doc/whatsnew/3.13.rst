@@ -998,7 +998,9 @@ New Features
 * Add :c:func:`PyObject_VisitManagedDict` and
   :c:func:`PyObject_ClearManagedDict` functions which must be called by the
   traverse and clear functions of a type using
-  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
 
 Porting to Python 3.13
