@@ -395,7 +395,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
 
     result = (PyStructSequence *) PyStructSequence_New(Py_TYPE(self));
     if (!result) {
-        goto error;
+        return NULL;
     }
 
     if (kwargs != NULL) {
@@ -406,7 +406,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
             if (!key) {
                 goto error;
             }
-            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);  // borrowed
+            PyObject *ob = _PyDict_Pop(kwargs, key, self->ob_item[i]);
             Py_DECREF(key);
             if (!ob) {
                 goto error;
@@ -434,7 +434,7 @@ structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
     return (PyObject *)result;
 
 error:
-    Py_XDECREF(result);
+    Py_DECREF(result);
     return NULL;
 }
 
