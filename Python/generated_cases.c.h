@@ -2466,14 +2466,17 @@
             PyObject *owner;
             PyObject *attr;
             PyObject *null = NULL;
-            // _CHECK_ATTR_WITH_HINT
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
             {
                 uint32_t type_version = read_u32(&next_instr[1].cache);
                 PyTypeObject *tp = Py_TYPE(owner);
                 assert(type_version != 0);
             DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
-                assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            }
+            // _CHECK_ATTR_WITH_HINT
+            {
+                assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
                 PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(_PyDictOrValues_IsValues(dorv), LOAD_ATTR);
                 PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);

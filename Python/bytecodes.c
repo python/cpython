@@ -1913,11 +1913,8 @@ dummy_func(
             _LOAD_ATTR_MODULE +
             unused/5;
 
-        op(_CHECK_ATTR_WITH_HINT, (type_version/2, owner -- owner)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(_PyDictOrValues_IsValues(dorv));
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
@@ -1949,6 +1946,7 @@ dummy_func(
 
         macro(LOAD_ATTR_WITH_HINT) =
             unused/1 +
+            _GUARD_TYPE_VERSION +
             _CHECK_ATTR_WITH_HINT +
             _LOAD_ATTR_WITH_HINT +
             unused/5;
