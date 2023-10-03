@@ -1591,6 +1591,108 @@ call fails (for example because the path doesn't exist).
    .. versionchanged:: 3.10
       The *newline* parameter was added.
 
+
+Virtual paths
+-------------
+
+.. class:: PurePathBase(*path_segments)
+
+   Abstract base class for path objects without I/O support.
+
+   The :class:`PurePath` class is a subclass of this class.
+
+   Unlike :class:`PurePath`, this class does not define any of the following
+   magic methods:
+   :meth:`~os.PathLike.__fspath__`, :meth:`__bytes__`,
+   :meth:`__reduce__`, :meth:`__hash__`, :meth:`__eq__`,
+   :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, :meth:`__ge__`
+
+   .. versionadded:: 3.13
+
+
+.. class:: PathBase(*path_segments)
+
+   Abstract base class for path objects with I/O support.
+
+   This class provides abstract implementations for methods that derived
+   classes can override selectively; the default implementations raise
+   :exc:`UnsupportedOperation`.
+
+   The :class:`Path` class is a subclass of this class that operates on the
+   local filesystem. User-defined subclasses may operate on other kinds of
+   filesystem, such as archive files or remote storage; instances of these
+   classes are *virtual paths*.
+
+   Like its superclass :class:`PurePathBase` (and unlike :class:`PurePath` and
+   :class:`Path`), this class does not define any of the following magic methods:
+   :meth:`~os.PathLike.__fspath__`, :meth:`__bytes__`,
+   :meth:`__reduce__`, :meth:`__hash__`, :meth:`__eq__`,
+   :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, :meth:`__ge__`.
+   In all other respects, its interface is identical to :class:`Path`.
+
+   The default implementations of the most basic methods, like :meth:`stat`
+   and ``iterdir()``, directly raise :exc:`UnsupportedOperation`. Other
+   methods like ``is_dir()`` and ``glob()`` call through to the basic methods.
+   The following table summarises their relationships:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Basic Methods
+        - Mixin Methods
+      * - :meth:`stat`
+        - ``lstat()``, ``exists()``, ``samefile()``, ``is_dir()``,
+          ``is_file()``, ``is_mount()``, ``is_symlink()``,
+          ``is_block_device()``, ``is_char_device()``, ``is_fifo()``,
+          ``is_socket()``, :meth:`resolve`
+      * - ``open()``
+        - ``read_text()``, ``write_text()``,
+          ``read_bytes()``, ``write_bytes()``
+      * - ``iterdir()`` and ``stat()``
+        - ``glob()``, ``rglob()``, ``walk()``
+      * - ``absolute()``
+        - ``cwd()``
+      * - ``expanduser()``
+        - ``home()``
+      * - ``chmod()``
+        - ``lchmod()``
+      * - ``symlink_to()``, ``hardlink_to()``, ``mkdir()``, ``touch()``,
+          ``rename()``, ``replace()``, ``unlink()``, ``rmdir()``,
+          ``owner()``, ``group()``, ``from_uri()``, ``as_uri()``
+          :meth:`is_junction`
+        - No mixin methods
+
+   These methods are described in the :ref:`concrete paths <concrete-paths>`
+   documentation. That said, the following methods deserve special attention:
+
+   .. method:: stat(*, follow_symlinks=True)
+
+      FIXME: how do we describe the return value??
+
+   .. method:: resolve(strict=False)
+
+      Resolves symlinks and eliminates ``..`` path components. If supported,
+      make the path absolute.
+
+      The default implementation of this method first calls
+      ``absolute()``, but suppresses any resulting :exc:`UnsupportedOperation`
+      exception; this allows paths to be resolved on filesystems that lack
+      a notion of a working directory. It calls ``stat()`` on each ancestor
+      path, and ``readlink()`` when a stat result indicates a symlink.
+      :exc:`OSError` is raised if more than 40 symlinks are encountered while
+      resolving a path; this is taken to indicate a loop.
+
+   .. method:: is_junction()
+
+      Returns ``True`` if the path points to a junction.
+
+      The default implementation of this method returns ``False`` rather than
+      raising :exc:`UnsupportedOperation`, because junctions are almost never
+      available in virtual filesystems.
+
+   .. versionadded:: 3.13
+
+
 Correspondence to tools in the :mod:`os` module
 -----------------------------------------------
 

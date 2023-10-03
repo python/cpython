@@ -180,6 +180,12 @@ os
 pathlib
 -------
 
+* Add :class:`pathlib.PurePathBase` and :class:`~pathlib.PathBase` abstract
+  base classes. Users can subclass :class:`~pathlib.PathBase` to implement
+  *virtual paths*: objects representing paths in archive files, on remote
+  storage systems, and so forth.
+  (Contributed by Barney Gale in :gh:`110109`.)
+
 * Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
