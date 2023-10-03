@@ -295,12 +295,14 @@ class Engine:
         if padding:
             disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
             offset += padding
-        for symbol, offset in self.got.items():
+        for symbol, got_offset in self.got.items():
             if symbol in self.body_symbols:
                 addend = self.body_symbols[symbol]
                 symbol = "_JIT_BASE"
+            else:
+                addend = 0
             # XXX: ABS_32 on 32-bit platforms?
-            holes.append(Hole("R_X86_64_64", symbol, offset, 0))
+            holes.append(Hole("R_X86_64_64", symbol, got + got_offset, addend))
             disassembly.append(f"{offset:x}: &{symbol}")
             offset += 8
         self.body.extend([0] * 8 * len(self.got))
@@ -403,7 +405,7 @@ class Engine:
                 "Addend": addend,
             }:
                 offset += base
-                value = len(self.body)
+                value = len(self.body) - offset
                 self.write_u32(offset, value + addend)
                 return None
             case {
@@ -413,7 +415,7 @@ class Engine:
                 "Addend": addend,
             }:
                 offset += base
-                value = len(self.body) + self._got_lookup(symbol) - offset
+                value = self._got_lookup(symbol) - offset
                 self.write_u32(offset, value + addend)
                 return None
             case {
