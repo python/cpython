@@ -5196,7 +5196,7 @@ Miscellaneous System Information
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.13
-      If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHONCPUCOUNT` is set,
+      If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
       :func:`cpu_count` returns the overridden value *n*.
 
 
@@ -5218,7 +5218,7 @@ Miscellaneous System Information
    The :func:`cpu_count` function can be used to get the number of logical CPUs
    in the **system**.
 
-   If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHONCPUCOUNT` is set,
+   If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
    :func:`process_cpu_count` returns the overridden value *n*.
 
    See also the :func:`sched_getaffinity` functions.

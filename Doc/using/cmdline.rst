@@ -549,7 +549,7 @@ Miscellaneous options
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count` and :func:`os.process_cpu_count`.
      *n* must be greater than or equal to 1.
      This option is useful for users who need to limit CPU resources of a container system.
-     See also :envvar:`PYTHONCPUCOUNT`.
+     See also :envvar:`PYTHON_CPU_COUNT`.
      If *n* is ``default``, :func:`os.cpu_count` and  :func:`os.process_cpu_count` are not overridden.
 
    It also allows passing arbitrary values and retrieving them through the
@@ -1071,7 +1071,7 @@ conflict.
 
    .. versionadded:: 3.12
 
-.. envvar:: PYTHONCPUCOUNT
+.. envvar:: PYTHON_CPU_COUNT
 
    If this variable is set to a positive integer, it overrides
    :func:`os.cpu_count` and and :func:`os.process_cpu_count` return result.

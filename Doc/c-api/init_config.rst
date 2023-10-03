@@ -885,7 +885,7 @@ PyConfig
       into *cpu_count*.
 
       Configured by the :samp:`-X cpu_count={n|default}` command line
-      flag or the :envvar:`PYTHONCPUCOUNT` environment variable.
+      flag or the :envvar:`PYTHON_CPU_COUNT` environment variable.
 
       Default: ``-1``.
 
