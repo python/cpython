@@ -11,7 +11,7 @@ if sys.platform != "win32":
     raise unittest.SkipTest("windows related tests")
 
 import _winapi
-import msvcrt;
+import msvcrt
 
 
 class TestFileOperations(unittest.TestCase):
