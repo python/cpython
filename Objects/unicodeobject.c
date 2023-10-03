@@ -40,9 +40,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -56,6 +56,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
+
 #include "stringlib/eq.h"         // unicode_eq()
 #include <stddef.h>               // ptrdiff_t
 
@@ -98,11 +99,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
       be created before the Unicode type is ready.
 
 */
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 // The value must be the same in fileutils.c.
@@ -211,19 +207,11 @@ static int unicode_is_singleton(PyObject *unicode);
 #endif
 
 
-// Return a borrowed reference to the empty string singleton.
+// Return a reference to the immortal empty string singleton.
 static inline PyObject* unicode_get_empty(void)
 {
     _Py_DECLARE_STR(empty, "");
     return &_Py_STR(empty);
-}
-
-
-// Return a strong reference to the empty string singleton.
-static inline PyObject* unicode_new_empty(void)
-{
-    PyObject *empty = unicode_get_empty();
-    return Py_NewRef(empty);
 }
 
 /* This dictionary holds all interned unicode strings.  Note that references
@@ -310,7 +298,7 @@ clear_interned_dict(PyInterpreterState *interp)
 
 #define _Py_RETURN_UNICODE_EMPTY()   \
     do {                             \
-        return unicode_new_empty();  \
+        return unicode_get_empty();  \
     } while (0)
 
 static inline void
@@ -650,7 +638,6 @@ unicode_result(PyObject *unicode)
         PyObject *empty = unicode_get_empty();
         if (unicode != empty) {
             Py_DECREF(unicode);
-            Py_INCREF(empty);
         }
         return empty;
     }
@@ -662,7 +649,6 @@ unicode_result(PyObject *unicode)
             Py_UCS1 ch = data[0];
             PyObject *latin1_char = LATIN1(ch);
             if (unicode != latin1_char) {
-                Py_INCREF(latin1_char);
                 Py_DECREF(unicode);
             }
             return latin1_char;
@@ -1199,7 +1185,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
     /* Optimization for empty strings */
     if (size == 0) {
-        return unicode_new_empty();
+        return unicode_get_empty();
     }
 
     PyObject *obj;
@@ -1669,7 +1655,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         return 0;
 
     if (length == 0) {
-        PyObject *empty = unicode_new_empty();
+        PyObject *empty = unicode_get_empty();
         Py_SETREF(*p_unicode, empty);
         return 0;
     }
@@ -1764,7 +1750,9 @@ unicode_write_cstr(PyObject *unicode, Py_ssize_t index,
 static PyObject*
 get_latin1_char(Py_UCS1 ch)
 {
-    return Py_NewRef(LATIN1(ch));
+    PyObject *o = LATIN1(ch);
+    assert(_Py_IsImmortal(o));
+    return o;
 }
 
 static PyObject*
@@ -1891,7 +1879,7 @@ PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
             "NULL string with positive size with NULL passed to PyUnicode_FromStringAndSize");
         return NULL;
     }
-    return unicode_new_empty();
+    return unicode_get_empty();
 }
 
 PyObject *
@@ -1912,19 +1900,19 @@ _PyUnicode_FromId(_Py_Identifier *id)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
-    Py_ssize_t index = _Py_atomic_size_get(&id->index);
+    Py_ssize_t index = _Py_atomic_load_ssize(&id->index);
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
         PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
-        index = _Py_atomic_size_get(&id->index);
+        index = _Py_atomic_load_ssize(&id->index);
         if (index < 0) {
             assert(rt_ids->next_index < PY_SSIZE_T_MAX);
             index = rt_ids->next_index;
             rt_ids->next_index++;
-            _Py_atomic_size_set(&id->index, index);
+            _Py_atomic_store_ssize(&id->index, index);
         }
         PyThread_release_lock(rt_ids->lock);
     }
@@ -7107,7 +7095,7 @@ decode_code_page_errors(UINT code_page,
             if (err != ERROR_NO_UNICODE_TRANSLATION
                 && err != ERROR_INSUFFICIENT_BUFFER)
             {
-                PyErr_SetFromWindowsErr(0);
+                PyErr_SetFromWindowsErr(err);
                 goto error;
             }
             insize++;
@@ -10261,7 +10249,7 @@ replace(PyObject *self, PyObject *str1,
         }
         new_size = slen + n * (len2 - len1);
         if (new_size == 0) {
-            u = unicode_new_empty();
+            u = unicode_get_empty();
             goto done;
         }
         if (new_size > (PY_SSIZE_T_MAX / rkind)) {
@@ -12408,7 +12396,7 @@ str.split as unicode_split
         The separator used to split the string.
 
         When set to None (the default value), will split on any whitespace
-        character (including \\n \\r \\t \\f and spaces) and will discard
+        character (including \n \r \t \f and spaces) and will discard
         empty strings from the result.
     maxsplit: Py_ssize_t = -1
         Maximum number of splits (starting from the left).
@@ -12424,7 +12412,7 @@ the regular expression module.
 
 static PyObject *
 unicode_split_impl(PyObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=3a65b1db356948dc input=906d953b44efc43b]*/
+/*[clinic end generated code: output=3a65b1db356948dc input=07b9040d98c5fe8d]*/
 {
     if (sep == Py_None)
         return split(self, NULL, maxsplit);
@@ -14040,7 +14028,7 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
                                 "* wants int");
                 return -1;
             }
-            arg->prec = _PyLong_AsInt(v);
+            arg->prec = PyLong_AsInt(v);
             if (arg->prec == -1 && PyErr_Occurred())
                 return -1;
             if (arg->prec < 0)
@@ -14505,7 +14493,7 @@ unicode_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 {
     PyObject *unicode;
     if (x == NULL) {
-        unicode = unicode_new_empty();
+        unicode = unicode_get_empty();
     }
     else if (encoding == NULL && errors == NULL) {
         unicode = PyObject_Str(x);
@@ -14994,8 +14982,7 @@ unicode_ascii_iter_next(unicodeiterobject *it)
         Py_UCS1 chr = (Py_UCS1)PyUnicode_READ(PyUnicode_1BYTE_KIND,
                                               data, it->it_index);
         it->it_index++;
-        PyObject *item = (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
-        return Py_NewRef(item);
+        return (PyObject*)&_Py_SINGLETON(strings).ascii[chr];
     }
     it->it_seq = NULL;
     Py_DECREF(seq);
@@ -15025,7 +15012,7 @@ unicodeiter_reduce(unicodeiterobject *it, PyObject *Py_UNUSED(ignored))
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
-        PyObject *u = unicode_new_empty();
+        PyObject *u = unicode_get_empty();
         if (u == NULL) {
             Py_XDECREF(iter);
             return NULL;
@@ -15405,8 +15392,3 @@ PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

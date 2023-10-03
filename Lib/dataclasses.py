@@ -575,15 +575,15 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     # message, and future-proofs us in case we build up the function
     # using ast.
 
-    seen_default = False
+    seen_default = None
     for f in std_fields:
         # Only consider the non-kw-only fields in the __init__ call.
         if f.init:
             if not (f.default is MISSING and f.default_factory is MISSING):
-                seen_default = True
+                seen_default = f
             elif seen_default:
                 raise TypeError(f'non-default argument {f.name!r} '
-                                'follows default argument')
+                                f'follows default argument {seen_default.name!r}')
 
     locals = {f'__dataclass_type_{f.name}__': f.type for f in fields}
     locals.update({
@@ -1073,6 +1073,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     globals,
                                     slots,
                           ))
+    _set_new_attribute(cls, '__replace__', _replace)
 
     # Get the fields as a list, and include only real fields.  This is
     # used in all of the following methods.
@@ -1546,12 +1547,14 @@ def replace(obj, /, **changes):
       c1 = replace(c, x=3)
       assert c1.x == 3 and c1.y == 2
     """
-
-    # We're going to mutate 'changes', but that's okay because it's a
-    # new dict, even if called with 'replace(obj, **my_changes)'.
-
     if not _is_dataclass_instance(obj):
         raise TypeError("replace() should be called on dataclass instances")
+    return _replace(obj, **changes)
+
+
+def _replace(obj, /, **changes):
+    # We're going to mutate 'changes', but that's okay because it's a
+    # new dict, even if called with 'replace(obj, **my_changes)'.
 
     # It's an error to have init=False fields in 'changes'.
     # If a field is not in 'changes', read its value from the provided obj.

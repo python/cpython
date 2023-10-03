@@ -98,7 +98,6 @@ PyTypeObject PyEllipsis_Type = {
 };
 
 PyObject _Py_EllipsisObject = {
-    _PyObject_EXTRA_INIT
     { _Py_IMMORTAL_REFCNT },
     &PyEllipsis_Type
 };
@@ -415,7 +414,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = Py_NewRef(_PyLong_GetOne());
+        step = _PyLong_GetOne();
         step_is_negative = 0;
     }
     else {
@@ -443,7 +442,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = Py_NewRef(_PyLong_GetZero());
+        lower = _PyLong_GetZero();
         upper = Py_NewRef(length);
     }
 

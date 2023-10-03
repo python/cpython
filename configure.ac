@@ -921,198 +921,14 @@ fi
 
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
-cat > conftest.c <<EOF
-#undef bfin
-#undef cris
-#undef fr30
-#undef linux
-#undef hppa
-#undef hpux
-#undef i386
-#undef mips
-#undef powerpc
-#undef sparc
-#undef unix
-#if defined(__ANDROID__)
-    # Android is not a multiarch system.
-#elif defined(__linux__)
-# if defined(__x86_64__) && defined(__LP64__)
-        x86_64-linux-gnu
-# elif defined(__x86_64__) && defined(__ILP32__)
-        x86_64-linux-gnux32
-# elif defined(__i386__)
-        i386-linux-gnu
-# elif defined(__aarch64__) && defined(__AARCH64EL__)
-#  if defined(__ILP32__)
-        aarch64_ilp32-linux-gnu
-#  else
-        aarch64-linux-gnu
-#  endif
-# elif defined(__aarch64__) && defined(__AARCH64EB__)
-#  if defined(__ILP32__)
-        aarch64_be_ilp32-linux-gnu
-#  else
-        aarch64_be-linux-gnu
-#  endif
-# elif defined(__alpha__)
-        alpha-linux-gnu
-# elif defined(__ARM_EABI__) && defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabihf
-#  else
-        armeb-linux-gnueabihf
-#  endif
-# elif defined(__ARM_EABI__) && !defined(__ARM_PCS_VFP)
-#  if defined(__ARMEL__)
-        arm-linux-gnueabi
-#  else
-        armeb-linux-gnueabi
-#  endif
-# elif defined(__hppa__)
-        hppa-linux-gnu
-# elif defined(__ia64__)
-        ia64-linux-gnu
-# elif defined(__loongarch__)
-#  if defined(__loongarch_lp64)
-#   if defined(__loongarch_soft_float)
-        loongarch64-linux-gnusf
-#   elif defined(__loongarch_single_float)
-        loongarch64-linux-gnuf32
-#   elif defined(__loongarch_double_float)
-        loongarch64-linux-gnu
-#   else
-#    error unknown platform triplet
-#   endif
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__m68k__) && !defined(__mcoldfire__)
-        m68k-linux-gnu
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6el-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
-#  if _MIPS_SIM == _ABIO32
-        mipsisa32r6-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mipsisa64r6-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mipsisa64r6-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float) && defined(_MIPSEL)
-#  if _MIPS_SIM == _ABIO32
-        mipsel-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64el-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64el-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__mips_hard_float)
-#  if _MIPS_SIM == _ABIO32
-        mips-linux-gnu
-#  elif _MIPS_SIM == _ABIN32
-        mips64-linux-gnuabin32
-#  elif _MIPS_SIM == _ABI64
-        mips64-linux-gnuabi64
-#  else
-#   error unknown platform triplet
-#  endif
-# elif defined(__or1k__)
-        or1k-linux-gnu
-# elif defined(__powerpc__) && defined(__SPE__)
-        powerpc-linux-gnuspe
-# elif defined(__powerpc64__)
-#  if defined(__LITTLE_ENDIAN__)
-        powerpc64le-linux-gnu
-#  else
-        powerpc64-linux-gnu
-#  endif
-# elif defined(__powerpc__)
-        powerpc-linux-gnu
-# elif defined(__s390x__)
-        s390x-linux-gnu
-# elif defined(__s390__)
-        s390-linux-gnu
-# elif defined(__sh__) && defined(__LITTLE_ENDIAN__)
-        sh4-linux-gnu
-# elif defined(__sparc__) && defined(__arch64__)
-        sparc64-linux-gnu
-# elif defined(__sparc__)
-        sparc-linux-gnu
-# elif defined(__riscv)
-#  if __riscv_xlen == 32
-        riscv32-linux-gnu
-#  elif __riscv_xlen == 64
-        riscv64-linux-gnu
-#  else
-#   error unknown platform triplet
-#  endif
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__FreeBSD_kernel__)
-# if defined(__LP64__)
-        x86_64-kfreebsd-gnu
-# elif defined(__i386__)
-        i386-kfreebsd-gnu
-# else
-#   error unknown platform triplet
-# endif
-#elif defined(__gnu_hurd__)
-        i386-gnu
-#elif defined(__APPLE__)
-        darwin
-#elif defined(__VXWORKS__)
-        vxworks
-#elif defined(__wasm32__)
-#  if defined(__EMSCRIPTEN__)
-	wasm32-emscripten
-#  elif defined(__wasi__)
-#    if defined(_REENTRANT)
-	wasm32-wasi-threads
-#    else
-	wasm32-wasi
-#    endif
-#  else
-#    error unknown wasm32 platform
-#  endif
-#elif defined(__wasm64__)
-#  if defined(__EMSCRIPTEN__)
-	wasm64-emscripten
-#  elif defined(__wasi__)
-	wasm64-wasi
-#  else
-#    error unknown wasm64 platform
-#  endif
-#else
-# error unknown platform triplet
-#endif
-
-EOF
-
-if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
-  case "$build_os" in
-  linux-musl*)
-    PLATFORM_TRIPLET=`echo "$PLATFORM_TRIPLET" | sed 's/linux-gnu/linux-musl/'`
-    ;;
-  esac
+if $CPP $CPPFLAGS $srcdir/Misc/platform_triplet.c >conftest.out 2>/dev/null; then
+  PLATFORM_TRIPLET=`grep '^PLATFORM_TRIPLET=' conftest.out | tr -d ' 	'`
+  PLATFORM_TRIPLET="${PLATFORM_TRIPLET@%:@PLATFORM_TRIPLET=}"
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
   AC_MSG_RESULT([none])
 fi
-rm -f conftest.c conftest.out
+rm -f conftest.out
 
 AC_MSG_CHECKING([for multiarch])
 AS_CASE([$ac_sys_system],
@@ -1673,6 +1489,23 @@ fi
 AC_SUBST([ABIFLAGS])
 ABIFLAGS=""
 
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
+
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
 AC_ARG_WITH([pydebug],
@@ -1978,7 +1811,10 @@ then
   fi
 fi
 LLVM_PROF_ERR=no
-case $CC in
+
+# GNU Autoconf recommends the use of expr instead of basename.
+AS_VAR_SET([CC_BASENAME], [$(expr "//$CC" : '.*/\(.*\)')])
+case "$CC_BASENAME" in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
@@ -2409,7 +2245,7 @@ yes)
 
     # ICC doesn't recognize the option, but only emits a warning
     ## XXX does it emit an unused result warning and can it be disabled?
-    AS_CASE([$CC],
+    AS_CASE(["$CC_BASENAME"],
             [*icc*], [ac_cv_disable_unused_result_warning=no]
             [PY_CHECK_CC_WARNING([disable], [unused-result])])
     AS_VAR_IF([ac_cv_disable_unused_result_warning], [yes],
@@ -2655,7 +2491,7 @@ yes)
     ;;
 esac
 
-case "$CC" in
+case "$CC_BASENAME" in
 *mpicc*)
     CFLAGS_NODIST="$CFLAGS_NODIST"
     ;;
@@ -2848,7 +2684,7 @@ AC_DEFINE([STDC_HEADERS], [1],
 # checks for header files
 AC_CHECK_HEADERS([ \
   alloca.h asm/types.h bluetooth.h conio.h direct.h dlfcn.h endian.h errno.h fcntl.h grp.h \
-  ieeefp.h io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
+  io.h langinfo.h libintl.h libutil.h linux/auxvec.h sys/auxv.h linux/fs.h linux/limits.h linux/memfd.h \
   linux/random.h linux/soundcard.h \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
@@ -2880,7 +2716,8 @@ AC_CHECK_HEADERS([net/if.h], [], [],
 ])
 
 # On Linux, netlink.h requires asm/types.h
-AC_CHECK_HEADERS([linux/netlink.h], [], [], [
+# On FreeBSD, netlink.h is located in netlink/netlink.h
+AC_CHECK_HEADERS([linux/netlink.h netlink/netlink.h], [], [], [
 #ifdef HAVE_ASM_TYPES_H
 #include <asm/types.h>
 #endif
@@ -4773,8 +4610,8 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
@@ -5849,6 +5686,7 @@ AC_C_BIGENDIAN
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -5864,8 +5702,9 @@ AC_MSG_CHECKING([SOABI])
 SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 AC_MSG_RESULT([$SOABI])
 
-# Release and debug (Py_DEBUG) ABI are compatible, but not Py_TRACE_REFS ABI
-if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
+# Release build, debug build (Py_DEBUG), and trace refs build (Py_TRACE_REFS)
+# are ABI compatible
+if test "$Py_DEBUG" = 'true'; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
   AC_SUBST([ALT_SOABI])
   ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
@@ -5993,6 +5832,7 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
+AH_TEMPLATE([WITH_APPLE_EDITLINE], [Define to build the readline module against Apple BSD editline.])
 
 AC_ARG_WITH(
   [readline],
@@ -6007,6 +5847,15 @@ AC_ARG_WITH(
     )
   ],
   [with_readline=readline]
+)
+
+# gh-105323: Need to handle the macOS editline as an alias of readline.
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [Darwin/*], [AC_CHECK_TYPE([Function],
+                             [AC_DEFINE([WITH_APPLE_EDITLINE])],
+                             [],
+                             [@%:@include <readline/readline.h>])],
+  []
 )
 
 AS_VAR_IF([with_readline], [readline], [
@@ -6649,6 +6498,7 @@ SRCDIRS="\
   Modules/_sqlite \
   Modules/_sre \
   Modules/_testcapi \
+  Modules/_testinternalcapi \
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
@@ -7125,6 +6975,63 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
+# gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
+# On Linux aarch64, GCC may require programs and libraries to be linked
+# explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+# libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+# compiler flags.
+#
+# Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
+# requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
+# anymore.  <pyport.h> cannot be included alone, it's designed to be included
+# by <Python.h>: it expects other includes and macros to be defined.
+_SAVE_VAR([CPPFLAGS])
+CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
+
+AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
+               [ac_cv_libatomic_needed],
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+// pyatomic.h needs uint64_t and Py_ssize_t types
+#include <stdint.h>  // int64_t, intptr_t
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h> // ssize_t
+#endif
+// Code adapted from Include/pyport.h
+#if HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+typedef intptr_t Py_ssize_t;
+#else
+#  error "unable to define Py_ssize_t"
+#endif
+
+#include "pyatomic.h"
+
+int main()
+{
+    uint64_t byte;
+    _Py_atomic_store_uint64(&byte, 2);
+    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint64(&byte) != 10) {
+        return 1; // error
+    }
+    return 0; // all good
+}
+]])],
+  [ac_cv_libatomic_needed=no],  dnl build succeeded
+  [ac_cv_libatomic_needed=yes], dnl build failed
+  [ac_cv_libatomic_needed=no])  dnl cross compilation
+])
+
+AS_VAR_IF([ac_cv_libatomic_needed], [yes],
+          [LIBS="${LIBS} -latomic"])
+_RESTORE_VAR([CPPFLAGS])
+
+
+# stdlib
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [
     AS_VAR_SET([py_cv_module_]mod, [n/a])])
@@ -7394,6 +7301,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
 dnl test modules
 PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
@@ -7405,10 +7313,9 @@ PY_STDLIB_MOD([_ctypes_test],
   [], [$LIBM])
 
 dnl Limited API template modules.
-dnl The limited C API is not compatible with the Py_TRACE_REFS macro.
 dnl Emscripten does not support shared libraries yet.
-PY_STDLIB_MOD([xxlimited], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([xxlimited_35], [test "$with_trace_refs" = "no"], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited], [], [test "$ac_cv_func_dlopen" = yes])
+PY_STDLIB_MOD([xxlimited_35], [], [test "$ac_cv_func_dlopen" = yes])
 
 # substitute multiline block, must come after last PY_STDLIB_MOD()
 AC_SUBST([MODULE_BLOCK])
@@ -7425,6 +7332,7 @@ AC_CONFIG_FILES(m4_normalize([
   Modules/Setup.stdlib
 ]))
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
+# Generate files like pyconfig.h
 AC_OUTPUT
 
 AC_MSG_NOTICE([creating Modules/Setup.local])

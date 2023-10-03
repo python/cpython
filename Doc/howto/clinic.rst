@@ -158,7 +158,7 @@ process a single source file, like this:
 The CLI supports the following options:
 
 .. program:: ./Tools/clinic/clinic.py [-h] [-f] [-o OUTPUT] [-v] \
-             [--converters] [--make] [--srcdir SRCDIR] [FILE ...]
+             [--converters] [--make] [--srcdir SRCDIR] [--limited] [FILE ...]
 
 .. option:: -h, --help
 
@@ -188,9 +188,84 @@ The CLI supports the following options:
 
    The directory tree to walk in :option:`--make` mode.
 
+.. option:: --exclude EXCLUDE
+
+   A file to exclude in :option:`--make` mode.
+   This option can be given multiple times.
+
+.. option:: --limited
+
+    Use the :ref:`Limited API <limited-c-api>` to parse arguments in the generated C code.
+    See :ref:`clinic-howto-limited-capi`.
+
 .. option:: FILE ...
 
    The list of files to process.
+
+
+.. _clinic-classes:
+
+Classes for extending Argument Clinic
+-------------------------------------
+
+.. module:: clinic
+
+.. class:: CConverter
+
+   The base class for all converters.
+   See :ref:`clinic-howto-custom-converter` for how to subclass this class.
+
+   .. attribute:: type
+
+      The C type to use for this variable.
+      :attr:`!type` should be a Python string specifying the type,
+      e.g. ``'int'``.
+      If this is a pointer type, the type string should end with ``' *'``.
+
+   .. attribute:: default
+
+      The Python default value for this parameter, as a Python value.
+      Or the magic value ``unspecified`` if there is no default.
+
+   .. attribute:: py_default
+
+      :attr:`!default` as it should appear in Python code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_default
+
+      :attr:`!default` as it should appear in C code,
+      as a string.
+      Or ``None`` if there is no default.
+
+   .. attribute:: c_ignored_default
+
+      The default value used to initialize the C variable when
+      there is no default, but not specifying a default may
+      result in an "uninitialized variable" warning.  This can
+      easily happen when using option groups—although
+      properly written code will never actually use this value,
+      the variable does get passed in to the impl, and the
+      C compiler will complain about the "use" of the
+      uninitialized value.  This value should always be a
+      non-empty string.
+
+   .. attribute:: converter
+
+      The name of the C converter function, as a string.
+
+   .. attribute:: impl_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into the impl function.
+
+   .. attribute:: parse_by_reference
+
+      A boolean value.  If true,
+      Argument Clinic will add a ``&`` in front of the name of
+      the variable when passing it into :c:func:`PyArg_ParseTuple`.
 
 
 .. _clinic-tutorial:
@@ -1343,87 +1418,29 @@ state.  Example from the ``setattro`` slot method in
 See also :pep:`573`.
 
 
+.. _clinic-howto-custom-converter:
+
 How to write a custom converter
 -------------------------------
 
-As we hinted at in the previous section... you can write your own converters!
-A converter is simply a Python class that inherits from :py:class:`!CConverter`.
-The main purpose of a custom converter is if you have a parameter using
-the ``O&`` format unit—parsing this parameter means calling
+A converter is a Python class that inherits from :py:class:`CConverter`.
+The main purpose of a custom converter, is for parameters parsed with
+the ``O&`` format unit --- parsing such a parameter means calling
 a :c:func:`PyArg_ParseTuple` "converter function".
 
-Your converter class should be named ``*something*_converter``.
-If the name follows this convention, then your converter class
-will be automatically registered with Argument Clinic; its name
-will be the name of your class with the ``_converter`` suffix
-stripped off.  (This is accomplished with a metaclass.)
+Your converter class should be named :samp:`{ConverterName}_converter`.
+By following this convention, your converter class will be automatically
+registered with Argument Clinic, with its *converter name* being the name of
+your converter class with the ``_converter`` suffix stripped off.
 
-You shouldn't subclass :py:meth:`!CConverter.__init__`.  Instead, you should
-write a :py:meth:`!converter_init` function. :py:meth:`!converter_init`
-always accepts a *self* parameter; after that, all additional
-parameters *must* be keyword-only.  Any arguments passed in to
-the converter in Argument Clinic will be passed along to your
-:py:meth:`!converter_init`.
-
-There are some additional members of :py:class:`!CConverter` you may wish
-to specify in your subclass.  Here's the current list:
-
-.. module:: clinic
-
-.. class:: CConverter
-
-   .. attribute:: type
-
-      The C type to use for this variable.
-      :attr:`!type` should be a Python string specifying the type,
-      e.g. ``'int'``.
-      If this is a pointer type, the type string should end with ``' *'``.
-
-   .. attribute:: default
-
-      The Python default value for this parameter, as a Python value.
-      Or the magic value ``unspecified`` if there is no default.
-
-   .. attribute:: py_default
-
-      :attr:`!default` as it should appear in Python code,
-      as a string.
-      Or ``None`` if there is no default.
-
-   .. attribute:: c_default
-
-      :attr:`!default` as it should appear in C code,
-      as a string.
-      Or ``None`` if there is no default.
-
-   .. attribute:: c_ignored_default
-
-      The default value used to initialize the C variable when
-      there is no default, but not specifying a default may
-      result in an "uninitialized variable" warning.  This can
-      easily happen when using option groups—although
-      properly written code will never actually use this value,
-      the variable does get passed in to the impl, and the
-      C compiler will complain about the "use" of the
-      uninitialized value.  This value should always be a
-      non-empty string.
-
-   .. attribute:: converter
-
-      The name of the C converter function, as a string.
-
-   .. attribute:: impl_by_reference
-
-      A boolean value.  If true,
-      Argument Clinic will add a ``&`` in front of the name of
-      the variable when passing it into the impl function.
-
-   .. attribute:: parse_by_reference
-
-      A boolean value.  If true,
-      Argument Clinic will add a ``&`` in front of the name of
-      the variable when passing it into :c:func:`PyArg_ParseTuple`.
-
+Instead of subclassing :py:meth:`!CConverter.__init__`,
+write a :py:meth:`!converter_init` method.
+:py:meth:`!converter_init` always accepts a *self* parameter.
+After *self*, all additional parameters **must** be keyword-only.
+Any arguments passed to the converter in Argument Clinic
+will be passed along to your :py:meth:`!converter_init` method.
+See :py:class:`CConverter` for a list of members you may wish to specify in
+your subclass.
 
 Here's the simplest example of a custom converter, from :source:`Modules/zlibmodule.c`::
 
@@ -1436,16 +1453,16 @@ Here's the simplest example of a custom converter, from :source:`Modules/zlibmod
     [python start generated code]*/
     /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
-This block adds a converter to Argument Clinic named ``ssize_t``.  Parameters
-declared as ``ssize_t`` will be declared as type :c:type:`Py_ssize_t`, and will
-be parsed by the ``'O&'`` format unit, which will call the
-``ssize_t_converter`` converter function.  ``ssize_t`` variables
-automatically support default values.
+This block adds a converter named ``ssize_t`` to Argument Clinic.
+Parameters declared as ``ssize_t`` will be declared with type :c:type:`Py_ssize_t`,
+and will be parsed by the ``'O&'`` format unit,
+which will call the :c:func:`!ssize_t_converter` converter C function.
+``ssize_t`` variables automatically support default values.
 
 More sophisticated custom converters can insert custom C code to
 handle initialization and cleanup.
 You can see more examples of custom converters in the CPython
-source tree; grep the C files for the string :py:class:`!CConverter`.
+source tree; grep the C files for the string ``CConverter``.
 
 
 How to write a custom return converter
@@ -1891,3 +1908,163 @@ blocks embedded in Python files look slightly different.  They look like this:
     #[python start generated code]*/
     def foo(): pass
     #/*[python checksum:...]*/
+
+
+.. _clinic-howto-limited-capi:
+
+How to use the Limited C API
+----------------------------
+
+If Argument Clinic :term:`input` is located within a C source file
+that contains ``#define Py_LIMITED_API``, Argument Clinic will generate C code
+that uses the :ref:`Limited API <limited-c-api>` to parse arguments. The
+advantage of this is that the generated code will not use private functions.
+However, this *can* result in Argument Clinic generating less efficient code
+in some cases. The extent of the performance penalty will depend
+on the parameters (types, number, etc.).
+
+.. versionadded:: 3.13
+
+
+.. _clinic-howto-override-signature:
+
+How to override the generated signature
+---------------------------------------
+
+You can use the ``@text_signature`` directive to override the default generated
+signature in the docstring.
+This can be useful for complex signatures that Argument Clinic cannot handle.
+The ``@text_signature`` directive takes one argument:
+the custom signature as a string.
+The provided signature is copied verbatim to the generated docstring.
+
+Example from :source:`Objects/codeobject.c`::
+
+   /*[clinic input]
+   @text_signature "($self, /, **changes)"
+   code.replace
+       *
+       co_argcount: int(c_default="self->co_argcount") = unchanged
+       co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
+       # etc ...
+
+       Return a copy of the code object with new values for the specified fields.
+   [clinic start generated output]*/
+
+The generated docstring ends up looking like this:
+
+.. code-block:: none
+
+   replace($self, /, **changes)
+   --
+
+   Return a copy of the code object with new values for the specified fields.
+
+
+.. _clinic-howto-deprecate-positional:
+.. _clinic-howto-deprecate-keyword:
+
+How to deprecate passing parameters positionally or by keyword
+--------------------------------------------------------------
+
+Argument Clinic provides syntax that makes it possible to generate code that
+deprecates passing :term:`arguments <argument>` for positional-or-keyword
+:term:`parameters <parameter>` positionally or by keyword.
+For example, say we've got a module-level function :py:func:`!foo.myfunc`
+that has five parameters: a positional-only parameter *a*, three
+positional-or-keyword parameters *b*, *c* and *d*, and a keyword-only
+parameter *e*::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       /
+       b: int
+       c: int
+       d: int
+       *
+       e: int
+   [clinic start generated output]*/
+
+We now want to make the *b* parameter positional-only and the *d* parameter
+keyword-only;
+however, we'll have to wait two releases before making these changes,
+as mandated by Python's backwards-compatibility policy (see :pep:`387`).
+For this example, imagine we're in the development phase for Python 3.12:
+that means we'll be allowed to introduce deprecation warnings in Python 3.12
+whenever an argument for the *b* parameter is passed by keyword or an argument
+for the *d* parameter is passed positionally, and we'll be allowed to make
+them positional-only and keyword-only respectively in Python 3.14 at
+the earliest.
+
+We can use Argument Clinic to emit the desired deprecation warnings
+using the ``[from ...]`` syntax, by adding the line ``/ [from 3.14]`` right
+below the *b* parameter and adding the line ``* [from 3.14]`` right above
+the *d* parameter::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       /
+       b: int
+       / [from 3.14]
+       c: int
+       * [from 3.14]
+       d: int
+       *
+       e: int
+   [clinic start generated output]*/
+
+Next, regenerate Argument Clinic code (``make clinic``),
+and add unit tests for the new behaviour.
+
+The generated code will now emit a :exc:`DeprecationWarning`
+when an :term:`argument` for the :term:`parameter` *d* is passed positionally
+(e.g ``myfunc(1, 2, 3, 4, e=5)``) or an argument for the parameter *b* is
+passed by keyword (e.g ``myfunc(1, b=2, c=3, d=4, e=5)``).
+C preprocessor directives are also generated for emitting
+compiler warnings if the ``[from ...]`` lines have not been removed
+from the Argument Clinic input when the deprecation period is over,
+which means when the alpha phase of the specified Python version kicks in.
+
+Let's return to our example and skip ahead two years:
+Python 3.14 development has now entered the alpha phase,
+but we forgot all about updating the Argument Clinic code
+for :py:func:`!myfunc`!
+Luckily for us, compiler warnings are now generated:
+
+.. code-block:: none
+
+   In file included from Modules/foomodule.c:139:
+   Modules/clinic/foomodule.c.h:139:8: warning: In 'foomodule.c', update the clinic input of 'mymod.myfunc'. [-W#warnings]
+    #    warning "In 'foomodule.c', update the clinic input of 'mymod.myfunc'. [-W#warnings]"
+         ^
+
+We now close the deprecation phase by making *a* positional-only and *c*
+keyword-only;
+replace the ``/ [from ...]`` line below *b* with the ``/`` from the line
+below *a* and the ``* [from ...]`` line above *d* with the ``*`` from
+the line above *e*::
+
+   /*[clinic input]
+   module foo
+   myfunc
+       a: int
+       b: int
+       /
+       c: int
+       *
+       d: int
+       e: int
+   [clinic start generated output]*/
+
+Finally, run ``make clinic`` to regenerate the Argument Clinic code,
+and update your unit tests to reflect the new behaviour.
+
+.. note::
+
+   If you forget to update your input block during the alpha and beta phases,
+   the compiler warning will turn into a compiler error when the
+   release candidate phase begins.

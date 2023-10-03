@@ -737,7 +737,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
@@ -912,6 +912,13 @@ class UtimeTests(unittest.TestCase):
             # Set to the current time in the old explicit way.
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
+
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
 
     def get_file_system(self, path):
         if sys.platform == 'win32':
@@ -3989,13 +3996,41 @@ class OSErrorTests(unittest.TestCase):
                     self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
+    def check_cpu_count(self, cpus):
+        if cpus is None:
+            self.skipTest("Could not determine the number of CPUs")
+
+        self.assertIsInstance(cpus, int)
+        self.assertGreater(cpus, 0)
+
     def test_cpu_count(self):
         cpus = os.cpu_count()
-        if cpus is not None:
-            self.assertIsInstance(cpus, int)
-            self.assertGreater(cpus, 0)
-        else:
+        self.check_cpu_count(cpus)
+
+    def test_process_cpu_count(self):
+        cpus = os.process_cpu_count()
+        self.assertLessEqual(cpus, os.cpu_count())
+        self.check_cpu_count(cpus)
+
+    @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
+                         "don't have sched affinity support")
+    def test_process_cpu_count_affinity(self):
+        ncpu = os.cpu_count()
+        if ncpu is None:
             self.skipTest("Could not determine the number of CPUs")
+
+        # Disable one CPU
+        mask = os.sched_getaffinity(0)
+        if len(mask) <= 1:
+            self.skipTest(f"sched_getaffinity() returns less than "
+                          f"2 CPUs: {sorted(mask)}")
+        self.addCleanup(os.sched_setaffinity, 0, list(mask))
+        mask.pop()
+        os.sched_setaffinity(0, mask)
+
+        # test process_cpu_count()
+        affinity = os.process_cpu_count()
+        self.assertEqual(affinity, ncpu - 1)
 
 
 # FD inheritance check is only useful for systems with process support.

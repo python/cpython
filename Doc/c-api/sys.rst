@@ -8,8 +8,9 @@ Operating System Utilities
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
    Return the file system representation for *path*. If the object is a
-   :class:`str` or :class:`bytes` object, then its reference count is
-   incremented. If the object implements the :class:`os.PathLike` interface,
+   :class:`str` or :class:`bytes` object, then a new
+   :term:`strong reference` is returned.
+   If the object implements the :class:`os.PathLike` interface,
    then :meth:`~os.PathLike.__fspath__` is returned as long as it is a
    :class:`str` or :class:`bytes` object. Otherwise :exc:`TypeError` is raised
    and ``NULL`` is returned.

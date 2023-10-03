@@ -381,6 +381,11 @@ validate_expr(struct validator *state, expr_ty exp, expr_context_ty ctx)
         ret = validate_exprs(state, exp->v.Tuple.elts, ctx, 0);
         break;
     case NamedExpr_kind:
+        if (exp->v.NamedExpr.target->kind != Name_kind) {
+            PyErr_SetString(PyExc_TypeError,
+                            "NamedExpr target must be a Name");
+            return 0;
+        }
         ret = validate_expr(state, exp->v.NamedExpr.value, Load);
         break;
     /* This last case doesn't have any checking. */
@@ -768,6 +773,11 @@ validate_stmt(struct validator *state, stmt_ty stmt)
                validate_expr(state, stmt->v.AnnAssign.annotation, Load);
         break;
     case TypeAlias_kind:
+        if (stmt->v.TypeAlias.name->kind != Name_kind) {
+            PyErr_SetString(PyExc_TypeError,
+                            "TypeAlias with non-Name name");
+            return 0;
+        }
         ret = validate_expr(state, stmt->v.TypeAlias.name, Store) &&
             validate_type_params(state, stmt->v.TypeAlias.type_params) &&
             validate_expr(state, stmt->v.TypeAlias.value, Load);
@@ -1029,7 +1039,7 @@ validate_type_params(struct validator *state, asdl_type_param_seq *tps)
 
 
 /* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 int
 _PyAST_Validate(mod_ty mod)
@@ -1046,10 +1056,10 @@ _PyAST_Validate(mod_ty mod)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     switch (mod->kind) {
     case Module_kind:

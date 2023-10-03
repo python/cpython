@@ -3,6 +3,10 @@
 
 /* Windows users:  read Python's PCbuild\readme.txt */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "zlib.h"

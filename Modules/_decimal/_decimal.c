@@ -35,6 +35,7 @@
 #include "complexobject.h"
 #include "mpdecimal.h"
 
+#include <ctype.h>                // isascii()
 #include <stdlib.h>
 
 #include "docstrings.h"

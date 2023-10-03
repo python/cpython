@@ -1,0 +1,2 @@
+Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+usable by the calling thread of the current process. Patch by Victor Stinner.

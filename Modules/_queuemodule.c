@@ -3,6 +3,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_time.h"          // _PyTime_t
 
