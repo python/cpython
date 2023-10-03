@@ -56,3 +56,4 @@ def setup(app):
         w.writerow(('Domain', 'Type', 'Target', 'Source'))
     app.connect('warn-missing-reference', warn_missing_reference)
     app.connect('build-finished', summarise_warnings)
+    return {'version': '1', 'parallel_read_safe': True, 'parallel_write_safe': True}
