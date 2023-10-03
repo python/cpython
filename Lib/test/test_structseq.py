@@ -90,17 +90,23 @@ class StructSeqTest(unittest.TestCase):
         self.assertRaises(TypeError, t, "123")
         self.assertRaises(TypeError, t, "123", dict={})
         self.assertRaises(TypeError, t, "123456789", dict=None)
+        self.assertRaises(TypeError, t, seq="123456789", dict={})
+
+        self.assertEqual(t("123456789"), tuple("123456789"))
+        self.assertEqual(t("123456789", {}), tuple("123456789"))
+        self.assertEqual(t("123456789", dict={}), tuple("123456789"))
+        self.assertEqual(t(sequence="123456789", dict={}), tuple("123456789"))
+
+        self.assertEqual(t("1234567890"), tuple("123456789"))
+        self.assertEqual(t("1234567890").tm_zone, "0")
+        self.assertEqual(t("123456789", {"tm_zone": "some zone"}), tuple("123456789"))
+        self.assertEqual(t("123456789", {"tm_zone": "some zone"}).tm_zone, "some zone")
 
         s = "123456789"
         self.assertEqual("".join(t(s)), s)
 
     def test_constructor_with_duplicate_fields(self):
         t = time.struct_time
-        self.assertEqual(t("123456789"), tuple("123456789"))
-        self.assertEqual(t("1234567890"), tuple("123456789"))
-        self.assertEqual(t("1234567890").tm_zone, "0")
-        self.assertEqual(t("123456789", dict={"tm_zone": "some zone"}), tuple("123456789"))
-        self.assertEqual(t("123456789", dict={"tm_zone": "some zone"}).tm_zone, "some zone")
 
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
             t("123456789", dict={"tm_year": 0})
