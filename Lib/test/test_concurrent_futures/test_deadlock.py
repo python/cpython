@@ -91,7 +91,7 @@ class ErrorAtUnpickle(object):
 
 
 class ExecutorDeadlockTest:
-    TIMEOUT = support.SHORT_TIMEOUT
+    TIMEOUT = support.LONG_TIMEOUT
 
     def _fail_on_deadlock(self, executor):
         # If we did not recover before TIMEOUT seconds, consider that the
@@ -145,6 +145,9 @@ class ExecutorDeadlockTest:
         self._check_crash(BrokenProcessPool, id, ExitAtUnpickle())
 
     def test_error_at_task_unpickle(self):
+        # gh-109832: Restore stderr overriden by _raise_error_ignore_stderr()
+        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
+
         # Check problem occurring while unpickling a task on workers
         self._check_crash(BrokenProcessPool, id, ErrorAtUnpickle())
 
@@ -180,6 +183,9 @@ class ExecutorDeadlockTest:
         self._check_crash(PicklingError, _return_instance, ErrorAtPickle)
 
     def test_error_during_result_unpickle_in_result_handler(self):
+        # gh-109832: Restore stderr overriden by _raise_error_ignore_stderr()
+        self.addCleanup(setattr, sys, 'stderr', sys.stderr)
+
         # Check problem occurring while unpickling a task in
         # the result_handler thread
         self._check_crash(BrokenProcessPool,

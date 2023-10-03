@@ -158,6 +158,15 @@ class Queue(object):
         except AttributeError:
             pass
 
+    def _terminate_broken(self):
+        # Close a Queue on error.
+
+        # gh-94777: Prevent queue writing to a pipe which is no longer read.
+        self._reader.close()
+
+        self.close()
+        self.join_thread()
+
     def _start_thread(self):
         debug('Queue._start_thread()')
 
@@ -169,13 +178,19 @@ class Queue(object):
                   self._wlock, self._reader.close, self._writer.close,
                   self._ignore_epipe, self._on_queue_feeder_error,
                   self._sem),
-            name='QueueFeederThread'
+            name='QueueFeederThread',
+            daemon=True,
         )
-        self._thread.daemon = True
 
-        debug('doing self._thread.start()')
-        self._thread.start()
-        debug('... done self._thread.start()')
+        try:
+            debug('doing self._thread.start()')
+            self._thread.start()
+            debug('... done self._thread.start()')
+        except:
+            # gh-109047: During Python finalization, creating a thread
+            # can fail with RuntimeError.
+            self._thread = None
+            raise
 
         if not self._joincancelled:
             self._jointhread = Finalize(
