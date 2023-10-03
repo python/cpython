@@ -136,10 +136,8 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(os.stat_result.__match_args__, expected_args)
 
     def test_copy_replace_all_fields_visible(self):
-        assert (
-            os.times_result.n_unnamed_fields == 0
-            and os.times_result.n_sequence_fields == os.times_result.n_fields
-        )
+        assert os.times_result.n_unnamed_fields == 0
+        assert os.times_result.n_sequence_fields == os.times_result.n_fields
 
         t = os.times()
 
@@ -157,10 +155,8 @@ class StructSeqTest(unittest.TestCase):
             copy.replace(t, user=1, error=-1)
 
     def test_copy_replace_with_invisible_fields(self):
-        assert (
-            time.struct_time.n_unnamed_fields == 0
-            and time.struct_time.n_sequence_fields < time.struct_time.n_fields
-        )
+        assert time.struct_time.n_unnamed_fields == 0
+        assert time.struct_time.n_sequence_fields < time.struct_time.n_fields
 
         t = time.gmtime(0)
 
