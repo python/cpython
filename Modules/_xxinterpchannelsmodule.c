@@ -2468,7 +2468,10 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     PyTypeObject *cls = state->ChannelIDType;
-    assert(get_module_from_owned_type(cls) == self);
+
+    PyObject *mod = get_module_from_owned_type(cls);
+    assert(mod == self);
+    Py_DECREF(mod);
 
     return _channelid_new(self, cls, args, kwds);
 }
