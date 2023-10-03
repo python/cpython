@@ -100,15 +100,6 @@ _get_current_module(void)
     return mod;
 }
 
-static PyObject *
-get_module_from_owned_type(PyTypeObject *cls)
-{
-    assert(cls != NULL);
-    return _get_current_module();
-    // XXX Use the more efficient API now that we use heap types:
-    //return PyType_GetModule(cls);
-}
-
 static struct PyModuleDef moduledef;
 
 static PyObject *
@@ -2464,7 +2455,8 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     PyTypeObject *cls = state->ChannelIDType;
-    assert(get_module_from_owned_type(cls) == self);
+    assert(cls != NULL);
+    assert(_get_current_module() == self);
 
     return _channelid_new(self, cls, args, kwds);
 }

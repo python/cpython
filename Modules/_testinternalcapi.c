@@ -42,6 +42,9 @@
 static PyObject *
 _get_current_module(void)
 {
+    // XXX Use the more efficient API now that we use heap types:
+    // return PyType_GetModule(cls);
+
     // We ensured it was imported in _run_script().
     PyObject *name = PyUnicode_FromString(MODULE_NAME);
     if (name == NULL) {
