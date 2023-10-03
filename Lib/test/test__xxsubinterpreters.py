@@ -15,6 +15,7 @@ from test.support import script_helper
 
 interpreters = import_helper.import_module('_xxsubinterpreters')
 interpreters.run_string = interpreters.exec
+interpreters.run_func = interpreters.exec
 
 
 ##################################
@@ -924,6 +925,111 @@ class RunStringTests(TestBase):
                 retcode = proc.wait()
 
         self.assertEqual(retcode, 0)
+
+
+class RunFuncTests(TestBase):
+
+    def setUp(self):
+        super().setUp()
+        self.id = interpreters.create()
+
+    def test_success(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        interpreters.run_func(self.id, script, shared=dict(w=w))
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_in_thread(self):
+        r, w = os.pipe()
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        def f():
+            interpreters.run_func(self.id, script, shared=dict(w=w))
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_code_object(self):
+        r, w = os.pipe()
+
+        def script():
+            global w
+            import contextlib
+            with open(w, 'w', encoding="utf-8") as spipe:
+                with contextlib.redirect_stdout(spipe):
+                    print('it worked!', end='')
+        code = script.__code__
+        interpreters.run_func(self.id, code, shared=dict(w=w))
+
+        with open(r, encoding="utf-8") as outfile:
+            out = outfile.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_closure(self):
+        spam = True
+        def script():
+            assert spam
+
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
+
+    # XXX This hasn't been fixed yet.
+    @unittest.expectedFailure
+    def test_return_value(self):
+        def script():
+            return 'spam'
+        with self.assertRaises(ValueError):
+            interpreters.run_func(self.id, script)
+
+    def test_args(self):
+        with self.subTest('args'):
+            def script(a, b=0):
+                assert a == b
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('*args'):
+            def script(*args):
+                assert not args
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('**kwargs'):
+            def script(**kwargs):
+                assert not kwargs
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('kwonly'):
+            def script(*, spam=True):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
+
+        with self.subTest('posonly'):
+            def script(spam, /):
+                assert spam
+            with self.assertRaises(ValueError):
+                interpreters.run_func(self.id, script)
 
 
 if __name__ == '__main__':
