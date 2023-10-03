@@ -1806,6 +1806,33 @@
             break;
         }
 
+        case _CHECK_ATTR_CLASS: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
+            assert(type_version != 0);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            attr = Py_NewRef(descr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
         case _GUARD_DORV_VALUES: {
             PyObject *owner;
             owner = stack_pointer[-1];

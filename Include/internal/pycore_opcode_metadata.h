@@ -51,39 +51,41 @@
 #define _CHECK_ATTR_WITH_HINT 323
 #define _LOAD_ATTR_WITH_HINT 324
 #define _LOAD_ATTR_SLOT 325
-#define _GUARD_DORV_VALUES 326
-#define _STORE_ATTR_INSTANCE_VALUE 327
-#define _GUARD_TYPE_VERSION_STORE 328
-#define _STORE_ATTR_SLOT 329
-#define _IS_NONE 330
-#define _ITER_CHECK_LIST 331
-#define _ITER_JUMP_LIST 332
-#define _IS_ITER_EXHAUSTED_LIST 333
-#define _ITER_NEXT_LIST 334
-#define _ITER_CHECK_TUPLE 335
-#define _ITER_JUMP_TUPLE 336
-#define _IS_ITER_EXHAUSTED_TUPLE 337
-#define _ITER_NEXT_TUPLE 338
-#define _ITER_CHECK_RANGE 339
-#define _ITER_JUMP_RANGE 340
-#define _IS_ITER_EXHAUSTED_RANGE 341
-#define _ITER_NEXT_RANGE 342
-#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 343
-#define _GUARD_KEYS_VERSION 344
-#define _LOAD_ATTR_METHOD_WITH_VALUES 345
-#define _LOAD_ATTR_METHOD_NO_DICT 346
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 347
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 348
-#define _CHECK_PEP_523 349
-#define _CHECK_FUNCTION_EXACT_ARGS 350
-#define _CHECK_STACK_SPACE 351
-#define _INIT_CALL_PY_EXACT_ARGS 352
-#define _PUSH_FRAME 353
-#define _POP_JUMP_IF_FALSE 354
-#define _POP_JUMP_IF_TRUE 355
-#define _JUMP_TO_TOP 356
-#define _SAVE_CURRENT_IP 357
-#define _INSERT 358
+#define _CHECK_ATTR_CLASS 326
+#define _LOAD_ATTR_CLASS 327
+#define _GUARD_DORV_VALUES 328
+#define _STORE_ATTR_INSTANCE_VALUE 329
+#define _GUARD_TYPE_VERSION_STORE 330
+#define _STORE_ATTR_SLOT 331
+#define _IS_NONE 332
+#define _ITER_CHECK_LIST 333
+#define _ITER_JUMP_LIST 334
+#define _IS_ITER_EXHAUSTED_LIST 335
+#define _ITER_NEXT_LIST 336
+#define _ITER_CHECK_TUPLE 337
+#define _ITER_JUMP_TUPLE 338
+#define _IS_ITER_EXHAUSTED_TUPLE 339
+#define _ITER_NEXT_TUPLE 340
+#define _ITER_CHECK_RANGE 341
+#define _ITER_JUMP_RANGE 342
+#define _IS_ITER_EXHAUSTED_RANGE 343
+#define _ITER_NEXT_RANGE 344
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 345
+#define _GUARD_KEYS_VERSION 346
+#define _LOAD_ATTR_METHOD_WITH_VALUES 347
+#define _LOAD_ATTR_METHOD_NO_DICT 348
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 349
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 350
+#define _CHECK_PEP_523 351
+#define _CHECK_FUNCTION_EXACT_ARGS 352
+#define _CHECK_STACK_SPACE 353
+#define _INIT_CALL_PY_EXACT_ARGS 354
+#define _PUSH_FRAME 355
+#define _POP_JUMP_IF_FALSE 356
+#define _POP_JUMP_IF_TRUE 357
+#define _JUMP_TO_TOP 358
+#define _SAVE_CURRENT_IP 359
+#define _INSERT 360
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -380,6 +382,10 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case _LOAD_ATTR_SLOT:
             return 1;
         case LOAD_ATTR_SLOT:
+            return 1;
+        case _CHECK_ATTR_CLASS:
+            return 1;
+        case _LOAD_ATTR_CLASS:
             return 1;
         case LOAD_ATTR_CLASS:
             return 1;
@@ -947,8 +953,12 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
             return ((oparg & 1) ? 1 : 0) + 1;
         case LOAD_ATTR_SLOT:
             return (oparg & 1 ? 1 : 0) + 1;
-        case LOAD_ATTR_CLASS:
+        case _CHECK_ATTR_CLASS:
+            return 1;
+        case _LOAD_ATTR_CLASS:
             return ((oparg & 1) ? 1 : 0) + 1;
+        case LOAD_ATTR_CLASS:
+            return (oparg & 1 ? 1 : 0) + 1;
         case LOAD_ATTR_PROPERTY:
             return 1;
         case LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN:
@@ -1430,6 +1440,8 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG },
     [_LOAD_ATTR_SLOT] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_ATTR_SLOT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
+    [_CHECK_ATTR_CLASS] = { true, INSTR_FMT_IXC0, HAS_DEOPT_FLAG },
+    [_LOAD_ATTR_CLASS] = { true, INSTR_FMT_IBC000, HAS_ARG_FLAG },
     [LOAD_ATTR_CLASS] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_ATTR_PROPERTY] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG },
     [LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG },
@@ -1664,6 +1676,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_ATTR_MODULE] = { .nuops = 2, .uops = { { _CHECK_ATTR_MODULE, 2, 1 }, { _LOAD_ATTR_MODULE, 1, 3 } } },
     [LOAD_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 0 }, { _LOAD_ATTR_WITH_HINT, 1, 3 } } },
     [LOAD_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_SLOT, 1, 3 } } },
+    [LOAD_ATTR_CLASS] = { .nuops = 2, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION_STORE, 2, 1 }, { _GUARD_DORV_VALUES, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION_STORE, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
     [COMPARE_OP] = { .nuops = 1, .uops = { { COMPARE_OP, 0, 0 } } },
@@ -1742,6 +1755,8 @@ const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_CHECK_ATTR_WITH_HINT] = "_CHECK_ATTR_WITH_HINT",
     [_LOAD_ATTR_WITH_HINT] = "_LOAD_ATTR_WITH_HINT",
     [_LOAD_ATTR_SLOT] = "_LOAD_ATTR_SLOT",
+    [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
+    [_LOAD_ATTR_CLASS] = "_LOAD_ATTR_CLASS",
     [_GUARD_DORV_VALUES] = "_GUARD_DORV_VALUES",
     [_STORE_ATTR_INSTANCE_VALUE] = "_STORE_ATTR_INSTANCE_VALUE",
     [_GUARD_TYPE_VERSION_STORE] = "_GUARD_TYPE_VERSION_STORE",

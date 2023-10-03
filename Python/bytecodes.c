@@ -1967,19 +1967,26 @@ dummy_func(
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             unused/5;
 
-        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, null if (oparg & 1))) {
-
+        op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
             DEOPT_IF(!PyType_Check(owner));
-            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
             assert(type_version != 0);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
 
+        }
+
+        op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
             STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            attr = Py_NewRef(descr);
             null = NULL;
-            attr = descr;
-            assert(attr != NULL);
-            Py_INCREF(attr);
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_CLASS) =
+            unused/1 +
+            _CHECK_ATTR_CLASS +
+            unused/2 +
+            _LOAD_ATTR_CLASS;
 
         inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);

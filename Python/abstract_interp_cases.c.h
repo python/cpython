@@ -503,6 +503,17 @@
             break;
         }
 
+        case _CHECK_ATTR_CLASS: {
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS: {
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
+            break;
+        }
+
         case _GUARD_DORV_VALUES: {
             break;
         }
