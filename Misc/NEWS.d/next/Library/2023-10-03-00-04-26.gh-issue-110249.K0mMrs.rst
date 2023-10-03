@@ -1,1 +1,1 @@
-Add `--inline-caches` flag to `dis` command line.
+Add ``--inline-caches`` flag to ``dis`` command line.
