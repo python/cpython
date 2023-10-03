@@ -4,7 +4,7 @@ import sys
 import unittest
 from textwrap import dedent
 
-from test.support import os_helper
+from test.support import os_helper, requires_resource
 from test.support.os_helper import TESTFN, TESTFN_ASCII
 
 if sys.platform != "win32":
@@ -69,6 +69,7 @@ class TestConsoleIO(unittest.TestCase):
                        creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 
+    @requires_resource('gui')
     def test_kbhit(self):
         code = dedent('''
             import msvcrt
@@ -90,6 +91,7 @@ class TestConsoleIO(unittest.TestCase):
         ''')
         self.run_in_separated_process(code)
 
+    @requires_resource('gui')
     def test_getwch(self):
         self.check_getwch('getwch')
 
@@ -97,6 +99,7 @@ class TestConsoleIO(unittest.TestCase):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
+    @requires_resource('gui')
     def test_getwche(self):
         self.check_getwch('getwche')
 
