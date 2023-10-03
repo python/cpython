@@ -226,7 +226,9 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
                 return NULL;
             }
             if (i < len) {
-                if (ob != NULL && res->ob_item[i] != NULL) {
+                // For i < len, the ob_item[i] is already set from sequence.
+                // If there is a value in the dict, raise an error.
+                if (ob != NULL) {
                     PyErr_Format(PyExc_TypeError,
                                  "%.500s() got multiple values for field '%s'",
                                  type->tp_name,
