@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import unittest
 
@@ -92,6 +93,28 @@ class StructSeqTest(unittest.TestCase):
 
         s = "123456789"
         self.assertEqual("".join(t(s)), s)
+
+    def test_constructor_with_duplicate_fields(self):
+        t = time.struct_time
+        self.assertEqual(t("123456789"), tuple("123456789"))
+        self.assertEqual(t("123456789", dict={"tm_zone": "some zone"}), tuple("123456789"))
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
+            t("123456789", dict={"tm_year": 0})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
+            t("123456789", dict={"tm_year": 0, "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
+            t("123456789", dict={"tm_zone": 'some zone', "tm_mon": 1})
+
+    def test_constructor_with_unknown_fields(self):
+        t = time.struct_time
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape("got unexpected field name(s): {'error'}")):
+            t("123456789", dict={"error": 0})
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape("got unexpected field name(s): {'error'}")):
+            t("123456789", dict={"tm_zone": 'some zone', "error": 0})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
+            t("123456789", dict={"tm_year": 0, "tm_zone": 'some zone', "error": 0})
 
     def test_eviltuple(self):
         class Exc(Exception):
