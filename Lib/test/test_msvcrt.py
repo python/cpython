@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import unittest
 
@@ -10,8 +11,6 @@ if sys.platform != "win32":
 
 import _winapi
 import msvcrt;
-
-from _testconsole import write_input, flush_console_input_buffer
 
 
 class TestFileOperations(unittest.TestCase):
@@ -62,33 +61,45 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 class TestConsoleIO(unittest.TestCase):
     def test_kbhit(self):
-        h = msvcrt.get_osfhandle(sys.stdin.fileno())
-        flush_console_input_buffer(h)
-        self.assertEqual(msvcrt.kbhit(), 0)
+        # Run test in a seprated process to avoid stdin conflicts.
+        # See: gh-110147
+        cmd = [sys.executable, '-c',
+               'import msvcrt;'
+               'assert msvcrt.kbhit() == 0;'
+               ]
+        subprocess.run(cmd, check=True, capture_output=True)
 
     def test_getch(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getch(), b'c')
 
     def test_getwch(self):
-        with open('CONIN$', 'rb', buffering=0) as stdin:
-            h = msvcrt.get_osfhandle(stdin.fileno())
-            flush_console_input_buffer(h)
-
-            write_input(stdin, c_encoded)
-            self.assertEqual(msvcrt.getwch(), c)
+        # Run test in a seprated process to avoid stdin conflicts.
+        # See: gh-110147
+        cmd = [sys.executable, '-c',
+               'import msvcrt;'
+               'from _testconsole import write_input;'
+               'stdin = open("CONIN$", "rb", buffering=0);'
+               f'write_input(stdin, {c_encoded});'
+               f'assert msvcrt.getwch() == "{c}";'
+               ]
+        subprocess.run(cmd, check=True, capture_output=True)
 
     def test_getche(self):
         msvcrt.ungetch(b'c')
         self.assertEqual(msvcrt.getche(), b'c')
 
     def test_getwche(self):
-        with open('CONIN$', 'rb', buffering=0) as stdin:
-            h = msvcrt.get_osfhandle(stdin.fileno())
-            flush_console_input_buffer(h)
-
-            write_input(stdin, c_encoded)
-            self.assertEqual(msvcrt.getwche(), c)
+        # Run test in a seprated process to avoid stdin conflicts.
+        # See: gh-110147
+        cmd = [sys.executable, '-c',
+               'import msvcrt;'
+               'from _testconsole import write_input;'
+               'stdin = open("CONIN$", "rb", buffering=0);'
+               f'write_input(stdin, {c_encoded});'
+               f'assert msvcrt.getwche() == "{c}";'
+               ]
+        subprocess.run(cmd, check=True, capture_output=True)
 
     def test_putch(self):
         msvcrt.putch(b'c')
