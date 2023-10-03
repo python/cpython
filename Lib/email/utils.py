@@ -182,6 +182,7 @@ def make_msgid(idstring=None, domain=None):
     import os
     import random
     import socket
+
     timeval = int(time.time()*100)
     pid = os.getpid()
     randint = random.getrandbits(64)
