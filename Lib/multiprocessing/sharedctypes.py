@@ -25,7 +25,7 @@ __all__ = [
     'Synchronized', 'SynchronizedArray', 'SynchronizedString',
     # Misc functions
     'copy', 'synchronized'
-]
+    ]
 
 #
 #
