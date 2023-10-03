@@ -1,4 +1,6 @@
+import copy
 import os
+import pickle
 import time
 import unittest
 
@@ -108,7 +110,98 @@ class StructSeqTest(unittest.TestCase):
 
     def test_reduce(self):
         t = time.gmtime()
-        x = t.__reduce__()
+        cls, (tup, dct) = t.__reduce__()
+        self.assertIs(cls, time.struct_time)
+        self.assertIsInstance(tup, tuple)
+        self.assertIsInstance(dct, dict)
+        self.assertEqual(tup, t)
+        self.assertEqual(len(tup), len(t))
+        self.assertEqual(len(dct), t.n_fields - t.n_sequence_fields)
+
+    def test_reduce_with_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+
+        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
+        self.assertEqual(r.st_atime, 1.0)
+        cls, (tup, dct) = r.__reduce__()
+        self.assertIs(cls, os.stat_result)
+        self.assertIsInstance(tup, tuple)
+        self.assertIsInstance(dct, dict)
+        self.assertEqual(tup, tuple(r))
+        self.assertIn('st_atime', dct)
+        self.assertEqual(len(dct), r.n_fields - r.n_sequence_fields)
+
+    def test_pickling(self):
+        t = time.gmtime()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(t, proto)
+            t2 = pickle.loads(p)
+            self.assertEqual(t.__class__, t2.__class__)
+            self.assertEqual(t, t2)
+            self.assertEqual(t.tm_year, t2.tm_year)
+            self.assertEqual(t.tm_zone, t2.tm_zone)
+
+    def test_pickling_with_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+
+        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            p = pickle.dumps(r, proto)
+            r2 = pickle.loads(p)
+            self.assertEqual(r.__class__, r2.__class__)
+            self.assertEqual(r, r2)
+            self.assertEqual(r.st_mode, r2.st_mode)
+            self.assertEqual(r.st_atime, r2.st_atime)
+            self.assertEqual(r.st_atime_ns, r2.st_atime_ns)
+
+    def test_copying(self):
+        n_fields = time.struct_time.n_fields
+        t = time.struct_time([[i] for i in range(n_fields)])
+
+        t2 = copy.copy(t)
+        self.assertEqual(t.__class__, t2.__class__)
+        self.assertEqual(t, t2)
+        self.assertEqual(t.tm_year, t2.tm_year)
+        self.assertEqual(t.tm_zone, t2.tm_zone)
+        self.assertIs(t[0], t2[0])
+        self.assertIs(t.tm_year, t2.tm_year)
+
+        t3 = copy.deepcopy(t)
+        self.assertEqual(t.__class__, t3.__class__)
+        self.assertEqual(t, t3)
+        self.assertEqual(t.tm_year, t3.tm_year)
+        self.assertEqual(t.tm_zone, t3.tm_zone)
+        self.assertIsNot(t[0], t3[0])
+        self.assertIsNot(t.tm_year, t3.tm_year)
+
+    def test_copying_with_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+
+        n_sequence_fields = os.stat_result.n_sequence_fields
+        r = os.stat_result([[i] for i in range(n_sequence_fields)],
+                           {'st_atime': [1.0], 'st_atime_ns': [2.0]})
+
+        r2 = copy.copy(r)
+        self.assertEqual(r.__class__, r2.__class__)
+        self.assertEqual(r, r2)
+        self.assertEqual(r.st_mode, r2.st_mode)
+        self.assertEqual(r.st_atime, r2.st_atime)
+        self.assertEqual(r.st_atime_ns, r2.st_atime_ns)
+        self.assertIs(r[0], r2[0])
+        self.assertIs(r.st_mode, r2.st_mode)
+        self.assertIs(r.st_atime, r2.st_atime)
+        self.assertIs(r.st_atime_ns, r2.st_atime_ns)
+
+        r3 = copy.deepcopy(r)
+        self.assertEqual(r.__class__, r3.__class__)
+        self.assertEqual(r, r3)
+        self.assertEqual(r.st_mode, r3.st_mode)
+        self.assertEqual(r.st_atime, r3.st_atime)
+        self.assertEqual(r.st_atime_ns, r3.st_atime_ns)
+        self.assertIsNot(r[0], r3[0])
+        self.assertIsNot(r.st_mode, r3.st_mode)
+        self.assertIsNot(r.st_atime, r3.st_atime)
+        self.assertIsNot(r.st_atime_ns, r3.st_atime_ns)
 
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing.
