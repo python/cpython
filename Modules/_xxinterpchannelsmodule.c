@@ -2013,6 +2013,7 @@ _channel_end_from_xid(_PyCrossInterpreterData *data)
     }
     PyTypeObject *cls = _get_current_channel_end_type(cid->end);
     if (cls == NULL) {
+        Py_DECREF(cid);
         return NULL;
     }
     PyObject *obj = PyObject_CallOneArg((PyObject *)cls, (PyObject *)cid);
@@ -2028,7 +2029,9 @@ _channel_end_shared(PyThreadState *tstate, PyObject *obj,
     if (cidobj == NULL) {
         return -1;
     }
-    if (_channelid_shared(tstate, cidobj, data) < 0) {
+    int res = _channelid_shared(tstate, cidobj, data);
+    Py_DECREF(cidobj);
+    if (res < 0) {
         return -1;
     }
     data->new_object = _channel_end_from_xid;
