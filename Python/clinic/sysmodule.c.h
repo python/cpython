@@ -1384,7 +1384,7 @@ PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
 "_get_cpu_count_config($module, /)\n"
 "--\n"
 "\n"
-"Private function for get PyConfig.cpu_count");
+"Private function for getting PyConfig.cpu_count");
 
 #define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
     {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
@@ -1451,4 +1451,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=c8da9442f1d43b25 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a7d3fbbcb281c22 input=a9049054013a1b77]*/

@@ -2293,12 +2293,12 @@ sys__getframemodulename_impl(PyObject *module, int depth)
 /*[clinic input]
 sys._get_cpu_count_config -> int
 
-Private function for get PyConfig.cpu_count
+Private function for getting PyConfig.cpu_count
 [clinic start generated code]*/
 
 static int
 sys__get_cpu_count_config_impl(PyObject *module)
-/*[clinic end generated code: output=36611bb5efad16dc input=80293caef314f45b]*/
+/*[clinic end generated code: output=36611bb5efad16dc input=523e1ade2204084e]*/
 {
     const PyConfig *config = _Py_GetConfig();
     return config->cpu_count;
