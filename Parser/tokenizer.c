@@ -2690,6 +2690,22 @@ f_string_middle:
         if (tok->done == E_ERROR) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
+        int in_format_spec = (
+                current_tok->last_expr_end != -1
+                &&
+                INSIDE_FSTRING_EXPR(current_tok)
+        );
+
+        // If we are in a format spec and we found a newline,
+        // it means that the format spec ends here and we should
+        // return to the regular mode.
+        if (in_format_spec && c == '\n') {
+            tok_backup(tok, c);
+            TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+            p_start = tok->start;
+            p_end = tok->cur;
+            return MAKE_TOKEN(FSTRING_MIDDLE);
+        }
         if (c == EOF || (current_tok->f_string_quote_size == 1 && c == '\n')) {
             if (tok->decoding_erred) {
                 return MAKE_TOKEN(ERRORTOKEN);
@@ -2726,11 +2742,6 @@ f_string_middle:
             end_quote_size = 0;
         }
 
-        int in_format_spec = (
-                current_tok->last_expr_end != -1
-                &&
-                INSIDE_FSTRING_EXPR(current_tok)
-        );
         if (c == '{') {
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
