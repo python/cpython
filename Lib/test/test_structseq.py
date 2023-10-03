@@ -103,7 +103,11 @@ class StructSeqTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
             t("123456789", dict={"tm_year": 0, "tm_mon": 1})
         with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
-            t("123456789", dict={"tm_zone": 'some zone', "tm_mon": 1})
+            t("123456789", dict={"tm_zone": "some zone", "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
+            t("123456789", dict={"tm_zone": "some zone", "tm_mon": 1, "error": 0})
+        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_mon'"):
+            t("123456789", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
 
     def test_constructor_with_unknown_fields(self):
         t = time.struct_time
@@ -112,9 +116,7 @@ class StructSeqTest(unittest.TestCase):
             t("123456789", dict={"error": 0})
         with self.assertRaisesRegex(TypeError,
                                     re.escape("got unexpected field name(s): {'error'}")):
-            t("123456789", dict={"tm_zone": 'some zone', "error": 0})
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_year'"):
-            t("123456789", dict={"tm_year": 0, "tm_zone": 'some zone', "error": 0})
+            t("123456789", dict={"tm_zone": "some zone", "error": 0})
 
     def test_eviltuple(self):
         class Exc(Exception):
