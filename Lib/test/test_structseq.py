@@ -121,7 +121,8 @@ class StructSeqTest(unittest.TestCase):
     def test_reduce_with_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
 
-        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
+        r = os.stat_result(range(os.stat_result.n_sequence_fields),
+                           {'st_atime': 1.0, 'st_atime_ns': 2.0})
         self.assertEqual(r.st_atime, 1.0)
         cls, (tup, dct) = r.__reduce__()
         self.assertIs(cls, os.stat_result)
@@ -129,6 +130,7 @@ class StructSeqTest(unittest.TestCase):
         self.assertIsInstance(dct, dict)
         self.assertEqual(tup, tuple(r))
         self.assertIn('st_atime', dct)
+        self.assertIn('st_atime_ns', dct)
         self.assertEqual(len(dct), r.n_fields - r.n_sequence_fields)
 
     def test_pickling(self):
@@ -144,7 +146,8 @@ class StructSeqTest(unittest.TestCase):
     def test_pickling_with_unnamed_fields(self):
         assert os.stat_result.n_unnamed_fields > 0
 
-        r = os.stat_result(range(os.stat_result.n_sequence_fields), {'st_atime': 1.0})
+        r = os.stat_result(range(os.stat_result.n_sequence_fields),
+                           {'st_atime': 1.0, 'st_atime_ns': 2.0})
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             p = pickle.dumps(r, proto)
             r2 = pickle.loads(p)
