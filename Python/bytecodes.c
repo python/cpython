@@ -2900,6 +2900,7 @@ dummy_func(
         macro(LOAD_ATTR_METHOD_LAZY_DICT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
+            _CHECK_ATTR_METHOD_LAZY_DICT +
             unused/2 +
             _LOAD_ATTR_METHOD_LAZY_DICT;
 

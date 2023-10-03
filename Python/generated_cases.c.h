@@ -3739,6 +3739,14 @@
                 assert(type_version != 0);
                 DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
             }
+            // _CHECK_ATTR_METHOD_LAZY_DICT
+            {
+                Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
+                assert(dictoffset > 0);
+                PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+                /* This object has a __dict__, just not yet created */
+                DEOPT_IF(dict != NULL, LOAD_ATTR);
+            }
             // _LOAD_ATTR_METHOD_LAZY_DICT
             {
                 PyObject *descr = read_obj(&next_instr[5].cache);
