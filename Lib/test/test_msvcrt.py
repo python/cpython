@@ -85,7 +85,7 @@ class TestConsoleIO(unittest.TestCase):
             import msvcrt
             from _testconsole import write_input
             with open("CONIN$", "rb", buffering=0) as stdin:
-                write_input(stdin, {repr(c_encoded)})
+                write_input(stdin, {ascii(c_encoded)})
                 assert msvcrt.getwch() == "{c}"
         ''')
         self.run_in_separated_process(code)
