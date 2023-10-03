@@ -2470,7 +2470,6 @@ the context manager does nothing.
 
 .. _sqlite3-uri-tricks:
 
-
 How to work with SQLite URIs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
