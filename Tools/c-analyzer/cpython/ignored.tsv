@@ -50,6 +50,9 @@ Python/getversion.c	-	version	-
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
 
+## thread-safe hashtable (internal locks)
+Python/parking_lot.c	-	buckets	-
+
 
 ##################################
 ## state tied to Py_Main()
@@ -84,6 +87,10 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
+
+# Internal constant list
+Python/initconfig.c	-	PYCONFIG_SPEC	-
+
 
 ##-----------------------
 ## public C-API
@@ -205,14 +212,15 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
-Modules/_decimal/_decimal.c	-	cond_map	-
+Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
 Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
 Modules/_decimal/_decimal.c	-	invalid_signals_err	-
-Modules/_decimal/_decimal.c	-	signal_map	-
+Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
+Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
 Modules/_hashopenssl.c	-	py_hashes	-
 Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
@@ -326,7 +334,7 @@ Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
 Parser/tokenizer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
-Python/ceval.c	-	binary_ops	-
+Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
 Python/codecs.c	-	ucnhash_capi	-
@@ -418,6 +426,8 @@ Modules/_testbuffer.c	staticarray_init	kwlist	-
 Modules/_testcapi/buffer.c	-	testBufType	-
 Modules/_testcapi/code.c	get_code_extra_index	key	-
 Modules/_testcapi/datetime.c	-	test_run_counter	-
+Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
+Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
 Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
 Modules/_testcapi/mem.c	-	FmData	-
@@ -428,6 +438,7 @@ Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
 Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
 Modules/_testcapi/watchers.c	-	g_type_modified_events	-
 Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
+Modules/_testcapi/watchers.c	-	code_watcher_ids	-
 Modules/_testcapi/watchers.c	-	num_code_object_created_events	-
 Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
 Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
@@ -573,15 +584,15 @@ Modules/_testmultiphase.c	-	uninitialized_def	-
 Modules/_testsinglephase.c	-	global_state	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
-Modules/_xxtestfuzz/fuzzer.c	-	SRE_FLAG_DEBUG	-
+Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
 Modules/_xxtestfuzz/fuzzer.c	-	json_loads_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	regex_patterns	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_compile_method	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_error_exception	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
@@ -713,3 +724,5 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Python/optimizer_analysis.c	-	_Py_PartitionRootNode_Type	-
+Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-

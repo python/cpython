@@ -1134,7 +1134,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1175,7 +1175,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       Unlike :meth:`assertLogs`, nothing will be returned by the context
       manager.
@@ -2017,7 +2017,7 @@ Loading and running tests
 
    .. attribute:: collectedDurations
 
-      A list containing 2-tuples of :class:`TestCase` instances and floats
+      A list containing 2-tuples of test case names and floats
       representing the elapsed time of each test which was run.
 
       .. versionadded:: 3.12

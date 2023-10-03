@@ -207,10 +207,6 @@
 
 .. data:: OP
 
-.. data:: AWAIT
-
-.. data:: ASYNC
-
 .. data:: TYPE_IGNORE
 
 .. data:: TYPE_COMMENT

@@ -17,14 +17,22 @@ operations (explained below).
 
 Interface summary:
 
-.. function:: copy(x)
+.. function:: copy(obj)
 
-   Return a shallow copy of *x*.
+   Return a shallow copy of *obj*.
 
 
-.. function:: deepcopy(x[, memo])
+.. function:: deepcopy(obj[, memo])
 
-   Return a deep copy of *x*.
+   Return a deep copy of *obj*.
+
+
+.. function:: replace(obj, /, **changes)
+
+   Creates a new object of the same type as *obj*, replacing fields with values
+   from *changes*.
+
+   .. versionadded:: 3.13
 
 
 .. exception:: Error
@@ -79,14 +87,40 @@ pickle functions from the :mod:`copyreg` module.
    single: __copy__() (copy protocol)
    single: __deepcopy__() (copy protocol)
 
+.. currentmodule:: None
+
 In order for a class to define its own copy implementation, it can define
-special methods :meth:`__copy__` and :meth:`__deepcopy__`.  The former is called
-to implement the shallow copy operation; no additional arguments are passed.
-The latter is called to implement the deep copy operation; it is passed one
-argument, the ``memo`` dictionary.  If the :meth:`__deepcopy__` implementation needs
-to make a deep copy of a component, it should call the :func:`deepcopy` function
-with the component as first argument and the memo dictionary as second argument.
-The memo dictionary should be treated as an opaque object.
+special methods :meth:`~object.__copy__` and :meth:`~object.__deepcopy__`.
+
+.. method:: object.__copy__(self)
+   :noindexentry:
+
+   Called to implement the shallow copy operation;
+   no additional arguments are passed.
+
+.. method:: object.__deepcopy__(self, memo)
+   :noindexentry:
+
+   Called to implement the deep copy operation; it is passed one
+   argument, the *memo* dictionary.  If the ``__deepcopy__`` implementation needs
+   to make a deep copy of a component, it should call the :func:`~copy.deepcopy` function
+   with the component as first argument and the *memo* dictionary as second argument.
+   The *memo* dictionary should be treated as an opaque object.
+
+
+.. index::
+   single: __replace__() (replace protocol)
+
+Function :func:`!copy.replace` is more limited
+than :func:`~copy.copy` and :func:`~copy.deepcopy`,
+and only supports named tuples created by :func:`~collections.namedtuple`,
+:mod:`dataclasses`, and other classes which define method :meth:`~object.__replace__`.
+
+.. method:: object.__replace__(self, /, **changes)
+   :noindexentry:
+
+   This method should create a new object of the same type,
+   replacing fields with values from *changes*.
 
 
 .. seealso::

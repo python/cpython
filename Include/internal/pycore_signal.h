@@ -10,11 +10,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"         // _Py_atomic_address
-#include <signal.h>                // NSIG
+#include "pycore_atomic.h"        // _Py_atomic_address
+#include <signal.h>               // NSIG
 
 
-/* Restore signals that the interpreter has called SIG_IGN on to SIG_DFL. */
+// Restore signals that the interpreter has called SIG_IGN on to SIG_DFL.
+// Export for '_posixsubprocess' shared extension.
 PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 #ifdef _SIG_MAXSIG
@@ -93,6 +94,15 @@ struct _signals_runtime_state {
         .wakeup = _signals_WAKEUP_INIT, \
     }
 
+
+// Export for '_multiprocessing' shared extension
+PyAPI_FUNC(int) _PyOS_IsMainThread(void);
+
+#ifdef MS_WINDOWS
+// <windows.h> is not included by Python.h so use void* instead of HANDLE.
+// Export for '_multiprocessing' shared extension
+PyAPI_FUNC(void*) _PyOS_SigintEvent(void);
+#endif
 
 #ifdef __cplusplus
 }

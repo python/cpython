@@ -14,8 +14,8 @@ are always available.  They are listed here in alphabetical order.
 | |  :func:`abs`          | |  :func:`enumerate`  | |  :func:`len`        | |  |func-range|_        |
 | |  :func:`aiter`        | |  :func:`eval`       | |  |func-list|_       | |  :func:`repr`         |
 | |  :func:`all`          | |  :func:`exec`       | |  :func:`locals`     | |  :func:`reversed`     |
-| |  :func:`any`          | |                     | |                     | |  :func:`round`        |
-| |  :func:`anext`        | |  **F**              | |  **M**              | |                       |
+| |  :func:`anext`        | |                     | |                     | |  :func:`round`        |
+| |  :func:`any`          | |  **F**              | |  **M**              | |                       |
 | |  :func:`ascii`        | |  :func:`filter`     | |  :func:`map`        | |  **S**                |
 | |                       | |  :func:`float`      | |  :func:`max`        | |  |func-set|_          |
 | |  **B**                | |  :func:`format`     | |  |func-memoryview|_ | |  :func:`setattr`      |
@@ -794,7 +794,7 @@ are always available.  They are listed here in alphabetical order.
 
       For objects with custom :meth:`__hash__` methods, note that :func:`hash`
       truncates the return value based on the bit width of the host machine.
-      See :meth:`__hash__` for details.
+      See :meth:`__hash__ <object.__hash__>` for details.
 
 .. function:: help()
               help(request)
@@ -1231,7 +1231,7 @@ are always available.  They are listed here in alphabetical order.
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer is
      chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :attr:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
+     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
      the buffer will typically be 4096 or 8192 bytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
@@ -1271,7 +1271,7 @@ are always available.  They are listed here in alphabetical order.
 
    * ``'xmlcharrefreplace'`` is only supported when writing to a file.
      Characters not supported by the encoding are replaced with the
-     appropriate XML character reference ``&#nnn;``.
+     appropriate XML character reference :samp:`&#{nnn};`.
 
    * ``'backslashreplace'`` replaces malformed data by Python's backslashed
      escape sequences.
@@ -1631,7 +1631,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. class:: slice(stop)
-           slice(start, stop, step=1)
+           slice(start, stop, step=None)
 
    Return a :term:`slice` object representing the set of indices specified by
    ``range(start, stop, step)``.  The *start* and *step* arguments default to
@@ -1752,7 +1752,7 @@ are always available.  They are listed here in alphabetical order.
       The *start* parameter can be specified as a keyword argument.
 
    .. versionchanged:: 3.12 Summation of floats switched to an algorithm
-      that gives higher accuracy on most builds.
+      that gives higher accuracy and better commutativity on most builds.
 
 
 .. class:: super()

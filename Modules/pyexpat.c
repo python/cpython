@@ -4,11 +4,11 @@
 
 #include "Python.h"
 #include "pycore_import.h"        // _PyImport_SetModule()
-#include <ctype.h>
+#include "pycore_pyhash.h"        // _Py_HashSecret
+#include "pycore_traceback.h"     // _PyTraceback_Add()
 
-#include "structmember.h"         // PyMemberDef
+#include <stddef.h>               // offsetof()
 #include "expat.h"
-
 #include "pyexpat.h"
 
 /* Do not emit Clinic output to a file as that wreaks havoc with conditionally
@@ -832,7 +832,7 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
 
     pyexpat_state *state = PyType_GetModuleState(cls);
 
-    if (_PyObject_LookupAttr(file, state->str_read, &readmethod) < 0) {
+    if (PyObject_GetOptionalAttr(file, state->str_read, &readmethod) < 0) {
         return NULL;
     }
     if (readmethod == NULL) {
@@ -1470,7 +1470,7 @@ xmlparse_specified_attributes_setter(xmlparseobject *self, PyObject *v, void *cl
 }
 
 static PyMemberDef xmlparse_members[] = {
-    {"intern", T_OBJECT, offsetof(xmlparseobject, intern), READONLY, NULL},
+    {"intern", _Py_T_OBJECT, offsetof(xmlparseobject, intern), Py_READONLY, NULL},
     {NULL}
 };
 
@@ -1655,8 +1655,7 @@ add_submodule(PyObject *mod, const char *fullname)
     Py_DECREF(mod_name);
 
     /* gives away the reference to the submodule */
-    if (PyModule_AddObject(mod, name, submodule) < 0) {
-        Py_DECREF(submodule);
+    if (PyModule_Add(mod, name, submodule) < 0) {
         return NULL;
     }
 
@@ -1812,16 +1811,13 @@ add_errors_module(PyObject *mod)
         goto error;
     }
 
-    int rc = PyModule_AddObjectRef(errors_module, "codes", codes_dict);
-    Py_CLEAR(codes_dict);
-    if (rc < 0) {
-        goto error;
+    if (PyModule_Add(errors_module, "codes", codes_dict) < 0) {
+        Py_DECREF(rev_codes_dict);
+        return -1;
     }
 
-    rc = PyModule_AddObjectRef(errors_module, "messages", rev_codes_dict);
-    Py_CLEAR(rev_codes_dict);
-    if (rc < 0) {
-        goto error;
+    if (PyModule_Add(errors_module, "messages", rev_codes_dict) < 0) {
+        return -1;
     }
 
     return 0;
@@ -1889,10 +1885,7 @@ add_features(PyObject *mod)
             goto error;
         }
     }
-    if (PyModule_AddObject(mod, "features", list) < 0) {
-        goto error;
-    }
-    return 0;
+    return PyModule_Add(mod, "features", list);
 
 error:
     Py_DECREF(list);
@@ -1961,8 +1954,7 @@ pyexpat_exec(PyObject *mod)
                                               info.major,
                                               info.minor,
                                               info.micro);
-        if (PyModule_AddObject(mod, "version_info", versionInfo) < 0) {
-            Py_DECREF(versionInfo);
+        if (PyModule_Add(mod, "version_info", versionInfo) < 0) {
             return -1;
         }
     }
@@ -2042,8 +2034,7 @@ pyexpat_exec(PyObject *mod)
         return -1;
     }
 
-    if (PyModule_AddObject(mod, "expat_CAPI", capi_object) < 0) {
-        Py_DECREF(capi_object);
+    if (PyModule_Add(mod, "expat_CAPI", capi_object) < 0) {
         return -1;
     }
 

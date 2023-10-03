@@ -13,10 +13,6 @@
 
 #include "Python.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif /* HAVE_SYS_TYPES_H */
@@ -591,17 +587,17 @@ stat_exec(PyObject *module)
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_TEMPORARY);
     ADD_INT_MACRO(module, FILE_ATTRIBUTE_VIRTUAL);
 
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_SYMLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_SYMLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_MOUNT_POINT",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_MOUNT_POINT",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT)) < 0) {
+        return -1;
     }
-    if (PyModule_AddObject(module, "IO_REPARSE_TAG_APPEXECLINK",
-                           PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
-            return -1;
+    if (PyModule_Add(module, "IO_REPARSE_TAG_APPEXECLINK",
+            PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK)) < 0) {
+        return -1;
     }
 #endif
 
@@ -631,7 +627,3 @@ PyInit__stat(void)
 {
     return PyModuleDef_Init(&statmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

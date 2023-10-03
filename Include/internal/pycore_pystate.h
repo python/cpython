@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"   /* PyRuntimeState */
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 /* Check if the current thread is the main thread.
@@ -36,9 +36,18 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 static inline int
 _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
 {
-    return (_PyRuntimeState_GetFinalizing(interp->runtime) != NULL &&
-            interp == &interp->runtime->_main_interpreter);
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
 }
+
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
 
 
 static inline const PyConfig *
@@ -66,7 +75,16 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 #if defined(HAVE_THREAD_LOCAL) && !defined(Py_BUILD_CORE_MODULE)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
-PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
+
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
+// Export for most shared extensions, used via _PyThreadState_GET() static
+// inline function.
+PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
 /* Get the current Python thread state.
 
@@ -121,15 +139,11 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_New(PyInterpreterState *interp);
-PyAPI_FUNC(void) _PyThreadState_Bind(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
+extern void _PyThreadState_Bind(PyThreadState *tstate);
+extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 
-extern void _PyThreadState_InitDetached(PyThreadState *, PyInterpreterState *);
-extern void _PyThreadState_ClearDetached(PyThreadState *);
-extern void _PyThreadState_BindDetached(PyThreadState *);
-extern void _PyThreadState_UnbindDetached(PyThreadState *);
-
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyThreadState_GetDict(PyThreadState *tstate);
 
 /* The implementation of sys._current_frames()  Returns a dict mapping
@@ -145,25 +159,25 @@ extern PyObject* _PyThread_CurrentExceptions(void);
 
 /* Other */
 
-PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
+extern PyThreadState * _PyThreadState_Swap(
     _PyRuntimeState *runtime,
     PyThreadState *newts);
 
-PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
+extern PyStatus _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 
 #ifdef HAVE_FORK
 extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
 
-
+// Export for the stable ABI
 PyAPI_FUNC(int) _PyState_AddModule(
     PyThreadState *tstate,
     PyObject* module,
     PyModuleDef* def);
 
 
-PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
+extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 #define HEAD_LOCK(runtime) \
     PyThread_acquire_lock((runtime)->interpreters.mutex, WAIT_LOCK)
@@ -172,8 +186,17 @@ PyAPI_FUNC(int) _PyOS_InterruptOccurred(PyThreadState *tstate);
 
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
+// Export for test_peg_generator.
 PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 
+// Get the single PyInterpreterState used by this process' GILState
+// implementation.
+//
+// This function doesn't check for error. Return NULL before _PyGILState_Init()
+// is called and after _PyGILState_Fini() is called.
+//
+// See also PyInterpreterState_Get() and _PyInterpreterState_GET().
+extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
 #ifdef __cplusplus
 }

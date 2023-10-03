@@ -44,7 +44,7 @@ Any object can be tested for truth value, for use in an :keyword:`if` or
 .. index:: single: true
 
 By default, an object is considered true unless its class defines either a
-:meth:`__bool__` method that returns ``False`` or a :meth:`__len__` method that
+:meth:`~object.__bool__` method that returns ``False`` or a :meth:`__len__` method that
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
@@ -282,7 +282,7 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x / y``           | quotient of *x* and *y*         |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
-| ``x // y``          | floored quotient of *x* and     | \(1)    |                    |
+| ``x // y``          | floored quotient of *x* and     | \(1)\(2)|                    |
 |                     | *y*                             |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
 | ``x % y``           | remainder of ``x / y``          | \(2)    |                    |
@@ -319,8 +319,10 @@ the operations, see :ref:`operator-summary`):
 Notes:
 
 (1)
-   Also referred to as integer division.  The resultant value is a whole
-   integer, though the result's type is not necessarily int.  The result is
+   Also referred to as integer division.  For operands of type :class:`int`,
+   the result has type :class:`int`.  For operands of type :class:`float`,
+   the result has type :class:`float`.  In general, the result is a whole
+   integer, though the result's type is not necessarily :class:`int`.  The result is
    always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
    ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
@@ -1639,7 +1641,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1803,7 +1805,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1939,7 +1941,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2014,11 +2016,14 @@ expression support in the :mod:`re` module).
    .. versionadded:: 3.9
 
 
-.. method:: str.replace(old, new[, count])
+.. method:: str.replace(old, new, count=-1)
 
    Return a copy of the string with all occurrences of substring *old* replaced by
-   *new*.  If the optional argument *count* is given, only the first *count*
-   occurrences are replaced.
+   *new*.  If *count* is given, only the first *count* occurrences are replaced.
+   If *count* is not specified or ``-1``, then all occurrences are replaced.
+
+   .. versionchanged:: 3.13
+      *count* is now supported as a keyword argument.
 
 
 .. method:: str.rfind(sub[, start[, end]])
@@ -2285,7 +2290,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)
@@ -3950,7 +3955,7 @@ copying.
          >>> m = memoryview(bytearray(b'abc'))
          >>> mm = m.toreadonly()
          >>> mm.tolist()
-         [89, 98, 99]
+         [97, 98, 99]
          >>> mm[0] = 42
          Traceback (most recent call last):
            File "<stdin>", line 1, in <module>
@@ -4006,6 +4011,7 @@ copying.
       :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
+      Note that all byte lengths may depend on the operating system.
 
       Cast 1D/long to 1D/unsigned bytes::
 
@@ -4036,8 +4042,8 @@ copying.
          >>> x = memoryview(b)
          >>> x[0] = b'a'
          Traceback (most recent call last):
-           File "<stdin>", line 1, in <module>
-         ValueError: memoryview: invalid value for format "B"
+           ...
+         TypeError: memoryview: invalid type for format 'B'
          >>> y = x.cast('c')
          >>> y[0] = b'a'
          >>> b
@@ -4786,10 +4792,10 @@ An example of dictionary view usage::
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
    {'bacon'}
-   >>> keys ^ {'sausage', 'juice'}
-   {'juice', 'sausage', 'bacon', 'spam'}
-   >>> keys | ['juice', 'juice', 'juice']
-   {'juice', 'sausage', 'bacon', 'spam', 'eggs'}
+   >>> keys ^ {'sausage', 'juice'} == {'juice', 'sausage', 'bacon', 'spam'}
+   True
+   >>> keys | ['juice', 'juice', 'juice'] == {'bacon', 'spam', 'juice'}
+   True
 
    >>> # get back a read-only proxy for the original dictionary
    >>> values.mapping
@@ -4996,8 +5002,8 @@ exception to disallow mistakes like ``dict[str][str]``::
 
    >>> dict[str][str]
    Traceback (most recent call last):
-     File "<stdin>", line 1, in <module>
-   TypeError: There are no type variables left in dict[str]
+     ...
+   TypeError: dict[str] is not a generic class
 
 However, such expressions are valid when :ref:`type variables <generics>` are
 used.  The index must have as many elements as there are type variable items
@@ -5203,13 +5209,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       >>> isinstance("", int | str)
       True
 
-   However, union objects containing :ref:`parameterized generics
-   <types-genericalias>` cannot be used::
+   However, :ref:`parameterized generics <types-genericalias>` in
+   union objects cannot be checked::
 
-      >>> isinstance(1, int | list[int])
+      >>> isinstance(1, int | list[int])  # short-circuit evaluation
+      True
+      >>> isinstance([1], int | list[int])
       Traceback (most recent call last):
-        File "<stdin>", line 1, in <module>
-      TypeError: isinstance() argument 2 cannot contain a parameterized generic
+        ...
+      TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
 :data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
@@ -5512,7 +5520,7 @@ types, where they are relevant.  Some of these are not reported by the
    definition order.  Example::
 
       >>> int.__subclasses__()
-      [<class 'bool'>]
+      [<class 'bool'>, <enum 'IntEnum'>, <flag 'IntFlag'>, <class 're._constants._NamedIntConstant'>]
 
 
 .. _int_max_str_digits:
@@ -5548,7 +5556,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> _ = int('2' * 5432)
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 5432 digits; use sys.set_int_max_str_digits() to increase the limit
    >>> i = int('2' * 4300)
    >>> len(str(i))
    4300
@@ -5556,7 +5564,7 @@ When an operation would exceed the limit, a :exc:`ValueError` is raised:
    >>> len(str(i_squared))
    Traceback (most recent call last):
    ...
-   ValueError: Exceeds the limit (4300 digits) for integer string conversion: value has 8599 digits; use sys.set_int_max_str_digits() to increase the limit.
+   ValueError: Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit
    >>> len(hex(i_squared))
    7144
    >>> assert int(hex(i_squared), base=16) == i*i  # Hexadecimal is unlimited.
@@ -5626,7 +5634,7 @@ From code, you can inspect the current limit and set a new one using these
   a getter and setter for the interpreter-wide limit. Subinterpreters have
   their own limit.
 
-Information about the default and minimum can be found in :attr:`sys.int_info`:
+Information about the default and minimum can be found in :data:`sys.int_info`:
 
 * :data:`sys.int_info.default_max_str_digits <sys.int_info>` is the compiled-in
   default limit.

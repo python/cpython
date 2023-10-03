@@ -1,6 +1,7 @@
 #include <stdbool.h>
 
 #include <Python.h>
+#include "pycore_bytesobject.h"   // _PyBytes_DecodeEscape()
 #include "pycore_unicodeobject.h" // _PyUnicode_DecodeUnicodeEscapeInternal()
 
 #include "tokenizer.h"

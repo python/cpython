@@ -237,6 +237,11 @@ static void check_stdio_details(const wchar_t *encoding, const wchar_t *errors)
     if (errors) {
         config_set_string(&config, &config.stdio_errors, errors);
     }
+#ifdef MS_WINDOWS
+    // gh-106659: On Windows, don't use _io._WindowsConsoleIO which always
+    // announce UTF-8 for sys.stdin.encoding.
+    config.legacy_windows_stdio = 1;
+#endif
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -703,6 +708,10 @@ static int test_init_from_config(void)
     config.pathconfig_warnings = 0;
 
     config.safe_path = 1;
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=");
+    config._pystats = 1;
+#endif
 
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
@@ -773,6 +782,9 @@ static void set_most_env_vars(void)
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
     putenv("PYTHONSAFEPATH=1");
     putenv("PYTHONINTMAXSTRDIGITS=4567");
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=1");
+#endif
 }
 
 

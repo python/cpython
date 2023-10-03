@@ -381,6 +381,7 @@ PYTHON_OBJS=	\
 		Python/context.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
+		Python/executor.o \
 		Python/flowgraph.o \
 		Python/frame.o \
 		Python/frozenmain.o \
@@ -399,11 +400,14 @@ PYTHON_OBJS=	\
 		Python/instrumentation.o \
 		Python/intrinsics.o \
 		Python/legacy_tracing.o \
+		Python/lock.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
+		Python/optimizer_analysis.o \
+		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -488,8 +492,6 @@ OBJECT_OBJS=	\
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
 
-DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
-
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS_OMIT_FROZEN=	\
@@ -502,7 +504,6 @@ LIBRARY_OBJS_OMIT_FROZEN=	\
 
 LIBRARY_OBJS=	\
 		$(LIBRARY_OBJS_OMIT_FROZEN) \
-		$(DEEPFREEZE_OBJS) \
 		Modules/getpath.o \
 		Python/frozen.o
 
@@ -767,15 +768,18 @@ coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
-	$(TESTRUNNER) $(TESTOPTS) || true
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) || true
 	@ # build lcov report
 	$(MAKE) coverage-lcov
 
 # Run "Argument Clinic" over all source files
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --exclude Lib/test/clinic.test.c --srcdir $(srcdir)
+
+.PHONY: clinic-tests
+clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py -f $(srcdir)/Lib/test/clinic.test.c
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -1055,7 +1059,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run deepfreeze.py
@@ -1156,7 +1160,7 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
@@ -1245,13 +1249,11 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 ############################################################################
 # Deepfreeze targets
 
-.PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
-
-DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
+DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
-Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
+$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
@@ -1278,8 +1280,6 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
 # END: deepfreeze modules
-	@echo "Note: Deepfreeze may have added some global objects,"
-	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1288,11 +1288,11 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
+# Dependencies which can add and/or remove _Py_ID() identifiers:
+# - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
-	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
-	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1314,9 +1314,10 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
+# "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
-regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
+regen-all: regen-cases regen-typeslots \
+	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
 	@echo
@@ -1419,20 +1420,6 @@ regen-ast:
 	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_ast_state.h $(srcdir)/Include/internal/pycore_ast_state.h.new
 	$(UPDATE_FILE) $(srcdir)/Python/Python-ast.c $(srcdir)/Python/Python-ast.c.new
 
-.PHONY: regen-opcode
-regen-opcode:
-	# Regenerate Include/opcode.h from Lib/opcode.py
-	# using Tools/build/generate_opcode_h.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_opcode_h.py \
-		$(srcdir)/Lib/opcode.py \
-		$(srcdir)/Lib/_opcode_metadata.py \
-		$(srcdir)/Include/opcode.h.new \
-		$(srcdir)/Include/internal/pycore_opcode.h.new \
-		$(srcdir)/Include/internal/pycore_intrinsics.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode.h $(srcdir)/Include/internal/pycore_opcode.h.new
-	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_intrinsics.h $(srcdir)/Include/internal/pycore_intrinsics.h.new
-
 .PHONY: regen-token
 regen-token:
 	# Regenerate Doc/library/token-list.inc from Grammar/Tokens
@@ -1532,35 +1519,56 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
-.PHONY: regen-opcode-targets
-regen-opcode-targets:
-	# Regenerate Python/opcode_targets.h from Lib/opcode.py
-	# using Python/makeopcodetargets.py
-	$(PYTHON_FOR_REGEN) $(srcdir)/Python/makeopcodetargets.py \
-		$(srcdir)/Python/opcode_targets.h.new
-	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
 
 .PHONY: regen-cases
 regen-cases:
 	# Regenerate various files from Python/bytecodes.c
+	# Pass CASESFLAG=-l to insert #line directives in the output
 	PYTHONPATH=$(srcdir)/Tools/cases_generator \
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/generate_cases.py -l
+	$(PYTHON_FOR_REGEN) \
+	    $(srcdir)/Tools/cases_generator/generate_cases.py \
+		$(CASESFLAG) \
+		-o $(srcdir)/Python/generated_cases.c.h.new \
+		-n $(srcdir)/Include/opcode_ids.h.new \
+		-t $(srcdir)/Python/opcode_targets.h.new \
+		-m $(srcdir)/Include/internal/pycore_opcode_metadata.h.new \
+		-e $(srcdir)/Python/executor_cases.c.h.new \
+		-p $(srcdir)/Lib/_opcode_metadata.py.new \
+		-a $(srcdir)/Python/abstract_interp_cases.c.h.new \
+		$(srcdir)/Python/bytecodes.c
+	$(UPDATE_FILE) $(srcdir)/Python/generated_cases.c.h $(srcdir)/Python/generated_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/opcode_ids.h $(srcdir)/Include/opcode_ids.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/opcode_targets.h $(srcdir)/Python/opcode_targets.h.new
+	$(UPDATE_FILE) $(srcdir)/Include/internal/pycore_opcode_metadata.h $(srcdir)/Include/internal/pycore_opcode_metadata.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/executor_cases.c.h $(srcdir)/Python/executor_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Python/abstract_interp_cases.c.h $(srcdir)/Python/abstract_interp_cases.c.h.new
+	$(UPDATE_FILE) $(srcdir)/Lib/_opcode_metadata.py $(srcdir)/Lib/_opcode_metadata.py.new
 
-Python/compile.o: $(srcdir)/Python/opcode_metadata.h
+Python/compile.o: $(srcdir)/Include/internal/pycore_opcode_metadata.h
 
 Python/ceval.o: \
 		$(srcdir)/Python/ceval_macros.h \
 		$(srcdir)/Python/condvar.h \
 		$(srcdir)/Python/generated_cases.c.h \
-		$(srcdir)/Python/opcode_metadata.h \
 		$(srcdir)/Python/opcode_targets.h
 
+Python/executor.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
+		$(srcdir)/Python/ceval_macros.h \
+		$(srcdir)/Python/executor_cases.c.h
+
 Python/flowgraph.o: \
-		$(srcdir)/Python/opcode_metadata.h
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h
 
 Python/optimizer.o: \
 		$(srcdir)/Python/executor_cases.c.h \
-		$(srcdir)/Python/opcode_metadata.h
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
+
+Python/optimizer_analysis.o: \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h
 
 Python/frozen.o: $(FROZEN_FILES_OUT)
 
@@ -1629,6 +1637,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
 		$(srcdir)/Include/opcode.h \
+		$(srcdir)/Include/opcode_ids.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
@@ -1699,6 +1708,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/optimizer.h \
 		$(srcdir)/Include/cpython/picklebufobject.h \
 		$(srcdir)/Include/cpython/pthread_stubs.h \
+		$(srcdir)/Include/cpython/pyatomic.h \
+		$(srcdir)/Include/cpython/pyatomic_gcc.h \
+		$(srcdir)/Include/cpython/pyatomic_std.h \
 		$(srcdir)/Include/cpython/pyctype.h \
 		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
@@ -1707,6 +1719,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/pystats.h \
 		$(srcdir)/Include/cpython/pythonrun.h \
 		$(srcdir)/Include/cpython/pythread.h \
 		$(srcdir)/Include/cpython/setobject.h \
@@ -1724,11 +1737,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
-		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
 		$(srcdir)/Include/internal/pycore_call.h \
+		$(srcdir)/Include/internal/pycore_capsule.h \
 		$(srcdir)/Include/internal/pycore_ceval.h \
 		$(srcdir)/Include/internal/pycore_ceval_state.h \
 		$(srcdir)/Include/internal/pycore_code.h \
@@ -1755,11 +1768,14 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_global_objects_fini_generated.h \
 		$(srcdir)/Include/internal/pycore_hamt.h \
 		$(srcdir)/Include/internal/pycore_hashtable.h \
+		$(srcdir)/Include/internal/pycore_identifier.h \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_list.h \
+		$(srcdir)/Include/internal/pycore_llist.h \
+		$(srcdir)/Include/internal/pycore_lock.h \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_modsupport.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
@@ -1768,8 +1784,10 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_object_state.h \
 		$(srcdir)/Include/internal/pycore_obmalloc.h \
 		$(srcdir)/Include/internal/pycore_obmalloc_init.h \
-		$(srcdir)/Include/internal/pycore_opcode.h \
+		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_opcode_utils.h \
+		$(srcdir)/Include/internal/pycore_optimizer.h \
+		$(srcdir)/Include/internal/pycore_parking_lot.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -1778,11 +1796,15 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_pymem.h \
 		$(srcdir)/Include/internal/pycore_pymem_init.h \
 		$(srcdir)/Include/internal/pycore_pystate.h \
+		$(srcdir)/Include/internal/pycore_pystats.h \
+		$(srcdir)/Include/internal/pycore_pythonrun.h \
 		$(srcdir)/Include/internal/pycore_pythread.h \
 		$(srcdir)/Include/internal/pycore_range.h \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_semaphore.h \
+		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
@@ -1815,8 +1837,8 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
-TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
-TESTTIMEOUT=	1200
+TESTRUNNER=	$(TESTPYTHON) -m test
+TESTTIMEOUT=
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
@@ -1826,56 +1848,38 @@ cleantest: all
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
+# Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
-		$(TESTRUNNER) $(TESTOPTS)
-
-# Run the full test suite twice - once without .pyc files, and once with.
-# In the past, we've had problems where bugs in the marshalling or
-# elsewhere caused bytecode read from .pyc files to behave differently
-# than bytecode generated directly from a .py source file.  Sometimes
-# the bytecode read from a .pyc file had the bug, sometimes the directly
-# generated bytecode.  This is sometimes a very shy bug needing a lot of
-# sample data.
-.PHONY: testall
-testall: all
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTRUNNER) -u all $(TESTOPTS)
-		$(TESTRUNNER) -u all $(TESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
 testuniversal: all
-		@if [ `arch` != 'i386' ]; then \
-			echo "This can only be used on OSX/i386" ;\
-			exit 1 ;\
-		fi
-		$(TESTRUNNER) -u all $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate \
-			./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
+	@if [ `arch` != 'i386' ]; then \
+		echo "This can only be used on OSX/i386" ;\
+		exit 1 ;\
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	$(RUNSHARED) /usr/libexec/oah/translate \
+		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Like testall, but with only one pass and without multiple processes.
-# Run an optional script to include information about the build environment.
+# Like test, but using --slow-ci which enables all test resources and use
+# longer timeout. Run an optional pybuildbot.identify script to include
+# information about the build environment.
 .PHONY: buildbottest
 buildbottest: all
-		-@if which pybuildbot.identify >/dev/null 2>&1; then \
-			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
-		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
-
-# Like testall, but run Python tests with HOSTRUNNER directly.
-.PHONY: hostrunnertest
-hostrunnertest: all
-	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+	-@if which pybuildbot.identify >/dev/null 2>&1; then \
+		pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 .PHONY: pythoninfo
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
-QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
+QUICKTESTOPTS=	-x test_subprocess test_io \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
@@ -1884,7 +1888,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
 
 .PHONY: quicktest
 quicktest: all
-		$(TESTRUNNER) $(QUICKTESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) $(QUICKTESTOPTS)
 
 # SSL tests
 .PHONY: multisslcompile
@@ -1924,8 +1928,7 @@ altinstall: commoninstall
 .PHONY: commoninstall
 commoninstall:  check-clean-src @FRAMEWORKALTINSTALLFIRST@ \
 		altbininstall libinstall inclinstall libainstall \
-		sharedinstall altmaninstall \
-		@FRAMEWORKALTINSTALLLAST@
+		sharedinstall altmaninstall @FRAMEWORKALTINSTALLLAST@
 
 # Install shared libraries enabled by Setup
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
@@ -2113,13 +2116,14 @@ LIBSUBDIRS=	asyncio \
 		wsgiref \
 		$(XMLLIBSUBDIRS) \
 		xmlrpc \
-		zipfile \
+		zipfile zipfile/_path \
 		zoneinfo \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
-		test/capath \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
 		test/data \
@@ -2128,14 +2132,19 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/encoded_modules \
 		test/leakers \
 		test/libregrtest \
+		test/mathdata \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cppext \
 		test/test_ctypes \
+		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
+		test/test_gdb \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2189,6 +2198,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_importlib/resources/zipdata02 \
 		test/test_importlib/source \
 		test/test_json \
+		test/test_module \
 		test/test_peg_generator \
 		test/test_sqlite3 \
 		test/test_tkinter \
@@ -2217,9 +2227,11 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_warnings \
 		test/test_warnings/data \
 		test/test_zipfile \
+		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tkinterdata \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
@@ -2570,6 +2582,7 @@ recheck:
 autoconf:
 	(cd $(srcdir); autoreconf -ivf -Werror)
 
+# See https://github.com/tiran/cpython_autoconf container
 .PHONY: regen-configure
 regen-configure:
 	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
@@ -2775,7 +2788,8 @@ MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_
 MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
-MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
+MODULE__TESTINTERNALCAPI_DEPS=$(srcdir)/Modules/_testinternalcapi/parts.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 
 CODECS_COMMON_HEADERS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h $(srcdir)/Modules/cjkcodecs/cjkcodecs.h

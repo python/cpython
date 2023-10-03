@@ -18,9 +18,7 @@
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "opcode.h"               // MAKE_CELL
-#include "structmember.h"         // PyMemberDef
 
-#include <ctype.h>
 #include <stddef.h>               // ptrdiff_t
 
 /*[clinic input]
@@ -235,6 +233,13 @@ _PyType_GetDict(PyTypeObject *self)
 {
     /* It returns a borrowed reference. */
     return lookup_tp_dict(self);
+}
+
+PyObject *
+PyType_GetDict(PyTypeObject *self)
+{
+    PyObject *dict = lookup_tp_dict(self);
+    return _Py_XNewRef(dict);
 }
 
 static inline void
@@ -579,8 +584,29 @@ _PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
     return PyUnicode_FromString(doc);
 }
 
+static const char *
+signature_from_flags(int flags)
+{
+    switch (flags & ~METH_COEXIST) {
+        case METH_NOARGS:
+            return "($self, /)";
+        case METH_NOARGS|METH_CLASS:
+            return "($type, /)";
+        case METH_NOARGS|METH_STATIC:
+            return "()";
+        case METH_O:
+            return "($self, object, /)";
+        case METH_O|METH_CLASS:
+            return "($type, object, /)";
+        case METH_O|METH_STATIC:
+            return "(object, /)";
+        default:
+            return NULL;
+    }
+}
+
 PyObject *
-_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc)
+_PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_doc, int flags)
 {
     const char *start = find_signature(name, internal_doc);
     const char *end;
@@ -590,6 +616,10 @@ _PyType_GetTextSignatureFromInternalDoc(const char *name, const char *internal_d
     else
         end = NULL;
     if (!end) {
+        start = signature_from_flags(flags);
+        if (start) {
+            return PyUnicode_FromString(start);
+        }
         Py_RETURN_NONE;
     }
 
@@ -928,16 +958,16 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 
 
 static PyMemberDef type_members[] = {
-    {"__basicsize__", T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),READONLY},
-    {"__itemsize__", T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), READONLY},
-    {"__flags__", T_ULONG, offsetof(PyTypeObject, tp_flags), READONLY},
+    {"__basicsize__", Py_T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),Py_READONLY},
+    {"__itemsize__", Py_T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), Py_READONLY},
+    {"__flags__", Py_T_ULONG, offsetof(PyTypeObject, tp_flags), Py_READONLY},
     /* Note that this value is misleading for static builtin types,
        since the memory at this offset will always be NULL. */
-    {"__weakrefoffset__", T_PYSSIZET,
-     offsetof(PyTypeObject, tp_weaklistoffset), READONLY},
-    {"__base__", T_OBJECT, offsetof(PyTypeObject, tp_base), READONLY},
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(PyTypeObject, tp_dictoffset), READONLY},
+    {"__weakrefoffset__", Py_T_PYSSIZET,
+     offsetof(PyTypeObject, tp_weaklistoffset), Py_READONLY},
+    {"__base__", _Py_T_OBJECT, offsetof(PyTypeObject, tp_base), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(PyTypeObject, tp_dictoffset), Py_READONLY},
     {0}
 };
 
@@ -1078,7 +1108,7 @@ type_module(PyTypeObject *type, void *context)
                 PyUnicode_InternInPlace(&mod);
         }
         else {
-            mod = Py_NewRef(&_Py_ID(builtins));
+            mod = &_Py_ID(builtins);
         }
     }
     return mod;
@@ -1422,7 +1452,7 @@ type_get_doc(PyTypeObject *type, void *context)
 static PyObject *
 type_get_text_signature(PyTypeObject *type, void *context)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc, 0);
 }
 
 static int
@@ -1444,24 +1474,17 @@ type_get_annotations(PyTypeObject *type, void *context)
     }
 
     PyObject *annotations;
-    /* there's no _PyDict_GetItemId without WithError, so let's LBYL. */
     PyObject *dict = lookup_tp_dict(type);
-    if (PyDict_Contains(dict, &_Py_ID(__annotations__))) {
-        annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
-        /*
-        ** PyDict_GetItemWithError could still fail,
-        ** for instance with a well-timed Ctrl-C or a MemoryError.
-        ** so let's be totally safe.
-        */
-        if (annotations) {
-            if (Py_TYPE(annotations)->tp_descr_get) {
-                annotations = Py_TYPE(annotations)->tp_descr_get(
-                        annotations, NULL, (PyObject *)type);
-            } else {
-                Py_INCREF(annotations);
-            }
+    annotations = PyDict_GetItemWithError(dict, &_Py_ID(__annotations__));
+    if (annotations) {
+        if (Py_TYPE(annotations)->tp_descr_get) {
+            annotations = Py_TYPE(annotations)->tp_descr_get(
+                    annotations, NULL, (PyObject *)type);
+        } else {
+            Py_INCREF(annotations);
         }
-    } else {
+    }
+    else if (!PyErr_Occurred()) {
         annotations = PyDict_New();
         if (annotations) {
             int result = PyDict_SetItem(
@@ -1493,11 +1516,10 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
         result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
     } else {
         /* delete */
-        if (!PyDict_Contains(dict, &_Py_ID(__annotations__))) {
-            PyErr_Format(PyExc_AttributeError, "__annotations__");
-            return -1;
-        }
         result = PyDict_DelItem(dict, &_Py_ID(__annotations__));
+        if (result < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
+            PyErr_SetString(PyExc_AttributeError, "__annotations__");
+        }
     }
 
     if (result == 0) {
@@ -1776,7 +1798,7 @@ traverse_slots(PyTypeObject *type, PyObject *self, visitproc visit, void *arg)
     n = Py_SIZE(type);
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
-        if (mp->type == T_OBJECT_EX) {
+        if (mp->type == Py_T_OBJECT_EX) {
             char *addr = (char *)self + mp->offset;
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
@@ -1813,7 +1835,7 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         assert(base->tp_dictoffset == 0);
         if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
             assert(type->tp_dictoffset == -1);
-            int err = _PyObject_VisitManagedDict(self, visit, arg);
+            int err = PyObject_VisitManagedDict(self, visit, arg);
             if (err) {
                 return err;
             }
@@ -1851,7 +1873,7 @@ clear_slots(PyTypeObject *type, PyObject *self)
     n = Py_SIZE(type);
     mp = _PyHeapType_GET_MEMBERS((PyHeapTypeObject *)type);
     for (i = 0; i < n; i++, mp++) {
-        if (mp->type == T_OBJECT_EX && !(mp->flags & READONLY)) {
+        if (mp->type == Py_T_OBJECT_EX && !(mp->flags & Py_READONLY)) {
             char *addr = (char *)self + mp->offset;
             PyObject *obj = *(PyObject **)addr;
             if (obj != NULL) {
@@ -1883,7 +1905,7 @@ subtype_clear(PyObject *self)
        __dict__ slots (as in the case 'self.__dict__ is self'). */
     if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
         if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
-            _PyObject_ClearManagedDict(self);
+            PyObject_ClearManagedDict(self);
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -2352,7 +2374,7 @@ static PyObject *
 class_name(PyObject *cls)
 {
     PyObject *name;
-    if (_PyObject_LookupAttr(cls, &_Py_ID(__name__), &name) == 0) {
+    if (PyObject_GetOptionalAttr(cls, &_Py_ID(__name__), &name) == 0) {
         name = PyObject_Repr(cls);
     }
     return name;
@@ -2420,7 +2442,7 @@ set_mro_error(PyObject **to_merge, Py_ssize_t to_merge_size, int *remain)
     n = PyDict_GET_SIZE(set);
 
     off = PyOS_snprintf(buf, sizeof(buf), "Cannot create a \
-consistent method resolution\norder (MRO) for bases");
+consistent method resolution order (MRO) for bases");
     i = 0;
     while (PyDict_Next(set, &i, &k, &v) && (size_t)off < sizeof(buf)) {
         PyObject *name = class_name(k);
@@ -3568,7 +3590,7 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
             if (mp->name == NULL) {
                 return -1;
             }
-            mp->type = T_OBJECT_EX;
+            mp->type = Py_T_OBJECT_EX;
             mp->offset = slotoffset;
 
             /* __dict__ and __weakref__ are already filtered out */
@@ -3857,16 +3879,14 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
         if (PyType_Check(base)) {
             continue;
         }
-        PyObject *mro_entries;
-        if (_PyObject_LookupAttr(base, &_Py_ID(__mro_entries__),
-                                 &mro_entries) < 0) {
+        int rc = PyObject_HasAttrWithError(base, &_Py_ID(__mro_entries__));
+        if (rc < 0) {
             return -1;
         }
-        if (mro_entries != NULL) {
+        if (rc) {
             PyErr_SetString(PyExc_TypeError,
                             "type() doesn't support MRO entry resolution; "
                             "use types.new_class()");
-            Py_DECREF(mro_entries);
             return -1;
         }
     }
@@ -4117,20 +4137,20 @@ _PyType_FromMetaclass_impl(
                 nmembers++;
                 if (strcmp(memb->name, "__weaklistoffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->type == Py_T_PYSSIZET);
+                    assert(memb->flags == Py_READONLY);
                     weaklistoffset = memb->offset;
                 }
                 if (strcmp(memb->name, "__dictoffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->type == Py_T_PYSSIZET);
+                    assert(memb->flags == Py_READONLY);
                     dictoffset = memb->offset;
                 }
                 if (strcmp(memb->name, "__vectorcalloffset__") == 0) {
                     // The PyMemberDef must be a Py_ssize_t and readonly
-                    assert(memb->type == T_PYSSIZET);
-                    assert(memb->flags == READONLY);
+                    assert(memb->type == Py_T_PYSSIZET);
+                    assert(memb->flags == Py_READONLY);
                     vectorcalloffset = memb->offset;
                 }
                 if (memb->flags & Py_RELATIVE_OFFSET) {
@@ -4265,9 +4285,9 @@ _PyType_FromMetaclass_impl(
         if (_allow_tp_new) {
             if (PyErr_WarnFormat(
                     PyExc_DeprecationWarning, 1,
-                    "Using PyType_Spec with metaclasses that have custom "
-                    "tp_new is deprecated and will no longer be allowed in "
-                    "Python 3.14.") < 0) {
+                    "Type %s uses PyType_Spec with a metaclass that has custom "
+                    "tp_new. This is deprecated and will no longer be allowed in "
+                    "Python 3.14.", spec->name) < 0) {
                 goto finally;
             }
         }
@@ -4966,9 +4986,6 @@ type_setattro(PyTypeObject *type, PyObject *name, PyObject *value)
     return res;
 }
 
-extern void
-_PyDictKeys_DecRef(PyDictKeysObject *keys);
-
 
 static void
 type_dealloc_common(PyTypeObject *type)
@@ -5140,7 +5157,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
     assert(aclass);
 
     /* Merge in the type's dict (if any). */
-    if (_PyObject_LookupAttr(aclass, &_Py_ID(__dict__), &classdict) < 0) {
+    if (PyObject_GetOptionalAttr(aclass, &_Py_ID(__dict__), &classdict) < 0) {
         return -1;
     }
     if (classdict != NULL) {
@@ -5151,7 +5168,7 @@ merge_class_dict(PyObject *dict, PyObject *aclass)
     }
 
     /* Recursively merge in the base types' (if any) dicts. */
-    if (_PyObject_LookupAttr(aclass, &_Py_ID(__bases__), &bases) < 0) {
+    if (PyObject_GetOptionalAttr(aclass, &_Py_ID(__bases__), &bases) < 0) {
         return -1;
     }
     if (bases != NULL) {
@@ -5977,7 +5994,7 @@ object_getstate_default(PyObject *obj, int required)
             PyObject *name, *value;
 
             name = Py_NewRef(PyList_GET_ITEM(slotnames, i));
-            if (_PyObject_LookupAttr(obj, name, &value) < 0) {
+            if (PyObject_GetOptionalAttr(obj, name, &value) < 0) {
                 Py_DECREF(name);
                 goto error;
             }
@@ -6374,7 +6391,7 @@ object___reduce_ex___impl(PyObject *self, int protocol)
         }
     }
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__reduce__), &reduce) < 0) {
         return NULL;
     }
     if (reduce != NULL) {
@@ -6493,7 +6510,7 @@ object___dir___impl(PyObject *self)
     PyObject *itsclass = NULL;
 
     /* Get __dict__ (which may or may not be a real dict...) */
-    if (_PyObject_LookupAttr(self, &_Py_ID(__dict__), &dict) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__dict__), &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -6513,7 +6530,7 @@ object___dir___impl(PyObject *self)
         goto error;
 
     /* Merge in attrs reachable from its class. */
-    if (_PyObject_LookupAttr(self, &_Py_ID(__class__), &itsclass) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__class__), &itsclass) < 0) {
         goto error;
     }
     /* XXX(tomer): Perhaps fall back to Py_TYPE(obj) if no
@@ -7487,7 +7504,7 @@ type_ready(PyTypeObject *type, int rerunbuiltin)
      * to get type objects into the doubly-linked list of all objects.
      * Still, not all type objects go through PyType_Ready.
      */
-    _Py_AddToAllObjects((PyObject *)type, 0);
+    _Py_AddToAllObjects((PyObject *)type);
 #endif
 
     /* Initialize tp_dict: _PyType_IsReady() tests if tp_dict != NULL */
@@ -8386,7 +8403,7 @@ method_is_overloaded(PyObject *left, PyObject *right, PyObject *name)
     PyObject *a, *b;
     int ok;
 
-    if (_PyObject_LookupAttr((PyObject *)(Py_TYPE(right)), name, &b) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)(Py_TYPE(right)), name, &b) < 0) {
         return -1;
     }
     if (b == NULL) {
@@ -8394,7 +8411,7 @@ method_is_overloaded(PyObject *left, PyObject *right, PyObject *name)
         return 0;
     }
 
-    if (_PyObject_LookupAttr((PyObject *)(Py_TYPE(left)), name, &a) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)(Py_TYPE(left)), name, &a) < 0) {
         Py_DECREF(b);
         return -1;
     }
@@ -10179,11 +10196,11 @@ typedef struct {
 } superobject;
 
 static PyMemberDef super_members[] = {
-    {"__thisclass__", T_OBJECT, offsetof(superobject, type), READONLY,
+    {"__thisclass__", _Py_T_OBJECT, offsetof(superobject, type), Py_READONLY,
      "the class invoking super()"},
-    {"__self__",  T_OBJECT, offsetof(superobject, obj), READONLY,
+    {"__self__",  _Py_T_OBJECT, offsetof(superobject, obj), Py_READONLY,
      "the instance invoking super(); may be None"},
-    {"__self_class__", T_OBJECT, offsetof(superobject, obj_type), READONLY,
+    {"__self_class__", _Py_T_OBJECT, offsetof(superobject, obj_type), Py_READONLY,
      "the type of the instance invoking super(); may be None"},
     {0}
 };
@@ -10366,7 +10383,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
         /* Try the slow way */
         PyObject *class_attr;
 
-        if (_PyObject_LookupAttr(obj, &_Py_ID(__class__), &class_attr) < 0) {
+        if (PyObject_GetOptionalAttr(obj, &_Py_ID(__class__), &class_attr) < 0) {
             return NULL;
         }
         if (class_attr != NULL &&

@@ -50,6 +50,25 @@ extern "C" {
 
    This function always succeeds. */
 
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrStringWithError(PyObject *o, const char *attr_name);
+
+   Returns 1 if object 'o' has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
+/* Implemented elsewhere:
+
+   int PyObject_HasAttrWithError(PyObject *o, PyObject *attr_name);
+
+   Returns 1 if o has the attribute attr_name, and 0 otherwise.
+   This is equivalent to the Python expression: hasattr(o,attr_name).
+   Returns -1 on failure. */
+
+
 /* Implemented elsewhere:
 
    PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name);
@@ -58,6 +77,38 @@ extern "C" {
    Returns the attribute value on success, or NULL on failure.
 
    This is the equivalent of the Python expression: o.attr_name. */
+
+
+/* Implemented elsewhere:
+
+   int PyObject_GetOptionalAttr(PyObject *obj, PyObject *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttr() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
+
+
+/* Implemented elsewhere:
+
+   int PyObject_GetOptionalAttrString(PyObject *obj, const char *attr_name, PyObject **result);
+
+   Variant of PyObject_GetAttrString() which doesn't raise AttributeError
+   if the attribute is not found.
+
+   If the attribute is found, return 1 and set *result to a new strong
+   reference to the attribute.
+   If the attribute is not found, return 0 and set *result to NULL;
+   the AttributeError is silenced.
+   If an error other than AttributeError is raised, return -1 and
+   set *result to NULL.
+*/
 
 
 /* Implemented elsewhere:
@@ -80,7 +131,7 @@ extern "C" {
 
    This is the equivalent of the Python statement o.attr_name=v. */
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttrString(PyObject *o, const char *attr_name);
 
@@ -88,17 +139,15 @@ extern "C" {
    -1 on failure.
 
    This is the equivalent of the Python statement: del o.attr_name. */
-#define PyObject_DelAttrString(O, A) PyObject_SetAttrString((O), (A), NULL)
 
 
-/* Implemented as a macro:
+/* Implemented elsewhere:
 
    int PyObject_DelAttr(PyObject *o, PyObject *attr_name);
 
    Delete attribute named attr_name, for object o. Returns -1
    on failure.  This is the equivalent of the Python
    statement: del o.attr_name. */
-#define  PyObject_DelAttr(O, A) PyObject_SetAttr((O), (A), NULL)
 
 
 /* Implemented elsewhere:
@@ -791,6 +840,18 @@ PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, const char *key);
    This function always succeeds. */
 PyAPI_FUNC(int) PyMapping_HasKey(PyObject *o, PyObject *key);
 
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyWithError(PyObject *o, PyObject *key);
+
+/* Return 1 if the mapping object has the key 'key', and 0 otherwise.
+   This is equivalent to the Python expression: key in o.
+   On failure, return -1. */
+
+PyAPI_FUNC(int) PyMapping_HasKeyStringWithError(PyObject *o, const char *key);
+
 /* On success, return a list or tuple of the keys in mapping object 'o'.
    On failure, return NULL. */
 PyAPI_FUNC(PyObject *) PyMapping_Keys(PyObject *o);
@@ -809,6 +870,21 @@ PyAPI_FUNC(PyObject *) PyMapping_Items(PyObject *o);
    This is the equivalent of the Python expression: o[key]. */
 PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o,
                                                const char *key);
+
+/* Variants of PyObject_GetItem() and PyMapping_GetItemString() which don't
+   raise KeyError if the key is not found.
+
+   If the key is found, return 1 and set *result to a new strong
+   reference to the corresponding value.
+   If the key is not found, return 0 and set *result to NULL;
+   the KeyError is silenced.
+   If an error other than KeyError is raised, return -1 and
+   set *result to NULL.
+*/
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyMapping_GetOptionalItem(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyMapping_GetOptionalItemString(PyObject *, const char *, PyObject **);
+#endif
 
 /* Map the string 'key' to the value 'v' in the mapping 'o'.
    Returns -1 on failure.
