@@ -167,6 +167,34 @@ def format_datetime(dt, usegmt=False):
     return _format_timetuple_and_zone(now, zone)
 
 
+def make_msgid(idstring=None, domain=None):
+    """Returns a string suitable for RFC 2822 compliant Message-ID, e.g:
+
+    <142480216486.20800.16526388040877946887@nightshade.la.mastaler.com>
+
+    Optional idstring if given is a string used to strengthen the
+    uniqueness of the message id.  Optional domain if given provides the
+    portion of the message id after the '@'.  It defaults to the locally
+    defined hostname.
+    """
+    # Lazy imports to speedup module import time
+    # (no other functions in email.utils need these modules)
+    import os
+    import random
+    import socket
+    timeval = int(time.time()*100)
+    pid = os.getpid()
+    randint = random.getrandbits(64)
+    if idstring is None:
+        idstring = ''
+    else:
+        idstring = '.' + idstring
+    if domain is None:
+        domain = socket.getfqdn()
+    msgid = '<%d.%d.%d%s@%s>' % (timeval, pid, randint, idstring, domain)
+    return msgid
+
+
 def parsedate_to_datetime(data):
     parsed_date_tz = _parsedate_tz(data)
     if parsed_date_tz is None:
@@ -324,11 +352,3 @@ def localtime(dt=None, isdst=None):
     if dt is None:
         dt = datetime.datetime.now()
     return dt.astimezone()
-
-
-def __getattr__(attr):
-    # lazy import, to speedup module import time
-    if attr == "make_msgid":
-        from ._msgid import make_msgid
-        return make_msgid
-    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
