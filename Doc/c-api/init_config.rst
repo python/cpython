@@ -880,9 +880,9 @@ PyConfig
 
    .. c:member:: int cpu_count
 
-      If the value of :c:member:`~PyConfig.cpu_count` is not ``-1`` then it will override
-      the return value of :func:`os.cpu_count` and :func:`os.process_cpu_count` functions
-      into *cpu_count*.
+      If the value of :c:member:`~PyConfig.cpu_count` is not ``-1`` then it will
+      override the return values of :func:`os.cpu_count`,
+      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
 
       Configured by the :samp:`-X cpu_count={n|default}` command line
       flag or the :envvar:`PYTHON_CPU_COUNT` environment variable.

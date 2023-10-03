@@ -231,8 +231,9 @@ The following implementation-specific options are available:\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
     The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
--X cpu_count=[n|default]: override CPU count of os.cpu_count() and os.process_cpu_count().\n\
-    This helps for users who need to limit CPU resources of a container system."
+-X cpu_count=[n|default]: Override the return value of os.cpu_count(),\n\
+    os.process_cpu_count(), and multiprocessing.cpu_count(). This can help users who need\n\
+    to limit resources in a container."
 
 #ifdef Py_STATS
 "\n\
@@ -270,6 +271,8 @@ static const char usage_envvars[] =
 "   locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
+"PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
+"   os.cpu_count(), and multiprocessing.cpu_count() if set to a positive integer.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"

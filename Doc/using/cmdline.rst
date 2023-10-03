@@ -546,11 +546,12 @@ Miscellaneous options
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
-   * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count` and :func:`os.process_cpu_count`.
+   * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
+     :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
-     This option is useful for users who need to limit CPU resources of a container system.
-     See also :envvar:`PYTHON_CPU_COUNT`.
-     If *n* is ``default``, :func:`os.cpu_count` and  :func:`os.process_cpu_count` are not overridden.
+     This option may be useful for users who need to limit CPU resources of a
+     container system. See also :envvar:`PYTHON_CPU_COUNT`.
+     If *n* is ``default``, nothing is overridden.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1073,8 +1074,8 @@ conflict.
 
 .. envvar:: PYTHON_CPU_COUNT
 
-   If this variable is set to a positive integer, it overrides
-   :func:`os.cpu_count` and and :func:`os.process_cpu_count` return result.
+   If this variable is set to a positive integer, it overrides the return
+   values of :func:`os.cpu_count` and :func:`os.process_cpu_count`.
 
    See also the :option:`-X cpu_count <-X>` command-line option.
 
