@@ -55,7 +55,6 @@ if 'posix' in _names:
     from posix import *
     try:
         from posix import _exit
-        from posix import _get_cpu_count_config
         __all__.append('_exit')
     except ImportError:
         pass
@@ -1139,7 +1138,7 @@ if name == 'nt':
         )
 
 
-if _exists('sched_getaffinity') and _get_cpu_count_config() != 'overridden':
+if _exists('sched_getaffinity') and sys._get_cpu_count_config() != 'overridden':
     def process_cpu_count():
         """
         Get the number of CPUs of the current process.

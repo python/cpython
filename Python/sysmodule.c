@@ -2290,6 +2290,23 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     return Py_NewRef(r);
 }
 
+/*[clinic input]
+sys._get_cpu_count_config
+Private function to get PyConfig.cpu_count is overridden or not
+[clinic start generated code]*/
+
+static PyObject *
+sys__get_cpu_count_config_impl(PyObject *module)
+/*[clinic end generated code: output=56db9f22b9ef5580 input=bb27289c04f47ce2]*/
+{
+    const PyConfig *config = _Py_GetConfig();
+    if (config->cpu_count > 0) {
+        return PyUnicode_FromString("overridden");
+    }
+    return PyUnicode_FromString("default");
+}
+
+
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2424,6 +2441,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_CLEAR_METHODDEF
     SYS__STATS_DUMP_METHODDEF
 #endif
+    SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

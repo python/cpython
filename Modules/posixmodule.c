@@ -14336,23 +14336,6 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
 /*[clinic input]
-os._get_cpu_count_config
-
-Private function to get PyConfig.cpu_count is overridden or not
-[clinic start generated code]*/
-
-static PyObject *
-os__get_cpu_count_config_impl(PyObject *module)
-/*[clinic end generated code: output=3b0ba7e445c9c6b2 input=312c6ed9a71c441c]*/
-{
-    const PyConfig *config = _Py_GetConfig();
-    if (config->cpu_count > 0) {
-        return PyUnicode_FromString("overridden");
-    }
-    return PyUnicode_FromString("default");
-}
-
-/*[clinic input]
 os.cpu_count
 
 Return the number of logical CPUs in the system.
@@ -15998,7 +15981,6 @@ static PyMethodDef posix_methods[] = {
     OS_LISTXATTR_METHODDEF
 
     OS_GET_TERMINAL_SIZE_METHODDEF
-    OS__GET_CPU_COUNT_CONFIG_METHODDEF
     OS_CPU_COUNT_METHODDEF
     OS_GET_INHERITABLE_METHODDEF
     OS_SET_INHERITABLE_METHODDEF

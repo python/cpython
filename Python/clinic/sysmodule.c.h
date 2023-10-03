@@ -1380,6 +1380,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
+"_get_cpu_count_config($module, /)\n"
+"--\n"
+"\n"
+"Private function to get PyConfig.cpu_count is overridden or not");
+
+#define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+
+static PyObject *
+sys__get_cpu_count_config_impl(PyObject *module);
+
+static PyObject *
+sys__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__get_cpu_count_config_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1423,4 +1441,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=549bb1f92a15f916 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbea7a14012dd3b7 input=a9049054013a1b77]*/
