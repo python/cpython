@@ -1603,9 +1603,11 @@ Virtual paths
 
    Unlike :class:`PurePath`, this class does not define any of the following
    magic methods:
-   :meth:`~os.PathLike.__fspath__`, :meth:`__bytes__`,
-   :meth:`__reduce__`, :meth:`__hash__`, :meth:`__eq__`,
-   :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, :meth:`__ge__`
+   :meth:`~os.PathLike.__fspath__`, :meth:`~object.__bytes__`,
+   :meth:`~object.__reduce__`,
+   :meth:`~object.__hash__`, :meth:`~object.__eq__`,
+   :meth:`~object.__lt__`, :meth:`~object.__le__`,
+   :meth:`~object.__gt__`, :meth:`~object.__ge__`.
 
    .. versionadded:: 3.13
 
@@ -1625,9 +1627,11 @@ Virtual paths
 
    Like its superclass :class:`PurePathBase` (and unlike :class:`PurePath` and
    :class:`Path`), this class does not define any of the following magic methods:
-   :meth:`~os.PathLike.__fspath__`, :meth:`__bytes__`,
-   :meth:`__reduce__`, :meth:`__hash__`, :meth:`__eq__`,
-   :meth:`__lt__`, :meth:`__le__`, :meth:`__gt__`, :meth:`__ge__`.
+   :meth:`~os.PathLike.__fspath__`, :meth:`~object.__bytes__`,
+   :meth:`~object.__reduce__`,
+   :meth:`~object.__hash__`, :meth:`~object.__eq__`,
+   :meth:`~object.__lt__`, :meth:`~object.__le__`,
+   :meth:`~object.__gt__`, :meth:`~object.__ge__`.
    In all other respects, its interface is identical to :class:`Path`.
 
    The default implementations of the most basic methods, like :meth:`stat`
