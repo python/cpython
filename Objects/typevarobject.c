@@ -200,7 +200,7 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -216,7 +216,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
     Py_VISIT(tv->evaluate_constraints);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -227,7 +227,7 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -744,7 +744,7 @@ paramspec_dealloc(PyObject *self)
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -757,7 +757,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -765,7 +765,7 @@ static int
 paramspec_clear(paramspecobject *self)
 {
     Py_CLEAR(self->bound);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -1026,7 +1026,7 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
@@ -1165,14 +1165,14 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
 static int
 typevartuple_clear(PyObject *self)
 {
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 

@@ -98,6 +98,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(pythonpath_env, WSTR_OPT),
     SPEC(home, WSTR_OPT),
     SPEC(platlibdir, WSTR),
+    SPEC(sys_path_0, WSTR_OPT),
     SPEC(module_search_paths_set, UINT),
     SPEC(module_search_paths, WSTR_LIST),
     SPEC(stdlib_dir, WSTR_OPT),
@@ -779,6 +780,7 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->exec_prefix);
     CLEAR(config->base_exec_prefix);
     CLEAR(config->platlibdir);
+    CLEAR(config->sys_path_0);
 
     CLEAR(config->filesystem_encoding);
     CLEAR(config->filesystem_errors);
@@ -3107,6 +3109,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     PySys_WriteStderr("  import site = %i\n", config->site_import);
     PySys_WriteStderr("  is in build tree = %i\n", config->_is_python_build);
     DUMP_CONFIG("stdlib dir", stdlib_dir);
+    DUMP_CONFIG("sys.path[0]", sys_path_0);
 #undef DUMP_CONFIG
 
 #define DUMP_SYS(NAME) \

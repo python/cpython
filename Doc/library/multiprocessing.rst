@@ -2221,7 +2221,7 @@ with the :class:`Pool` class.
    callbacks and has a parallel map implementation.
 
    *processes* is the number of worker processes to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
@@ -2255,6 +2255,10 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.4
       *context*
+
+   .. versionchanged:: 3.13
+      *processes* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
 
    .. note::
 
@@ -2782,7 +2786,7 @@ worker threads rather than worker processes.
    :meth:`~multiprocessing.pool.Pool.terminate` manually.
 
    *processes* is the number of worker threads to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.

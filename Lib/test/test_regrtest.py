@@ -148,6 +148,14 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
+        with os_helper.EnvironmentVarGuard() as env:
+            env['SOURCE_DATE_EPOCH'] = '1'
+
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertFalse(regrtest.randomize)
+            self.assertIsNone(regrtest.random_seed)
+
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
         self.assertEqual(ns.random_seed, 12345)
@@ -786,14 +794,6 @@ class ProgramsTestCase(BaseTestCase):
         # Lib/test/autotest.py
         script = os.path.join(self.testdir, 'autotest.py')
         args = [*self.python_args, script, *self.regrtest_args, *self.tests]
-        self.run_tests(args)
-
-    @unittest.skipUnless(sysconfig.is_python_build(),
-                         'run_tests.py script is not installed')
-    def test_tools_script_run_tests(self):
-        # Tools/scripts/run_tests.py
-        script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
-        args = [script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
 
     def run_batch(self, *args):

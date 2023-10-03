@@ -91,6 +91,13 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+  default number of worker threads and processes. Get the CPU affinity
+  if supported.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
 New Modules
 ===========
 
@@ -182,6 +189,10 @@ pathlib
 * Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
+
+* Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
+  object from a 'file' URI (``file:/``).
+  (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
@@ -990,6 +1001,12 @@ New Features
   references) now supports the :ref:`Limited API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -1285,3 +1302,6 @@ removed, although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
   * :c:func:`PyThread_ReInitTLS`: no longer needed.
+
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)

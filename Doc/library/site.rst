@@ -19,7 +19,7 @@ Importing this module will append site-specific paths to the module search path
 and add a few builtins, unless :option:`-S` was used.  In that case, this module
 can be safely imported with no automatic modifications to the module search path
 or additions to the builtins.  To explicitly trigger the usual site-specific
-additions, call the :func:`site.main` function.
+additions, call the :func:`main` function.
 
 .. versionchanged:: 3.3
    Importing the module used to trigger paths manipulation even when using
@@ -109,32 +109,40 @@ directory precedes the :file:`foo` directory because :file:`bar.pth` comes
 alphabetically before :file:`foo.pth`; and :file:`spam` is omitted because it is
 not mentioned in either path configuration file.
 
-.. index:: pair: module; sitecustomize
+:mod:`sitecustomize`
+--------------------
+
+.. module:: sitecustomize
 
 After these path manipulations, an attempt is made to import a module named
 :mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
 directory.  If this import fails with an :exc:`ImportError` or its subclass
-exception, and the exception's :attr:`name` attribute equals to ``'sitecustomize'``,
+exception, and the exception's :attr:`~ImportError.name`
+attribute equals to ``'sitecustomize'``,
 it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
 attempted output from :mod:`sitecustomize` is ignored.  Any other exception
 causes a silent and perhaps mysterious failure of the process.
 
-.. index:: pair: module; usercustomize
+:mod:`usercustomize`
+--------------------
+
+.. module:: usercustomize
 
 After this, an attempt is made to import a module named :mod:`usercustomize`,
 which can perform arbitrary user-specific customizations, if
-:data:`ENABLE_USER_SITE` is true.  This file is intended to be created in the
+:data:`~site.ENABLE_USER_SITE` is true.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
-its subclass exception, and the exception's :attr:`name` attribute equals to
-``'usercustomize'``, it is silently ignored.
+its subclass exception, and the exception's :attr:`~ImportError.name`
+attribute equals to ``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
 :mod:`sitecustomize` and :mod:`usercustomize` is still attempted.
 
+.. currentmodule:: site
 
 .. _rlcompleter-config:
 
@@ -191,7 +199,7 @@ Module contents
    :file:`~/Library/Python/{X.Y}` for macOS framework builds, and
    :file:`{%APPDATA%}\\Python` for Windows.  This value is used to
    compute the installation directories for scripts, data files, Python modules,
-   etc. for the user installation scheme.
+   etc. for the :ref:`user installation scheme <sysconfig-user-scheme>`.
    See also :envvar:`PYTHONUSERBASE`.
 
 
