@@ -61,7 +61,8 @@ c_encoded = b'\x57\x5b' # utf-16-le (which windows internally used) encoded char
 
 
 class TestConsoleIO(unittest.TestCase):
-    @requires_resource('gui')  # CREATE_NEW_CONSOLE will creates a "popup" window.
+    # CREATE_NEW_CONSOLE creates a "popup" window.
+    @requires_resource('gui')
     def run_in_separated_process(self, code):
         # Run test in a seprated process to avoid stdin conflicts.
         # See: gh-110147
