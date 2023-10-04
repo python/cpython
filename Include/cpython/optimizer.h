@@ -11,9 +11,11 @@ typedef struct _PyExecutorLinkListNode {
     struct _PyExecutorObject *previous;
 } _PyExecutorLinkListNode;
 
-/* Bloom filter with k = 6, m = 256 */
+/* Bloom filter with m = 256 */
+#define BLOOM_FILTER_WORDS 8
+
 typedef struct _bloom_filter {
-    uint32_t bits[8];
+    uint32_t bits[BLOOM_FILTER_WORDS];
 } _PyBloomFilter;
 
 typedef struct {

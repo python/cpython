@@ -953,10 +953,38 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
  *        Executor management
  ****************************************/
 
-static uint16_t
+/* We use a bloomfilter with k = 6, m = 256
+ * The choice of k and the following constants
+ * could do with a more rigourous analysis,
+ * but here is a simple analysis:
+ *
+ * We want to keep the false positive rate low.
+ * For n = 5 (a trace depends on 5 objects),
+ * we expect 30 bits set, giving a false positive
+ * rate of (30/256)**6 == 2.5e-6 which is plenty
+ * good enough.
+ *
+ * However with n = 10 we expect 60 bits set (worst case),
+ * giving a false positive of (60/256)**6 == 0.0001
+ *
+ * We choose k = 6, rather than a higher number as
+ * it means the false positive rate goes slower for high n.
+ *
+ * n = 15, k = 6 => fp = 0.18%
+ * n = 15, k = 8 => fp = 0.23%
+ * n = 20, k = 6 => fp = 1.1%
+ * n = 20, k = 8 => fp = 2.3%
+ *
+ * The above analysis assumes perfect hash functions,
+ * but we don't have those, so it is approximate.
+ */
+
+#define K 6
+
+static uint32_t
 address_to_hash(void *ptr, uint32_t seed, uint32_t multiplier) {
     assert(ptr != NULL);
-    uint16_t uhash = seed;
+    uint32_t uhash = seed;
     uintptr_t addr = (uintptr_t)ptr;
     for (int i = 0; i < SIZEOF_VOID_P; i++) {
         uhash ^= addr & 255;
@@ -966,31 +994,30 @@ address_to_hash(void *ptr, uint32_t seed, uint32_t multiplier) {
     return uhash;
 }
 
-static const uint32_t multipliers[3] = {
+static const uint32_t multipliers[2] = {
     _PyHASH_MULTIPLIER,
     110351524,
-    48271
 };
 
-static const uint32_t seeds[3] = {
+static const uint32_t seeds[2] = {
     20221211,
     2147483647,
-    1051,
 };
 
 static void
 address_to_hashes(void *ptr, _PyBloomFilter *bloom)
 {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
     /* Set k (6) bits */
-    for (int i = 0; i < 3; i++) {
-        uint16_t hash = address_to_hash(ptr, seeds[i], multipliers[i]);
-        int bit0 = hash & 255;
-        int bit1 = hash >> 8;
-        bloom->bits[bit0 >> 5] |= (1 << (bit0&31));
-        bloom->bits[bit1 >> 5] |= (1 << (bit1&31));
+    for (int i = 0; i < 2; i++) {
+        uint32_t hash = address_to_hash(ptr, seeds[i], multipliers[i]);
+        for (int j = 0; j < (K/2); j++) {
+            uint8_t bits = hash & 255;
+            bloom->bits[bits >> 5] |= (1 << (bits&31));
+            hash >>= 8;
+        }
     }
 }
 
@@ -999,7 +1026,7 @@ add_to_bloom_filter(_PyBloomFilter *bloom, PyObject *obj)
 {
     _PyBloomFilter hashes;
     address_to_hashes(obj, &hashes);
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] |= hashes.bits[i];
     }
 }
@@ -1007,7 +1034,7 @@ add_to_bloom_filter(_PyBloomFilter *bloom, PyObject *obj)
 static bool
 bloom_filter_may_contain(_PyBloomFilter *bloom, _PyBloomFilter *hashes)
 {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         if ((bloom->bits[i] & hashes->bits[i]) != hashes->bits[i]) {
             return false;
         }
@@ -1067,7 +1094,7 @@ void
 _Py_ExecutorInit(_PyExecutorObject *executor)
 {
     executor->vm_data.valid = true;
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         executor->vm_data.bloom.bits[i] = 0;
     }
     link_executor(executor);
@@ -1096,6 +1123,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
     _PyBloomFilter hashes;
     address_to_hashes(obj, &hashes);
     /* Walk the list of executors */
+    /* TO DO -- Use a tree to avoid traversing as many objects */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
