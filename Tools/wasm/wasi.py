@@ -9,15 +9,37 @@ import pathlib
 import shutil
 import subprocess
 import sysconfig
+import tempfile
 
 CHECKOUT = pathlib.Path(__file__).parent.parent.parent
 CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 HOST_TRIPLE = "wasm32-wasi"
 
 
-def section(title):
-    title = str(title)
-    print(title, "#" * (79 - len(title)))
+def section(working_dir):
+    """Print out a visible section header based on a working directory."""
+    print("#" * 80)
+    print("📁", working_dir)
+
+
+def call(command, *, quiet, **kwargs):
+    """Execute a command.
+
+    If 'quiet' is true, then redirect stdout and stderr to a temporary file.
+    """
+    print("❯", " ".join(command))
+    if not quiet:
+        stdout = None
+        stderr = None
+    else:
+        stdout = tempfile.NamedTemporaryFile("w", encoding="utf-8",
+                                             delete=False,
+                                             prefix="cpython-wasi-",
+                                             suffix=".log")
+        stderr = subprocess.STDOUT
+        print(f"Logging output to {stdout.name} ...")
+
+    subprocess.check_call(command, **kwargs, stdout=stdout, stderr=stderr)
 
 
 def build_platform():
@@ -36,11 +58,12 @@ def compile_host_python(context):
 
     section(build_dir)
 
-    if context.build_python:
+    if not context.build_python:
+        print("Skipped via --skip-build-python ...")
+    else:
         with contextlib.chdir(build_dir):
-            subprocess.check_call([CHECKOUT / "configure", "-C"])
-            subprocess.check_call(["make", "--jobs",
-                                   str(cpu_count()), "all"])
+            call([CHECKOUT / "configure", "-C"], quiet=context.quiet)
+            call(["make", "--jobs", str(cpu_count()), "all"], quiet=context.quiet)
 
     binary = build_dir / "python"
     cmd = [binary, "-c",
@@ -117,9 +140,10 @@ def compile_wasi_python(context, build_python, version):
                      f"--build={build_platform()}",
                      f"--with-build-python={build_python}"]
         configure_env = os.environ | env_additions | wasi_sdk_env(context)
-        subprocess.check_call(configure, env=configure_env)
-        subprocess.check_call(["make", "--jobs", str(cpu_count()), "all"],
-                              env=os.environ | env_additions)
+        call(configure, env=configure_env, quiet=context.quiet)
+        call(["make", "--jobs", str(cpu_count()), "all"],
+             env=os.environ | env_additions,
+             quiet=context.quiet)
 
     exec_script = build_dir / "python.sh"
     with exec_script.open("w", encoding="utf-8") as file:
@@ -138,6 +162,9 @@ def main():
     build.add_argument("--skip-build-python", action="store_false",
                        dest="build_python", default=True,
                        help="Skip building the build/host Python")
+    build.add_argument("--quiet", action="store_true", default=False,
+                       dest="quiet",
+                       help="Redirect output from subprocesses to a log file")
 
     context = parser.parse_args()
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
@@ -145,6 +172,7 @@ def main():
                          "see https://github.com/WebAssembly/wasi-sdk")
 
     build_python, version = compile_host_python(context)
+    print()
     compile_wasi_python(context, build_python, version)
 
 
