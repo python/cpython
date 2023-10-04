@@ -13,7 +13,7 @@ extern "C" {
 
 extern void _PySlice_Fini(PyInterpreterState *);
 
-PyAPI_FUNC(PyObject *)
+extern PyObject *
 _PyBuildSlice_ConsumeRefs(PyObject *start, PyObject *stop);
 
 #ifdef __cplusplus

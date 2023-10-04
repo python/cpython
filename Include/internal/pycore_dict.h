@@ -13,7 +13,7 @@ extern "C" {
 #include "pycore_object.h"        // PyDictOrValues
 
 // Unsafe flavor of PyDict_GetItemWithError(): no error checking
-PyAPI_FUNC(PyObject*) _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
+extern PyObject* _PyDict_GetItemWithError(PyObject *dp, PyObject *key);
 
 extern int _PyDict_DelItemIf(PyObject *mp, PyObject *key,
                              int (*predicate)(PyObject *value));
@@ -59,7 +59,7 @@ PyAPI_FUNC(PyObject*) _PyDict_Pop(PyObject *, PyObject *, PyObject *);
    of a key wins, if override is 2, a KeyError with conflicting key as
    argument is raised.
 */
-PyAPI_FUNC(int) _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
+extern int _PyDict_MergeEx(PyObject *mp, PyObject *other, int override);
 
 extern void _PyDict_DebugMallocStats(FILE *out);
 
@@ -113,10 +113,10 @@ extern Py_ssize_t _Py_dict_lookup(PyDictObject *mp, PyObject *key, Py_hash_t has
 
 extern Py_ssize_t _PyDict_LookupIndex(PyDictObject *, PyObject *);
 extern Py_ssize_t _PyDictKeys_StringLookup(PyDictKeysObject* dictkeys, PyObject *key);
-PyAPI_FUNC(PyObject *)_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
+extern PyObject *_PyDict_LoadGlobal(PyDictObject *, PyDictObject *, PyObject *);
 
 /* Consumes references to key and value */
-PyAPI_FUNC(int) _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
+extern int _PyDict_SetItem_Take2(PyDictObject *op, PyObject *key, PyObject *value);
 extern int _PyObjectDict_SetItem(PyTypeObject *tp, PyObject **dictptr, PyObject *name, PyObject *value);
 
 extern PyObject *_PyDict_Pop_KnownHash(PyObject *, PyObject *, Py_hash_t, PyObject *);
@@ -240,8 +240,8 @@ _PyDict_NotifyEvent(PyInterpreterState *interp,
 }
 
 extern PyObject *_PyObject_MakeDictFromInstanceAttributes(PyObject *obj, PyDictValues *values);
-PyAPI_FUNC(bool) _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
-PyAPI_FUNC(PyObject *)_PyDict_FromItems(
+extern bool _PyObject_MakeInstanceAttributesFromDict(PyObject *obj, PyDictOrValues *dorv);
+extern PyObject *_PyDict_FromItems(
         PyObject *const *keys, Py_ssize_t keys_offset,
         PyObject *const *values, Py_ssize_t values_offset,
         Py_ssize_t length);

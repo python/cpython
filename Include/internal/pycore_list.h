@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
+extern PyObject* _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
 
 
@@ -39,7 +39,7 @@ struct _Py_list_state {
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
-PyAPI_FUNC(int)
+extern int
 _PyList_AppendTakeRefListResize(PyListObject *self, PyObject *newitem);
 
 static inline int
@@ -77,7 +77,7 @@ typedef struct {
     PyListObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyListIterObject;
 
-PyAPI_FUNC(PyObject *)_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
+extern PyObject *_PyList_FromArraySteal(PyObject *const *src, Py_ssize_t n);
 
 #ifdef __cplusplus
 }

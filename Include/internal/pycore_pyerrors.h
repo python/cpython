@@ -95,7 +95,7 @@ extern void _PyErr_Fetch(
 
 extern PyObject* _PyErr_GetRaisedException(PyThreadState *tstate);
 
-PyAPI_FUNC(int) _PyErr_ExceptionMatches(
+extern int _PyErr_ExceptionMatches(
     PyThreadState *tstate,
     PyObject *exc);
 
@@ -114,18 +114,18 @@ extern void _PyErr_SetObject(
 
 extern void _PyErr_ChainStackItem(void);
 
-PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
+extern void _PyErr_Clear(PyThreadState *tstate);
 
 extern void _PyErr_SetNone(PyThreadState *tstate, PyObject *exception);
 
 extern PyObject* _PyErr_NoMemory(PyThreadState *tstate);
 
-PyAPI_FUNC(void) _PyErr_SetString(
+extern void _PyErr_SetString(
     PyThreadState *tstate,
     PyObject *exception,
     const char *string);
 
-PyAPI_FUNC(PyObject*) _PyErr_Format(
+extern PyObject* _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
