@@ -767,12 +767,27 @@ class TestSupport(unittest.TestCase):
         #self.assertEqual(available, 2)
 
     def test_copy_python_src_ignore(self):
-        src_dir = sysconfig.get_config_var('srcdir')
+        # Get source directory
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
         src_dir = os.path.abspath(src_dir)
 
-        ignored = {'.git', '__pycache__'}
+        # Check that the source code is available
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
+        landmark = os.path.join(src_dir, 'Modules')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
+
+        # Test support.copy_python_src_ignore()
 
         # Source code directory
+        ignored = {'.git', '__pycache__'}
         names = os.listdir(src_dir)
         self.assertEqual(support.copy_python_src_ignore(src_dir, names),
                          ignored | {'build'})
@@ -782,7 +797,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored | {'build', 'venv'})
 
-        # An other directory
+        # Another directory
         path = os.path.join(src_dir, 'Objects')
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored)
