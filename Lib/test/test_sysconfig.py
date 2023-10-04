@@ -19,6 +19,7 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        _expand_vars, _get_preferred_schemes, _main)
 import _imp
 import _osx_support
+import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -493,8 +494,10 @@ class TestSysConfig(unittest.TestCase):
                      'EXT_SUFFIX required for this test')
     @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
     def test_EXT_SUFFIX_in_vars(self):
+        expected = _sysconfig.config_vars()
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
+        self.assertEqual(vars['EXT_SUFFIX'], expected['EXT_SUFFIX'])
 
     @unittest.skipUnless(sys.platform == 'linux' and
                          hasattr(sys.implementation, '_multiarch'),

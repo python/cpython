@@ -959,6 +959,9 @@
     <ClCompile Include="..\Modules\symtablemodule.c">
       <Filter>Modules</Filter>
     </ClCompile>
+    <ClCompile Include="..\Modules\_sysconfig.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_threadmodule.c">
       <Filter>Modules</Filter>
     </ClCompile>

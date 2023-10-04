@@ -545,12 +545,13 @@ def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
     import _winapi
+    import _sysconfig
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
     # Add EXT_SUFFIX, SOABI, and Py_NOGIL
-    vars.update(_winapi._sysconfig_vars())
+    vars.update(_sysconfig.config_vars())
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):

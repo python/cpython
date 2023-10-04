@@ -1478,22 +1478,4 @@ exit:
 
     return return_value;
 }
-
-PyDoc_STRVAR(_winapi__sysconfig_vars__doc__,
-"_sysconfig_vars($module, /)\n"
-"--\n"
-"\n"
-"Returns a dictionary containing variables intended to be exposed by sysconfig.");
-
-#define _WINAPI__SYSCONFIG_VARS_METHODDEF    \
-    {"_sysconfig_vars", (PyCFunction)_winapi__sysconfig_vars, METH_NOARGS, _winapi__sysconfig_vars__doc__},
-
-static PyObject *
-_winapi__sysconfig_vars_impl(PyObject *module);
-
-static PyObject *
-_winapi__sysconfig_vars(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return _winapi__sysconfig_vars_impl(module);
-}
-/*[clinic end generated code: output=56bf6530df63a262 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6df38b5eb93f2e5a input=a9049054013a1b77]*/
