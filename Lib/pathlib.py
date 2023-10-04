@@ -1262,6 +1262,8 @@ class _PathBase(PurePath):
         uppermost parent of the path (equivalent to path.parents[-1]), and
         *parts* is a reversed list of parts following the anchor.
         """
+        if not self._tail:
+            return self, []
         return self._from_parsed_parts(self.drive, self.root, []), self._tail[::-1]
 
     def resolve(self, strict=False):
@@ -1271,18 +1273,16 @@ class _PathBase(PurePath):
         """
         if self._resolving:
             return self
+        path, parts = self._split_stack()
         try:
-            path = self.absolute()
+            path = path.absolute()
         except UnsupportedOperation:
-            path = self
+            pass
 
         # If the user has *not* overridden the `readlink()` method, then symlinks are unsupported
         # and (in non-strict mode) we can improve performance by not calling `stat()`.
         querying = strict or getattr(self.readlink, '_supported', True)
         link_count = 0
-        stat_cache = {}
-        target_cache = {}
-        path, parts = path._split_stack()
         while parts:
             part = parts.pop()
             if part == '..':
@@ -1294,40 +1294,35 @@ class _PathBase(PurePath):
                     # Delete '..' segment and its predecessor
                     path = path.parent
                     continue
-            # Join the current part onto the path.
-            path_parent = path
-            path = path._make_child_relpath(part)
+            next_path = path._make_child_relpath(part)
             if querying and part != '..':
-                path._resolving = True
+                next_path._resolving = True
                 try:
-                    st = stat_cache.get(path)
-                    if st is None:
-                        st = stat_cache[path] = path.stat(follow_symlinks=False)
+                    st = next_path.stat(follow_symlinks=False)
                     if S_ISLNK(st.st_mode):
                         # Like Linux and macOS, raise OSError(errno.ELOOP) if too many symlinks are
                         # encountered during resolution.
                         link_count += 1
                         if link_count >= _MAX_SYMLINKS:
-                            raise OSError(ELOOP, "Too many symbolic links in path", str(path))
-                        target = target_cache.get(path)
-                        if target is None:
-                            target = target_cache[path] = path.readlink()
-                        target, target_parts = target._split_stack()
+                            raise OSError(ELOOP, "Too many symbolic links in path", str(self))
+                        target, target_parts = next_path.readlink()._split_stack()
                         # If the symlink target is absolute (like '/etc/hosts'), set the current
-                        # path to its uppermost parent (like '/'). If not, the symlink target is
-                        # relative to the symlink parent, which we recorded earlier.
-                        path = target if target.root else path_parent
+                        # path to its uppermost parent (like '/').
+                        if target.root:
+                            path = target
                         # Add the symlink target's reversed tail parts (like ['hosts', 'etc']) to
                         # the stack of unresolved path parts.
                         parts.extend(target_parts)
+                        continue
                     elif parts and not S_ISDIR(st.st_mode):
-                        raise NotADirectoryError(ENOTDIR, "Not a directory", str(path))
+                        raise NotADirectoryError(ENOTDIR, "Not a directory", str(self))
                 except OSError:
                     if strict:
                         raise
                     else:
                         querying = False
-        path._resolving = False
+                next_path._resolving = False
+            path = next_path
         return path
 
     def symlink_to(self, target, target_is_directory=False):
