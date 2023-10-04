@@ -495,6 +495,8 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
+static void _xidregistry_clear(struct _xidregistry *);
+
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
 {
@@ -502,6 +504,8 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     /* The count is cleared by _Py_FinalizeRefTotal(). */
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
+
+    _xidregistry_clear(&runtime->xidregistry);
 
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
@@ -548,6 +552,11 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
     for (int i = 0; i < NUMLOCKS; i++) {
         reinit_err += _PyThread_at_fork_reinit(lockptrs[i]);
     }
+    /* PyOS_AfterFork_Child(), which calls this function, later calls
+       _PyInterpreterState_DeleteExceptMain(), so we only need to update
+       the main interpreter here. */
+    assert(runtime->interpreters.main != NULL);
+    runtime->interpreters.main->xidregistry.mutex = runtime->xidregistry.mutex;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -709,6 +718,10 @@ init_interpreter(PyInterpreterState *interp,
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
     interp->f_opcode_trace_set = false;
+
+    assert(runtime->xidregistry.mutex != NULL);
+    interp->xidregistry.mutex = runtime->xidregistry.mutex;
+
     interp->_initialized = 1;
     return _PyStatus_OK();
 }
@@ -929,6 +942,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+
+    _xidregistry_clear(&interp->xidregistry);
+    /* The lock is owned by the runtime, so we don't free it here. */
+    interp->xidregistry.mutex = NULL;
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
@@ -2613,23 +2630,27 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
    crossinterpdatafunc. It would be simpler and more efficient. */
 
 static int
-_xidregistry_add_type(struct _xidregistry *xidregistry, PyTypeObject *cls,
-                 crossinterpdatafunc getdata)
+_xidregistry_add_type(struct _xidregistry *xidregistry,
+                      PyTypeObject *cls, crossinterpdatafunc getdata)
 {
-    // Note that we effectively replace already registered classes
-    // rather than failing.
     struct _xidregitem *newhead = PyMem_RawMalloc(sizeof(struct _xidregitem));
     if (newhead == NULL) {
         return -1;
     }
-    // XXX Assign a callback to clear the entry from the registry?
-    newhead->cls = PyWeakref_NewRef((PyObject *)cls, NULL);
-    if (newhead->cls == NULL) {
-        PyMem_RawFree(newhead);
-        return -1;
+    *newhead = (struct _xidregitem){
+        // We do not keep a reference, to avoid keeping the class alive.
+        .cls = cls,
+        .refcount = 1,
+        .getdata = getdata,
+    };
+    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        // XXX Assign a callback to clear the entry from the registry?
+        newhead->weakref = PyWeakref_NewRef((PyObject *)cls, NULL);
+        if (newhead->weakref == NULL) {
+            PyMem_RawFree(newhead);
+            return -1;
+        }
     }
-    newhead->getdata = getdata;
-    newhead->prev = NULL;
     newhead->next = xidregistry->head;
     if (newhead->next != NULL) {
         newhead->next->prev = newhead;
@@ -2654,9 +2675,22 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
     if (next != NULL) {
         next->prev = entry->prev;
     }
-    Py_DECREF(entry->cls);
+    Py_XDECREF(entry->weakref);
     PyMem_RawFree(entry);
     return next;
+}
+
+static void
+_xidregistry_clear(struct _xidregistry *xidregistry)
+{
+    struct _xidregitem *cur = xidregistry->head;
+    xidregistry->head = NULL;
+    while (cur != NULL) {
+        struct _xidregitem *next = cur->next;
+        Py_XDECREF(cur->weakref);
+        PyMem_RawFree(cur);
+        cur = next;
+    }
 }
 
 static struct _xidregitem *
@@ -2664,29 +2698,54 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 {
     struct _xidregitem *cur = xidregistry->head;
     while (cur != NULL) {
-        PyObject *registered = _PyWeakref_GET_REF(cur->cls);
-        if (registered == NULL) {
-            // The weakly ref'ed object was freed.
-            cur = _xidregistry_remove_entry(xidregistry, cur);
-        }
-        else {
-            assert(PyType_Check(registered));
-            if (registered == (PyObject *)cls) {
-                Py_DECREF(registered);
-                return cur;
+        if (cur->weakref != NULL) {
+            // cur is/was a heap type.
+            PyObject *registered = _PyWeakref_GET_REF(cur->weakref);
+            if (registered == NULL) {
+                // The weakly ref'ed object was freed.
+                cur = _xidregistry_remove_entry(xidregistry, cur);
+                continue;
             }
+            assert(PyType_Check(registered));
+            assert(cur->cls == (PyTypeObject *)registered);
+            assert(cur->cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
             Py_DECREF(registered);
-            cur = cur->next;
         }
+        if (cur->cls == cls) {
+            return cur;
+        }
+        cur = cur->next;
     }
     return NULL;
 }
 
+static inline struct _xidregistry *
+_get_xidregistry(PyInterpreterState *interp, PyTypeObject *cls)
+{
+    struct _xidregistry *xidregistry = &interp->runtime->xidregistry;
+    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        assert(interp->xidregistry.mutex == xidregistry->mutex);
+        xidregistry = &interp->xidregistry;
+    }
+    return xidregistry;
+}
+
 static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry);
+
+static inline void
+_ensure_builtins_xid(PyInterpreterState *interp, struct _xidregistry *xidregistry)
+{
+    if (xidregistry != &interp->xidregistry) {
+        assert(xidregistry == &interp->runtime->xidregistry);
+        if (xidregistry->head == NULL) {
+            _register_builtins_for_crossinterpreter_data(xidregistry);
+        }
+    }
+}
 
 int
 _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
-                                       crossinterpdatafunc getdata)
+                                      crossinterpdatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
@@ -2697,12 +2756,23 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
         return -1;
     }
 
-    struct _xidregistry *xidregistry = &_PyRuntime.xidregistry ;
+    int res = 0;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
-    if (xidregistry->head == NULL) {
-        _register_builtins_for_crossinterpreter_data(xidregistry);
+
+    _ensure_builtins_xid(interp, xidregistry);
+
+    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    if (matched != NULL) {
+        assert(matched->getdata == getdata);
+        matched->refcount += 1;
+        goto finally;
     }
-    int res = _xidregistry_add_type(xidregistry, cls, getdata);
+
+    res = _xidregistry_add_type(xidregistry, cls, getdata);
+
+finally:
     PyThread_release_lock(xidregistry->mutex);
     return res;
 }
@@ -2711,13 +2781,20 @@ int
 _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
 {
     int res = 0;
-    struct _xidregistry *xidregistry = &_PyRuntime.xidregistry ;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
+
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
     if (matched != NULL) {
-        (void)_xidregistry_remove_entry(xidregistry, matched);
+        assert(matched->refcount > 0);
+        matched->refcount -= 1;
+        if (matched->refcount == 0) {
+            (void)_xidregistry_remove_entry(xidregistry, matched);
+        }
         res = 1;
     }
+
     PyThread_release_lock(xidregistry->mutex);
     return res;
 }
@@ -2730,17 +2807,19 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
 crossinterpdatafunc
 _PyCrossInterpreterData_Lookup(PyObject *obj)
 {
-    struct _xidregistry *xidregistry = &_PyRuntime.xidregistry ;
-    PyObject *cls = PyObject_Type(obj);
+    PyTypeObject *cls = Py_TYPE(obj);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
-    if (xidregistry->head == NULL) {
-        _register_builtins_for_crossinterpreter_data(xidregistry);
-    }
-    struct _xidregitem *matched = _xidregistry_find_type(xidregistry,
-                                                         (PyTypeObject *)cls);
-    Py_DECREF(cls);
+
+    _ensure_builtins_xid(interp, xidregistry);
+
+    struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
+    crossinterpdatafunc func = matched != NULL ? matched->getdata : NULL;
+
     PyThread_release_lock(xidregistry->mutex);
-    return matched != NULL ? matched->getdata : NULL;
+    return func;
 }
 
 /* cross-interpreter data for builtin types */
