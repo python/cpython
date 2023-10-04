@@ -1349,7 +1349,7 @@ class CAPITest(unittest.TestCase):
         # CRASHES equaltoutf8(b'abc', b'abc')
         # CRASHES equaltoutf8([], b'abc')
         # CRASHES equaltoutf8(NULL, b'abc')
-        # CRASHES equaltoutf8('abc')  # NULL
+        # CRASHES equaltoutf8('abc', NULL)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
