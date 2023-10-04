@@ -694,6 +694,19 @@ class TypeParamsClassScopeTest(unittest.TestCase):
         cls = ns["outer"]()
         self.assertEqual(cls.Alias.__value__, "class")
 
+    def test_nested_free(self):
+        ns = run_code("""
+            def f():
+                T = str
+                class C:
+                    T = int
+                    class D[U](T):
+                        x = T
+                return C
+        """)
+        C = ns["f"]()
+        self.assertIn(int, C.D.__bases__)
+        self.assertIs(C.D.x, str)
 
 class TypeParamsManglingTest(unittest.TestCase):
     def test_mangling(self):

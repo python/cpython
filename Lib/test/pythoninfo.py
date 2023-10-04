@@ -239,6 +239,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -268,6 +269,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -320,6 +322,7 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
@@ -335,7 +338,8 @@ def collect_os(info_add):
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -500,6 +504,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
@@ -516,6 +521,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'abs_builddir',
+        'abs_srcdir',
         'prefix',
         'srcdir',
     ):
@@ -952,6 +958,16 @@ def collect_tempfile(info_add):
 
     info_add('tempfile.gettempdir', tempfile.gettempdir())
 
+
+def collect_libregrtest_utils(info_add):
+    try:
+        from test.libregrtest import utils
+    except ImportError:
+        return
+
+    info_add('libregrtests.build_info', ' '.join(utils.get_build_info()))
+
+
 def collect_info(info):
     error = False
     info_add = info.add
@@ -991,6 +1007,7 @@ def collect_info(info):
         collect_tkinter,
         collect_windows,
         collect_zlib,
+        collect_libregrtest_utils,
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,

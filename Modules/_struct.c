@@ -2198,8 +2198,8 @@ static PyMemberDef s_members[] = {
 };
 
 static PyGetSetDef s_getsetlist[] = {
-    {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
-    {"size", (getter)s_get_size, (setter)NULL, "struct size in bytes", NULL},
+    {"format", (getter)s_get_format, (setter)NULL, PyDoc_STR("struct format string"), NULL},
+    {"size", (getter)s_get_size, (setter)NULL, PyDoc_STR("struct size in bytes"), NULL},
     {NULL} /* sentinel */
 };
 

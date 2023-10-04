@@ -154,7 +154,7 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-_PyInterpreterFrame *
+int
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
     assert(src->op.code == JUMP_BACKWARD);
@@ -162,18 +162,14 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
-        goto jump_to_destination;
+        return 0;
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
     int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
-        if (err < 0) {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            return NULL;
-        }
-        goto jump_to_destination;
+        return err;
     }
     int index = get_index_for_executor(code, src);
     if (index < 0) {
@@ -184,16 +180,11 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
          * it might get confused by the executor disappearing,
          * but there is not much we can do about that here. */
         Py_DECREF(executor);
-        goto jump_to_destination;
+        return 0;
     }
     insert_executor(code, src, index, executor);
-    assert(frame->prev_instr == src);
-    frame->prev_instr = dest - 1;
-    return executor->execute(executor, frame, stack_pointer);
-jump_to_destination:
-    frame->prev_instr = dest - 1;
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return frame;
+    Py_DECREF(executor);
+    return 1;
 }
 
 _PyExecutorObject *

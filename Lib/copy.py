@@ -122,13 +122,14 @@ def _deepcopy_fallback(x, memo=None, _nil=[]):
 
     See the module's __doc__ string for more info.
     """
-    if memo is None:
-        memo = {}
 
     d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
+    if memo is None:
+        memo = {}
+    else:
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
 
     cls = type(x)
 

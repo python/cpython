@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 import faulthandler
 import os.path
@@ -9,7 +10,7 @@ import tempfile
 import threading
 import time
 import traceback
-from typing import Literal
+from typing import Literal, TextIO
 
 from test import support
 from test.support import os_helper
@@ -17,11 +18,11 @@ from test.support import os_helper
 from .logger import Logger
 from .result import TestResult, State
 from .results import TestResults
-from .runtests import RunTests
+from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, MS_WINDOWS,
-    format_duration, print_warning, count, plural)
+    StrPath, TestName, MS_WINDOWS,
+    format_duration, print_warning, count, plural, get_signal_name)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -41,7 +42,10 @@ MAIN_PROCESS_TIMEOUT = 5 * 60.0
 assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
-JOIN_TIMEOUT = 30.0   # seconds
+WAIT_COMPLETED_TIMEOUT = 30.0   # seconds
+
+# Time to wait a killed process (in seconds)
+WAIT_KILLED_TIMEOUT = 60.0
 
 
 # We do not use a generator so multiple threads can call next().
@@ -83,6 +87,17 @@ class ExitThread(Exception):
     pass
 
 
+class WorkerError(Exception):
+    def __init__(self,
+                 test_name: TestName,
+                 err_msg: str | None,
+                 stdout: str | None,
+                 state: str):
+        result = TestResult(test_name, state=state)
+        self.mp_result = MultiprocessResult(result, stdout, err_msg)
+        super().__init__()
+
+
 class WorkerThread(threading.Thread):
     def __init__(self, worker_id: int, runner: "RunWorkers") -> None:
         super().__init__()
@@ -92,9 +107,9 @@ class WorkerThread(threading.Thread):
         self.output = runner.output
         self.timeout = runner.worker_timeout
         self.log = runner.log
-        self.current_test_name = None
-        self.start_time = None
-        self._popen = None
+        self.test_name: TestName | None = None
+        self.start_time: float | None = None
+        self._popen: subprocess.Popen[str] | None = None
         self._killed = False
         self._stopped = False
 
@@ -104,7 +119,7 @@ class WorkerThread(threading.Thread):
             info.append("running")
         else:
             info.append('stopped')
-        test = self.current_test_name
+        test = self.test_name
         if test:
             info.append(f'test={test}')
         popen = self._popen
@@ -126,7 +141,7 @@ class WorkerThread(threading.Thread):
         if USE_PROCESS_GROUP:
             what = f"{self} process group"
         else:
-            what = f"{self}"
+            what = f"{self} process"
 
         print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
@@ -147,25 +162,11 @@ class WorkerThread(threading.Thread):
         self._stopped = True
         self._kill()
 
-    def mp_result_error(
-        self,
-        test_result: TestResult,
-        stdout: str | None = None,
-        err_msg=None
-    ) -> MultiprocessResult:
-        return MultiprocessResult(test_result, stdout, err_msg)
-
-    def _run_process(self, runtests: RunTests, output_fd: int, json_fd: int,
-                     tmp_dir: StrPath | None = None) -> int:
-        try:
-            popen = create_worker_process(runtests, output_fd, json_fd,
-                                          tmp_dir)
-
-            self._killed = False
-            self._popen = popen
-        except:
-            self.current_test_name = None
-            raise
+    def _run_process(self, runtests: RunTests, output_fd: int,
+                     tmp_dir: StrPath | None = None) -> int | None:
+        popen = create_worker_process(runtests, output_fd, tmp_dir)
+        self._popen = popen
+        self._killed = False
 
         try:
             if self._stopped:
@@ -206,10 +207,9 @@ class WorkerThread(threading.Thread):
         finally:
             self._wait_completed()
             self._popen = None
-            self.current_test_name = None
 
-    def _runtest(self, test_name: TestName) -> MultiprocessResult:
-        self.current_test_name = test_name
+    def create_stdout(self, stack: contextlib.ExitStack) -> TextIO:
+        """Create stdout temporay file (file descriptor)."""
 
         if MS_WINDOWS:
             # gh-95027: When stdout is not a TTY, Python uses the ANSI code
@@ -219,85 +219,146 @@ class WorkerThread(threading.Thread):
         else:
             encoding = sys.stdout.encoding
 
+        # gh-94026: Write stdout+stderr to a tempfile as workaround for
+        # non-blocking pipes on Emscripten with NodeJS.
+        # gh-109425: Use "backslashreplace" error handler: log corrupted
+        # stdout+stderr, instead of failing with a UnicodeDecodeError and not
+        # logging stdout+stderr at all.
+        stdout_file = tempfile.TemporaryFile('w+',
+                                             encoding=encoding,
+                                             errors='backslashreplace')
+        stack.enter_context(stdout_file)
+        return stdout_file
+
+    def create_json_file(self, stack: contextlib.ExitStack) -> tuple[JsonFile, TextIO | None]:
+        """Create JSON file."""
+
+        json_file_use_stdout = self.runtests.json_file_use_stdout()
+        if json_file_use_stdout:
+            json_file = JsonFile(None, JsonFileType.STDOUT)
+            json_tmpfile = None
+        else:
+            json_tmpfile = tempfile.TemporaryFile('w+', encoding='utf8')
+            stack.enter_context(json_tmpfile)
+
+            json_fd = json_tmpfile.fileno()
+            if MS_WINDOWS:
+                json_handle = msvcrt.get_osfhandle(json_fd)
+                json_file = JsonFile(json_handle,
+                                     JsonFileType.WINDOWS_HANDLE)
+            else:
+                json_file = JsonFile(json_fd, JsonFileType.UNIX_FD)
+        return (json_file, json_tmpfile)
+
+    def create_worker_runtests(self, test_name: TestName, json_file: JsonFile) -> RunTests:
+        """Create the worker RunTests."""
+
         tests = (test_name,)
         if self.runtests.rerun:
             match_tests = self.runtests.get_match_tests(test_name)
         else:
             match_tests = None
-        err_msg = None
 
-        # gh-94026: Write stdout+stderr to a tempfile as workaround for
-        # non-blocking pipes on Emscripten with NodeJS.
-        with (tempfile.TemporaryFile('w+', encoding=encoding) as stdout_file,
-              tempfile.TemporaryFile('w+', encoding='utf8') as json_file):
-            stdout_fd = stdout_file.fileno()
-            json_fd = json_file.fileno()
-            if MS_WINDOWS:
-                json_fd = msvcrt.get_osfhandle(json_fd)
+        kwargs = {}
+        if match_tests:
+            kwargs['match_tests'] = match_tests
+        return self.runtests.copy(
+            tests=tests,
+            json_file=json_file,
+            **kwargs)
 
-            kwargs = {}
-            if match_tests:
-                kwargs['match_tests'] = match_tests
-            worker_runtests = self.runtests.copy(
-                tests=tests,
-                json_fd=json_fd,
-                **kwargs)
-
-            # gh-93353: Check for leaked temporary files in the parent process,
-            # since the deletion of temporary files can happen late during
-            # Python finalization: too late for libregrtest.
-            if not support.is_wasi:
-                # Don't check for leaked temporary files and directories if Python is
-                # run on WASI. WASI don't pass environment variables like TMPDIR to
-                # worker processes.
-                tmp_dir = tempfile.mkdtemp(prefix="test_python_")
-                tmp_dir = os.path.abspath(tmp_dir)
-                try:
-                    retcode = self._run_process(worker_runtests,
-                                                stdout_fd, json_fd, tmp_dir)
-                finally:
-                    tmp_files = os.listdir(tmp_dir)
-                    os_helper.rmtree(tmp_dir)
-            else:
+    def run_tmp_files(self, worker_runtests: RunTests,
+                      stdout_fd: int) -> tuple[int | None, list[StrPath]]:
+        # gh-93353: Check for leaked temporary files in the parent process,
+        # since the deletion of temporary files can happen late during
+        # Python finalization: too late for libregrtest.
+        if not support.is_wasi:
+            # Don't check for leaked temporary files and directories if Python is
+            # run on WASI. WASI don't pass environment variables like TMPDIR to
+            # worker processes.
+            tmp_dir = tempfile.mkdtemp(prefix="test_python_")
+            tmp_dir = os.path.abspath(tmp_dir)
+            try:
                 retcode = self._run_process(worker_runtests,
-                                            stdout_fd, json_fd)
-                tmp_files = ()
-            stdout_file.seek(0)
+                                            stdout_fd, tmp_dir)
+            finally:
+                tmp_files = os.listdir(tmp_dir)
+                os_helper.rmtree(tmp_dir)
+        else:
+            retcode = self._run_process(worker_runtests, stdout_fd)
+            tmp_files = []
 
-            try:
-                stdout = stdout_file.read().strip()
-            except Exception as exc:
-                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
-                # decoded from encoding
-                err_msg = f"Cannot read process stdout: {exc}"
-                result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
-                return self.mp_result_error(result, err_msg=err_msg)
+        return (retcode, tmp_files)
 
-            try:
-                # deserialize run_tests_worker() output
-                json_file.seek(0)
-                worker_json: StrJSON = json_file.read()
-                if worker_json:
-                    result = TestResult.from_json(worker_json)
-                else:
-                    err_msg = "empty JSON"
-            except Exception as exc:
-                # gh-101634: Catch UnicodeDecodeError if stdout cannot be
-                # decoded from encoding
-                err_msg = f"Fail to read or parser worker process JSON: {exc}"
-                result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
-                return self.mp_result_error(result, stdout, err_msg=err_msg)
+    def read_stdout(self, stdout_file: TextIO) -> str:
+        stdout_file.seek(0)
+        try:
+            return stdout_file.read().strip()
+        except Exception as exc:
+            # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+            # decoded from encoding
+            raise WorkerError(self.test_name,
+                              f"Cannot read process stdout: {exc}",
+                              stdout=None,
+                              state=State.WORKER_BUG)
 
-        if retcode is None:
-            result = TestResult(test_name, state=State.TIMEOUT)
-            return self.mp_result_error(result, stdout)
+    def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
+                  stdout: str) -> tuple[TestResult, str]:
+        try:
+            if json_tmpfile is not None:
+                json_tmpfile.seek(0)
+                worker_json = json_tmpfile.read()
+            elif json_file.file_type == JsonFileType.STDOUT:
+                stdout, _, worker_json = stdout.rpartition("\n")
+                stdout = stdout.rstrip()
+            else:
+                with json_file.open(encoding='utf8') as json_fp:
+                    worker_json = json_fp.read()
+        except Exception as exc:
+            # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+            # decoded from encoding
+            err_msg = f"Failed to read worker process JSON: {exc}"
+            raise WorkerError(self.test_name, err_msg, stdout,
+                              state=State.WORKER_BUG)
 
-        if retcode != 0:
-            err_msg = "Exit code %s" % retcode
+        if not worker_json:
+            raise WorkerError(self.test_name, "empty JSON", stdout,
+                              state=State.WORKER_BUG)
 
-        if err_msg:
-            result = TestResult(test_name, state=State.MULTIPROCESSING_ERROR)
-            return self.mp_result_error(result, stdout, err_msg)
+        try:
+            result = TestResult.from_json(worker_json)
+        except Exception as exc:
+            # gh-101634: Catch UnicodeDecodeError if stdout cannot be
+            # decoded from encoding
+            err_msg = f"Failed to parse worker process JSON: {exc}"
+            raise WorkerError(self.test_name, err_msg, stdout,
+                              state=State.WORKER_BUG)
+
+        return (result, stdout)
+
+    def _runtest(self, test_name: TestName) -> MultiprocessResult:
+        with contextlib.ExitStack() as stack:
+            stdout_file = self.create_stdout(stack)
+            json_file, json_tmpfile = self.create_json_file(stack)
+            worker_runtests = self.create_worker_runtests(test_name, json_file)
+
+            retcode, tmp_files = self.run_tmp_files(worker_runtests,
+                                                    stdout_file.fileno())
+
+            stdout = self.read_stdout(stdout_file)
+
+            if retcode is None:
+                raise WorkerError(self.test_name, stdout=stdout,
+                                  err_msg=None,
+                                  state=State.TIMEOUT)
+            if retcode != 0:
+                name = get_signal_name(retcode)
+                if name:
+                    retcode = f"{retcode} ({name})"
+                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout,
+                                  state=State.WORKER_FAILED)
+
+            result, stdout = self.read_json(json_file, json_tmpfile, stdout)
 
         if tmp_files:
             msg = (f'\n\n'
@@ -319,7 +380,13 @@ class WorkerThread(threading.Thread):
                     break
 
                 self.start_time = time.monotonic()
-                mp_result = self._runtest(test_name)
+                self.test_name = test_name
+                try:
+                    mp_result = self._runtest(test_name)
+                except WorkerError as exc:
+                    mp_result = exc.mp_result
+                finally:
+                    self.test_name = None
                 mp_result.result.duration = time.monotonic() - self.start_time
                 self.output.put((False, mp_result))
 
@@ -335,10 +402,10 @@ class WorkerThread(threading.Thread):
         popen = self._popen
 
         try:
-            popen.wait(JOIN_TIMEOUT)
+            popen.wait(WAIT_COMPLETED_TIMEOUT)
         except (subprocess.TimeoutExpired, OSError) as exc:
             print_warning(f"Failed to wait for {self} completion "
-                          f"(timeout={format_duration(JOIN_TIMEOUT)}): "
+                          f"(timeout={format_duration(WAIT_COMPLETED_TIMEOUT)}): "
                           f"{exc!r}")
 
     def wait_stopped(self, start_time: float) -> None:
@@ -359,20 +426,20 @@ class WorkerThread(threading.Thread):
                 break
             dt = time.monotonic() - start_time
             self.log(f"Waiting for {self} thread for {format_duration(dt)}")
-            if dt > JOIN_TIMEOUT:
+            if dt > WAIT_KILLED_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
 
 
-def get_running(workers: list[WorkerThread]) -> list[str]:
-    running = []
+def get_running(workers: list[WorkerThread]) -> str | None:
+    running: list[str] = []
     for worker in workers:
-        current_test_name = worker.current_test_name
-        if not current_test_name:
+        test_name = worker.test_name
+        if not test_name:
             continue
         dt = time.monotonic() - worker.start_time
         if dt >= PROGRESS_MIN_TIME:
-            text = '%s (%s)' % (current_test_name, format_duration(dt))
+            text = f'{test_name} ({format_duration(dt)})'
             running.append(text)
     if not running:
         return None
@@ -381,7 +448,7 @@ def get_running(workers: list[WorkerThread]) -> list[str]:
 
 class RunWorkers:
     def __init__(self, num_workers: int, runtests: RunTests,
-                 logger: Logger, results: TestResult) -> None:
+                 logger: Logger, results: TestResults) -> None:
         self.num_workers = num_workers
         self.runtests = runtests
         self.log = logger.log
@@ -396,10 +463,10 @@ class RunWorkers:
             # Rely on faulthandler to kill a worker process. This timouet is
             # when faulthandler fails to kill a worker process. Give a maximum
             # of 5 minutes to faulthandler to kill the worker.
-            self.worker_timeout = min(self.timeout * 1.5, self.timeout + 5 * 60)
+            self.worker_timeout: float | None = min(self.timeout * 1.5, self.timeout + 5 * 60)
         else:
             self.worker_timeout = None
-        self.workers = None
+        self.workers: list[WorkerThread] | None = None
 
         jobs = self.runtests.get_jobs()
         if jobs is not None:
@@ -469,7 +536,7 @@ class RunWorkers:
 
         text = str(result)
         if mp_result.err_msg:
-            # MULTIPROCESSING_ERROR
+            # WORKER_BUG
             text += ' (%s)' % mp_result.err_msg
         elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
             text += ' (%s)' % format_duration(result.duration)
@@ -479,13 +546,13 @@ class RunWorkers:
                 text += f' -- {running}'
         self.display_progress(self.test_index, text)
 
-    def _process_result(self, item: QueueOutput) -> bool:
+    def _process_result(self, item: QueueOutput) -> TestResult:
         """Returns True if test runner must stop."""
         if item[0]:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
-            result = TestResult("<regrtest worker>", state=State.MULTIPROCESSING_ERROR)
+            result = TestResult("<regrtest worker>", state=State.WORKER_BUG)
             self.results.accumulate_result(result, self.runtests)
             return result
 

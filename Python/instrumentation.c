@@ -37,6 +37,8 @@ static const int8_t EVENT_FOR_OPCODE[256] = {
     [INSTRUMENTED_RETURN_VALUE] = PY_MONITORING_EVENT_PY_RETURN,
     [CALL] = PY_MONITORING_EVENT_CALL,
     [INSTRUMENTED_CALL] = PY_MONITORING_EVENT_CALL,
+    [CALL_KW] = PY_MONITORING_EVENT_CALL,
+    [INSTRUMENTED_CALL_KW] = PY_MONITORING_EVENT_CALL,
     [CALL_FUNCTION_EX] = PY_MONITORING_EVENT_CALL,
     [INSTRUMENTED_CALL_FUNCTION_EX] = PY_MONITORING_EVENT_CALL,
     [LOAD_SUPER_ATTR] = PY_MONITORING_EVENT_CALL,
@@ -69,6 +71,7 @@ static const uint8_t DE_INSTRUMENT[256] = {
     [INSTRUMENTED_RETURN_VALUE] = RETURN_VALUE,
     [INSTRUMENTED_RETURN_CONST] = RETURN_CONST,
     [INSTRUMENTED_CALL] = CALL,
+    [INSTRUMENTED_CALL_KW] = CALL_KW,
     [INSTRUMENTED_CALL_FUNCTION_EX] = CALL_FUNCTION_EX,
     [INSTRUMENTED_YIELD_VALUE] = YIELD_VALUE,
     [INSTRUMENTED_JUMP_FORWARD] = JUMP_FORWARD,
@@ -90,6 +93,8 @@ static const uint8_t INSTRUMENTED_OPCODES[256] = {
     [INSTRUMENTED_RETURN_VALUE] = INSTRUMENTED_RETURN_VALUE,
     [CALL] = INSTRUMENTED_CALL,
     [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
+    [CALL_KW] = INSTRUMENTED_CALL_KW,
+    [INSTRUMENTED_CALL_KW] = INSTRUMENTED_CALL_KW,
     [CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
     [INSTRUMENTED_CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
     [YIELD_VALUE] = INSTRUMENTED_YIELD_VALUE,
@@ -301,7 +306,7 @@ _PyInstruction_GetLength(PyCodeObject *code, int offset)
     if (opcode == ENTER_EXECUTOR) {
         int exec_index = _PyCode_CODE(code)[offset].op.arg;
         _PyExecutorObject *exec = code->co_executors->executors[exec_index];
-        opcode = exec->vm_data.opcode;
+        opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
 
     }
     assert(opcode != ENTER_EXECUTOR);
@@ -659,7 +664,7 @@ instrument(PyCodeObject *code, int i)
     if (opcode == INSTRUMENTED_INSTRUCTION) {
         opcode_ptr = &code->_co_monitoring->per_instruction_opcodes[i];
         opcode = *opcode_ptr;
-        CHECK(!is_instrumented(opcode));
+        CHECK(opcode != INSTRUMENTED_INSTRUCTION && opcode != INSTRUMENTED_LINE);
         CHECK(opcode == _PyOpcode_Deopt[opcode]);
     }
     CHECK(opcode != 0);
@@ -1289,6 +1294,9 @@ initialize_tools(PyCodeObject *code)
         assert(opcode != ENTER_EXECUTOR);
         if (opcode == INSTRUMENTED_LINE) {
             opcode = code->_co_monitoring->lines[i].original_opcode;
+        }
+        if (opcode == INSTRUMENTED_INSTRUCTION) {
+            opcode = code->_co_monitoring->per_instruction_opcodes[i];
         }
         bool instrumented = is_instrumented(opcode);
         if (instrumented) {
