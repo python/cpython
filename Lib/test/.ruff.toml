@@ -9,8 +9,6 @@ extend-exclude = [
     "encoded_modules/module_koi8_r.py",
     # Failed to parse
     "badsyntax_3131.py",
-    "support/socket_helper.py",
-    "test_fstring.py",
     "test_lib2to3/data/bom.py",
     "test_lib2to3/data/crlf.py",
     "test_lib2to3/data/different_encoding.py",
