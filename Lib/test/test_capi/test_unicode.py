@@ -1331,6 +1331,15 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(equaltoutf8('\ud801',
                             '\ud801'.encode("utf8", "surrogatepass")), 0)
 
+        def check_not_equal_encoding(text, encoding):
+            self.assertEqual(equaltoutf8(text, text.encode(encoding)), 0)
+            self.assertNotEqual(text.encode(encoding), text.encode("utf8"))
+
+        # Strings encoded to other encodings are not equal to expected UTF8-encoding string
+        check_not_equal_encoding('Stéphane', 'latin1')
+        check_not_equal_encoding('Stéphane', 'utf-16-le')  # embedded null characters
+        check_not_equal_encoding('北京市', 'gbk')
+
         # CRASHES equaltoutf8(b'abc', b'abc')
         # CRASHES equaltoutf8([], b'abc')
         # CRASHES equaltoutf8(NULL, b'abc')

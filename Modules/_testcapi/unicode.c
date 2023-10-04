@@ -1438,8 +1438,9 @@ unicode_equaltoutf8(PyObject *self, PyObject *args)
     Py_ssize_t right_len;
     int result;
 
-    if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len))
+    if (!PyArg_ParseTuple(args, "O|y#", &left, &right, &right_len)) {
         return NULL;
+    }
 
     NULLABLE(left);
     result = PyUnicode_EqualToUTF8(left, right);
