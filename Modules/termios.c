@@ -248,9 +248,13 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
-        else if (PyLong_Check(v))
-            mode.c_cc[i] = (cc_t) PyLong_AsLong(v);
-        else {
+        else if (PyLong_Check(v)) {
+            item = PyLong_AsLong(v);
+            if (item == -1 && PyErr_Occurred()) {
+                return NULL;
+            }
+            mode.c_cc[i] = (cc_t) item;
+        } else {
             PyErr_SetString(PyExc_TypeError,
      "tcsetattr: elements of attributes must be characters or integers");
                         return NULL;
