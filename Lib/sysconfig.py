@@ -544,30 +544,16 @@ def _init_posix(vars):
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
-    import _imp
-    import re
+    import _winapi
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    extension_suffixes = _imp.extension_suffixes()
-    if len(extension_suffixes) >= 1:
-        # GH-99201: _imp.extension_suffixes may be empty when
-        # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
-        # e.g., "_d.cp313-win_amd64.pyd"
-        vars['EXT_SUFFIX'] = extension_suffixes[0]
+    # Add EXT_SUFFIX, SOABI, and Py_NOGIL
+    vars.update(_winapi._sysconfig_vars())
 
-        # e.g., "cp313-win_amd64"
-        _, soabi, _ = vars['EXT_SUFFIX'].split('.')
-        vars['SOABI'] = soabi
-
-        # e.g., check for a "t" (for "threading") in SOABI
-        if re.match(r'cp\d+t', soabi):
-            vars['Py_NOGIL'] = 1
-
-    vars['LIBPL'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
+    vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
-        import _winapi
         dllhandle = _winapi.GetModuleFileName(sys.dllhandle)
         vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
         vars['LDLIBRARY'] = vars['LIBRARY']

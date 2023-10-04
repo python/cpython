@@ -18,6 +18,7 @@ typedef PyObject *(*PyModInitFunction)(void);
 #ifdef MS_WINDOWS
 #include <windows.h>
 typedef FARPROC dl_funcptr;
+extern const char *_Py_SOABI;
 #else
 typedef void (*dl_funcptr)(void);
 #endif

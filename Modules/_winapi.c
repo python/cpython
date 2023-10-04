@@ -38,6 +38,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
+#include "importdl.h"             // _PyImport_DynLoadFiletab
 
 
 
@@ -2166,6 +2167,32 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
 }
 
 
+/*[clinic input]
+_winapi._sysconfig_vars
+
+Returns a dictionary containing variables intended to be exposed by sysconfig.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi__sysconfig_vars_impl(PyObject *module)
+/*[clinic end generated code: output=8384e61338037cb1 input=065a8a08627f27bf]*/
+{
+    PyObject *sysconfig = Py_BuildValue("{ssss}",
+                                        "EXT_SUFFIX", _PyImport_DynLoadFiletab[0],
+                                        "SOABI", _Py_SOABI);
+    if (sysconfig == NULL) {
+        return NULL;
+    }
+#ifdef Py_NOGIL
+    if (PyDict_SetItem(sysconfig, "Py_NOGIL", _PyLong_GetOne()) < 0) {
+        Py_DECREF(sysconfig);
+        return NULL;
+    }
+#endif
+    return sysconfig;
+}
+
+
 static PyMethodDef winapi_functions[] = {
     _WINAPI_CLOSEHANDLE_METHODDEF
     _WINAPI_CONNECTNAMEDPIPE_METHODDEF
@@ -2190,6 +2217,7 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_LCMAPSTRINGEX_METHODDEF
     _WINAPI_READFILE_METHODDEF
     _WINAPI_SETNAMEDPIPEHANDLESTATE_METHODDEF
+    _WINAPI__SYSCONFIG_VARS_METHODDEF
     _WINAPI_TERMINATEPROCESS_METHODDEF
     _WINAPI_UNMAPVIEWOFFILE_METHODDEF
     _WINAPI_VIRTUALQUERYSIZE_METHODDEF
@@ -2375,6 +2403,7 @@ static int winapi_exec(PyObject *m)
     WINAPI_CONSTANT(F_DWORD, COPYFILE2_PROGRESS_PAUSE);
 
     WINAPI_CONSTANT("i", NULL);
+
 
     return 0;
 }
