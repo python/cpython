@@ -1828,6 +1828,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
     _PyEval_AcquireLock(tstate);
 
+    // XXX assert(tstate_is_alive(tstate));
     current_fast_set(&_PyRuntime, tstate);
     tstate_activate(tstate);
 
@@ -1846,6 +1847,7 @@ _PyThreadState_Attach(PyThreadState *tstate)
 void
 _PyThreadState_Detach(PyThreadState *tstate)
 {
+    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
     assert(tstate->state == _Py_THREAD_ATTACHED);
     assert(tstate == current_fast_get(&_PyRuntime));
     tstate_set_detached(tstate);
