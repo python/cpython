@@ -26,15 +26,14 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "Python.h"
-#include <ctype.h>
 #ifdef MS_WINDOWS
 #  include "pycore_fileutils.h"   // _Py_stat()
 #endif
 
-#include "pycore_long.h"
+#include "pycore_long.h"          // _PyLong_IsNegative()
 
 #ifdef MS_WINDOWS
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 #define CHECK_SIZE(size, elemsize) \
@@ -46,11 +45,11 @@ Copyright (C) 1994 Steen Lumholt.
 #define TCL_THREADS
 
 #ifdef TK_FRAMEWORK
-#include <Tcl/tcl.h>
-#include <Tk/tk.h>
+#  include <Tcl/tcl.h>
+#  include <Tk/tk.h>
 #else
-#include <tcl.h>
-#include <tk.h>
+#  include <tcl.h>
+#  include <tk.h>
 #endif
 
 #include "tkinter.h"
@@ -911,16 +910,13 @@ AsObj(PyObject *value)
     if (PyLong_CheckExact(value)) {
         int overflow;
         long longValue;
-#ifdef TCL_WIDE_INT_TYPE
         Tcl_WideInt wideValue;
-#endif
         longValue = PyLong_AsLongAndOverflow(value, &overflow);
         if (!overflow) {
             return Tcl_NewLongObj(longValue);
         }
         /* If there is an overflow in the long conversion,
            fall through to wideInt handling. */
-#ifdef TCL_WIDE_INT_TYPE
         if (_PyLong_AsByteArray((PyLongObject *)value,
                                 (unsigned char *)(void *)&wideValue,
                                 sizeof(wideValue),
@@ -929,7 +925,6 @@ AsObj(PyObject *value)
             return Tcl_NewWideIntObj(wideValue);
         }
         PyErr_Clear();
-#endif
         /* If there is an overflow in the wideInt conversion,
            fall through to bignum handling. */
         return asBignumObj(value);

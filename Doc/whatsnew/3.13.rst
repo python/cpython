@@ -85,6 +85,19 @@ Other Language Changes
   This change will affect tools using docstrings, like :mod:`doctest`.
   (Contributed by Inada Naoki in :gh:`81283`.)
 
+* The :func:`compile` built-in can now accept a new flag,
+  ``ast.PyCF_OPTIMIZED_AST``, which is similar to ``ast.PyCF_ONLY_AST``
+  except that the returned ``AST`` is optimized according to the value
+  of the ``optimize`` argument.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
+* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+  default number of worker threads and processes. Get the CPU affinity
+  if supported.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+
 New Modules
 ===========
 
@@ -94,6 +107,14 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+* :func:`ast.parse` now accepts an optional argument ``optimize``
+  which is passed on to the :func:`compile` built-in. This makes it
+  possible to obtain an optimized ``AST``.
+  (Contributed by Irit Katriel in :gh:`108113`).
+
 array
 -----
 
@@ -101,12 +122,32 @@ array
   It can be used instead of ``'u'`` type code, which is deprecated.
   (Contributed by Inada Naoki in :gh:`80480`.)
 
+copy
+----
+
+* Add :func:`copy.replace` function which allows to create a modified copy of
+  an object, which is especially useful for immutable objects.
+  It supports named tuples created with the factory function
+  :func:`collections.namedtuple`, :class:`~dataclasses.dataclass` instances,
+  various :mod:`datetime` objects, :class:`~inspect.Signature` objects,
+  :class:`~inspect.Parameter` objects, :ref:`code object <code-objects>`, and
+  any user classes which define the :meth:`!__replace__` method.
+  (Contributed by Serhiy Storchaka in :gh:`108751`.)
+
 dbm
 ---
 
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
-  (Contributed by Dong-hee Na in :gh:`107122`.)
+  (Contributed by Donghee Na in :gh:`107122`.)
+
+doctest
+-------
+
+* The :meth:`doctest.DocTestRunner.run` method now counts the number of skipped
+  tests. Add :attr:`doctest.DocTestRunner.skips` and
+  :attr:`doctest.TestResults.skipped` attributes.
+  (Contributed by Victor Stinner in :gh:`108794`.)
 
 io
 --
@@ -117,12 +158,35 @@ and only logged in :ref:`Python Development Mode <devmode>` or on :ref:`Python
 built on debug mode <debug-build>`.
 (Contributed by Victor Stinner in :gh:`62948`.)
 
+opcode
+------
+
+* Move ``opcode.ENABLE_SPECIALIZATION`` to ``_opcode.ENABLE_SPECIALIZATION``.
+  This field was added in 3.12, it was never documented and is not intended for
+  external usage. (Contributed by Irit Katriel in :gh:`105481`.)
+
+* Removed ``opcode.is_pseudo``, ``opcode.MIN_PSEUDO_OPCODE`` and
+  ``opcode.MAX_PSEUDO_OPCODE``, which were added in 3.12, were never
+  documented or exposed through ``dis``, and were not intended to be
+  used externally.
+
+os
+--
+
+* Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+  usable by the calling thread of the current process.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
 pathlib
 -------
 
 * Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
+
+* Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
+  object from a 'file' URI (``file:/``).
+  (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
@@ -132,10 +196,37 @@ pathlib
   :meth:`~pathlib.Path.is_dir`.
   (Contributed by Barney Gale in :gh:`77609` and :gh:`105793`.)
 
+pdb
+---
+
+* Add ability to move between chained exceptions during post mortem debugging in :func:`~pdb.pm` using
+  the new ``exceptions [exc_number]`` command for Pdb. (Contributed by Matthias
+  Bussonnier in :gh:`106676`.)
+
+* Expressions/Statements whose prefix is a pdb command are now correctly
+  identified and executed.
+  (Contributed by Tian Gao in :gh:`108464`.)
+
+sqlite3
+-------
+
+* A :exc:`ResourceWarning` is now emitted if a :class:`sqlite3.Connection`
+  object is not :meth:`closed <sqlite3.Connection.close>` explicitly.
+  (Contributed by Erlend E. Aasland in :gh:`105539`.)
+
+tkinter
+-------
+
+* Add :mod:`tkinter` widget methods:
+  :meth:`!tk_busy_hold`, :meth:`!tk_busy_configure`,
+  :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
+  :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
+  (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
+
 traceback
 ---------
 
-* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+* Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
@@ -147,10 +238,21 @@ typing
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
 
+venv
+----
+
+* Add support for adding source control management (SCM) ignore files to a
+  virtual environment's directory. By default, Git is supported. This is
+  implemented as opt-in via the API which can be extended to support other SCMs
+  (:class:`venv.EnvBuilder` and :func:`venv.create`), and opt-out via the CLI
+  (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
+  :gh:`108125`.)
+
 Optimizations
 =============
 
-
+* :func:`textwrap.indent` is now ~30% faster than before for large input.
+  (Contributed by Inada Naoki in :gh:`107369`.)
 
 
 Deprecated
@@ -174,10 +276,19 @@ Deprecated
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
-* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
+  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process based CGI
+  http servers have been out of favor for a very long time.  This code was
+  outdated, unmaintained, and rarely used.  It has a high potential for both
+  security and functionality bugs.  This includes removal of the ``--cgi``
+  flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`typing`:
+
+  * Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+    the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+    be disallowed in Python 3.15. Use the class-based syntax or the functional
+    syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
 
   * When using the functional syntax to create a :class:`typing.NamedTuple`
     class or a :class:`typing.TypedDict` class, failing to pass a value to the
@@ -195,10 +306,42 @@ Deprecated
     has yet to be supported by any major type checkers.
     (Contributed by Alex Waygood in :gh:`106309`.)
 
+  * :data:`typing.AnyStr` is deprecated. In Python 3.16, it will be removed from
+    ``typing.__all__``, and a :exc:`DeprecationWarning` will be emitted when it
+    is imported or accessed. It will be removed entirely in Python 3.18. Use
+    the new :ref:`type parameter syntax <type-params>` instead.
+    (Contributed by Michael The in :gh:`107116`.)
+
 * :mod:`wave`: Deprecate the ``getmark()``, ``setmark()`` and ``getmarkers()``
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* Passing more than one positional argument to :func:`sqlite3.connect` and the
+  :class:`sqlite3.Connection` constructor is deprecated. The remaining
+  parameters will become keyword-only in Python 3.15.
+
+  Deprecate passing name, number of arguments, and the callable as keyword
+  arguments, for the following :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.create_function`
+  * :meth:`~sqlite3.Connection.create_aggregate`
+
+  Deprecate passing the callback callable by keyword for the following
+  :class:`sqlite3.Connection` APIs:
+
+  * :meth:`~sqlite3.Connection.set_authorizer`
+  * :meth:`~sqlite3.Connection.set_progress_handler`
+  * :meth:`~sqlite3.Connection.set_trace_callback`
+
+  The affected parameters will become positional-only in Python 3.15.
+
+  (Contributed by Erlend E. Aasland in :gh:`107948` and :gh:`108278`.)
+
+* The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
+  in :data:`~dis.hasarg` instead.
+  (Contributed by Irit Katriel in :gh:`109319`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -308,6 +451,11 @@ Pending Removal in Python 3.14
 Pending Removal in Python 3.15
 ------------------------------
 
+* :class:`http.server.CGIHTTPRequestHandler` will be removed along with its
+  related ``--cgi`` flag to ``python -m http.server``.  It was obsolete and
+  rarely used.  No direct replacement exists.  *Anything* is better than CGI
+  to interface a web server with a request handler.
+
 * :class:`typing.NamedTuple`:
 
   * The undocumented keyword argument syntax for creating NamedTuple classes
@@ -332,6 +480,12 @@ Pending Removal in Python 3.15
   methods of the :class:`wave.Wave_read` and :class:`wave.Wave_write` classes.
   They will be removed in Python 3.15.
   (Contributed by Victor Stinner in :gh:`105096`.)
+
+* Passing any arguments to :func:`threading.RLock` is now deprecated.
+  C version allows any numbers of args and kwargs,
+  but they are just ignored. Python version does not allow any arguments.
+  All arguments will be removed from :func:`threading.RLock` in Python 3.15.
+  (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 Pending Removal in Python 3.16
 ------------------------------
@@ -375,8 +529,8 @@ although there is currently no date scheduled for their removal.
   * Delegation of ``int()`` to ``__trunc__()`` method.
 
 * :mod:`calendar`: ``calendar.January`` and ``calendar.February`` constants are
-  deprecated and replaced by :data:`calendar.Month.JANUARY` and
-  :data:`calendar.Month.FEBRUARY`.
+  deprecated and replaced by :data:`calendar.JANUARY` and
+  :data:`calendar.FEBRUARY`.
   (Contributed by Prince Roshan in :gh:`103636`.)
 
 * :mod:`datetime`:
@@ -739,11 +893,19 @@ Build Changes
 =============
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  the :file:`configure` script.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * SQLite 3.15.2 or newer is required to build the :mod:`sqlite3` extension module.
   (Contributed by Erlend Aasland in :gh:`105875`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) is now ABI compatible with Python release build and
+  :ref:`debug build <debug-build>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
+* Building CPython now requires a compiler with support for the C11 atomic
+  library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
 
 C API Changes
@@ -784,6 +946,18 @@ New Features
   be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
+* Add fixed variants of functions which silently ignore errors:
+
+  - :c:func:`PyObject_HasAttrWithError` replaces :c:func:`PyObject_HasAttr`.
+  - :c:func:`PyObject_HasAttrStringWithError` replaces :c:func:`PyObject_HasAttrString`.
+  - :c:func:`PyMapping_HasKeyWithError` replaces :c:func:`PyMapping_HasKey`.
+  - :c:func:`PyMapping_HasKeyStringWithError` replaces :c:func:`PyMapping_HasKeyString`.
+
+  New functions return not only ``1`` for true and ``0`` for false, but also
+  ``-1`` for error.
+
+  (Contributed by Serhiy Storchaka in :gh:`108511`.)
+
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
@@ -802,11 +976,83 @@ New Features
   not needed.
   (Contributed by Victor Stinner in :gh:`106004`.)
 
+* Added :c:func:`PyDict_ContainsString` function: same as
+  :c:func:`PyDict_Contains`, but *key* is specified as a :c:expr:`const char*`
+  UTF-8 encoded bytes string, rather than a :c:expr:`PyObject*`.
+  (Contributed by Victor Stinner in :gh:`108314`.)
+
+* Add :c:func:`Py_IsFinalizing` function: check if the main Python interpreter is
+  :term:`shutting down <interpreter shutdown>`.
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Add :c:func:`PyLong_AsInt` function: similar to :c:func:`PyLong_AsLong`, but
+  store the result in a C :c:expr:`int` instead of a C :c:expr:`long`.
+  Previously, it was known as the private function :c:func:`!_PyLong_AsInt`
+  (with an underscore prefix).
+  (Contributed by Victor Stinner in :gh:`108014`.)
+
+* Python built with :file:`configure` :option:`--with-trace-refs` (tracing
+  references) now supports the :ref:`Limited API <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`108634`.)
+
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  functions on Python 3.11 and 3.12.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
+* Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
+  :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
+  if it is NULL. The caller is responsible to check if the result is NULL.
+  Previously, the function was private and known as
+  ``_PyThreadState_UncheckedGet()``.
+  (Contributed by Victor Stinner in :gh:`108867`.)
+
 Porting to Python 3.13
 ----------------------
 
+* ``Python.h`` no longer includes the ``<ieeefp.h>`` standard header. It was
+  included for the ``finite()`` function which is now provided by the
+  ``<math.h>`` header. It should now be included explicitly if needed. Remove
+  also the ``HAVE_IEEEFP_H`` macro.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
+  needed, it should now be included explicitly. For example, it provides the
+  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
+  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
+  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
+  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
+  ``<pthread.h>`` header files can be included.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes these standard header files: ``<time.h>``,
+  ``<sys/select.h>`` and ``<sys/time.h>``. If needed, they should now be
+  included explicitly. For example, ``<time.h>`` provides the ``clock()`` and
+  ``gmtime()`` functions, ``<sys/select.h>`` provides the ``select()``
+  function, and ``<sys/time.h>`` provides the ``futimes()``, ``gettimeofday()``
+  and ``setitimer()`` functions.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+* ``Python.h`` no longer includes the ``<ctype.h>`` standard header file. If
+  needed, it should now be included explicitly. For example, it provides
+  ``isalpha()`` and ``tolower()`` functions which are locale dependent. Python
+  provides locale independent functions, like :c:func:`!Py_ISALPHA` and
+  :c:func:`!Py_TOLOWER`.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 Deprecated
 ----------
+
+* Passing optional arguments *maxsplit*, *count* and *flags* in module-level
+  functions :func:`re.split`, :func:`re.sub` and :func:`re.subn` as positional
+  arguments is now deprecated.
+  In future Python versions these parameters will be
+  :ref:`keyword-only <keyword-only_parameter>`.
+  (Contributed by Serhiy Storchaka in :gh:`56166`.)
 
 * Deprecate the old ``Py_UNICODE`` and ``PY_UNICODE_TYPE`` types: use directly
   the :c:type:`wchar_t` type instead. Since Python 3.3, ``Py_UNICODE`` and
@@ -917,7 +1163,9 @@ Removed
   * ``Py_SetPath()``: set :c:member:`PyConfig.module_search_paths` instead.
   * ``Py_SetProgramName()``: set :c:member:`PyConfig.program_name` instead.
   * ``Py_SetPythonHome()``: set :c:member:`PyConfig.home` instead.
-  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding` instead.
+  * ``Py_SetStandardStreamEncoding()``: set :c:member:`PyConfig.stdio_encoding`
+    instead, and set also maybe :c:member:`PyConfig.legacy_windows_stdio` (on
+    Windows).
   * ``_Py_SetProgramFullPath()``: set :c:member:`PyConfig.executable` instead.
 
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
@@ -939,13 +1187,6 @@ Removed
   * or :c:func:`PyGILState_Ensure` and :c:func:`PyGILState_Release`.
 
   (Contributed by Victor Stinner in :gh:`105182`.)
-
-* Remove the old private, undocumented and untested ``_PyGC_FINALIZED()`` macro
-  which was kept for backward compatibility with Python 3.8 and older: use
-  :c:func:`PyObject_GC_IsFinalized()` instead. The `pythoncapi-compat project
-  <https://github.com/python/pythoncapi-compat/>`__ can be used to get this
-  function on Python 3.8 and older.
-  (Contributed by Victor Stinner in :gh:`105268`.)
 
 * Remove the old aliases to functions calling functions which were kept for
   backward compatibility with Python 3.8 provisional API:
@@ -1064,3 +1305,6 @@ removed, although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
   * :c:func:`PyThread_ReInitTLS`: no longer needed.
+
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)

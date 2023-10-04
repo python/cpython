@@ -66,7 +66,7 @@ today_fmt = '%B %d, %Y'
 highlight_language = 'python3'
 
 # Minimum version of sphinx required
-needs_sphinx = '3.2'
+needs_sphinx = '4.2'
 
 # Ignore any .rst files in the includes/ directory;
 # they're embedded in pages but not rendered individually.
@@ -94,10 +94,11 @@ nitpick_ignore = [
     ('c:func', 'sprintf'),
     ('c:func', 'stat'),
     ('c:func', 'system'),
+    ('c:func', 'time'),
     ('c:func', 'vsnprintf'),
     # Standard C types
     ('c:type', 'FILE'),
-    ('c:type', '__int'),
+    ('c:type', 'int64_t'),
     ('c:type', 'intmax_t'),
     ('c:type', 'off_t'),
     ('c:type', 'ptrdiff_t'),
@@ -105,9 +106,18 @@ nitpick_ignore = [
     ('c:type', 'size_t'),
     ('c:type', 'ssize_t'),
     ('c:type', 'time_t'),
+    ('c:type', 'uint64_t'),
     ('c:type', 'uintmax_t'),
+    ('c:type', 'uintptr_t'),
     ('c:type', 'va_list'),
     ('c:type', 'wchar_t'),
+    ('c:type', '__int64'),
+    ('c:type', 'unsigned __int64'),
+    # Standard C structures
+    ('c:struct', 'in6_addr'),
+    ('c:struct', 'in_addr'),
+    ('c:struct', 'stat'),
+    ('c:struct', 'statvfs'),
     # Standard C macros
     ('c:macro', 'LLONG_MAX'),
     ('c:macro', 'LLONG_MIN'),
@@ -147,11 +157,91 @@ nitpick_ignore = [
     ('envvar', 'USER'),
     ('envvar', 'USERNAME'),
     ('envvar', 'USERPROFILE'),
+]
+
+# Temporary undocumented names.
+# In future this list must be empty.
+nitpick_ignore += [
+    # C API: Standard Python exception classes
+    ('c:data', 'PyExc_ArithmeticError'),
+    ('c:data', 'PyExc_AssertionError'),
+    ('c:data', 'PyExc_AttributeError'),
+    ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BlockingIOError'),
+    ('c:data', 'PyExc_BrokenPipeError'),
+    ('c:data', 'PyExc_BufferError'),
+    ('c:data', 'PyExc_ChildProcessError'),
+    ('c:data', 'PyExc_ConnectionAbortedError'),
+    ('c:data', 'PyExc_ConnectionError'),
+    ('c:data', 'PyExc_ConnectionRefusedError'),
+    ('c:data', 'PyExc_ConnectionResetError'),
+    ('c:data', 'PyExc_EOFError'),
+    ('c:data', 'PyExc_Exception'),
+    ('c:data', 'PyExc_FileExistsError'),
+    ('c:data', 'PyExc_FileNotFoundError'),
+    ('c:data', 'PyExc_FloatingPointError'),
+    ('c:data', 'PyExc_GeneratorExit'),
+    ('c:data', 'PyExc_ImportError'),
+    ('c:data', 'PyExc_IndentationError'),
+    ('c:data', 'PyExc_IndexError'),
+    ('c:data', 'PyExc_InterruptedError'),
+    ('c:data', 'PyExc_IsADirectoryError'),
+    ('c:data', 'PyExc_KeyboardInterrupt'),
+    ('c:data', 'PyExc_KeyError'),
+    ('c:data', 'PyExc_LookupError'),
+    ('c:data', 'PyExc_MemoryError'),
+    ('c:data', 'PyExc_ModuleNotFoundError'),
+    ('c:data', 'PyExc_NameError'),
+    ('c:data', 'PyExc_NotADirectoryError'),
+    ('c:data', 'PyExc_NotImplementedError'),
+    ('c:data', 'PyExc_OSError'),
+    ('c:data', 'PyExc_OverflowError'),
+    ('c:data', 'PyExc_PermissionError'),
+    ('c:data', 'PyExc_ProcessLookupError'),
+    ('c:data', 'PyExc_RecursionError'),
+    ('c:data', 'PyExc_ReferenceError'),
+    ('c:data', 'PyExc_RuntimeError'),
+    ('c:data', 'PyExc_StopAsyncIteration'),
+    ('c:data', 'PyExc_StopIteration'),
+    ('c:data', 'PyExc_SyntaxError'),
+    ('c:data', 'PyExc_SystemError'),
+    ('c:data', 'PyExc_SystemExit'),
+    ('c:data', 'PyExc_TabError'),
+    ('c:data', 'PyExc_TimeoutError'),
+    ('c:data', 'PyExc_TypeError'),
+    ('c:data', 'PyExc_UnboundLocalError'),
+    ('c:data', 'PyExc_UnicodeDecodeError'),
+    ('c:data', 'PyExc_UnicodeEncodeError'),
+    ('c:data', 'PyExc_UnicodeError'),
+    ('c:data', 'PyExc_UnicodeTranslateError'),
+    ('c:data', 'PyExc_ValueError'),
+    ('c:data', 'PyExc_ZeroDivisionError'),
+    # C API: Standard Python warning classes
+    ('c:data', 'PyExc_BytesWarning'),
+    ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_FutureWarning'),
+    ('c:data', 'PyExc_ImportWarning'),
+    ('c:data', 'PyExc_PendingDeprecationWarning'),
+    ('c:data', 'PyExc_ResourceWarning'),
+    ('c:data', 'PyExc_RuntimeWarning'),
+    ('c:data', 'PyExc_SyntaxWarning'),
+    ('c:data', 'PyExc_UnicodeWarning'),
+    ('c:data', 'PyExc_UserWarning'),
+    ('c:data', 'PyExc_Warning'),
     # Do not error nit-picky mode builds when _SubParsersAction.add_parser cannot
     # be resolved, as the method is currently undocumented. For context, see
     # https://github.com/python/cpython/pull/103289.
     ('py:meth', '_SubParsersAction.add_parser'),
 ]
+
+# gh-106948: Copy standard C types declared in the "c:type" domain to the
+# "c:identifier" domain, since "c:function" markup looks for types in the
+# "c:identifier" domain. Use list() to not iterate on items which are being
+# added
+for role, name in list(nitpick_ignore):
+    if role == 'c:type':
+        nitpick_ignore.append(('c:identifier', name))
+del role, name
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {
@@ -264,8 +354,6 @@ _stdauthor = 'Guido van Rossum and the Python development team'
 latex_documents = [
     ('c-api/index', 'c-api.tex',
      'The Python/C API', _stdauthor, 'manual'),
-    ('distributing/index', 'distributing.tex',
-     'Distributing Python Modules', _stdauthor, 'manual'),
     ('extending/index', 'extending.tex',
      'Extending and Embedding Python', _stdauthor, 'manual'),
     ('installing/index', 'installing.tex',

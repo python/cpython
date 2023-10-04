@@ -121,6 +121,8 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
+.. _profile-cli:
+
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
 profile another script.  For example::
 

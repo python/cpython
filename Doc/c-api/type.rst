@@ -103,7 +103,7 @@ Type Objects
    :c:func:`PyType_AddWatcher` will be called whenever
    :c:func:`PyType_Modified` reports a change to *type*. (The callback may be
    called only once for a series of consecutive modifications to *type*, if
-   :c:func:`PyType_Lookup` is not called on *type* between the modifications;
+   :c:func:`!_PyType_Lookup` is not called on *type* between the modifications;
    this is an implementation detail and subject to change.)
 
    An extension should never call ``PyType_Watch`` with a *watcher_id* that was
@@ -480,7 +480,7 @@ The following functions and structs are used to create
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
-      :py:func:`PyType_FromSpecWithBases` instead.
+      :c:func:`PyType_FromSpecWithBases` instead.
 
      .. versionchanged:: 3.9
 

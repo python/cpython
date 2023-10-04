@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#include "opcode.h"
+
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
@@ -15,6 +17,7 @@
 #include "pycore_sliceobject.h"
 #include "pycore_uops.h"
 
+#define TIER_TWO 2
 #include "ceval_macros.h"
 
 
@@ -41,7 +44,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         lltrace = *uop_debug - '0';  // TODO: Parse an int and all that
     }
     #define DPRINTF(level, ...) \
-        if (lltrace >= (level)) { fprintf(stderr, __VA_ARGS__); }
+        if (lltrace >= (level)) { printf(__VA_ARGS__); }
 #else
     #define DPRINTF(level, ...)
 #endif
@@ -109,7 +112,7 @@ pop_1_error:
     STACK_SHRINK(1);
 error:
     // On ERROR_IF we return NULL as the frame.
-    // The caller recovers the frame from cframe.current_frame.
+    // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);

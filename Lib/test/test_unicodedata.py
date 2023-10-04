@@ -18,7 +18,7 @@ from test.support import (open_urlresource, requires_resource, script_helper,
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = 'e708c31c0d51f758adf475cb7201cf80917362be'
+    expectedchecksum = '63aa77dcb36b0e1df082ee2a6071caeda7f0955e'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -71,7 +71,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '26ff0d31c14194b4606a5b3a81ac36df3a14e331'
+    expectedchecksum = '232affd2a50ec4bd69d2482aa0291385cbdefaba'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -313,6 +313,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertTrue("\u1d79".upper()=='\ua77d')
         self.assertTrue(".".upper()=='.')
 
+    @requires_resource('cpu')
     def test_bug_5828(self):
         self.assertEqual("\u1d79".lower(), "\u1d79")
         # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
@@ -353,6 +354,7 @@ class NormalizationTest(unittest.TestCase):
         return "".join([chr(x) for x in data])
 
     @requires_resource('network')
+    @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
         TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"

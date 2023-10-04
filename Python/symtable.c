@@ -1,9 +1,11 @@
 #include "Python.h"
-#include "pycore_ast.h"           // identifier, stmt_ty
+#include "pycore_ast.h"           // stmt_ty
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
 
+// Set this to 1 to dump all symtables to stdout for debugging
+#define _PY_DUMP_SYMTABLE 0
 
 /* error strings used for warnings */
 #define GLOBAL_PARAM \
@@ -150,9 +152,8 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 static PyObject *
 ste_repr(PySTEntryObject *ste)
 {
-    return PyUnicode_FromFormat("<symtable entry %U(%ld), line %d>",
-                                ste->ste_name,
-                                PyLong_AS_LONG(ste->ste_id), ste->ste_lineno);
+    return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
+                                ste->ste_name, ste->ste_id, ste->ste_lineno);
 }
 
 static void
@@ -252,6 +253,109 @@ static int symtable_visit_pattern(struct symtable *st, pattern_ty s);
 static int symtable_raise_if_annotation_block(struct symtable *st, const char *, expr_ty);
 static int symtable_raise_if_comprehension_block(struct symtable *st, expr_ty);
 
+/* For debugging purposes only */
+#if _PY_DUMP_SYMTABLE
+static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
+{
+    const char *blocktype = "";
+    switch (ste->ste_type) {
+        case FunctionBlock: blocktype = "FunctionBlock"; break;
+        case ClassBlock: blocktype = "ClassBlock"; break;
+        case ModuleBlock: blocktype = "ModuleBlock"; break;
+        case AnnotationBlock: blocktype = "AnnotationBlock"; break;
+        case TypeVarBoundBlock: blocktype = "TypeVarBoundBlock"; break;
+        case TypeAliasBlock: blocktype = "TypeAliasBlock"; break;
+        case TypeParamBlock: blocktype = "TypeParamBlock"; break;
+    }
+    const char *comptype = "";
+    switch (ste->ste_comprehension) {
+        case ListComprehension: comptype = " ListComprehension"; break;
+        case DictComprehension: comptype = " DictComprehension"; break;
+        case SetComprehension: comptype = " SetComprehension"; break;
+        case GeneratorExpression: comptype = " GeneratorExpression"; break;
+        case NoComprehension: break;
+    }
+    PyObject* msg = PyUnicode_FromFormat(
+        (
+            "%U=== Symtable for %U ===\n"
+            "%U%s%s\n"
+            "%U%s%s%s%s%s%s%s%s%s%s%s%s%s\n"
+            "%Ulineno: %d col_offset: %d\n"
+            "%U--- Symbols ---\n"
+        ),
+        prefix,
+        ste->ste_name,
+        prefix,
+        blocktype,
+        comptype,
+        prefix,
+        ste->ste_nested ? " nested" : "",
+        ste->ste_free ? " free" : "",
+        ste->ste_child_free ? " child_free" : "",
+        ste->ste_generator ? " generator" : "",
+        ste->ste_coroutine ? " coroutine" : "",
+        ste->ste_varargs ? " varargs" : "",
+        ste->ste_varkeywords ? " varkeywords" : "",
+        ste->ste_returns_value ? " returns_value" : "",
+        ste->ste_needs_class_closure ? " needs_class_closure" : "",
+        ste->ste_needs_classdict ? " needs_classdict" : "",
+        ste->ste_comp_inlined ? " comp_inlined" : "",
+        ste->ste_comp_iter_target ? " comp_iter_target" : "",
+        ste->ste_can_see_class_scope ? " can_see_class_scope" : "",
+        prefix,
+        ste->ste_lineno,
+        ste->ste_col_offset,
+        prefix
+    );
+    assert(msg != NULL);
+    printf("%s", PyUnicode_AsUTF8(msg));
+    Py_DECREF(msg);
+    PyObject *name, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(ste->ste_symbols, &pos, &name, &value)) {
+        int scope = _PyST_GetScope(ste, name);
+        long flags = _PyST_GetSymbol(ste, name);
+        printf("%s  %s: ", PyUnicode_AsUTF8(prefix), PyUnicode_AsUTF8(name));
+        if (flags & DEF_GLOBAL) printf(" DEF_GLOBAL");
+        if (flags & DEF_LOCAL) printf(" DEF_LOCAL");
+        if (flags & DEF_PARAM) printf(" DEF_PARAM");
+        if (flags & DEF_NONLOCAL) printf(" DEF_NONLOCAL");
+        if (flags & USE) printf(" USE");
+        if (flags & DEF_FREE) printf(" DEF_FREE");
+        if (flags & DEF_FREE_CLASS) printf(" DEF_FREE_CLASS");
+        if (flags & DEF_IMPORT) printf(" DEF_IMPORT");
+        if (flags & DEF_ANNOT) printf(" DEF_ANNOT");
+        if (flags & DEF_COMP_ITER) printf(" DEF_COMP_ITER");
+        if (flags & DEF_TYPE_PARAM) printf(" DEF_TYPE_PARAM");
+        if (flags & DEF_COMP_CELL) printf(" DEF_COMP_CELL");
+        switch (scope) {
+            case LOCAL: printf(" LOCAL"); break;
+            case GLOBAL_EXPLICIT: printf(" GLOBAL_EXPLICIT"); break;
+            case GLOBAL_IMPLICIT: printf(" GLOBAL_IMPLICIT"); break;
+            case FREE: printf(" FREE"); break;
+            case CELL: printf(" CELL"); break;
+        }
+        printf("\n");
+    }
+    printf("%s--- Children ---\n", PyUnicode_AsUTF8(prefix));
+    PyObject *new_prefix = PyUnicode_FromFormat("  %U", prefix);
+    assert(new_prefix != NULL);
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(ste->ste_children); i++) {
+        PyObject *child = PyList_GetItem(ste->ste_children, i);
+        assert(child != NULL && PySTEntry_Check(child));
+        _dump_symtable((PySTEntryObject *)child, new_prefix);
+    }
+    Py_DECREF(new_prefix);
+}
+
+static void dump_symtable(PySTEntryObject* ste)
+{
+    PyObject *empty = PyUnicode_FromString("");
+    assert(empty != NULL);
+    _dump_symtable(ste, empty);
+    Py_DECREF(empty);
+}
+#endif
 
 #define DUPLICATE_ARGUMENT \
 "duplicate argument '%U' in function definition"
@@ -282,17 +386,10 @@ symtable_new(void)
     return NULL;
 }
 
-/* When compiling the use of C stack is probably going to be a lot
-   lighter than when executing Python code but still can overflow
-   and causing a Python crash if not checked (e.g. eval("()"*300000)).
-   Using the current recursion limit for the compiler seems too
-   restrictive (it caused at least one test to fail) so a factor is
-   used to allow deeper recursion when compiling an expression.
-
-   Using a scaling factor means this should automatically adjust when
+/* Using a scaling factor means this should automatically adjust when
    the recursion limit is adjusted for small or large C stack allocations.
 */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 struct symtable *
 _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
@@ -319,10 +416,10 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    st->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     /* Make the initial symbol information gathering pass */
     if (!symtable_enter_block(st, &_Py_ID(top), ModuleBlock, (void *)mod, 0, 0, 0, 0)) {
@@ -368,8 +465,12 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
         return NULL;
     }
     /* Make the second symbol analysis pass */
-    if (symtable_analyze(st))
+    if (symtable_analyze(st)) {
+#if _PY_DUMP_SYMTABLE
+        dump_symtable(st->st_top);
+#endif
         return st;
+    }
     _PySymtable_Free(st);
     return NULL;
  error:
@@ -530,6 +631,7 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
              PyObject *bound, PyObject *local, PyObject *free,
              PyObject *global, PyObject *type_params, PySTEntryObject *class_entry)
 {
+    int contains;
     if (flags & DEF_GLOBAL) {
         if (flags & DEF_NONLOCAL) {
             PyErr_Format(PyExc_SyntaxError,
@@ -550,14 +652,22 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
                          "nonlocal declaration not allowed at module level");
             return error_at_directive(ste, name);
         }
-        if (!PySet_Contains(bound, name)) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (!contains) {
             PyErr_Format(PyExc_SyntaxError,
                          "no binding for nonlocal '%U' found",
                          name);
 
             return error_at_directive(ste, name);
         }
-        if (PySet_Contains(type_params, name)) {
+        contains = PySet_Contains(type_params, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
             PyErr_Format(PyExc_SyntaxError,
                          "nonlocal binding not allowed for type parameter '%U'",
                          name);
@@ -606,17 +716,29 @@ analyze_name(PySTEntryObject *ste, PyObject *scopes, PyObject *name, long flags,
        Note that having a non-NULL bound implies that the block
        is nested.
     */
-    if (bound && PySet_Contains(bound, name)) {
-        SET_SCOPE(scopes, name, FREE);
-        ste->ste_free = 1;
-        return PySet_Add(free, name) >= 0;
+    if (bound) {
+        contains = PySet_Contains(bound, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, FREE);
+            ste->ste_free = 1;
+            return PySet_Add(free, name) >= 0;
+        }
     }
     /* If a parent has a global statement, then call it global
        explicit?  It could also be global implicit.
      */
-    if (global && PySet_Contains(global, name)) {
-        SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
-        return 1;
+    if (global) {
+        contains = PySet_Contains(global, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
+            SET_SCOPE(scopes, name, GLOBAL_IMPLICIT);
+            return 1;
+        }
     }
     if (ste->ste_nested)
         ste->ste_free = 1;
@@ -719,8 +841,19 @@ analyze_cells(PyObject *scopes, PyObject *free, PyObject *inlined_cells)
         scope = PyLong_AS_LONG(v);
         if (scope != LOCAL)
             continue;
-        if (!PySet_Contains(free, name) && !PySet_Contains(inlined_cells, name))
-            continue;
+        int contains = PySet_Contains(free, name);
+        if (contains < 0) {
+            goto error;
+        }
+        if (!contains) {
+            contains = PySet_Contains(inlined_cells, name);
+            if (contains < 0) {
+                goto error;
+            }
+            if (!contains) {
+                continue;
+            }
+        }
         /* Replace LOCAL with CELL for this name, and remove
            from free. It is safe to replace the value of name
            in the dict, because it will not cause a resize.
@@ -771,7 +904,11 @@ update_symbols(PyObject *symbols, PyObject *scopes,
         long scope, flags;
         assert(PyLong_Check(v));
         flags = PyLong_AS_LONG(v);
-        if (PySet_Contains(inlined_cells, name)) {
+        int contains = PySet_Contains(inlined_cells, name);
+        if (contains < 0) {
+            return 0;
+        }
+        if (contains) {
             flags |= DEF_COMP_CELL;
         }
         v_scope = PyDict_GetItemWithError(scopes, name);
@@ -808,8 +945,7 @@ update_symbols(PyObject *symbols, PyObject *scopes,
                the class that has the same name as a local
                or global in the class scope.
             */
-            if  (classflag &&
-                 PyLong_AS_LONG(v) & (DEF_BOUND | DEF_GLOBAL)) {
+            if  (classflag) {
                 long flags = PyLong_AS_LONG(v) | DEF_FREE_CLASS;
                 v_new = PyLong_FromLong(flags);
                 if (!v_new) {
@@ -829,9 +965,15 @@ update_symbols(PyObject *symbols, PyObject *scopes,
             goto error;
         }
         /* Handle global symbol */
-        if (bound && !PySet_Contains(bound, name)) {
-            Py_DECREF(name);
-            continue;       /* it's a global */
+        if (bound) {
+            int contains = PySet_Contains(bound, name);
+            if (contains < 0) {
+                goto error;
+            }
+            if (!contains) {
+                Py_DECREF(name);
+                continue;       /* it's a global */
+            }
         }
         /* Propagate new free symbol up the lexical stack */
         if (PyDict_SetItem(symbols, name, v_free) < 0) {
@@ -1044,7 +1186,7 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
         goto error;
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree, inlined_cells,
-                        ste->ste_type == ClassBlock))
+                        (ste->ste_type == ClassBlock) || ste->ste_can_see_class_scope))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
@@ -1976,6 +2118,17 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.UnaryOp.operand);
         break;
     case Lambda_kind: {
+        if (st->st_cur->ste_can_see_class_scope) {
+            // gh-109118
+            PyErr_Format(PyExc_SyntaxError,
+                         "Cannot use lambda in annotation scope within class scope");
+            PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                              e->lineno,
+                                              e->col_offset + 1,
+                                              e->end_lineno,
+                                              e->end_col_offset + 1);
+            VISIT_QUIT(st, 0);
+        }
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
@@ -2425,6 +2578,18 @@ symtable_handle_comprehension(struct symtable *st, expr_ty e,
                               identifier scope_name, asdl_comprehension_seq *generators,
                               expr_ty elt, expr_ty value)
 {
+    if (st->st_cur->ste_can_see_class_scope) {
+        // gh-109118
+        PyErr_Format(PyExc_SyntaxError,
+                     "Cannot use comprehension in annotation scope within class scope");
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                         e->lineno,
+                                         e->col_offset + 1,
+                                         e->end_lineno,
+                                         e->end_col_offset + 1);
+        VISIT_QUIT(st, 0);
+    }
+
     int is_generator = (e->kind == GeneratorExp_kind);
     comprehension_ty outermost = ((comprehension_ty)
                                     asdl_seq_GET(generators, 0));

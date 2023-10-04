@@ -1,11 +1,22 @@
 /* termios.c -- POSIX terminal I/O module implementation.  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
-/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
-   is defined, so we define it here. */
+// On QNX 6, struct termio must be declared by including sys/termio.h
+// if TCGETA, TCSETA, TCSETAW, or TCSETAF are used. sys/termio.h must
+// be included before termios.h or it will generate an error.
+#if defined(HAVE_SYS_TERMIO_H) && !defined(__hpux)
+#  include <sys/termio.h>
+#endif
+
+// Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
+// is defined, so we define it here.
 #if defined(__sgi)
-#define CTRL(c) ((c)&037)
+#  define CTRL(c) ((c)&037)
 #endif
 
 #if defined(__sun)
@@ -16,6 +27,9 @@
 
 #include <termios.h>
 #include <sys/ioctl.h>
+#if defined(__sun) && defined(__SVR4)
+#  include <unistd.h>             // ioctl()
+#endif
 
 /* HP-UX requires that this be included to pick up MDCD, MCTS, MDSR,
  * MDTR, MRI, and MRTS (apparently used internally by some things
@@ -106,7 +120,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
         v = PyBytes_FromStringAndSize(&ch, 1);
         if (v == NULL)
             goto err;
-        PyList_SetItem(cc, i, v);
+        PyList_SET_ITEM(cc, i, v);
     }
 
     /* Convert the MIN and TIME slots to integer.  On some systems, the
@@ -114,29 +128,44 @@ termios_tcgetattr_impl(PyObject *module, int fd)
        only do this in noncanonical input mode.  */
     if ((mode.c_lflag & ICANON) == 0) {
         v = PyLong_FromLong((long)mode.c_cc[VMIN]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VMIN, v);
+        }
+        if (PyList_SetItem(cc, VMIN, v) < 0) {
+            goto err;
+        }
         v = PyLong_FromLong((long)mode.c_cc[VTIME]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VTIME, v);
+        }
+        if (PyList_SetItem(cc, VTIME, v) < 0) {
+            goto err;
+        }
     }
 
-    if (!(v = PyList_New(7)))
-        goto err;
-
-    PyList_SetItem(v, 0, PyLong_FromLong((long)mode.c_iflag));
-    PyList_SetItem(v, 1, PyLong_FromLong((long)mode.c_oflag));
-    PyList_SetItem(v, 2, PyLong_FromLong((long)mode.c_cflag));
-    PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
-    PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
-    PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
+    if (!(v = PyList_New(7))) {
         goto err;
     }
-    PyList_SetItem(v, 6, cc);
+
+#define ADD_LONG_ITEM(index, val) \
+    do { \
+        PyObject *l = PyLong_FromLong((long)val); \
+        if (l == NULL) { \
+            Py_DECREF(v); \
+            goto err; \
+        } \
+        PyList_SET_ITEM(v, index, l); \
+    } while (0)
+
+    ADD_LONG_ITEM(0, mode.c_iflag);
+    ADD_LONG_ITEM(1, mode.c_oflag);
+    ADD_LONG_ITEM(2, mode.c_cflag);
+    ADD_LONG_ITEM(3, mode.c_lflag);
+    ADD_LONG_ITEM(4, ispeed);
+    ADD_LONG_ITEM(5, ospeed);
+#undef ADD_LONG_ITEM
+
+    PyList_SET_ITEM(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);

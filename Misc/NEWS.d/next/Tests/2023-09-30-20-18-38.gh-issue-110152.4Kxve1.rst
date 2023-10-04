@@ -1,0 +1,5 @@
+Remove ``Tools/scripts/run_tests.py`` and ``make hostrunnertest``. Just run
+``./python -m test --slow-ci``, ``make buildbottest`` or ``make test`` instead.
+Python test runner (regrtest) now handles cross-compilation and HOSTRUNNER. It
+also adds options to Python such fast ``-u -E -W default -bb`` when
+``--fast-ci`` or ``--slow-ci`` option is used. Patch by Victor Stinner.

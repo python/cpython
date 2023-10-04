@@ -77,3 +77,9 @@ typedef struct {
 PyAPI_FUNC(PyStatus) Py_NewInterpreterFromConfig(
     PyThreadState **tstate_p,
     const PyInterpreterConfig *config);
+
+typedef void (*atexit_datacallbackfunc)(void *);
+PyAPI_FUNC(int) PyUnstable_AtExit(
+        PyInterpreterState *, atexit_datacallbackfunc, void *);
+
+PyAPI_FUNC(int) Py_IsFinalizing(void);

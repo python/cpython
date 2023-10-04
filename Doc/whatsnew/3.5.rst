@@ -921,7 +921,7 @@ and improves their substitutability for lists.
 Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
     Point = namedtuple('Point', ['x', 'y'])
-    Point.__doc__ += ': Cartesian coodinate'
+    Point.__doc__ += ': Cartesian coordinate'
     Point.x.__doc__ = 'abscissa'
     Point.y.__doc__ = 'ordinate'
 
@@ -2512,7 +2512,7 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* The undocumented :c:member:`~PyMemoryViewObject.format` member of the
+* The undocumented :c:member:`!format` member of the
   (non-public) :c:type:`PyMemoryViewObject` structure has been removed.
   All extensions relying on the relevant parts in ``memoryobject.h``
   must be rebuilt.
@@ -2520,7 +2520,7 @@ Changes in the C API
 * The :c:type:`PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
-* Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
+* Removed non-documented macro :c:macro:`!PyObject_REPR()` which leaked references.
   Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
   to format the :func:`repr` of the object.
   (Contributed by Serhiy Storchaka in :issue:`22453`.)
@@ -2533,7 +2533,7 @@ Changes in the C API
 
 * As part of the :pep:`492` implementation, the ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
-  :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
+  :c:member:`~PyTypeObject.tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
 
 

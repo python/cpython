@@ -88,8 +88,8 @@ startup by the :c:func:`PyConfig_Read` function: see
    On some systems, conversion using the file system encoding may fail. In this
    case, Python uses the :ref:`surrogateescape encoding error handler
    <surrogateescape>`, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again translated to the
-   original byte on encoding.
+   Unicode character U+DC\ *xx* on decoding, and these are again
+   translated to the original byte on encoding.
 
 
 The :term:`file system encoding <filesystem encoding and error handler>` must
@@ -215,7 +215,7 @@ process and user.
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
-      :c:func:`putenv`.
+      :c:func:`!putenv`.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
@@ -401,11 +401,11 @@ process and user.
 
       On macOS, :func:`getgroups` behavior differs somewhat from
       other Unix platforms. If the Python interpreter was built with a
-      deployment target of :const:`10.5` or earlier, :func:`getgroups` returns
+      deployment target of ``10.5`` or earlier, :func:`getgroups` returns
       the list of effective group ids associated with the current user process;
       this list is limited to a system-defined number of entries, typically 16,
       and may be modified by calls to :func:`setgroups` if suitably privileged.
-      If built with a deployment target greater than :const:`10.5`,
+      If built with a deployment target greater than ``10.5``,
       :func:`getgroups` returns the current group access list for the user
       associated with the effective user id of the process; the group access
       list may change over the lifetime of the process, it is not affected by
@@ -564,7 +564,7 @@ process and user.
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
-      cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
+      cause memory leaks. Refer to the system documentation for :c:func:`!putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
 
@@ -646,7 +646,7 @@ process and user.
 
 .. function:: setpgrp()
 
-   Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
+   Call the system call :c:func:`!setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -654,7 +654,7 @@ process and user.
 
 .. function:: setpgid(pid, pgrp, /)
 
-   Call the system call :c:func:`setpgid` to set the process group id of the
+   Call the system call :c:func:`!setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
@@ -1077,7 +1077,7 @@ as internal buffering of data.
 .. function:: fsync(fd)
 
    Force write of file with filedescriptor *fd* to disk.  On Unix, this calls the
-   native :c:func:`fsync` function; on Windows, the MS :c:func:`_commit` function.
+   native :c:func:`!fsync` function; on Windows, the MS :c:func:`!_commit` function.
 
    If you're starting with a buffered Python :term:`file object` *f*, first do
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
@@ -1163,25 +1163,65 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how, /)
+.. function:: lseek(fd, pos, whence, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
-   by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
-   beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
-   current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
-   the file. Return the new cursor position in bytes, starting from the beginning.
+   by *whence*, and return the new position in bytes relative to
+   the start of the file.
+   Valid values for *whence* are:
+
+   * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
+   * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
+   * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
+   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
+
+   .. versionchanged:: 3.3
+
+      Add support for :const:`!SEEK_HOLE` and :const:`!SEEK_DATA`.
 
 
 .. data:: SEEK_SET
           SEEK_CUR
           SEEK_END
 
-   Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
-   respectively.
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on :term:`file-like objects <file object>`,
+   for whence to adjust the file position indicator.
+
+   :const:`SEEK_SET`
+      Adjust the file position relative to the beginning of the file.
+   :const:`SEEK_CUR`
+      Adjust the file position relative to the current file position.
+   :const:`SEEK_END`
+      Adjust the file position relative to the end of the file.
+
+   Their values are 0, 1, and 2, respectively.
+
+
+.. data:: SEEK_HOLE
+          SEEK_DATA
+
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on :term:`file-like objects <file object>`,
+   for seeking file data and holes on sparsely allocated files.
+
+   :data:`!SEEK_DATA`
+      Adjust the file offset to the next location containing data,
+      relative to the seek position.
+
+   :data:`!SEEK_HOLE`
+      Adjust the file offset to the next location containing a hole,
+      relative to the seek position.
+      A hole is defined as a sequence of zeros.
+
+   .. note::
+
+      These operations only make sense for filesystems that support them.
+
+   .. availability:: Linux >= 3.1, macOS, Unix
 
    .. versionadded:: 3.3
-      Some operating systems could support additional values, like
-      :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`.
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
@@ -1578,25 +1618,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking, /)
-
-   Set the blocking mode of the specified file descriptor. Set the
-   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
-
-   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
-
-   .. availability:: Unix, Windows.
-
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
-
-      On Windows, this function is limited to pipes.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.12
-      Added support for pipes on Windows.
-
 .. data:: SF_NODISKIO
           SF_MNOWAIT
           SF_SYNC
@@ -1616,6 +1637,26 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.11
+
+
+.. function:: set_blocking(fd, blocking, /)
+
+   Set the blocking mode of the specified file descriptor. Set the
+   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
+
+   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
+
+   .. availability:: Unix, Windows.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
+      On Windows, this function is limited to pipes.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
@@ -2150,7 +2191,7 @@ features:
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
-   .. availability:: Unix, Windows.
+   .. availability:: Unix, Windows, not Emscripten.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -2264,7 +2305,7 @@ features:
 
 .. function:: lstat(path, *, dir_fd=None)
 
-   Perform the equivalent of an :c:func:`lstat` system call on the given path.
+   Perform the equivalent of an :c:func:`!lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
    :class:`stat_result` object.
 
@@ -2420,13 +2461,13 @@ features:
 .. function:: major(device, /)
 
    Extract the device major number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: minor(device, /)
 
    Extract the device minor number from a raw device number (usually the
-   :attr:`st_dev` or :attr:`st_rdev` field from :c:type:`stat`).
+   :attr:`st_dev` or :attr:`st_rdev` field from :c:struct:`stat`).
 
 
 .. function:: makedev(major, minor, /)
@@ -2937,7 +2978,7 @@ features:
 .. class:: stat_result
 
    Object whose attributes correspond roughly to the members of the
-   :c:type:`stat` structure. It is used for the result of :func:`os.stat`,
+   :c:struct:`stat` structure. It is used for the result of :func:`os.stat`,
    :func:`os.fstat` and :func:`os.lstat`.
 
    Attributes:
@@ -3107,22 +3148,24 @@ features:
 
       Windows file attributes: ``dwFileAttributes`` member of the
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
-      :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
+      :c:func:`!GetFileInformationByHandle`.
+      See the :const:`!FILE_ATTRIBUTE_* <stat.FILE_ATTRIBUTE_ARCHIVE>`
       constants in the :mod:`stat` module.
 
    .. attribute:: st_reparse_tag
 
-      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
       set, this field contains the tag identifying the type of reparse point.
-      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
+      See the :const:`IO_REPARSE_TAG_* <stat.IO_REPARSE_TAG_SYMLINK>`
+      constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
-   useful for extracting information from a :c:type:`stat` structure. (On
+   useful for extracting information from a :c:struct:`stat` structure. (On
    Windows, some items are filled with dummy values.)
 
    For backward compatibility, a :class:`stat_result` instance is also
    accessible as a tuple of at least 10 integers giving the most important (and
-   portable) members of the :c:type:`stat` structure, in the order
+   portable) members of the :c:struct:`stat` structure, in the order
    :attr:`st_mode`, :attr:`st_ino`, :attr:`st_dev`, :attr:`st_nlink`,
    :attr:`st_uid`, :attr:`st_gid`, :attr:`st_size`, :attr:`st_atime`,
    :attr:`st_mtime`, :attr:`st_ctime`. More items may be added at the end by
@@ -3172,9 +3215,9 @@ features:
 
 .. function:: statvfs(path)
 
-   Perform a :c:func:`statvfs` system call on the given path.  The return value is
+   Perform a :c:func:`!statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
-   correspond to the members of the :c:type:`statvfs` structure, namely:
+   correspond to the members of the :c:struct:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
    :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
@@ -4114,15 +4157,38 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.fork "" os.fork
 
+   .. warning::
+
+      If you use TLS sockets in an application calling ``fork()``, see
+      the warning in the :mod:`ssl` documentation.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. warning::
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, :func:`os.fork` now raises a :exc:`DeprecationWarning`.
 
-      See :mod:`ssl` for applications that use the SSL module with fork().
+      We chose to surface this as a warning, when detectable, to better
+      inform developers of a design problem that the POSIX platform
+      specifically notes as not supported. Even in code that
+      *appears* to work, it has never been safe to mix threading with
+      :func:`os.fork` on POSIX platforms. The CPython runtime itself has
+      always made API calls that are not safe for use in the child
+      process when threads existed in the parent (such as ``malloc`` and
+      ``free``).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+      Users of macOS or users of libc or malloc implementations other
+      than those typically found in glibc to date are among those
+      already more likely to experience deadlocks running such code.
+
+      See `this discussion on fork being incompatible with threads
+      <https://discuss.python.org/t/33555>`_
+      for technical details of why we're surfacing this longstanding
+      platform compatibility problem to developers.
+
+   .. availability:: POSIX, not Emscripten, not WASI.
 
 
 .. function:: forkpty()
@@ -4134,6 +4200,11 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    .. audit-event:: os.forkpty "" os.forkpty
+
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, this now raises a :exc:`DeprecationWarning`. See the
+      longer explanation on :func:`os.fork`.
 
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
@@ -4263,7 +4334,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawn` C library API for use from Python.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
@@ -4299,16 +4370,16 @@ written in Python, such as a mail server's external command delivery program.
       Performs ``os.dup2(fd, new_fd)``.
 
    These tuples correspond to the C library
-   :c:func:`posix_spawn_file_actions_addopen`,
-   :c:func:`posix_spawn_file_actions_addclose`, and
-   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
-   for the :c:func:`posix_spawn` call itself.
+   :c:func:`!posix_spawn_file_actions_addopen`,
+   :c:func:`!posix_spawn_file_actions_addclose`, and
+   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
    specified. If the value specified is 0, the child's process group ID will be
    made the same as its process ID. If the value of *setpgroup* is not set, the
    child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:macro:`POSIX_SPAWN_SETPGROUP` flag.
+   to the C library :c:macro:`!POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
    GID of the child to the real UID and GID of the parent process. If the
@@ -4316,27 +4387,27 @@ written in Python, such as a mail server's external command delivery program.
    the parent. In either case, if the set-user-ID and set-group-ID permission
    bits are enabled on the executable file, their effect will override the
    setting of the effective UID and GID. This argument corresponds to the C
-   library :c:macro:`POSIX_SPAWN_RESETIDS` flag.
+   library :c:macro:`!POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for ``posix_spawn``. *setsid* requires :c:macro:`POSIX_SPAWN_SETSID`
-   or :c:macro:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   for ``posix_spawn``. *setsid* requires :c:macro:`!POSIX_SPAWN_SETSID`
+   or :c:macro:`!POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGMASK` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGMASK` flag.
 
    The *sigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGDEF` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGDEF` flag.
 
    The *scheduler* argument must be a tuple containing the (optional) scheduler
    policy and an instance of :class:`sched_param` with the scheduler parameters.
    A value of ``None`` in the place of the scheduler policy indicates that is
    not being provided. This argument is a combination of the C library
-   :c:macro:`POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`POSIX_SPAWN_SETSCHEDULER`
+   :c:macro:`!POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`!POSIX_SPAWN_SETSCHEDULER`
    flags.
 
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
@@ -4349,7 +4420,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawnp` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawnp` C library API for use from Python.
 
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
@@ -4530,7 +4601,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Use *show_cmd* to override the default window style. Whether this has any
    effect will depend on the application being launched. Values are integers as
-   supported by the Win32 :c:func:`ShellExecute` function.
+   supported by the Win32 :c:func:`!ShellExecute` function.
 
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
@@ -4540,7 +4611,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`os.path.normpath` function to ensure that paths are properly encoded for
    Win32.
 
-   To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
+   To reduce interpreter startup overhead, the Win32 :c:func:`!ShellExecute`
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
@@ -5070,8 +5141,12 @@ operating system.
 
 .. function:: sched_getaffinity(pid, /)
 
-   Return the set of CPUs the process with PID *pid* (or the current process
-   if zero) is restricted to.
+   Return the set of CPUs the process with PID *pid* is restricted to.
+
+   If *pid* is zero, return the set of CPUs the calling thread of the current
+   process is restricted to.
+
+   See also the :func:`process_cpu_count` function.
 
 
 .. _os-path:
@@ -5112,12 +5187,11 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the **system**. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
-
+   The :func:`process_cpu_count` function can be used to get the number of
+   logical CPUs usable by the calling thread of the **current process**.
 
    .. versionadded:: 3.4
 
@@ -5129,6 +5203,20 @@ Miscellaneous System Information
    unobtainable.
 
    .. availability:: Unix.
+
+
+.. function:: process_cpu_count()
+
+   Get the number of logical CPUs usable by the calling thread of the **current
+   process**. Returns ``None`` if undetermined. It can be less than
+   :func:`cpu_count` depending on the CPU affinity.
+
+   The :func:`cpu_count` function can be used to get the number of logical CPUs
+   in the **system**.
+
+   See also the :func:`sched_getaffinity` functions.
+
+   .. versionadded:: 3.13
 
 
 .. function:: sysconf(name, /)

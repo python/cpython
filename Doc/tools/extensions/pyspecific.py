@@ -98,14 +98,13 @@ class ImplementationDetail(Directive):
     final_argument_whitespace = True
 
     # This text is copied to templates/dummy.html
-    label_text = 'CPython implementation detail:'
+    label_text = sphinx_gettext('CPython implementation detail:')
 
     def run(self):
         self.assert_has_content()
         pnode = nodes.compound(classes=['impl-detail'])
-        label = sphinx_gettext(self.label_text)
         content = self.content
-        add_text = nodes.strong(label, label)
+        add_text = nodes.strong(self.label_text, self.label_text)
         self.state.nested_parse(content, self.content_offset, pnode)
         content = nodes.inline(pnode[0].rawsource, translatable=True)
         content.source = pnode[0].source
@@ -180,7 +179,7 @@ class Availability(SphinxDirective):
         if unknown:
             cls = type(self)
             logger = logging.getLogger(cls.__qualname__)
-            logger.warn(
+            logger.warning(
                 f"Unknown platform(s) or syntax '{' '.join(sorted(unknown))}' "
                 f"in '.. availability:: {self.arguments[0]}', see "
                 f"{__file__}:{cls.__qualname__}.known_platforms for a set "
@@ -234,9 +233,9 @@ class AuditEvent(Directive):
     final_argument_whitespace = True
 
     _label = [
-        "Raises an :ref:`auditing event <auditing>` {name} with no arguments.",
-        "Raises an :ref:`auditing event <auditing>` {name} with argument {args}.",
-        "Raises an :ref:`auditing event <auditing>` {name} with arguments {args}.",
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with no arguments."),
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with argument {args}."),
+        sphinx_gettext("Raises an :ref:`auditing event <auditing>` {name} with arguments {args}."),
     ]
 
     @property
@@ -252,7 +251,7 @@ class AuditEvent(Directive):
         else:
             args = []
 
-        label = sphinx_gettext(self._label[min(2, len(args))])
+        label = self._label[min(2, len(args))]
         text = label.format(name="``{}``".format(name),
                             args=", ".join("``{}``".format(a) for a in args if a))
 
@@ -267,7 +266,7 @@ class AuditEvent(Directive):
         info = env.all_audit_events.setdefault(name, new_info)
         if info is not new_info:
             if not self._do_args_match(info['args'], new_info['args']):
-                self.logger.warn(
+                self.logger.warning(
                     "Mismatched arguments for audit-event {}: {!r} != {!r}"
                     .format(name, info['args'], new_info['args'])
                 )
@@ -414,8 +413,8 @@ class DeprecatedRemoved(Directive):
     final_argument_whitespace = True
     option_spec = {}
 
-    _deprecated_label = 'Deprecated since version {deprecated}, will be removed in version {removed}'
-    _removed_label = 'Deprecated since version {deprecated}, removed in version {removed}'
+    _deprecated_label = sphinx_gettext('Deprecated since version {deprecated}, will be removed in version {removed}')
+    _removed_label = sphinx_gettext('Deprecated since version {deprecated}, removed in version {removed}')
 
     def run(self):
         node = addnodes.versionmodified()
@@ -431,7 +430,6 @@ class DeprecatedRemoved(Directive):
         else:
             label = self._removed_label
 
-        label = sphinx_gettext(label)
         text = label.format(deprecated=self.arguments[0], removed=self.arguments[1])
         if len(self.arguments) == 3:
             inodes, messages = self.state.inline_text(self.arguments[2],
@@ -544,7 +542,7 @@ class PydocTopicsBuilder(Builder):
                                      'building topics... ',
                                      length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
-                self.env.logger.warn('label %r not in documentation' % label)
+                self.env.logger.warning(f'label {label!r} not in documentation')
                 continue
             docname, labelid, sectname = self.env.domaindata['std']['labels'][label]
             doctree = self.env.get_and_resolve_doctree(docname, self)

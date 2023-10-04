@@ -52,8 +52,6 @@ PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(
     PyObject *kwnames,
     struct _PyArg_Parser *,
     ...);
-PyAPI_FUNC(int) _PyArg_VaParseTupleAndKeywordsFast(PyObject *, PyObject *,
-                                                   struct _PyArg_Parser *, va_list);
 PyAPI_FUNC(PyObject * const *) _PyArg_UnpackKeywords(
         PyObject *const *args, Py_ssize_t nargs,
         PyObject *kwargs, PyObject *kwnames,

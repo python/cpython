@@ -25,7 +25,7 @@ The following functions can be safely called before Python is initialized:
 
   * :c:func:`PyImport_AppendInittab`
   * :c:func:`PyImport_ExtendInittab`
-  * :c:func:`PyInitFrozenExtensions`
+  * :c:func:`!PyInitFrozenExtensions`
   * :c:func:`PyMem_SetAllocator`
   * :c:func:`PyMem_SetupDebugHooks`
   * :c:func:`PyObject_SetArenaAllocator`
@@ -151,7 +151,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :c:member:`PyConfig.use_environment` should be used instead, see
    :ref:`Python Initialization Configuration <init-config>`.
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all :envvar:`!PYTHON*` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    Set by the :option:`-E` and :option:`-I` options.
@@ -224,7 +224,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    :ref:`Python Initialization Configuration <init-config>`.
 
    If the flag is non-zero, use :class:`io.FileIO` instead of
-   :class:`WindowsConsoleIO` for :mod:`sys` standard streams.
+   :class:`!io._WindowsConsoleIO` for :mod:`sys` standard streams.
 
    Set to ``1`` if the :envvar:`PYTHONLEGACYWINDOWSSTDIO` environment
    variable is set to a non-empty string.
@@ -373,6 +373,14 @@ Initializing and finalizing the interpreter
    :c:func:`Py_Initialize` is called again.
 
 
+.. c:function:: int Py_IsFinalizing()
+
+   Return true (non-zero) if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return false (zero) otherwise.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
@@ -393,7 +401,7 @@ Initializing and finalizing the interpreter
    the application.
 
    **Bugs and caveats:** The destruction of modules and objects in modules is done
-   in random order; this may cause destructors (:meth:`__del__` methods) to fail
+   in random order; this may cause destructors (:meth:`~object.__del__` methods) to fail
    when they depend on other objects (even functions) or modules.  Dynamically
    loaded extension modules loaded by Python are not unloaded.  Small amounts of
    memory allocated by the Python interpreter may not be freed (if you find a leak,
@@ -417,7 +425,7 @@ Process-wide parameters
 =======================
 
 
-.. c:function:: wchar* Py_GetProgramName()
+.. c:function:: wchar_t* Py_GetProgramName()
 
    Return the program name set with :c:member:`PyConfig.program_name`, or the default.
    The returned string points into static storage; the caller should not modify its
@@ -785,7 +793,7 @@ the fork, and releasing them afterwards. In addition, it resets any
 :ref:`lock-objects` in the child. When extending or embedding Python, there
 is no way to inform Python of additional (non-Python) locks that need to be
 acquired before or reset after a fork. OS facilities such as
-:c:func:`pthread_atfork` would need to be used to accomplish the same thing.
+:c:func:`!pthread_atfork` would need to be used to accomplish the same thing.
 Additionally, when extending or embedding Python, calling :c:func:`fork`
 directly rather than through :func:`os.fork` (and returning to or calling
 into Python) may result in a deadlock by one of Python's internal locks
@@ -827,8 +835,11 @@ code, or when embedding the Python interpreter:
 .. c:type:: PyThreadState
 
    This data structure represents the state of a single thread.  The only public
-   data member is :attr:`interp` (:c:expr:`PyInterpreterState *`), which points to
-   this thread's interpreter state.
+   data member is:
+
+   .. c:member:: PyInterpreterState *interp
+
+      This thread's interpreter state.
 
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
@@ -849,7 +860,7 @@ code, or when embedding the Python interpreter:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -858,6 +869,19 @@ code, or when embedding the Python interpreter:
    Return the current thread state.  The global interpreter lock must be held.
    When the current thread state is ``NULL``, this issues a fatal error (so that
    the caller needn't check for ``NULL``).
+
+   See also :c:func:`PyThreadState_GetUnchecked`.
+
+
+.. c:function:: PyThreadState* PyThreadState_GetUnchecked()
+
+   Similar to :c:func:`PyThreadState_Get`, but don't kill the process with a
+   fatal error if it is NULL. The caller is responsible to check if the result
+   is NULL.
+
+   .. versionadded:: 3.13
+      In Python 3.5 to 3.12, the function was private and known as
+      ``_PyThreadState_UncheckedGet()``.
 
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
@@ -895,7 +919,7 @@ with sub-interpreters:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1177,7 +1201,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1223,7 +1247,96 @@ You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
 function. You can create and destroy them using the following functions:
 
 
-.. c:function:: PyThreadState* Py_NewInterpreter()
+.. c:type:: PyInterpreterConfig
+
+   Structure containing most parameters to configure a sub-interpreter.
+   Its values are used only in :c:func:`Py_NewInterpreterFromConfig` and
+   never modified by the runtime.
+
+   .. versionadded:: 3.12
+
+   Structure fields:
+
+   .. c:member:: int use_main_obmalloc
+
+      If this is ``0`` then the sub-interpreter will use its own
+      "object" allocator state.
+      Otherwise it will use (share) the main interpreter's.
+
+      If this is ``0`` then
+      :c:member:`~PyInterpreterConfig.check_multi_interp_extensions`
+      must be ``1`` (non-zero).
+      If this is ``1`` then :c:member:`~PyInterpreterConfig.gil`
+      must not be :c:macro:`PyInterpreterConfig_OWN_GIL`.
+
+   .. c:member:: int allow_fork
+
+      If this is ``0`` then the runtime will not support forking the
+      process in any thread where the sub-interpreter is currently active.
+      Otherwise fork is unrestricted.
+
+      Note that the :mod:`subprocess` module still works
+      when fork is disallowed.
+
+   .. c:member:: int allow_exec
+
+      If this is ``0`` then the runtime will not support replacing the
+      current process via exec (e.g. :func:`os.execv`) in any thread
+      where the sub-interpreter is currently active.
+      Otherwise exec is unrestricted.
+
+      Note that the :mod:`subprocess` module still works
+      when exec is disallowed.
+
+   .. c:member:: int allow_threads
+
+      If this is ``0`` then the sub-interpreter's :mod:`threading` module
+      won't create threads.
+      Otherwise threads are allowed.
+
+   .. c:member:: int allow_daemon_threads
+
+      If this is ``0`` then the sub-interpreter's :mod:`threading` module
+      won't create daemon threads.
+      Otherwise daemon threads are allowed (as long as
+      :c:member:`~PyInterpreterConfig.allow_threads` is non-zero).
+
+   .. c:member:: int check_multi_interp_extensions
+
+      If this is ``0`` then all extension modules may be imported,
+      including legacy (single-phase init) modules,
+      in any thread where the sub-interpreter is currently active.
+      Otherwise only multi-phase init extension modules
+      (see :pep:`489`) may be imported.
+      (Also see :c:macro:`Py_mod_multiple_interpreters`.)
+
+      This must be ``1`` (non-zero) if
+      :c:member:`~PyInterpreterConfig.use_main_obmalloc` is ``0``.
+
+   .. c:member:: int gil
+
+      This determines the operation of the GIL for the sub-interpreter.
+      It may be one of the following:
+
+      .. c:namespace:: NULL
+
+      .. c:macro:: PyInterpreterConfig_DEFAULT_GIL
+
+         Use the default selection (:c:macro:`PyInterpreterConfig_SHARED_GIL`).
+
+      .. c:macro:: PyInterpreterConfig_SHARED_GIL
+
+         Use (share) the main interpreter's GIL.
+
+      .. c:macro:: PyInterpreterConfig_OWN_GIL
+
+         Use the sub-interpreter's own GIL.
+
+      If this is :c:macro:`PyInterpreterConfig_OWN_GIL` then
+      :c:member:`PyInterpreterConfig.use_main_obmalloc` must be ``0``.
+
+
+.. c:function:: PyStatus Py_NewInterpreterFromConfig(PyThreadState **tstate_p, const PyInterpreterConfig *config)
 
    .. index::
       pair: module; builtins
@@ -1243,16 +1356,47 @@ function. You can create and destroy them using the following functions:
    ``sys.stdout`` and ``sys.stderr`` (however these refer to the same underlying
    file descriptors).
 
-   The return value points to the first thread state created in the new
+   The given *config* controls the options with which the interpreter
+   is initialized.
+
+   Upon success, *tstate_p* will be set to the first thread state
+   created in the new
    sub-interpreter.  This thread state is made in the current thread state.
    Note that no actual thread is created; see the discussion of thread states
-   below.  If creation of the new interpreter is unsuccessful, ``NULL`` is
-   returned; no exception is set since the exception state is stored in the
-   current thread state and there may not be a current thread state.  (Like all
-   other Python/C API functions, the global interpreter lock must be held before
-   calling this function and is still held when it returns; however, unlike most
-   other Python/C API functions, there needn't be a current thread state on
-   entry.)
+   below.  If creation of the new interpreter is unsuccessful,
+   *tstate_p* is set to ``NULL``;
+   no exception is set since the exception state is stored in the
+   current thread state and there may not be a current thread state.
+
+   Like all other Python/C API functions, the global interpreter lock
+   must be held before calling this function and is still held when it
+   returns.  Likewise a current thread state must be set on entry.  On
+   success, the returned thread state will be set as current.  If the
+   sub-interpreter is created with its own GIL then the GIL of the
+   calling interpreter will be released.  When the function returns,
+   the new interpreter's GIL will be held by the current thread and
+   the previously interpreter's GIL will remain released here.
+
+   .. versionadded:: 3.12
+
+   Sub-interpreters are most effective when isolated from each other,
+   with certain functionality restricted::
+
+      PyInterpreterConfig config = {
+          .use_main_obmalloc = 0,
+          .allow_fork = 0,
+          .allow_exec = 0,
+          .allow_threads = 1,
+          .allow_daemon_threads = 0,
+          .check_multi_interp_extensions = 1,
+          .gil = PyInterpreterConfig_OWN_GIL,
+      };
+      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+
+   Note that the config is used only briefly and does not get modified.
+   During initialization the config's values are converted into various
+   :c:type:`PyInterpreterState` values.  A read-only copy of the config
+   may be stored internally on the :c:type:`PyInterpreterState`.
 
    .. index::
       single: Py_FinalizeEx()
@@ -1287,17 +1431,77 @@ function. You can create and destroy them using the following functions:
    .. index:: single: close() (in module os)
 
 
+.. c:function:: PyThreadState* Py_NewInterpreter(void)
+
+   .. index::
+      pair: module; builtins
+      pair: module; __main__
+      pair: module; sys
+      single: stdout (in module sys)
+      single: stderr (in module sys)
+      single: stdin (in module sys)
+
+   Create a new sub-interpreter.  This is essentially just a wrapper
+   around :c:func:`Py_NewInterpreterFromConfig` with a config that
+   preserves the existing behavior.  The result is an unisolated
+   sub-interpreter that shares the main interpreter's GIL, allows
+   fork/exec, allows daemon threads, and allows single-phase init
+   modules.
+
+
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
 
    .. index:: single: Py_FinalizeEx()
 
-   Destroy the (sub-)interpreter represented by the given thread state. The given
-   thread state must be the current thread state.  See the discussion of thread
-   states below.  When the call returns, the current thread state is ``NULL``.  All
-   thread states associated with this interpreter are destroyed.  (The global
-   interpreter lock must be held before calling this function and is still held
-   when it returns.)  :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
+   Destroy the (sub-)interpreter represented by the given thread state.
+   The given thread state must be the current thread state.  See the
+   discussion of thread states below.  When the call returns,
+   the current thread state is ``NULL``.  All thread states associated
+   with this interpreter are destroyed.  The global interpreter lock
+   used by the target interpreter must be held before calling this
+   function.  No GIL is held when it returns.
+
+   :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
+
+
+A Per-Interpreter GIL
+---------------------
+
+Using :c:func:`Py_NewInterpreterFromConfig` you can create
+a sub-interpreter that is completely isolated from other interpreters,
+including having its own GIL.  The most important benefit of this
+isolation is that such an interpreter can execute Python code without
+being blocked by other interpreters or blocking any others.  Thus a
+single Python process can truly take advantage of multiple CPU cores
+when running Python code.  The isolation also encourages a different
+approach to concurrency than that of just using threads.
+(See :pep:`554`.)
+
+Using an isolated interpreter requires vigilance in preserving that
+isolation.  That especially means not sharing any objects or mutable
+state without guarantees about thread-safety.  Even objects that are
+otherwise immutable (e.g. ``None``, ``(1, 5)``) can't normally be shared
+because of the refcount.  One simple but less-efficient approach around
+this is to use a global lock around all use of some state (or object).
+Alternately, effectively immutable objects (like integers or strings)
+can be made safe in spite of their refcounts by making them "immortal".
+In fact, this has been done for the builtin singletons, small integers,
+and a number of other builtin objects.
+
+If you preserve isolation then you will have access to proper multi-core
+computing without the complications that come with free-threading.
+Failure to preserve isolation will expose you to the full consequences
+of free-threading, including races and hard-to-debug crashes.
+
+Aside from that, one of the main challenges of using multiple isolated
+interpreters is how to communicate between them safely (not break
+isolation) and efficiently.  The runtime and stdlib do not provide
+any standard approach to this yet.  A future stdlib module would help
+mitigate the effort of preserving isolation and expose effective tools
+for communicating (and sharing) data between interpreters.
+
+.. versionadded:: 3.12
 
 
 Bugs and caveats

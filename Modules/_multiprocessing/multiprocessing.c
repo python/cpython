@@ -14,16 +14,17 @@ class HANDLE_converter(CConverter):
     type = "HANDLE"
     format_unit = '"F_HANDLE"'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3e537d244034affb]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3cf0318efc6a8772]*/
 
 /*[clinic input]
 module _multiprocessing

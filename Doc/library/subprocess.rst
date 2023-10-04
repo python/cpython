@@ -465,9 +465,9 @@ functions.
    :func:`open` function when creating the stdin/stdout/stderr pipe
    file objects:
 
-   - :const:`0` means unbuffered (read and write are one
+   - ``0`` means unbuffered (read and write are one
      system call and can return short)
-   - :const:`1` means line buffered
+   - ``1`` means line buffered
      (only usable if ``text=True`` or ``universal_newlines=True``)
    - any other positive value means use a buffer of approximately that
      size
@@ -477,7 +477,7 @@ functions.
    .. versionchanged:: 3.3.1
       *bufsize* now defaults to -1 to enable buffering by default to match the
       behavior that most code expects.  In versions prior to Python 3.2.4 and
-      3.3.1 it incorrectly defaulted to :const:`0` which was unbuffered
+      3.3.1 it incorrectly defaulted to ``0`` which was unbuffered
       and allowed short reads.  This was unintentional and did not match the
       behavior of Python 2 as most code expected.
 
@@ -541,8 +541,8 @@ functions.
       :exc:`RuntimeError`. The new restriction may affect applications that
       are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
-   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
-   :const:`2` will be closed before the child process is executed.  Otherwise
+   If *close_fds* is true, all file descriptors except ``0``, ``1`` and
+   ``2`` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
    as described in :ref:`fd_inheritance`.
 

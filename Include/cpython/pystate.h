@@ -8,6 +8,7 @@
 PyAPI_FUNC(int) _PyInterpreterState_RequiresIDRef(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_RequireIDRef(PyInterpreterState *, int);
 
+PyAPI_FUNC(PyObject *) PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *);
 
 /* State unique per thread */
 
@@ -27,24 +28,6 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-
-// Internal structure: you should not use it directly, but use public functions
-// like PyThreadState_EnterTracing() and PyThreadState_LeaveTracing().
-typedef struct _PyCFrame {
-    /* This struct will be threaded through the C stack
-     * allowing fast access to per-thread state that needs
-     * to be accessed quickly by the interpreter, but can
-     * be modified outside of the interpreter.
-     *
-     * WARNING: This makes data on the C stack accessible from
-     * heap objects. Care must be taken to maintain stack
-     * discipline and make sure that instances of this struct cannot
-     * accessed outside of their lifetime.
-     */
-    /* Pointer to the currently executing frame (it can be NULL) */
-    struct _PyInterpreterFrame *current_frame;
-    struct _PyCFrame *previous;
-} _PyCFrame;
 
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
@@ -109,6 +92,15 @@ struct _ts {
         /* padding to align to 4 bytes */
         unsigned int :24;
     } _status;
+#ifdef Py_BUILD_CORE
+#  define _PyThreadState_WHENCE_NOTSET -1
+#  define _PyThreadState_WHENCE_UNKNOWN 0
+#  define _PyThreadState_WHENCE_INTERP 1
+#  define _PyThreadState_WHENCE_THREADING 2
+#  define _PyThreadState_WHENCE_GILSTATE 3
+#  define _PyThreadState_WHENCE_EXEC 4
+#endif
+    int _whence;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -122,9 +114,8 @@ struct _ts {
     int tracing;
     int what_event; /* The event currently being monitored, if any. */
 
-    /* Pointer to current _PyCFrame in the C stack frame of the currently,
-     * or most recently, executing _PyEval_EvalFrameDefault. */
-    _PyCFrame *cframe;
+    /* Pointer to currently executing frame. */
+    struct _PyInterpreterFrame *current_frame;
 
     Py_tracefunc c_profilefunc;
     Py_tracefunc c_tracefunc;
@@ -210,26 +201,25 @@ struct _ts {
     /* The thread's exception stack entry.  (Always the last entry.) */
     _PyErr_StackItem exc_state;
 
-    /* The bottom-most frame on the stack. */
-    _PyCFrame root_cframe;
 };
 
-/* WASI has limited call stack. Python's recursion limit depends on code
-   layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   recursions, sometimes less. 500 is a more conservative limit. */
-#ifndef C_RECURSION_LIMIT
-#  ifdef __wasi__
-#    define C_RECURSION_LIMIT 500
-#  else
-#    define C_RECURSION_LIMIT 800
-#  endif
+#ifdef __wasi__
+   // WASI has limited call stack. Python's recursion limit depends on code
+   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   // recursions, sometimes less. 500 is a more conservative limit.
+#  define Py_C_RECURSION_LIMIT 500
+#else
+   // This value is duplicated in Lib/test/support/__init__.py
+#  define Py_C_RECURSION_LIMIT 1500
 #endif
+
 
 /* other API */
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
-PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
+
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -245,15 +235,6 @@ PyAPI_FUNC(void) PyThreadState_LeaveTracing(PyThreadState *tstate);
 
    The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
-
-/* Get the single PyInterpreterState used by this process' GILState
-   implementation.
-
-   This function doesn't check for error. Return NULL before _PyGILState_Init()
-   is called and after _PyGILState_Fini() is called.
-
-   See also PyInterpreterState_Get() and _PyInterpreterState_GET(). */
-PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
@@ -338,6 +319,7 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 

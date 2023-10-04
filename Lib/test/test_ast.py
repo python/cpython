@@ -357,6 +357,38 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_optimization_levels__debug__(self):
+        cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval, expected=expected):
+                res1 = ast.parse("__debug__", optimize=optval)
+                res2 = ast.parse(ast.parse("__debug__"), optimize=optval)
+                for res in [res1, res2]:
+                    self.assertIsInstance(res.body[0], ast.Expr)
+                    if isinstance(expected, bool):
+                        self.assertIsInstance(res.body[0].value, ast.Constant)
+                        self.assertEqual(res.body[0].value.value, expected)
+                    else:
+                        self.assertIsInstance(res.body[0].value, ast.Name)
+                        self.assertEqual(res.body[0].value.id, expected)
+
+    def test_optimization_levels_const_folding(self):
+        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
+        not_folded = ('Expr', (1, 0, 1, 5),
+                         ('BinOp', (1, 0, 1, 5),
+                             ('Constant', (1, 0, 1, 1), 1, None),
+                             ('Add',),
+                             ('Constant', (1, 4, 1, 5), 2, None)))
+
+        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
+        for (optval, expected) in cases:
+            with self.subTest(optval=optval):
+                tree1 = ast.parse("1 + 2", optimize=optval)
+                tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
+                for tree in [tree1, tree2]:
+                    res = to_tuple(tree.body[0])
+                    self.assertEqual(res, expected)
+
     def test_invalid_position_information(self):
         invalid_linenos = [
             (10, 1), (-10, -11), (10, -11), (-5, -2), (-5, 1)
@@ -1084,6 +1116,7 @@ class AST_Tests(unittest.TestCase):
                     return self
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
+    @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.cpython_only
     def test_ast_recursion_limit(self):
         fail_depth = support.EXCEEDS_RECURSION_LIMIT
@@ -1998,6 +2031,7 @@ class ASTValidatorTests(unittest.TestCase):
             'ast.NameConstant is deprecated and will be removed in Python 3.14; use ast.Constant instead',
         ])
 
+    @support.requires_resource('cpu')
     def test_stdlib_validates(self):
         stdlib = os.path.dirname(ast.__file__)
         tests = [fn for fn in os.listdir(stdlib) if fn.endswith(".py")]

@@ -2270,7 +2270,7 @@ class MockTest(unittest.TestCase):
         class Foo():
             one = 'one'
         # patch, patch.object and create_autospec need to check for misspelled
-        # arguments explicitly and throw a RuntimError if found.
+        # arguments explicitly and throw a RuntimeError if found.
         with self.assertRaises(RuntimeError):
             with patch(f'{__name__}.Something.meth', autospect=True): pass
         with self.assertRaises(RuntimeError):

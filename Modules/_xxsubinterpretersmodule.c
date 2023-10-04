@@ -6,8 +6,10 @@
 #endif
 
 #include "Python.h"
-#include "pycore_interp.h"        // _PyInterpreterState_GetMainModule()
-#include "pycore_interp_id.h"     // _PyInterpreterState_GetIDObject()
+#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+#include "interpreteridobject.h"
 
 
 #define MODULE_NAME "_xxsubinterpreters"
@@ -40,7 +42,7 @@ _get_current_interp(void)
 static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
-    assert(!PyObject_HasAttrString(mod, name));
+    assert(!PyObject_HasAttrStringWithError(mod, name));
     PyObject *exctype = PyErr_NewException(name, base, NULL);
     if (exctype == NULL) {
         return NULL;
@@ -57,24 +59,17 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+_release_xid_data(_PyCrossInterpreterData *data)
 {
-    PyObject *exc;
-    if (ignoreexc) {
-        exc = PyErr_GetRaisedException();
-    }
+    PyObject *exc = PyErr_GetRaisedException();
     int res = _PyCrossInterpreterData_Release(data);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
-        if (ignoreexc) {
-            // XXX Emit a warning?
-            PyErr_Clear();
-        }
+        // XXX Emit a warning?
+        PyErr_Clear();
     }
-    if (ignoreexc) {
-        PyErr_SetRaisedException(exc);
-    }
+    PyErr_SetRaisedException(exc);
     return res;
 }
 
@@ -144,7 +139,7 @@ _sharednsitem_clear(struct _sharednsitem *item)
         PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
-    (void)_release_xid_data(&item->data, 1);
+    (void)_release_xid_data(&item->data);
 }
 
 static int
@@ -173,16 +168,16 @@ typedef struct _sharedns {
 static _sharedns *
 _sharedns_new(Py_ssize_t len)
 {
-    _sharedns *shared = PyMem_NEW(_sharedns, 1);
+    _sharedns *shared = PyMem_RawCalloc(sizeof(_sharedns), 1);
     if (shared == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     shared->len = len;
-    shared->items = PyMem_NEW(struct _sharednsitem, len);
+    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
     if (shared->items == NULL) {
         PyErr_NoMemory();
-        PyMem_Free(shared);
+        PyMem_RawFree(shared);
         return NULL;
     }
     return shared;
@@ -194,8 +189,8 @@ _sharedns_free(_sharedns *shared)
     for (Py_ssize_t i=0; i < shared->len; i++) {
         _sharednsitem_clear(&shared->items[i]);
     }
-    PyMem_Free(shared->items);
-    PyMem_Free(shared);
+    PyMem_RawFree(shared->items);
+    PyMem_RawFree(shared);
 }
 
 static _sharedns *
@@ -247,6 +242,11 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
 // of the exception in the calling interpreter.
 
 typedef struct _sharedexception {
+    PyInterpreterState *interp;
+#define ERR_NOT_SET 0
+#define ERR_NO_MEMORY 1
+#define ERR_ALREADY_RUNNING 2
+    int code;
     const char *name;
     const char *msg;
 } _sharedexception;
@@ -268,14 +268,26 @@ _sharedexception_clear(_sharedexception *exc)
 }
 
 static const char *
-_sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
+_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
 {
+    if (sharedexc->interp == NULL) {
+        sharedexc->interp = PyInterpreterState_Get();
+    }
+
+    if (code != ERR_NOT_SET) {
+        assert(exc == NULL);
+        assert(code > 0);
+        sharedexc->code = code;
+        return NULL;
+    }
+
     assert(exc != NULL);
     const char *failure = NULL;
 
     PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
     if (nameobj == NULL) {
         failure = "unable to format exception type name";
+        code = ERR_NO_MEMORY;
         goto error;
     }
     sharedexc->name = _copy_raw_string(nameobj);
@@ -286,6 +298,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
         } else {
             failure = "unable to encode and copy exception type name";
         }
+        code = ERR_NO_MEMORY;
         goto error;
     }
 
@@ -293,6 +306,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
         PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
         if (msgobj == NULL) {
             failure = "unable to format exception message";
+            code = ERR_NO_MEMORY;
             goto error;
         }
         sharedexc->msg = _copy_raw_string(msgobj);
@@ -303,6 +317,7 @@ _sharedexception_bind(PyObject *exc, _sharedexception *sharedexc)
             } else {
                 failure = "unable to encode and copy exception message";
             }
+            code = ERR_NO_MEMORY;
             goto error;
         }
     }
@@ -313,7 +328,10 @@ error:
     assert(failure != NULL);
     PyErr_Clear();
     _sharedexception_clear(sharedexc);
-    *sharedexc = no_exception;
+    *sharedexc = (_sharedexception){
+        .interp = sharedexc->interp,
+        .code = code,
+    };
     return failure;
 }
 
@@ -321,6 +339,7 @@ static void
 _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
     if (exc->name != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         if (exc->msg != NULL) {
             PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
         }
@@ -329,9 +348,19 @@ _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
         }
     }
     else if (exc->msg != NULL) {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetString(wrapperclass, exc->msg);
     }
+    else if (exc->code == ERR_NO_MEMORY) {
+        PyErr_NoMemory();
+    }
+    else if (exc->code == ERR_ALREADY_RUNNING) {
+        assert(exc->interp != NULL);
+        assert(_PyInterpreterState_IsRunningMain(exc->interp));
+        _PyInterpreterState_FailIfRunningMain(exc->interp);
+    }
     else {
+        assert(exc->code == ERR_NOT_SET);
         PyErr_SetNone(wrapperclass);
     }
 }
@@ -364,43 +393,23 @@ exceptions_init(PyObject *mod)
 }
 
 static int
-_is_running(PyInterpreterState *interp)
-{
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
-    if (PyThreadState_Next(tstate) != NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "interpreter has more than one thread");
-        return -1;
-    }
-
-    assert(!PyErr_Occurred());
-    struct _PyInterpreterFrame *frame = tstate->cframe->current_frame;
-    if (frame == NULL) {
-        return 0;
-    }
-    return 1;
-}
-
-static int
-_ensure_not_running(PyInterpreterState *interp)
-{
-    int is_running = _is_running(interp);
-    if (is_running < 0) {
-        return -1;
-    }
-    if (is_running) {
-        PyErr_Format(PyExc_RuntimeError, "interpreter already running");
-        return -1;
-    }
-    return 0;
-}
-
-static int
 _run_script(PyInterpreterState *interp, const char *codestr,
             _sharedns *shared, _sharedexception *sharedexc)
 {
+    int errcode = ERR_NOT_SET;
+
+    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+        assert(PyErr_Occurred());
+        // In the case where we didn't switch interpreters, it would
+        // be more efficient to leave the exception in place and return
+        // immediately.  However, life is simpler if we don't.
+        PyErr_Clear();
+        errcode = ERR_ALREADY_RUNNING;
+        goto error;
+    }
+
     PyObject *excval = NULL;
-    PyObject *main_mod = _PyInterpreterState_GetMainModule(interp);
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
     }
@@ -428,20 +437,23 @@ _run_script(PyInterpreterState *interp, const char *codestr,
     else {
         Py_DECREF(result);  // We throw away the result.
     }
+    _PyInterpreterState_SetNotRunningMain(interp);
 
     *sharedexc = no_exception;
     return 0;
 
 error:
     excval = PyErr_GetRaisedException();
-    const char *failure = _sharedexception_bind(excval, sharedexc);
+    const char *failure = _sharedexception_bind(excval, errcode, sharedexc);
     if (failure != NULL) {
         fprintf(stderr,
                 "RunFailedError: script raised an uncaught exception (%s)",
                 failure);
-        PyErr_Clear();
     }
     Py_XDECREF(excval);
+    if (errcode != ERR_ALREADY_RUNNING) {
+        _PyInterpreterState_SetNotRunningMain(interp);
+    }
     assert(!PyErr_Occurred());
     return -1;
 }
@@ -450,10 +462,8 @@ static int
 _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
                            const char *codestr, PyObject *shareables)
 {
-    if (_ensure_not_running(interp) < 0) {
-        return -1;
-    }
     module_state *state = get_module_state(mod);
+    assert(state != NULL);
 
     _sharedns *shared = _get_shared_ns(shareables);
     if (shared == NULL && PyErr_Occurred()) {
@@ -462,30 +472,30 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
 
     // Switch to interpreter.
     PyThreadState *save_tstate = NULL;
+    PyThreadState *tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
-        // XXX Using the "head" thread isn't strictly correct.
-        PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+        tstate = PyThreadState_New(interp);
+        tstate->_whence = _PyThreadState_WHENCE_EXEC;
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
 
     // Run the script.
-    _sharedexception exc = {NULL, NULL};
+    _sharedexception exc = (_sharedexception){ .interp = interp };
     int result = _run_script(interp, codestr, shared, &exc);
 
     // Switch back.
     if (save_tstate != NULL) {
+        PyThreadState_Clear(tstate);
         PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
     }
 
     // Propagate any exception out to the caller.
-    if (exc.name != NULL) {
-        assert(state != NULL);
+    if (result < 0) {
+        assert(!PyErr_Occurred());
         _sharedexception_apply(&exc, state->RunFailedError);
-    }
-    else if (result != 0) {
-        // We were unable to allocate a shared exception.
-        PyErr_NoMemory();
+        assert(PyErr_Occurred());
     }
 
     if (shared != NULL) {
@@ -515,6 +525,7 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
     const PyInterpreterConfig config = isolated
         ? (PyInterpreterConfig)_PyInterpreterConfig_INIT
         : (PyInterpreterConfig)_PyInterpreterConfig_LEGACY_INIT;
+
     // XXX Possible GILState issues?
     PyThreadState *tstate = NULL;
     PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
@@ -530,8 +541,9 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     assert(tstate != NULL);
+
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    PyObject *idobj = _PyInterpreterState_GetIDObject(interp);
+    PyObject *idobj = PyInterpreterState_GetIDObject(interp);
     if (idobj == NULL) {
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
@@ -539,6 +551,10 @@ interp_create(PyObject *self, PyObject *args, PyObject *kwds)
         PyThreadState_Swap(save_tstate);
         return NULL;
     }
+
+    PyThreadState_Clear(tstate);
+    PyThreadState_Delete(tstate);
+
     _PyInterpreterState_RequireIDRef(interp, 1);
     return idobj;
 }
@@ -561,7 +577,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -580,12 +596,14 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     // Ensure the interpreter isn't running.
     /* XXX We *could* support destroying a running interpreter but
        aren't going to worry about it for now. */
-    if (_ensure_not_running(interp) < 0) {
+    if (_PyInterpreterState_IsRunningMain(interp)) {
+        PyErr_Format(PyExc_RuntimeError, "interpreter running");
         return NULL;
     }
 
     // Destroy the interpreter.
-    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *tstate = PyThreadState_New(interp);
+    tstate->_whence = _PyThreadState_WHENCE_INTERP;
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);
@@ -616,7 +634,7 @@ interp_list_all(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     interp = PyInterpreterState_Head();
     while (interp != NULL) {
-        id = _PyInterpreterState_GetIDObject(interp);
+        id = PyInterpreterState_GetIDObject(interp);
         if (id == NULL) {
             Py_DECREF(ids);
             return NULL;
@@ -648,7 +666,7 @@ interp_get_current(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (interp == NULL) {
         return NULL;
     }
-    return _PyInterpreterState_GetIDObject(interp);
+    return PyInterpreterState_GetIDObject(interp);
 }
 
 PyDoc_STRVAR(get_current_doc,
@@ -662,7 +680,7 @@ interp_get_main(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     // Currently, 0 is always the main interpreter.
     int64_t id = 0;
-    return _PyInterpreterID_New(id);
+    return PyInterpreterID_New(id);
 }
 
 PyDoc_STRVAR(get_main_doc,
@@ -684,7 +702,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Look up the interpreter.
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
@@ -750,15 +768,11 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
     if (interp == NULL) {
         return NULL;
     }
-    int is_running = _is_running(interp);
-    if (is_running < 0) {
-        return NULL;
-    }
-    if (is_running) {
+    if (_PyInterpreterState_IsRunningMain(interp)) {
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
@@ -768,6 +782,7 @@ PyDoc_STRVAR(is_running_doc,
 "is_running(id) -> bool\n\
 \n\
 Return whether or not the identified interpreter is running.");
+
 
 static PyMethodDef module_functions[] = {
     {"create",                    _PyCFunction_CAST(interp_create),
@@ -808,7 +823,7 @@ module_exec(PyObject *mod)
     }
 
     // PyInterpreterID
-    if (PyModule_AddType(mod, &_PyInterpreterID_Type) < 0) {
+    if (PyModule_AddType(mod, &PyInterpreterID_Type) < 0) {
         goto error;
     }
 

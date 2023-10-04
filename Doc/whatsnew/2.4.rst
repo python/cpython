@@ -1468,7 +1468,7 @@ Some of the changes to Python's build process and to the C API are:
   *X* is a NaN.   (Contributed by Tim Peters.)
 
 * C code can avoid unnecessary locking by using the new
-  :c:func:`PyEval_ThreadsInitialized` function to tell  if any thread operations
+  :c:func:`!PyEval_ThreadsInitialized` function to tell  if any thread operations
   have been performed.  If this function  returns false, no lock operations are
   needed. (Contributed by Nick Coghlan.)
 
@@ -1476,7 +1476,7 @@ Some of the changes to Python's build process and to the C API are:
   :c:func:`PyArg_ParseTupleAndKeywords` but takes a  :c:type:`va_list` instead of a
   number of arguments. (Contributed by Greg Chapman.)
 
-* A new method flag, :c:macro:`METH_COEXISTS`, allows a function defined in slots
+* A new method flag, :c:macro:`METH_COEXIST`, allows a function defined in slots
   to co-exist with a :c:type:`PyCFunction` having the same name.  This can halve
   the access time for a method such as :meth:`set.__contains__`.  (Contributed by
   Raymond Hettinger.)
@@ -1491,7 +1491,7 @@ Some of the changes to Python's build process and to the C API are:
   though that processor architecture doesn't call that register "the TSC
   register".  (Contributed by Jeremy Hylton.)
 
-* The :c:type:`tracebackobject` type has been renamed to
+* The :c:type:`!tracebackobject` type has been renamed to
   :c:type:`PyTracebackObject`.
 
 .. ======================================================================

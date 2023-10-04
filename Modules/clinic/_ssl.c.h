@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_Size_t_Converter()
 
 PyDoc_STRVAR(_ssl__SSLSocket_do_handshake__doc__,
 "do_handshake($self, /)\n"
@@ -282,7 +283,7 @@ _ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t na
     if (!_PyArg_CheckPositional("sendfile", nargs, 3, 4)) {
         goto exit;
     }
-    fd = _PyLong_AsInt(args[0]);
+    fd = PyLong_AsInt(args[0]);
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -295,7 +296,7 @@ _ssl__SSLSocket_sendfile(PySSLSocket *self, PyObject *const *args, Py_ssize_t na
     if (nargs < 4) {
         goto skip_optional;
     }
-    flags = _PyLong_AsInt(args[3]);
+    flags = PyLong_AsInt(args[3]);
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -540,7 +541,7 @@ _ssl__SSLContext(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!_PyArg_CheckPositional("_SSLContext", PyTuple_GET_SIZE(args), 1, 1)) {
         goto exit;
     }
-    proto_version = _PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
+    proto_version = PyLong_AsInt(PyTuple_GET_ITEM(args, 0));
     if (proto_version == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1168,7 +1169,7 @@ _ssl_MemoryBIO_read(PySSLMemoryBIO *self, PyObject *const *args, Py_ssize_t narg
     if (nargs < 1) {
         goto skip_optional;
     }
-    len = _PyLong_AsInt(args[0]);
+    len = PyLong_AsInt(args[0]);
     if (len == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1318,7 +1319,7 @@ _ssl_RAND_bytes(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int n;
 
-    n = _PyLong_AsInt(arg);
+    n = PyLong_AsInt(arg);
     if (n == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1467,7 +1468,7 @@ _ssl_nid2obj(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int nid;
 
-    nid = _PyLong_AsInt(arg);
+    nid = PyLong_AsInt(arg);
     if (nid == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1641,4 +1642,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=ee707ef11d50ae65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a448aa851909dc57 input=a9049054013a1b77]*/
