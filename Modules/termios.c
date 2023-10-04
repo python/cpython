@@ -215,7 +215,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     long item;
 #define SAFE_LONG_ITEM(obj) \
     item = PyLong_AsLong(obj); \
-    if (PyErr_Occurred()) { \
+    if (item == -1 && PyErr_Occurred()) { \
         return NULL; \
     }
 
@@ -234,9 +234,6 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 #undef SAFE_LONG_ITEM
 
     PyObject *cc = PyList_GET_ITEM(term, 6);
-    if (PyErr_Occurred()) {
-        return NULL;
-    }
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
         PyErr_Format(PyExc_TypeError,
             "tcsetattr: attributes[6] must be %d element list",
