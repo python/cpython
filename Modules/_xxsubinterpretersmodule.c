@@ -827,7 +827,7 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(exec_doc,
-"exec(id, code, shared)\n\
+"exec(id, code, shared=None)\n\
 \n\
 Execute the provided code in the identified interpreter.\n\
 This is equivalent to running the builtin exec() under the target\n\
@@ -838,7 +838,7 @@ globals and locals.\n\
 \n\
 Functions (and code objects) are also supported, with some restrictions.\n\
 The code/function must not take any arguments or be a closure\n\
-(i.e. have cell vars).\n\
+(i.e. have cell vars).  Methods and other callables are not supported.\n\
 \n\
 If a function is provided, its code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
