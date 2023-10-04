@@ -774,7 +774,9 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
-static PyObject* sortenvironmentkey(PyObject *module, PyObject *item) {
+static PyObject*
+sortenvironmentkey(PyObject *module, PyObject *item)
+{
     return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT, LCMAP_UPPERCASE, item);
 }
 
@@ -782,7 +784,7 @@ static PyMethodDef sortenvironmentkey_def = {
     "sortenvironmentkey",
     _PyCFunction_CAST(sortenvironmentkey),
     METH_O,
-    ""
+    "",
 };
 
 static PyObject *
@@ -888,7 +890,6 @@ normalize_environment(PyObject* environment)
         prev_key_string = key_string;
     }
 
-cleanup:
 error:
     Py_XDECREF(keys);
     Py_XDECREF(keyfunc);
