@@ -120,16 +120,16 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
         }
         case R_X86_64_GOTOFF64: {
             patch -= (uintptr_t)location;
-            *addr = patch;
+            *(uint64_t *)addr = patch;
             return;
         }
         case R_X86_64_GOTPC32:
         case R_X86_64_GOTPCRELX:
-        case R_X86_64_REX_GOTPCRELX:
-        default: {
-            Py_UNREACHABLE();
+        case R_X86_64_REX_GOTPCRELX: {
+            break;
         }
     }
+    Py_UNREACHABLE();
 }
 
 static void
