@@ -17,7 +17,7 @@
 #include "pycore_list.h"          // _PyList_Fini()
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
-#include "pycore_pathconfig.h"    // _PyConfig_WritePathConfig()
+#include "pycore_pathconfig.h"    // _PyPathConfig_UpdateGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyObject_DebugMallocStats()
@@ -32,13 +32,17 @@
 #include "pycore_typevarobject.h" // _Py_clear_generic_types()
 #include "pycore_unicodeobject.h" // _PyUnicode_InitTypes()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
+
 #include "opcode.h"
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
-#include <mach-o/loader.h>
+#  include <mach-o/loader.h>
 #endif
 
 #ifdef HAVE_SIGNAL_H
@@ -58,11 +62,6 @@
 #endif
 
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /* Forward declarations */
@@ -656,7 +655,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -830,11 +830,6 @@ pycore_interp_init(PyThreadState *tstate)
     status = _PyGC_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-    // Intern strings in deep-frozen modules first so that others
-    // can use it instead of creating a heap allocated string.
-    if (_Py_Deepfreeze_Init() < 0) {
-        return _PyStatus_ERR("failed to initialize deep-frozen modules");
     }
 
     status = pycore_init_types(interp);
@@ -1212,6 +1207,31 @@ init_interp_main(PyThreadState *tstate)
             }
             PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
             Py_DECREF(opt);
+        }
+    }
+
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        if (config->sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(config->sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
         }
     }
 
@@ -1643,27 +1663,20 @@ flush_std_files(void)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
     PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    PyObject *tmp;
     int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(fout) < 0) {
             PyErr_WriteUnraisable(fout);
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-        if (tmp == NULL) {
+        if (_PyFile_Flush(ferr) < 0) {
             PyErr_Clear();
             status = -1;
         }
-        else
-            Py_DECREF(tmp);
     }
 
     return status;
@@ -1742,7 +1755,6 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_HashRandomization_Fini();
         _PyArg_Fini();
         _Py_ClearFileSystemEncoding();
-        _Py_Deepfreeze_Fini();
         _PyPerfTrampoline_Fini();
     }
 
@@ -2039,7 +2051,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
         *tstate_p = NULL;
@@ -2637,12 +2650,8 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     Py_DECREF(exc);
 
     /* sys.stderr may be buffered: call sys.stderr.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
-    if (res == NULL) {
+    if (_PyFile_Flush(ferr) < 0) {
         _PyErr_Clear(tstate);
-    }
-    else {
-        Py_DECREF(res);
     }
 
     return has_tb;
@@ -3155,7 +3164,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

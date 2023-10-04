@@ -2393,11 +2393,13 @@ int
 PyMapping_GetOptionalItemString(PyObject *obj, const char *key, PyObject **result)
 {
     if (key == NULL) {
+        *result = NULL;
         null_error();
         return -1;
     }
     PyObject *okey = PyUnicode_FromString(key);
     if (okey == NULL) {
+        *result = NULL;
         return -1;
     }
     int rc = PyMapping_GetOptionalItem(obj, okey, result);
@@ -2422,6 +2424,24 @@ PyMapping_SetItemString(PyObject *o, const char *key, PyObject *value)
     r = PyObject_SetItem(o, okey, value);
     Py_DECREF(okey);
     return r;
+}
+
+int
+PyMapping_HasKeyStringWithError(PyObject *obj, const char *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItemString(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
+PyMapping_HasKeyWithError(PyObject *obj, PyObject *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItem(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
 }
 
 int

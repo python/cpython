@@ -4,10 +4,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 
-#include <assert.h>
+#include "tokenizer.h"            // struct tok_state
+#include "errcode.h"              // E_OK
 
-#include "tokenizer.h"
-#include "errcode.h"
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // read()
+#endif
 
 /* Alternate tab spacing */
 #define ALTTABSIZE 1
@@ -1642,7 +1644,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
         tok_nextc(tok);
     }
     else /* In future releases, only error will remain. */
-    if (is_potential_identifier_char(c)) {
+    if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
         syntaxerror(tok, "invalid %s literal", kind);
         return 0;

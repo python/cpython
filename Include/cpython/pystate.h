@@ -92,6 +92,15 @@ struct _ts {
         /* padding to align to 4 bytes */
         unsigned int :24;
     } _status;
+#ifdef Py_BUILD_CORE
+#  define _PyThreadState_WHENCE_NOTSET -1
+#  define _PyThreadState_WHENCE_UNKNOWN 0
+#  define _PyThreadState_WHENCE_INTERP 1
+#  define _PyThreadState_WHENCE_THREADING 2
+#  define _PyThreadState_WHENCE_GILSTATE 3
+#  define _PyThreadState_WHENCE_EXEC 4
+#endif
+    int _whence;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -194,23 +203,23 @@ struct _ts {
 
 };
 
-/* WASI has limited call stack. Python's recursion limit depends on code
-   layout, optimization, and WASI runtime. Wasmtime can handle about 700
-   recursions, sometimes less. 500 is a more conservative limit. */
-#ifndef C_RECURSION_LIMIT
-#  ifdef __wasi__
-#    define C_RECURSION_LIMIT 500
-#  else
-    // This value is duplicated in Lib/test/support/__init__.py
-#    define C_RECURSION_LIMIT 1500
-#  endif
+#ifdef __wasi__
+   // WASI has limited call stack. Python's recursion limit depends on code
+   // layout, optimization, and WASI runtime. Wasmtime can handle about 700
+   // recursions, sometimes less. 500 is a more conservative limit.
+#  define Py_C_RECURSION_LIMIT 500
+#else
+   // This value is duplicated in Lib/test/support/__init__.py
+#  define Py_C_RECURSION_LIMIT 1500
 #endif
+
 
 /* other API */
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
-PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
+
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
@@ -310,6 +319,7 @@ PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
 
 PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 

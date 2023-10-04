@@ -456,6 +456,8 @@ Module contents
    ``replace()`` (or similarly named) method which handles instance
    copying.
 
+   Dataclass instances are also supported by generic function :func:`copy.replace`.
+
 .. function:: is_dataclass(obj)
 
    Return ``True`` if its parameter is a dataclass or an instance of one,
