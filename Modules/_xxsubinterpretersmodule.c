@@ -961,6 +961,40 @@ Execute the provided string in the identified interpreter.\n\
 \n\
 (See " MODULE_NAME ".exec().");
 
+static PyObject *
+interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "func", "shared", NULL};
+    PyObject *id, *func;
+    PyObject *shared = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO|O:" MODULE_NAME ".run_func", kwlist,
+                                     &id, &func, &shared)) {
+        return NULL;
+    }
+
+    PyCodeObject *code = convert_code_arg(func, MODULE_NAME ".exec",
+                                          "argument 2",
+                                          "a function or a code object");
+    if (code == NULL) {
+        return NULL;
+    }
+
+    if (_interp_exec(self, id, (PyObject *)code, shared) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(run_func_doc,
+"run_func(id, func, shared=None)\n\
+\n\
+Execute the body of the provided function in the identified interpreter.\n\
+Code objects are also supported.  In both cases, closures and args\n\
+are not supported.  Methods and other callables are not supported either.\n\
+\n\
+(See " MODULE_NAME ".exec().");
+
 
 static PyObject *
 object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
@@ -1030,6 +1064,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, exec_doc},
     {"run_string",                _PyCFunction_CAST(interp_run_string),
      METH_VARARGS | METH_KEYWORDS, run_string_doc},
+    {"run_func",                  _PyCFunction_CAST(interp_run_func),
+     METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
