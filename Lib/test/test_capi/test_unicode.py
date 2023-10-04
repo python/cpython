@@ -1306,7 +1306,8 @@ class CAPITest(unittest.TestCase):
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
-            '\U0001f600\U0001f601\U0001f602'
+            '\U0001f600\U0001f601\U0001f602',
+            '\U0010ffff',
         ]
         for s in strings:
             # Call PyUnicode_AsUTF8AndSize() which creates the UTF-8
@@ -1323,6 +1324,11 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(equaltoutf8(s2, b[:-1]), 0)
             self.assertEqual(equaltoutf8(s2, b[:-1] + b'x'), 0)
 
+        # embedded null chars/bytes
+        self.assertEqual(equaltoutf8('abc', b'abc\0def\0'), 1)
+        self.assertEqual(equaltoutf8('a\0bc', b'abc'), 0)
+        self.assertEqual(equaltoutf8('abc', b'a\0bc'), 0)
+        
         # Surrogate characters are always treated as not equal
         self.assertEqual(equaltoutf8('\udcfe',
                             '\udcfe'.encode("utf8", "surrogateescape")), 0)

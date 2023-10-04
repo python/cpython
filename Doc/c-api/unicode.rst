@@ -1399,9 +1399,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
 
    Compare a Unicode object with a UTF-8 or ASCII encoded C string
-   and return true (``1``) if they are equal and false (``0``) otherwise.
+   and return true (``1``) if they are equal, or false (``0``) otherwise.
    If the Unicode object contains null or surrogate characters or
-   the C string is not encoded to UTF-8 or ASCII, return false.
+   the C string is not encoded to UTF-8 or ASCII, return false (``0``) .
 
    This function does not raise exceptions.
 
