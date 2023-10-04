@@ -24632,9 +24632,7 @@ fi
 if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
 then :
 
-
 printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
-
 
 fi
 
