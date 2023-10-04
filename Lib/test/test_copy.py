@@ -959,13 +959,13 @@ class TestReplace:
             with self.subTest(Point=Point):
                 p = Point(11, 22)
                 self.assertIsInstance(p, Point)
-                self.assertEqual(copy.replace(p), (11, 22))
-                self.assertIsInstance(copy.replace(p), Point)
-                self.assertEqual(copy.replace(p, x=1), (1, 22))
-                self.assertEqual(copy.replace(p, y=2), (11, 2))
-                self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
+                self.assertEqual(self.copy_module.replace(p), (11, 22))
+                self.assertIsInstance(self.copy_module.replace(p), Point)
+                self.assertEqual(self.copy_module.replace(p, x=1), (1, 22))
+                self.assertEqual(self.copy_module.replace(p, y=2), (11, 2))
+                self.assertEqual(self.copy_module.replace(p, x=1, y=2), (1, 2))
                 with self.assertRaisesRegex(ValueError, 'unexpected field name'):
-                    copy.replace(p, x=1, error=2)
+                    self.copy_module.replace(p, x=1, error=2)
 
     def test_dataclass(self):
         from dataclasses import dataclass
