@@ -1,6 +1,10 @@
 import argparse
 import contextlib
 import os
+try:
+    from os import process_cpu_count as cpu_count
+except ImportError:
+    from os import cpu_count
 import pathlib
 import shutil
 import subprocess
@@ -12,7 +16,8 @@ HOST_TRIPLE = "wasm32-wasi"
 
 
 def section(title):
-    print(title, "#" * 20)
+    title = str(title)
+    print(title, "#" * (79 - len(title)))
 
 
 def build_platform():
@@ -21,7 +26,7 @@ def build_platform():
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
-def compile_host_python():
+def compile_host_python(context):
     """Compile the build/host Python.
 
     Returns the path to the new interpreter and it's major.minor version.
@@ -31,9 +36,11 @@ def compile_host_python():
 
     section(build_dir)
 
-    with contextlib.chdir(build_dir):
-        subprocess.check_call([CHECKOUT / "configure", "-C"])
-        subprocess.check_call(["make", "--jobs", str(os.process_cpu_count()), "all"])
+    if context.build_python:
+        with contextlib.chdir(build_dir):
+            subprocess.check_call([CHECKOUT / "configure", "-C"])
+            subprocess.check_call(["make", "--jobs",
+                                   str(cpu_count()), "all"])
 
     binary = build_dir / "python"
     cmd = [binary, "-c",
@@ -111,7 +118,7 @@ def compile_wasi_python(context, build_python, version):
                      f"--with-build-python={build_python}"]
         configure_env = os.environ | env_additions | wasi_sdk_env(context)
         subprocess.check_call(configure, env=configure_env)
-        subprocess.check_call(["make", "--jobs", str(os.process_cpu_count()), "all"],
+        subprocess.check_call(["make", "--jobs", str(cpu_count()), "all"],
                               env=os.environ | env_additions)
 
     exec_script = build_dir / "python.sh"
@@ -128,14 +135,17 @@ def main():
                        default=find_wasi_sdk(),
                        help="Path to wasi-sdk; defaults to "
                             "$WASI_SDK_PATH or /opt/wasi-sdk")
+    build.add_argument("--skip-build-python", action="store_false",
+                       dest="build_python", default=True,
+                       help="Skip building the build/host Python")
 
-    args = parser.parse_args()
-    if not args.wasi_sdk_path or not args.wasi_sdk_path.exists():
+    context = parser.parse_args()
+    if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
         raise ValueError("wasi-sdk not found or specified; "
                          "see https://github.com/WebAssembly/wasi-sdk")
 
-    build_python, version = compile_host_python()
-    compile_wasi_python(args, build_python, version)
+    build_python, version = compile_host_python(context)
+    compile_wasi_python(context, build_python, version)
 
 
 if  __name__ == "__main__":
