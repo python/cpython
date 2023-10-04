@@ -1601,7 +1601,7 @@ Virtual paths
 
    The :class:`PurePath` class is a subclass of this class.
 
-   Unlike :class:`PurePath`, this class does not define any of the following
+   Unlike :class:`PurePath`, this class does not define any of these
    magic methods:
    :meth:`~os.PathLike.__fspath__`, :meth:`~object.__bytes__`,
    :meth:`~object.__reduce__`,
@@ -1626,52 +1626,58 @@ Virtual paths
    classes are *virtual paths*.
 
    Like its superclass :class:`PurePathBase` (and unlike :class:`PurePath` and
-   :class:`Path`), this class does not define any of the following magic methods:
+   :class:`Path`), this class does not define these magic methods:
    :meth:`~os.PathLike.__fspath__`, :meth:`~object.__bytes__`,
    :meth:`~object.__reduce__`,
    :meth:`~object.__hash__`, :meth:`~object.__eq__`,
    :meth:`~object.__lt__`, :meth:`~object.__le__`,
    :meth:`~object.__gt__`, :meth:`~object.__ge__`.
-   In all other respects, its interface is identical to :class:`Path`.
+   In all other respects, its interface is the same as :class:`Path`.
 
-   The default implementations of the most basic methods, like :meth:`stat`
+   The default implementations of the most basic methods, like ``stat()``
    and ``iterdir()``, directly raise :exc:`UnsupportedOperation`. Other
    methods like ``is_dir()`` and ``glob()`` call through to the basic methods.
-   The following table summarises their relationships:
+   The following table shows their relationships:
 
    .. list-table::
       :header-rows: 1
 
       * - Basic Methods
         - Mixin Methods
-      * - :meth:`stat`
-        - ``lstat()``, ``exists()``, ``samefile()``, ``is_dir()``,
-          ``is_file()``, ``is_mount()``, ``is_symlink()``,
+      * - ``stat()``
+        - ``lstat()``, ``exists()``, ``resolve()``, ``samefile()``,
+          ``is_dir()``, ``is_file()``, ``is_mount()``, ``is_symlink()``,
           ``is_block_device()``, ``is_char_device()``, ``is_fifo()``,
-          ``is_socket()``, :meth:`resolve`
+          ``is_socket()``
       * - ``open()``
         - ``read_text()``, ``write_text()``,
           ``read_bytes()``, ``write_bytes()``
       * - ``iterdir()`` and ``stat()``
         - ``glob()``, ``rglob()``, ``walk()``
-      * - ``absolute()``
-        - ``cwd()``
-      * - ``expanduser()``
-        - ``home()``
       * - ``chmod()``
         - ``lchmod()``
+      * - ``expanduser()``
+        - ``home()``
+      * - ``absolute()``
+        - ``cwd()``
       * - ``symlink_to()``, ``hardlink_to()``, ``mkdir()``, ``touch()``,
           ``rename()``, ``replace()``, ``unlink()``, ``rmdir()``,
-          ``owner()``, ``group()``, ``from_uri()``, ``as_uri()``
-          :meth:`is_junction`
+          ``owner()``, ``group()``, ``from_uri()``, ``as_uri()``,
+          ``is_junction()``
         - No mixin methods
 
-   These methods are described in the :ref:`concrete paths <concrete-paths>`
-   documentation. That said, the following methods deserve special attention:
+   These methods are described in the documentation for
+   :ref:`concrete paths <concrete-paths>`. That said, some methods deserve
+   special attention:
 
    .. method:: stat(*, follow_symlinks=True)
 
-      FIXME: how do we describe the return value??
+      Returns information about the path.
+
+      The default implementation of this method immediately raises
+      :exc:`UnsupportedOperation`. Subclasses that override this method should
+      return an object that resembles a :class:`~os.stat_result`; it should at
+      least have ``st_mode``, ``st_dev`` and ``st_ino`` attributes.
 
    .. method:: resolve(strict=False)
 
