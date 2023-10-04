@@ -605,7 +605,7 @@ def format_addend(symbol: str | None, addend: int) -> str:
     if symbol_part and not addend:
         return symbol_part
     if addend & (1 << 63):
-        return f"{symbol_part}{hex((1 << 64) - addend)}"
+        return f"{symbol_part}{hex(addend - (1 << 64))}"
     return f"{f'{symbol_part}+' if symbol_part else ''}{hex(addend)}"
 
 
