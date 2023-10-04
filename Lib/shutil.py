@@ -10,7 +10,6 @@ import stat
 import fnmatch
 import collections
 import errno
-import warnings
 
 try:
     import zlib
@@ -723,6 +722,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
     """
 
     if onerror is not None:
+        import warnings
         warnings.warn("onerror argument is deprecated, use onexc instead",
                       DeprecationWarning, stacklevel=2)
 
