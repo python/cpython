@@ -22,6 +22,7 @@ __all__ = [
     'unquote',
     ]
 
+import os
 import re
 import time
 import datetime
@@ -179,7 +180,6 @@ def make_msgid(idstring=None, domain=None):
     """
     # Lazy imports to speedup module import time
     # (no other functions in email.utils need these modules)
-    import os
     import random
     import socket
 
