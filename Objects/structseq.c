@@ -216,19 +216,34 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         res->ob_item[i] = Py_NewRef(v);
     }
     Py_DECREF(arg);
-    for (; i < max_len; ++i) {
-        PyObject *ob = NULL;
-        if (dict != NULL) {
-            const char *name = type->tp_members[i-n_unnamed_fields].name;
+    if (dict != NULL && PyDict_GET_SIZE(dict) > 0) {
+        Py_ssize_t n_found_keys = 0;
+        for (i = len; i < max_len; ++i) {
+            PyObject *ob = NULL;
+            const char *name = type->tp_members[i - n_unnamed_fields].name;
             if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
                 Py_DECREF(res);
                 return NULL;
             }
+            if (ob == NULL) {
+                ob = Py_NewRef(Py_None);
+            }
+            else {
+                ++n_found_keys;
+            }
+            res->ob_item[i] = ob;
         }
-        if (ob == NULL) {
-            ob = Py_NewRef(Py_None);
+        if (PyDict_GET_SIZE(dict) > n_found_keys) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.500s() got duplicate or unexpected field name(s)",
+                         type->tp_name);
+            Py_DECREF(res);
+            return NULL;
         }
-        res->ob_item[i] = ob;
+    } else {
+        for (i = len; i < max_len; ++i) {
+            res->ob_item[i] = Py_NewRef(Py_None);
+        }
     }
 
     _PyObject_GC_TRACK(res);
