@@ -1063,22 +1063,22 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 /* Module functions */
 
 struct bootstate {
-    PyInterpreterState *interp;
+    PyThreadState *tstate;
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
-    PyThreadState *tstate;
-    _PyRuntimeState *runtime;
 };
 
 
 static void
-thread_bootstate_free(struct bootstate *boot)
+thread_bootstate_free(struct bootstate *boot, int decref)
 {
-    Py_DECREF(boot->func);
-    Py_DECREF(boot->args);
-    Py_XDECREF(boot->kwargs);
-    PyMem_Free(boot);
+    if (decref) {
+        Py_DECREF(boot->func);
+        Py_DECREF(boot->args);
+        Py_XDECREF(boot->kwargs);
+    }
+    PyMem_RawFree(boot);
 }
 
 
@@ -1088,9 +1088,24 @@ thread_run(void *boot_raw)
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate = boot->tstate;
 
-    // gh-104690: If Python is being finalized and PyInterpreterState_Delete()
-    // was called, tstate becomes a dangling pointer.
-    assert(_PyThreadState_CheckConsistency(tstate));
+    // gh-108987: If _thread.start_new_thread() is called before or while
+    // Python is being finalized, thread_run() can called *after*.
+    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
+    // threads must exit, except of the thread calling Py_Finalize() whch holds
+    // the GIL and must not exit.
+    //
+    // At this stage, tstate can be a dangling pointer (point to freed memory),
+    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
+    if (_PyThreadState_MustExit(tstate)) {
+        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+        // These functions are called on tstate indirectly by Py_Finalize()
+        // which calls _PyInterpreterState_Clear().
+        //
+        // Py_DECREF() cannot be called because the GIL is not held: leak
+        // references on purpose. Python is being finalized anyway.
+        thread_bootstate_free(boot, 0);
+        goto exit;
+    }
 
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
@@ -1109,14 +1124,17 @@ thread_run(void *boot_raw)
         Py_DECREF(res);
     }
 
-    thread_bootstate_free(boot);
+    thread_bootstate_free(boot, 1);
+
     tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
+exit:
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
     // to open the libgcc_s.so library (ex: EMFILE error).
+    return;
 }
 
 static PyObject *
@@ -1140,7 +1158,6 @@ and False otherwise.\n");
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *kwargs = NULL;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
@@ -1179,20 +1196,21 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(boot->interp);
+    boot->tstate = _PyThreadState_New(interp);
     if (boot->tstate == NULL) {
-        PyMem_Free(boot);
+        PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
             return PyErr_NoMemory();
         }
         return NULL;
     }
-    boot->runtime = runtime;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
@@ -1201,7 +1219,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
         PyThreadState_Clear(boot->tstate);
-        thread_bootstate_free(boot);
+        thread_bootstate_free(boot, 1);
         return NULL;
     }
     return PyLong_FromUnsignedLong(ident);
