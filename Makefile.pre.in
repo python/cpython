@@ -400,12 +400,14 @@ PYTHON_OBJS=	\
 		Python/instrumentation.o \
 		Python/intrinsics.o \
 		Python/legacy_tracing.o \
+		Python/lock.o \
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
+		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
 		Python/pyarena.o \
@@ -489,9 +491,6 @@ OBJECT_OBJS=	\
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
-
-DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
-DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
 ##########################################################################
 # objects that get linked into the Python library
@@ -658,7 +657,7 @@ profile-run-stamp:
 	$(MAKE) profile-gen-stamp
 	# Next, run the profile task to generate the profile information.
 	@ # FIXME: can't run for a cross build
-	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	$(LLVM_PROF_FILE) $(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	$(LLVM_PROF_MERGER)
 	# Remove profile generation binary since we are done with it.
 	$(MAKE) clean-retain-profile
@@ -707,7 +706,7 @@ profile-bolt-stamp: $(BUILDPYTHON)
 	  mv "$${bin}.bolt_inst" "$${bin}"; \
 	done
 	# Run instrumented binaries to collect data.
-	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK) || true
+	$(RUNSHARED) ./$(BUILDPYTHON) $(PROFILE_TASK)
 	# Merge all the data files together.
 	for bin in $(BOLT_BINARIES); do \
 	  @MERGE_FDATA@ $${bin}.*.fdata > "$${bin}.fdata"; \
@@ -769,7 +768,7 @@ coverage-report: regen-token regen-frozen
 	@ # build with coverage info
 	$(MAKE) coverage
 	@ # run tests, ignore failures
-	$(TESTRUNNER) $(TESTOPTS) || true
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) || true
 	@ # build lcov report
 	$(MAKE) coverage-lcov
 
@@ -1068,7 +1067,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run deepfreeze.py
@@ -1169,7 +1168,7 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
@@ -1258,9 +1257,7 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 ############################################################################
 # Deepfreeze targets
 
-.PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_C)
-
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py Include/internal/pycore_global_strings.h $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
@@ -1300,10 +1297,9 @@ regen-importlib: regen-frozen
 # Global objects
 
 # Dependencies which can add and/or remove _Py_ID() identifiers:
-# - deepfreeze.c
 # - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
 ############################################################################
@@ -1749,7 +1745,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_ast_state.h \
 		$(srcdir)/Include/internal/pycore_atexit.h \
 		$(srcdir)/Include/internal/pycore_atomic.h \
-		$(srcdir)/Include/internal/pycore_atomic_funcs.h \
 		$(srcdir)/Include/internal/pycore_bitutils.h \
 		$(srcdir)/Include/internal/pycore_bytes_methods.h \
 		$(srcdir)/Include/internal/pycore_bytesobject.h \
@@ -1787,6 +1782,8 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_interp.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_list.h \
+		$(srcdir)/Include/internal/pycore_llist.h \
+		$(srcdir)/Include/internal/pycore_lock.h \
 		$(srcdir)/Include/internal/pycore_long.h \
 		$(srcdir)/Include/internal/pycore_modsupport.h \
 		$(srcdir)/Include/internal/pycore_moduleobject.h \
@@ -1798,6 +1795,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_opcode_metadata.h \
 		$(srcdir)/Include/internal/pycore_opcode_utils.h \
 		$(srcdir)/Include/internal/pycore_optimizer.h \
+		$(srcdir)/Include/internal/pycore_parking_lot.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
@@ -1813,6 +1811,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
+		$(srcdir)/Include/internal/pycore_semaphore.h \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
@@ -1846,8 +1845,8 @@ $(LIBRARY_OBJS) $(MODOBJS) Programs/python.o: $(PYTHON_HEADERS)
 
 TESTOPTS=	$(EXTRATESTOPTS)
 TESTPYTHON=	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(TESTPYTHONOPTS)
-TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
-TESTTIMEOUT=	1200
+TESTRUNNER=	$(TESTPYTHON) -m test
+TESTTIMEOUT=
 
 # Remove "test_python_*" directories of previous failed test jobs.
 # Pass TESTOPTS options because it can contain --tempdir option.
@@ -1857,56 +1856,38 @@ cleantest: all
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
+# Similar to buildbottest, but use --fast-ci option, instead of --slow-ci.
 .PHONY: test
 test: all
-		$(TESTRUNNER) $(TESTOPTS)
-
-# Run the full test suite twice - once without .pyc files, and once with.
-# In the past, we've had problems where bugs in the marshalling or
-# elsewhere caused bytecode read from .pyc files to behave differently
-# than bytecode generated directly from a .py source file.  Sometimes
-# the bytecode read from a .pyc file had the bug, sometimes the directly
-# generated bytecode.  This is sometimes a very shy bug needing a lot of
-# sample data.
-.PHONY: testall
-testall: all
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		$(TESTPYTHON) -E $(srcdir)/Lib/compileall.py
-		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-$(TESTRUNNER) -u all $(TESTOPTS)
-		$(TESTRUNNER) -u all $(TESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 # Run the test suite for both architectures in a Universal build on OSX.
 # Must be run on an Intel box.
 .PHONY: testuniversal
 testuniversal: all
-		@if [ `arch` != 'i386' ]; then \
-			echo "This can only be used on OSX/i386" ;\
-			exit 1 ;\
-		fi
-		$(TESTRUNNER) -u all $(TESTOPTS)
-		$(RUNSHARED) /usr/libexec/oah/translate \
-			./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
+	@if [ `arch` != 'i386' ]; then \
+		echo "This can only be used on OSX/i386" ;\
+		exit 1 ;\
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
+	$(RUNSHARED) /usr/libexec/oah/translate \
+		./$(BUILDPYTHON) -E -m test -j 0 -u all $(TESTOPTS)
 
-# Like testall, but with only one pass and without multiple processes.
-# Run an optional script to include information about the build environment.
+# Like test, but using --slow-ci which enables all test resources and use
+# longer timeout. Run an optional pybuildbot.identify script to include
+# information about the build environment.
 .PHONY: buildbottest
 buildbottest: all
-		-@if which pybuildbot.identify >/dev/null 2>&1; then \
-			pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
-		fi
-		$(TESTRUNNER) -j 1 -u all -W --slowest --fail-env-changed --timeout=$(TESTTIMEOUT) $(TESTOPTS)
-
-# Like testall, but run Python tests with HOSTRUNNER directly.
-.PHONY: hostrunnertest
-hostrunnertest: all
-	$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test -u all $(TESTOPTS)
+	-@if which pybuildbot.identify >/dev/null 2>&1; then \
+		pybuildbot.identify "CC='$(CC)'" "CXX='$(CXX)'"; \
+	fi
+	$(TESTRUNNER) --slow-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS)
 
 .PHONY: pythoninfo
 pythoninfo: all
 		$(RUNSHARED) $(HOSTRUNNER) ./$(BUILDPYTHON) -m test.pythoninfo
 
-QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
+QUICKTESTOPTS=	-x test_subprocess test_io \
 		test_multibytecodec test_urllib2_localnet test_itertools \
 		test_multiprocessing_fork test_multiprocessing_spawn \
 		test_multiprocessing_forkserver \
@@ -1915,7 +1896,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_subprocess test_io \
 
 .PHONY: quicktest
 quicktest: all
-		$(TESTRUNNER) $(QUICKTESTOPTS)
+	$(TESTRUNNER) --fast-ci --timeout=$(TESTTIMEOUT) $(TESTOPTS) $(QUICKTESTOPTS)
 
 # SSL tests
 .PHONY: multisslcompile
@@ -2149,7 +2130,8 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
-		test/capath \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
 		test/data \
@@ -2158,6 +2140,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/encoded_modules \
 		test/leakers \
 		test/libregrtest \
+		test/mathdata \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
@@ -2168,6 +2151,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_dataclasses \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
+		test/test_gdb \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2254,6 +2239,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
 		test/tkinterdata \
+		test/tokenizedata \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \

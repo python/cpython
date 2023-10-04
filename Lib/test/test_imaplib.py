@@ -23,8 +23,8 @@ except ImportError:
 
 support.requires_working_socket(module=True)
 
-CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 
 class TestImaplib(unittest.TestCase):

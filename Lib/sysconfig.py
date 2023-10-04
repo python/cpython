@@ -544,16 +544,20 @@ def _init_posix(vars):
 def _init_non_posix(vars):
     """Initialize the module as appropriate for NT"""
     # set basic install directories
-    import _imp
+    import _winapi
+    import _sysconfig
     vars['LIBDEST'] = get_path('stdlib')
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
-    try:
-        # GH-99201: _imp.extension_suffixes may be empty when
-        # HAVE_DYNAMIC_LOADING is not set. In this case, don't set EXT_SUFFIX.
-        vars['EXT_SUFFIX'] = _imp.extension_suffixes()[0]
-    except IndexError:
-        pass
+
+    # Add EXT_SUFFIX, SOABI, and Py_NOGIL
+    vars.update(_sysconfig.config_vars())
+
+    vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
+    if hasattr(sys, 'dllhandle'):
+        dllhandle = _winapi.GetModuleFileName(sys.dllhandle)
+        vars['LIBRARY'] = os.path.basename(_safe_realpath(dllhandle))
+        vars['LDLIBRARY'] = vars['LIBRARY']
     vars['EXE'] = '.exe'
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))

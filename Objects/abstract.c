@@ -2427,6 +2427,24 @@ PyMapping_SetItemString(PyObject *o, const char *key, PyObject *value)
 }
 
 int
+PyMapping_HasKeyStringWithError(PyObject *obj, const char *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItemString(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
+PyMapping_HasKeyWithError(PyObject *obj, PyObject *key)
+{
+    PyObject *res;
+    int rc = PyMapping_GetOptionalItem(obj, key, &res);
+    Py_XDECREF(res);
+    return rc;
+}
+
+int
 PyMapping_HasKeyString(PyObject *o, const char *key)
 {
     PyObject *v;

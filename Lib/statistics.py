@@ -844,7 +844,9 @@ def quantiles(data, *, n=4, method='exclusive'):
     data = sorted(data)
     ld = len(data)
     if ld < 2:
-        raise StatisticsError('must have at least two data points')
+        if ld == 1:
+            return data * (n - 1)
+        raise StatisticsError('must have at least one data point')
     if method == 'inclusive':
         m = ld - 1
         result = []

@@ -1,0 +1,2 @@
+Fix a Python 3.12 regression in the import time of :mod:`random`. Patch by Alex
+Waygood.

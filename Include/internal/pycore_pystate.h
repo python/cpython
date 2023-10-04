@@ -36,9 +36,19 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 static inline int
 _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
 {
-    return (_PyRuntimeState_GetFinalizing(interp->runtime) != NULL &&
-            interp == &interp->runtime->_main_interpreter);
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
 }
+
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
 
 
 static inline const PyConfig *
@@ -71,6 +81,8 @@ extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
 #endif
 
+int _PyThreadState_MustExit(PyThreadState *tstate);
+
 // Export for most shared extensions, used via _PyThreadState_GET() static
 // inline function.
 PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
@@ -81,7 +93,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
    The caller must hold the GIL.
 
-   See also PyThreadState_Get() and _PyThreadState_UncheckedGet(). */
+   See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
@@ -128,7 +140,9 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
+extern PyThreadState * _PyThreadState_New(
+    PyInterpreterState *interp,
+    int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 

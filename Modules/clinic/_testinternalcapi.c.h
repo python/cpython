@@ -296,4 +296,21 @@ _testinternalcapi_write_unraisable_exc(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c7156622e80df1ce input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
+"test_long_numbits($module, /)\n"
+"--\n"
+"\n");
+
+#define _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF    \
+    {"test_long_numbits", (PyCFunction)_testinternalcapi_test_long_numbits, METH_NOARGS, _testinternalcapi_test_long_numbits__doc__},
+
+static PyObject *
+_testinternalcapi_test_long_numbits_impl(PyObject *module);
+
+static PyObject *
+_testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _testinternalcapi_test_long_numbits_impl(module);
+}
+/*[clinic end generated code: output=59144f59957627bd input=a9049054013a1b77]*/

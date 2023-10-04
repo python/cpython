@@ -24,6 +24,10 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // symlink()
+#endif
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
@@ -36,7 +40,6 @@
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
-
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -222,10 +225,6 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyDoc_STRVAR(posix__doc__,
 "This module provides access to operating system functionality that is\n\
 standardized by the C Standard and the POSIX standard (a thinly\n\
@@ -287,10 +286,6 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
-#endif
-
-#ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -2396,21 +2391,26 @@ _posix_free(void *module)
    _posix_clear((PyObject *)module);
 }
 
-static void
+static int
 fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
-    PyObject *s = _PyLong_FromTime_t(sec);
-    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+    assert(!PyErr_Occurred());
+
+    int res = -1;
     PyObject *s_in_ns = NULL;
     PyObject *ns_total = NULL;
     PyObject *float_s = NULL;
 
-    if (!(s && ns_fractional))
+    PyObject *s = _PyLong_FromTime_t(sec);
+    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+    if (!(s && ns_fractional)) {
         goto exit;
+    }
 
     s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns)
+    if (!s_in_ns) {
         goto exit;
+    }
 
     ns_total = PyNumber_Add(s_in_ns, ns_fractional);
     if (!ns_total)
@@ -2433,12 +2433,17 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
         PyStructSequence_SET_ITEM(v, ns_index, ns_total);
         ns_total = NULL;
     }
+
+    assert(!PyErr_Occurred());
+    res = 0;
+
 exit:
     Py_XDECREF(s);
     Py_XDECREF(ns_fractional);
     Py_XDECREF(s_in_ns);
     Py_XDECREF(ns_total);
     Py_XDECREF(float_s);
+    return res;
 }
 
 #ifdef MS_WINDOWS
@@ -2473,34 +2478,47 @@ _pystat_l128_from_l64_l64(uint64_t low, uint64_t high)
 static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
-    unsigned long ansec, mnsec, cnsec;
+    assert(!PyErr_Occurred());
+
     PyObject *StatResultType = get_posix_state(module)->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
-    if (v == NULL)
+    if (v == NULL) {
         return NULL;
+    }
 
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
+#define SET_ITEM(pos, expr) \
+    do { \
+        PyObject *obj = (expr); \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        PyStructSequence_SET_ITEM(v, (pos), obj); \
+    } while (0)
+
+    SET_ITEM(0, PyLong_FromLong((long)st->st_mode));
 #ifdef MS_WINDOWS
-    PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
+    SET_ITEM(1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
+    SET_ITEM(2, PyLong_FromUnsignedLongLong(st->st_dev));
 #else
     static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
                   "stat.st_ino is larger than unsigned long long");
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
-    PyStructSequence_SET_ITEM(v, 2, _PyLong_FromDev(st->st_dev));
+    SET_ITEM(1, PyLong_FromUnsignedLongLong(st->st_ino));
+    SET_ITEM(2, _PyLong_FromDev(st->st_dev));
 #endif
-    PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
+    SET_ITEM(3, PyLong_FromLong((long)st->st_nlink));
 #if defined(MS_WINDOWS)
-    PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong(0));
-    PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong(0));
+    SET_ITEM(4, PyLong_FromLong(0));
+    SET_ITEM(5, PyLong_FromLong(0));
 #else
-    PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
-    PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
+    SET_ITEM(4, _PyLong_FromUid(st->st_uid));
+    SET_ITEM(5, _PyLong_FromGid(st->st_gid));
 #endif
     static_assert(sizeof(long long) >= sizeof(st->st_size),
                   "stat.st_size is larger than long long");
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
+    SET_ITEM(6, PyLong_FromLongLong(st->st_size));
 
+    // Set st_atime, st_mtime and st_ctime
+    unsigned long ansec, mnsec, cnsec;
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
     mnsec = st->st_mtim.tv_nsec;
@@ -2516,67 +2534,67 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
-    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
-    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
+    if (fill_time(module, v, 7, 10, 13, st->st_atime, ansec) < 0) {
+        goto error;
+    }
+    if (fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
+        goto error;
+    }
+    if (fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
+        goto error;
+    }
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
-                              PyLong_FromLong((long)st->st_blksize));
+    SET_ITEM(ST_BLKSIZE_IDX, PyLong_FromLong((long)st->st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
-                              PyLong_FromLong((long)st->st_blocks));
+    SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
-                              PyLong_FromLong((long)st->st_rdev));
+    SET_ITEM(ST_RDEV_IDX, PyLong_FromLong((long)st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-    PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
-                              PyLong_FromLong((long)st->st_gen));
+    SET_ITEM(ST_GEN_IDX, PyLong_FromLong((long)st->st_gen));
 #endif
 #if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME)
     {
-      PyObject *val;
-      unsigned long bsec,bnsec;
+      unsigned long bsec, bnsec;
       bsec = (long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
       bnsec = st->st_birthtimespec.tv_nsec;
 #else
       bnsec = 0;
 #endif
-      val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                                val);
+      SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
 #elif defined(MS_WINDOWS)
-    fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
-              st->st_birthtime, st->st_birthtime_nsec);
+    if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+                  st->st_birthtime, st->st_birthtime_nsec) < 0) {
+        goto error;
+    }
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
-                              PyLong_FromLong((long)st->st_flags));
+    SET_ITEM(ST_FLAGS_IDX, PyLong_FromLong((long)st->st_flags));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
-    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
-                              PyLong_FromUnsignedLong(st->st_file_attributes));
+    SET_ITEM(ST_FILE_ATTRIBUTES_IDX,
+             PyLong_FromUnsignedLong(st->st_file_attributes));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-   PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
-                              PyUnicode_FromString(st->st_fstype));
+   SET_ITEM(ST_FSTYPE_IDX, PyUnicode_FromString(st->st_fstype));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
-    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
-                              PyLong_FromUnsignedLong(st->st_reparse_tag));
+    SET_ITEM(ST_REPARSE_TAG_IDX, PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
-    }
-
+    assert(!PyErr_Occurred());
     return v;
+
+error:
+    Py_DECREF(v);
+    return NULL;
+
+#undef SET_ITEM
 }
 
 /* POSIX methods */
@@ -4889,25 +4907,25 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir
 
-    path: 'O'
+    s: 'O'
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=00faea0af309669d input=b1d2571cf7291aaf]*/
+os__path_isdir_impl(PyObject *module, PyObject *s)
+/*[clinic end generated code: output=9d87ab3c8b8a4e61 input=c17f7ef21d22d64e]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
+    path_t _path = PATH_T_INITIALIZE("isdir", "s", 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(path, &_path)) {
+    if (!path_converter(s, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
@@ -6307,11 +6325,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
         _Py_time_t_to_FILE_TIME(utime.mtime_s, utime.mtime_ns, &mtime);
     }
     if (!SetFileTime(hFile, NULL, &atime, &mtime)) {
-        /* Avoid putting the file name into the error here,
-           as that may confuse the user into believing that
-           something is wrong with the file, when it also
-           could be the time stamp that gives a problem. */
-        PyErr_SetFromWindowsErr(0);
+        path_error(path);
         CloseHandle(hFile);
         return NULL;
     }
@@ -6351,8 +6365,7 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 #endif
 
     if (result < 0) {
-        /* see previous comment about not putting filename in error here */
-        posix_error();
+        path_error(path);
         return NULL;
     }
 
@@ -8120,39 +8133,45 @@ static PyObject *
 os_sched_getaffinity_impl(PyObject *module, pid_t pid)
 /*[clinic end generated code: output=f726f2c193c17a4f input=983ce7cb4a565980]*/
 {
-    int cpu, ncpus, count;
+    int ncpus = NCPUS_START;
     size_t setsize;
-    cpu_set_t *mask = NULL;
-    PyObject *res = NULL;
+    cpu_set_t *mask;
 
-    ncpus = NCPUS_START;
     while (1) {
         setsize = CPU_ALLOC_SIZE(ncpus);
         mask = CPU_ALLOC(ncpus);
-        if (mask == NULL)
+        if (mask == NULL) {
             return PyErr_NoMemory();
-        if (sched_getaffinity(pid, setsize, mask) == 0)
+        }
+        if (sched_getaffinity(pid, setsize, mask) == 0) {
             break;
+        }
         CPU_FREE(mask);
-        if (errno != EINVAL)
+        if (errno != EINVAL) {
             return posix_error();
+        }
         if (ncpus > INT_MAX / 2) {
-            PyErr_SetString(PyExc_OverflowError, "could not allocate "
-                            "a large enough CPU set");
+            PyErr_SetString(PyExc_OverflowError,
+                            "could not allocate a large enough CPU set");
             return NULL;
         }
-        ncpus = ncpus * 2;
+        ncpus *= 2;
     }
 
-    res = PySet_New(NULL);
-    if (res == NULL)
+    PyObject *res = PySet_New(NULL);
+    if (res == NULL) {
         goto error;
-    for (cpu = 0, count = CPU_COUNT_S(setsize, mask); count; cpu++) {
+    }
+
+    int cpu = 0;
+    int count = CPU_COUNT_S(setsize, mask);
+    for (; count; cpu++) {
         if (CPU_ISSET_S(cpu, setsize, mask)) {
             PyObject *cpu_num = PyLong_FromLong(cpu);
             --count;
-            if (cpu_num == NULL)
+            if (cpu_num == NULL) {
                 goto error;
+            }
             if (PySet_Add(res, cpu_num)) {
                 Py_DECREF(cpu_num);
                 goto error;
@@ -8164,12 +8183,12 @@ os_sched_getaffinity_impl(PyObject *module, pid_t pid)
     return res;
 
 error:
-    if (mask)
+    if (mask) {
         CPU_FREE(mask);
+    }
     Py_XDECREF(res);
     return NULL;
 }
-
 #endif /* HAVE_SCHED_SETAFFINITY */
 
 #endif /* HAVE_SCHED_H */
@@ -14320,44 +14339,49 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 /*[clinic input]
 os.cpu_count
 
-Return the number of CPUs in the system; return None if indeterminable.
+Return the number of logical CPUs in the system.
 
-This number is not equivalent to the number of CPUs the current process can
-use.  The number of usable CPUs can be obtained with
-``len(os.sched_getaffinity(0))``
+Return None if indeterminable.
 [clinic start generated code]*/
 
 static PyObject *
 os_cpu_count_impl(PyObject *module)
-/*[clinic end generated code: output=5fc29463c3936a9c input=e7c8f4ba6dbbadd3]*/
+/*[clinic end generated code: output=5fc29463c3936a9c input=ba2f6f8980a0e2eb]*/
 {
-    int ncpu = 0;
+    int ncpu;
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP
+# ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-#endif
+# else
+    ncpu = 0;
+# endif
+
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
+
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+
 #elif defined(__VXWORKS__)
     ncpu = _Py_popcount32(vxCpuEnabledGet());
+
 #elif defined(__DragonFly__) || \
       defined(__OpenBSD__)   || \
       defined(__FreeBSD__)   || \
       defined(__NetBSD__)    || \
       defined(__APPLE__)
-    int mib[2];
+    ncpu = 0;
     size_t len = sizeof(ncpu);
-    mib[0] = CTL_HW;
-    mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) != 0)
+    int mib[2] = {CTL_HW, HW_NCPU};
+    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) != 0) {
         ncpu = 0;
+    }
 #endif
-    if (ncpu >= 1)
-        return PyLong_FromLong(ncpu);
-    else
+
+    if (ncpu < 1) {
         Py_RETURN_NONE;
+    }
+    return PyLong_FromLong(ncpu);
 }
 
 
@@ -16984,7 +17008,3 @@ INITFUNC(void)
 {
     return PyModuleDef_Init(&posixmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

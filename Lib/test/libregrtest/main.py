@@ -1,39 +1,30 @@
-import faulthandler
-import locale
 import os
-import platform
 import random
 import re
+import shlex
 import sys
 import sysconfig
-import tempfile
 import time
-import unittest
-from test.libregrtest.cmdline import _parse_args, Namespace
-from test.libregrtest.runtest import (
-    findtests, split_test_packages, run_single_test, abs_module_name,
-    PROGRESS_MIN_TIME, State, RunTests, TestResult, HuntRefleak,
-    FilterTuple, FilterDict, TestList)
-from test.libregrtest.setup import setup_tests, setup_test_dir
-from test.libregrtest.pgo import setup_pgo_tests
-from test.libregrtest.utils import (strip_py_suffix, count, format_duration,
-                                    printlist, get_build_info)
+
 from test import support
-from test.support import TestStats
 from test.support import os_helper
-from test.support import threading_helper
 
-
-# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
-# Used to protect against threading._shutdown() hang.
-# Must be smaller than buildbot "1200 seconds without output" limit.
-EXIT_TIMEOUT = 120.0
-
-EXITCODE_BAD_TEST = 2
-EXITCODE_ENV_CHANGED = 3
-EXITCODE_NO_TESTS_RAN = 4
-EXITCODE_RERUN_FAIL = 5
-EXITCODE_INTERRUPTED = 130
+from .cmdline import _parse_args, Namespace
+from .findtests import findtests, split_test_packages, list_cases
+from .logger import Logger
+from .pgo import setup_pgo_tests
+from .result import State
+from .results import TestResults, EXITCODE_INTERRUPTED
+from .runtests import RunTests, HuntRefleak
+from .setup import setup_process, setup_test_dir
+from .single import run_single_test, PROGRESS_MIN_TIME
+from .utils import (
+    StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
+    strip_py_suffix, count, format_duration,
+    printlist, get_temp_dir, get_work_dir, exit_timeout,
+    display_header, cleanup_temp_dir, print_warning,
+    is_cross_compiled, get_host_runner,
+    MS_WINDOWS, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -59,9 +50,19 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace):
-        # Namespace of command line options
-        self.ns: Namespace = ns
+    def __init__(self, ns: Namespace, _add_python_opts: bool = False):
+        # Log verbosity
+        self.verbose: int = int(ns.verbose)
+        self.quiet: bool = ns.quiet
+        self.pgo: bool = ns.pgo
+        self.pgo_extended: bool = ns.pgo_extended
+
+        # Test results
+        self.results: TestResults = TestResults()
+        self.first_state: str | None = None
+
+        # Logger
+        self.logger = Logger(self.results, self.quiet, self.pgo)
 
         # Actions
         self.want_header: bool = ns.header
@@ -69,170 +70,103 @@ class Regrtest:
         self.want_list_cases: bool = ns.list_cases
         self.want_wait: bool = ns.wait
         self.want_cleanup: bool = ns.cleanup
+        self.want_rerun: bool = ns.rerun
+        self.want_run_leaks: bool = ns.runleaks
+
+        self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
+        self.want_add_python_opts: bool = (_add_python_opts
+                                           and ns._add_python_opts)
 
         # Select tests
         if ns.match_tests:
-            self.match_tests: FilterTuple = tuple(ns.match_tests)
+            self.match_tests: FilterTuple | None = tuple(ns.match_tests)
         else:
             self.match_tests = None
         if ns.ignore_tests:
-            self.ignore_tests: FilterTuple = tuple(ns.ignore_tests)
+            self.ignore_tests: FilterTuple | None = tuple(ns.ignore_tests)
         else:
             self.ignore_tests = None
         self.exclude: bool = ns.exclude
-        self.fromfile: str | None = ns.fromfile
-        self.starting_test: str | None = ns.start
+        self.fromfile: StrPath | None = ns.fromfile
+        self.starting_test: TestName | None = ns.start
+        self.cmdline_args: TestList = ns.args
+
+        # Workers
+        if ns.use_mp is None:
+            num_workers = 0  # run sequentially
+        elif ns.use_mp <= 0:
+            num_workers = -1  # use the number of CPUs
+        else:
+            num_workers = ns.use_mp
+        self.num_workers: int = num_workers
+        self.worker_json: StrJSON | None = ns.worker_json
 
         # Options to run tests
         self.fail_fast: bool = ns.failfast
+        self.fail_env_changed: bool = ns.fail_env_changed
+        self.fail_rerun: bool = ns.fail_rerun
         self.forever: bool = ns.forever
-        self.randomize: bool = ns.randomize
-        self.random_seed: int | None = ns.random_seed
-        self.pgo: bool = ns.pgo
-        self.pgo_extended: bool = ns.pgo_extended
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
-        self.verbose: bool = ns.verbose
-        self.quiet: bool = ns.quiet
         if ns.huntrleaks:
-            self.hunt_refleak: HuntRefleak = HuntRefleak(*ns.huntrleaks)
+            warmups, runs, filename = ns.huntrleaks
+            filename = os.path.abspath(filename)
+            self.hunt_refleak: HuntRefleak | None = HuntRefleak(warmups, runs, filename)
         else:
             self.hunt_refleak = None
-        self.test_dir: str | None = ns.testdir
-        self.junit_filename: str | None = ns.xmlpath
+        self.test_dir: StrPath | None = ns.testdir
+        self.junit_filename: StrPath | None = ns.xmlpath
+        self.memory_limit: str | None = ns.memlimit
+        self.gc_threshold: int | None = ns.threshold
+        self.use_resources: tuple[str, ...] = tuple(ns.use_resources)
+        if ns.python:
+            self.python_cmd: tuple[str, ...] | None = tuple(ns.python)
+        else:
+            self.python_cmd = None
+        self.coverage: bool = ns.trace
+        self.coverage_dir: StrPath | None = ns.coverdir
+        self.tmp_dir: StrPath | None = ns.tempdir
+
+        # Randomize
+        self.randomize: bool = ns.randomize
+        self.random_seed: int | None =  (
+            ns.random_seed
+            if ns.random_seed is not None
+            else random.getrandbits(32)
+        )
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            self.randomize = False
+            self.random_seed = None
 
         # tests
-        self.tests = []
-        self.selected = []
         self.first_runtests: RunTests | None = None
 
-        # test results
-        self.good: TestList = []
-        self.bad: TestList = []
-        self.rerun_bad: TestList = []
-        self.skipped: TestList = []
-        self.resource_denied: TestList = []
-        self.environment_changed: TestList = []
-        self.run_no_tests: TestList = []
-        self.rerun: TestList = []
-
-        self.need_rerun: list[TestResult] = []
-        self.first_state: str | None = None
-        self.interrupted = False
-        self.total_stats = TestStats()
-
-        # used by --slow
-        self.test_times = []
+        # used by --slowest
+        self.print_slowest: bool = ns.print_slow
 
         # used to display the progress bar "[ 3/100]"
         self.start_time = time.perf_counter()
-        self.test_count_text = ''
-        self.test_count_width = 1
 
         # used by --single
-        self.next_single_test = None
-        self.next_single_filename = None
-
-        # used by --junit-xml
-        self.testsuite_xml = None
-
-        # misc
-        self.win_load_tracker = None
-        self.tmp_dir = None
-
-    def get_executed(self):
-        return (set(self.good) | set(self.bad) | set(self.skipped)
-                | set(self.resource_denied) | set(self.environment_changed)
-                | set(self.run_no_tests))
-
-    def accumulate_result(self, result, rerun=False):
-        fail_env_changed = self.ns.fail_env_changed
-        test_name = result.test_name
-
-        match result.state:
-            case State.PASSED:
-                self.good.append(test_name)
-            case State.ENV_CHANGED:
-                self.environment_changed.append(test_name)
-            case State.SKIPPED:
-                self.skipped.append(test_name)
-            case State.RESOURCE_DENIED:
-                self.resource_denied.append(test_name)
-            case State.INTERRUPTED:
-                self.interrupted = True
-            case State.DID_NOT_RUN:
-                self.run_no_tests.append(test_name)
-            case _:
-                if result.is_failed(fail_env_changed):
-                    self.bad.append(test_name)
-                    self.need_rerun.append(result)
-                else:
-                    raise ValueError(f"invalid test state: {result.state!r}")
-
-        if result.has_meaningful_duration() and not rerun:
-            self.test_times.append((result.duration, test_name))
-        if result.stats is not None:
-            self.total_stats.accumulate(result.stats)
-        if rerun:
-            self.rerun.append(test_name)
-
-        xml_data = result.xml_data
-        if xml_data:
-            import xml.etree.ElementTree as ET
-            for e in xml_data:
-                try:
-                    self.testsuite_xml.append(ET.fromstring(e))
-                except ET.ParseError:
-                    print(xml_data, file=sys.__stderr__)
-                    raise
+        self.single_test_run: bool = ns.single
+        self.next_single_test: TestName | None = None
+        self.next_single_filename: StrPath | None = None
 
     def log(self, line=''):
-        empty = not line
+        self.logger.log(line)
 
-        # add the system load prefix: "load avg: 1.80 "
-        load_avg = self.getloadavg()
-        if load_avg is not None:
-            line = f"load avg: {load_avg:.2f} {line}"
-
-        # add the timestamp prefix:  "0:01:05 "
-        test_time = time.perf_counter() - self.start_time
-
-        mins, secs = divmod(int(test_time), 60)
-        hours, mins = divmod(mins, 60)
-        test_time = "%d:%02d:%02d" % (hours, mins, secs)
-
-        line = f"{test_time} {line}"
-        if empty:
-            line = line[:-1]
-
-        print(line, flush=True)
-
-    def display_progress(self, test_index, text):
-        if self.quiet:
-            return
-
-        # "[ 51/405/1] test_tcl passed"
-        line = f"{test_index:{self.test_count_width}}{self.test_count_text}"
-        fails = len(self.bad) + len(self.environment_changed)
-        if fails and not self.pgo:
-            line = f"{line}/{fails}"
-        self.log(f"[{line}] {text}")
-
-    def find_tests(self):
-        ns = self.ns
-        single = ns.single
-
-        if single:
+    def find_tests(self, tests: TestList | None = None) -> tuple[TestTuple, TestList | None]:
+        if self.single_test_run:
             self.next_single_filename = os.path.join(self.tmp_dir, 'pynexttest')
             try:
                 with open(self.next_single_filename, 'r') as fp:
                     next_test = fp.read().strip()
-                    self.tests = [next_test]
+                    tests = [next_test]
             except OSError:
                 pass
 
         if self.fromfile:
-            self.tests = []
+            tests = []
             # regex to match 'test_builtin' in line:
             # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
             regex = re.compile(r'\btest_[a-zA-Z0-9_]+\b')
@@ -242,36 +176,36 @@ class Regrtest:
                     line = line.strip()
                     match = regex.search(line)
                     if match is not None:
-                        self.tests.append(match.group())
+                        tests.append(match.group())
 
-        strip_py_suffix(self.tests)
+        strip_py_suffix(tests)
 
         if self.pgo:
             # add default PGO tests if no tests are specified
-            setup_pgo_tests(ns)
+            setup_pgo_tests(self.cmdline_args, self.pgo_extended)
 
         exclude_tests = set()
         if self.exclude:
-            for arg in ns.args:
+            for arg in self.cmdline_args:
                 exclude_tests.add(arg)
-            ns.args = []
+            self.cmdline_args = []
 
         alltests = findtests(testdir=self.test_dir,
                              exclude=exclude_tests)
 
         if not self.fromfile:
-            self.selected = self.tests or ns.args
-            if self.selected:
-                self.selected = split_test_packages(self.selected)
+            selected = tests or self.cmdline_args
+            if selected:
+                selected = split_test_packages(selected)
             else:
-                self.selected = alltests
+                selected = alltests
         else:
-            self.selected = self.tests
+            selected = tests
 
-        if single:
-            self.selected = self.selected[:1]
+        if self.single_test_run:
+            selected = selected[:1]
             try:
-                pos = alltests.index(self.selected[0])
+                pos = alltests.index(selected[0])
                 self.next_single_test = alltests[pos + 1]
             except IndexError:
                 pass
@@ -279,91 +213,49 @@ class Regrtest:
         # Remove all the selected tests that precede start if it's set.
         if self.starting_test:
             try:
-                del self.selected[:self.selected.index(self.starting_test)]
+                del selected[:selected.index(self.starting_test)]
             except ValueError:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
+        random.seed(self.random_seed)
         if self.randomize:
-            if self.random_seed is None:
-                self.random_seed = random.randrange(100_000_000)
-            random.seed(self.random_seed)
-            random.shuffle(self.selected)
+            random.shuffle(selected)
 
-    def list_tests(self):
-        for name in self.selected:
+        return (tuple(selected), tests)
+
+    @staticmethod
+    def list_tests(tests: TestTuple):
+        for name in tests:
             print(name)
 
-    def _list_cases(self, suite):
-        for test in suite:
-            if isinstance(test, unittest.loader._FailedTest):
-                continue
-            if isinstance(test, unittest.TestSuite):
-                self._list_cases(test)
-            elif isinstance(test, unittest.TestCase):
-                if support.match_test(test):
-                    print(test.id())
-
-    def list_cases(self):
-        support.verbose = False
-        support.set_match_tests(self.match_tests, self.ignore_tests)
-
-        skipped = []
-        for test_name in self.selected:
-            module_name = abs_module_name(test_name, self.test_dir)
-            try:
-                suite = unittest.defaultTestLoader.loadTestsFromName(module_name)
-                self._list_cases(suite)
-            except unittest.SkipTest:
-                skipped.append(test_name)
-
-        if skipped:
-            sys.stdout.flush()
-            stderr = sys.stderr
-            print(file=stderr)
-            print(count(len(skipped), "test"), "skipped:", file=stderr)
-            printlist(skipped, file=stderr)
-
-    def get_rerun_match(self, rerun_list) -> FilterDict:
-        rerun_match_tests = {}
-        for result in rerun_list:
-            match_tests = result.get_rerun_match_tests()
-            # ignore empty match list
-            if match_tests:
-                rerun_match_tests[result.test_name] = match_tests
-        return rerun_match_tests
-
-    def _rerun_failed_tests(self, need_rerun, runtests: RunTests):
+    def _rerun_failed_tests(self, runtests: RunTests):
         # Configure the runner to re-run tests
-        ns = self.ns
-        if ns.use_mp is None:
-            ns.use_mp = 1
+        if self.num_workers == 0:
+            # Always run tests in fresh processes to have more deterministic
+            # initial state. Don't re-run tests in parallel but limit to a
+            # single worker process to have side effects (on the system load
+            # and timings) between tests.
+            self.num_workers = 1
 
-        # Get tests to re-run
-        tests = [result.test_name for result in need_rerun]
-        match_tests_dict = self.get_rerun_match(need_rerun)
-
-        # Clear previously failed tests
-        self.rerun_bad.extend(self.bad)
-        self.bad.clear()
-        self.need_rerun.clear()
+        tests, match_tests_dict = self.results.prepare_rerun()
 
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(
-            tests=tuple(tests),
+            tests=tests,
             rerun=True,
             verbose=True,
             forever=False,
             fail_fast=False,
             match_tests_dict=match_tests_dict,
             output_on_failure=False)
-        self.set_tests(runtests)
-        self._run_tests_mp(runtests)
+        self.logger.set_tests(runtests)
+        self._run_tests_mp(runtests, self.num_workers)
         return runtests
 
-    def rerun_failed_tests(self, need_rerun, runtests: RunTests):
-        if self.ns.python:
+    def rerun_failed_tests(self, runtests: RunTests):
+        if self.python_cmd:
             # Temp patch for https://github.com/python/cpython/issues/94052
             self.log(
                 "Re-running failed tests is not supported with --python "
@@ -371,105 +263,46 @@ class Regrtest:
             )
             return
 
-        self.first_state = self.get_tests_state()
+        self.first_state = self.get_state()
 
         print()
-        rerun_runtests = self._rerun_failed_tests(need_rerun, runtests)
+        rerun_runtests = self._rerun_failed_tests(runtests)
 
-        if self.bad:
-            print(count(len(self.bad), 'test'), "failed again:")
-            printlist(self.bad)
+        if self.results.bad:
+            print(count(len(self.results.bad), 'test'), "failed again:")
+            printlist(self.results.bad)
 
         self.display_result(rerun_runtests)
 
     def display_result(self, runtests):
-        pgo = runtests.pgo
-        print_slow = self.ns.print_slow
-
         # If running the test suite for PGO then no one cares about results.
-        if pgo:
+        if runtests.pgo:
             return
 
+        state = self.get_state()
         print()
-        print("== Tests result: %s ==" % self.get_tests_state())
+        print(f"== Tests result: {state} ==")
 
-        if self.interrupted:
-            print("Test suite interrupted by signal SIGINT.")
+        self.results.display_result(runtests.tests,
+                                    self.quiet, self.print_slowest)
 
-        omitted = set(self.selected) - self.get_executed()
-        if omitted:
-            print()
-            print(count(len(omitted), "test"), "omitted:")
-            printlist(omitted)
-
-        if self.good and not self.quiet:
-            print()
-            if (not self.bad
-                and not self.skipped
-                and not self.interrupted
-                and len(self.good) > 1):
-                print("All", end=' ')
-            print(count(len(self.good), "test"), "OK.")
-
-        if print_slow:
-            self.test_times.sort(reverse=True)
-            print()
-            print("10 slowest tests:")
-            for test_time, test in self.test_times[:10]:
-                print("- %s: %s" % (test, format_duration(test_time)))
-
-        if self.bad:
-            print()
-            print(count(len(self.bad), "test"), "failed:")
-            printlist(self.bad)
-
-        if self.environment_changed:
-            print()
-            print("{} altered the execution environment:".format(
-                     count(len(self.environment_changed), "test")))
-            printlist(self.environment_changed)
-
-        if self.skipped and not self.quiet:
-            print()
-            print(count(len(self.skipped), "test"), "skipped:")
-            printlist(self.skipped)
-
-        if self.resource_denied and not self.quiet:
-            print()
-            print(count(len(self.resource_denied), "test"), "skipped (resource denied):")
-            printlist(self.resource_denied)
-
-        if self.rerun:
-            print()
-            print("%s:" % count(len(self.rerun), "re-run test"))
-            printlist(self.rerun)
-
-        if self.run_no_tests:
-            print()
-            print(count(len(self.run_no_tests), "test"), "run no tests:")
-            printlist(self.run_no_tests)
-
-    def run_test(self, test_name: str, runtests: RunTests, tracer):
+    def run_test(self, test_name: TestName, runtests: RunTests, tracer):
         if tracer is not None:
             # If we're tracing code coverage, then we don't exit with status
             # if on a false return value from main.
-            cmd = ('result = run_single_test(test_name, runtests, self.ns)')
-            ns = dict(locals())
-            tracer.runctx(cmd, globals=globals(), locals=ns)
-            result = ns['result']
+            cmd = ('result = run_single_test(test_name, runtests)')
+            namespace = dict(locals())
+            tracer.runctx(cmd, globals=globals(), locals=namespace)
+            result = namespace['result']
         else:
-            result = run_single_test(test_name, runtests, self.ns)
+            result = run_single_test(test_name, runtests)
 
-        self.accumulate_result(result)
+        self.results.accumulate_result(result, runtests)
 
         return result
 
     def run_tests_sequentially(self, runtests):
-        ns = self.ns
-        coverage = ns.trace
-        fail_env_changed = ns.fail_env_changed
-
-        if coverage:
+        if self.coverage:
             import trace
             tracer = trace.Trace(trace=False, count=True)
         else:
@@ -477,7 +310,12 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        msg = "Run tests sequentially"
+        jobs = runtests.get_jobs()
+        if jobs is not None:
+            tests = count(jobs, 'test')
+        else:
+            tests = 'tests'
+        msg = f"Run {tests} sequentially"
         if runtests.timeout:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
@@ -490,7 +328,7 @@ class Regrtest:
             text = test_name
             if previous_test:
                 text = '%s -- %s' % (text, previous_test)
-            self.display_progress(test_index, text)
+            self.logger.display_progress(test_index, text)
 
             result = self.run_test(test_name, runtests, tracer)
 
@@ -499,7 +337,7 @@ class Regrtest:
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-            if result.must_stop(self.fail_fast, fail_env_changed):
+            if result.must_stop(self.fail_fast, self.fail_env_changed):
                 break
 
             previous_test = str(result)
@@ -515,111 +353,15 @@ class Regrtest:
 
         return tracer
 
-    def display_header(self):
-        # Print basic platform information
-        print("==", platform.python_implementation(), *sys.version.split())
-        print("==", platform.platform(aliased=True),
-                      "%s-endian" % sys.byteorder)
-        print("== Python build:", ' '.join(get_build_info()))
-        print("== cwd:", os.getcwd())
-        cpu_count = os.cpu_count()
-        if cpu_count:
-            print("== CPU count:", cpu_count)
-        print("== encodings: locale=%s, FS=%s"
-              % (locale.getencoding(), sys.getfilesystemencoding()))
-        self.display_sanitizers()
-
-    def display_sanitizers(self):
-        # This makes it easier to remember what to set in your local
-        # environment when trying to reproduce a sanitizer failure.
-        asan = support.check_sanitizer(address=True)
-        msan = support.check_sanitizer(memory=True)
-        ubsan = support.check_sanitizer(ub=True)
-        sanitizers = []
-        if asan:
-            sanitizers.append("address")
-        if msan:
-            sanitizers.append("memory")
-        if ubsan:
-            sanitizers.append("undefined behavior")
-        if not sanitizers:
-            return
-
-        print(f"== sanitizers: {', '.join(sanitizers)}")
-        for sanitizer, env_var in (
-            (asan, "ASAN_OPTIONS"),
-            (msan, "MSAN_OPTIONS"),
-            (ubsan, "UBSAN_OPTIONS"),
-        ):
-            options= os.environ.get(env_var)
-            if sanitizer and options is not None:
-                print(f"== {env_var}={options!r}")
-
-    def no_tests_run(self):
-        return not any((self.good, self.bad, self.skipped, self.interrupted,
-                        self.environment_changed))
-
-    def get_tests_state(self):
-        fail_env_changed = self.ns.fail_env_changed
-
-        result = []
-        if self.bad:
-            result.append("FAILURE")
-        elif fail_env_changed and self.environment_changed:
-            result.append("ENV CHANGED")
-        elif self.no_tests_run():
-            result.append("NO TESTS RAN")
-
-        if self.interrupted:
-            result.append("INTERRUPTED")
-
-        if not result:
-            result.append("SUCCESS")
-
-        result = ', '.join(result)
+    def get_state(self):
+        state = self.results.get_state(self.fail_env_changed)
         if self.first_state:
-            result = '%s then %s' % (self.first_state, result)
-        return result
+            state = f'{self.first_state} then {state}'
+        return state
 
-    def _run_tests_mp(self, runtests: RunTests) -> None:
-        from test.libregrtest.runtest_mp import run_tests_multiprocess
-        # If we're on windows and this is the parent runner (not a worker),
-        # track the load average.
-        if sys.platform == 'win32':
-            from test.libregrtest.win_utils import WindowsLoadTracker
-
-            try:
-                self.win_load_tracker = WindowsLoadTracker()
-            except PermissionError as error:
-                # Standard accounts may not have access to the performance
-                # counters.
-                print(f'Failed to create WindowsLoadTracker: {error}')
-
-        try:
-            run_tests_multiprocess(self, runtests)
-        finally:
-            if self.win_load_tracker is not None:
-                self.win_load_tracker.close()
-                self.win_load_tracker = None
-
-    def set_tests(self, runtests: RunTests):
-        self.tests = runtests.tests
-        if runtests.forever:
-            self.test_count_text = ''
-            self.test_count_width = 3
-        else:
-            self.test_count_text = '/{}'.format(len(self.tests))
-            self.test_count_width = len(self.test_count_text) - 1
-
-    def run_tests(self, runtests: RunTests):
-        self.first_runtests = runtests
-        self.set_tests(runtests)
-        if self.ns.use_mp:
-            self._run_tests_mp(runtests)
-            tracer = None
-        else:
-            tracer = self.run_tests_sequentially(runtests)
-        return tracer
+    def _run_tests_mp(self, runtests: RunTests, num_workers: int) -> None:
+        from .run_workers import RunWorkers
+        RunWorkers(num_workers, runtests, self.logger, self.results).run()
 
     def finalize_tests(self, tracer):
         if self.next_single_filename:
@@ -632,241 +374,37 @@ class Regrtest:
         if tracer is not None:
             results = tracer.results()
             results.write_results(show_missing=True, summary=True,
-                                  coverdir=self.ns.coverdir)
+                                  coverdir=self.coverage_dir)
 
-        if self.ns.runleaks:
+        if self.want_run_leaks:
             os.system("leaks %d" % os.getpid())
 
-        self.save_xml_result()
+        if self.junit_filename:
+            self.results.write_junit(self.junit_filename)
 
     def display_summary(self):
-        duration = time.perf_counter() - self.start_time
+        duration = time.perf_counter() - self.logger.start_time
         filtered = bool(self.match_tests) or bool(self.ignore_tests)
 
         # Total duration
         print()
         print("Total duration: %s" % format_duration(duration))
 
-        # Total tests
-        total = self.total_stats
-        text = f'run={total.tests_run:,}'
-        if filtered:
-            text = f"{text} (filtered)"
-        stats = [text]
-        if total.failures:
-            stats.append(f'failures={total.failures:,}')
-        if total.skipped:
-            stats.append(f'skipped={total.skipped:,}')
-        print(f"Total tests: {' '.join(stats)}")
-
-        # Total test files
-        all_tests = [self.good, self.bad, self.rerun,
-                     self.skipped,
-                     self.environment_changed, self.run_no_tests]
-        run = sum(map(len, all_tests))
-        text = f'run={run}'
-        if not self.first_runtests.forever:
-            ntest = len(self.first_runtests.tests)
-            text = f"{text}/{ntest}"
-        if filtered:
-            text = f"{text} (filtered)"
-        report = [text]
-        for name, tests in (
-            ('failed', self.bad),
-            ('env_changed', self.environment_changed),
-            ('skipped', self.skipped),
-            ('resource_denied', self.resource_denied),
-            ('rerun', self.rerun),
-            ('run_no_tests', self.run_no_tests),
-        ):
-            if tests:
-                report.append(f'{name}={len(tests)}')
-        print(f"Total test files: {' '.join(report)}")
+        self.results.display_summary(self.first_runtests, filtered)
 
         # Result
-        result = self.get_tests_state()
-        print(f"Result: {result}")
+        state = self.get_state()
+        print(f"Result: {state}")
 
-    def save_xml_result(self):
-        if not self.junit_filename and not self.testsuite_xml:
-            return
-
-        import xml.etree.ElementTree as ET
-        root = ET.Element("testsuites")
-
-        # Manually count the totals for the overall summary
-        totals = {'tests': 0, 'errors': 0, 'failures': 0}
-        for suite in self.testsuite_xml:
-            root.append(suite)
-            for k in totals:
-                try:
-                    totals[k] += int(suite.get(k, 0))
-                except ValueError:
-                    pass
-
-        for k, v in totals.items():
-            root.set(k, str(v))
-
-        xmlpath = os.path.join(os_helper.SAVEDCWD, self.junit_filename)
-        with open(xmlpath, 'wb') as f:
-            for s in ET.tostringlist(root):
-                f.write(s)
-
-    def fix_umask(self):
-        if support.is_emscripten:
-            # Emscripten has default umask 0o777, which breaks some tests.
-            # see https://github.com/emscripten-core/emscripten/issues/17269
-            old_mask = os.umask(0)
-            if old_mask == 0o777:
-                os.umask(0o027)
-            else:
-                os.umask(old_mask)
-
-    def set_temp_dir(self):
-        ns = self.ns
-        if ns.tempdir:
-            ns.tempdir = os.path.expanduser(ns.tempdir)
-
-        if ns.tempdir:
-            self.tmp_dir = ns.tempdir
-
-        if not self.tmp_dir:
-            # When tests are run from the Python build directory, it is best practice
-            # to keep the test files in a subfolder.  This eases the cleanup of leftover
-            # files using the "make distclean" command.
-            if sysconfig.is_python_build():
-                self.tmp_dir = sysconfig.get_config_var('abs_builddir')
-                if self.tmp_dir is None:
-                    # bpo-30284: On Windows, only srcdir is available. Using
-                    # abs_builddir mostly matters on UNIX when building Python
-                    # out of the source tree, especially when the source tree
-                    # is read only.
-                    self.tmp_dir = sysconfig.get_config_var('srcdir')
-                self.tmp_dir = os.path.join(self.tmp_dir, 'build')
-            else:
-                self.tmp_dir = tempfile.gettempdir()
-
-        self.tmp_dir = os.path.abspath(self.tmp_dir)
-
-    def is_worker(self):
-        return (self.ns.worker_json is not None)
-
-    def create_temp_dir(self):
-        os.makedirs(self.tmp_dir, exist_ok=True)
-
-        # Define a writable temp dir that will be used as cwd while running
-        # the tests. The name of the dir includes the pid to allow parallel
-        # testing (see the -j option).
-        # Emscripten and WASI have stubbed getpid(), Emscripten has only
-        # milisecond clock resolution. Use randint() instead.
-        if sys.platform in {"emscripten", "wasi"}:
-            nounce = random.randint(0, 1_000_000)
-        else:
-            nounce = os.getpid()
-
-        if self.is_worker():
-            test_cwd = 'test_python_worker_{}'.format(nounce)
-        else:
-            test_cwd = 'test_python_{}'.format(nounce)
-        test_cwd += os_helper.FS_NONASCII
-        test_cwd = os.path.join(self.tmp_dir, test_cwd)
-        return test_cwd
-
-    def cleanup(self):
-        import glob
-
-        path = os.path.join(glob.escape(self.tmp_dir), 'test_python_*')
-        print("Cleanup %s directory" % self.tmp_dir)
-        for name in glob.glob(path):
-            if os.path.isdir(name):
-                print("Remove directory: %s" % name)
-                os_helper.rmtree(name)
-            else:
-                print("Remove file: %s" % name)
-                os_helper.unlink(name)
-
-    def main(self, tests: TestList | None = None):
-        ns = self.ns
-        self.tests = tests
-
-        if self.junit_filename:
-            support.junit_xml_list = self.testsuite_xml = []
-
-        strip_py_suffix(ns.args)
-
-        self.set_temp_dir()
-
-        self.fix_umask()
-
-        if self.want_cleanup:
-            self.cleanup()
-            sys.exit(0)
-
-        test_cwd = self.create_temp_dir()
-
-        try:
-            # Run the tests in a context manager that temporarily changes the CWD
-            # to a temporary and writable directory. If it's not possible to
-            # create or change the CWD, the original CWD will be used.
-            # The original CWD is available from os_helper.SAVEDCWD.
-            with os_helper.temp_cwd(test_cwd, quiet=True):
-                # When using multiprocessing, worker processes will use test_cwd
-                # as their parent temporary directory. So when the main process
-                # exit, it removes also subdirectories of worker processes.
-                ns.tempdir = test_cwd
-
-                self._main()
-        except SystemExit as exc:
-            # bpo-38203: Python can hang at exit in Py_Finalize(), especially
-            # on threading._shutdown() call: put a timeout
-            if threading_helper.can_start_thread:
-                faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
-
-            sys.exit(exc.code)
-
-    def getloadavg(self):
-        if self.win_load_tracker is not None:
-            return self.win_load_tracker.getloadavg()
-
-        if hasattr(os, 'getloadavg'):
-            return os.getloadavg()[0]
-
-        return None
-
-    def get_exitcode(self):
-        exitcode = 0
-        if self.bad:
-            exitcode = EXITCODE_BAD_TEST
-        elif self.interrupted:
-            exitcode = EXITCODE_INTERRUPTED
-        elif self.ns.fail_env_changed and self.environment_changed:
-            exitcode = EXITCODE_ENV_CHANGED
-        elif self.no_tests_run():
-            exitcode = EXITCODE_NO_TESTS_RAN
-        elif self.rerun and self.ns.fail_rerun:
-            exitcode = EXITCODE_RERUN_FAIL
-        return exitcode
-
-    def action_run_tests(self):
-        if self.hunt_refleak and self.hunt_refleak.warmups < 3:
-            msg = ("WARNING: Running tests with --huntrleaks/-R and "
-                   "less than 3 warmup repetitions can give false positives!")
-            print(msg, file=sys.stdout, flush=True)
-
-        # For a partial run, we do not need to clutter the output.
-        if (self.want_header
-            or not(self.pgo or self.quiet or self.ns.single
-                   or self.tests or self.ns.args)):
-            self.display_header()
-
-        if self.randomize:
-            print("Using random seed", self.random_seed)
-
-        runtests = RunTests(
-            tuple(self.selected),
+    def create_run_tests(self, tests: TestTuple):
+        return RunTests(
+            tests,
             fail_fast=self.fail_fast,
+            fail_env_changed=self.fail_env_changed,
             match_tests=self.match_tests,
             ignore_tests=self.ignore_tests,
+            match_tests_dict=None,
+            rerun=False,
             forever=self.forever,
             pgo=self.pgo,
             pgo_extended=self.pgo_extended,
@@ -876,45 +414,256 @@ class Regrtest:
             quiet=self.quiet,
             hunt_refleak=self.hunt_refleak,
             test_dir=self.test_dir,
-            junit_filename=self.junit_filename)
+            use_junit=(self.junit_filename is not None),
+            memory_limit=self.memory_limit,
+            gc_threshold=self.gc_threshold,
+            use_resources=self.use_resources,
+            python_cmd=self.python_cmd,
+            randomize=self.randomize,
+            random_seed=self.random_seed,
+            json_file=None,
+        )
 
-        setup_tests(runtests, self.ns)
+    def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        if self.hunt_refleak and self.hunt_refleak.warmups < 3:
+            msg = ("WARNING: Running tests with --huntrleaks/-R and "
+                   "less than 3 warmup repetitions can give false positives!")
+            print(msg, file=sys.stdout, flush=True)
 
-        tracer = self.run_tests(runtests)
-        self.display_result(runtests)
+        if self.num_workers < 0:
+            # Use all CPUs + 2 extra worker processes for tests
+            # that like to sleep
+            self.num_workers = (os.process_cpu_count() or 1) + 2
 
-        need_rerun = self.need_rerun
-        if self.ns.rerun and need_rerun:
-            self.rerun_failed_tests(need_rerun, runtests)
+        # For a partial run, we do not need to clutter the output.
+        if (self.want_header
+            or not(self.pgo or self.quiet or self.single_test_run
+                   or tests or self.cmdline_args)):
+            display_header(self.use_resources, self.python_cmd)
+
+        print("Using random seed", self.random_seed)
+
+        runtests = self.create_run_tests(selected)
+        self.first_runtests = runtests
+        self.logger.set_tests(runtests)
+
+        setup_process()
+
+        if self.hunt_refleak and not self.num_workers:
+            # gh-109739: WindowsLoadTracker thread interfers with refleak check
+            use_load_tracker = False
+        else:
+            # WindowsLoadTracker is only needed on Windows
+            use_load_tracker = MS_WINDOWS
+
+        if use_load_tracker:
+            self.logger.start_load_tracker()
+        try:
+            if self.num_workers:
+                self._run_tests_mp(runtests, self.num_workers)
+                tracer = None
+            else:
+                tracer = self.run_tests_sequentially(runtests)
+
+            self.display_result(runtests)
+
+            if self.want_rerun and self.results.need_rerun():
+                self.rerun_failed_tests(runtests)
+        finally:
+            if use_load_tracker:
+                self.logger.stop_load_tracker()
 
         self.display_summary()
         self.finalize_tests(tracer)
 
-    def _main(self):
-        if self.is_worker():
-            from test.libregrtest.runtest_mp import worker_process
-            worker_process(self.ns.worker_json)
+        return self.results.get_exitcode(self.fail_env_changed,
+                                         self.fail_rerun)
+
+    def run_tests(self, selected: TestTuple, tests: TestList | None) -> int:
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        work_dir = get_work_dir(self.tmp_dir)
+
+        # Put a timeout on Python exit
+        with exit_timeout():
+            # Run the tests in a context manager that temporarily changes the
+            # CWD to a temporary and writable directory. If it's not possible
+            # to create or change the CWD, the original CWD will be used.
+            # The original CWD is available from os_helper.SAVEDCWD.
+            with os_helper.temp_cwd(work_dir, quiet=True):
+                # When using multiprocessing, worker processes will use
+                # work_dir as their parent temporary directory. So when the
+                # main process exit, it removes also subdirectories of worker
+                # processes.
+                return self._run_tests(selected, tests)
+
+    def _add_cross_compile_opts(self, regrtest_opts):
+        # WASM/WASI buildbot builders pass multiple PYTHON environment
+        # variables such as PYTHONPATH and _PYTHON_HOSTRUNNER.
+        keep_environ = bool(self.python_cmd)
+        environ = None
+
+        # Are we using cross-compilation?
+        cross_compile = is_cross_compiled()
+
+        # Get HOSTRUNNER
+        hostrunner = get_host_runner()
+
+        if cross_compile:
+            # emulate -E, but keep PYTHONPATH + cross compile env vars,
+            # so test executable can load correct sysconfigdata file.
+            keep = {
+                '_PYTHON_PROJECT_BASE',
+                '_PYTHON_HOST_PLATFORM',
+                '_PYTHON_SYSCONFIGDATA_NAME',
+                'PYTHONPATH'
+            }
+            old_environ = os.environ
+            new_environ = {
+                name: value for name, value in os.environ.items()
+                if not name.startswith(('PYTHON', '_PYTHON')) or name in keep
+            }
+            # Only set environ if at least one variable was removed
+            if new_environ != old_environ:
+                environ = new_environ
+            keep_environ = True
+
+        if cross_compile and hostrunner:
+            if self.num_workers == 0:
+                # For now use only two cores for cross-compiled builds;
+                # hostrunner can be expensive.
+                regrtest_opts.extend(['-j', '2'])
+
+            # If HOSTRUNNER is set and -p/--python option is not given, then
+            # use hostrunner to execute python binary for tests.
+            if not self.python_cmd:
+                buildpython = sysconfig.get_config_var("BUILDPYTHON")
+                python_cmd = f"{hostrunner} {buildpython}"
+                regrtest_opts.extend(["--python", python_cmd])
+                keep_environ = True
+
+        return (environ, keep_environ)
+
+    def _add_ci_python_opts(self, python_opts, keep_environ):
+        # --fast-ci and --slow-ci add options to Python:
+        # "-u -W default -bb -E"
+
+        # Unbuffered stdout and stderr
+        if not sys.stdout.write_through:
+            python_opts.append('-u')
+
+        # Add warnings filter 'default'
+        if 'default' not in sys.warnoptions:
+            python_opts.extend(('-W', 'default'))
+
+        # Error on bytes/str comparison
+        if sys.flags.bytes_warning < 2:
+            python_opts.append('-bb')
+
+        if not keep_environ:
+            # Ignore PYTHON* environment variables
+            if not sys.flags.ignore_environment:
+                python_opts.append('-E')
+
+    def _execute_python(self, cmd, environ):
+        # Make sure that messages before execv() are logged
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        cmd_text = shlex.join(cmd)
+        try:
+            print(f"+ {cmd_text}", flush=True)
+
+            if hasattr(os, 'execv') and not MS_WINDOWS:
+                os.execv(cmd[0], cmd)
+                # On success, execv() do no return.
+                # On error, it raises an OSError.
+            else:
+                import subprocess
+                with subprocess.Popen(cmd, env=environ) as proc:
+                    try:
+                        proc.wait()
+                    except KeyboardInterrupt:
+                        # There is no need to call proc.terminate(): on CTRL+C,
+                        # SIGTERM is also sent to the child process.
+                        try:
+                            proc.wait(timeout=EXIT_TIMEOUT)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
+                            sys.exit(EXITCODE_INTERRUPTED)
+
+                sys.exit(proc.returncode)
+        except Exception as exc:
+            print_warning(f"Failed to change Python options: {exc!r}\n"
+                          f"Command: {cmd_text}")
+            # continue executing main()
+
+    def _add_python_opts(self):
+        python_opts = []
+        regrtest_opts = []
+
+        environ, keep_environ = self._add_cross_compile_opts(regrtest_opts)
+        if self.ci_mode:
+            self._add_ci_python_opts(python_opts, keep_environ)
+
+        if (not python_opts) and (not regrtest_opts) and (environ is None):
+            # Nothing changed: nothing to do
             return
+
+        # Create new command line
+        cmd = list(sys.orig_argv)
+        if python_opts:
+            cmd[1:1] = python_opts
+        if regrtest_opts:
+            cmd.extend(regrtest_opts)
+        cmd.append("--dont-add-python-opts")
+
+        self._execute_python(cmd, environ)
+
+    def _init(self):
+        # Set sys.stdout encoder error handler to backslashreplace,
+        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+        # when printing a traceback or any other non-encodable character.
+        sys.stdout.reconfigure(errors="backslashreplace")
+
+        if self.junit_filename and not os.path.isabs(self.junit_filename):
+            self.junit_filename = os.path.abspath(self.junit_filename)
+
+        strip_py_suffix(self.cmdline_args)
+
+        self.tmp_dir = get_temp_dir(self.tmp_dir)
+
+    def main(self, tests: TestList | None = None):
+        if self.want_add_python_opts:
+            self._add_python_opts()
+
+        self._init()
+
+        if self.want_cleanup:
+            cleanup_temp_dir(self.tmp_dir)
+            sys.exit(0)
 
         if self.want_wait:
             input("Press any key to continue...")
 
         setup_test_dir(self.test_dir)
-        self.find_tests()
+        selected, tests = self.find_tests(tests)
 
         exitcode = 0
         if self.want_list_tests:
-            self.list_tests()
+            self.list_tests(selected)
         elif self.want_list_cases:
-            self.list_cases()
+            list_cases(selected,
+                       match_tests=self.match_tests,
+                       ignore_tests=self.ignore_tests,
+                       test_dir=self.test_dir)
         else:
-            self.action_run_tests()
-            exitcode = self.get_exitcode()
+            exitcode = self.run_tests(selected, tests)
 
         sys.exit(exitcode)
 
 
-def main(tests=None, **kwargs):
+def main(tests=None, _add_python_opts=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns).main(tests=tests)
+    Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)
