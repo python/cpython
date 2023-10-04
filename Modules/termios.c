@@ -120,7 +120,7 @@ termios_tcgetattr_impl(PyObject *module, int fd)
         v = PyBytes_FromStringAndSize(&ch, 1);
         if (v == NULL)
             goto err;
-        PyList_SetItem(cc, i, v);
+        PyList_SET_ITEM(cc, i, v);
     }
 
     /* Convert the MIN and TIME slots to integer.  On some systems, the
@@ -128,29 +128,44 @@ termios_tcgetattr_impl(PyObject *module, int fd)
        only do this in noncanonical input mode.  */
     if ((mode.c_lflag & ICANON) == 0) {
         v = PyLong_FromLong((long)mode.c_cc[VMIN]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VMIN, v);
+        }
+        if (PyList_SetItem(cc, VMIN, v) < 0) {
+            goto err;
+        }
         v = PyLong_FromLong((long)mode.c_cc[VTIME]);
-        if (v == NULL)
+        if (v == NULL) {
             goto err;
-        PyList_SetItem(cc, VTIME, v);
+        }
+        if (PyList_SetItem(cc, VTIME, v) < 0) {
+            goto err;
+        }
     }
 
-    if (!(v = PyList_New(7)))
-        goto err;
-
-    PyList_SetItem(v, 0, PyLong_FromLong((long)mode.c_iflag));
-    PyList_SetItem(v, 1, PyLong_FromLong((long)mode.c_oflag));
-    PyList_SetItem(v, 2, PyLong_FromLong((long)mode.c_cflag));
-    PyList_SetItem(v, 3, PyLong_FromLong((long)mode.c_lflag));
-    PyList_SetItem(v, 4, PyLong_FromLong((long)ispeed));
-    PyList_SetItem(v, 5, PyLong_FromLong((long)ospeed));
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
+    if (!(v = PyList_New(7))) {
         goto err;
     }
-    PyList_SetItem(v, 6, cc);
+
+#define ADD_LONG_ITEM(index, val) \
+    do { \
+        PyObject *l = PyLong_FromLong((long)val); \
+        if (l == NULL) { \
+            Py_DECREF(v); \
+            goto err; \
+        } \
+        PyList_SET_ITEM(v, index, l); \
+    } while (0)
+
+    ADD_LONG_ITEM(0, mode.c_iflag);
+    ADD_LONG_ITEM(1, mode.c_oflag);
+    ADD_LONG_ITEM(2, mode.c_cflag);
+    ADD_LONG_ITEM(3, mode.c_lflag);
+    ADD_LONG_ITEM(4, ispeed);
+    ADD_LONG_ITEM(5, ospeed);
+#undef ADD_LONG_ITEM
+
+    PyList_SET_ITEM(v, 6, cc);
     return v;
   err:
     Py_DECREF(cc);

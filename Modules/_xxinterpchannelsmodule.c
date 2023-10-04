@@ -1992,6 +1992,7 @@ _get_current_channel_end_type(int end)
                 return NULL;
             }
         }
+        Py_DECREF(highlevel);
         if (end == CHANNEL_SEND) {
             cls = state->send_channel_type;
         }
@@ -2012,6 +2013,7 @@ _channel_end_from_xid(_PyCrossInterpreterData *data)
     }
     PyTypeObject *cls = _get_current_channel_end_type(cid->end);
     if (cls == NULL) {
+        Py_DECREF(cid);
         return NULL;
     }
     PyObject *obj = PyObject_CallOneArg((PyObject *)cls, (PyObject *)cid);
@@ -2027,7 +2029,9 @@ _channel_end_shared(PyThreadState *tstate, PyObject *obj,
     if (cidobj == NULL) {
         return -1;
     }
-    if (_channelid_shared(tstate, cidobj, data) < 0) {
+    int res = _channelid_shared(tstate, cidobj, data);
+    Py_DECREF(cidobj);
+    if (res < 0) {
         return -1;
     }
     data->new_object = _channel_end_from_xid;
@@ -2464,7 +2468,10 @@ channel__channel_id(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     PyTypeObject *cls = state->ChannelIDType;
-    assert(get_module_from_owned_type(cls) == self);
+
+    PyObject *mod = get_module_from_owned_type(cls);
+    assert(mod == self);
+    Py_DECREF(mod);
 
     return _channelid_new(self, cls, args, kwds);
 }
