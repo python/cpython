@@ -29,14 +29,14 @@ static size_t page_size;
 static unsigned char *
 alloc(size_t size)
 {
-    size += (16 - (size & 15)) & 15;
+    assert((size & 7) == 0);
     if (JIT_POOL_SIZE - page_size < pool_head + size) {
         return NULL;
     }
     unsigned char *memory = pool + pool_head;
     pool_head += size;
-    assert(((uintptr_t)(pool + pool_head) & 15) == 0);
-    assert(((uintptr_t)memory & 15) == 0);
+    assert(((uintptr_t)(pool + pool_head) & 7) == 0);
+    assert(((uintptr_t)memory & 7) == 0);
     return memory;
 }
 

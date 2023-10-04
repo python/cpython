@@ -308,16 +308,14 @@ class Engine:
                 addend = 0
             # XXX: ABS_32 on 32-bit platforms?
             holes.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
-            disassembly.append(f"{offset:x}: &{symbol}")
+            value_part = value.name if value is not HoleValue._JIT_ZERO else ""
+            symbol_part = f"&{symbol}" if symbol is not None else ""
+            addend_part = format_addend(addend, 0) if addend else ""
+            if value_part and symbol_part:
+                value_part += "+"
+            disassembly.append(f"{offset:x}: {value_part}{symbol_part}{addend_part}")
             offset += 8
         self.body.extend([0] * 8 * len(self.got))
-        padding = 0
-        while len(self.body) % 16:
-            self.body.append(0)
-            padding += 1
-        if padding:
-            disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
-            offset += padding
         holes.sort(key=lambda hole: hole.offset)
         assert offset == len(self.body), (self.path, offset, len(self.body))
         return Stencil(
@@ -373,7 +371,7 @@ class Engine:
         while len(self.body) % 8:
             self.body.append(0)
         return len(self.body) + self.got.setdefault(symbol, 8 * len(self.got))
-    
+
     @staticmethod
     def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
         try:
@@ -699,11 +697,9 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         yield f"    [{opname}] = INIT_STENCIL({opname}),"
     yield f"}};"
     yield f""
-    yield f"#define INIT_HOLE(NAME) [NAME] = (uint64_t)0xBADBADBADBADBADB"
-    yield f""
     yield f"#define GET_PATCHES() {{ \\"
     for value in HoleValue:
-        yield f"    INIT_HOLE({value.name}), \\"
+        yield f"    [{value.name}] = (uint64_t)0xBADBADBADBADBADB, \\"
     yield f"}}"
     yield f""
 
