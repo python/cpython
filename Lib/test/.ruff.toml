@@ -9,8 +9,6 @@ extend-exclude = [
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
     "test_source_encoding.py",
-    # Failed to parse
-    "test_fstring.py",
     # TODO Fix: F811 Redefinition of unused name
     "test_buffer.py",
     "test_dataclasses/__init__.py",
