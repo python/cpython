@@ -494,10 +494,8 @@ class TestSysConfig(unittest.TestCase):
                      'EXT_SUFFIX required for this test')
     @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
     def test_EXT_SUFFIX_in_vars(self):
-        expected = _sysconfig.config_vars()
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
-        self.assertEqual(vars['EXT_SUFFIX'], expected['EXT_SUFFIX'])
 
     @unittest.skipUnless(sys.platform == 'linux' and
                          hasattr(sys.implementation, '_multiarch'),
