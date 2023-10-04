@@ -1328,7 +1328,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(equaltoutf8('abc', b'abc\0def\0'), 1)
         self.assertEqual(equaltoutf8('a\0bc', b'abc'), 0)
         self.assertEqual(equaltoutf8('abc', b'a\0bc'), 0)
-        
+
         # Surrogate characters are always treated as not equal
         self.assertEqual(equaltoutf8('\udcfe',
                             '\udcfe'.encode("utf8", "surrogateescape")), 0)
