@@ -111,10 +111,7 @@ typedef struct pyruntimestate {
      tools. */
 
     // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry {
-        PyThread_type_lock mutex;
-        struct _xidregitem *head;
-    } xidregistry;
+    struct _xidregistry xidregistry;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
