@@ -9,29 +9,6 @@
 #include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
 
-#ifdef _DEBUG
-#define PYD_DEBUG_SUFFIX "_d"
-#else
-#define PYD_DEBUG_SUFFIX ""
-#endif
-
-#ifdef Py_NOGIL
-#  define PYD_THREADING_TAG "t"
-#else
-#  define PYD_THREADING_TAG ""
-#endif
-
-#ifdef PYD_PLATFORM_TAG
-#  define PYD_SOABI "cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) PYD_THREADING_TAG "-" PYD_PLATFORM_TAG
-#else
-#  define PYD_SOABI "cp" Py_STRINGIFY(PY_MAJOR_VERSION) Py_STRINGIFY(PY_MINOR_VERSION) PYD_THREADING_TAG
-#endif
-
-#define PYD_TAGGED_SUFFIX PYD_DEBUG_SUFFIX "." PYD_SOABI ".pyd"
-#define PYD_UNTAGGED_SUFFIX PYD_DEBUG_SUFFIX ".pyd"
-
-const char *_Py_SOABI = PYD_SOABI;
-
 const char *_PyImport_DynLoadFiletab[] = {
     PYD_TAGGED_SUFFIX,
     PYD_UNTAGGED_SUFFIX,

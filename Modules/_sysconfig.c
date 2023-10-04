@@ -17,6 +17,7 @@ module _sysconfig
 
 #include "clinic/_sysconfig.c.h"
 
+#ifdef MS_WINDOWS
 static int
 add_string_value(PyObject *dict, const char *key, const char *str_value)
 {
@@ -28,6 +29,7 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
     Py_DECREF(value);
     return err;
 }
+#endif
 
 /*[clinic input]
 _sysconfig.config_vars
@@ -43,14 +45,13 @@ _sysconfig_config_vars_impl(PyObject *module)
     if (config == NULL) {
         return NULL;
     }
-    if (_PyImport_DynLoadFiletab[0]) {
-        if (add_string_value(config, "EXT_SUFFIX", _PyImport_DynLoadFiletab[0]) < 0) {
-            Py_DECREF(config);
-            return NULL;
-        }
-    }
+
 #ifdef MS_WINDOWS
-    if (add_string_value(config, "SOABI", _Py_SOABI) < 0) {
+    if (add_string_value(config, "EXT_SUFFIX", PYD_TAGGED_SUFFIX) < 0) {
+        Py_DECREF(config);
+        return NULL;
+    }
+    if (add_string_value(config, "SOABI", PYD_SOABI) < 0) {
         Py_DECREF(config);
         return NULL;
     }
