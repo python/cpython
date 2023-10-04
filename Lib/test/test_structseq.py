@@ -110,13 +110,14 @@ class StructSeqTest(unittest.TestCase):
     def test_constructor_with_duplicate_fields(self):
         t = time.struct_time
 
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+        error_message = re.escape("got duplicate or unexpected field name(s)")
+        with self.assertRaisesRegex(TypeError, error_message):
             t("1234567890", dict={"tm_zone": "some zone"})
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+        with self.assertRaisesRegex(TypeError, error_message):
             t("1234567890", dict={"tm_zone": "some zone", "tm_mon": 1})
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+        with self.assertRaisesRegex(TypeError, error_message):
             t("1234567890", dict={"error": 0, "tm_zone": "some zone"})
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'tm_zone'"):
+        with self.assertRaisesRegex(TypeError, error_message):
             t("1234567890", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
 
     def test_constructor_with_duplicate_unnamed_fields(self):
@@ -131,13 +132,14 @@ class StructSeqTest(unittest.TestCase):
         self.assertEqual(r.st_atime, -1.0)
         self.assertEqual(r, tuple(range(n_visible_fields)))
 
-        with self.assertRaisesRegex(TypeError, "got multiple values for field 'st_atime'"):
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape("got duplicate or unexpected field name(s)")):
             os.stat_result((*range(n_visible_fields), -1.0), {'st_atime': -1.0})
 
     def test_constructor_with_unknown_fields(self):
         t = time.struct_time
 
-        error_message = re.escape("got unexpected field name(s)")
+        error_message = re.escape("got duplicate or unexpected field name(s)")
         with self.assertRaisesRegex(TypeError, error_message):
             t("123456789", dict={"tm_year": 0})
         with self.assertRaisesRegex(TypeError, error_message):

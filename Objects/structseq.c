@@ -217,25 +217,6 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
     }
     Py_DECREF(arg);
     if (dict != NULL && PyDict_GET_SIZE(dict) > 0) {
-        for (i = min_len; i < len; ++i) {
-            PyObject *ob = NULL;
-            const char *name = type->tp_members[i - n_unnamed_fields].name;
-            if (PyDict_GetItemStringRef(dict, name, &ob) < 0) {
-                Py_DECREF(res);
-                return NULL;
-            }
-            // For min_len <= i < len, the ob_item[i] is already set from sequence.
-            // If there is a value in the dict, raise an error.
-            if (ob != NULL) {
-                PyErr_Format(PyExc_TypeError,
-                             "%.500s() got multiple values for field '%s'",
-                             type->tp_name, name);
-                Py_DECREF(ob);
-                Py_DECREF(res);
-                return NULL;
-            }
-        }
-
         Py_ssize_t n_found_keys = 0;
         for (i = len; i < max_len; ++i) {
             PyObject *ob = NULL;
@@ -254,7 +235,7 @@ structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
         }
         if (PyDict_GET_SIZE(dict) > n_found_keys) {
             PyErr_Format(PyExc_TypeError,
-                         "%.500s() got unexpected field name(s)",
+                         "%.500s() got duplicate or unexpected field name(s)",
                          type->tp_name);
             Py_DECREF(res);
             return NULL;
