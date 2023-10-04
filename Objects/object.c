@@ -1926,10 +1926,7 @@ PyTypeObject _PyNone_Type = {
     none_new,           /*tp_new */
 };
 
-PyObject _Py_NoneStruct = {
-    { _Py_IMMORTAL_REFCNT },
-    &_PyNone_Type
-};
+PyObject _Py_NoneStruct = _PyObject_HEAD_INIT(&_PyNone_Type);
 
 /* NotImplemented is an object that can be used to signal that an
    operation is not implemented for the given type combination. */
@@ -2028,10 +2025,7 @@ PyTypeObject _PyNotImplemented_Type = {
     notimplemented_new, /*tp_new */
 };
 
-PyObject _Py_NotImplementedStruct = {
-    { _Py_IMMORTAL_REFCNT },
-    &_PyNotImplemented_Type
-};
+PyObject _Py_NotImplementedStruct = _PyObject_HEAD_INIT(&_PyNotImplemented_Type);
 
 
 PyStatus

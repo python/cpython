@@ -58,12 +58,12 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
     {                                     \
         .ob_refcnt = _Py_IMMORTAL_REFCNT, \
         .ob_type = (type)                 \
-    },
+    }
 #define _PyVarObject_HEAD_INIT(type, size)    \
     {                                         \
-        .ob_base = _PyObject_HEAD_INIT(type)  \
+        .ob_base = _PyObject_HEAD_INIT(type), \
         .ob_size = size                       \
-    },
+    }
 
 extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,

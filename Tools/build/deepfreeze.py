@@ -115,6 +115,7 @@ class Printer:
         self.inits: list[str] = []
         self.identifiers, self.strings = self.get_identifiers_and_strings()
         self.write('#include "Python.h"')
+        self.write('#include "internal/pycore_object.h"')
         self.write('#include "internal/pycore_gc.h"')
         self.write('#include "internal/pycore_code.h"')
         self.write('#include "internal/pycore_frame.h"')
@@ -154,14 +155,10 @@ class Printer:
         self.write("}" + suffix)
 
     def object_head(self, typename: str) -> None:
-        with self.block(".ob_base =", ","):
-            self.write(f".ob_refcnt = _Py_IMMORTAL_REFCNT,")
-            self.write(f".ob_type = &{typename},")
+        self.write(f".ob_base = _PyObject_HEAD_INIT(&{typename}),")
 
     def object_var_head(self, typename: str, size: int) -> None:
-        with self.block(".ob_base =", ","):
-            self.object_head(typename)
-            self.write(f".ob_size = {size},")
+        self.write(f".ob_base = _PyVarObject_HEAD_INIT(&{typename}, {size}),")
 
     def field(self, obj: object, name: str) -> None:
         self.write(f".{name} = {getattr(obj, name)},")
