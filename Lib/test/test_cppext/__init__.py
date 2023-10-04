@@ -14,6 +14,10 @@ SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
+# gh-110119: pip does not currently support 't' in the ABI flag use by
+# --disable-gil builds. Once it does, we can remove this skip.
+@unittest.skipIf(sysconfig.get_config_var('Py_NOGIL') == 1,
+                 'test does not work with --disable-gil')
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
     @support.requires_resource('cpu')

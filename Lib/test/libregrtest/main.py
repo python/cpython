@@ -1,7 +1,9 @@
 import os
 import random
 import re
+import shlex
 import sys
+import sysconfig
 import time
 
 from test import support
@@ -10,18 +12,19 @@ from test.support import os_helper
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
+from .pgo import setup_pgo_tests
 from .result import State
+from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
-from .pgo import setup_pgo_tests
-from .results import TestResults
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
-    display_header, cleanup_temp_dir,
-    MS_WINDOWS)
+    display_header, cleanup_temp_dir, print_warning,
+    is_cross_compiled, get_host_runner,
+    MS_WINDOWS, EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -47,7 +50,7 @@ class Regrtest:
     directly to set the values that would normally be set by flags
     on the command line.
     """
-    def __init__(self, ns: Namespace):
+    def __init__(self, ns: Namespace, _add_python_opts: bool = False):
         # Log verbosity
         self.verbose: int = int(ns.verbose)
         self.quiet: bool = ns.quiet
@@ -69,6 +72,10 @@ class Regrtest:
         self.want_cleanup: bool = ns.cleanup
         self.want_rerun: bool = ns.rerun
         self.want_run_leaks: bool = ns.runleaks
+
+        self.ci_mode: bool = (ns.fast_ci or ns.slow_ci)
+        self.want_add_python_opts: bool = (_add_python_opts
+                                           and ns._add_python_opts)
 
         # Select tests
         if ns.match_tests:
@@ -99,8 +106,6 @@ class Regrtest:
         self.fail_env_changed: bool = ns.fail_env_changed
         self.fail_rerun: bool = ns.fail_rerun
         self.forever: bool = ns.forever
-        self.randomize: bool = ns.randomize
-        self.random_seed: int | None = ns.random_seed
         self.output_on_failure: bool = ns.verbose3
         self.timeout: float | None = ns.timeout
         if ns.huntrleaks:
@@ -121,6 +126,17 @@ class Regrtest:
         self.coverage: bool = ns.trace
         self.coverage_dir: StrPath | None = ns.coverdir
         self.tmp_dir: StrPath | None = ns.tempdir
+
+        # Randomize
+        self.randomize: bool = ns.randomize
+        self.random_seed: int | None =  (
+            ns.random_seed
+            if ns.random_seed is not None
+            else random.getrandbits(32)
+        )
+        if 'SOURCE_DATE_EPOCH' in os.environ:
+            self.randomize = False
+            self.random_seed = None
 
         # tests
         self.first_runtests: RunTests | None = None
@@ -202,10 +218,8 @@ class Regrtest:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
+        random.seed(self.random_seed)
         if self.randomize:
-            if self.random_seed is None:
-                self.random_seed = random.randrange(100_000_000)
-            random.seed(self.random_seed)
             random.shuffle(selected)
 
         return (tuple(selected), tests)
@@ -419,16 +433,15 @@ class Regrtest:
         if self.num_workers < 0:
             # Use all CPUs + 2 extra worker processes for tests
             # that like to sleep
-            self.num_workers = (os.cpu_count() or 1) + 2
+            self.num_workers = (os.process_cpu_count() or 1) + 2
 
         # For a partial run, we do not need to clutter the output.
         if (self.want_header
             or not(self.pgo or self.quiet or self.single_test_run
                    or tests or self.cmdline_args)):
-            display_header()
+            display_header(self.use_resources, self.python_cmd)
 
-        if self.randomize:
-            print("Using random seed", self.random_seed)
+        print("Using random seed", self.random_seed)
 
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
@@ -483,13 +496,148 @@ class Regrtest:
                 # processes.
                 return self._run_tests(selected, tests)
 
-    def main(self, tests: TestList | None = None):
+    def _add_cross_compile_opts(self, regrtest_opts):
+        # WASM/WASI buildbot builders pass multiple PYTHON environment
+        # variables such as PYTHONPATH and _PYTHON_HOSTRUNNER.
+        keep_environ = bool(self.python_cmd)
+        environ = None
+
+        # Are we using cross-compilation?
+        cross_compile = is_cross_compiled()
+
+        # Get HOSTRUNNER
+        hostrunner = get_host_runner()
+
+        if cross_compile:
+            # emulate -E, but keep PYTHONPATH + cross compile env vars,
+            # so test executable can load correct sysconfigdata file.
+            keep = {
+                '_PYTHON_PROJECT_BASE',
+                '_PYTHON_HOST_PLATFORM',
+                '_PYTHON_SYSCONFIGDATA_NAME',
+                'PYTHONPATH'
+            }
+            old_environ = os.environ
+            new_environ = {
+                name: value for name, value in os.environ.items()
+                if not name.startswith(('PYTHON', '_PYTHON')) or name in keep
+            }
+            # Only set environ if at least one variable was removed
+            if new_environ != old_environ:
+                environ = new_environ
+            keep_environ = True
+
+        if cross_compile and hostrunner:
+            if self.num_workers == 0:
+                # For now use only two cores for cross-compiled builds;
+                # hostrunner can be expensive.
+                regrtest_opts.extend(['-j', '2'])
+
+            # If HOSTRUNNER is set and -p/--python option is not given, then
+            # use hostrunner to execute python binary for tests.
+            if not self.python_cmd:
+                buildpython = sysconfig.get_config_var("BUILDPYTHON")
+                python_cmd = f"{hostrunner} {buildpython}"
+                regrtest_opts.extend(["--python", python_cmd])
+                keep_environ = True
+
+        return (environ, keep_environ)
+
+    def _add_ci_python_opts(self, python_opts, keep_environ):
+        # --fast-ci and --slow-ci add options to Python:
+        # "-u -W default -bb -E"
+
+        # Unbuffered stdout and stderr
+        if not sys.stdout.write_through:
+            python_opts.append('-u')
+
+        # Add warnings filter 'default'
+        if 'default' not in sys.warnoptions:
+            python_opts.extend(('-W', 'default'))
+
+        # Error on bytes/str comparison
+        if sys.flags.bytes_warning < 2:
+            python_opts.append('-bb')
+
+        if not keep_environ:
+            # Ignore PYTHON* environment variables
+            if not sys.flags.ignore_environment:
+                python_opts.append('-E')
+
+    def _execute_python(self, cmd, environ):
+        # Make sure that messages before execv() are logged
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        cmd_text = shlex.join(cmd)
+        try:
+            print(f"+ {cmd_text}", flush=True)
+
+            if hasattr(os, 'execv') and not MS_WINDOWS:
+                os.execv(cmd[0], cmd)
+                # On success, execv() do no return.
+                # On error, it raises an OSError.
+            else:
+                import subprocess
+                with subprocess.Popen(cmd, env=environ) as proc:
+                    try:
+                        proc.wait()
+                    except KeyboardInterrupt:
+                        # There is no need to call proc.terminate(): on CTRL+C,
+                        # SIGTERM is also sent to the child process.
+                        try:
+                            proc.wait(timeout=EXIT_TIMEOUT)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
+                            sys.exit(EXITCODE_INTERRUPTED)
+
+                sys.exit(proc.returncode)
+        except Exception as exc:
+            print_warning(f"Failed to change Python options: {exc!r}\n"
+                          f"Command: {cmd_text}")
+            # continue executing main()
+
+    def _add_python_opts(self):
+        python_opts = []
+        regrtest_opts = []
+
+        environ, keep_environ = self._add_cross_compile_opts(regrtest_opts)
+        if self.ci_mode:
+            self._add_ci_python_opts(python_opts, keep_environ)
+
+        if (not python_opts) and (not regrtest_opts) and (environ is None):
+            # Nothing changed: nothing to do
+            return
+
+        # Create new command line
+        cmd = list(sys.orig_argv)
+        if python_opts:
+            cmd[1:1] = python_opts
+        if regrtest_opts:
+            cmd.extend(regrtest_opts)
+        cmd.append("--dont-add-python-opts")
+
+        self._execute_python(cmd, environ)
+
+    def _init(self):
+        # Set sys.stdout encoder error handler to backslashreplace,
+        # similar to sys.stderr error handler, to avoid UnicodeEncodeError
+        # when printing a traceback or any other non-encodable character.
+        sys.stdout.reconfigure(errors="backslashreplace")
+
         if self.junit_filename and not os.path.isabs(self.junit_filename):
             self.junit_filename = os.path.abspath(self.junit_filename)
 
         strip_py_suffix(self.cmdline_args)
 
         self.tmp_dir = get_temp_dir(self.tmp_dir)
+
+    def main(self, tests: TestList | None = None):
+        if self.want_add_python_opts:
+            self._add_python_opts()
+
+        self._init()
 
         if self.want_cleanup:
             cleanup_temp_dir(self.tmp_dir)
@@ -515,7 +663,7 @@ class Regrtest:
         sys.exit(exitcode)
 
 
-def main(tests=None, **kwargs):
+def main(tests=None, _add_python_opts=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns).main(tests=tests)
+    Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)

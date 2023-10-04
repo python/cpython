@@ -239,6 +239,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -520,6 +521,7 @@ def collect_sysconfig(info_add):
         'SHELL',
         'SOABI',
         'abs_builddir',
+        'abs_srcdir',
         'prefix',
         'srcdir',
     ):
