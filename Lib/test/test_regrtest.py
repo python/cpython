@@ -2088,17 +2088,17 @@ class TestUtils(unittest.TestCase):
             'resources (1): network')
         self.assertEqual(
             format_resources(("audio", "decimal", "network")),
-            'resources (3): audio, decimal, network')
+            'resources (3): audio,decimal,network')
         self.assertEqual(
             format_resources(ALL_RESOURCES),
             'resources: all')
         self.assertEqual(
             format_resources(tuple(name for name in ALL_RESOURCES
                                    if name != "cpu")),
-            'resources: all, -cpu')
+            'resources: all,-cpu')
         self.assertEqual(
             format_resources((*ALL_RESOURCES, "tzdata")),
-            'resources: all, +tzdata')
+            'resources: all,tzdata')
 
 
 if __name__ == '__main__':

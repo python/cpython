@@ -549,21 +549,20 @@ def is_cross_compiled():
 
 
 def format_resources(use_resources: tuple[str, ...]):
-    # set preserves insertion order
     use_resources = set(use_resources)
     all_resources = set(ALL_RESOURCES)
 
     # Express resources relative to "all"
     relative_all = ['all']
-    for name in all_resources - use_resources:
+    for name in sorted(all_resources - use_resources):
         relative_all.append(f'-{name}')
-    for name in use_resources - all_resources:
-        relative_all.append(f'+{name}')
-    all_text = ', '.join(relative_all)
+    for name in sorted(use_resources - all_resources):
+        relative_all.append(f'{name}')
+    all_text = ','.join(relative_all)
     all_text = f"resources: {all_text}"
 
     # List of enabled resources
-    text = ', '.join(sorted(use_resources))
+    text = ','.join(sorted(use_resources))
     text = f"resources ({len(use_resources)}): {text}"
 
     # Pick the shortest string (prefer relative to all if lengths are equal)
