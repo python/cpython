@@ -7,6 +7,7 @@
 #include "Python.h"
 
 #include "pycore_importdl.h"   // _PyImport_DynLoadFiletab
+#include "pycore_long.h"       // _PyLong_GetZero, _PyLong_GetOne
 
 
 /*[clinic input]
@@ -54,12 +55,17 @@ _sysconfig_config_vars_impl(PyObject *module)
         return NULL;
     }
 #endif
+
 #ifdef Py_NOGIL
-    if (PyDict_SetItem(config, "Py_NOGIL", _PyLong_GetOne()) < 0) {
+    PyObject *py_nogil = _PyLong_GetOne();
+#else
+    PyObject *py_nogil = _PyLong_GetZero();
+#endif
+    if (PyDict_SetItemString(config, "Py_NOGIL", py_nogil) < 0) {
         Py_DECREF(config);
         return NULL;
     }
-#endif
+
     return config;
 }
 
