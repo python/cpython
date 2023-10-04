@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
@@ -1262,4 +1262,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9fbc01f706562dea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31bcc780209593a2 input=a9049054013a1b77]*/

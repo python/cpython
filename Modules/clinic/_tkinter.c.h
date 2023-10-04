@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "eval($self, script, /)\n"
 "--\n"
@@ -865,4 +859,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=2cdb2fd0ce66ebe5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bcd9cdc8f6bdcfae input=a9049054013a1b77]*/

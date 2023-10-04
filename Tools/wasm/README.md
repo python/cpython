@@ -79,7 +79,7 @@ PIC. To populate the build cache, run:
 ```shell
 . /opt/emsdk/emsdk_env.sh
 embuilder build zlib bzip2 MINIMAL_PIC
-embuilder build --pic zlib bzip2 MINIMAL_PIC
+embuilder --pic build zlib bzip2 MINIMAL_PIC
 ```
 
 
@@ -141,7 +141,7 @@ and header files with debug builds.
 #### Cross compile to wasm32-emscripten for node
 
 ```shell
-./Tools/wasm/wasm_build.py emscripten-browser-dl
+./Tools/wasm/wasm_build.py emscripten-node-dl
 ```
 
 The command is roughly equivalent to:

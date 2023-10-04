@@ -1,0 +1,3 @@
+:mod:`re` functions such as :func:`re.findall`, :func:`re.split`,
+:func:`re.search` and :func:`re.sub` which perform short repeated matches
+can now be interrupted by user.

@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 PyDoc_STRVAR(_sre_getcodesize__doc__,
 "getcodesize($module, /)\n"
@@ -1460,4 +1460,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const 
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=6b84e62c87238f0e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46d83927cbafa93a input=a9049054013a1b77]*/

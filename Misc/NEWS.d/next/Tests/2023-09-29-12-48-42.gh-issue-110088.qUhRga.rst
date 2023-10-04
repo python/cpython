@@ -1,0 +1,4 @@
+Fix test_asyncio timeouts: don't measure the maximum duration, a test should
+not measure a CI performance. Only measure the minimum duration when a task has
+a timeout or delay. Add ``CLOCK_RES`` to ``test_asyncio.utils``. Patch by
+Victor Stinner.

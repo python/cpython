@@ -5799,14 +5799,13 @@ instantiate(PyObject *cls, PyObject *args)
        into a newly created tuple. */
     assert(PyTuple_Check(args));
     if (!PyTuple_GET_SIZE(args) && PyType_Check(cls)) {
-        PyObject *func;
-        if (PyObject_GetOptionalAttr(cls, &_Py_ID(__getinitargs__), &func) < 0) {
+        int rc = PyObject_HasAttrWithError(cls, &_Py_ID(__getinitargs__));
+        if (rc < 0) {
             return NULL;
         }
-        if (func == NULL) {
+        if (!rc) {
             return PyObject_CallMethodOneArg(cls, &_Py_ID(__new__), cls);
         }
-        Py_DECREF(func);
     }
     return PyObject_CallObject(cls, args);
 }

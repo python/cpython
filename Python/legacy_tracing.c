@@ -2,12 +2,13 @@
  * Provides callables to forward PEP 669 events to legacy events.
  */
 
-#include <stddef.h>
 #include "Python.h"
-#include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+
+#include "opcode.h"
+#include <stddef.h>
 
 typedef struct _PyLegacyEventHandler {
     PyObject_HEAD

@@ -403,20 +403,19 @@ I/O Base Classes
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling :meth:`!file.readlines`.
 
-   .. method:: seek(offset, whence=SEEK_SET, /)
+   .. method:: seek(offset, whence=os.SEEK_SET, /)
 
-      Change the stream position to the given byte *offset*.  *offset* is
-      interpreted relative to the position indicated by *whence*.  The default
-      value for *whence* is :data:`!SEEK_SET`.  Values for *whence* are:
+      Change the stream position to the given byte *offset*,
+      interpreted relative to the position indicated by *whence*,
+      and return the new absolute position.
+      Values for *whence* are:
 
-      * :data:`!SEEK_SET` or ``0`` -- start of the stream (the default);
+      * :data:`os.SEEK_SET` or ``0`` -- start of the stream (the default);
         *offset* should be zero or positive
-      * :data:`!SEEK_CUR` or ``1`` -- current stream position; *offset* may
-        be negative
-      * :data:`!SEEK_END` or ``2`` -- end of the stream; *offset* is usually
-        negative
-
-      Return the new absolute position.
+      * :data:`os.SEEK_CUR` or ``1`` -- current stream position;
+        *offset* may be negative
+      * :data:`os.SEEK_END` or ``2`` -- end of the stream;
+        *offset* is usually negative
 
       .. versionadded:: 3.1
          The :data:`!SEEK_*` constants.
@@ -1054,12 +1053,23 @@ Text I/O
 
       * ``seek(0, SEEK_SET)``: Rewind to the start of the stream.
       * ``seek(cookie, SEEK_SET)``: Restore a previous position;
-        *cookie* **must be** a number returned by :meth:`!tell`.
+        *cookie* **must be** a number returned by :meth:`tell`.
       * ``seek(0, SEEK_END)``: Fast-forward to the end of the stream.
       * ``seek(0, SEEK_CUR)``: Leave the current stream position unchanged.
 
       Any other argument combinations are invalid,
       and may raise exceptions.
+
+      .. seealso::
+
+         :data:`os.SEEK_SET`, :data:`os.SEEK_CUR`, and :data:`os.SEEK_END`.
+
+   .. method:: tell()
+
+      Return the stream position as an opaque number.
+      The return value of :meth:`!tell` can be given as input to :meth:`seek`,
+      to restore a previous stream position.
+
 
 .. class:: StringIO(initial_value='', newline='\n')
 

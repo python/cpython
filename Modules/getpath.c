@@ -4,7 +4,9 @@
 #include "pycore_fileutils.h"     // _Py_abspath()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
@@ -342,11 +344,12 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
-    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyMem_Free((void *)path);
         return NULL;
     }
+    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {
@@ -819,7 +822,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    if (!_PyThreadState_UncheckedGet()) {
+    if (!_PyThreadState_GET()) {
         return PyStatus_Error("cannot calculate path configuration without GIL");
     }
 

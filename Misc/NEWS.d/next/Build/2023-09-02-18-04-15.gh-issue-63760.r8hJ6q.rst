@@ -1,0 +1,3 @@
+Fix Solaris build: no longer redefine the ``gethostname()`` function. Solaris
+defines the function since 2005. Patch by Victor Stinner, original patch by
+Jakub Kulík.

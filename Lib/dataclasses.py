@@ -1073,6 +1073,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                                     globals,
                                     slots,
                           ))
+    _set_new_attribute(cls, '__replace__', _replace)
 
     # Get the fields as a list, and include only real fields.  This is
     # used in all of the following methods.
@@ -1546,12 +1547,14 @@ def replace(obj, /, **changes):
       c1 = replace(c, x=3)
       assert c1.x == 3 and c1.y == 2
     """
-
-    # We're going to mutate 'changes', but that's okay because it's a
-    # new dict, even if called with 'replace(obj, **my_changes)'.
-
     if not _is_dataclass_instance(obj):
         raise TypeError("replace() should be called on dataclass instances")
+    return _replace(obj, **changes)
+
+
+def _replace(obj, /, **changes):
+    # We're going to mutate 'changes', but that's okay because it's a
+    # new dict, even if called with 'replace(obj, **my_changes)'.
 
     # It's an error to have init=False fields in 'changes'.
     # If a field is not in 'changes', read its value from the provided obj.
@@ -1564,15 +1567,15 @@ def replace(obj, /, **changes):
         if not f.init:
             # Error if this field is specified in changes.
             if f.name in changes:
-                raise ValueError(f'field {f.name} is declared with '
-                                 'init=False, it cannot be specified with '
-                                 'replace()')
+                raise TypeError(f'field {f.name} is declared with '
+                                f'init=False, it cannot be specified with '
+                                f'replace()')
             continue
 
         if f.name not in changes:
             if f._field_type is _FIELD_INITVAR and f.default is MISSING:
-                raise ValueError(f"InitVar {f.name!r} "
-                                 'must be specified with replace()')
+                raise TypeError(f"InitVar {f.name!r} "
+                                f'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)
 
     # Create the new object, which calls __init__() and

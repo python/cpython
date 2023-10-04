@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_identifier.h"    // _Py_Identifier
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*

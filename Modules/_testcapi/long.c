@@ -1,3 +1,7 @@
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "parts.h"
 #include "clinic/long.c.h"
 
@@ -531,57 +535,6 @@ _testcapi_test_long_as_double_impl(PyObject *module)
 }
 
 /*[clinic input]
-_testcapi.test_long_numbits
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_test_long_numbits_impl(PyObject *module)
-/*[clinic end generated code: output=9eaf8458cb15d7f7 input=265c02d48a13059e]*/
-{
-    struct triple {
-        long input;
-        size_t nbits;
-        int sign;
-    } testcases[] = {{0, 0, 0},
-                     {1L, 1, 1},
-                     {-1L, 1, -1},
-                     {2L, 2, 1},
-                     {-2L, 2, -1},
-                     {3L, 2, 1},
-                     {-3L, 2, -1},
-                     {4L, 3, 1},
-                     {-4L, 3, -1},
-                     {0x7fffL, 15, 1},          /* one Python int digit */
-             {-0x7fffL, 15, -1},
-             {0xffffL, 16, 1},
-             {-0xffffL, 16, -1},
-             {0xfffffffL, 28, 1},
-             {-0xfffffffL, 28, -1}};
-    size_t i;
-
-    for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
-        int sign;
-        PyObject *plong;
-
-        plong = PyLong_FromLong(testcases[i].input);
-        if (plong == NULL)
-            return NULL;
-        nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
-
-        Py_DECREF(plong);
-        if (nbits != testcases[i].nbits)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_NumBits");
-        if (sign != testcases[i].sign)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_Sign");
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _testcapi.call_long_compact_api
     arg: object
     /
@@ -626,7 +579,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AS_SIZE_T_METHODDEF
     _TESTCAPI_TEST_LONG_AS_UNSIGNED_LONG_LONG_MASK_METHODDEF
     _TESTCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF
-    _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF
     _TESTCAPI_TEST_LONGLONG_API_METHODDEF
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     _TESTCAPI_PYLONG_ASINT_METHODDEF

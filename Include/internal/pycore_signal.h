@@ -95,6 +95,15 @@ struct _signals_runtime_state {
     }
 
 
+// Export for '_multiprocessing' shared extension
+PyAPI_FUNC(int) _PyOS_IsMainThread(void);
+
+#ifdef MS_WINDOWS
+// <windows.h> is not included by Python.h so use void* instead of HANDLE.
+// Export for '_multiprocessing' shared extension
+PyAPI_FUNC(void*) _PyOS_SigintEvent(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

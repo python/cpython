@@ -26,6 +26,7 @@ MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
+Py_STATS = hasattr(sys, '_stats_on')
 
 # _PyCoreConfig_InitCompatConfig()
 API_COMPAT = 1
@@ -454,6 +455,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
+        'dump_refs_file': None,
         'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
@@ -503,6 +505,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'run_command': None,
         'run_module': None,
         'run_filename': None,
+        'sys_path_0': None,
 
         '_install_importlib': 1,
         'check_hash_pycs_mode': 'default',
@@ -512,6 +515,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
+    if Py_STATS:
+        CONFIG_COMPAT['_pystats'] = 0
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -895,6 +900,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -927,6 +934,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
@@ -960,6 +969,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
 
@@ -1122,6 +1133,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 2,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1137,6 +1149,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
             'parse_argv': 2,
             '_init_main': 0,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_main", config,
                                api=API_PYTHON,

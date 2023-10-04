@@ -495,6 +495,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_field_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
+        '__replace__': _replace,
         '_replace': _replace,
         '__repr__': __repr__,
         '_asdict': _asdict,

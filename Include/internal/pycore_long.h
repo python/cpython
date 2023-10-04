@@ -47,6 +47,34 @@ extern "C" {
 # error "_PY_LONG_DEFAULT_MAX_STR_DIGITS smaller than threshold."
 #endif
 
+extern PyLongObject* _PyLong_New(Py_ssize_t);
+
+// Return a copy of src.
+extern PyObject* _PyLong_Copy(PyLongObject *src);
+
+// Export for '_decimal' shared extension
+PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+    int negative,
+    Py_ssize_t digit_count,
+    digit *digits);
+
+// _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
+// v must not be NULL, and must be a normalized long.
+// There are no error cases.
+//
+// Export for '_pickle' shared extension.
+PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+
+// _PyLong_NumBits.  Return the number of bits needed to represent the
+// absolute value of a long.  For example, this returns 1 for 1 and -1, 2
+// for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
+// v must not be NULL, and must be a normalized long.
+// (size_t)-1 is returned and OverflowError set if the true result doesn't
+// fit in a size_t.
+//
+// Export for 'math' shared extension.
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+
 
 /* runtime lifecycle */
 
@@ -185,6 +213,23 @@ extern char* _PyLong_FormatBytesWriter(
     PyObject *obj,
     int base,
     int alternate);
+
+// Argument converters used by Argument Clinic
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedShort_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedInt_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLong_Converter(PyObject *, void *);
+
+// Export for '_blake2' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_UnsignedLongLong_Converter(PyObject *, void *);
+
+// Export for '_testclinic' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.

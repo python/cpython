@@ -185,6 +185,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyThreadState_INIT \
     { \
+        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
@@ -192,7 +193,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #ifdef Py_TRACE_REFS
 # define _py_object_state_INIT(INTERP) \
     { \
-        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
+        .refchain = NULL, \
     }
 #else
 # define _py_object_state_INIT(INTERP) \

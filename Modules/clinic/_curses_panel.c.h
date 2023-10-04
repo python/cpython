@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_curses_panel_panel_bottom__doc__,
 "bottom($self, /)\n"
 "--\n"
@@ -422,4 +416,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=cb76cb1d5040f387 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd302cb9afc42f40 input=a9049054013a1b77]*/

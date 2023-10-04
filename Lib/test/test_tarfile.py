@@ -1,3 +1,4 @@
+import errno
 import sys
 import os
 import io
@@ -2587,16 +2588,17 @@ class CommandLineTest(unittest.TestCase):
         return script_helper.assert_python_failure('-m', 'tarfile', *args)
 
     def make_simple_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             for tardata in files:
                 tf.add(tardata, arcname=os.path.basename(tardata))
 
     def make_evil_tarfile(self, tar_name):
-        files = [support.findfile('tokenize_tests.txt')]
         self.addCleanup(os_helper.unlink, tar_name)
         with tarfile.open(tar_name, 'w') as tf:
             benign = tarfile.TarInfo('benign')
@@ -2677,9 +2679,11 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(rc, 1)
 
     def test_create_command(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-c', '--create':
             try:
                 out = self.tarfilecmd(opt, tmpname, *files)
@@ -2690,9 +2694,11 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_verbose(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for opt in '-v', '--verbose':
             try:
                 out = self.tarfilecmd(opt, '-c', tmpname, *files,
@@ -2704,7 +2710,7 @@ class CommandLineTest(unittest.TestCase):
                 os_helper.unlink(tmpname)
 
     def test_create_command_dotless_filename(self):
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', dotlessname, *files)
             self.assertEqual(out, b'')
@@ -2715,7 +2721,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_create_command_dot_started_filename(self):
         tar_name = os.path.join(TEMPDIR, ".testtar")
-        files = [support.findfile('tokenize_tests.txt')]
+        files = [support.findfile('tokenize_tests.txt', subdir='tokenizedata')]
         try:
             out = self.tarfilecmd('-c', tar_name, *files)
             self.assertEqual(out, b'')
@@ -2725,9 +2731,11 @@ class CommandLineTest(unittest.TestCase):
             os_helper.unlink(tar_name)
 
     def test_create_command_compressed(self):
-        files = [support.findfile('tokenize_tests.txt'),
+        files = [support.findfile('tokenize_tests.txt',
+                                  subdir='tokenizedata'),
                  support.findfile('tokenize_tests-no-coding-cookie-'
-                                  'and-utf8-bom-sig-only.txt')]
+                                  'and-utf8-bom-sig-only.txt',
+                                  subdir='tokenizedata')]
         for filetype in (GzipTest, Bz2Test, LzmaTest):
             if not filetype.open:
                 continue
@@ -3808,34 +3816,55 @@ class TestExtractionFilters(unittest.TestCase):
             arc.add('read_group_only', mode='?---r-----')
             arc.add('no_bits', mode='?---------')
             arc.add('dir/', mode='?---rwsrwt')
+            arc.add('dir_all_bits/', mode='?rwsrwsrwt')
 
-        # On some systems, setting the sticky bit is a no-op.
-        # Check if that's the case.
+        # On some systems, setting the uid, gid, and/or sticky bit is a no-ops.
+        # Check which bits we can set, so we can compare tarfile machinery to
+        # a simple chmod.
         tmp_filename = os.path.join(TEMPDIR, "tmp.file")
         with open(tmp_filename, 'w'):
             pass
-        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
-        have_sticky_files = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
-        os.unlink(tmp_filename)
+        try:
+            new_mode = (os.stat(tmp_filename).st_mode
+                        | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
+            try:
+                os.chmod(tmp_filename, new_mode)
+            except OSError as exc:
+                if exc.errno == getattr(errno, "EFTYPE", 0):
+                    # gh-108948: On FreeBSD, regular users cannot set
+                    # the sticky bit.
+                    self.skipTest("chmod() failed with EFTYPE: "
+                                  "regular users cannot set sticky bit")
+                else:
+                    raise
+
+            got_mode = os.stat(tmp_filename).st_mode
+            _t_file = 't' if (got_mode & stat.S_ISVTX) else 'x'
+            _suid_file = 's' if (got_mode & stat.S_ISUID) else 'x'
+            _sgid_file = 's' if (got_mode & stat.S_ISGID) else 'x'
+        finally:
+            os.unlink(tmp_filename)
 
         os.mkdir(tmp_filename)
-        os.chmod(tmp_filename, os.stat(tmp_filename).st_mode | stat.S_ISVTX)
-        have_sticky_dirs = (os.stat(tmp_filename).st_mode & stat.S_ISVTX)
+        new_mode = (os.stat(tmp_filename).st_mode
+                    | stat.S_ISVTX | stat.S_ISGID | stat.S_ISUID)
+        os.chmod(tmp_filename, new_mode)
+        got_mode = os.stat(tmp_filename).st_mode
+        _t_dir = 't' if (got_mode & stat.S_ISVTX) else 'x'
+        _suid_dir = 's' if (got_mode & stat.S_ISUID) else 'x'
+        _sgid_dir = 's' if (got_mode & stat.S_ISGID) else 'x'
         os.rmdir(tmp_filename)
 
         with self.check_context(arc.open(), 'fully_trusted'):
-            if have_sticky_files:
-                self.expect_file('all_bits', mode='?rwsrwsrwt')
-            else:
-                self.expect_file('all_bits', mode='?rwsrwsrwx')
+            self.expect_file('all_bits',
+                             mode=f'?rw{_suid_file}rw{_sgid_file}rw{_t_file}')
             self.expect_file('perm_bits', mode='?rwxrwxrwx')
             self.expect_file('exec_group_other', mode='?rw-rwxrwx')
             self.expect_file('read_group_only', mode='?---r-----')
             self.expect_file('no_bits', mode='?---------')
-            if have_sticky_dirs:
-                self.expect_file('dir/', mode='?---rwsrwt')
-            else:
-                self.expect_file('dir/', mode='?---rwsrwx')
+            self.expect_file('dir/', mode=f'?---rw{_sgid_dir}rw{_t_dir}')
+            self.expect_file('dir_all_bits/',
+                             mode=f'?rw{_suid_dir}rw{_sgid_dir}rw{_t_dir}')
 
         with self.check_context(arc.open(), 'tar'):
             self.expect_file('all_bits', mode='?rwxr-xr-x')
@@ -3844,6 +3873,7 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_file('read_group_only', mode='?---r-----')
             self.expect_file('no_bits', mode='?---------')
             self.expect_file('dir/', mode='?---r-xr-x')
+            self.expect_file('dir_all_bits/', mode='?rwxr-xr-x')
 
         with self.check_context(arc.open(), 'data'):
             normal_dir_mode = stat.filemode(stat.S_IMODE(
@@ -3854,6 +3884,7 @@ class TestExtractionFilters(unittest.TestCase):
             self.expect_file('read_group_only', mode='?rw-r-----')
             self.expect_file('no_bits', mode='?rw-------')
             self.expect_file('dir/', mode=normal_dir_mode)
+            self.expect_file('dir_all_bits/', mode=normal_dir_mode)
 
     def test_pipe(self):
         # Test handling of a special file

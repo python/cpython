@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_ssl_Certificate_public_bytes__doc__,
 "public_bytes($self, /, format=Encoding.PEM)\n"
@@ -86,4 +85,4 @@ _ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl(self);
 }
-/*[clinic end generated code: output=72e2bb139c64546c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e438b54fbebd53e input=a9049054013a1b77]*/
