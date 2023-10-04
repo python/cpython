@@ -309,11 +309,13 @@ class Engine:
             # XXX: ABS_32 on 32-bit platforms?
             holes.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
             value_part = value.name if value is not HoleValue._JIT_ZERO else ""
-            symbol_part = f"&{symbol}" if symbol is not None else ""
-            addend_part = format_addend(addend, 0) if addend else ""
-            if value_part and symbol_part:
-                value_part += "+"
-            disassembly.append(f"{offset:x}: {value_part}{symbol_part}{addend_part}")
+            if value_part and not symbol and not addend:
+                addend_part = ""
+            else:
+                addend_part = format_addend(symbol, addend)
+                if value_part:
+                    value_part += "+"
+            disassembly.append(f"{offset:x}: {value_part}{addend_part}")
             offset += 8
         self.body.extend([0] * 8 * len(self.got))
         holes.sort(key=lambda hole: hole.offset)
@@ -597,12 +599,14 @@ class Compiler:
                     group.create_task(task)
 
 
-def format_addend(value: int, width: int = 0) -> str:
-    value %= 1 << 64
-    width = max(0, width - 3)
-    if value & (1 << 63):
-        return f"-0x{(1 << 64) - value:0{width}x}"
-    return f"+0x{value:0{width}x}"
+def format_addend(symbol: str | None, addend: int) -> str:
+    symbol_part = f"(uintptr_t)&{symbol}" if symbol else ""
+    addend %= 1 << 64
+    if symbol_part and not addend:
+        return symbol_part
+    if addend & (1 << 63):
+        return f"{symbol_part}{hex((1 << 64) - addend)}"
+    return f"{f'{symbol_part}+' if symbol_part else ''}{hex(addend)}"
 
 
 def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
@@ -649,30 +653,10 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         body = ",".join(f"0x{byte:02x}" for byte in stencil.body)
         yield f"static const unsigned char {opname}_stencil_bytes[{len(stencil.body)}] = {{{body}}};"
         holes = []
-        kind_width = max((len(hole.kind) for hole in stencil.holes), default=0)
-        offset_width = max((len(f"{hole.offset:x}") for hole in stencil.holes), default=0)
-        addend_width = max(
-            (len(format_addend(hole.addend)) for hole in stencil.holes), default=0
-        )
-        value_width = max((len(hole.value.name) for hole in stencil.holes), default=0)
-        symbol_width = max(
-            (
-                len(f"(uintptr_t)&{hole.symbol}")
-                for hole in stencil.holes
-                if hole.symbol is not None
-            ),
-            default=0,
-        )
         for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
-            symbol = f'(uintptr_t)&{hole.symbol}' if hole.symbol is not None else ''
-            addend = format_addend(hole.addend, addend_width)
+            addend = format_addend(hole.symbol, hole.addend)
             holes.append(
-                f"    {{"
-                f".offset=0x{hole.offset:0{offset_width}x}, "
-                f".kind={hole.kind + ',':{kind_width + 1}} "
-                f".value={hole.value.name + ',':{value_width + 1}} "
-                f".addend={symbol:{symbol_width}}{addend}"
-                f"}},"
+                f"    {{{hex(hole.offset)}, {hole.kind}, {hole.value.name}, {addend}}},"
             )
         if holes:
             yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
