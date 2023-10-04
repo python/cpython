@@ -463,10 +463,11 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
                         'fields with new values')
 
-    def __replace__(self, /, **kwds):
-        result = self._make(_map(kwds.pop, field_names, self))
-        for name in kwds:
-            raise TypeError(f'Got unexpected keyword argument {name!r}')
+    def __replace__(self, /, **changes):
+        result = self._make(_map(changes.pop, field_names, self))
+        if changes:
+            for name in changes:
+                raise TypeError(f'Got unexpected keyword argument {name!r}')
         return result
 
     __replace__.__doc__ = _replace.__doc__
