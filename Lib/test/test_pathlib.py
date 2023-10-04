@@ -1672,6 +1672,7 @@ class DummyPath(pathlib._PathBase):
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
+    pathmod = posixpath
     _files = {}
     _directories = {'/': set()}
     _symlinks = {}
