@@ -930,6 +930,37 @@ The code/function must not take any arguments or be a closure\n\
 If a function is provided, its code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
 
+static PyObject *
+interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "script", "shared", NULL};
+    PyObject *id, *script;
+    PyObject *shared = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OU|O:" MODULE_NAME ".run_string", kwlist,
+                                     &id, &script, &shared)) {
+        return NULL;
+    }
+
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME ".exec",
+                                            "argument 2", "a string");
+    if (script == NULL) {
+        return NULL;
+    }
+
+    if (_interp_exec(self, id, (PyObject *)script, shared) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(run_string_doc,
+"run_string(id, script, shared=None)\n\
+\n\
+Execute the provided string in the identified interpreter.\n\
+\n\
+(See " MODULE_NAME ".exec().");
+
 
 static PyObject *
 object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
@@ -997,6 +1028,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, is_running_doc},
     {"exec",                      _PyCFunction_CAST(interp_exec),
      METH_VARARGS | METH_KEYWORDS, exec_doc},
+    {"run_string",                _PyCFunction_CAST(interp_run_string),
+     METH_VARARGS | METH_KEYWORDS, run_string_doc},
 
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},

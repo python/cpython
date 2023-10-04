@@ -14,7 +14,6 @@ from test.support import script_helper
 
 
 interpreters = import_helper.import_module('_xxsubinterpreters')
-interpreters.run_string = interpreters.exec
 interpreters.run_func = interpreters.exec
 
 
