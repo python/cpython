@@ -39,7 +39,7 @@ Returns a dictionary containing build variables intended to be exposed by syscon
 
 static PyObject *
 _sysconfig_config_vars_impl(PyObject *module)
-/*[clinic end generated code: output=9c41cdee63ea9487 input=1458713a8d30b474]*/
+/*[clinic end generated code: output=9c41cdee63ea9487 input=391ff42f3af57d01]*/
 {
     PyObject *config = PyDict_New();
     if (config == NULL) {
