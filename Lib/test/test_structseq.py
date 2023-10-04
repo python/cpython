@@ -1,6 +1,7 @@
 import copy
 import os
 import pickle
+import re
 import time
 import unittest
 
@@ -91,9 +92,68 @@ class StructSeqTest(unittest.TestCase):
         self.assertRaises(TypeError, t, "123")
         self.assertRaises(TypeError, t, "123", dict={})
         self.assertRaises(TypeError, t, "123456789", dict=None)
+        self.assertRaises(TypeError, t, seq="123456789", dict={})
+
+        self.assertEqual(t("123456789"), tuple("123456789"))
+        self.assertEqual(t("123456789", {}), tuple("123456789"))
+        self.assertEqual(t("123456789", dict={}), tuple("123456789"))
+        self.assertEqual(t(sequence="123456789", dict={}), tuple("123456789"))
+
+        self.assertEqual(t("1234567890"), tuple("123456789"))
+        self.assertEqual(t("1234567890").tm_zone, "0")
+        self.assertEqual(t("123456789", {"tm_zone": "some zone"}), tuple("123456789"))
+        self.assertEqual(t("123456789", {"tm_zone": "some zone"}).tm_zone, "some zone")
 
         s = "123456789"
         self.assertEqual("".join(t(s)), s)
+
+    def test_constructor_with_duplicate_fields(self):
+        t = time.struct_time
+
+        error_message = re.escape("got duplicate or unexpected field name(s)")
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("1234567890", dict={"tm_zone": "some zone"})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("1234567890", dict={"tm_zone": "some zone", "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("1234567890", dict={"error": 0, "tm_zone": "some zone"})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("1234567890", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
+
+    def test_constructor_with_duplicate_unnamed_fields(self):
+        assert os.stat_result.n_unnamed_fields > 0
+        n_visible_fields = os.stat_result.n_sequence_fields
+
+        r = os.stat_result(range(n_visible_fields), {'st_atime': -1.0})
+        self.assertEqual(r.st_atime, -1.0)
+        self.assertEqual(r, tuple(range(n_visible_fields)))
+
+        r = os.stat_result((*range(n_visible_fields), -1.0))
+        self.assertEqual(r.st_atime, -1.0)
+        self.assertEqual(r, tuple(range(n_visible_fields)))
+
+        with self.assertRaisesRegex(TypeError,
+                                    re.escape("got duplicate or unexpected field name(s)")):
+            os.stat_result((*range(n_visible_fields), -1.0), {'st_atime': -1.0})
+
+    def test_constructor_with_unknown_fields(self):
+        t = time.struct_time
+
+        error_message = re.escape("got duplicate or unexpected field name(s)")
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"tm_year": 0})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"tm_year": 0, "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"tm_zone": "some zone", "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"tm_zone": "some zone", "error": 0})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"error": 0, "tm_zone": "some zone", "tm_mon": 1})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"error": 0})
+        with self.assertRaisesRegex(TypeError, error_message):
+            t("123456789", dict={"tm_zone": "some zone", "error": 0})
 
     def test_eviltuple(self):
         class Exc(Exception):
