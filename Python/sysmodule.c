@@ -40,7 +40,9 @@ Data members:
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
 
-#include <locale.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getpid()
+#endif
 
 #ifdef MS_WINDOWS
 #  define WIN32_LEAN_AND_MEAN
@@ -2039,11 +2041,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*[clinic input]
 sys._debugmallocstats
 
@@ -2070,10 +2067,6 @@ sys__debugmallocstats_impl(PyObject *module)
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 
@@ -2297,11 +2290,6 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     return Py_NewRef(r);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2369,10 +2357,6 @@ PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
     }
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 
 static PyMethodDef sys_methods[] = {
