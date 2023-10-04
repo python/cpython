@@ -1009,9 +1009,9 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
                              PyUnicode_CheckExact(item->v.Constant.value) &&
                              PyUnicode_GET_LENGTH(item->v.Constant.value) == 0);
     }
-    asdl_expr_seq *resized_spec;
     if (non_empty_count != n_items) {
-        resized_spec = _Py_asdl_expr_seq_new(non_empty_count, p->arena);
+        asdl_expr_seq *resized_spec =
+            _Py_asdl_expr_seq_new(non_empty_count, p->arena);
         if (resized_spec == NULL) {
             return NULL;
         }
@@ -1026,10 +1026,9 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
             asdl_seq_SET(resized_spec, j++, item);
         }
         assert(j == non_empty_count);
-    } else {
-        resized_spec = spec;
+        spec = resized_spec;
     }
-    expr_ty res = _PyAST_JoinedStr(resized_spec, lineno, col_offset, end_lineno,
+    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
                                    end_col_offset, p->arena);
     if (!res) {
         return NULL;
