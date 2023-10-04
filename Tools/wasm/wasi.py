@@ -12,7 +12,8 @@ HOST_TRIPLE = "wasm32-wasi"
 
 
 def section(title):
-    print("#" * 5, title, "#" * 5)
+    print(title, "#" * 20)
+
 
 def build_platform():
     """The name of the build/host platform."""
