@@ -240,6 +240,7 @@
     <ClInclude Include="..\Include\internal\pycore_hashtable.h" />
     <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
+    <ClInclude Include="..\Include\internal\pycore_importdl.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
@@ -367,7 +368,6 @@
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
     <ClInclude Include="..\Python\condvar.h" />
-    <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
   </ItemGroup>

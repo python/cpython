@@ -1,8 +1,12 @@
-#ifndef Py_IMPORTDL_H
-#define Py_IMPORTDL_H
+#ifndef Py_INTERNAL_IMPORTDL_H
+#define Py_INTERNAL_IMPORTDL_H
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
 
@@ -27,4 +31,4 @@ typedef void (*dl_funcptr)(void);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_IMPORTDL_H */
+#endif /* !Py_INTERNAL_IMPORTDL_H */

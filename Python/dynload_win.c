@@ -5,7 +5,7 @@
 #include "pycore_fileutils.h"     // _Py_add_relfile()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#include "importdl.h"             // dl_funcptr
+#include "pycore_importdl.h"      // dl_funcptr
 #include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
 
