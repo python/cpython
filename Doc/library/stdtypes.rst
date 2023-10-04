@@ -804,7 +804,7 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
-.. _typebool:
+.. _bltin-boolean-values:
 
 Boolean Type - :class:`bool`
 ============================
