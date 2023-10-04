@@ -239,16 +239,22 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_predictions_and_eval_breaker(self):
         input = """
-        inst(OP1, (--)) {
+        inst(OP1, (arg -- rest)) {
         }
         inst(OP3, (arg -- res)) {
-            DEOPT_IF(xxx, OP1);
+            DEOPT_IF(xxx);
             CHECK_EVAL_BREAKER();
         }
+        family(OP1, INLINE_CACHE_ENTRIES_OP1) = { OP3 };
     """
         output = """
         TARGET(OP1) {
             PREDICTED(OP1);
+            static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
+            PyObject *arg;
+            PyObject *rest;
+            arg = stack_pointer[-1];
+            stack_pointer[-1] = rest;
             DISPATCH();
         }
 
@@ -371,6 +377,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP) {
+            PREDICTED(OP);
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right;
             PyObject *left;

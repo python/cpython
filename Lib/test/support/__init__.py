@@ -777,14 +777,17 @@ def check_cflags_pgo():
     # Check if Python was built with ./configure --enable-optimizations:
     # with Profile Guided Optimization (PGO).
     cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
-    pgo_options = (
+    pgo_options = [
         # GCC
         '-fprofile-use',
         # clang: -fprofile-instr-use=code.profclangd
         '-fprofile-instr-use',
         # ICC
         "-prof-use",
-    )
+    ]
+    PGO_PROF_USE_FLAG = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+    if PGO_PROF_USE_FLAG:
+        pgo_options.append(PGO_PROF_USE_FLAG)
     return any(option in cflags_nodist for option in pgo_options)
 
 
@@ -2565,3 +2568,30 @@ def without_optimizer(func):
         finally:
             _testinternalcapi.set_optimizer(save_opt)
     return wrapper
+
+
+_BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
+    # SRC_DIR/.git
+    '.git',
+    # ignore all __pycache__/ sub-directories
+    '__pycache__',
+})
+
+# Ignore function for shutil.copytree() to copy the Python source code.
+def copy_python_src_ignore(path, names):
+    ignored = _BASE_COPY_SRC_DIR_IGNORED_NAMES
+    if os.path.basename(path) == 'Doc':
+        ignored |= {
+            # SRC_DIR/Doc/build/
+            'build',
+            # SRC_DIR/Doc/venv/
+            'venv',
+        }
+
+    # check if we are at the root of the source code
+    elif 'Modules' in names:
+        ignored |= {
+            # SRC_DIR/build/
+            'build',
+        }
+    return ignored

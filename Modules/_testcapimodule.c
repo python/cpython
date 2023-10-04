@@ -2458,8 +2458,8 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate2 = PyThreadState_Get();
     assert(tstate2 == tstate);
 
-    // private _PyThreadState_UncheckedGet()
-    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    // PyThreadState_GetUnchecked()
+    PyThreadState *tstate3 = PyThreadState_GetUnchecked();
     assert(tstate3 == tstate);
 
     // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
@@ -2923,7 +2923,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 

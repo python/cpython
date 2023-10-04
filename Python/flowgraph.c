@@ -1017,7 +1017,17 @@ remove_redundant_nops(basicblock *bb) {
                 }
                 /* or if last instruction in BB and next BB has same line number */
                 if (next) {
-                    if (lineno == next->b_instr[0].i_loc.lineno) {
+                    location next_loc = NO_LOCATION;
+                    for (int next_i=0; next_i < next->b_iused; next_i++) {
+                        cfg_instr *instr = &next->b_instr[next_i];
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
+                            /* Skip over NOPs without location, they will be removed */
+                            continue;
+                        }
+                        next_loc = instr->i_loc;
+                        break;
+                    }
+                    if (lineno == next_loc.lineno) {
                         continue;
                     }
                 }
@@ -2468,17 +2478,19 @@ insert_prefix_instructions(_PyCompile_CodeUnitMetadata *umd, basicblock *entrybl
          * of 0. This is because RETURN_GENERATOR pushes an element
          * with _PyFrame_StackPush before switching stacks.
          */
+
+        location loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1);
         cfg_instr make_gen = {
             .i_opcode = RETURN_GENERATOR,
             .i_oparg = 0,
-            .i_loc = LOCATION(umd->u_firstlineno, umd->u_firstlineno, -1, -1),
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 0, &make_gen));
         cfg_instr pop_top = {
             .i_opcode = POP_TOP,
             .i_oparg = 0,
-            .i_loc = NO_LOCATION,
+            .i_loc = loc,
             .i_target = NULL,
         };
         RETURN_IF_ERROR(basicblock_insert_instruction(entryblock, 1, &pop_top));

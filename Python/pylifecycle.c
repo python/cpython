@@ -37,6 +37,9 @@
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
@@ -59,11 +62,6 @@
 #endif
 
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 /* Forward declarations */
@@ -657,7 +655,8 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
@@ -1208,6 +1207,31 @@ init_interp_main(PyThreadState *tstate)
             }
             PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
             Py_DECREF(opt);
+        }
+    }
+
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        if (config->sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(config->sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
         }
     }
 
@@ -2027,7 +2051,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
         *tstate_p = NULL;
@@ -3139,7 +3164,3 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
     return oldhandler;
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif

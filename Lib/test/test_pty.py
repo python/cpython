@@ -80,16 +80,8 @@ def expectedFailureIfStdinIsTTY(fun):
 # because pty code is not too portable.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
-        self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
-
         old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
         self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
-
-        # isatty() and close() can hang on some platforms. Set an alarm
-        # before running the test to make sure we don't hang forever.
-        self.addCleanup(signal.alarm, 0)
-        signal.alarm(10)
 
         # Save original stdin window size.
         self.stdin_dim = None
@@ -100,9 +92,6 @@ class PtyTest(unittest.TestCase):
                                 self.stdin_dim)
             except tty.error:
                 pass
-
-    def handle_sig(self, sig, frame):
-        self.fail("isatty hung")
 
     @staticmethod
     def handle_sighup(signum, frame):
