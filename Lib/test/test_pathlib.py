@@ -1672,9 +1672,8 @@ class DummyPath(pathlib._PathBase):
     Simple implementation of PathBase that keeps files and directories in
     memory.
     """
-    pathmod = posixpath
     _files = {}
-    _directories = {'/': set()}
+    _directories = {}
     _symlinks = {}
 
     def stat(self, *, follow_symlinks=True):
@@ -1731,17 +1730,21 @@ class DummyPath(pathlib._PathBase):
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        path = str(self.resolve())
+        if path in self._directories:
+            if exist_ok:
+                return
+            else:
+                raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
-            self._directories[str(self.parent)].add(self.name)
-            self._directories[str(self)] = set()
+            if self.name:
+                self._directories[str(self.parent)].add(self.name)
+            self._directories[path] = set()
         except KeyError:
-            if not parents or self.parent == self:
+            if not parents:
                 raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
-        except FileExistsError:
-            if not exist_ok:
-                raise
 
 
 class DummyPathTest(unittest.TestCase):
@@ -1802,7 +1805,6 @@ class DummyPathTest(unittest.TestCase):
         cls._files.clear()
         cls._directories.clear()
         cls._symlinks.clear()
-        cls._directories['/'] = set()
 
     def tempdir(self):
         path = self.cls(BASE).with_name('tmp-dirD')
