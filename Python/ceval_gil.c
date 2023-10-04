@@ -329,28 +329,6 @@ drop_gil(struct _ceval_state *ceval, PyThreadState *tstate)
 }
 
 
-/* Check if a Python thread must exit immediately, rather than taking the GIL
-   if Py_Finalize() has been called.
-
-   When this function is called by a daemon thread after Py_Finalize() has been
-   called, the GIL does no longer exist.
-
-   tstate must be non-NULL. */
-static inline int
-tstate_must_exit(PyThreadState *tstate)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(&_PyRuntime);
-    if (finalizing == NULL) {
-        finalizing = _PyInterpreterState_GetFinalizing(tstate->interp);
-    }
-    return (finalizing != NULL && finalizing != tstate);
-}
-
-
 /* Take the GIL.
 
    The function saves errno at entry and restores its value at exit.
@@ -366,7 +344,7 @@ take_gil(PyThreadState *tstate)
     // XXX It may be more correct to check tstate->_status.finalizing.
     // XXX assert(!tstate->_status.cleared);
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-39877: If Py_Finalize() has been called and tstate is not the
            thread which called Py_Finalize(), exit immediately the thread.
 
@@ -404,7 +382,7 @@ take_gil(PyThreadState *tstate)
             _Py_atomic_load_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
-            if (tstate_must_exit(tstate)) {
+            if (_PyThreadState_MustExit(tstate)) {
                 MUTEX_UNLOCK(gil->mutex);
                 // gh-96387: If the loop requested a drop request in a previous
                 // iteration, reset the request. Otherwise, drop_gil() can
@@ -444,7 +422,7 @@ _ready:
     MUTEX_UNLOCK(gil->switch_mutex);
 #endif
 
-    if (tstate_must_exit(tstate)) {
+    if (_PyThreadState_MustExit(tstate)) {
         /* bpo-36475: If Py_Finalize() has been called and tstate is not
            the thread which called Py_Finalize(), exit immediately the
            thread.
@@ -785,7 +763,7 @@ _PyEval_SignalReceived(PyInterpreterState *interp)
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
-                   int (*func)(void *), void *arg)
+                   _Py_pending_call_func func, void *arg)
 {
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
@@ -832,7 +810,7 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       int (*func)(void *), void *arg,
+                       _Py_pending_call_func func, void *arg,
                        int mainthreadonly)
 {
     assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
@@ -856,7 +834,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
 }
 
 int
-Py_AddPendingCall(int (*func)(void *), void *arg)
+Py_AddPendingCall(_Py_pending_call_func func, void *arg)
 {
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
@@ -900,7 +878,7 @@ _make_pending_calls(struct _pending_calls *pending)
 {
     /* perform a bounded number of calls, in case of recursion */
     for (int i=0; i<NPENDINGCALLS; i++) {
-        int (*func)(void *) = NULL;
+        _Py_pending_call_func func = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */

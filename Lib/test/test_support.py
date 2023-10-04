@@ -7,6 +7,7 @@ import socket
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
 import unittest
@@ -760,7 +761,81 @@ class TestSupport(unittest.TestCase):
             else:
                 self.fail("RecursionError was not raised")
 
-        #self.assertEqual(available, 2)
+    def test_parse_memlimit(self):
+        parse = support._parse_memlimit
+        KiB = 1024
+        MiB = KiB * 1024
+        GiB = MiB * 1024
+        TiB = GiB * 1024
+        self.assertEqual(parse('0k'), 0)
+        self.assertEqual(parse('3k'), 3 * KiB)
+        self.assertEqual(parse('2.4m'), int(2.4 * MiB))
+        self.assertEqual(parse('4g'), int(4 * GiB))
+        self.assertEqual(parse('1t'), TiB)
+
+        for limit in ('', '3', '3.5.10k', '10x'):
+            with self.subTest(limit=limit):
+                with self.assertRaises(ValueError):
+                    parse(limit)
+
+    def test_set_memlimit(self):
+        _4GiB = 4 * 1024 ** 3
+        TiB = 1024 ** 4
+        old_max_memuse = support.max_memuse
+        old_real_max_memuse = support.real_max_memuse
+        try:
+            if sys.maxsize > 2**32:
+                support.set_memlimit('4g')
+                self.assertEqual(support.max_memuse, _4GiB)
+                self.assertEqual(support.real_max_memuse, _4GiB)
+
+                big = 2**100 // TiB
+                support.set_memlimit(f'{big}t')
+                self.assertEqual(support.max_memuse, sys.maxsize)
+                self.assertEqual(support.real_max_memuse, big * TiB)
+            else:
+                support.set_memlimit('4g')
+                self.assertEqual(support.max_memuse, sys.maxsize)
+                self.assertEqual(support.real_max_memuse, _4GiB)
+        finally:
+            support.max_memuse = old_max_memuse
+            support.real_max_memuse = old_real_max_memuse
+
+    def test_copy_python_src_ignore(self):
+        # Get source directory
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = os.path.abspath(src_dir)
+
+        # Check that the source code is available
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
+        landmark = os.path.join(src_dir, 'Modules')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
+
+        # Test support.copy_python_src_ignore()
+
+        # Source code directory
+        ignored = {'.git', '__pycache__'}
+        names = os.listdir(src_dir)
+        self.assertEqual(support.copy_python_src_ignore(src_dir, names),
+                         ignored | {'build'})
+
+        # Doc/ directory
+        path = os.path.join(src_dir, 'Doc')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored | {'build', 'venv'})
+
+        # Another directory
+        path = os.path.join(src_dir, 'Objects')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc
@@ -773,7 +848,6 @@ class TestSupport(unittest.TestCase):
     # EnvironmentVarGuard
     # transient_internet
     # run_with_locale
-    # set_memlimit
     # bigmemtest
     # precisionbigmemtest
     # bigaddrspacetest
