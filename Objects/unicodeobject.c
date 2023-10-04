@@ -10678,6 +10678,7 @@ PyUnicode_EqualToUTF8(PyObject *unicode, const char *str)
 {
     assert(_PyUnicode_CHECK(unicode));
     assert(str);
+
     if (PyUnicode_IS_ASCII(unicode)) {
         size_t len = (size_t)PyUnicode_GET_LENGTH(unicode);
         return strlen(str) == len &&
@@ -10689,49 +10690,53 @@ PyUnicode_EqualToUTF8(PyObject *unicode, const char *str)
             memcmp(PyUnicode_UTF8(unicode), str, len) == 0;
     }
 
-    Py_UCS4 ch;
+    const unsigned char *s = (const unsigned char *)str;
     Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
     int kind = PyUnicode_KIND(unicode);
     const void *data = PyUnicode_DATA(unicode);
     /* Compare Unicode string and UTF-8 string */
     for (Py_ssize_t i = 0; i < len; i++) {
-        ch = PyUnicode_READ(kind, data, i);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         if (ch == 0) {
             return 0;
         }
         else if (ch < 0x80) {
-            if (ch != (unsigned char)*str++) {
+            if (s[0] != ch) {
                 return 0;
             }
+            s += 1;
         }
         else if (ch < 0x800) {
-            if ((0xc0 | (ch >> 6)) != (unsigned char)*str++ ||
-                (0x80 | (ch & 0x3f)) != (unsigned char)*str++)
+            if (s[0] != (0xc0 | (ch >> 6)) ||
+                s[1] != (0x80 | (ch & 0x3f)))
             {
                 return 0;
             }
+            s += 2;
         }
         else if (ch < 0x10000) {
             if (Py_UNICODE_IS_SURROGATE(ch) ||
-                (0xe0 | (ch >> 12)) != (unsigned char)*str++ ||
-                (0x80 | ((ch >> 6) & 0x3f)) != (unsigned char)*str++ ||
-                (0x80 | (ch & 0x3f)) != (unsigned char)*str++)
+                s[0] != (0xe0 | (ch >> 12)) ||
+                s[1] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[2] != (0x80 | (ch & 0x3f)))
             {
                 return 0;
             }
+            s += 3;
         }
         else {
             assert(ch <= MAX_UNICODE);
-            if ((0xf0 | (ch >> 18)) != (unsigned char)*str++ ||
-                (0x80 | ((ch >> 12) & 0x3f)) != (unsigned char)*str++ ||
-                (0x80 | ((ch >> 6) & 0x3f)) != (unsigned char)*str++ ||
-                (0x80 | (ch & 0x3f)) != (unsigned char)*str++)
+            if (s[0] != (0xf0 | (ch >> 18)) ||
+                s[1] != (0x80 | ((ch >> 12) & 0x3f)) ||
+                s[2] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[3] != (0x80 | (ch & 0x3f)))
             {
                 return 0;
             }
+            s += 4;
         }
     }
-    return *str == 0;
+    return *s == 0;
 }
 
 int

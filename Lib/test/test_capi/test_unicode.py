@@ -1302,26 +1302,34 @@ class CAPITest(unittest.TestCase):
     def test_equaltoutf8(self):
         """Test PyUnicode_EqualToUTF8()"""
         from _testcapi import unicode_equaltoutf8 as equaltoutf8
+        from _testcapi import unicode_asutf8andsize as asutf8andsize
 
         strings = [
             'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
             '\U0001f600\U0001f601\U0001f602'
         ]
         for s in strings:
+            # Call PyUnicode_AsUTF8AndSize() which creates the UTF-8
+            # encoded string cached in the Unicode object.
+            asutf8andsize(s, 0)
             b = s.encode()
-            self.assertEqual(equaltoutf8(s, b), 1)
-            self.assertEqual(equaltoutf8(b.decode(), b), 1)
+            self.assertEqual(equaltoutf8(s, b), 1)  # Use the UTF-8 cache.
+            s2 = b.decode()  # New Unicode object without the UTF-8 cache.
+            self.assertEqual(equaltoutf8(s2, b), 1)
             self.assertEqual(equaltoutf8(s + 'x', b + b'x'), 1)
             self.assertEqual(equaltoutf8(s + 'x', b + b'y'), 0)
             self.assertEqual(equaltoutf8(s + '\0', b + b'\0'), 0)
-            self.assertEqual(equaltoutf8(s, b + b'x'), 0)
-            self.assertEqual(equaltoutf8(s, b[:-1]), 0)
-            self.assertEqual(equaltoutf8(s, b[:-1] + b'x'), 0)
+            self.assertEqual(equaltoutf8(s2, b + b'x'), 0)
+            self.assertEqual(equaltoutf8(s2, b[:-1]), 0)
+            self.assertEqual(equaltoutf8(s2, b[:-1] + b'x'), 0)
 
-        # surrogateescape
-        self.assertEqual(equaltoutf8('\udcfe', b'\xfe'), 0)
-        # surrogatepass
-        self.assertEqual(equaltoutf8('\udcfe', b'\xed\xb3\xbe'), 0)
+        # Surrogate characters are always treated as not equal
+        self.assertEqual(equaltoutf8('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogateescape")), 0)
+        self.assertEqual(equaltoutf8('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogatepass")), 0)
+        self.assertEqual(equaltoutf8('\ud801',
+                            '\ud801'.encode("utf8", "surrogatepass")), 0)
 
         # CRASHES equaltoutf8(b'abc', b'abc')
         # CRASHES equaltoutf8([], b'abc')
