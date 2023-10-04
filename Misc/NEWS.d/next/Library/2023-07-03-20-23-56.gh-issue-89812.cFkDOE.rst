@@ -1,0 +1,2 @@
+Add private ``pathlib._PathBase`` class, which provides experimental support
+for virtual filesystems, and may be made public in a future version of Python.
