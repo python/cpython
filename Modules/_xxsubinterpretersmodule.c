@@ -777,22 +777,14 @@ PyDoc_STRVAR(get_main_doc,
 Return the ID of main interpreter.");
 
 
-static PyObject *
-interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
+static int
+_interp_exec(PyObject *self,
+             PyObject *id_arg, PyObject *code_arg, PyObject *shared_arg)
 {
-    static char *kwlist[] = {"id", "code", "shared", NULL};
-    PyObject *id, *code_arg;
-    PyObject *shared = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|O:" MODULE_NAME ".exec", kwlist,
-                                     &id, &code_arg, &shared)) {
-        return NULL;
-    }
-
     // Look up the interpreter.
-    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id_arg);
     if (interp == NULL) {
-        return NULL;
+        return -1;
     }
 
     // Extract code.
@@ -802,14 +794,33 @@ interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
     const char *codestr = get_code_str(code_arg,
                                        &codestrlen, &bytes_obj, &flags);
     if (codestr == NULL) {
-        return NULL;
+        return -1;
     }
 
     // Run the code in the interpreter.
     int res = _run_in_interpreter(self, interp, codestr, codestrlen,
-                                  shared, flags);
+                                  shared_arg, flags);
     Py_XDECREF(bytes_obj);
     if (res != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyObject *
+interp_exec(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "code", "shared", NULL};
+    PyObject *id, *code;
+    PyObject *shared = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO|O:" MODULE_NAME ".exec", kwlist,
+                                     &id, &code, &shared)) {
+        return NULL;
+    }
+
+    if (_interp_exec(self, id, code, shared) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
