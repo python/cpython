@@ -392,7 +392,7 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
-        self.assertIsNone(regrtest.random_seed)
+        self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
         self.assertTrue(regrtest.fail_rerun)
         self.assertTrue(regrtest.print_slowest)
@@ -663,7 +663,7 @@ class BaseTestCase(unittest.TestCase):
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
         randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed <= 100_000_000, randseed)
+        self.assertTrue(0 <= randseed, randseed)
         return randseed
 
     def run_command(self, args, input=None, exitcode=0, **kw):
@@ -949,6 +949,10 @@ class ArgsTestCase(BaseTestCase):
         match = self.regex_search(r'TESTRANDOM: ([0-9]+)', output)
         test_random2 = int(match.group(1))
         self.assertEqual(test_random2, test_random)
+
+        # check that random.seed is used by default
+        output = self.run_tests(test, exitcode=EXITCODE_NO_TESTS_RAN)
+        self.assertIsInstance(self.parse_random_seed(output), int)
 
     def test_fromfile(self):
         # test --fromfile
