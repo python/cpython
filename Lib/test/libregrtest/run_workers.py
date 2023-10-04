@@ -262,6 +262,9 @@ class WorkerThread(threading.Thread):
         kwargs = {}
         if match_tests:
             kwargs['match_tests'] = match_tests
+        if self.runtests.output_on_failure:
+            kwargs['verbose'] = True
+            kwargs['output_on_failure'] = False
         return self.runtests.copy(
             tests=tests,
             json_file=json_file,
@@ -562,8 +565,16 @@ class RunWorkers:
         self.results.accumulate_result(result, self.runtests)
         self.display_result(mp_result)
 
-        if mp_result.worker_stdout:
-            print(mp_result.worker_stdout, flush=True)
+        # Display worker stdout
+        if not self.runtests.output_on_failure:
+            show_stdout = True
+        else:
+            # --verbose3 ignores stdout on success
+            show_stdout = (result.state != State.PASSED)
+        if show_stdout:
+            stdout = mp_result.worker_stdout
+            if stdout:
+                print(stdout, flush=True)
 
         return result
 

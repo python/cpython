@@ -1,0 +1,4 @@
+regrtest: When using worker processes (-jN) with --verbose3 option, regrtest
+can now display the worker output even if a worker process does crash.
+Previously, sys.stdout and sys.stderr were replaced and so the worker output
+was lost on a crash. Patch by Victor Stinner.
