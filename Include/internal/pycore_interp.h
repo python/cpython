@@ -67,8 +67,7 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    uint64_t monitoring_version;
-    uint64_t last_restart_version;
+    uintptr_t last_restart_version;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
