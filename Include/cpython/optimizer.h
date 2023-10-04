@@ -11,7 +11,9 @@ typedef struct _PyExecutorLinkListNode {
     struct _PyExecutorObject *previous;
 } _PyExecutorLinkListNode;
 
-/* Bloom filter with m = 256 */
+
+/* Bloom filter with m = 256
+ * https://en.wikipedia.org/wiki/Bloom_filter */
 #define BLOOM_FILTER_WORDS 8
 
 typedef struct _bloom_filter {
@@ -61,10 +63,13 @@ _PyOptimizer_BackEdge(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_
 
 extern _PyOptimizerObject _PyOptimizer_Default;
 
-void _Py_ExecutorInit(_PyExecutorObject *);
+void _Py_ExecutorInit(_PyExecutorObject *, _PyBloomFilter *);
 void _Py_ExecutorClear(_PyExecutorObject *);
+void _Py_BloomFilter_Init(_PyBloomFilter *);
+void _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *obj);
 PyAPI_FUNC(void) _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj);
 PyAPI_FUNC(void) _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj);
+extern void _Py_Executors_InvalidateAll(PyInterpreterState *interp);
 
 /* For testing */
 PyAPI_FUNC(PyObject *)PyUnstable_Optimizer_NewCounter(void);

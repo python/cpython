@@ -2387,6 +2387,20 @@ class TestOptimizerAPI(unittest.TestCase):
             self.assertEqual(code, replace_code)
             self.assertEqual(hash(code), hash(replace_code))
 
+
+def get_first_executor(func):
+    code = func.__code__
+    co_code = code.co_code
+    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
+    for i in range(0, len(co_code), 2):
+        if co_code[i] == JUMP_BACKWARD:
+            try:
+                return _testinternalcapi.get_executor(code, i)
+            except ValueError:
+                pass
+    return None
+
+
 class TestExecutorInvalidation(unittest.TestCase):
 
     def setUp(self):
@@ -2431,19 +2445,22 @@ class TestExecutorInvalidation(unittest.TestCase):
             for exe in executors[:i]:
                 self.assertTrue(exe.valid)
 
-
-def get_first_executor(func):
-    code = func.__code__
-    co_code = code.co_code
-    JUMP_BACKWARD = opcode.opmap["JUMP_BACKWARD"]
-    for i in range(0, len(co_code), 2):
-        if co_code[i] == JUMP_BACKWARD:
-            try:
-                return _testinternalcapi.get_executor(code, i)
-            except ValueError:
-                pass
-    return None
-
+    def test_uop_optimizer_invalidation(self):
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def f():
+                for i in range(1000):
+                    pass
+        """), ns, ns)
+        f = ns['f']
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertTrue(exe.valid)
+        _testinternalcapi.invalidate_executors(f.__code__)
+        self.assertFalse(exe.valid)
 
 class TestUops(unittest.TestCase):
 

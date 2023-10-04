@@ -268,7 +268,9 @@ counter_optimize(
     executor->optimizer = (_PyCounterOptimizerObject *)self;
     executor->next_instr = instr;
     *exec_ptr = (_PyExecutorObject *)executor;
-    _Py_ExecutorInit((_PyExecutorObject *)executor);
+    _PyBloomFilter empty;
+    _Py_BloomFilter_Init(&empty);
+    _Py_ExecutorInit((_PyExecutorObject *)executor, &empty);
     return 1;
 }
 
@@ -367,6 +369,12 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
+
+static PyMemberDef uop_members[] = {
+    { "valid", Py_T_UBYTE, offsetof(_PyUOpExecutorObject, base.vm_data.valid), Py_READONLY, "is valid?" },
+    { NULL }
+};
+
 static PyTypeObject UOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
@@ -375,6 +383,7 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
+    .tp_members = uop_members,
 };
 
 static int
@@ -410,9 +419,11 @@ translate_bytecode_to_trace(
     PyCodeObject *code,
     _Py_CODEUNIT *instr,
     _PyUOpInstruction *trace,
-    int buffer_size)
+    int buffer_size,
+    _PyBloomFilter *dependencies)
 {
     PyCodeObject *initial_code = code;
+    _Py_BloomFilter_Add(dependencies, initial_code);
     _Py_CODEUNIT *initial_instr = instr;
     int trace_length = 0;
     int max_length = buffer_size;
@@ -738,6 +749,7 @@ pop_jump_if_bool:
                                 // Increment IP to the return address
                                 instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + 1;
                                 TRACE_STACK_PUSH();
+                                _Py_BloomFilter_Add(dependencies, new_code);
                                 code = new_code;
                                 instr = _PyCode_CODE(code);
                                 DPRINTF(2,
@@ -896,8 +908,10 @@ uop_optimize(
     _PyExecutorObject **exec_ptr,
     int curr_stackentries)
 {
+    _PyBloomFilter dependencies;
+    _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction trace[_Py_UOP_MAX_TRACE_LENGTH];
-    int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH);
+    int trace_length = translate_bytecode_to_trace(code, instr, trace, _Py_UOP_MAX_TRACE_LENGTH, &dependencies);
     if (trace_length <= 0) {
         // Error or nothing translated
         return trace_length;
@@ -914,7 +928,7 @@ uop_optimize(
     }
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
-    _Py_ExecutorInit((_PyExecutorObject *)executor);
+    _Py_ExecutorInit((_PyExecutorObject *)executor, &dependencies);
     *exec_ptr = (_PyExecutorObject *)executor;
     return 1;
 }
@@ -936,6 +950,8 @@ static PyTypeObject UOpOptimizer_Type = {
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
+    PyType_Ready(&UOpExecutor_Type);
+    PyType_Ready(&UOpOptimizer_Type);
     _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &UOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
@@ -968,19 +984,25 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
  * giving a false positive of (60/256)**6 == 0.0001
  *
  * We choose k = 6, rather than a higher number as
- * it means the false positive rate goes slower for high n.
+ * it means the false positive rate grows slower for high n.
  *
+ * n = 5, k = 6 => fp = 2.6e-6
+ * n = 5, k = 8 => fp = 3.5e-7
+ * n = 10, k = 6 => fp = 1.6e-4
+ * n = 10, k = 8 => fp = 0.9e-4
  * n = 15, k = 6 => fp = 0.18%
  * n = 15, k = 8 => fp = 0.23%
  * n = 20, k = 6 => fp = 1.1%
  * n = 20, k = 8 => fp = 2.3%
  *
  * The above analysis assumes perfect hash functions,
- * but we don't have those, so it is approximate.
+ * but those don't exist, so the real false positive
+ * rates may be worse.
  */
 
 #define K 6
 
+/* TO DO -- Use more modern hash functions with better distribution of bits */
 static uint32_t
 address_to_hash(void *ptr, uint32_t seed, uint32_t multiplier) {
     assert(ptr != NULL);
@@ -1004,12 +1026,17 @@ static const uint32_t seeds[2] = {
     2147483647,
 };
 
-static void
-address_to_hashes(void *ptr, _PyBloomFilter *bloom)
+void
+_Py_BloomFilter_Init(_PyBloomFilter *bloom)
 {
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
         bloom->bits[i] = 0;
     }
+}
+
+void
+_Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
+{
     /* Set k (6) bits */
     for (int i = 0; i < 2; i++) {
         uint32_t hash = address_to_hash(ptr, seeds[i], multipliers[i]);
@@ -1018,16 +1045,6 @@ address_to_hashes(void *ptr, _PyBloomFilter *bloom)
             bloom->bits[bits >> 5] |= (1 << (bits&31));
             hash >>= 8;
         }
-    }
-}
-
-static void
-add_to_bloom_filter(_PyBloomFilter *bloom, PyObject *obj)
-{
-    _PyBloomFilter hashes;
-    address_to_hashes(obj, &hashes);
-    for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
-        bloom->bits[i] |= hashes.bits[i];
     }
 }
 
@@ -1091,11 +1108,11 @@ unlink_executor(_PyExecutorObject *executor)
 
 /* This must be called by optimizers before using the executor */
 void
-_Py_ExecutorInit(_PyExecutorObject *executor)
+_Py_ExecutorInit(_PyExecutorObject *executor, _PyBloomFilter *dependency_set)
 {
     executor->vm_data.valid = true;
     for (int i = 0; i < BLOOM_FILTER_WORDS; i++) {
-        executor->vm_data.bloom.bits[i] = 0;
+        executor->vm_data.bloom.bits[i] = dependency_set->bits[i];
     }
     link_executor(executor);
 }
@@ -1111,7 +1128,7 @@ void
 _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 {
     assert(executor->vm_data.valid = true);
-    add_to_bloom_filter(&executor->vm_data.bloom, obj);
+    _Py_BloomFilter_Add(&executor->vm_data.bloom, obj);
 }
 
 /* Invalidate all executors that depend on `obj`
@@ -1120,14 +1137,15 @@ _Py_Executor_DependsOn(_PyExecutorObject *executor, void *obj)
 void
 _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
 {
-    _PyBloomFilter hashes;
-    address_to_hashes(obj, &hashes);
+    _PyBloomFilter obj_filter;
+    _Py_BloomFilter_Init(&obj_filter);
+    _Py_BloomFilter_Add(&obj_filter, obj);
     /* Walk the list of executors */
     /* TO DO -- Use a tree to avoid traversing as many objects */
     for (_PyExecutorObject *exec = interp->executor_list_head; exec != NULL;) {
         assert(exec->vm_data.valid);
         _PyExecutorObject *next = exec->vm_data.links.next;
-        if (bloom_filter_may_contain(&exec->vm_data.bloom, &hashes)) {
+        if (bloom_filter_may_contain(&exec->vm_data.bloom, &obj_filter)) {
             exec->vm_data.valid = false;
             unlink_executor(exec);
         }
@@ -1135,8 +1153,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj)
     }
 }
 
-/* Invalidate all executors
- */
+/* Invalidate all executors */
 void
 _Py_Executors_InvalidateAll(PyInterpreterState *interp)
 {

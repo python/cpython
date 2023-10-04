@@ -1804,6 +1804,7 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         return -1;
     }
     set_global_version(interp, new_version);
+    _Py_Executors_InvalidateAll(interp);
     return instrument_all_executing_code_objects(interp);
 }
 
@@ -1833,6 +1834,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
         /* Force instrumentation update */
         code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
+    _Py_Executors_InvalidateDependency(interp, code);
     if (_Py_Instrument(code, interp)) {
         return -1;
     }
