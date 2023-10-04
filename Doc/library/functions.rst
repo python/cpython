@@ -147,7 +147,7 @@ are always available.  They are listed here in alphabetical order.
    or omitted, this returns ``False``; otherwise, it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
-   ``True`` (see :ref:`bltin-boolean-values`).
+   ``True`` (see :ref:`typebool`).
 
    .. index:: pair: Boolean; type
 
