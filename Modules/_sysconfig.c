@@ -31,7 +31,7 @@ add_string_value(PyObject *dict, const char *key, const char *str_value)
 /*[clinic input]
 _sysconfig.config_vars
 
-Returns a dictionary containing variables intended to be exposed by sysconfig.
+Returns a dictionary containing build variables intended to be exposed by sysconfig.
 [clinic start generated code]*/
 
 static PyObject *
