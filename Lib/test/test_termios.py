@@ -10,15 +10,16 @@ termios = import_module('termios')
 
 class TestFunctions(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         try:
-            self.stream = open('/dev/tty', 'wb', buffering=0)
+            cls.stream = open('/dev/tty', 'wb', buffering=0)
         except OSError:
-            self.skipTest("Cannot open '/dev/tty'")
-        self.addCleanup(self.stream.close)
-        self.fd = self.stream.fileno()
-        self.bad_fd, _ = tempfile.mkstemp()
-        self.addClassCleanup(os.close, self.bad_fd)
+            raise unittest.SkipTest("Cannot open '/dev/tty'")
+        cls.addClassCleanup(cls.stream.close)
+        cls.fd = cls.stream.fileno()
+        cls.bad_fd, _ = tempfile.mkstemp()
+        cls.addClassCleanup(os.close, cls.bad_fd)
 
     def assertRaisesTermiosError(self, errno, callable, *args):
         with self.assertRaises(termios.error) as cm:
