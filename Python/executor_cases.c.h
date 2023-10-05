@@ -3301,10 +3301,3 @@
             stack_pointer[-1 - oparg] = top;
             break;
         }
-
-        case _JUMP_IF_INVALID: {
-            if (!self->base.vm_data.valid) {
-                pc = oparg;
-            }
-            break;
-        }

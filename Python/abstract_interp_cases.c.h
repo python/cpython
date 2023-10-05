@@ -932,7 +932,3 @@
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - oparg)), true);
             break;
         }
-
-        case _JUMP_IF_INVALID: {
-            break;
-        }
