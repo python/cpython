@@ -760,6 +760,7 @@ def calculate_optimization_stats(stats):
     trace_stack_overflow = stats["Optimization trace stack overflow"]
     trace_stack_underflow = stats["Optimization trace stack underflow"]
     trace_too_long = stats["Optimization trace too long"]
+    trace_too_short = stats["Optimiztion trace too short"]
     inner_loop = stats["Optimization inner loop"]
     recursive_call = stats["Optimization recursive call"]
 
@@ -771,6 +772,7 @@ def calculate_optimization_stats(stats):
         ("Trace stack overflow", trace_stack_overflow, ""),
         ("Trace stack underflow", trace_stack_underflow, ""),
         ("Trace too long", trace_too_long, ""),
+        ("Trace too short", trace_too_short, ""),
         ("Inner loop found", inner_loop, ""),
         ("Recursive call", recursive_call, ""),
     ]
