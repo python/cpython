@@ -3781,12 +3781,29 @@ features:
    .. versionadded:: 3.10
 
 
-Linux extended attributes
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Extended attributes
+~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 3.3
+   Added suppport for Linux.
 
-These functions are all available on Linux only.
+.. versionadded:: 3.12
+   Added support for macOS and FreeBSD.
+
+These functions provide access to file system extended attributes on the Unix
+platforms that support them.
+
+.. note::
+
+   On some platforms, extended attribute names have a *namespace qualifier*
+   prefix such as ``'user.'`` or ``'system.'``.
+
+   On FreeBSD, Python requires that the caller of functions that expect an
+   attribute name specify the namespace qualifier, which is interpreted
+   according to ``extattr_string_to_namespace()``. The rest of the string is
+   interpreted as the attribute name. E.g. Python will interpret the
+   ``'user.mime_type'`` string as the attribute name ``'mime_type'`` in the
+   ``EXTATTR_NAMESPACE_USER`` namespace.
 
 .. function:: getxattr(path, attribute, *, follow_symlinks=True)
 
@@ -3800,9 +3817,13 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.getxattr path,attribute os.getxattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionadded:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: listxattr(path=None, *, follow_symlinks=True)
 
@@ -3814,11 +3835,21 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. note::
+
+      On FreeBSD, this function will only list attributes residing in the
+      ``user`` and ``system`` (if permitted) namespaces, prefixed with a
+      namespace qualifier.
+
    .. audit-event:: os.listxattr path os.listxattr
+
+   .. availability:: Linux, macOS, FreeBSD.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
+   .. versionadded:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: removexattr(path, attribute, *, follow_symlinks=True)
 
@@ -3832,9 +3863,13 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.removexattr path,attribute os.removexattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionadded:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. function:: setxattr(path, attribute, value, flags=0, *, follow_symlinks=True)
 
@@ -3857,27 +3892,62 @@ These functions are all available on Linux only.
 
    .. audit-event:: os.setxattr path,attribute,value,flags os.setxattr
 
+   .. availability:: Linux, macOS, FreeBSD.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
+   .. versionadded:: 3.12
+      Added support for macOS and FreeBSD.
 
 .. data:: XATTR_SIZE_MAX
 
    The maximum size the value of an extended attribute can be. Currently, this
-   is 64 KiB on Linux.
+   is 64 KiB.
 
+   .. availability:: Linux.
+
+.. data:: XATTR_NAME_MAX
+
+   The maximum length the name of an extended attribute (including the
+   namespace qualifier) can be. Currently, this is 255 bytes.
+
+   .. availability:: Linux.
+
+   .. versionadded:: 3.12
+
+.. data:: XATTR_MAXNAMELEN
+
+   The maximum length the name of an extended attribute can be. Currently, this
+   is 127 UTF-8 bytes.
+
+   .. availability:: macOS.
+
+   .. versionadded:: 3.12
+
+.. data:: EXTATTR_MAXNAMELEN
+
+   The maximum length the name of an extended attribute (excluding the
+   namespace qualifier) can be. Currently, this is 255 bytes.
+
+   .. availability:: FreeBSD.
+
+   .. versionadded:: 3.12
 
 .. data:: XATTR_CREATE
 
    This is a possible value for the flags argument in :func:`setxattr`. It
    indicates the operation must create an attribute.
 
+   .. availability:: Linux, macOS, FreeBSD.
 
 .. data:: XATTR_REPLACE
 
    This is a possible value for the flags argument in :func:`setxattr`. It
    indicates the operation must replace an existing attribute.
 
+
+   .. availability:: Linux, macOS, FreeBSD.
 
 .. _os-process:
 

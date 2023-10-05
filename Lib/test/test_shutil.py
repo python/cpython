@@ -1091,7 +1091,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         os.symlink(src, src_link)
         os.symlink(dst, dst_link)
         if hasattr(os, 'lchmod'):
-            os.lchmod(src_link, stat.S_IRWXO)
+            os.lchmod(src_link, stat.S_IRUSR)
         if hasattr(os, 'lchflags') and hasattr(stat, 'UF_NODUMP'):
             os.lchflags(src_link, stat.UF_NODUMP)
         src_link_stat = os.lstat(src_link)

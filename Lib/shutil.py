@@ -321,10 +321,14 @@ if hasattr(os, 'listxattr'):
 
         """
 
+        if sys.platform.startswith("freebsd") or sys.platform == "darwin":
+            missing_xattr_errno = errno.ENOATTR
+        else:
+            missing_xattr_errno = errno.ENODATA
         try:
             names = os.listxattr(src, follow_symlinks=follow_symlinks)
         except OSError as e:
-            if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
+            if e.errno not in (errno.ENOTSUP, errno.EINVAL):
                 raise
             return
         for name in names:
@@ -332,8 +336,8 @@ if hasattr(os, 'listxattr'):
                 value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
                 os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
             except OSError as e:
-                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
-                                   errno.EINVAL, errno.EACCES):
+                if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.EINVAL,
+                                   errno.EACCES, missing_xattr_errno):
                     raise
 else:
     def _copyxattr(*args, **kwargs):

@@ -10560,6 +10560,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_EVENTFD_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "sys/extattr.h" "ac_cv_header_sys_extattr_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_extattr_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_EXTATTR_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/file.h" "ac_cv_header_sys_file_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_file_h" = xyes
 then :
