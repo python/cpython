@@ -822,14 +822,19 @@ def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None)
 
         def calculate_rows(self, stats: Stats) -> Rows:
             rows: Rows = []
+            last_non_zero = 0
             for k, v in stats.items():
                 if k.startswith(self.key):
                     match = re.match(r".+\[([0-9]+)\]", k)
                     if match is not None:
                         entry = int(match.groups()[0])
+                        if v != 0:
+                            last_non_zero = len(rows)
                         rows.append(
                             (f"<= {entry}", Count(v), Ratio(int(v), stats[self.den]))
                         )
+            # Don't include any zero entries at the end
+            rows = rows[:last_non_zero + 1]
             return rows
 
     class UnsupportedOpcodesTable(SimpleChangeTable):
