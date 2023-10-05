@@ -112,7 +112,7 @@ class CPythonInstallDetailsFileTests(unittest.TestCase, FormatTestsBase):
         value = self.key('python.stdlib')
 
         try:
-            stdlib = os.path.dirname(unittest.__path__)
+            stdlib = os.path.dirname(sysconfig.__file__)
         except AttributeError as exc:
             self.skipTest(str(exc))
 
