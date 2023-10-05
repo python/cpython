@@ -13,7 +13,7 @@ import traceback
 from typing import Literal, TextIO
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, MS_WINDOWS
 
 from .logger import Logger
 from .result import TestResult, State
@@ -21,7 +21,7 @@ from .results import TestResults
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, TestName, MS_WINDOWS,
+    StrPath, TestName,
     format_duration, print_warning, count, plural, get_signal_name)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
