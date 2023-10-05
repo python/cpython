@@ -11,7 +11,10 @@ termios = import_module('termios')
 class TestFunctions(unittest.TestCase):
 
     def setUp(self):
-        self.stream = open('/dev/tty', 'wb', buffering=0)
+        try:
+            self.stream = open('/dev/tty', 'wb', buffering=0)
+        except OSError:
+            self.skipTest("Cannot open '/dev/tty'")
         self.addCleanup(self.stream.close)
         self.fd = self.stream.fileno()
         self.bad_fd, _ = tempfile.mkstemp()
