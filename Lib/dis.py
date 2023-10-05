@@ -901,12 +901,14 @@ def _test():
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('-C', '--show-caches', action='store_true',
+                        help='show inline caches')
     parser.add_argument('infile', type=argparse.FileType('rb'), nargs='?', default='-')
     args = parser.parse_args()
     with args.infile as infile:
         source = infile.read()
     code = compile(source, args.infile.name, "exec")
-    dis(code)
+    dis(code, show_caches=args.show_caches)
 
 if __name__ == "__main__":
     _test()

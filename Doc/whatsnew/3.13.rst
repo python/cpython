@@ -1006,8 +1006,17 @@ New Features
 * Add :c:func:`PyObject_VisitManagedDict` and
   :c:func:`PyObject_ClearManagedDict` functions which must be called by the
   traverse and clear functions of a type using
-  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
+
+* Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
+  :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
+  if it is NULL. The caller is responsible to check if the result is NULL.
+  Previously, the function was private and known as
+  ``_PyThreadState_UncheckedGet()``.
+  (Contributed by Victor Stinner in :gh:`108867`.)
 
 Porting to Python 3.13
 ----------------------

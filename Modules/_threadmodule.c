@@ -1205,7 +1205,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->tstate = _PyThreadState_New(interp);
+    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
     if (boot->tstate == NULL) {
         PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {

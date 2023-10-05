@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
@@ -2274,11 +2275,7 @@ _Py_ScheduleGC(PyInterpreterState *interp)
     if (gcstate->collecting == 1) {
         return;
     }
-    struct _ceval_state *ceval = &interp->ceval;
-    if (!_Py_atomic_load_relaxed(&ceval->gc_scheduled)) {
-        _Py_atomic_store_relaxed(&ceval->gc_scheduled, 1);
-        _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
-    }
+    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
 }
 
 void
