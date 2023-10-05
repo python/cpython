@@ -1,0 +1,2 @@
+:func:`os.path.realpath` now resolves MS-DOS style file names even if
+the file is not accessible. Patch by Moonsik Park.

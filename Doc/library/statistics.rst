@@ -585,7 +585,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    The *data* can be any iterable containing sample data.  For meaningful
    results, the number of data points in *data* should be larger than *n*.
-   Raises :exc:`StatisticsError` if there are not at least two data points.
+   Raises :exc:`StatisticsError` if there is not at least one data point.
 
    The cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
@@ -624,6 +624,11 @@ However, for reading convenience, most of the examples show sorted sequences.
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.13
+      No longer raises an exception for an input with only a single data point.
+      This allows quantile estimates to be built up one sample point
+      at a time becoming gradually more refined with each new data point.
 
 .. function:: covariance(x, y, /)
 
