@@ -11,7 +11,7 @@ SectionData = dict[str, 'ConfigItem | SectionData']
 ConfigData = dict[str, SectionData]
 
 
-def generic_info() -> ConfigData:
+def generic_info(executable: str) -> ConfigData:
     return {
         'python': {
             'version': sys.version.split(' ')[0],
@@ -19,10 +19,7 @@ def generic_info() -> ConfigData:
                 field: getattr(sys.version_info, field)
                 for field in ('major', 'minor', 'micro', 'releaselevel', 'serial')
             },
-            'executable': os.path.join(
-                sysconfig.get_path('scripts'),
-                os.path.basename(sys.executable),
-            ),
+            'executable': executable,
             'stdlib': sysconfig.get_path('stdlib'),
         },
     }
@@ -31,10 +28,11 @@ def generic_info() -> ConfigData:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('output_path', metavar='FILE')
+    parser.add_argument('--executable', help='The executable path on the system.')
 
     args = parser.parse_args()
 
-    config = generic_info()
+    config = generic_info(args.executable)
 
     with open(args.output_path, 'w') as f:
         json.dump(config, f)
