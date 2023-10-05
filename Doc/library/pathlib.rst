@@ -812,26 +812,26 @@ conforming to :rfc:`8089`.
 
    Return a new path object from parsing a 'file' URI. For example::
 
-       >>> p = PosixPath.from_uri('file:///etc/hosts')
-       PosixPath('/etc/hosts')
+      >>> p = Path.from_uri('file:///etc/hosts')
+      PosixPath('/etc/hosts')
 
    On Windows, DOS device and UNC paths may be parsed from URIs::
 
-       >>> p = WindowsPath.from_uri('file:///c:/windows')
-       WindowsPath('c:/windows')
-       >>> p = WindowsPath.from_uri('file://server/share')
-       WindowsPath('//server/share')
+      >>> p = Path.from_uri('file:///c:/windows')
+      WindowsPath('c:/windows')
+      >>> p = Path.from_uri('file://server/share')
+      WindowsPath('//server/share')
 
    Several variant forms are supported::
 
-       >>> p = WindowsPath.from_uri('file:////server/share')
-       WindowsPath('//server/share')
-       >>> p = WindowsPath.from_uri('file://///server/share')
-       WindowsPath('//server/share')
-       >>> p = WindowsPath.from_uri('file:c:/windows')
-       WindowsPath('c:/windows')
-       >>> p = WindowsPath.from_uri('file:/c|/windows')
-       WindowsPath('c:/windows')
+      >>> p = Path.from_uri('file:////server/share')
+      WindowsPath('//server/share')
+      >>> p = Path.from_uri('file://///server/share')
+      WindowsPath('//server/share')
+      >>> p = Path.from_uri('file:c:/windows')
+      WindowsPath('c:/windows')
+      >>> p = Path.from_uri('file:/c|/windows')
+      WindowsPath('c:/windows')
 
    :exc:`ValueError` is raised if the URI does not start with ``file:``, or
    the parsed path isn't absolute.
