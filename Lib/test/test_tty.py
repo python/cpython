@@ -9,7 +9,10 @@ tty = import_module('tty')
 class TestTty(unittest.TestCase):
 
     def setUp(self):
-        self.stream = open('/dev/tty', 'wb', buffering=0)
+        try:
+            self.stream = open('/dev/tty', 'wb', buffering=0)
+        except OSError:
+            self.skipTest("Cannot open '/dev/tty'")
         self.addCleanup(self.stream.close)
         self.fd = self.stream.fileno()
         self.mode = termios.tcgetattr(self.fd)
