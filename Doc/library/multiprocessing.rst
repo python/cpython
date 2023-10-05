@@ -475,7 +475,7 @@ process which created it.
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
-   stop the parent process somehow.)
+   stop the parent process somehow.
 
 .. We use the "rubric" directive here to avoid creating
    the "Reference" subsection in the TOC.
@@ -483,7 +483,14 @@ process which created it.
 .. rubric:: Reference
 
 .. toctree::
+   :caption: Reference
    :maxdepth: 1
 
    multiprocessing-reference.rst
+
+.. toctree::
+   :caption: Programming Guidelines
+   :maxdepth: 1
+
+   multiprocessing-guidelines.rst
 

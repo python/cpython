@@ -2312,7 +2312,3 @@ worker threads rather than worker processes.
         interface that was designed around threads from the start, and which
         returns :class:`concurrent.futures.Future` instances that are
         compatible with many other libraries, including :mod:`asyncio`.
-
-
-.. _multiprocessing-programming:
-

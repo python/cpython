@@ -1,3 +1,5 @@
+.. _multiprocessing-programming:
+
 Programming guidelines
 ----------------------
 
