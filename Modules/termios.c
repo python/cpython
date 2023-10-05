@@ -240,15 +240,15 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 
     int i;
     PyObject *v;
-    long l;
+    long lng;
     for (i = 0; i < NCCS; i++) {
         v = PyList_GetItem(cc, i);
 
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
         else if (PyLong_Check(v)) {
-            l = PyLong_AsLong(v);
-            if (l == -1 && PyErr_Occurred()) {
+            lng = PyLong_AsLong(v);
+            if (lng == -1 && PyErr_Occurred()) {
                 return NULL;
             }
             mode.c_cc[i] = (cc_t) l;
