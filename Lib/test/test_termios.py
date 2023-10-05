@@ -74,8 +74,8 @@ class TestFunctions(unittest.TestCase):
         for i in range(len(attrs[-1])):
             attrs2 = attrs[:]
             attrs2[-1] = attrs2[-1][:]
-            #attrs2[-1][i] = 2**1000
-            #self.assertRaises(OverflowError, termios.tcsetattr, self.fd, termios.TCSANOW, attrs2)
+            attrs2[-1][i] = 2**1000
+            self.assertRaises(OverflowError, termios.tcsetattr, self.fd, termios.TCSANOW, attrs2)
             attrs2[-1][i] = object()
             self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW, attrs2)
             attrs2[-1][i] = b''
