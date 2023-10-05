@@ -798,6 +798,7 @@ done:
         return trace_length;
     }
     else {
+        OPT_STAT_INC(trace_too_short);
         DPRINTF(4,
                 "No trace for %s (%s:%d) at byte offset %d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
