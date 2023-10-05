@@ -251,7 +251,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
             if (lng == -1 && PyErr_Occurred()) {
                 return NULL;
             }
-            mode.c_cc[i] = (cc_t) l;
+            mode.c_cc[i] = (cc_t) lng;
         }
         else {
             PyErr_SetString(PyExc_TypeError,
