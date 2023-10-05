@@ -23,9 +23,11 @@ class TaskGroup:
 
     Any exceptions other than `asyncio.CancelledError` raised within
     a task will cancel all remaining tasks and wait for them to exit.
+    You can prevent this behavior by passing `defer_errors=True` to
+    the constructor.
     The exceptions are then combined and raised as an `ExceptionGroup`.
     """
-    def __init__(self):
+    def __init__(self, defer_errors=False):
         self._entered = False
         self._exiting = False
         self._aborting = False
@@ -36,6 +38,7 @@ class TaskGroup:
         self._errors = []
         self._base_error = None
         self._on_completed_fut = None
+        self._defer_errors = defer_errors
 
     def __repr__(self):
         info = ['']
@@ -204,7 +207,8 @@ class TaskGroup:
             return
 
         self._errors.append(exc)
-        if self._is_base_error(exc) and self._base_error is None:
+        is_base_error = self._is_base_error(exc)
+        if is_base_error and self._base_error is None:
             self._base_error = exc
 
         if self._parent_task.done():
@@ -237,6 +241,7 @@ class TaskGroup:
             #            pass
             #        await something_else     # this line has to be called
             #                                 # after TaskGroup is finished.
-            self._abort()
-            self._parent_cancel_requested = True
-            self._parent_task.cancel()
+            if not self._defer_errors or is_base_error:
+                self._abort()
+                self._parent_cancel_requested = True
+                self._parent_task.cancel()
