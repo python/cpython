@@ -4304,6 +4304,17 @@ class TestParameterObject(unittest.TestCase):
         with self.assertRaises(AttributeError):
             p.kind = 123
 
+    def test_stringified_defaults(self):
+        for d, s in (
+            (12, 'spam=12'),
+            (int, 'spam=int'),
+            (inspect, 'spam=inspect'),
+            (inspect.Parameter, 'spam=inspect.Parameter'),
+        ):
+            with self.subTest(d=d, s=s):
+                p = inspect.Parameter('spam', kind=inspect.Parameter.POSITIONAL_OR_KEYWORD, default=d)
+                self.assertEqual(str(p), s)
+
 
 class TestSignatureBind(unittest.TestCase):
     @staticmethod

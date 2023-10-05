@@ -2858,10 +2858,23 @@ class Parameter:
                                        formatannotation(self._annotation))
 
         if self._default is not _empty:
-            if self._annotation is not _empty:
-                formatted = '{} = {}'.format(formatted, repr(self._default))
+            if hasattr(self._default, '__qualname__') or hasattr(self._default, '__name__'):
+                if hasattr(self._default, '__qualname__'):
+                    val = self._default.__qualname__
+                else:
+                    val = self._default.__name__
+                if (not ismodule(self._default)
+                    and (mod := getmodule(self._default))
+                    and hasattr(mod, '__name__')
+                    and mod.__name__ != 'builtins'
+                ):
+                    val = '{}.{}'.format(mod.__name__, val)
             else:
-                formatted = '{}={}'.format(formatted, repr(self._default))
+                val = repr(self._default)
+            if self._annotation is not _empty:
+                formatted = '{} = {}'.format(formatted, val)
+            else:
+                formatted = '{}={}'.format(formatted, val)
 
         if kind == _VAR_POSITIONAL:
             formatted = '*' + formatted
