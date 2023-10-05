@@ -295,11 +295,6 @@ class PseudoInstruction:
     instr_flags: InstructionFlags
 
 
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
-
-
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction
 
 
