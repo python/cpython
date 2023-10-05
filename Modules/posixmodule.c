@@ -10192,8 +10192,14 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
-    _PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial), &new_value.it_value);
-    _PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval), &new_value.it_interval);
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial), &new_value.it_value) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid initial value");
+        return NULL;
+    }
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval), &new_value.it_interval) < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid interval value");
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     result = timerfd_settime(fd, flags, &new_value, &old_value);
     Py_END_ALLOW_THREADS
