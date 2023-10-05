@@ -494,6 +494,21 @@ class TestInterpreterStack(IsTestBase):
         self.assertEqual(inspect.formatargvalues(args, varargs, varkw, locals),
                          '(x=11, y=14)')
 
+        def return_current_frame(x):
+            return inspect.currentframe()
+
+        self.assertEqual(inspect.formatargvalues(*inspect.getargvalues(return_current_frame(5))), "(x=5)")
+        self.assertEqual(inspect.formatargvalues(*inspect.getargvalues(return_current_frame(9))), "(x=9)")
+
+    # See issue-61448
+    def test_formatargvalues_deleted_args(self):
+        def fun(a, b, x, y):
+            del b, y
+            return inspect.currentframe()
+
+        args = inspect.getargvalues(fun(2, 4, 8, 16))
+        self.assertEqual(inspect.formatargvalues(*args), '(a=2, b=<deleted>, x=8, y=<deleted>)')
+
     def test_previous_frame(self):
         args, varargs, varkw, locals = inspect.getargvalues(mod.fr.f_back)
         self.assertEqual(args, ['a', 'b', 'c', 'd', 'e', 'f'])

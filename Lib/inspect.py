@@ -1512,6 +1512,14 @@ def formatannotationrelativeto(object):
         return formatannotation(annotation, module)
     return _formatannotation
 
+# A placeholder with <deleted> as repr (using a string would have '<deleted>'
+# with quotes). This is used in formatargvalues function.
+class _Deleted:
+    def __repr__(self):
+        return '<deleted>'
+
+_deleted = _Deleted()
+del _Deleted
 
 def formatargvalues(args, varargs, varkw, locals,
                     formatarg=str,
@@ -1526,7 +1534,7 @@ def formatargvalues(args, varargs, varkw, locals,
     argument is an optional function to format the sequence of arguments."""
     def convert(name, locals=locals,
                 formatarg=formatarg, formatvalue=formatvalue):
-        return formatarg(name) + formatvalue(locals[name])
+        return formatarg(name) + formatvalue(locals.get(name, _deleted))
     specs = []
     for i in range(len(args)):
         specs.append(convert(args[i]))
