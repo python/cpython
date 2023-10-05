@@ -67,11 +67,7 @@ class FaultHandlerTests(unittest.TestCase):
 
         # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
         option = 'handle_segv=0'
-        for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
-            if name in env:
-                env[name] += f':{option}'
-            else:
-                env[name] = option
+        support.set_sanitizer_env_var(env, option)
 
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code,
