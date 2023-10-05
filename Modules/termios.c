@@ -212,26 +212,21 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
-    long item;
-#define SAFE_LONG_ITEM(obj) \
-    item = PyLong_AsLong(obj); \
-    if (item == -1 && PyErr_Occurred()) { \
-        return NULL; \
-    }
-
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 0));
-    mode.c_iflag = (tcflag_t) item;
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 1));
-    mode.c_oflag = (tcflag_t) item;
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 2));
-    mode.c_cflag = (tcflag_t) item;
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 3));
-    mode.c_lflag = (tcflag_t) item;
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 4));
-    speed_t ispeed = (speed_t) item;
-    SAFE_LONG_ITEM(PyList_GET_ITEM(term, 5));
-    speed_t ospeed = (speed_t) item;
-#undef SAFE_LONG_ITEM
+#define SET_FROM_LIST(TYPE, VAR, LIST, N) do {  \
+    PyObject *item = PyList_GET_ITEM(LIST, N);  \
+    long num = PyLong_AsLong(item);             \
+    if (num == -1 && PyErr_Occurred()) {        \
+        return NULL;                            \
+    }                                           \
+    VAR = (TYPE)num;                            \
+} while (0)
+    SET_FROM_LIST(tcflag_t, mode.c_iflag, term, 0);
+    SET_FROM_LIST(tcflag_t, mode.c_oflag, term, 1);
+    SET_FROM_LIST(tcflag_t, mode.c_cflag, term, 2);
+    SET_FROM_LIST(tcflag_t, mode.c_lflag, term, 3);
+    SET_FROM_LIST(speed_t, ispeed, term, 4);
+    SET_FROM_LIST(speed_t, ospeed, term, 5);
+#undef SET_FROM_LIST
 
     PyObject *cc = PyList_GET_ITEM(term, 6);
     if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
@@ -254,7 +249,8 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
                 return NULL;
             }
             mode.c_cc[i] = (cc_t) item;
-        } else {
+        }
+        else {
             PyErr_SetString(PyExc_TypeError,
      "tcsetattr: elements of attributes must be characters or integers");
                         return NULL;

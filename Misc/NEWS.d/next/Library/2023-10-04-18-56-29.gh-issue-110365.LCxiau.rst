@@ -1,2 +1,2 @@
 Fix :func:`termios.tcsetattr` bug that was overwritting existing errors
-during parsing integets from ``term`` list.
+during parsing integers from ``term`` list.
