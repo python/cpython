@@ -43,21 +43,22 @@ def pretty(name: str) -> str:
     return name.replace("_", " ").lower()
 
 
-class Stats(dict):
+class Stats:
     def __init__(self, input: Path):
         super().__init__()
 
         if input.is_file():
             with open(input, "r") as fd:
-                self.update(json.load(fd))
+                self._data = json.load(fd)
 
-            self["_stats_defines"] = {
+            self._data["_stats_defines"] = {
                 int(k): v for k, v in self["_stats_defines"].items()
             }
-            self["_defines"] = {int(k): v for k, v in self["_defines"].items()}
+            self._data["_defines"] = {int(k): v for k, v in self["_defines"].items()}
 
         elif input.is_dir():
-            stats: collections.Counter = collections.Counter()
+            stats = collections.Counter()
+
             for filename in input.iterdir():
                 with open(filename) as fd:
                     for line in fd:
@@ -72,14 +73,34 @@ class Stats(dict):
                         stats[key.strip()] += int(value)
                 stats["__nfiles__"] += 1
 
-            self.update(stats)
-
+            self._data = dict(stats)
             self._load_metadata_from_source()
 
         else:
             raise ValueError(f"{input:r} is not a file or directory path")
 
         self._opcode_stats: dict[str, OpcodeStats] = {}
+
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __contains__(self, key):
+        return key in self._data
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def items(self):
+        return self._data.items()
+
+    def keys(self):
+        return self._data.keys()
+
+    def values(self):
+        return self._data.values()
+
+    def save(self, json_output: TextIO):
+        json.dump(self._data, json_output)
 
     def _load_metadata_from_source(self):
         def get_defines(filepath: Path, prefix: str = "SPEC_FAIL") -> Defines:
@@ -97,27 +118,27 @@ class Stats(dict):
 
         import opcode
 
-        self["_specialized_instructions"] = [
+        self._data["_specialized_instructions"] = [
             op
             for op in opcode._specialized_opmap.keys()  # type: ignore
             if "__" not in op
         ]
-        self["_stats_defines"] = get_defines(
+        self._data["_stats_defines"] = get_defines(
             Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
         )
-        self["_defines"] = get_defines(Path("Python") / "specialize.c")
+        self._data["_defines"] = get_defines(Path("Python") / "specialize.c")
 
     @property
     def defines(self) -> Defines:
-        return self["_defines"]
+        return self._data["_defines"]
 
     @property
     def pystats_defines(self) -> Defines:
-        return self["_stats_defines"]
+        return self._data["_stats_defines"]
 
     @property
     def specialized_instructions(self) -> list[str]:
-        return self["_specialized_instructions"]
+        return self._data["_specialized_instructions"]
 
     def get_opcode_stats(self, prefix: str) -> OpcodeStats:
         if prefix in self._opcode_stats:
@@ -803,7 +824,8 @@ def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None)
                     "Trace too short",
                     Count(trace_too_short),
                     Ratio(trace_too_short, created),
-                )("Inner loop found", Count(inner_loop), Ratio(inner_loop, created)),
+                ),
+                ("Inner loop found", Count(inner_loop), Ratio(inner_loop, created)),
                 (
                     "Recursive call",
                     Count(recursive_call),
@@ -976,11 +998,11 @@ def output_markdown(out: TextIO, base_stats: Stats, head_stats: Stats | None = N
     print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=None):
+def output_stats(inputs: list[Path], json_output=TextIO | None):
     if len(inputs) == 1:
         stats = Stats(Path(inputs[0]))
         if json_output is not None:
-            json.dump(stats, json_output)
+            stats.save(json_output)
         output_markdown(sys.stdout, stats)
     elif len(inputs) == 2:
         if json_output is not None:
