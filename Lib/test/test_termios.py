@@ -12,12 +12,10 @@ class TestFunctions(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        try:
-            cls.stream = open('/dev/tty', 'wb', buffering=0)
-        except OSError:
-            raise unittest.SkipTest("Cannot open '/dev/tty'")
+        cls.master_fd, cls.fd = os.openpty()
+        cls.addClassCleanup(os.close, cls.master_fd)
+        cls.stream = open(cls.fd, 'wb', buffering=0)
         cls.addClassCleanup(cls.stream.close)
-        cls.fd = cls.stream.fileno()
         cls.bad_fd, _ = tempfile.mkstemp()
         cls.addClassCleanup(os.close, cls.bad_fd)
 
