@@ -784,7 +784,10 @@ clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 	echo "BUILDPYTHON: run $(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)"
-	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	@ # Use -o $(BUILDPYTHON) instead of -o $@ to write the program in the
+	@ # build directory instead of the source directory with FreeBSD make
+	@ # (gh-103053).
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $(BUILDPYTHON) Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 	echo "BUILDPYTHON: BUILDPYTHON=$(BUILDPYTHON) target=$@"
 	echo "BUILDPYTHON: built successfully"
 	echo "BUILDPYTHON: pwd"
