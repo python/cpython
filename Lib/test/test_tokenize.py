@@ -572,6 +572,55 @@ f'''{
     OP         '}'           (3, 1) (3, 2)
     FSTRING_END "'''"         (3, 2) (3, 5)
     """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    OP         '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NL         '\\n'          (1, 5) (1, 6)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    NL         '\\n'          (2, 7) (2, 8)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
+    """)
 
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
@@ -2274,6 +2323,54 @@ def"', """\
     FSTRING_START \'f"\'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
     FSTRING_END \'"\'           (1, 16) (1, 17)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    RBRACE     '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):
