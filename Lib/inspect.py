@@ -1670,21 +1670,23 @@ def getclosurevars(func):
     global_vars = {}
     builtin_vars = {}
     unbound_names = set()
-    for name in code.co_names:
-        if name in ("None", "True", "False"):
-            # Because these used to be builtins instead of keywords, they
-            # may still show up as name references. We ignore them.
-            continue
-        try:
-            global_vars[name] = global_ns[name]
-        except KeyError:
-            try:
-                builtin_vars[name] = builtin_ns[name]
-            except KeyError:
-                unbound_names.add(name)
 
-    return ClosureVars(nonlocal_vars, global_vars,
-                       builtin_vars, unbound_names)
+    for instrn in dis.get_instructions(func):
+        if instrn.opname == "LOAD_GLOBAL" or instrn.opname == "STORE_GLOBAL":
+            name = instrn.argval
+            if name == "None" or name == "True" or name == "False":
+                # Because these used to be builtins instead of keywords, they
+                # may still show up as name references. We ignore them.
+                continue
+            try:
+                global_vars[name] = global_ns[name]
+            except KeyError:
+                try:
+                    builtin_vars[name] = builtin_ns[name]
+                except KeyError:
+                    unbound_names.add(name)
+
+    return ClosureVars(nonlocal_vars, global_vars, builtin_vars, unbound_names)
 
 # -------------------------------------------------- stack frame extraction
 
