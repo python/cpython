@@ -531,6 +531,7 @@ _run_script(PyInterpreterState *interp,
         PyObject *code = PyMarshal_ReadObjectFromString(codestr, codestrlen);
         if (code != NULL) {
             result = PyEval_EvalCode(code, ns, ns);
+            Py_DECREF(code);
         }
     }
     else {
@@ -977,7 +978,9 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_interp_exec(self, id, (PyObject *)script, shared) < 0) {
+    int res = _interp_exec(self, id, (PyObject *)script, shared);
+    Py_DECREF(script);
+    if (res < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -1009,7 +1012,9 @@ interp_run_func(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_interp_exec(self, id, (PyObject *)code, shared) < 0) {
+    int res = _interp_exec(self, id, (PyObject *)code, shared);
+    Py_DECREF(code);
+    if (res < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
