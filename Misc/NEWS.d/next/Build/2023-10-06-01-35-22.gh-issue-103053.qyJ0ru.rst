@@ -1,0 +1,4 @@
+On FreeBSD when Python is built out of tree, the "python" program was
+created in the source directory instead of build directory. Fix the Makefile
+to write the "python" program in the build directory. Patch by Victor
+Stinner.
