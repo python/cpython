@@ -58,11 +58,15 @@ def compile_host_python(context):
 
     section(build_dir)
 
+    configure = [CHECKOUT / "configure", "-C"]
+    if context.debug:
+        configure.append("--with-pydebug")
+
     if not context.build_python:
         print("Skipped via --skip-build-python ...")
     else:
         with contextlib.chdir(build_dir):
-            call([CHECKOUT / "configure", "-C"], quiet=context.quiet)
+            call(configure, quiet=context.quiet)
             call(["make", "--jobs", str(cpu_count()), "all"], quiet=context.quiet)
 
     binary = build_dir / "python"
@@ -143,6 +147,8 @@ def compile_wasi_python(context, build_python, version):
                      f"--host={HOST_TRIPLE}",
                      f"--build={build_platform()}",
                      f"--with-build-python={build_python}"]
+        if context.debug:
+            configure.append("--with-pydebug")
         configure_env = os.environ | env_additions | wasi_sdk_env(context)
         call(configure, env=configure_env, quiet=context.quiet)
         call(["make", "--jobs", str(cpu_count()), "all"],
@@ -169,6 +175,9 @@ def main():
     build.add_argument("--quiet", action="store_true", default=False,
                        dest="quiet",
                        help="Redirect output from subprocesses to a log file")
+    build.add_argument("--debug", action="store_true", default=False,
+                       dest="debug",
+                       help="Debug build (i.e., pydebug)")
 
     context = parser.parse_args()
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
