@@ -1401,7 +1401,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    Compare a Unicode object with a UTF-8 or ASCII encoded C string
    and return true (``1``) if they are equal, or false (``0``) otherwise.
    If the Unicode object contains null or surrogate characters or
-   the C string is not encoded to UTF-8 or ASCII, return false (``0``) .
+   the C string is not valid UTF-8, false (``0``) is returned.
 
    This function does not raise exceptions.
 
