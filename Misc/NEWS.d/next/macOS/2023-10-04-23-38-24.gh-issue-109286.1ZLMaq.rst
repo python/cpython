@@ -1,1 +1,1 @@
-Upgraded macOS SQLite installer to 3.43.1
+Update macOS installer to use SQLite 3.43.1.
