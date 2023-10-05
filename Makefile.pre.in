@@ -2677,7 +2677,7 @@ frameworkinstallextras:
 # Install the
 .PHONY: descfileinstall
 descfileinstall:
-	$(INSTALL) -d -m $(FILEMODE) ./install-details.json $(DESTDIR)$(LIBDEST)/install-details.json
+	$(INSTALL) -m $(FILEMODE) ./install-details.json $(DESTDIR)$(LIBDEST)/install-details.json
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
