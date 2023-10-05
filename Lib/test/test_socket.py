@@ -204,8 +204,13 @@ class SocketUDPLITETest(SocketUDPTest):
 class ThreadSafeCleanupTestCase:
     """Subclass of unittest.TestCase with thread-safe cleanup methods.
 
-    This subclass protects the addCleanup() and doCleanups() methods
-    with a recursive lock.
+    This subclass protects the addCleanup() method with a recursive lock.
+
+    doCleanups() is called when the server completed, but the client can still
+    be running in its thread especially if the server failed with a timeout.
+    Don't put a lock on doCleanups() to prevent deadlock between addCleanup()
+    called in the client and doCleanups() waiting for self.done.wait of
+    ThreadableTest._setUp() (gh-110167)
     """
 
     def __init__(self, *args, **kwargs):
@@ -216,9 +221,6 @@ class ThreadSafeCleanupTestCase:
         with self._cleanup_lock:
             return super().addCleanup(*args, **kwargs)
 
-    def doCleanups(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().doCleanups(*args, **kwargs)
 
 class SocketCANTest(unittest.TestCase):
 
