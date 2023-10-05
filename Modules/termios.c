@@ -212,14 +212,16 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         return PyErr_SetFromErrno(state->TermiosError);
     }
 
+    speed_t ispeed, ospeed;
 #define SET_FROM_LIST(TYPE, VAR, LIST, N) do {  \
     PyObject *item = PyList_GET_ITEM(LIST, N);  \
     long num = PyLong_AsLong(item);             \
     if (num == -1 && PyErr_Occurred()) {        \
         return NULL;                            \
     }                                           \
-    VAR = (TYPE)num;                            \
+    VAR = (TYPE) num;                           \
 } while (0)
+
     SET_FROM_LIST(tcflag_t, mode.c_iflag, term, 0);
     SET_FROM_LIST(tcflag_t, mode.c_oflag, term, 1);
     SET_FROM_LIST(tcflag_t, mode.c_cflag, term, 2);
@@ -238,17 +240,18 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
 
     int i;
     PyObject *v;
+    long l;
     for (i = 0; i < NCCS; i++) {
         v = PyList_GetItem(cc, i);
 
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
         else if (PyLong_Check(v)) {
-            item = PyLong_AsLong(v);
-            if (item == -1 && PyErr_Occurred()) {
+            l = PyLong_AsLong(v);
+            if (l == -1 && PyErr_Occurred()) {
                 return NULL;
             }
-            mode.c_cc[i] = (cc_t) item;
+            mode.c_cc[i] = (cc_t) l;
         }
         else {
             PyErr_SetString(PyExc_TypeError,
