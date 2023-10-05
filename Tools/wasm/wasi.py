@@ -128,7 +128,11 @@ def compile_wasi_python(context, build_python, version):
                    f"--mapdir /::{CHECKOUT} "
                    f"--env PYTHONPATH=/{CROSS_BUILD_DIR.name}/wasi/build/lib.wasi-wasm32-{version} "
                    f"{build_dir / 'python.wasm'} --")
-    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner}
+    env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner,
+                     # Python's first commit:
+                     # Thu, 09 Aug 1990 14:25:15 +0000 (1990-08-09)
+                     # https://hg.python.org/cpython/rev/3cd033e6b530
+                     "SOURCE_DATE_EPOCH": "650211915"}
 
     with contextlib.chdir(build_dir):
         # The path to `configure` MUST be relative, else `python.wasm` is unable
