@@ -10078,22 +10078,22 @@ os_times_impl(PyObject *module)
 static PyObject *
 build_itimerspec(const struct itimerspec* curr_value)
 {
-    double _next_expiration = CONVERT_SEC_AND_NSEC_TO_DOUBLE(curr_value->it_value.tv_sec,
+    double _value = CONVERT_SEC_AND_NSEC_TO_DOUBLE(curr_value->it_value.tv_sec,
                                                           curr_value->it_value.tv_nsec);
-    PyObject *next_expiration = PyFloat_FromDouble(_next_expiration);
-    if (next_expiration == NULL) {
+    PyObject *value = PyFloat_FromDouble(_value);
+    if (value == NULL) {
         return NULL;
     }
     double _interval = CONVERT_SEC_AND_NSEC_TO_DOUBLE(curr_value->it_interval.tv_sec,
                                                    curr_value->it_interval.tv_nsec);
     PyObject *interval = PyFloat_FromDouble(_interval);
     if (interval == NULL) {
-        Py_DECREF(next_expiration);
+        Py_DECREF(value);
         return NULL;
     }
-    PyObject *tuple = PyTuple_Pack(2, next_expiration, interval);
+    PyObject *tuple = PyTuple_Pack(2, value, interval);
     Py_DECREF(interval);
-    Py_DECREF(next_expiration);
+    Py_DECREF(value);
     return tuple;
 }
 
