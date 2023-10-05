@@ -4290,7 +4290,7 @@ then
 	# in most compilers, so we define one here.
 	SUNOS_VERSION=`echo $ac_sys_release | tr -d '.'`
 
-printf "%s\n" "#define SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
 
     fi
 fi

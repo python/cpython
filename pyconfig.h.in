@@ -1612,6 +1612,9 @@
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
+/* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
+#undef Py_SUNOS_VERSION
+
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
@@ -1680,9 +1683,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
-#undef SUNOS_VERSION
 
 /* Define if you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */

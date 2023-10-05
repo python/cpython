@@ -595,7 +595,7 @@ then
 	# For Solaris, there isn't an OS version specific macro defined
 	# in most compilers, so we define one here.
 	SUNOS_VERSION=`echo $ac_sys_release | tr -d '.'`
-	AC_DEFINE_UNQUOTED([SUNOS_VERSION], [$SUNOS_VERSION],
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
 	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
     fi
 fi
