@@ -1716,6 +1716,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
 
+    def test_audit_tuple(self):
+        self.run_embedded_interpreter("test_audit_tuple")
+
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
 
