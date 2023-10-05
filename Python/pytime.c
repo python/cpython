@@ -470,7 +470,7 @@ _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 
 #ifdef HAVE_CLOCK_GETTIME
 static int
-pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
+pytime_fromtimespec(_PyTime_t *tp, const struct timespec *ts, int raise_exc)
 {
     _PyTime_t t, tv_nsec;
 
@@ -493,7 +493,7 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
 }
 
 int
-_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
+_PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts)
 {
     return pytime_fromtimespec(tp, ts, 1);
 }

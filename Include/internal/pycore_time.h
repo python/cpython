@@ -245,7 +245,7 @@ PyAPI_FUNC(int) _PyTime_AsTimevalTime_t(
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 // Create a timestamp from a timespec structure.
 // Raise an exception and return -1 on overflow, return 0 on success.
-extern int _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts);
+extern int _PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts);
 
 // Convert a timestamp to a timespec structure (nanosecond resolution).
 // tv_nsec is always positive.
