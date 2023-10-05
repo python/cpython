@@ -42,6 +42,8 @@ EXITCODE_NO_TESTS_RAN = 4
 EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130
 
+MS_WINDOWS = (sys.platform == 'win32')
+
 TEST_INTERRUPTED = textwrap.dedent("""
     from signal import SIGINT, raise_signal
     try:
@@ -2035,6 +2037,38 @@ class ArgsTestCase(BaseTestCase):
         for opt in ("--fast-ci", "--slow-ci"):
             with self.subTest(opt=opt):
                 self.check_add_python_opts(opt)
+
+    # gh-76319: Raising SIGSEGV on Android may not cause a crash.
+    @unittest.skipIf(support.is_android,
+                     'raising SIGSEGV on Android is unreliable')
+    def test_worker_output_on_failure(self):
+        try:
+            from faulthandler import _sigsegv
+        except ImportError:
+            self.skipTest("need faulthandler._sigsegv")
+
+        code = textwrap.dedent(r"""
+            import faulthandler
+            import unittest
+            from test import support
+
+            class CrashTests(unittest.TestCase):
+                def test_crash(self):
+                    print("just before crash!", flush=True)
+
+                    with support.SuppressCrashReport():
+                        faulthandler._sigsegv(True)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-j1", testname, exitcode=EXITCODE_BAD_TEST)
+        self.check_executed_tests(output, testname,
+                                  failed=[testname],
+                                  stats=0, parallel=True)
+        if not MS_WINDOWS:
+            exitcode = -int(signal.SIGSEGV)
+            self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
+        self.check_line(output, "just before crash!", full=True, regex=False)
 
 
 class TestUtils(unittest.TestCase):
