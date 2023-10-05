@@ -219,7 +219,7 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
     if (num == -1 && PyErr_Occurred()) {        \
         return NULL;                            \
     }                                           \
-    VAR = (TYPE) num;                           \
+    VAR = (TYPE)num;                            \
 } while (0)
 
     SET_FROM_LIST(tcflag_t, mode.c_iflag, term, 0);
@@ -246,11 +246,11 @@ termios_tcsetattr_impl(PyObject *module, int fd, int when, PyObject *term)
         if (PyBytes_Check(v) && PyBytes_Size(v) == 1)
             mode.c_cc[i] = (cc_t) * PyBytes_AsString(v);
         else if (PyLong_Check(v)) {
-            long lng = PyLong_AsLong(v);
-            if (lng == -1 && PyErr_Occurred()) {
+            long num = PyLong_AsLong(v);
+            if (num == -1 && PyErr_Occurred()) {
                 return NULL;
             }
-            mode.c_cc[i] = (cc_t) lng;
+            mode.c_cc[i] = (cc_t)num;
         }
         else {
             PyErr_SetString(PyExc_TypeError,
