@@ -115,9 +115,10 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 
       class Foo:
           def __getitem__(self, index):
-              ...
-          def __len__(self):
-              ...
+              if 0 <= index < 10:
+                  return index
+              raise IndexError
+
           def get_iterator(self):
               return iter(self)
 
@@ -129,14 +130,14 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
                   yield None
 
           def get_iterator(self):
-              return self.__iter__()
+              return iter(self)
 
           @classmethod
           def __subclasshook__(cls, C):
-              if cls is MyIterable:
-                  if any("__iter__" in B.__dict__ for B in C.__mro__):
+              if cls is MyIterable:  # Do not inherit this behaviour
+                  if hasattr(C, "__iter__"):
                       return True
-              return NotImplemented
+              return NotImplemented  # fallback to regular subclass check
 
       MyIterable.register(Foo)
 
@@ -147,17 +148,14 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    to be overridden in non-abstract derived classes.
 
    The :meth:`__subclasshook__` class method defined here says that any class
-   that has an :meth:`~iterator.__iter__` method in its
-   :attr:`~object.__dict__` (or in that of one of its base classes, accessed
-   via the :attr:`~class.__mro__` list) is considered a ``MyIterable`` too.
+   that has an :meth:`~iterator.__iter__` method
+   is considered a ``MyIterable`` too.
 
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
    even though it does not define an :meth:`~iterator.__iter__` method (it uses
-   the old-style iterable protocol, defined in terms of :meth:`__len__` and
+   the old-style iterable protocol, defined in terms of
    :meth:`__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
-
-
 
 
 The :mod:`abc` module also provides the following decorator:
