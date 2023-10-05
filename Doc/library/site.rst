@@ -266,11 +266,11 @@ If it is called without arguments, it will print the contents of
 :data:`USER_BASE` and whether the directory exists, then the same thing for
 :data:`USER_SITE`, and finally the value of :data:`ENABLE_USER_SITE`.
 
-.. cmdoption:: --user-base
+.. option:: --user-base
 
    Print the path to the user base directory.
 
-.. cmdoption:: --user-site
+.. option:: --user-site
 
    Print the path to the user site-packages directory.
 

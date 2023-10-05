@@ -138,13 +138,13 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: <file> ... <fileN>
-               -
+.. option:: <file> ... <fileN>
+            -
 
    Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
-.. cmdoption:: -q, --quiet
+.. option:: -q, --quiet
 
    Suppress errors output.
 
