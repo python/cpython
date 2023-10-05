@@ -429,6 +429,8 @@ Other functions
 
 .. _sysconfig-cli:
 
+.. _sysconfig-commandline:
+
 Using :mod:`sysconfig` as a script
 ----------------------------------
 

@@ -654,7 +654,7 @@ all:		@DEF_MAKE_ALL_RULE@
 
 .PHONY: build_all
 build_all:	check-clean-src $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil install-details.toml
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil install-details.json
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -831,8 +831,8 @@ $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
-install-details.toml: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt $(srcdir)/Tools/build/generate_install_details_file.py
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate_install_details_file.py ./install-details.toml
+install-details.json: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt $(srcdir)/Tools/build/generate_install_details_file.py
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate_install_details_file.py ./install-details.json
 
 # Create build directory and generate the sysconfig build-time data there.
 # pybuilddir.txt contains the name of the build dir and is used for
@@ -2677,7 +2677,7 @@ frameworkinstallextras:
 # Install the
 .PHONY: descfileinstall
 descfileinstall:
-	$(INSTALL) -d -m $(FILEMODE) ./install-details.toml $(DESTDIR)$(LIBDEST)/install-details.toml
+	$(INSTALL) -d -m $(FILEMODE) ./install-details.json $(DESTDIR)$(LIBDEST)/install-details.json
 
 # Build the toplevel Makefile
 Makefile.pre: $(srcdir)/Makefile.pre.in config.status
@@ -2795,7 +2795,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py' -exec rm -f {} ';' || true
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
-	-rm -f install-details.toml
+	-rm -f install-details.json
 	-rm -f _bootstrap_python
 	-rm -f python.html python*.js python.data python*.symbols python*.map
 	-rm -f $(WASM_STDLIB)

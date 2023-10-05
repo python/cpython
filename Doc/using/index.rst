@@ -19,3 +19,4 @@ interpreter and things that make working with Python easier.
    windows.rst
    mac.rst
    editors.rst
+   introspection.rst
