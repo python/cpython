@@ -10117,17 +10117,8 @@ os.timerfd_create
         A valid clock ID constant as timer file descriptor.
 
         time.CLOCK_REALTIME
-            A settable system-wide real-time clock.
-            If system clock is changed, timer setting need to be updated.
-            See os.TFD_TIMER_ABSTIME and os.TFD_TIMER_CANCEL_ON_SET.
-
         time.CLOCK_MONOTONIC
-           A nonsettable monotonically increasing clock.
-           Even if system clock is changed, timer setting will be not affected.
-
         time.CLOCK_BOOTTIME
-           Same as time.CLOCK_MONOTONIC except that it inclues any time that
-           the system is suspended.
     /
     *
     flags: int = 0
@@ -10145,7 +10136,7 @@ Create and return a timer file descriptor.
 
 static PyObject *
 os_timerfd_create_impl(PyObject *module, int clockid, int flags)
-/*[clinic end generated code: output=1caae80fb168004a input=f23bfa49fc4b6576]*/
+/*[clinic end generated code: output=1caae80fb168004a input=64b7020c5ac0b8f4]*/
 
 {
     int fd;
@@ -10170,16 +10161,8 @@ os.timerfd_settime
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: double = 0.0
         The initial expiration time, in seconds.
-
-        * If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.
-        * If *flags* doesn't have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.
-        * If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME
-          and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.
     interval: double = 0.0
         The timer's interval, in seconds.
-
-        * If 'interval' is zero, timer will be run once.
-        * If 'interval' is non-zero, timer will be run periodically with the interval.
 
 Alter a timer file descriptor's internal timer in seconds.
 [clinic start generated code]*/
@@ -10187,7 +10170,7 @@ Alter a timer file descriptor's internal timer in seconds.
 static PyObject *
 os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
                         double interval)
-/*[clinic end generated code: output=0dda31115317adb9 input=436a433c2c9664f0]*/
+/*[clinic end generated code: output=0dda31115317adb9 input=6c24e47e7a4d799e]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
@@ -10221,16 +10204,8 @@ os.timerfd_settime_ns
         0 or a bit mask of TFD_TIMER_ABSTIME or TFD_TIMER_CANCEL_ON_SET.
     initial: long_long = 0
         initial expiration timing in seconds.
-
-        * If *flags* has TFD_TIMER_ABSTIME bit, *flags* must be in absolute time.
-        * If *flags* doesn't have TFD_TIMER_ABSTIME bit, *flags* must be in relative time.
-        * If *flags* has TFD_TIMER_ABSTIME bit and TFD_TIMER_CANCEL_ON_SET bit and *flags* and time.CLOCK_REALTIME
-          and system clock is changed discontinuously, reading a file descriptor is aborted with ECANCELED.
     interval: long_long = 0
         interval for the timer in seconds.
-
-        * If 'interval' is zero, timer will be run once.
-        * If 'interval' is non-zero, timer will be run periodically with the interval.
 
 Alter a timer file descriptor's internal timer in nanoseconds.
 [clinic start generated code]*/
@@ -10238,7 +10213,7 @@ Alter a timer file descriptor's internal timer in nanoseconds.
 static PyObject *
 os_timerfd_settime_ns_impl(PyObject *module, int fd, int flags,
                            long long initial, long long interval)
-/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=81eb655e9802cb05]*/
+/*[clinic end generated code: output=6273ec7d7b4cc0b3 input=261e105d6e42f5bc]*/
 {
     struct itimerspec new_value;
     struct itimerspec old_value;
