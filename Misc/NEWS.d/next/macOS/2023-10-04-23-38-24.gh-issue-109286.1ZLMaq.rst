@@ -1,0 +1,1 @@
+Upgraded macOS SQLite installer to 3.43.1
