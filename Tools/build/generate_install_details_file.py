@@ -36,9 +36,6 @@ def main() -> None:
 
     config = generic_info()
 
-    # move this to tests afterwards
-    assert len(config['python']['version_parts']) == sys.version_info.n_fields
-
     with open(args.output_path, 'w') as f:
         json.dump(config, f)
 
