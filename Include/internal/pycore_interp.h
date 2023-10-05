@@ -39,6 +39,32 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+
+/* cross-interpreter data registry */
+
+/* For now we use a global registry of shareable classes.  An
+   alternative would be to add a tp_* slot for a class's
+   crossinterpdatafunc. It would be simpler and more efficient. */
+
+struct _xidregitem;
+
+struct _xidregitem {
+    struct _xidregitem *prev;
+    struct _xidregitem *next;
+    /* This can be a dangling pointer, but only if weakref is set. */
+    PyTypeObject *cls;
+    /* This is NULL for builtin types. */
+    PyObject *weakref;
+    size_t refcount;
+    crossinterpdatafunc getdata;
+};
+
+struct _xidregistry {
+    PyThread_type_lock mutex;
+    struct _xidregitem *head;
+};
+
+
 /* interpreter state */
 
 /* PyInterpreterState holds the global state for one of the runtime's
@@ -67,8 +93,7 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    uint64_t monitoring_version;
-    uint64_t last_restart_version;
+    uintptr_t last_restart_version;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
@@ -149,6 +174,9 @@ struct _is {
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry xidregistry;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
@@ -238,21 +266,6 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
     }
 }
 
-
-/* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    PyObject *cls;  // weakref to a PyTypeObject
-    crossinterpdatafunc getdata;
-};
 
 extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
