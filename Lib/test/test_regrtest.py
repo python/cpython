@@ -674,7 +674,7 @@ class BaseTestCase(unittest.TestCase):
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.STDOUT
         proc = subprocess.run(args,
-                              universal_newlines=True,
+                              text=True,
                               input=input,
                               stdout=subprocess.PIPE,
                               **kw)
@@ -756,8 +756,8 @@ class ProgramsTestCase(BaseTestCase):
         self.check_executed_tests(output, self.tests,
                                   randomize=True, stats=len(self.tests))
 
-    def run_tests(self, args):
-        output = self.run_python(args)
+    def run_tests(self, args, env=None):
+        output = self.run_python(args, env=env)
         self.check_output(output)
 
     def test_script_regrtest(self):
@@ -2061,7 +2061,14 @@ class ArgsTestCase(BaseTestCase):
         """)
         testname = self.create_test(code=code)
 
-        output = self.run_tests("-j1", testname, exitcode=EXITCODE_BAD_TEST)
+        # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
+        env = dict(os.environ)
+        option = 'handle_segv=0'
+        support.set_sanitizer_env_var(env, option)
+
+        output = self.run_tests("-j1", testname,
+                                exitcode=EXITCODE_BAD_TEST,
+                                env=env)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   stats=0, parallel=True)
