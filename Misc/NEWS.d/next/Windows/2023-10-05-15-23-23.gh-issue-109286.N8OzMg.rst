@@ -1,1 +1,1 @@
-Windows SQLite installer updated to 3.43.1
+Update Windows installer to use SQLite 3.43.1.
