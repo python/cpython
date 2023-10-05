@@ -5239,6 +5239,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
+    cli = None
 
     def __init__(self, methodName='runTest'):
         SocketTCPTest.__init__(self, methodName=methodName)
@@ -5248,7 +5249,8 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.source_port = socket_helper.find_unused_port()
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli is not None:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
