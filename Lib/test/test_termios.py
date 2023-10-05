@@ -14,10 +14,9 @@ class TestFunctions(unittest.TestCase):
     def setUpClass(cls):
         cls.master_fd, cls.fd = os.openpty()
         cls.addClassCleanup(os.close, cls.master_fd)
-        cls.stream = open(cls.fd, 'wb', buffering=0)
-        cls.addClassCleanup(cls.stream.close)
-        cls.bad_fd, _ = tempfile.mkstemp()
-        cls.addClassCleanup(os.close, cls.bad_fd)
+        cls.stream = cls.enterClassContext(open(cls.fd, 'wb', buffering=0))
+        tmp = cls.enterClassContext(tempfile.TemporaryFile(mode='wb', buffering=0))
+        cls.bad_fd = tmp.fileno()
 
     def assertRaisesTermiosError(self, errno, callable, *args):
         with self.assertRaises(termios.error) as cm:
