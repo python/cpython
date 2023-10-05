@@ -29,6 +29,22 @@ _get_current_interp(void)
 }
 
 static PyObject *
+_get_current_module(void)
+{
+    PyObject *name = PyUnicode_FromString(MODULE_NAME);
+    if (name == NULL) {
+        return NULL;
+    }
+    PyObject *mod = PyImport_GetModule(name);
+    Py_DECREF(name);
+    if (mod == NULL) {
+        return NULL;
+    }
+    assert(mod != Py_None);
+    return mod;
+}
+
+static PyObject *
 add_new_exception(PyObject *mod, const char *name, PyObject *base)
 {
     assert(!PyObject_HasAttrStringWithError(mod, name));
@@ -64,6 +80,21 @@ get_module_state(PyObject *mod)
     assert(mod != NULL);
     module_state *state = PyModule_GetState(mod);
     assert(state != NULL);
+    return state;
+}
+
+static module_state *
+_get_current_module_state(void)
+{
+    PyObject *mod = _get_current_module();
+    if (mod == NULL) {
+        // XXX import it?
+        PyErr_SetString(PyExc_RuntimeError,
+                        MODULE_NAME " module not imported yet");
+        return NULL;
+    }
+    module_state *state = get_module_state(mod);
+    Py_DECREF(mod);
     return state;
 }
 
@@ -181,6 +212,159 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     *bytes_p = bytes_obj;
     *len_p = len;
     return codestr;
+}
+
+
+/* exception snapshot objects ***********************************************/
+
+typedef struct exc_snapshot {
+    PyObject_HEAD
+    _Py_excinfo info;
+} exc_snapshot;
+
+static PyObject *
+exc_snapshot_from_info(PyTypeObject *cls, _Py_excinfo *info)
+{
+    exc_snapshot *self = (exc_snapshot *)PyObject_New(exc_snapshot, cls);
+    if (self == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (_Py_excinfo_Copy(&self->info, info) < 0) {
+        Py_DECREF(self);
+    }
+    return (PyObject *)self;
+}
+
+static void
+exc_snapshot_dealloc(exc_snapshot *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _Py_excinfo_Clear(&self->info);
+    tp->tp_free(self);
+    /* "Instances of heap-allocated types hold a reference to their type."
+     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
+     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    */
+    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
+    // like we do for _abc._abc_data?
+    Py_DECREF(tp);
+}
+
+static PyObject *
+exc_snapshot_repr(exc_snapshot *self)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    const char *clsname = _PyType_Name(type);
+    return PyUnicode_FromFormat("%s(name='%s', msg='%s')",
+                                clsname, self->info.type, self->info.msg);
+}
+
+static PyObject *
+exc_snapshot_str(exc_snapshot *self)
+{
+    char buf[256];
+    const char *msg = _Py_excinfo_AsUTF8(&self->info, buf, 256);
+    if (msg == NULL) {
+        msg = "";
+    }
+    return PyUnicode_FromString(msg);
+}
+
+static Py_hash_t
+exc_snapshot_hash(exc_snapshot *self)
+{
+    PyObject *str = exc_snapshot_str(self);
+    if (str == NULL) {
+        return -1;
+    }
+    Py_hash_t hash = PyObject_Hash(str);
+    Py_DECREF(str);
+    return hash;
+}
+
+PyDoc_STRVAR(exc_snapshot_doc,
+"ExceptionSnapshot\n\
+\n\
+A minimal summary of a raised exception.");
+
+static PyMemberDef exc_snapshot_members[] = {
+#define OFFSET(field) \
+        (offsetof(exc_snapshot, info) + offsetof(_Py_excinfo, field))
+    {"type", Py_T_STRING, OFFSET(type), Py_READONLY,
+     PyDoc_STR("the name of the original exception type")},
+    {"msg", Py_T_STRING, OFFSET(msg), Py_READONLY,
+     PyDoc_STR("the message string of the original exception")},
+#undef OFFSET
+    {NULL}
+};
+
+static PyObject *
+exc_snapshot_apply(exc_snapshot *self, PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"exctype", NULL};
+    PyObject *exctype = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "|O:ExceptionSnapshot.apply" , kwlist,
+                                     &exctype)) {
+        return NULL;
+    }
+
+    if (exctype == NULL) {
+        module_state *state = _get_current_module_state();
+        if (state == NULL) {
+            return NULL;
+        }
+        exctype = state->RunFailedError;
+    }
+
+    _Py_excinfo_Apply(&self->info, exctype);
+    return NULL;
+}
+
+PyDoc_STRVAR(exc_snapshot_apply_doc,
+"Raise an exception based on the snapshot.");
+
+static PyMethodDef exc_snapshot_methods[] = {
+    {"apply",                    _PyCFunction_CAST(exc_snapshot_apply),
+     METH_VARARGS | METH_KEYWORDS, exc_snapshot_apply_doc},
+    {NULL}
+};
+
+static PyType_Slot ExcSnapshotType_slots[] = {
+    {Py_tp_dealloc, (destructor)exc_snapshot_dealloc},
+    {Py_tp_doc, (void *)exc_snapshot_doc},
+    {Py_tp_repr, (reprfunc)exc_snapshot_repr},
+    {Py_tp_str, (reprfunc)exc_snapshot_str},
+    {Py_tp_hash, exc_snapshot_hash},
+    {Py_tp_members, exc_snapshot_members},
+    {Py_tp_methods, exc_snapshot_methods},
+    {0, NULL},
+};
+
+static PyType_Spec ExcSnapshotType_spec = {
+    .name = MODULE_NAME ".ExceptionSnapshot",
+    .basicsize = sizeof(exc_snapshot),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = ExcSnapshotType_slots,
+};
+
+static int
+ExceptionSnapshot_InitType(PyObject *mod, PyTypeObject **p_type)
+{
+    if (*p_type != NULL) {
+        return 0;
+    }
+
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
+                NULL, mod, &ExcSnapshotType_spec, NULL);
+    if (cls == NULL) {
+        return -1;
+    }
+
+    *p_type = cls;
+    return 0;
 }
 
 
@@ -784,8 +968,7 @@ module_exec(PyObject *mod)
     }
 
     // ExceptionSnapshot
-    state->ExceptionSnapshotType = PyStructSequence_NewType(&exc_snapshot_desc);
-    if (state->ExceptionSnapshotType == NULL) {
+    if (ExceptionSnapshot_InitType(mod, &state->ExceptionSnapshotType) < 0) {
         goto error;
     }
     if (PyModule_AddType(mod, state->ExceptionSnapshotType) < 0) {
