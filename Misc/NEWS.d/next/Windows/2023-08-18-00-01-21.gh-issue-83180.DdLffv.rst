@@ -1,0 +1,3 @@
+Changes the :ref:`launcher` to prefer an active virtual environment when the
+launched script has a shebang line using a Unix-like virtual command, even
+if the command requests a specific version of Python.

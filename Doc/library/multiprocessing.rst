@@ -131,6 +131,12 @@ to start a process.  These *start methods* are
        Code that requires *fork* should explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
+    .. versionchanged:: 3.12
+       If Python is able to detect that your process has multiple threads, the
+       :func:`os.fork` function that this start method calls internally will
+       raise a :exc:`DeprecationWarning`. Use a different start method.
+       See the :func:`os.fork` documentation for further explanation.
+
   *forkserver*
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
@@ -990,13 +996,13 @@ Miscellaneous
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
+   :func:`os.process_cpu_count`.
 
    When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
 
    .. seealso::
-      :func:`os.cpu_count`
+      :func:`os.cpu_count` and :func:`os.process_cpu_count`
 
 .. function:: current_process()
 
@@ -2208,7 +2214,7 @@ with the :class:`Pool` class.
    callbacks and has a parallel map implementation.
 
    *processes* is the number of worker processes to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
@@ -2242,6 +2248,10 @@ with the :class:`Pool` class.
 
    .. versionadded:: 3.4
       *context*
+
+   .. versionchanged:: 3.13
+      *processes* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
 
    .. note::
 
@@ -2769,7 +2779,7 @@ worker threads rather than worker processes.
    :meth:`~multiprocessing.pool.Pool.terminate` manually.
 
    *processes* is the number of worker threads to use.  If *processes* is
-   ``None`` then the number returned by :func:`os.cpu_count` is used.
+   ``None`` then the number returned by :func:`os.process_cpu_count` is used.
 
    If *initializer* is not ``None`` then each worker process will call
    ``initializer(*initargs)`` when it starts.
