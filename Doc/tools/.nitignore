@@ -48,12 +48,10 @@ Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
 Doc/library/configparser.rst
 Doc/library/contextlib.rst
-Doc/library/copy.rst
 Doc/library/csv.rst
 Doc/library/datetime.rst
 Doc/library/dbm.rst
 Doc/library/decimal.rst
-Doc/library/difflib.rst
 Doc/library/doctest.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
@@ -108,7 +106,6 @@ Doc/library/select.rst
 Doc/library/selectors.rst
 Doc/library/shelve.rst
 Doc/library/signal.rst
-Doc/library/site.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
 Doc/library/socketserver.rst
@@ -116,7 +113,6 @@ Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
 Doc/library/subprocess.rst
-Doc/library/sys_path_init.rst
 Doc/library/syslog.rst
 Doc/library/tarfile.rst
 Doc/library/tempfile.rst
@@ -148,7 +144,6 @@ Doc/reference/datamodel.rst
 Doc/reference/expressions.rst
 Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
-Doc/tutorial/controlflow.rst
 Doc/tutorial/datastructures.rst
 Doc/tutorial/introduction.rst
 Doc/using/cmdline.rst

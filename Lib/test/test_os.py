@@ -2566,30 +2566,34 @@ class Win32KillTests(unittest.TestCase):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)
         m[0] = 0
+
         # Run a script which has console control handling enabled.
-        proc = subprocess.Popen([sys.executable,
-                   os.path.join(os.path.dirname(__file__),
-                                "win_console_handler.py"), tagname],
-                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-        # Let the interpreter startup before we send signals. See #3137.
-        count, max = 0, 100
-        while count < max and proc.poll() is None:
-            if m[0] == 1:
-                break
-            time.sleep(0.1)
-            count += 1
-        else:
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("Subprocess didn't finish initialization")
-        os.kill(proc.pid, event)
-        # proc.send_signal(event) could also be done here.
-        # Allow time for the signal to be passed and the process to exit.
-        time.sleep(0.5)
-        if not proc.poll():
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("subprocess did not stop on {}".format(name))
+        script = os.path.join(os.path.dirname(__file__),
+                              "win_console_handler.py")
+        cmd = [sys.executable, script, tagname]
+        proc = subprocess.Popen(cmd,
+                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        with proc:
+            # Let the interpreter startup before we send signals. See #3137.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if proc.poll() is None:
+                    break
+            else:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("Subprocess didn't finish initialization")
+
+            os.kill(proc.pid, event)
+
+            try:
+                # proc.send_signal(event) could also be done here.
+                # Allow time for the signal to be passed and the process to exit.
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("subprocess did not stop on {}".format(name))
 
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
     @support.requires_subprocess()
@@ -3996,13 +4000,41 @@ class OSErrorTests(unittest.TestCase):
                     self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
+    def check_cpu_count(self, cpus):
+        if cpus is None:
+            self.skipTest("Could not determine the number of CPUs")
+
+        self.assertIsInstance(cpus, int)
+        self.assertGreater(cpus, 0)
+
     def test_cpu_count(self):
         cpus = os.cpu_count()
-        if cpus is not None:
-            self.assertIsInstance(cpus, int)
-            self.assertGreater(cpus, 0)
-        else:
+        self.check_cpu_count(cpus)
+
+    def test_process_cpu_count(self):
+        cpus = os.process_cpu_count()
+        self.assertLessEqual(cpus, os.cpu_count())
+        self.check_cpu_count(cpus)
+
+    @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
+                         "don't have sched affinity support")
+    def test_process_cpu_count_affinity(self):
+        ncpu = os.cpu_count()
+        if ncpu is None:
             self.skipTest("Could not determine the number of CPUs")
+
+        # Disable one CPU
+        mask = os.sched_getaffinity(0)
+        if len(mask) <= 1:
+            self.skipTest(f"sched_getaffinity() returns less than "
+                          f"2 CPUs: {sorted(mask)}")
+        self.addCleanup(os.sched_setaffinity, 0, list(mask))
+        mask.pop()
+        os.sched_setaffinity(0, mask)
+
+        # test process_cpu_count()
+        affinity = os.process_cpu_count()
+        self.assertEqual(affinity, ncpu - 1)
 
 
 # FD inheritance check is only useful for systems with process support.

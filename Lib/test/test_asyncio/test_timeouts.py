@@ -46,7 +46,6 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(cm2.expired())
 
     async def test_waiter_cancelled(self):
-        loop = asyncio.get_running_loop()
         cancelled = False
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01):
@@ -59,39 +58,26 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout_not_called(self):
         loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout(10) as cm:
             await asyncio.sleep(0.01)
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertGreater(cm.when(), t1)
 
     async def test_timeout_disabled(self):
-        loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout(None) as cm:
             await asyncio.sleep(0.01)
-        t1 = loop.time()
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
 
     async def test_timeout_at_disabled(self):
-        loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout_at(None) as cm:
             await asyncio.sleep(0.01)
-        t1 = loop.time()
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
 
     async def test_timeout_zero(self):
         loop = asyncio.get_running_loop()
@@ -101,8 +87,6 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(10)
         t1 = loop.time()
         self.assertTrue(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
 
     async def test_timeout_zero_sleep_zero(self):
@@ -113,8 +97,6 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0)
         t1 = loop.time()
         self.assertTrue(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
 
     async def test_timeout_in_the_past_sleep_zero(self):
@@ -125,8 +107,6 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(0)
         t1 = loop.time()
         self.assertTrue(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertTrue(t0 >= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):

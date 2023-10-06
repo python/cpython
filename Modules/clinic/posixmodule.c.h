@@ -1848,6 +1848,40 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__findfirstfile__doc__,
+"_findfirstfile($module, path, /)\n"
+"--\n"
+"\n"
+"A function to get the real file name without accessing the file in Windows.");
+
+#define OS__FINDFIRSTFILE_METHODDEF    \
+    {"_findfirstfile", (PyCFunction)os__findfirstfile, METH_O, os__findfirstfile__doc__},
+
+static PyObject *
+os__findfirstfile_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__findfirstfile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("_findfirstfile", "path", 0, 0);
+
+    if (!path_converter(arg, &path)) {
+        goto exit;
+    }
+    return_value = os__findfirstfile_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getvolumepathname__doc__,
 "_getvolumepathname($module, /, path)\n"
 "--\n"
@@ -1977,7 +2011,7 @@ exit:
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os__path_isdir__doc__,
-"_path_isdir($module, /, path)\n"
+"_path_isdir($module, /, s)\n"
 "--\n"
 "\n"
 "Return true if the pathname refers to an existing directory.");
@@ -1986,7 +2020,7 @@ PyDoc_STRVAR(os__path_isdir__doc__,
     {"_path_isdir", _PyCFunction_CAST(os__path_isdir), METH_FASTCALL|METH_KEYWORDS, os__path_isdir__doc__},
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path);
+os__path_isdir_impl(PyObject *module, PyObject *s);
 
 static PyObject *
 os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -2001,7 +2035,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(path), },
+        .ob_item = { &_Py_ID(s), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -2010,7 +2044,7 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"path", NULL};
+    static const char * const _keywords[] = {"s", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "_path_isdir",
@@ -2018,14 +2052,14 @@ os__path_isdir(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     };
     #undef KWTUPLE
     PyObject *argsbuf[1];
-    PyObject *path;
+    PyObject *s;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
     if (!args) {
         goto exit;
     }
-    path = args[0];
-    return_value = os__path_isdir_impl(module, path);
+    s = args[0];
+    return_value = os__path_isdir_impl(module, s);
 
 exit:
     return return_value;
@@ -10425,11 +10459,9 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
 "\n"
-"Return the number of CPUs in the system; return None if indeterminable.\n"
+"Return the number of logical CPUs in the system.\n"
 "\n"
-"This number is not equivalent to the number of CPUs the current process can\n"
-"use.  The number of usable CPUs can be obtained with\n"
-"``len(os.sched_getaffinity(0))``");
+"Return None if indeterminable.");
 
 #define OS_CPU_COUNT_METHODDEF    \
     {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
@@ -11453,6 +11485,10 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
+#ifndef OS__FINDFIRSTFILE_METHODDEF
+    #define OS__FINDFIRSTFILE_METHODDEF
+#endif /* !defined(OS__FINDFIRSTFILE_METHODDEF) */
+
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
@@ -11988,4 +12024,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1dd5aa7495cd6e3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a36904281a8a7507 input=a9049054013a1b77]*/

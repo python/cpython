@@ -24,6 +24,10 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // symlink()
+#endif
+
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  if !defined(MS_WINDOWS_GAMES) || defined(MS_WINDOWS_DESKTOP)
@@ -36,7 +40,6 @@
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
 #endif
-
 
 #ifndef MS_WINDOWS
 #  include "posixmodule.h"
@@ -222,10 +225,6 @@
 #endif
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyDoc_STRVAR(posix__doc__,
 "This module provides access to operating system functionality that is\n\
 standardized by the C Standard and the POSIX standard (a thinly\n\
@@ -287,10 +286,6 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #  include <sched.h>
-#endif
-
-#ifdef HAVE_COPY_FILE_RANGE
-#  include <unistd.h>             // copy_file_range()
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -4814,6 +4809,37 @@ cleanup:
     return result;
 }
 
+/*[clinic input]
+os._findfirstfile
+    path: path_t
+    /
+A function to get the real file name without accessing the file in Windows.
+[clinic start generated code]*/
+
+static PyObject *
+os__findfirstfile_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=106dd3f0779c83dd input=0734dff70f60e1a8]*/
+{
+    PyObject *result;
+    HANDLE hFindFile;
+    WIN32_FIND_DATAW wFileData;
+    WCHAR *wRealFileName;
+
+    Py_BEGIN_ALLOW_THREADS
+    hFindFile = FindFirstFileW(path->wide, &wFileData);
+    Py_END_ALLOW_THREADS
+
+    if (hFindFile == INVALID_HANDLE_VALUE) {
+        path_error(path);
+        return NULL;
+    }
+
+    wRealFileName = wFileData.cFileName;
+    result = PyUnicode_FromWideChar(wRealFileName, wcslen(wRealFileName));
+    FindClose(hFindFile);
+    return result;
+}
+
 
 /*[clinic input]
 os._getvolumepathname
@@ -4912,25 +4938,25 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 /*[clinic input]
 os._path_isdir
 
-    path: 'O'
+    s: 'O'
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
 static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=00faea0af309669d input=b1d2571cf7291aaf]*/
+os__path_isdir_impl(PyObject *module, PyObject *s)
+/*[clinic end generated code: output=9d87ab3c8b8a4e61 input=c17f7ef21d22d64e]*/
 {
     HANDLE hfile;
     BOOL close_file = TRUE;
     FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
+    path_t _path = PATH_T_INITIALIZE("isdir", "s", 0, 1);
     int result;
     BOOL slow_path = TRUE;
     FILE_STAT_BASIC_INFORMATION statInfo;
 
-    if (!path_converter(path, &_path)) {
+    if (!path_converter(s, &_path)) {
         path_cleanup(&_path);
         if (PyErr_ExceptionMatches(PyExc_ValueError)) {
             PyErr_Clear();
@@ -8138,39 +8164,45 @@ static PyObject *
 os_sched_getaffinity_impl(PyObject *module, pid_t pid)
 /*[clinic end generated code: output=f726f2c193c17a4f input=983ce7cb4a565980]*/
 {
-    int cpu, ncpus, count;
+    int ncpus = NCPUS_START;
     size_t setsize;
-    cpu_set_t *mask = NULL;
-    PyObject *res = NULL;
+    cpu_set_t *mask;
 
-    ncpus = NCPUS_START;
     while (1) {
         setsize = CPU_ALLOC_SIZE(ncpus);
         mask = CPU_ALLOC(ncpus);
-        if (mask == NULL)
+        if (mask == NULL) {
             return PyErr_NoMemory();
-        if (sched_getaffinity(pid, setsize, mask) == 0)
+        }
+        if (sched_getaffinity(pid, setsize, mask) == 0) {
             break;
+        }
         CPU_FREE(mask);
-        if (errno != EINVAL)
+        if (errno != EINVAL) {
             return posix_error();
+        }
         if (ncpus > INT_MAX / 2) {
-            PyErr_SetString(PyExc_OverflowError, "could not allocate "
-                            "a large enough CPU set");
+            PyErr_SetString(PyExc_OverflowError,
+                            "could not allocate a large enough CPU set");
             return NULL;
         }
-        ncpus = ncpus * 2;
+        ncpus *= 2;
     }
 
-    res = PySet_New(NULL);
-    if (res == NULL)
+    PyObject *res = PySet_New(NULL);
+    if (res == NULL) {
         goto error;
-    for (cpu = 0, count = CPU_COUNT_S(setsize, mask); count; cpu++) {
+    }
+
+    int cpu = 0;
+    int count = CPU_COUNT_S(setsize, mask);
+    for (; count; cpu++) {
         if (CPU_ISSET_S(cpu, setsize, mask)) {
             PyObject *cpu_num = PyLong_FromLong(cpu);
             --count;
-            if (cpu_num == NULL)
+            if (cpu_num == NULL) {
                 goto error;
+            }
             if (PySet_Add(res, cpu_num)) {
                 Py_DECREF(cpu_num);
                 goto error;
@@ -8182,12 +8214,12 @@ os_sched_getaffinity_impl(PyObject *module, pid_t pid)
     return res;
 
 error:
-    if (mask)
+    if (mask) {
         CPU_FREE(mask);
+    }
     Py_XDECREF(res);
     return NULL;
 }
-
 #endif /* HAVE_SCHED_SETAFFINITY */
 
 #endif /* HAVE_SCHED_H */
@@ -14338,44 +14370,49 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 /*[clinic input]
 os.cpu_count
 
-Return the number of CPUs in the system; return None if indeterminable.
+Return the number of logical CPUs in the system.
 
-This number is not equivalent to the number of CPUs the current process can
-use.  The number of usable CPUs can be obtained with
-``len(os.sched_getaffinity(0))``
+Return None if indeterminable.
 [clinic start generated code]*/
 
 static PyObject *
 os_cpu_count_impl(PyObject *module)
-/*[clinic end generated code: output=5fc29463c3936a9c input=e7c8f4ba6dbbadd3]*/
+/*[clinic end generated code: output=5fc29463c3936a9c input=ba2f6f8980a0e2eb]*/
 {
-    int ncpu = 0;
+    int ncpu;
 #ifdef MS_WINDOWS
-#ifdef MS_WINDOWS_DESKTOP
+# ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-#endif
+# else
+    ncpu = 0;
+# endif
+
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
+
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
     ncpu = sysconf(_SC_NPROCESSORS_ONLN);
+
 #elif defined(__VXWORKS__)
     ncpu = _Py_popcount32(vxCpuEnabledGet());
+
 #elif defined(__DragonFly__) || \
       defined(__OpenBSD__)   || \
       defined(__FreeBSD__)   || \
       defined(__NetBSD__)    || \
       defined(__APPLE__)
-    int mib[2];
+    ncpu = 0;
     size_t len = sizeof(ncpu);
-    mib[0] = CTL_HW;
-    mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) != 0)
+    int mib[2] = {CTL_HW, HW_NCPU};
+    if (sysctl(mib, 2, &ncpu, &len, NULL, 0) != 0) {
         ncpu = 0;
+    }
 #endif
-    if (ncpu >= 1)
-        return PyLong_FromLong(ncpu);
-    else
+
+    if (ncpu < 1) {
         Py_RETURN_NONE;
+    }
+    return PyLong_FromLong(ncpu);
 }
 
 
@@ -15955,6 +15992,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFULLPATHNAME_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
+    OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
     OS__PATH_NORMPATH_METHODDEF
@@ -17002,7 +17040,3 @@ INITFUNC(void)
 {
     return PyModuleDef_Init(&posixmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -12,7 +12,6 @@ from instructions import (
     InstructionOrCacheEffect,
     MacroInstruction,
     MacroParts,
-    OverriddenInstructionPlaceHolder,
     PseudoInstruction,
 )
 import parsing
@@ -26,7 +25,7 @@ RESERVED_WORDS = {
     "co_names": "Use FRAME_CO_NAMES.",
 }
 
-RE_PREDICTED = r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+RE_GO_TO_INSTR = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
 
 
 class Analyzer:
@@ -66,7 +65,6 @@ class Analyzer:
         parsing.InstDef
         | parsing.Macro
         | parsing.Pseudo
-        | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
     macros: dict[str, parsing.Macro]
@@ -141,7 +139,7 @@ class Analyzer:
             match thing:
                 case parsing.InstDef(name=name):
                     macro: parsing.Macro | None = None
-                    if thing.kind == "inst":
+                    if thing.kind == "inst" and not thing.override:
                         macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
                         if not thing.override:
@@ -150,12 +148,7 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        placeholder = OverriddenInstructionPlaceHolder(name=name)
-                        self.everything[instrs_idx[name]] = placeholder
-                        if macro is not None:
-                            self.warning(
-                                f"Overriding desugared {macro.name} may not work", thing
-                            )
+                        self.everything[instrs_idx[name]] = thing
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -187,16 +180,23 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.analyze_macros_and_pseudos()
-        self.find_predictions()
         self.map_families()
+        self.mark_predictions()
         self.check_families()
 
-    def find_predictions(self) -> None:
-        """Find the instructions that need PREDICTED() labels."""
+    def mark_predictions(self) -> None:
+        """Mark the instructions that need PREDICTED() labels."""
+        # Start with family heads
+        for family in self.families.values():
+            if family.name in self.instrs:
+                self.instrs[family.name].predicted = True
+            if family.name in self.macro_instrs:
+                self.macro_instrs[family.name].predicted = True
+        # Also look for GO_TO_INSTRUCTION() calls
         for instr in self.instrs.values():
             targets: set[str] = set()
             for line in instr.block_text:
-                if m := re.match(RE_PREDICTED, line):
+                if m := re.match(RE_GO_TO_INSTR, line):
                     targets.add(m.group(1))
             for target in targets:
                 if target_instr := self.instrs.get(target):
@@ -225,11 +225,18 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif not self.macro_instrs.get(member):
+                if member_mac := self.macro_instrs.get(member):
+                    assert member_mac.family is None, (member, member_mac.family.name)
+                    member_mac.family = family
+                if not member_instr and not member_mac:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
                     )
+        # A sanctioned exception:
+        # This opcode is a member of the family but it doesn't pass the checks.
+        if mac := self.macro_instrs.get("BINARY_OP_INPLACE_ADD_UNICODE"):
+            mac.family = self.families.get("BINARY_OP")
 
     def check_families(self) -> None:
         """Check each family:
