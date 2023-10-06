@@ -175,7 +175,7 @@ def main():
     build.add_argument("--quiet", action="store_true", default=False,
                        dest="quiet",
                        help="Redirect output from subprocesses to a log file")
-    build.add_argument("--debug", action="store_true", default=False,
+    build.add_argument("--with-pydebug", action="store_true", default=False,
                        dest="debug",
                        help="Debug build (i.e., pydebug)")
 
