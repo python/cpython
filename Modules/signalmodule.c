@@ -4,7 +4,7 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
-#include "pycore_atomic.h"        // _Py_atomic_int
+#include "pyatomic.h"             // _Py_atomic_store_uintptr _Py_atomic_load_uintptr
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -124,13 +124,13 @@ typedef struct {
 Py_LOCAL_INLINE(PyObject *)
 get_handler(int i)
 {
-    return (PyObject *)_Py_atomic_load(&Handlers[i].func);
+    return (PyObject *)_Py_atomic_load_uintptr(&Handlers[i].func);
 }
 
 Py_LOCAL_INLINE(void)
 set_handler(int i, PyObject* func)
 {
-    _Py_atomic_store(&Handlers[i].func, (uintptr_t)func);
+    _Py_atomic_store_uintptr(&Handlers[i].func, (uintptr_t)func);
 }
 
 
