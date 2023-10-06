@@ -3895,7 +3895,7 @@ static PyType_Spec PyDateTime_TZInfoType_Spec = {
     "datetime.tzinfo",
     sizeof(PyDateTime_TZInfo),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_IMMUTABLETYPE,
     tzinfo_slots
 };
 
