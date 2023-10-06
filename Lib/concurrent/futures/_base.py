@@ -586,6 +586,10 @@ class Executor(object):
         Args:
             fn: A callable that will take as many arguments as there are
                 passed iterables.
+            *iterables: An iterable of arguments to fn. If fn takes only one
+                argument like fn(x), then iterables can be simply like [x1, x2,
+                ...]. If fn takes multiple arguments like fn(x, y), the
+                iterables can be formatted as [(x1, x2), (y1, y2), ...].
             timeout: The maximum number of seconds to wait. If None, then there
                 is no limit on the wait time.
             chunksize: The size of the chunks the iterable will be broken into
