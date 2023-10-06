@@ -46,7 +46,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization",
     # sys
-    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
@@ -75,13 +75,7 @@ __all__ = [
 #
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
-LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
-    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
-    # seconds on Windows ARM32 buildbot
-    LOOPBACK_TIMEOUT = 10
-elif sys.platform == 'vxworks':
-    LOOPBACK_TIMEOUT = 10
+LOOPBACK_TIMEOUT = 10.0
 
 # Timeout in seconds for network requests going to the internet. The timeout is
 # short enough to prevent a test to wait for too long if the internet request
@@ -436,6 +430,14 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     return unittest.skipIf(skip, reason)
 
 
+def set_sanitizer_env_var(env, option):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+        if name in env:
+            env[name] += f':{option}'
+        else:
+            env[name] = option
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
@@ -506,6 +508,8 @@ def has_no_debug_ranges():
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
+
+MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')

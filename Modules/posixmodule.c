@@ -4814,6 +4814,37 @@ cleanup:
     return result;
 }
 
+/*[clinic input]
+os._findfirstfile
+    path: path_t
+    /
+A function to get the real file name without accessing the file in Windows.
+[clinic start generated code]*/
+
+static PyObject *
+os__findfirstfile_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=106dd3f0779c83dd input=0734dff70f60e1a8]*/
+{
+    PyObject *result;
+    HANDLE hFindFile;
+    WIN32_FIND_DATAW wFileData;
+    WCHAR *wRealFileName;
+
+    Py_BEGIN_ALLOW_THREADS
+    hFindFile = FindFirstFileW(path->wide, &wFileData);
+    Py_END_ALLOW_THREADS
+
+    if (hFindFile == INVALID_HANDLE_VALUE) {
+        path_error(path);
+        return NULL;
+    }
+
+    wRealFileName = wFileData.cFileName;
+    result = PyUnicode_FromWideChar(wRealFileName, wcslen(wRealFileName));
+    FindClose(hFindFile);
+    return result;
+}
+
 
 /*[clinic input]
 os._getvolumepathname
@@ -16187,6 +16218,7 @@ static PyMethodDef posix_methods[] = {
     OS__GETFULLPATHNAME_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
+    OS__FINDFIRSTFILE_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
     OS__PATH_SPLITROOT_METHODDEF
     OS__PATH_NORMPATH_METHODDEF

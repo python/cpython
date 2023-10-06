@@ -1848,6 +1848,40 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__findfirstfile__doc__,
+"_findfirstfile($module, path, /)\n"
+"--\n"
+"\n"
+"A function to get the real file name without accessing the file in Windows.");
+
+#define OS__FINDFIRSTFILE_METHODDEF    \
+    {"_findfirstfile", (PyCFunction)os__findfirstfile, METH_O, os__findfirstfile__doc__},
+
+static PyObject *
+os__findfirstfile_impl(PyObject *module, path_t *path);
+
+static PyObject *
+os__findfirstfile(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("_findfirstfile", "path", 0, 0);
+
+    if (!path_converter(arg, &path)) {
+        goto exit;
+    }
+    return_value = os__findfirstfile_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getvolumepathname__doc__,
 "_getvolumepathname($module, /, path)\n"
 "--\n"
@@ -11821,6 +11855,10 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
+#ifndef OS__FINDFIRSTFILE_METHODDEF
+    #define OS__FINDFIRSTFILE_METHODDEF
+#endif /* !defined(OS__FINDFIRSTFILE_METHODDEF) */
+
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
@@ -12376,4 +12414,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=3f9722758431407b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cd3c86755ed26d5d input=a9049054013a1b77]*/
