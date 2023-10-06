@@ -23,22 +23,22 @@
 #  include <winsock2.h>         /* struct timeval */
 #endif
 
-#define PyDate_Check(op, mstate) PyObject_TypeCheck(op, mstate->DateType)
-#define PyDate_CheckExact(op, mstate) Py_IS_TYPE(op, mstate->DateType)
+#define PyDate_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->DateType)
+#define PyDate_CheckExact(op, mstate) Py_IS_TYPE(op, (mstate)->DateType)
 
-#define PyDateTime_Check(op, mstate) PyObject_TypeCheck(op, mstate->DateTimeType)
-#define PyDateTime_CheckExact(op, mstate) Py_IS_TYPE(op, mstate->DateTimeType)
+#define PyDateTime_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->DateTimeType)
+#define PyDateTime_CheckExact(op, mstate) Py_IS_TYPE(op, (mstate)->DateTimeType)
 
-#define PyTime_Check(op, mstate) PyObject_TypeCheck(op, mstate->TimeType)
-#define PyTime_CheckExact(op, mstate) Py_IS_TYPE(op, mstate->TimeType)
+#define PyTime_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->TimeType)
+#define PyTime_CheckExact(op, mstate) Py_IS_TYPE(op, (mstate)->TimeType)
 
-#define PyDelta_Check(op, mstate) PyObject_TypeCheck(op, mstate->DeltaType)
-#define PyDelta_CheckExact(op, mstate) Py_IS_TYPE(op, mstate->DeltaType)
+#define PyDelta_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->DeltaType)
+#define PyDelta_CheckExact(op, mstate) Py_IS_TYPE(op, (mstate)->DeltaType)
 
-#define PyTZInfo_Check(op, mstate) PyObject_TypeCheck(op, mstate->TZInfoType)
-#define PyTZInfo_CheckExact(op, mstate) Py_IS_TYPE(op, mstate->TZInfoType)
+#define PyTZInfo_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->TZInfoType)
+#define PyTZInfo_CheckExact(op, mstate) Py_IS_TYPE(op, (mstate)->TZInfoType)
 
-#define PyTimezone_Check(op, mstate) PyObject_TypeCheck(op, mstate->TimeZoneType)
+#define PyTimezone_Check(op, mstate) PyObject_TypeCheck(op, (mstate)->TimeZoneType)
 
 /*[clinic input]
 module datetime
