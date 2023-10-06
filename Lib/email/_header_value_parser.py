@@ -2837,6 +2837,24 @@ def _refold_parse_tree(parse_tree, *, policy):
                 lines.append(newline + tstr)
                 last_ew = None
                 continue
+        # Do not strip the quotes from BareQuotedString's by iterating over the
+        # children. Doing so might break a structured header and this function
+        # is context unaware. Instead prepare quoted children.
+        if isinstance(part, BareQuotedString):
+            subparts = list(part)
+            quoted_subparts = []
+            dquote = ValueTerminal('"', 'ptext')
+            quoted_subparts.append(dquote)
+            for subpart in subparts:
+                quoted_without_quotes = quote_string(subpart)[1:-1]
+                quoted_terminal = ValueTerminal(quoted_without_quotes, 'ptext')
+                quoted_subparts.append(quoted_terminal)
+            quoted_subparts.append(dquote)
+            if not part.as_ew_allowed:
+                wrap_as_ew_blocked += 1
+                quoted_subparts.append(end_ew_not_allowed)
+            parts = quoted_subparts + parts
+            continue
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)

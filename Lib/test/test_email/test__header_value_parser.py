@@ -2982,5 +2982,25 @@ class TestFolding(TestEmailBase):
             " filename*1*=_TEST_TES.txt\n",
             )
 
+    def test_long_display_name(self):
+        display_name = (
+                # An address as first part of display name is a security issue.
+                'spoofed@example.com'
+                + ' '
+                # This triggers the BareQuotedString folding recursion.
+                + 'a'*self.policy.max_line_length
+                # These two quoted-pairs become the unescaped " \ outside.
+                + ' '
+                + '\\" \\\\'
+                )
+        addr_spec = 'actual.sender@example.com'
+        address = '"' + display_name + '" <' + addr_spec + '>\n'
+        self._test(parser.get_address(address)[0],
+                   '"spoofed@example.com\n'
+                   ' ' + 'a'*self.policy.max_line_length + '\n'
+                   ' \\" \\\\" <actual.sender@example.com>\n',
+                   )
+
+
 if __name__ == '__main__':
     unittest.main()
