@@ -6969,13 +6969,13 @@ _datetime_exec(PyObject *module)
     return 0;
 
 error:
-    Py_XDECREF(us_per_ms);
-    Py_XDECREF(us_per_second);
-    Py_XDECREF(us_per_minute);
-    Py_XDECREF(us_per_hour);
-    Py_XDECREF(us_per_day);
-    Py_XDECREF(us_per_week);
-    Py_XDECREF(seconds_per_day);
+    Py_XDECREF(st->us_per_ms);
+    Py_XDECREF(st->us_per_second);
+    Py_XDECREF(st->us_per_minute);
+    Py_XDECREF(st->us_per_hour);
+    Py_XDECREF(st->us_per_day);
+    Py_XDECREF(st->us_per_week);
+    Py_XDECREF(st->seconds_per_day);
     return -1;
 }
 
