@@ -963,6 +963,7 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
    This function does not raise exceptions. */
 
 PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
 #endif
 
 /* Rich compare two strings and return one of the following:

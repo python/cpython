@@ -1,1 +1,1 @@
-Add :c:func:`PyUnicode_EqualToUTF8` function.
+Add :c:func:`PyUnicode_EqualToUTF8AndSize` and :c:func:`PyUnicode_EqualToUTF8` functions.
