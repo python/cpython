@@ -1,4 +1,4 @@
-import io
+import os
 import unittest
 from test.support.import_helper import import_module
 
@@ -6,14 +6,13 @@ termios = import_module('termios')
 tty = import_module('tty')
 
 
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
 class TestTty(unittest.TestCase):
 
     def setUp(self):
-        try:
-            self.stream = open('/dev/tty', 'wb', buffering=0)
-        except OSError:
-            self.skipTest("Cannot open '/dev/tty'")
-        self.addCleanup(self.stream.close)
+        master_fd, self.fd = os.openpty()
+        self.addCleanup(os.close, master_fd)
+        self.stream = self.enterContext(open(self.fd, 'wb', buffering=0))
         self.fd = self.stream.fileno()
         self.mode = termios.tcgetattr(self.fd)
         self.addCleanup(termios.tcsetattr, self.fd, termios.TCSANOW, self.mode)
