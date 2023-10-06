@@ -740,6 +740,11 @@ A ``TarInfo`` object has the following public data attributes:
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
+   For symbolic links (``SYMTYPE``), the *linkname* is relative to the directory
+   that contains the link.
+   For hard links (``LNKTYPE``), the *linkname* is relative to the root of
+   the archive.
+
 
 .. attribute:: TarInfo.uid
    :type: int
@@ -1151,31 +1156,31 @@ For a list of the files in a tar archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <tarfile>
-               --list <tarfile>
+.. option:: -l <tarfile>
+            --list <tarfile>
 
    List files in a tarfile.
 
-.. cmdoption:: -c <tarfile> <source1> ... <sourceN>
-               --create <tarfile> <source1> ... <sourceN>
+.. option:: -c <tarfile> <source1> ... <sourceN>
+            --create <tarfile> <source1> ... <sourceN>
 
    Create tarfile from source files.
 
-.. cmdoption:: -e <tarfile> [<output_dir>]
-               --extract <tarfile> [<output_dir>]
+.. option:: -e <tarfile> [<output_dir>]
+            --extract <tarfile> [<output_dir>]
 
    Extract tarfile into the current directory if *output_dir* is not specified.
 
-.. cmdoption:: -t <tarfile>
-               --test <tarfile>
+.. option:: -t <tarfile>
+            --test <tarfile>
 
    Test whether the tarfile is valid or not.
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output.
 
-.. cmdoption:: --filter <filtername>
+.. option:: --filter <filtername>
 
    Specifies the *filter* for ``--extract``.
    See :ref:`tarfile-extraction-filter` for details.

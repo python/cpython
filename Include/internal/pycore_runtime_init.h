@@ -8,11 +8,17 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_long.h"
-#include "pycore_object.h"
-#include "pycore_parser.h"
-#include "pycore_pymem_init.h"
-#include "pycore_obmalloc_init.h"
+#include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
+#include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
+#include "pycore_floatobject.h"   // _py_float_format_unknown
+#include "pycore_object.h"        // _PyObject_HEAD_INIT
+#include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
+#include "pycore_parser.h"        // _parser_runtime_state_INIT
+#include "pycore_pyhash.h"        // pyhash_state_INIT
+#include "pycore_pymem_init.h"    // _pymem_allocators_standard_INIT
+#include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
+#include "pycore_signal.h"        // _signals_RUNTIME_INIT
+#include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
 
 
 extern PyTypeObject _PyExc_MemoryError;
@@ -45,7 +51,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev = offsetof(PyThreadState, prev), \
                 .next = offsetof(PyThreadState, next), \
                 .interp = offsetof(PyThreadState, interp), \
-                .cframe = offsetof(PyThreadState, cframe), \
+                .current_frame = offsetof(PyThreadState, current_frame), \
                 .thread_id = offsetof(PyThreadState, thread_id), \
                 .native_thread_id = offsetof(PyThreadState, native_thread_id), \
             }, \
@@ -55,10 +61,6 @@ extern PyTypeObject _PyExc_MemoryError;
                 .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
-            }, \
-            .cframe = { \
-                .current_frame = offsetof(_PyCFrame, current_frame), \
-                .previous = offsetof(_PyCFrame, previous), \
             }, \
             .code_object = { \
                 .filename = offsetof(PyCodeObject, co_filename), \
@@ -183,6 +185,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyThreadState_INIT \
     { \
+        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
@@ -190,7 +193,7 @@ extern PyTypeObject _PyExc_MemoryError;
 #ifdef Py_TRACE_REFS
 # define _py_object_state_INIT(INTERP) \
     { \
-        .refchain = {&INTERP.object_state.refchain, &INTERP.object_state.refchain}, \
+        .refchain = NULL, \
     }
 #else
 # define _py_object_state_INIT(INTERP) \

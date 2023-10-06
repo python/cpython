@@ -333,7 +333,11 @@ gen_close_iter(PyObject *yf)
 static inline bool
 is_resume(_Py_CODEUNIT *instr)
 {
-    return instr->op.code == RESUME || instr->op.code == INSTRUMENTED_RESUME;
+    return (
+        instr->op.code == RESUME ||
+        instr->op.code == RESUME_CHECK ||
+        instr->op.code == INSTRUMENTED_RESUME
+    );
 }
 
 static inline bool
@@ -476,9 +480,9 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
                will be reported correctly to the user. */
             /* XXX We should probably be updating the current frame
                somewhere in ceval.c. */
-            _PyInterpreterFrame *prev = tstate->cframe->current_frame;
+            _PyInterpreterFrame *prev = tstate->current_frame;
             frame->previous = prev;
-            tstate->cframe->current_frame = frame;
+            tstate->current_frame = frame;
             /* Close the generator that we are currently iterating with
                'yield from' or awaiting on with 'await'. */
             PyFrameState state = gen->gi_frame_state;
@@ -486,7 +490,7 @@ _gen_throw(PyGenObject *gen, int close_on_genexit,
             ret = _gen_throw((PyGenObject *)yf, close_on_genexit,
                              typ, val, tb);
             gen->gi_frame_state = state;
-            tstate->cframe->current_frame = prev;
+            tstate->current_frame = prev;
             frame->previous = NULL;
         } else {
             /* `yf` is an iterator or a coroutine-like object. */
@@ -938,7 +942,7 @@ _Py_MakeCoro(PyFunctionObject *func)
     if (origin_depth == 0) {
         ((PyCoroObject *)coro)->cr_origin_or_finalizer = NULL;
     } else {
-        _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+        _PyInterpreterFrame *frame = tstate->current_frame;
         assert(frame);
         assert(_PyFrame_IsIncomplete(frame));
         frame = _PyFrame_GetFirstComplete(frame->previous);

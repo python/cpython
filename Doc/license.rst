@@ -352,8 +352,8 @@ the verbatim comments from the original code::
 Sockets
 -------
 
-The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
-:func:`getnameinfo`, which are coded in separate source files from the WIDE
+The :mod:`socket` module uses the functions, :c:func:`!getaddrinfo`, and
+:c:func:`!getnameinfo`, which are coded in separate source files from the WIDE
 Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -387,7 +387,7 @@ Project, https://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+The :mod:`!test.support.asynchat` and :mod:`!test.support.asyncore`
 modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
@@ -539,7 +539,7 @@ The :mod:`xmlrpc.client` module contains the following notice::
 test_epoll
 ----------
 
-The :mod:`test_epoll` module contains the following notice::
+The :mod:`!test.test_epoll` module contains the following notice::
 
   Copyright (c) 2001-2006 Twisted Matrix Laboratories.
 
@@ -844,7 +844,7 @@ and later releases derived from that, the Apache License v2 applies::
 expat
 -----
 
-The :mod:`pyexpat` extension is built using an included copy of the expat
+The :mod:`pyexpat <xml.parsers.expat>` extension is built using an included copy of the expat
 sources unless the build is configured ``--with-system-expat``::
 
   Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd

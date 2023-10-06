@@ -1442,6 +1442,7 @@ async/await code consider using the high-level
    * *stdin* can be any of these:
 
      * a file-like object
+     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe()`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file

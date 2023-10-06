@@ -110,7 +110,8 @@ For convenience, some of these functions will always return a
 
    This is the most common way to set the error indicator.  The first argument
    specifies the exception type; it is normally one of the standard exceptions,
-   e.g. :c:data:`PyExc_RuntimeError`.  You need not increment its reference count.
+   e.g. :c:data:`PyExc_RuntimeError`.  You need not create a new
+   :term:`strong reference` to it (e.g. with :c:func:`Py_INCREF`).
    The second argument is an error message; it is decoded from ``'utf-8'``.
 
 
@@ -221,17 +222,21 @@ For convenience, some of these functions will always return a
 
 .. c:function:: PyObject* PyErr_SetFromWindowsErrWithFilename(int ierr, const char *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, but the
-   filename is given as a C string.  *filename* is decoded from the filesystem
-   encoding (:func:`os.fsdecode`).
+   Similar to :c:func:`PyErr_SetFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is decoded from the filesystem
+   encoding (:func:`os.fsdecode`) and passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 
 
 .. c:function:: PyObject* PyErr_SetExcFromWindowsErrWithFilenameObject(PyObject *type, int ierr, PyObject *filename)
 
-   Similar to :c:func:`PyErr_SetFromWindowsErrWithFilenameObject`, with an
-   additional parameter specifying the exception type to be raised.
+   Similar to :c:func:`PyErr_SetExcFromWindowsErr`, with the additional behavior
+   that if *filename* is not ``NULL``, it is passed to the constructor of
+   :exc:`OSError` as a third parameter to be used to define the
+   :attr:`!filename` attribute of the exception instance.
 
    .. availability:: Windows.
 
@@ -781,7 +786,7 @@ Exception Objects
 
    Implement part of the interpreter's implementation of :keyword:`!except*`.
    *orig* is the original exception that was caught, and *excs* is the list of
-   the exceptions that need to be raised. This list contains the the unhandled
+   the exceptions that need to be raised. This list contains the unhandled
    part of *orig*, if any, as well as the exceptions that were raised from the
    :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
    those that were reraised (and have the same traceback as *orig*).

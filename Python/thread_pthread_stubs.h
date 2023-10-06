@@ -40,7 +40,7 @@ pthread_cond_init(pthread_cond_t *restrict cond,
     return 0;
 }
 
-PyAPI_FUNC(int)pthread_cond_destroy(pthread_cond_t *cond)
+PyAPI_FUNC(int) pthread_cond_destroy(pthread_cond_t *cond)
 {
     return 0;
 }

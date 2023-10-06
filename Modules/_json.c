@@ -12,7 +12,7 @@
 #include "pycore_ceval.h"           // _Py_EnterRecursiveCall()
 #include "pycore_runtime.h"         // _PyRuntime
 
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_global_strings.h"  // _Py_ID()
 #include <stdbool.h>                // bool
 
 

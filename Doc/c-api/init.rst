@@ -373,6 +373,14 @@ Initializing and finalizing the interpreter
    :c:func:`Py_Initialize` is called again.
 
 
+.. c:function:: int Py_IsFinalizing()
+
+   Return true (non-zero) if the main Python interpreter is
+   :term:`shutting down <interpreter shutdown>`. Return false (zero) otherwise.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
@@ -852,7 +860,7 @@ code, or when embedding the Python interpreter:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -861,6 +869,19 @@ code, or when embedding the Python interpreter:
    Return the current thread state.  The global interpreter lock must be held.
    When the current thread state is ``NULL``, this issues a fatal error (so that
    the caller needn't check for ``NULL``).
+
+   See also :c:func:`PyThreadState_GetUnchecked`.
+
+
+.. c:function:: PyThreadState* PyThreadState_GetUnchecked()
+
+   Similar to :c:func:`PyThreadState_Get`, but don't kill the process with a
+   fatal error if it is NULL. The caller is responsible to check if the result
+   is NULL.
+
+   .. versionadded:: 3.13
+      In Python 3.5 to 3.12, the function was private and known as
+      ``_PyThreadState_UncheckedGet()``.
 
 
 .. c:function:: PyThreadState* PyThreadState_Swap(PyThreadState *tstate)
@@ -898,7 +919,7 @@ with sub-interpreters:
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 
@@ -1180,7 +1201,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. note::
       Calling this function from a thread when the runtime is finalizing
       will terminate the thread, even if the thread was not created by Python.
-      You can use :c:func:`!_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      You can use :c:func:`Py_IsFinalizing` or :func:`sys.is_finalizing` to
       check if the interpreter is in process of being finalized before calling
       this function to avoid unwanted termination.
 

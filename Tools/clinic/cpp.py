@@ -186,7 +186,7 @@ def _main(filenames: list[str] | None = None) -> None:
             cpp = Monitor(filename, verbose=True)
             print()
             print(filename)
-            for line_number, line in enumerate(f.read().split('\n'), 1):
+            for line in f:
                 cpp.writeline(line)
 
 

@@ -107,7 +107,7 @@ make_union(PyObject *self, PyObject *other)
 static PyObject *
 caller(void)
 {
-    _PyInterpreterFrame *f = _PyThreadState_GET()->cframe->current_frame;
+    _PyInterpreterFrame *f = _PyThreadState_GET()->current_frame;
     if (f == NULL) {
         Py_RETURN_NONE;
     }
@@ -200,7 +200,8 @@ typevar_dealloc(PyObject *self)
     Py_XDECREF(tv->evaluate_bound);
     Py_XDECREF(tv->constraints);
     Py_XDECREF(tv->evaluate_constraints);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -215,7 +216,7 @@ typevar_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(tv->evaluate_bound);
     Py_VISIT(tv->constraints);
     Py_VISIT(tv->evaluate_constraints);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -226,7 +227,7 @@ typevar_clear(typevarobject *self)
     Py_CLEAR(self->evaluate_bound);
     Py_CLEAR(self->constraints);
     Py_CLEAR(self->evaluate_constraints);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -401,12 +402,13 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
 typevar.__typing_subst__ as typevar_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
-/*[clinic end generated code: output=c76ced134ed8f4e1 input=6b70a4bb2da838de]*/
+typevar_typing_subst(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=0773735e8ce18968 input=9e87b57f0fc59b92]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
@@ -742,7 +744,8 @@ paramspec_dealloc(PyObject *self)
 
     Py_DECREF(ps->name);
     Py_XDECREF(ps->bound);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -754,7 +757,7 @@ paramspec_traverse(PyObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     paramspecobject *ps = (paramspecobject *)self;
     Py_VISIT(ps->bound);
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
@@ -762,7 +765,7 @@ static int
 paramspec_clear(paramspecobject *self)
 {
     Py_CLEAR(self->bound);
-    _PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict((PyObject *)self);
     return 0;
 }
 
@@ -803,8 +806,8 @@ paramspec_kwargs(PyObject *self, void *unused)
 }
 
 static PyGetSetDef paramspec_getset[] = {
-    {"args", (getter)paramspec_args, NULL, "Represents positional arguments.", NULL},
-    {"kwargs", (getter)paramspec_kwargs, NULL, "Represents keyword arguments.", NULL},
+    {"args", (getter)paramspec_args, NULL, PyDoc_STR("Represents positional arguments."), NULL},
+    {"kwargs", (getter)paramspec_kwargs, NULL, PyDoc_STR("Represents keyword arguments."), NULL},
     {0},
 };
 
@@ -882,12 +885,13 @@ paramspec_new_impl(PyTypeObject *type, PyObject *name, PyObject *bound,
 paramspec.__typing_subst__ as paramspec_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
-/*[clinic end generated code: output=803e1ade3f13b57d input=4e0005d24023e896]*/
+paramspec_typing_subst(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=4c5b4aaada1c5814 input=2d5b5e3d4a717189]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
@@ -899,13 +903,14 @@ paramspec.__typing_prepare_subst__ as paramspec_typing_prepare_subst
 
     alias: object
     args: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
 paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
                                     PyObject *args)
-/*[clinic end generated code: output=95449d630a2adb9a input=4375e2ffcb2ad635]*/
+/*[clinic end generated code: output=95449d630a2adb9a input=6df6f9fef3e150da]*/
 {
     PyObject *args_array[3] = {(PyObject *)self, alias, args};
     PyObject *result = call_typing_func_object(
@@ -1021,7 +1026,8 @@ typevartuple_dealloc(PyObject *self)
     typevartupleobject *tvt = (typevartupleobject *)self;
 
     Py_DECREF(tvt->name);
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
+    PyObject_ClearWeakRefs(self);
 
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
@@ -1103,12 +1109,13 @@ typevartuple_impl(PyTypeObject *type, PyObject *name)
 typevartuple.__typing_subst__ as typevartuple_typing_subst
 
     arg: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
-/*[clinic end generated code: output=814316519441cd76 input=670c4e0a36e5d8c0]*/
+typevartuple_typing_subst(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=237054c6d7484eea input=3fcf2dfd9eee7945]*/
 {
     PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
     return NULL;
@@ -1119,13 +1126,14 @@ typevartuple.__typing_prepare_subst__ as typevartuple_typing_prepare_subst
 
     alias: object
     args: object
+    /
 
 [clinic start generated code]*/
 
 static PyObject *
 typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
                                        PyObject *alias, PyObject *args)
-/*[clinic end generated code: output=ff999bc5b02036c1 input=a211b05f2eeb4306]*/
+/*[clinic end generated code: output=ff999bc5b02036c1 input=685b149b0fc47556]*/
 {
     PyObject *args_array[3] = {(PyObject *)self, alias, args};
     PyObject *result = call_typing_func_object(
@@ -1157,14 +1165,14 @@ static int
 typevartuple_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
-    _PyObject_VisitManagedDict(self, visit, arg);
+    PyObject_VisitManagedDict(self, visit, arg);
     return 0;
 }
 
 static int
 typevartuple_clear(PyObject *self)
 {
-    _PyObject_ClearManagedDict(self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 
