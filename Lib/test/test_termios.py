@@ -1,6 +1,6 @@
 import errno
-import io
 import os
+import sys
 import tempfile
 import unittest
 from test.support.import_helper import import_module
@@ -91,7 +91,13 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW)
 
     def test_tcsendbreak(self):
-        termios.tcsendbreak(self.fd, 1)
+        try:
+            termios.tcsendbreak(self.fd, 1)
+        except termios.error as exc:
+            if exc.args[0] == errno.ENOTTY and sys.platform.startswith('freebsd'):
+                self.skipTest('termios.tcsendbreak() is not supported '
+                              'with pseudo-terminals (?) on this platform')
+            raise
         termios.tcsendbreak(self.stream, 1)
 
     def test_tcsendbreak_errors(self):
