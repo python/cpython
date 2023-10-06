@@ -1077,6 +1077,11 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 void
 _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
+#ifdef WITH_MIAMLLOC
+    if (_PyMem_MimallocEnabled()) {
+        return;
+    }
+#endif
     if (has_own_state(interp)) {
         Py_ssize_t leaked = _PyInterpreterState_GetAllocatedBlocks(interp);
         assert(has_own_state(interp) || leaked == 0);
@@ -1102,6 +1107,16 @@ _Py_FinalizeAllocatedBlocks(_PyRuntimeState *runtime)
 static Py_ssize_t
 get_num_global_allocated_blocks(_PyRuntimeState *runtime)
 {
+#ifdef WITH_MIMALLOC
+    if (_PyMem_MimallocEnabled()) {
+        size_t allocated_blocks = 0;
+
+        mi_heap_t *heap = mi_heap_get_default();
+        mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
+
+        return allocated_blocks;
+    }
+#endif
     Py_ssize_t total = 0;
     if (_PyRuntimeState_GetFinalizing(runtime) != NULL) {
         PyInterpreterState *interp = _PyInterpreterState_Main();
