@@ -93,11 +93,12 @@ find_state_left_or_right(PyObject *left, PyObject *right)
 
 /*[clinic input]
 module datetime
-class datetime.datetime "PyDateTime_DateTime *" "clinic_state()->PyDateTime_DateTimeType"
-class datetime.date "PyDateTime_Date *" "clinic_state()->PyDateTime_DateType"
-class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" "clinic_state()->PyDateTime_IsoCalendarDateType"
+# Note: module state is (currently) unused in clinic.
+class datetime.datetime "PyDateTime_DateTime *" ""
+class datetime.date "PyDateTime_Date *" ""
+class datetime.IsoCalendarDate "PyDateTime_IsoCalendarDate *" ""
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8a333fc5cbf6a146]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a2651510d22a8c6c]*/
 
 #define clinic_state() (fixme())
 #include "clinic/_datetimemodule.c.h"
