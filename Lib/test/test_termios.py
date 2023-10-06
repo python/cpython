@@ -11,13 +11,12 @@ termios = import_module('termios')
 @unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
 class TestFunctions(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        cls.master_fd, cls.fd = os.openpty()
-        cls.addClassCleanup(os.close, cls.master_fd)
-        cls.stream = cls.enterClassContext(open(cls.fd, 'wb', buffering=0))
-        tmp = cls.enterClassContext(tempfile.TemporaryFile(mode='wb', buffering=0))
-        cls.bad_fd = tmp.fileno()
+    def setUp(self):
+        master_fd, self.fd = os.openpty()
+        self.addCleanup(os.close, master_fd)
+        self.stream = self.enterContext(open(self.fd, 'wb', buffering=0))
+        tmp = self.enterContext(tempfile.TemporaryFile(mode='wb', buffering=0))
+        self.bad_fd = tmp.fileno()
 
     def assertRaisesTermiosError(self, errno, callable, *args):
         with self.assertRaises(termios.error) as cm:
