@@ -6766,14 +6766,13 @@ _datetime_exec(PyObject *module)
 {
     datetime_state *st = get_module_state(module);
 
-#define CREATE_TYPE(mod, var, spec, base)                               \
-    do {                                                                \
-        var = (PyTypeObject *)PyType_FromMetaclass(NULL, mod, spec,     \
-                                                   (PyObject *)base);   \
-        if (var == NULL) {                                              \
-            return -1;                                                  \
-        }                                                               \
-    } while (0)
+#define CREATE_TYPE(MOD, VAR, SPEC, BASE) do {                              \
+    PyObject *tp = PyType_FromModuleAndSpec(MOD, SPEC, (PyObject *)BASE);   \
+    if (tp == NULL) {                                                       \
+        return -1;                                                          \
+    }                                                                       \
+    VAR = (PyTypeObject *)tp;                                               \
+} while (0)
 
     CREATE_TYPE(module, st->PyDateTime_TimeType, &time_spec, NULL);
     CREATE_TYPE(module, st->PyDateTime_TZInfoType, &tzinfo_spec, NULL);
