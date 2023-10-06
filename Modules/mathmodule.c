@@ -2228,12 +2228,12 @@ loghelper(PyObject* arg, double (*func)(double))
         }
 
         x = PyLong_AsDouble(arg);
-        if (PyErr_Occurred()) {
+        if (x == -1.0) {
             /* Here the conversion to double overflowed, but it's possible
                to compute the log anyway.  Clear the exception and continue. */
             PyErr_Clear();
             x = _PyLong_Frexp((PyLongObject *)arg, &e);
-            if (PyErr_Occurred())
+            if (x == -1.0)
                 return NULL;
             /* Value is ~= x * 2**e, so the log ~= log(x) + log(2) * e. */
             result = func(x) + func(2.0) * e;
