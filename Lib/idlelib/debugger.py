@@ -1,12 +1,22 @@
 import bdb
 import os
+import linecache
+import re
 
-from tkinter import *
-from tkinter.ttk import Frame, Scrollbar
+from tkinter import BooleanVar, Menu, TclError
+from tkinter.ttk import PanedWindow, Frame, Label, Treeview, Scrollbar
+from tkinter import PhotoImage
+from tkinter.font import Font
 
-from idlelib import macosx
-from idlelib.scrolledlist import ScrolledList
 from idlelib.window import ListedToplevel
+
+
+def underscore_at_end(s):
+    """Helper used when displaying a sorted list of local or global variables
+    so that internal variables (starting with an underscore) are displayed
+    after others, not before.
+    """
+    return s.replace('_', '~')
 
 
 class Idb(bdb.Bdb):
@@ -68,6 +78,13 @@ class Debugger:
         self.make_gui()
         self.interacting = 0
         self.nesting_level = 0
+        self.framevars = {}
+        self.running = False
+
+    def getimage(self, filename):
+        "Return an image object for a file in our 'Icons' directory"
+        dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'Icons')
+        return PhotoImage(master=self.root, file=os.path.join(dir, filename))
 
     def run(self, *args):
         # Deal with the scenario where we've already got a program running
@@ -109,6 +126,15 @@ class Debugger:
         finally:
             self.interacting = 0
 
+    def beginexecuting(self):
+        self.running = True
+
+    def endexecuting(self):
+        self.running = False
+        self.show_status('')
+        self.enable_buttons(['prefs'])
+        self.clear_stack()
+
     def close(self, event=None):
         try:
             self.quit()
@@ -117,8 +143,7 @@ class Debugger:
         if self.interacting:
             self.top.bell()
             return
-        if self.stackviewer:
-            self.stackviewer.close(); self.stackviewer = None
+        self.abort_loop()
         # Clean up pyshell if user clicked debugger control close widget.
         # (Causes a harmless extra cycle through close_debugger() if user
         # toggled debugger from pyshell Debug menu)
@@ -130,80 +155,178 @@ class Debugger:
         pyshell = self.pyshell
         self.flist = pyshell.flist
         self.root = root = pyshell.root
+        self.clickable_cursor = 'hand2'
+        if self.root._windowingsystem == 'aqua':
+            self.clickable_cursor = 'pointinghand'
+        self.tooltip = None
+        self.var_values = {}
         self.top = top = ListedToplevel(root)
         self.top.wm_title("Debug Control")
         self.top.wm_iconname("Debug")
         top.wm_protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<Escape>", self.close)
-        #
-        self.bframe = bframe = Frame(top)
-        self.bframe.pack(anchor="w")
-        self.buttons = bl = []
-        #
-        self.bcont = b = Button(bframe, text="Go", command=self.cont)
-        bl.append(b)
-        self.bstep = b = Button(bframe, text="Step", command=self.step)
-        bl.append(b)
-        self.bnext = b = Button(bframe, text="Over", command=self.next)
-        bl.append(b)
-        self.bret = b = Button(bframe, text="Out", command=self.ret)
-        bl.append(b)
-        self.bret = b = Button(bframe, text="Quit", command=self.quit)
-        bl.append(b)
-        #
-        for b in bl:
-            b.configure(state="disabled")
-            b.pack(side="left")
-        #
-        self.cframe = cframe = Frame(bframe)
-        self.cframe.pack(side="left")
-        #
-        if not self.vstack:
-            self.__class__.vstack = BooleanVar(top)
-            self.vstack.set(1)
-        self.bstack = Checkbutton(cframe,
-            text="Stack", command=self.show_stack, variable=self.vstack)
-        self.bstack.grid(row=0, column=0)
-        if not self.vsource:
-            self.__class__.vsource = BooleanVar(top)
-        self.bsource = Checkbutton(cframe,
-            text="Source", command=self.show_source, variable=self.vsource)
-        self.bsource.grid(row=0, column=1)
-        if not self.vlocals:
-            self.__class__.vlocals = BooleanVar(top)
-            self.vlocals.set(1)
-        self.blocals = Checkbutton(cframe,
-            text="Locals", command=self.show_locals, variable=self.vlocals)
-        self.blocals.grid(row=1, column=0)
-        if not self.vglobals:
-            self.__class__.vglobals = BooleanVar(top)
-        self.bglobals = Checkbutton(cframe,
-            text="Globals", command=self.show_globals, variable=self.vglobals)
-        self.bglobals.grid(row=1, column=1)
-        #
-        self.status = Label(top, anchor="w")
-        self.status.pack(anchor="w")
-        self.error = Label(top, anchor="w")
-        self.error.pack(anchor="w", fill="x")
-        self.errorbg = self.error.cget("background")
-        #
-        self.fstack = Frame(top, height=1)
-        self.fstack.pack(expand=1, fill="both")
-        self.flocals = Frame(top)
-        self.flocals.pack(expand=1, fill="both")
-        self.fglobals = Frame(top, height=1)
-        self.fglobals.pack(expand=1, fill="both")
-        #
-        if self.vstack.get():
-            self.show_stack()
-        if self.vlocals.get():
-            self.show_locals()
-        if self.vglobals.get():
-            self.show_globals()
+
+        self.var_open_source_windows = BooleanVar(top, False)
+
+        self.pane = PanedWindow(self.top, orient='horizontal')
+        self.pane.grid(column=0, row=0, sticky='nwes')
+        self.top.grid_columnconfigure(0, weight=1)
+        self.top.grid_rowconfigure(0, weight=1)
+        self.left = left = Frame(self.pane, padding=5)
+        self.pane.add(left, weight=1)
+        controls = Frame(left)
+        self.buttondata = {}
+        self.buttons = ['go', 'step', 'over', 'out', 'stop', 'prefs']
+        button_names = {'go':'Go', 'step':'Step', 'over':'Over',
+                             'out':'Out', 'stop':'Stop', 'prefs':'Options'}
+        self.button_cmds = {'go':self.cont, 'step':self.step,
+                            'over':self.next, 'out':self.ret,
+                            'stop':self.quit, 'prefs':self.options}
+        for col, key in enumerate(self.buttons):
+            normal = self.getimage('debug_'+key+'.gif')
+            disabled = self.getimage('debug_'+key+'_disabled.gif')
+            b = Label(controls, image=normal, text=button_names[key],
+                          compound='top', font='TkIconFont')
+            b.grid(column=col, row=0, padx=[0,5])
+            self.buttondata[key] = (b, normal, disabled)
+        self.enable_buttons(['prefs'])
+        self.status_normal_font = Font(root=self.root, name='TkDefaultFont', exists=True)
+        self.status_error_font = self.status_normal_font.copy()
+        self.status_error_font['slant'] = 'italic'
+        self.status = Label(controls, text=' ', font=self.status_normal_font)
+        self.status.grid(column=0, row=1, columnspan=8, sticky='nw', padx=[5,0])
+        controls.grid(column=0, row=0, sticky='new', pady=[0,6])
+        controls.grid_columnconfigure(7, weight=1)
+
+        self.current_line_img = self.getimage('debug_current.gif')
+        self.regular_line_img = self.getimage('debug_line.gif')
+        self.stack = Treeview(left, columns=('statement', ),
+                                  height=5, selectmode='browse')
+        self.stack.column('#0', width=100)
+        self.stack.column('#1', width=150)
+        self.stack.tag_configure('error', foreground='red')
+        self.stack.bind('<<TreeviewSelect>>',
+                        lambda e: self.stack_selection_changed())
+        self.stack.bind('<Double-1>', lambda e: self.stack_doubleclick())
+        if self.root._windowingsystem == 'aqua':
+            self.stack.bind('<Button-2>', self.stack_contextmenu)
+            self.stack.bind('<Control-Button-1>', self.stack_contextmenu)
+        else:
+            self.stack.bind('<Button-3>', self.stack_contextmenu)
+
+        scroll = Scrollbar(left, command=self.stack.yview)
+        self.stack['yscrollcommand'] = scroll.set
+        self.stack.grid(column=0, row=2, sticky='nwes')
+        scroll.grid(column=1, row=2, sticky='ns')
+        left.grid_columnconfigure(0, weight=1)
+        left.grid_rowconfigure(2, weight=1)
+
+        right = Frame(self.pane, padding=5)
+        self.pane.add(right, weight=1)
+        self.vars = Treeview(right, columns=('value',), height=5,
+                                                selectmode='none')
+        self.locals = self.vars.insert('', 'end', text='Locals',
+                                       open=True)
+        self.globals = self.vars.insert('', 'end', text='Globals',
+                                        open=False)
+        self.vars.column('#0', width=100)
+        self.vars.column('#1', width=150)
+        self.vars.bind('<Motion>', self.mouse_moved_vars)
+        self.vars.bind('<Leave>', self.leave_vars)
+        scroll2 = Scrollbar(right, command=self.vars.yview)
+        self.vars['yscrollcommand'] = scroll2.set
+        self.vars.grid(column=0, row=0, sticky='nwes')
+        scroll2.grid(column=1, row=0, sticky='ns')
+        right.grid_columnconfigure(0, weight=1)
+        right.grid_rowconfigure(0, weight=1)
+        self.clear_stack()
+
+    def enable_buttons(self, buttons=None):
+        for key in self.buttons:
+            if buttons is None or key not in buttons:
+                self.buttondata[key][0]['image'] = self.buttondata[key][2]
+                self.buttondata[key][0]['foreground'] = '#aaaaaa'
+                self.buttondata[key][0]['cursor'] = ''
+                self.buttondata[key][0].bind('<1>', 'break')
+                self.buttondata[key][0].bind('<<context-menu>>', 'break')
+            else:
+                self.buttondata[key][0]['image'] = self.buttondata[key][1]
+                self.buttondata[key][0]['foreground'] = '#000000'
+                self.buttondata[key][0].bind('<1>', self.button_cmds[key])
+                self.buttondata[key][0].bind('<<context-menu>>',
+                                             self.button_cmds[key])
+                self.buttondata[key][0]['cursor'] = self.clickable_cursor
+
+    def stack_selection_changed(self):
+        self.show_vars()
+
+    def stack_doubleclick(self):
+        sel = self.stack.selection()
+        if len(sel) == 1:
+            self.show_source(sel[0])
+
+    def stack_contextmenu(self, event):
+        item = self.stack.identify('item', event.x, event.y)
+        if item is not None and item != -1 and item != '':
+            menu = Menu(self.top, tearoff=0)
+            menu.add_command(label='View Source',
+                             command = lambda: self.show_source(item))
+            menu.tk_popup(event.x_root, event.y_root)
+
+    def show_source(self, item):
+        if item in self.framevars:
+            fname = self.framevars[item][2]
+            lineno = self.framevars[item][3]
+            if fname[:1] + fname[-1:] != "<>" and os.path.exists(fname):
+                self.flist.gotofileline(fname, lineno)
+
+    def show_status(self, msg, error=False):
+        self.status['text'] = msg
+        self.status['foreground'] = '#ff0000' if error else '#006600'
+        self.status['font'] = self.status_error_font if error \
+                            else self.status_normal_font
+
+    def clear_stack(self):
+        self.stack.delete(*self.stack.get_children(''))
+        self.vars.delete(*self.vars.get_children(self.locals))
+        self.vars.delete(*self.vars.get_children(self.globals))
+        self.vars.detach(self.locals)
+        self.vars.detach(self.globals)
+        self.var_values = {}
+
+    def add_stackframe(self, frame, lineno, current=False):
+        func = frame.f_code.co_name
+        if func in ("?", "", None):
+            func = '.'
+        try:
+            selfval = frame.f_locals['self']
+        except KeyError:
+            selfval = None;
+        if selfval:
+            # This stackframe represents an object method; preface the method
+            # name with the name of the class.
+            if selfval.__class__.__name__ == 'str':
+                # We've got the string representation of the object sent from
+                # the remote debugger; parse out the name of the class, e.g.
+                # from "<random.Random object at 0x...>" extract "Random".
+                match = re.match(r'^<(?:.*)\.([^.]*) object at 0x[0-9a-f]+>$',
+                                 selfval)
+                if match:
+                    func = match.group(1) + '.' + func
+            else:
+                func = selfval.__class__.__name__ + '.' + func
+        stmt = linecache.getline(frame.f_code.co_filename, lineno).strip()
+        image = self.current_line_img if current else self.regular_line_img
+        item = self.stack.insert('', 'end', text=func,
+                               values=(stmt,), image=image)
+        self.framevars[item] = (frame.f_locals, frame.f_globals,
+                                frame.f_code.co_filename, lineno)
+        if current:
+            self.stack.selection_set(item)
 
     def interaction(self, message, frame, info=None):
         self.frame = frame
-        self.status.configure(text=message)
+        self.show_status(message)
         #
         if info:
             type, value, tb = info
@@ -217,39 +340,73 @@ class Debugger:
                     m1 = f"{m1}: {value}"
                 except:
                     pass
-            bg = "yellow"
         else:
             m1 = ""
             tb = None
-            bg = self.errorbg
-        self.error.configure(text=m1, background=bg)
-        #
-        sv = self.stackviewer
-        if sv:
-            stack, i = self.idb.get_stack(self.frame, tb)
-            sv.load_stack(stack, i)
-        #
-        self.show_variables(1)
-        #
-        if self.vsource.get():
-            self.sync_source_line()
-        #
-        for b in self.buttons:
-            b.configure(state="normal")
-        #
+
+        if m1 != '':
+            self.show_status(m1, error=True)
+        stack, idx = self.idb.get_stack(self.frame, tb)
+        self.clear_stack()
+        for i in range(len(stack)):
+            frame, lineno = stack[i]
+            self.add_stackframe(frame, lineno, current=(i == idx))
+        self.show_vars()
+        self.sync_source_line()
+        self.enable_buttons(self.buttons)
+
         self.top.wakeup()
         # Nested main loop: Tkinter's main loop is not reentrant, so use
         # Tcl's vwait facility, which reenters the event loop until an
-        # event handler sets the variable we're waiting on
+        # event handler sets the variable we're waiting on.
         self.nesting_level += 1
         self.root.tk.call('vwait', '::idledebugwait')
         self.nesting_level -= 1
-        #
-        for b in self.buttons:
-            b.configure(state="disabled")
-        self.status.configure(text="")
-        self.error.configure(text="", background=self.errorbg)
         self.frame = None
+
+    def show_vars(self):
+        self.vars.move(self.locals, '', 0)
+        self.vars.move(self.globals, '', 1)
+        self.vars.delete(*self.vars.get_children(self.locals))
+        self.vars.delete(*self.vars.get_children(self.globals))
+        self.var_values = {}
+        sel = self.stack.selection()
+        if len(sel) == 1 and sel[0] in self.framevars:
+            locals, globals, _, _ = self.framevars[sel[0]]
+            # locals/globals are normally rpc DictProxy objects, which are
+            # not iterable.
+            self.add_varheader()
+            for name in sorted(locals.keys(), key=underscore_at_end):
+                self.add_var(name, locals[name])
+            self.add_varheader(is_global=True)
+            for name in sorted(globals.keys(), key=underscore_at_end):
+                self.add_var(name, globals[name], is_global=True)
+
+    def add_varheader(self, is_global=False):
+        pass
+
+    def add_var(self, varname, value, is_global=False):
+        item = self.vars.insert(self.globals if is_global else self.locals,
+                         'end', text=varname, values=(value, ))
+        self.var_values[item] = value
+
+    def mouse_moved_vars(self, ev):
+        # tooltip_schedule(ev, self.var_tooltip)
+        pass
+
+    def leave_vars(self, ev):
+        # tooltip_clear()
+        pass
+
+    def var_tooltip(self, ev):
+        # Callback from tooltip package to return text of tooltip.
+        item = None
+        if self.vars.identify('column', ev.x, ev.y) == '#1':
+            item = self.vars.identify('item', ev.x, ev.y)
+        if item and item in self.var_values:
+            return(self.var_values[item], ev.x + self.vars.winfo_rootx() + 10,
+                                          ev.y + self.vars.winfo_rooty() + 5)
+        return None
 
     def sync_source_line(self):
         frame = self.frame
@@ -257,7 +414,9 @@ class Debugger:
             return
         filename, lineno = self.__frame2fileline(frame)
         if filename[:1] + filename[-1:] != "<>" and os.path.exists(filename):
-            self.flist.gotofileline(filename, lineno)
+            if (self.var_open_source_windows.get() or
+                self.flist.already_open(filename)):
+                self.flist.gotofileline(filename, lineno)
 
     def __frame2fileline(self, frame):
         code = frame.f_code
@@ -265,94 +424,46 @@ class Debugger:
         lineno = frame.f_lineno
         return filename, lineno
 
-    def cont(self):
+    def invoke_program(self):
+        "Called just before taking the next action in debugger, adjust state"
+        self.enable_buttons(['stop'])
+        self.show_status('Running...')
+
+    def cont(self, ev=None):
+        self.invoke_program()
         self.idb.set_continue()
         self.abort_loop()
 
-    def step(self):
+    def step(self, ev=None):
+        self.invoke_program()
         self.idb.set_step()
         self.abort_loop()
 
-    def next(self):
+    def next(self, ev=None):
+        self.invoke_program()
         self.idb.set_next(self.frame)
         self.abort_loop()
 
-    def ret(self):
+    def ret(self, ev=None):
+        self.invoke_program()
         self.idb.set_return(self.frame)
         self.abort_loop()
 
-    def quit(self):
+    def quit(self, ev=None):
+        self.invoke_program()
         self.idb.set_quit()
         self.abort_loop()
 
     def abort_loop(self):
         self.root.tk.call('set', '::idledebugwait', '1')
 
-    stackviewer = None
-
-    def show_stack(self):
-        if not self.stackviewer and self.vstack.get():
-            self.stackviewer = sv = StackViewer(self.fstack, self.flist, self)
-            if self.frame:
-                stack, i = self.idb.get_stack(self.frame, None)
-                sv.load_stack(stack, i)
-        else:
-            sv = self.stackviewer
-            if sv and not self.vstack.get():
-                self.stackviewer = None
-                sv.close()
-            self.fstack['height'] = 1
-
-    def show_source(self):
-        if self.vsource.get():
-            self.sync_source_line()
-
-    def show_frame(self, stackitem):
-        self.frame = stackitem[0]  # lineno is stackitem[1]
-        self.show_variables()
-
-    localsviewer = None
-    globalsviewer = None
-
-    def show_locals(self):
-        lv = self.localsviewer
-        if self.vlocals.get():
-            if not lv:
-                self.localsviewer = NamespaceViewer(self.flocals, "Locals")
-        else:
-            if lv:
-                self.localsviewer = None
-                lv.close()
-                self.flocals['height'] = 1
-        self.show_variables()
-
-    def show_globals(self):
-        gv = self.globalsviewer
-        if self.vglobals.get():
-            if not gv:
-                self.globalsviewer = NamespaceViewer(self.fglobals, "Globals")
-        else:
-            if gv:
-                self.globalsviewer = None
-                gv.close()
-                self.fglobals['height'] = 1
-        self.show_variables()
-
-    def show_variables(self, force=0):
-        lv = self.localsviewer
-        gv = self.globalsviewer
-        frame = self.frame
-        if not frame:
-            ldict = gdict = None
-        else:
-            ldict = frame.f_locals
-            gdict = frame.f_globals
-            if lv and gv and ldict is gdict:
-                ldict = None
-        if lv:
-            lv.load_dict(ldict, force, self.pyshell.interp.rpcclt)
-        if gv:
-            gv.load_dict(gdict, force, self.pyshell.interp.rpcclt)
+    def options(self, ev=None):
+        menu = Menu(self.top, tearoff=0)
+        menu.add_checkbutton(label='Show Source in Open Files Only',
+                variable=self.var_open_source_windows, onvalue=False)
+        menu.add_checkbutton(label='Automatically Open Files to Show Source',
+                variable=self.var_open_source_windows, onvalue=True)
+        menu.tk_popup(ev.x_root, ev.y_root)
 
     def set_breakpoint_here(self, filename, lineno):
         self.idb.set_break(filename, lineno)
@@ -373,176 +484,6 @@ class Debugger:
             except AttributeError:
                 continue
 
-class StackViewer(ScrolledList):
-
-    def __init__(self, master, flist, gui):
-        if macosx.isAquaTk():
-            # At least on with the stock AquaTk version on OSX 10.4 you'll
-            # get a shaking GUI that eventually kills IDLE if the width
-            # argument is specified.
-            ScrolledList.__init__(self, master)
-        else:
-            ScrolledList.__init__(self, master, width=80)
-        self.flist = flist
-        self.gui = gui
-        self.stack = []
-
-    def load_stack(self, stack, index=None):
-        self.stack = stack
-        self.clear()
-        for i in range(len(stack)):
-            frame, lineno = stack[i]
-            try:
-                modname = frame.f_globals["__name__"]
-            except:
-                modname = "?"
-            code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
-            import linecache
-            sourceline = linecache.getline(filename, lineno)
-            sourceline = sourceline.strip()
-            if funcname in ("?", "", None):
-                item = "%s, line %d: %s" % (modname, lineno, sourceline)
-            else:
-                item = "%s.%s(), line %d: %s" % (modname, funcname,
-                                                 lineno, sourceline)
-            if i == index:
-                item = "> " + item
-            self.append(item)
-        if index is not None:
-            self.select(index)
-
-    def popup_event(self, event):
-        "override base method"
-        if self.stack:
-            return ScrolledList.popup_event(self, event)
-
-    def fill_menu(self):
-        "override base method"
-        menu = self.menu
-        menu.add_command(label="Go to source line",
-                         command=self.goto_source_line)
-        menu.add_command(label="Show stack frame",
-                         command=self.show_stack_frame)
-
-    def on_select(self, index):
-        "override base method"
-        if 0 <= index < len(self.stack):
-            self.gui.show_frame(self.stack[index])
-
-    def on_double(self, index):
-        "override base method"
-        self.show_source(index)
-
-    def goto_source_line(self):
-        index = self.listbox.index("active")
-        self.show_source(index)
-
-    def show_stack_frame(self):
-        index = self.listbox.index("active")
-        if 0 <= index < len(self.stack):
-            self.gui.show_frame(self.stack[index])
-
-    def show_source(self, index):
-        if not (0 <= index < len(self.stack)):
-            return
-        frame, lineno = self.stack[index]
-        code = frame.f_code
-        filename = code.co_filename
-        if os.path.isfile(filename):
-            edit = self.flist.open(filename)
-            if edit:
-                edit.gotoline(lineno)
-
-
-class NamespaceViewer:
-
-    def __init__(self, master, title, dict=None):
-        width = 0
-        height = 40
-        if dict:
-            height = 20*len(dict) # XXX 20 == observed height of Entry widget
-        self.master = master
-        self.title = title
-        import reprlib
-        self.repr = reprlib.Repr()
-        self.repr.maxstring = 60
-        self.repr.maxother = 60
-        self.frame = frame = Frame(master)
-        self.frame.pack(expand=1, fill="both")
-        self.label = Label(frame, text=title, borderwidth=2, relief="groove")
-        self.label.pack(fill="x")
-        self.vbar = vbar = Scrollbar(frame, name="vbar")
-        vbar.pack(side="right", fill="y")
-        self.canvas = canvas = Canvas(frame,
-                                      height=min(300, max(40, height)),
-                                      scrollregion=(0, 0, width, height))
-        canvas.pack(side="left", fill="both", expand=1)
-        vbar["command"] = canvas.yview
-        canvas["yscrollcommand"] = vbar.set
-        self.subframe = subframe = Frame(canvas)
-        self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
-        self.load_dict(dict)
-
-    dict = -1
-
-    def load_dict(self, dict, force=0, rpc_client=None):
-        if dict is self.dict and not force:
-            return
-        subframe = self.subframe
-        frame = self.frame
-        for c in list(subframe.children.values()):
-            c.destroy()
-        self.dict = None
-        if not dict:
-            l = Label(subframe, text="None")
-            l.grid(row=0, column=0)
-        else:
-            #names = sorted(dict)
-            ###
-            # Because of (temporary) limitations on the dict_keys type (not yet
-            # public or pickleable), have the subprocess to send a list of
-            # keys, not a dict_keys object.  sorted() will take a dict_keys
-            # (no subprocess) or a list.
-            #
-            # There is also an obscure bug in sorted(dict) where the
-            # interpreter gets into a loop requesting non-existing dict[0],
-            # dict[1], dict[2], etc from the debugger_r.DictProxy.
-            ###
-            keys_list = dict.keys()
-            names = sorted(keys_list)
-            ###
-            row = 0
-            for name in names:
-                value = dict[name]
-                svalue = self.repr.repr(value) # repr(value)
-                # Strip extra quotes caused by calling repr on the (already)
-                # repr'd value sent across the RPC interface:
-                if rpc_client:
-                    svalue = svalue[1:-1]
-                l = Label(subframe, text=name)
-                l.grid(row=row, column=0, sticky="nw")
-                l = Entry(subframe, width=0, borderwidth=0)
-                l.insert(0, svalue)
-                l.grid(row=row, column=1, sticky="nw")
-                row = row+1
-        self.dict = dict
-        # XXX Could we use a <Configure> callback for the following?
-        subframe.update_idletasks() # Alas!
-        width = subframe.winfo_reqwidth()
-        height = subframe.winfo_reqheight()
-        canvas = self.canvas
-        self.canvas["scrollregion"] = (0, 0, width, height)
-        if height > 300:
-            canvas["height"] = 300
-            frame.pack(expand=1)
-        else:
-            canvas["height"] = height
-            frame.pack(expand=0)
-
-    def close(self):
-        self.frame.destroy()
 
 if __name__ == "__main__":
     from unittest import main
