@@ -1,0 +1,2 @@
+Expose :meth:`~object.__float__` as :func:`operator.as_float`.  Patch by
+Sergey B Kirpichev.

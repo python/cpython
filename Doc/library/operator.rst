@@ -116,6 +116,10 @@ The mathematical and bitwise operations are the most numerous:
       The result always has exact type :class:`int`.  Previously, the result
       could have been an instance of a subclass of ``int``.
 
+.. function:: as_float(a)
+              __float__(a)
+
+   Return *a* converted to a float.  Equivalent to ``a.__float__()``.
 
 .. function:: inv(obj)
               invert(obj)
