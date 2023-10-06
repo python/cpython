@@ -1016,7 +1016,7 @@ def optimization_section() -> Section:
                 ],
             )
         yield Section(
-            "Uop stats",
+            "Uop execution stats",
             "",
             [
                 Table(
