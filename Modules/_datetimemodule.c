@@ -1236,10 +1236,11 @@ static PyObject *
 new_timezone(PyObject *offset, PyObject *name)
 {
     assert(offset != NULL);
-    assert(PyDelta_Check(offset, mstate));
-    assert(name == NULL || PyUnicode_Check(name));
 
     DateTimeState *mstate = find_module_state_by_def(Py_TYPE(offset));
+
+    assert(PyDelta_Check(offset, mstate));
+    assert(name == NULL || PyUnicode_Check(name));
 
     if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
         return Py_NewRef(mstate->PyDateTime_TimeZone_UTC);
