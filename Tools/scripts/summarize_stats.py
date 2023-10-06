@@ -399,13 +399,14 @@ class Stats:
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
-        rows: Rows = []
+        rows = []
         for k, v in self._data.items():
             match = re.match(f"{prefix}\\[([0-9]+)\\]", k)
             if match is not None:
                 entry = int(match.groups()[0])
                 rows.append((entry, v))
-        return sorted(rows)
+        rows.sort()
+        return rows
 
 
 class Count(int):
@@ -949,7 +950,11 @@ def optimization_section() -> Section:
         optimization_stats = stats.get_optimization_stats()
 
         return [
-            (label, Count(value), Ratio(value, den, percentage=label != "Uops executed"))
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Uops executed"),
+            )
             for label, (value, den) in optimization_stats.items()
         ]
 
