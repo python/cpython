@@ -42,7 +42,7 @@ struct _signals_runtime_state {
         /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
          * (even though it would probably be otherwise, anyway).
          */
-        uintptr_t func;
+        void* func;
     } handlers[Py_NSIG];
 
     volatile struct {
