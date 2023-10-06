@@ -5,6 +5,7 @@ import gc
 import locale
 import operator
 import os
+import random
 import struct
 import subprocess
 import sys
@@ -29,10 +30,6 @@ def requires_subinterpreters(meth):
     return unittest.skipIf(interpreters is None,
                            'subinterpreters required')(meth)
 
-
-# count the number of test runs, used to create unique
-# strings to intern in test_intern()
-INTERN_NUMRUNS = 0
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
@@ -696,10 +693,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -717,9 +712,7 @@ class SysModuleTest(unittest.TestCase):
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
         self.assertIs(t, s)
 
@@ -1209,6 +1202,13 @@ class SysModuleTest(unittest.TestCase):
         sys._stats_off()
         sys._stats_clear()
         sys._stats_dump()
+
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    def test_disable_gil_abi(self):
+        abi_threaded = 't' in sys.abiflags
+        py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
+        self.assertEqual(py_nogil, abi_threaded)
 
 
 @test.support.cpython_only

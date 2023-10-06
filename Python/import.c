@@ -17,15 +17,12 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
-#include "importdl.h"             // _PyImport_DynLoadFiletab
+#include "pycore_importdl.h"      // _PyImport_DynLoadFiletab
 #include "pydtrace.h"             // PyDTrace_IMPORT_FIND_LOAD_START_ENABLED()
 #include <stdbool.h>              // bool
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 
@@ -3887,8 +3884,3 @@ PyInit__imp(void)
 {
     return PyModuleDef_Init(&imp_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

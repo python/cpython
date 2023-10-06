@@ -65,7 +65,7 @@ import _random
 
 try:
     # hashlib is pretty heavy to load, try lean internal module first
-    from _sha512 import sha512 as _sha512
+    from _sha2 import sha512 as _sha512
 except ImportError:
     # fallback to official implementation
     from hashlib import sha512 as _sha512
