@@ -126,6 +126,10 @@ unshare_buffer(bytesio *self, size_t size)
 static int
 resize_buffer(bytesio *self, size_t size)
 {
+    if (check_exports(self)) {
+        return -1;
+    }
+
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = PyBytes_GET_SIZE(self->buf);
@@ -182,9 +186,6 @@ Py_NO_INLINE static Py_ssize_t
 write_bytes(bytesio *self, PyObject *b)
 {
     if (check_closed(self)) {
-        return -1;
-    }
-    if (check_exports(self)) {
         return -1;
     }
 
