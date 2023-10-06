@@ -95,6 +95,10 @@ class CPythonInstallDetailsFileTests(unittest.TestCase, FormatTestsBase):
         with open(self.location, 'r') as f:
             return f.read()
 
+    def setUp(self):
+        if sys.platform in ('wasi', 'emscripten') and not os.path.isfile(self.location):
+            self.skipTest(f'{sys.platform} build without a install-details.json file')
+
     @needs_installed_python
     def test_location(self):
         self.assertTrue(os.path.isfile(self.location))
