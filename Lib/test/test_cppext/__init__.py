@@ -9,7 +9,6 @@ import sysconfig
 from test import support
 
 
-MS_WINDOWS = (sys.platform == 'win32')
 SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
@@ -30,7 +29,7 @@ class TestCPPExt(unittest.TestCase):
 
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
-    @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
+    @unittest.skipIf(support.MS_WINDOWS, 'test fails on Windows')
     # Building and running an extension in clang sanitizing mode is not
     # straightforward
     @unittest.skipIf(
