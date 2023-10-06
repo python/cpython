@@ -7,7 +7,7 @@ import sysconfig
 import time
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, MS_WINDOWS
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -24,7 +24,7 @@ from .utils import (
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
     is_cross_compiled, get_host_runner,
-    MS_WINDOWS, EXIT_TIMEOUT)
+    EXIT_TIMEOUT)
 
 
 class Regrtest:
