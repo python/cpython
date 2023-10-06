@@ -316,6 +316,7 @@ class _EnumTests:
                     return self.name.title()
                 def __format__(self, spec):
                     return ''.join(reversed(self.name))
+            self.NewBaseEnum = NewBaseEnum
             class NewSubEnum(NewBaseEnum):
                 first = auto()
             self.NewSubEnum = NewSubEnum
@@ -382,10 +383,8 @@ class _EnumTests:
                 return self.name.title()
             def __format__(self, spec):
                 return ''.join(reversed(self.name))
-            NewBaseEnum = self.enum_type('NewBaseEnum', dict(__format__=__format__, __str__=__str__))
-            class NewSubEnum(NewBaseEnum):
-                first = auto()
-            self.NewSubEnum = NewBaseEnum('NewSubEnum', 'first')
+            self.NewBaseEnum = self.enum_type('NewBaseEnum', dict(__format__=__format__, __str__=__str__))
+            self.NewSubEnum = self.NewBaseEnum('NewSubEnum', 'first')
             #
             def _generate_next_value_(name, start, last, values):
                 pass
@@ -600,6 +599,10 @@ class _EnumTests:
             sample = self.source_values[1]
         self.assertTrue('description' not in dir(SubEnum))
         self.assertTrue('description' in dir(SubEnum.sample), dir(SubEnum.sample))
+
+    def test_empty_enum_has_no_values(self):
+        with self.assertRaisesRegex(TypeError, "<.... 'NewBaseEnum'> has no members"):
+            self.NewBaseEnum(7)
 
     def test_enum_in_enum_out(self):
         Main = self.MainEnum

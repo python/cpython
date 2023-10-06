@@ -1,0 +1,3 @@
+Slightly improve the import time of several standard-library modules by
+deferring imports of :mod:`warnings` within those modules. Patch by Alex
+Waygood.

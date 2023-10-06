@@ -88,8 +88,8 @@ startup by the :c:func:`PyConfig_Read` function: see
    On some systems, conversion using the file system encoding may fail. In this
    case, Python uses the :ref:`surrogateescape encoding error handler
    <surrogateescape>`, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again translated to the
-   original byte on encoding.
+   Unicode character U+DC\ *xx* on decoding, and these are again
+   translated to the original byte on encoding.
 
 
 The :term:`file system encoding <filesystem encoding and error handler>` must
@@ -1618,25 +1618,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking, /)
-
-   Set the blocking mode of the specified file descriptor. Set the
-   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
-
-   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
-
-   .. availability:: Unix, Windows.
-
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
-
-      On Windows, this function is limited to pipes.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.12
-      Added support for pipes on Windows.
-
 .. data:: SF_NODISKIO
           SF_MNOWAIT
           SF_SYNC
@@ -1656,6 +1637,26 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.11
+
+
+.. function:: set_blocking(fd, blocking, /)
+
+   Set the blocking mode of the specified file descriptor. Set the
+   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
+
+   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
+
+   .. availability:: Unix, Windows.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
+      On Windows, this function is limited to pipes.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
@@ -4156,15 +4157,38 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.fork "" os.fork
 
+   .. warning::
+
+      If you use TLS sockets in an application calling ``fork()``, see
+      the warning in the :mod:`ssl` documentation.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. warning::
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, :func:`os.fork` now raises a :exc:`DeprecationWarning`.
 
-      See :mod:`ssl` for applications that use the SSL module with fork().
+      We chose to surface this as a warning, when detectable, to better
+      inform developers of a design problem that the POSIX platform
+      specifically notes as not supported. Even in code that
+      *appears* to work, it has never been safe to mix threading with
+      :func:`os.fork` on POSIX platforms. The CPython runtime itself has
+      always made API calls that are not safe for use in the child
+      process when threads existed in the parent (such as ``malloc`` and
+      ``free``).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+      Users of macOS or users of libc or malloc implementations other
+      than those typically found in glibc to date are among those
+      already more likely to experience deadlocks running such code.
+
+      See `this discussion on fork being incompatible with threads
+      <https://discuss.python.org/t/33555>`_
+      for technical details of why we're surfacing this longstanding
+      platform compatibility problem to developers.
+
+   .. availability:: POSIX, not Emscripten, not WASI.
 
 
 .. function:: forkpty()
@@ -4176,6 +4200,11 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    .. audit-event:: os.forkpty "" os.forkpty
+
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, this now raises a :exc:`DeprecationWarning`. See the
+      longer explanation on :func:`os.fork`.
 
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
@@ -5112,8 +5141,12 @@ operating system.
 
 .. function:: sched_getaffinity(pid, /)
 
-   Return the set of CPUs the process with PID *pid* (or the current process
-   if zero) is restricted to.
+   Return the set of CPUs the process with PID *pid* is restricted to.
+
+   If *pid* is zero, return the set of CPUs the calling thread of the current
+   process is restricted to.
+
+   See also the :func:`process_cpu_count` function.
 
 
 .. _os-path:
@@ -5154,12 +5187,11 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the **system**. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
-
+   The :func:`process_cpu_count` function can be used to get the number of
+   logical CPUs usable by the calling thread of the **current process**.
 
    .. versionadded:: 3.4
 
@@ -5171,6 +5203,20 @@ Miscellaneous System Information
    unobtainable.
 
    .. availability:: Unix.
+
+
+.. function:: process_cpu_count()
+
+   Get the number of logical CPUs usable by the calling thread of the **current
+   process**. Returns ``None`` if undetermined. It can be less than
+   :func:`cpu_count` depending on the CPU affinity.
+
+   The :func:`cpu_count` function can be used to get the number of logical CPUs
+   in the **system**.
+
+   See also the :func:`sched_getaffinity` functions.
+
+   .. versionadded:: 3.13
 
 
 .. function:: sysconf(name, /)

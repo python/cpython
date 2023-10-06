@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_interp.h"
+#include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName()
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
@@ -153,7 +154,7 @@ PyUnstable_SetOptimizer(_PyOptimizerObject *optimizer)
     Py_DECREF(old);
 }
 
-_PyInterpreterFrame *
+int
 _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest, PyObject **stack_pointer)
 {
     assert(src->op.code == JUMP_BACKWARD);
@@ -161,18 +162,14 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
     assert(PyCode_Check(code));
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!has_space_for_executor(code, src)) {
-        goto jump_to_destination;
+        return 0;
     }
     _PyOptimizerObject *opt = interp->optimizer;
     _PyExecutorObject *executor = NULL;
     int err = opt->optimize(opt, code, dest, &executor, (int)(stack_pointer - _PyFrame_Stackbase(frame)));
     if (err <= 0) {
         assert(executor == NULL);
-        if (err < 0) {
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            return NULL;
-        }
-        goto jump_to_destination;
+        return err;
     }
     int index = get_index_for_executor(code, src);
     if (index < 0) {
@@ -183,16 +180,11 @@ _PyOptimizer_BackEdge(_PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNI
          * it might get confused by the executor disappearing,
          * but there is not much we can do about that here. */
         Py_DECREF(executor);
-        goto jump_to_destination;
+        return 0;
     }
     insert_executor(code, src, index, executor);
-    assert(frame->prev_instr == src);
-    frame->prev_instr = dest - 1;
-    return executor->execute(executor, frame, stack_pointer);
-jump_to_destination:
-    frame->prev_instr = dest - 1;
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return frame;
+    Py_DECREF(executor);
+    return 1;
 }
 
 _PyExecutorObject *
@@ -469,18 +461,20 @@ translate_bytecode_to_trace(
     if (trace_length + (n) > max_length) { \
         DPRINTF(2, "No room for %s (need %d, got %d)\n", \
                 (opname), (n), max_length - trace_length); \
+        OPT_STAT_INC(trace_too_long); \
         goto done; \
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
 
-// Reserve space for main+stub uops, plus 2 for SAVE_IP and EXIT_TRACE
+// Reserve space for main+stub uops, plus 2 for _SET_IP and _EXIT_TRACE
 #define RESERVE(main, stub) RESERVE_RAW((main) + (stub) + 2, uop_name(opcode))
 
 // Trace stack operations (used by _PUSH_FRAME, _POP_FRAME)
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
-        ADD_TO_TRACE(SAVE_IP, 0, 0); \
+        OPT_STAT_INC(trace_stack_overflow); \
+        ADD_TO_TRACE(_SET_IP, 0, 0); \
         goto done; \
     } \
     trace_stack[trace_stack_depth].code = code; \
@@ -501,10 +495,10 @@ translate_bytecode_to_trace(
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
 
-top:  // Jump here after _PUSH_FRAME
+top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for SAVE_IP and EXIT_TRACE
-        ADD_TO_TRACE(SAVE_IP, INSTR_IP(instr, code), 0);
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -530,7 +524,7 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_NONE:
             {
                 RESERVE(2, 2);
-                ADD_TO_TRACE(IS_NONE, 0, 0);
+                ADD_TO_TRACE(_IS_NONE, 0, 0);
                 opcode = POP_JUMP_IF_TRUE;
                 goto pop_jump_if_bool;
             }
@@ -538,7 +532,7 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_NOT_NONE:
             {
                 RESERVE(2, 2);
-                ADD_TO_TRACE(IS_NONE, 0, 0);
+                ADD_TO_TRACE(_IS_NONE, 0, 0);
                 opcode = POP_JUMP_IF_FALSE;
                 goto pop_jump_if_bool;
             }
@@ -547,16 +541,29 @@ top:  // Jump here after _PUSH_FRAME
             case POP_JUMP_IF_TRUE:
             {
 pop_jump_if_bool:
-                // Assume jump unlikely (TODO: handle jump likely case)
                 RESERVE(1, 2);
-                _Py_CODEUNIT *target_instr =
-                    instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]] + oparg;
                 max_length -= 2;  // Really the start of the stubs
-                uint32_t uopcode = opcode == POP_JUMP_IF_TRUE ?
+                int counter = instr[1].cache;
+                int bitcount = _Py_popcount32(counter);
+                bool jump_likely = bitcount > 8;
+                bool jump_sense = opcode == POP_JUMP_IF_TRUE;
+                uint32_t uopcode = jump_sense ^ jump_likely ?
                     _POP_JUMP_IF_TRUE : _POP_JUMP_IF_FALSE;
+                _Py_CODEUNIT *next_instr = instr + 1 + _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+                _Py_CODEUNIT *target_instr = next_instr + oparg;
+                _Py_CODEUNIT *stub_target = jump_likely ? next_instr : target_instr;
+                DPRINTF(4, "%s(%d): counter=%x, bitcount=%d, likely=%d, sense=%d, uopcode=%s\n",
+                        uop_name(opcode), oparg,
+                        counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, SAVE_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 1, EXIT_TRACE, 0, 0);
+                ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(stub_target, code), 0);
+                ADD_TO_STUB(max_length + 1, _EXIT_TRACE, 0, 0);
+                if (jump_likely) {
+                    DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
+                            instr[1].cache, bitcount, 2 * INSTR_IP(target_instr, code));
+                    instr = target_instr;
+                    goto top;
+                }
                 break;
             }
 
@@ -564,9 +571,10 @@ pop_jump_if_bool:
             {
                 if (instr + 2 - oparg == initial_instr && code == initial_code) {
                     RESERVE(1, 0);
-                    ADD_TO_TRACE(JUMP_TO_TOP, 0, 0);
+                    ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
                 }
                 else {
+                    OPT_STAT_INC(inner_loop);
                     DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
                 }
                 goto done;
@@ -575,7 +583,7 @@ pop_jump_if_bool:
             case JUMP_FORWARD:
             {
                 RESERVE(0, 0);
-                // This will emit two SAVE_IP instructions; leave it to the optimizer
+                // This will emit two _SET_IP instructions; leave it to the optimizer
                 instr += oparg;
                 break;
             }
@@ -615,8 +623,8 @@ pop_jump_if_bool:
                 ADD_TO_TRACE(next_op, 0, 0);
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, SAVE_IP, INSTR_IP(target_instr, code), 0);
-                ADD_TO_STUB(max_length + 2, EXIT_TRACE, 0, 0);
+                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
+                ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
                 break;
             }
 
@@ -624,7 +632,7 @@ pop_jump_if_bool:
             {
                 const struct opcode_macro_expansion *expansion = &_PyOpcode_macro_expansion[opcode];
                 if (expansion->nuops > 0) {
-                    // Reserve space for nuops (+ SAVE_IP + EXIT_TRACE)
+                    // Reserve space for nuops (+ _SET_IP + _EXIT_TRACE)
                     int nuops = expansion->nuops;
                     RESERVE(nuops, 0);
                     if (expansion->uops[nuops-1].uop == _POP_FRAME) {
@@ -633,7 +641,9 @@ pop_jump_if_bool:
                         // LOAD_CONST + _POP_FRAME.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
-                            goto done;}
+                            OPT_STAT_INC(trace_stack_underflow);
+                            goto done;
+                        }
                     }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
                     for (int i = 0; i < nuops; i++) {
@@ -668,7 +678,7 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SAVE_IP:  // op==SAVE_IP; oparg=next instr
+                            case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
                                 oparg = INSTR_IP(instr + offset, code);
                                 break;
 
@@ -708,7 +718,8 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_qualname),
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
-                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    OPT_STAT_INC(recursive_call);
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 if (new_code->co_version != func_version) {
@@ -716,7 +727,7 @@ pop_jump_if_bool:
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
-                                    ADD_TO_TRACE(SAVE_IP, 0, 0);
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 // Increment IP to the return address
@@ -732,13 +743,14 @@ pop_jump_if_bool:
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
-                            ADD_TO_TRACE(SAVE_IP, 0, 0);
+                            ADD_TO_TRACE(_SET_IP, 0, 0);
                             goto done;
                         }
                     }
                     break;
                 }
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
+                OPT_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
 
@@ -754,9 +766,9 @@ done:
         TRACE_STACK_POP();
     }
     assert(code == initial_code);
-    // Skip short traces like SAVE_IP, LOAD_FAST, SAVE_IP, EXIT_TRACE
+    // Skip short traces like _SET_IP, LOAD_FAST, _SET_IP, _EXIT_TRACE
     if (trace_length > 3) {
-        ADD_TO_TRACE(EXIT_TRACE, 0, 0);
+        ADD_TO_TRACE(_EXIT_TRACE, 0, 0);
         DPRINTF(1,
                 "Created a trace for %s (%s:%d) at byte offset %d -- length %d+%d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
@@ -786,6 +798,7 @@ done:
         return trace_length;
     }
     else {
+        OPT_STAT_INC(trace_too_short);
         DPRINTF(4,
                 "No trace for %s (%s:%d) at byte offset %d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
@@ -805,25 +818,25 @@ done:
 static int
 remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
 {
-    // Stage 1: Replace unneeded SAVE_IP uops with NOP.
-    // Note that we don't enter stubs, those SAVE_IPs are needed.
-    int last_save_ip = -1;
+    // Stage 1: Replace unneeded _SET_IP uops with NOP.
+    // Note that we don't enter stubs, those SET_IPs are needed.
+    int last_set_ip = -1;
     int last_instr = 0;
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
-        if (opcode == SAVE_CURRENT_IP) {
-            // Special case: never remove preceding SAVE_IP
-            last_save_ip = -1;
+        if (opcode == _SAVE_CURRENT_IP) {
+            // Special case: never remove preceding _SET_IP
+            last_set_ip = -1;
         }
-        else if (opcode == SAVE_IP) {
-            if (!need_ip && last_save_ip >= 0) {
-                trace[last_save_ip].opcode = NOP;
+        else if (opcode == _SET_IP) {
+            if (!need_ip && last_set_ip >= 0) {
+                trace[last_set_ip].opcode = NOP;
             }
             need_ip = false;
-            last_save_ip = pc;
+            last_set_ip = pc;
         }
-        else if (opcode == JUMP_TO_TOP || opcode == EXIT_TRACE) {
+        else if (opcode == _JUMP_TO_TOP || opcode == _EXIT_TRACE) {
             last_instr = pc + 1;
             break;
         }
@@ -886,7 +899,8 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
-    OBJECT_STAT_INC(optimization_traces_created);
+    OPT_HIST(trace_length, trace_length_hist);
+    OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
@@ -896,6 +910,7 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+    OPT_HIST(trace_length, optimized_trace_length_hist);
     executor->base.execute = _PyUopExecute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;
@@ -927,6 +942,6 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
     opt->resume_threshold = UINT16_MAX;
     // Need at least 3 iterations to settle specializations.
     // A few lower bits of the counter are reserved for other flags.
-    opt->backedge_threshold = 3 << OPTIMIZER_BITS_IN_COUNTER;
+    opt->backedge_threshold = 16 << OPTIMIZER_BITS_IN_COUNTER;
     return (PyObject *)opt;
 }

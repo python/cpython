@@ -4,11 +4,6 @@
  * This only tests basic functionality, not any synchronizing ordering.
  */
 
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
-#include "cpython/pyatomic.h"
 #include "parts.h"
 
 // We define atomic bitwise operations on these types

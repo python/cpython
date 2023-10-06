@@ -25,10 +25,16 @@ static PyMemberDef frame_memberlist[] = {
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
-    if (PyFrame_FastToLocalsWithError(f) < 0)
+    if (f == NULL) {
+        PyErr_BadInternalCall();
         return NULL;
-    PyObject *locals = f->f_frame->f_locals;
-    return Py_NewRef(locals);
+    }
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
+    PyObject *locals = _PyFrame_GetLocals(f->f_frame, 1);
+    if (locals) {
+        f->f_fast_as_locals = 1;
+    }
+    return locals;
 }
 
 int
@@ -405,10 +411,10 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case LOAD_GLOBAL:
                 {
                     int j = oparg;
+                    next_stack = push_value(next_stack, Object);
                     if (j & 1) {
                         next_stack = push_value(next_stack, Null);
                     }
-                    next_stack = push_value(next_stack, Object);
                     stacks[next_i] = next_stack;
                     break;
                 }
@@ -418,19 +424,9 @@ mark_stacks(PyCodeObject *code_obj, int len)
                     int j = oparg;
                     if (j & 1) {
                         next_stack = pop_value(next_stack);
-                        next_stack = push_value(next_stack, Null);
                         next_stack = push_value(next_stack, Object);
+                        next_stack = push_value(next_stack, Null);
                     }
-                    stacks[next_i] = next_stack;
-                    break;
-                }
-                case CALL:
-                {
-                    int args = oparg;
-                    for (int j = 0; j < args+2; j++) {
-                        next_stack = pop_value(next_stack);
-                    }
-                    next_stack = push_value(next_stack, Object);
                     stacks[next_i] = next_stack;
                     break;
                 }
@@ -1342,11 +1338,11 @@ PyFrame_GetVarString(PyFrameObject *frame, const char *name)
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
     if (f == NULL) {
         PyErr_BadInternalCall();
         return -1;
     }
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     int err = _PyFrame_FastToLocalsWithError(f->f_frame);
     if (err == 0) {
         f->f_fast_as_locals = 1;

@@ -19,8 +19,9 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -236,7 +237,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
     Apply a function of two arguments cumulatively to the items of a sequence
     or iterable, from left to right, so as to reduce the iterable to a single

@@ -1236,28 +1236,49 @@ class _Unparser(NodeVisitor):
 
         new_fstring_parts = []
         quote_types = list(_ALL_QUOTES)
+        fallback_to_repr = False
         for value, is_constant in fstring_parts:
             if is_constant:
-                value, quote_types = self._str_literal_helper(
+                value, new_quote_types = self._str_literal_helper(
                     value,
                     quote_types=quote_types,
                     escape_special_whitespace=True,
                 )
+                if set(new_quote_types).isdisjoint(quote_types):
+                    fallback_to_repr = True
+                    break
+                quote_types = new_quote_types
             elif "\n" in value:
                 quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
+                assert quote_types
             new_fstring_parts.append(value)
+
+        if fallback_to_repr:
+            # If we weren't able to find a quote type that works for all parts
+            # of the JoinedStr, fallback to using repr and triple single quotes.
+            quote_types = ["'''"]
+            new_fstring_parts.clear()
+            for value, is_constant in fstring_parts:
+                if is_constant:
+                    value = repr('"' + value)  # force repr to use single quotes
+                    expected_prefix = "'\""
+                    assert value.startswith(expected_prefix), repr(value)
+                    value = value[len(expected_prefix):-1]
+                new_fstring_parts.append(value)
 
         value = "".join(new_fstring_parts)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{value}{quote_type}")
 
-    def _write_fstring_inner(self, node):
+    def _write_fstring_inner(self, node, scape_newlines=False):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value)
+                self._write_fstring_inner(value, scape_newlines=scape_newlines)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
+            if scape_newlines:
+                value = value.replace("\n", "\\n")
             self.write(value)
         elif isinstance(node, FormattedValue):
             self.visit_FormattedValue(node)
@@ -1280,7 +1301,10 @@ class _Unparser(NodeVisitor):
                 self.write(f"!{chr(node.conversion)}")
             if node.format_spec:
                 self.write(":")
-                self._write_fstring_inner(node.format_spec)
+                self._write_fstring_inner(
+                    node.format_spec,
+                    scape_newlines=True
+                )
 
     def visit_Name(self, node):
         self.write(node.id)
