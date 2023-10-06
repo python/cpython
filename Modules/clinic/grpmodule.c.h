@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(grp_getgrgid__doc__,
 "getgrgid($module, /, id)\n"
@@ -119,9 +118,6 @@ grp_getgrnam(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         _PyArg_BadArgument("getgrnam", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     name = args[0];
     return_value = grp_getgrnam_impl(module, name);
 
@@ -149,4 +145,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=0916fdbcdeaf5d7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d4bdad9b26fb8558 input=a9049054013a1b77]*/

@@ -147,6 +147,19 @@ class DbmTestCase(unittest.TestCase):
             db['a'] = 'b'
         self.assertRaises(dbm.ndbm.error, bool, db)
 
+    def test_clear(self):
+        kvs = [('foo', 'bar'), ('1234', '5678')]
+        with dbm.ndbm.open(self.filename, 'c') as db:
+            for k, v in kvs:
+                db[k] = v
+                self.assertIn(k, db)
+            self.assertEqual(len(db), len(kvs))
+
+            db.clear()
+            for k, v in kvs:
+                self.assertNotIn(k, db)
+            self.assertEqual(len(db), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

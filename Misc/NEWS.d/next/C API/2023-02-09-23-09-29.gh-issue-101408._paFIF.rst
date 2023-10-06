@@ -1,2 +1,0 @@
-:c:func:`PyObject_GC_Resize` should calculate preheader size if needed.
-Patch by Dong-hee Na.

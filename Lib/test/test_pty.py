@@ -80,16 +80,8 @@ def expectedFailureIfStdinIsTTY(fun):
 # because pty code is not too portable.
 class PtyTest(unittest.TestCase):
     def setUp(self):
-        old_alarm = signal.signal(signal.SIGALRM, self.handle_sig)
-        self.addCleanup(signal.signal, signal.SIGALRM, old_alarm)
-
         old_sighup = signal.signal(signal.SIGHUP, self.handle_sighup)
         self.addCleanup(signal.signal, signal.SIGHUP, old_sighup)
-
-        # isatty() and close() can hang on some platforms. Set an alarm
-        # before running the test to make sure we don't hang forever.
-        self.addCleanup(signal.alarm, 0)
-        signal.alarm(10)
 
         # Save original stdin window size.
         self.stdin_dim = None
@@ -100,9 +92,6 @@ class PtyTest(unittest.TestCase):
                                 self.stdin_dim)
             except tty.error:
                 pass
-
-    def handle_sig(self, sig, frame):
-        self.fail("isatty hung")
 
     @staticmethod
     def handle_sighup(signum, frame):
@@ -312,8 +301,8 @@ class SmallPtyTests(unittest.TestCase):
         self.orig_pty_waitpid = pty.waitpid
         self.fds = []  # A list of file descriptors to close.
         self.files = []
-        self.select_rfds_lengths = []
-        self.select_rfds_results = []
+        self.select_input = []
+        self.select_output = []
         self.tcsetattr_mode_setting = None
 
     def tearDown(self):
@@ -350,8 +339,8 @@ class SmallPtyTests(unittest.TestCase):
 
     def _mock_select(self, rfds, wfds, xfds):
         # This will raise IndexError when no more expected calls exist.
-        self.assertEqual(self.select_rfds_lengths.pop(0), len(rfds))
-        return self.select_rfds_results.pop(0), [], []
+        self.assertEqual((rfds, wfds, xfds), self.select_input.pop(0))
+        return self.select_output.pop(0)
 
     def _make_mock_fork(self, pid):
         def mock_fork():
@@ -374,11 +363,13 @@ class SmallPtyTests(unittest.TestCase):
         os.write(masters[1], b'from master')
         os.write(write_to_stdin_fd, b'from stdin')
 
-        # Expect two select calls, the last one will cause IndexError
+        # Expect three select calls, the last one will cause IndexError
         pty.select = self._mock_select
-        self.select_rfds_lengths.append(2)
-        self.select_rfds_results.append([mock_stdin_fd, masters[0]])
-        self.select_rfds_lengths.append(2)
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_output.append(([mock_stdin_fd, masters[0]], [], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [mock_stdout_fd, masters[0]], []))
+        self.select_output.append(([], [mock_stdout_fd, masters[0]], []))
+        self.select_input.append(([mock_stdin_fd, masters[0]], [], []))
 
         with self.assertRaises(IndexError):
             pty._copy(masters[0])

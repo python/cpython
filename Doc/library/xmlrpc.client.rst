@@ -161,7 +161,7 @@ between conformable Python objects and XML on the wire.
 
 .. seealso::
 
-   `XML-RPC HOWTO <https://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
+   `XML-RPC HOWTO <https://tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 

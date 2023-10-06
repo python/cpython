@@ -3,9 +3,9 @@
 
 #include "Python.h"
 
-#include "pycore_ast.h"           // asdl_seq_*
+#include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
-#include "pycore_compile.h"       // _PyAST_Optimize
+#include "pycore_compile.h"       // _PyAST_Optimize()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
 #include "pycore_frame.h"         // _PyFrame_GetCode()
 #include "pycore_interp.h"        // PyInterpreterState.gc
@@ -13,19 +13,21 @@
 #include "pycore_pyarena.h"       // _PyArena_Free()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "frameobject.h"          // PyFrame_New()
-#include "structmember.h"         // PyMemberDef
+
 #include "osdefs.h"               // SEP
-#ifdef HAVE_FCNTL_H
-#  include <fcntl.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // lseek()
 #endif
 
-#define OFF(x) offsetof(PyTracebackObject, x)
 
-#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+#define OFF(x) offsetof(PyTracebackObject, x)
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
+
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
@@ -148,9 +150,9 @@ static PyMethodDef tb_methods[] = {
 };
 
 static PyMemberDef tb_memberlist[] = {
-    {"tb_frame",        T_OBJECT,       OFF(tb_frame),  READONLY|PY_AUDIT_READ},
-    {"tb_lasti",        T_INT,          OFF(tb_lasti),  READONLY},
-    {"tb_lineno",       T_INT,          OFF(tb_lineno), READONLY},
+    {"tb_frame",        _Py_T_OBJECT,       OFF(tb_frame),  Py_READONLY|Py_AUDIT_READ},
+    {"tb_lasti",        Py_T_INT,          OFF(tb_lasti),  Py_READONLY},
+    {"tb_lineno",       Py_T_INT,          OFF(tb_lineno), Py_READONLY},
     {NULL}      /* Sentinel */
 };
 
@@ -615,6 +617,11 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
                     ++*right_anchor;
                 }
 
+                // Keep going if the current char is not ')'
+                if (i+1 < right->col_offset && (segment_str[i] == ')')) {
+                    continue;
+                }
+
                 // Set the error characters
                 *primary_error_char = "~";
                 *secondary_error_char = "^";
@@ -625,6 +632,18 @@ extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *lef
         case Subscript_kind: {
             *left_anchor = expr->v.Subscript.value->end_col_offset;
             *right_anchor = expr->v.Subscript.slice->end_col_offset + 1;
+            Py_ssize_t str_len = strlen(segment_str);
+
+            // Move right_anchor and left_anchor forward to the first non-whitespace character that is not ']' and '['
+            while (*left_anchor < str_len && (IS_WHITESPACE(segment_str[*left_anchor]) || segment_str[*left_anchor] != '[')) {
+                ++*left_anchor;
+            }
+            while (*right_anchor < str_len && (IS_WHITESPACE(segment_str[*right_anchor]) || segment_str[*right_anchor] != ']')) {
+                ++*right_anchor;
+            }
+            if (*right_anchor < str_len){
+                *right_anchor += 1;
+            }
 
             // Set the error characters
             *primary_error_char = "~";
@@ -675,16 +694,12 @@ extract_anchors_from_line(PyObject *filename, PyObject *line,
 
     PyCompilerFlags flags = _PyCompilerFlags_INIT;
 
-    _PyASTOptimizeState state;
-    state.optimize = _Py_GetConfig()->optimization_level;
-    state.ff_features = 0;
-
     mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
                                             &flags, arena);
     if (!module) {
         goto done;
     }
-    if (!_PyAST_Optimize(module, arena, &state)) {
+    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
         goto done;
     }
 
@@ -789,7 +804,7 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
     }
 
     int code_offset = tb->tb_lasti;
-    PyCodeObject* code = frame->f_frame->f_code;
+    PyCodeObject* code = _PyFrame_GetCode(frame->f_frame);
     const Py_ssize_t source_line_len = PyUnicode_GET_LENGTH(source_line);
 
     int start_line;
@@ -1051,7 +1066,7 @@ _Py_DumpDecimal(int fd, size_t value)
         value /= 10;
     } while (value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    (void)_Py_write_noraise(fd, ptr, end - ptr);
 }
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
@@ -1076,7 +1091,7 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
         value >>= 4;
     } while ((end - ptr) < width || value);
 
-    _Py_write_noraise(fd, ptr, end - ptr);
+    (void)_Py_write_noraise(fd, ptr, end - ptr);
 }
 
 void
@@ -1129,7 +1144,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         }
         if (!need_escape) {
             // The string can be written with a single write() syscall
-            _Py_write_noraise(fd, str, size);
+            (void)_Py_write_noraise(fd, str, size);
             goto done;
         }
     }
@@ -1139,7 +1154,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
-            _Py_write_noraise(fd, &c, 1);
+            (void)_Py_write_noraise(fd, &c, 1);
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
@@ -1168,7 +1183,7 @@ done:
 static void
 dump_frame(int fd, _PyInterpreterFrame *frame)
 {
-    PyCodeObject *code = frame->f_code;
+    PyCodeObject *code =_PyFrame_GetCode(frame);
     PUTS(fd, "  File ");
     if (code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
@@ -1180,7 +1195,7 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
         PUTS(fd, "???");
     }
 
-    int lineno = _PyInterpreterFrame_GetLine(frame);
+    int lineno = PyUnstable_InterpreterFrame_GetLine(frame);
     PUTS(fd, ", line ");
     if (lineno >= 0) {
         _Py_DumpDecimal(fd, (size_t)lineno);
@@ -1201,23 +1216,45 @@ dump_frame(int fd, _PyInterpreterFrame *frame)
     PUTS(fd, "\n");
 }
 
+static int
+tstate_is_freed(PyThreadState *tstate)
+{
+    if (_PyMem_IsPtrFreed(tstate)) {
+        return 1;
+    }
+    if (_PyMem_IsPtrFreed(tstate->interp)) {
+        return 1;
+    }
+    return 0;
+}
+
+
+static int
+interp_is_freed(PyInterpreterState *interp)
+{
+    return _PyMem_IsPtrFreed(interp);
+}
+
+
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    _PyInterpreterFrame *frame;
-    unsigned int depth;
-
     if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
     }
 
-    frame = tstate->cframe->current_frame;
+    if (tstate_is_freed(tstate)) {
+        PUTS(fd, "  <tstate is freed>\n");
+        return;
+    }
+
+    _PyInterpreterFrame *frame = tstate->current_frame;
     if (frame == NULL) {
         PUTS(fd, "  <no Python frame>\n");
         return;
     }
 
-    depth = 0;
+    unsigned int depth = 0;
     while (1) {
         if (MAX_FRAME_DEPTH <= depth) {
             PUTS(fd, "  ...\n");
@@ -1281,9 +1318,6 @@ const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_tstate)
 {
-    PyThreadState *tstate;
-    unsigned int nthreads;
-
     if (current_tstate == NULL) {
         /* _Py_DumpTracebackThreads() is called from signal handlers by
            faulthandler.
@@ -1297,6 +1331,10 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
            _PyThreadState_GET() cannot be used. Read the thread specific
            storage (TSS) instead: call PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
+    }
+
+    if (current_tstate != NULL && tstate_is_freed(current_tstate)) {
+        return "tstate is freed";
     }
 
     if (interp == NULL) {
@@ -1313,14 +1351,18 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     }
     assert(interp != NULL);
 
+    if (interp_is_freed(interp)) {
+        return "interp is freed";
+    }
+
     /* Get the current interpreter from the current thread */
-    tstate = PyInterpreterState_ThreadHead(interp);
+    PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     if (tstate == NULL)
         return "unable to get the thread head state";
 
     /* Dump the traceback of each thread */
     tstate = PyInterpreterState_ThreadHead(interp);
-    nthreads = 0;
+    unsigned int nthreads = 0;
     _Py_BEGIN_SUPPRESS_IPH
     do
     {

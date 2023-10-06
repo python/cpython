@@ -1,0 +1,2 @@
+Fix an issue that could result in crashes when compiling malformed
+:mod:`ast` nodes.

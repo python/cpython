@@ -9,6 +9,7 @@
 #endif
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_SizeOf()
 #include <ffi.h>
 #ifdef MS_WIN32
 #  include <malloc.h>
@@ -295,7 +296,7 @@ MakeAnonFields(PyObject *type)
     PyObject *anon_names;
     Py_ssize_t i;
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_anonymous_), &anon) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_anonymous_), &anon) < 0) {
         return -1;
     }
     if (anon == NULL) {
@@ -385,22 +386,22 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     if (fields == NULL)
         return 0;
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_swappedbytes_), &tmp) < 0) {
+    int rc = PyObject_HasAttrWithError(type, &_Py_ID(_swappedbytes_));
+    if (rc < 0) {
         return -1;
     }
-    if (tmp) {
-        Py_DECREF(tmp);
+    if (rc) {
         big_endian = !PY_BIG_ENDIAN;
     }
     else {
         big_endian = PY_BIG_ENDIAN;
     }
 
-    if (_PyObject_LookupAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
+    if (PyObject_GetOptionalAttr(type, &_Py_ID(_pack_), &tmp) < 0) {
         return -1;
     }
     if (tmp) {
-        pack = _PyLong_AsInt(tmp);
+        pack = PyLong_AsInt(tmp);
         Py_DECREF(tmp);
         if (pack < 0) {
             if (!PyErr_Occurred() ||

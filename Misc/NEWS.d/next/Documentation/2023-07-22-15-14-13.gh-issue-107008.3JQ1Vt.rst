@@ -1,0 +1,2 @@
+Document the :mod:`curses` module variables :const:`~curses.LINES` and
+:const:`~curses.COLS`.

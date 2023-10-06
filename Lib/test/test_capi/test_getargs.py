@@ -901,23 +901,6 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
 
-    def test_s_hash_int(self):
-        # "s#" without PY_SSIZE_T_CLEAN defined.
-        from _testcapi import getargs_s_hash_int
-        from _testcapi import getargs_s_hash_int2
-        buf = bytearray([1, 2])
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, "abc")
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, x=42)
-        self.assertRaises(SystemError, getargs_s_hash_int, buf, x="abc")
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, ("abc",))
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x=42)
-        self.assertRaises(SystemError, getargs_s_hash_int2, buf, x="abc")
-        buf.append(3)  # still mutable -- not locked by a buffer export
-        # getargs_s_hash_int(buf) may not raise SystemError because skipitem()
-        # is not called. But it is an implementation detail.
-        # getargs_s_hash_int(buf)
-        # getargs_s_hash_int2(buf)
-
     def test_z(self):
         from _testcapi import getargs_z
         self.assertEqual(getargs_z('abc\xe9'), b'abc\xc3\xa9')
@@ -1020,70 +1003,6 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(buf, bytearray(b'x'*4))
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
-
-    @support.requires_legacy_unicode_capi
-    def test_u(self):
-        from _testcapi import getargs_u
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, getargs_u, 'nul:\0')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u, b'bytes')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u, bytearray(b'bytearray'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u, memoryview(b'memoryview'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u, None)
-
-    @support.requires_legacy_unicode_capi
-    def test_u_hash(self):
-        from _testcapi import getargs_u_hash
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_u_hash('abc\xe9'), 'abc\xe9')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_u_hash('nul:\0'), 'nul:\0')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u_hash, b'bytes')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u_hash, bytearray(b'bytearray'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u_hash, memoryview(b'memoryview'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_u_hash, None)
-
-    @support.requires_legacy_unicode_capi
-    def test_Z(self):
-        from _testcapi import getargs_Z
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_Z('abc\xe9'), 'abc\xe9')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(ValueError, getargs_Z, 'nul:\0')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z, b'bytes')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z, bytearray(b'bytearray'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z, memoryview(b'memoryview'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(getargs_Z(None))
-
-    @support.requires_legacy_unicode_capi
-    def test_Z_hash(self):
-        from _testcapi import getargs_Z_hash
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_Z_hash('abc\xe9'), 'abc\xe9')
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(getargs_Z_hash('nul:\0'), 'nul:\0')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z_hash, b'bytes')
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertIsNone(getargs_Z_hash(None))
 
     def test_gh_99240_clear_args(self):
         from _testcapi import gh_99240_clear_args

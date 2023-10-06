@@ -1,6 +1,7 @@
 import asyncio
 import builtins
 import collections
+import copy
 import datetime
 import functools
 import importlib
@@ -13,13 +14,17 @@ from os.path import normcase
 import _pickle
 import pickle
 import shutil
+import stat
 import sys
+import time
 import types
+import tempfile
 import textwrap
 import unicodedata
 import unittest
 import unittest.mock
 import warnings
+
 
 try:
     from concurrent.futures import ThreadPoolExecutor
@@ -28,7 +33,7 @@ except ImportError:
 
 from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support.import_helper import DirsOnSysPath
+from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
@@ -37,8 +42,6 @@ from test import support
 from test import inspect_stock_annotations
 from test import inspect_stringized_annotations
 from test import inspect_stringized_annotations_2
-
-from test.test_import import _ready_to_import
 
 
 # Functions tested in this suite:
@@ -134,6 +137,14 @@ async def coroutine_function_example(self):
 def gen_coroutine_function_example(self):
     yield
     return 'spam'
+
+def meth_noargs(): pass
+def meth_o(object, /): pass
+def meth_self_noargs(self, /): pass
+def meth_self_o(self, object, /): pass
+def meth_type_noargs(type, /): pass
+def meth_type_o(type, object, /): pass
+
 
 class TestPredicates(IsTestBase):
 
@@ -557,7 +568,8 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
-        self.assertEqual(functions, [('eggs', mod.eggs),
+        self.assertEqual(functions, [('after_closing', mod.after_closing),
+                                     ('eggs', mod.eggs),
                                      ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
@@ -595,9 +607,40 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
         self.assertEqual(finddoc(int.real), int.real.__doc__)
 
+    cleandoc_testdata = [
+        # first line should have different margin
+        (' An\n  indented\n   docstring.', 'An\nindented\n docstring.'),
+        # trailing whitespace are not removed.
+        (' An \n   \n  indented \n   docstring. ',
+         'An \n \nindented \n docstring. '),
+        # NUL is not termination.
+        ('doc\0string\n\n  second\0line\n  third\0line\0',
+         'doc\0string\n\nsecond\0line\nthird\0line\0'),
+        # first line is lstrip()-ped. other lines are kept when no margin.[w:
+        ('   ', ''),
+        # compiler.cleandoc() doesn't strip leading/trailing newlines
+        # to keep maximum backward compatibility.
+        # inspect.cleandoc() removes them.
+        ('\n\n\n  first paragraph\n\n   second paragraph\n\n',
+         '\n\n\nfirst paragraph\n\n second paragraph\n\n'),
+        ('   \n \n  \n   ', '\n \n  \n   '),
+    ]
+
     def test_cleandoc(self):
-        self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
-                         'An\nindented\ndocstring.')
+        func = inspect.cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            # only inspect.cleandoc() strip \n
+            expected = expected.strip('\n')
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
+
+    @cpython_only
+    def test_c_cleandoc(self):
+        import _testinternalcapi
+        func = _testinternalcapi.compiler_cleandoc
+        for i, (input, expected) in enumerate(self.cleandoc_testdata):
+            with self.subTest(i=i):
+                self.assertEqual(func(input), expected)
 
     def test_getcomments(self):
         self.assertEqual(inspect.getcomments(mod), '# line 1\n')
@@ -641,6 +684,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 51)
         self.assertSourceEqual(mod.lobbest, 75, 76)
+        self.assertSourceEqual(mod.after_closing, 120, 120)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
@@ -776,6 +820,22 @@ class TestOneliners(GetSourceBase):
         # where the second line _is_ indented.
         self.assertSourceEqual(mod2.tlli, 33, 34)
 
+    def test_parenthesized_multiline_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.parenthesized_lambda, 279, 279)
+        self.assertSourceEqual(mod2.parenthesized_lambda2, 281, 281)
+        self.assertSourceEqual(mod2.parenthesized_lambda3, 283, 283)
+
+    def test_post_line_parenthesized_lambda(self):
+        # Test inspect.getsource with a parenthesized multi-line lambda
+        # function.
+        self.assertSourceEqual(mod2.post_line_parenthesized_lambda1, 286, 287)
+
+    def test_nested_lambda(self):
+        # Test inspect.getsource with a nested lambda function.
+        self.assertSourceEqual(mod2.nested_lambda, 291, 292)
+
     def test_onelinefunc(self):
         # Test inspect.getsource with a regular one-line function.
         self.assertSourceEqual(mod2.onelinefunc, 37, 37)
@@ -900,7 +960,6 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls196.cls200, 198, 201)
 
     def test_class_inside_conditional(self):
-        self.assertSourceEqual(mod2.cls238, 238, 240)
         self.assertSourceEqual(mod2.cls238.cls239, 239, 240)
 
     def test_multiple_children_classes(self):
@@ -915,6 +974,36 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.cls213, 218, 222)
         self.assertSourceEqual(mod2.cls213().func219(), 220, 221)
 
+    def test_class_with_method_from_other_module(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            with open(os.path.join(tempdir, 'inspect_actual%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    import inspect_other
+                    class A:
+                        def f(self):
+                            pass
+                    class A:
+                        def f(self):
+                            pass  # correct one
+                    A.f = inspect_other.A.f
+                    """))
+
+            with open(os.path.join(tempdir, 'inspect_other%spy' % os.extsep),
+                      'w', encoding='utf-8') as f:
+                f.write(textwrap.dedent("""
+                    class A:
+                        def f(self):
+                            pass
+                    """))
+
+            with DirsOnSysPath(tempdir):
+                import inspect_actual
+                self.assertIn("correct", inspect.getsource(inspect_actual.A))
+                # Remove the module from sys.modules to force it to be reloaded.
+                # This is necessary when the test is run multiple times.
+                sys.modules.pop("inspect_actual")
+
     @unittest.skipIf(
         support.is_emscripten or support.is_wasi,
         "socket.accept is broken"
@@ -925,6 +1014,10 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
         self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+
+    def test_class_definition_same_name_diff_methods(self):
+        self.assertSourceEqual(mod2.cls296, 296, 298)
+        self.assertSourceEqual(mod2.cls310, 310, 312)
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):
@@ -1089,6 +1182,47 @@ class TestClassesAndFunctions(unittest.TestCase):
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
+
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        tests = [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_self_noargs),
+            (obj.meth_o, meth_self_o),
+            (cls.meth_noargs_class, meth_type_noargs),
+            (cls.meth_o_class, meth_type_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_self_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_self_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_self_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_type_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_type_o),
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.getfullargspec(builtin),
+                                 inspect.getfullargspec(template))
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -2052,6 +2186,9 @@ class TestGetattrStatic(unittest.TestCase):
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
+        del descriptor.__set__
+        descriptor.__delete__ = lambda s, i, o: None
+        self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
 
     def test_metaclass_with_descriptor(self):
         class descriptor(object):
@@ -2111,6 +2248,28 @@ class TestGetattrStatic(unittest.TestCase):
         self.assertEqual(inspect.getattr_static(foo, 'a'), 3)
         self.assertFalse(test.called)
 
+    def test_mutated_mro(self):
+        test = self
+        test.called = False
+
+        class Foo(dict):
+            a = 3
+            @property
+            def __dict__(self):
+                test.called = True
+                return {}
+
+        class Bar(dict):
+            a = 4
+
+        class Baz(Bar): pass
+
+        baz = Baz()
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 4)
+        Baz.__bases__ = (Foo,)
+        self.assertEqual(inspect.getattr_static(baz, 'a'), 3)
+        self.assertFalse(test.called)
+
     def test_custom_object_dict(self):
         test = self
         test.called = False
@@ -2164,6 +2323,35 @@ class TestGetattrStatic(unittest.TestCase):
         with self.assertRaises(AttributeError):
             inspect.getattr_static(Thing, "spam")
         self.assertFalse(Thing.executed)
+
+    def test_custom___getattr__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattr__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'whatever')
+
+        self.assertFalse(test.called)
+
+    def test_custom___getattribute__(self):
+        test = self
+        test.called = False
+
+        class Foo:
+            def __getattribute__(self, attr):
+                test.called = True
+                return {}
+
+        with self.assertRaises(AttributeError):
+            inspect.getattr_static(Foo(), 'really_could_be_anything')
+
+        self.assertFalse(test.called)
+
 
 class TestGetGeneratorState(unittest.TestCase):
 
@@ -2712,6 +2900,11 @@ class TestSignatureObject(unittest.TestCase):
         # Regression test for issue #20586
         test_callable(_testcapi.docstring_with_signature_but_no_doc)
 
+        # Regression test for gh-104955
+        method = bytearray.__release_buffer__
+        sig = test_unbound_method(method)
+        self.assertEqual(list(sig.parameters), ['self', 'buffer'])
+
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -2745,6 +2938,47 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     'no signature found for builtin'):
             inspect.signature(str)
+
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        tests = [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_noargs),
+            (obj.meth_o, meth_o),
+            (cls.meth_noargs_class, meth_noargs),
+            (cls.meth_o_class, meth_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_o),
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.signature(builtin),
+                                 inspect.signature(template))
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
@@ -3595,6 +3829,28 @@ class TestSignatureObject(unittest.TestCase):
                                 P('bar', P.VAR_POSITIONAL)])),
                          '(foo, /, *bar)')
 
+    def test_signature_replace_parameters(self):
+        def test(a, b) -> 42:
+            pass
+
+        sig = inspect.signature(test)
+        parameters = sig.parameters
+        sig = sig.replace(parameters=list(parameters.values())[1:])
+        self.assertEqual(list(sig.parameters), ['b'])
+        self.assertEqual(sig.parameters['b'], parameters['b'])
+        self.assertEqual(sig.return_annotation, 42)
+        sig = sig.replace(parameters=())
+        self.assertEqual(dict(sig.parameters), {})
+
+        sig = inspect.signature(test)
+        parameters = sig.parameters
+        sig = copy.replace(sig, parameters=list(parameters.values())[1:])
+        self.assertEqual(list(sig.parameters), ['b'])
+        self.assertEqual(sig.parameters['b'], parameters['b'])
+        self.assertEqual(sig.return_annotation, 42)
+        sig = copy.replace(sig, parameters=())
+        self.assertEqual(dict(sig.parameters), {})
+
     def test_signature_replace_anno(self):
         def test() -> 42:
             pass
@@ -3605,6 +3861,15 @@ class TestSignatureObject(unittest.TestCase):
         sig = sig.replace(return_annotation=sig.empty)
         self.assertIs(sig.return_annotation, sig.empty)
         sig = sig.replace(return_annotation=42)
+        self.assertEqual(sig.return_annotation, 42)
+        self.assertEqual(sig, inspect.signature(test))
+
+        sig = inspect.signature(test)
+        sig = copy.replace(sig, return_annotation=None)
+        self.assertIs(sig.return_annotation, None)
+        sig = copy.replace(sig, return_annotation=sig.empty)
+        self.assertIs(sig.return_annotation, sig.empty)
+        sig = copy.replace(sig, return_annotation=42)
         self.assertEqual(sig.return_annotation, 42)
         self.assertEqual(sig, inspect.signature(test))
 
@@ -3850,6 +4115,24 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', 2, ..., 'positional_or_keyword')),
                           ...))
 
+    def test_signature_on_derived_classes(self):
+        # gh-105080: Make sure that signatures are consistent on derived classes
+
+        class B:
+            def __new__(self, *args, **kwargs):
+                return super().__new__(self)
+            def __init__(self, value):
+                self.value = value
+
+        class D1(B):
+            def __init__(self, value):
+                super().__init__(value)
+
+        class D2(D1):
+            pass
+
+        self.assertEqual(inspect.signature(D2), inspect.signature(D1))
+
 
 class TestParameterObject(unittest.TestCase):
     def test_signature_parameter_kinds(self):
@@ -3934,41 +4217,66 @@ class TestParameterObject(unittest.TestCase):
         p = inspect.Parameter('foo', default=42,
                               kind=inspect.Parameter.KEYWORD_ONLY)
 
-        self.assertIsNot(p, p.replace())
-        self.assertEqual(p, p.replace())
+        self.assertIsNot(p.replace(), p)
+        self.assertEqual(p.replace(), p)
+        self.assertIsNot(copy.replace(p), p)
+        self.assertEqual(copy.replace(p), p)
 
         p2 = p.replace(annotation=1)
         self.assertEqual(p2.annotation, 1)
         p2 = p2.replace(annotation=p2.empty)
-        self.assertEqual(p, p2)
+        self.assertEqual(p2, p)
+        p3 = copy.replace(p, annotation=1)
+        self.assertEqual(p3.annotation, 1)
+        p3 = copy.replace(p3, annotation=p3.empty)
+        self.assertEqual(p3, p)
 
         p2 = p2.replace(name='bar')
         self.assertEqual(p2.name, 'bar')
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, name='bar')
+        self.assertEqual(p3.name, 'bar')
+        self.assertNotEqual(p3, p)
 
         with self.assertRaisesRegex(ValueError,
                                     'name is a required attribute'):
             p2 = p2.replace(name=p2.empty)
+        with self.assertRaisesRegex(ValueError,
+                                    'name is a required attribute'):
+            p3 = copy.replace(p3, name=p3.empty)
 
         p2 = p2.replace(name='foo', default=None)
         self.assertIs(p2.default, None)
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, name='foo', default=None)
+        self.assertIs(p3.default, None)
+        self.assertNotEqual(p3, p)
 
         p2 = p2.replace(name='foo', default=p2.empty)
         self.assertIs(p2.default, p2.empty)
-
+        p3 = copy.replace(p3, name='foo', default=p3.empty)
+        self.assertIs(p3.default, p3.empty)
 
         p2 = p2.replace(default=42, kind=p2.POSITIONAL_OR_KEYWORD)
         self.assertEqual(p2.kind, p2.POSITIONAL_OR_KEYWORD)
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, default=42, kind=p3.POSITIONAL_OR_KEYWORD)
+        self.assertEqual(p3.kind, p3.POSITIONAL_OR_KEYWORD)
+        self.assertNotEqual(p3, p)
 
         with self.assertRaisesRegex(ValueError,
                                     "value <class 'inspect._empty'> "
                                     "is not a valid Parameter.kind"):
             p2 = p2.replace(kind=p2.empty)
+        with self.assertRaisesRegex(ValueError,
+                                    "value <class 'inspect._empty'> "
+                                    "is not a valid Parameter.kind"):
+            p3 = copy.replace(p3, kind=p3.empty)
 
         p2 = p2.replace(kind=p2.KEYWORD_ONLY)
         self.assertEqual(p2, p)
+        p3 = copy.replace(p3, kind=p3.KEYWORD_ONLY)
+        self.assertEqual(p3, p)
 
     def test_signature_parameter_positional_only(self):
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
@@ -4229,14 +4537,14 @@ class TestSignatureBind(unittest.TestCase):
 
     @cpython_only
     def test_signature_bind_implicit_arg(self):
-        # Issue #19611: getcallargs should work with set comprehensions
+        # Issue #19611: getcallargs should work with comprehensions
         def make_set():
-            return {z * z for z in range(5)}
-        setcomp_code = make_set.__code__.co_consts[1]
-        setcomp_func = types.FunctionType(setcomp_code, {})
+            return set(z * z for z in range(5))
+        gencomp_code = make_set.__code__.co_consts[1]
+        gencomp_func = types.FunctionType(gencomp_code, {})
 
         iterator = iter(range(5))
-        self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
+        self.assertEqual(set(self.call(gencomp_func, iterator)), {0, 1, 4, 9, 16})
 
     def test_signature_bind_posonly_kwargs(self):
         def foo(bar, /, **kwargs):
@@ -4489,7 +4797,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
-        from test.ann_module7 import BufferedReader
+        from test.typinganndata.ann_module7 import BufferedReader
         class MyBufferedReader(BufferedReader):
             """buffer reader class."""
 
@@ -4644,7 +4952,7 @@ def foo():
 
     def test_getsource_reload(self):
         # see issue 1218234
-        with _ready_to_import('reload_bug', self.src_before) as (name, path):
+        with ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
             with open(path, 'w', encoding='utf-8') as src:

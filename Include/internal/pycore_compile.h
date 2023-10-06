@@ -11,7 +11,7 @@ extern "C" {
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
-// Export the symbol for test_peg_generator (built as a library)
+// Export for 'test_peg_generator' shared extension
 PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     struct _mod *mod,
     PyObject *filename,
@@ -19,29 +19,41 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
     int optimize,
     struct _arena *arena);
 
+/* AST optimizations */
+extern int _PyCompile_AstOptimize(
+    struct _mod *mod,
+    PyObject *filename,
+    PyCompilerFlags *flags,
+    int optimize,
+    struct _arena *arena);
 
-typedef struct {
-    int optimize;
-    int ff_features;
-
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
-} _PyASTOptimizeState;
+static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
-    _PyASTOptimizeState *state);
+    int optimize,
+    int ff_features);
 
+typedef struct {
+    int h_label;
+    int h_startdepth;
+    int h_preserve_lasti;
+} _PyCompile_ExceptHandlerInfo;
 
 typedef struct {
     int i_opcode;
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
-} _PyCompilerInstruction;
+    _PyCompile_ExceptHandlerInfo i_except_handler_info;
+
+    /* Used by the assembler */
+    int i_target;
+    int i_offset;
+} _PyCompile_Instruction;
 
 typedef struct {
-    _PyCompilerInstruction *s_instrs;
+    _PyCompile_Instruction *s_instrs;
     int s_allocated;
     int s_used;
 
@@ -49,6 +61,11 @@ typedef struct {
     int s_labelmap_size;
     int s_next_free_label; /* next free label id */
 } _PyCompile_InstructionSequence;
+
+int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
+int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
+                                         int opcode, int oparg,
+                                         _PyCompilerSrcLocation loc);
 
 typedef struct {
     PyObject *u_name;
@@ -63,6 +80,9 @@ typedef struct {
     PyObject *u_varnames;  /* local variables */
     PyObject *u_cellvars;  /* cell variables */
     PyObject *u_freevars;  /* free variables */
+    PyObject *u_fasthidden; /* dict; keys are names that are fast-locals only
+                               temporarily within an inlined comprehension. When
+                               value is True, treat as fast-local. */
 
     Py_ssize_t u_argcount;        /* number of arguments for block */
     Py_ssize_t u_posonlyargcount;        /* number of positional only arguments for block */
@@ -84,15 +104,27 @@ int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 /* Access compiler internals for unit testing */
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
         PyCompilerFlags *flags,
-        int optimize);
+        int optimize,
+        int compile_mode);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
-        PyObject *consts);
+        PyObject *consts,
+        int nlocals);
+
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyCodeObject*)
+_PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
+                    PyObject *instructions);
 
 #ifdef __cplusplus
 }

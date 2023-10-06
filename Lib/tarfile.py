@@ -46,7 +46,6 @@ import time
 import struct
 import copy
 import re
-import warnings
 
 try:
     import pwd
@@ -372,8 +371,8 @@ class _Stream:
                 self.zlib = zlib
                 self.crc = zlib.crc32(b"")
                 if mode == "r":
-                    self._init_read_gz()
                     self.exception = zlib.error
+                    self._init_read_gz()
                 else:
                     self._init_write_gz(compresslevel)
 
@@ -742,7 +741,7 @@ class SpecialFileError(FilterError):
 class AbsoluteLinkError(FilterError):
     def __init__(self, tarinfo):
         self.tarinfo = tarinfo
-        super().__init__(f'{tarinfo.name!r} is a symlink to an absolute path')
+        super().__init__(f'{tarinfo.name!r} is a link to an absolute path')
 
 class LinkOutsideDestinationError(FilterError):
     def __init__(self, tarinfo, path):
@@ -802,7 +801,14 @@ def _get_filtered_attrs(member, dest_path, for_data=True):
         if member.islnk() or member.issym():
             if os.path.isabs(member.linkname):
                 raise AbsoluteLinkError(member)
-            target_path = os.path.realpath(os.path.join(dest_path, member.linkname))
+            if member.issym():
+                target_path = os.path.join(dest_path,
+                                           os.path.dirname(name),
+                                           member.linkname)
+            else:
+                target_path = os.path.join(dest_path,
+                                           member.linkname)
+            target_path = os.path.realpath(target_path)
             if os.path.commonpath([target_path, dest_path]) != dest_path:
                 raise LinkOutsideDestinationError(member, target_path)
     return new_attrs
@@ -1633,7 +1639,7 @@ class TarFile(object):
     def __init__(self, name=None, mode="r", fileobj=None, format=None,
             tarinfo=None, dereference=None, ignore_zeros=None, encoding=None,
             errors="surrogateescape", pax_headers=None, debug=None,
-            errorlevel=None, copybufsize=None):
+            errorlevel=None, copybufsize=None, stream=False):
         """Open an (uncompressed) tar archive `name'. `mode' is either 'r' to
            read from an existing archive, 'a' to append data to an existing
            file or 'w' to create a new file overwriting an existing one. `mode'
@@ -1664,6 +1670,8 @@ class TarFile(object):
             self._extfileobj = True
         self.name = os.path.abspath(name) if name else None
         self.fileobj = fileobj
+
+        self.stream = stream
 
         # Init attributes.
         if format is not None:
@@ -2210,6 +2218,7 @@ class TarFile(object):
         if filter is None:
             filter = self.extraction_filter
             if filter is None:
+                import warnings
                 warnings.warn(
                     'Python 3.14 will, by default, filter extracted tar '
                     + 'archives and reject files or modify their metadata. '
@@ -2548,7 +2557,8 @@ class TarFile(object):
                     os.lchown(targetpath, u, g)
                 else:
                     os.chown(targetpath, u, g)
-            except OSError as e:
+            except (OSError, OverflowError) as e:
+                # OverflowError can be raised if an ID doesn't fit in `id_t`
                 raise ExtractError("could not change owner") from e
 
     def chmod(self, tarinfo, targetpath):
@@ -2631,7 +2641,9 @@ class TarFile(object):
             break
 
         if tarinfo is not None:
-            self.members.append(tarinfo)
+            # if streaming the file we do not want to cache the tarinfo
+            if not self.stream:
+                self.members.append(tarinfo)
         else:
             self._loaded = True
 
@@ -2682,11 +2694,12 @@ class TarFile(object):
 
     def _load(self):
         """Read through the entire archive file and look for readable
-           members.
+           members. This should not run if the file is set to stream.
         """
-        while self.next() is not None:
-            pass
-        self._loaded = True
+        if not self.stream:
+            while self.next() is not None:
+                pass
+            self._loaded = True
 
     def _check(self, mode=None):
         """Check if TarFile is still open, and if the operation's mode

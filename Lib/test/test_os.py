@@ -737,7 +737,7 @@ class StatAttributeTests(unittest.TestCase):
         # denied. See issue 28075.
         # os.environ['TEMP'] should be located on a volume that
         # supports file ACLs.
-        fname = os.path.join(os.environ['TEMP'], self.fname)
+        fname = os.path.join(os.environ['TEMP'], self.fname + "_access")
         self.addCleanup(os_helper.unlink, fname)
         create_file(fname, b'ABC')
         # Deny the right to [S]YNCHRONIZE on the file to
@@ -912,6 +912,13 @@ class UtimeTests(unittest.TestCase):
             # Set to the current time in the old explicit way.
             os.utime(self.fname, None)
         self._test_utime_current(set_time)
+
+    def test_utime_nonexistent(self):
+        now = time.time()
+        filename = 'nonexistent'
+        with self.assertRaises(FileNotFoundError) as cm:
+            os.utime(filename, (now, now))
+        self.assertEqual(cm.exception.filename, filename)
 
     def get_file_system(self, path):
         if sys.platform == 'win32':
@@ -2559,30 +2566,34 @@ class Win32KillTests(unittest.TestCase):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)
         m[0] = 0
+
         # Run a script which has console control handling enabled.
-        proc = subprocess.Popen([sys.executable,
-                   os.path.join(os.path.dirname(__file__),
-                                "win_console_handler.py"), tagname],
-                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-        # Let the interpreter startup before we send signals. See #3137.
-        count, max = 0, 100
-        while count < max and proc.poll() is None:
-            if m[0] == 1:
-                break
-            time.sleep(0.1)
-            count += 1
-        else:
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("Subprocess didn't finish initialization")
-        os.kill(proc.pid, event)
-        # proc.send_signal(event) could also be done here.
-        # Allow time for the signal to be passed and the process to exit.
-        time.sleep(0.5)
-        if not proc.poll():
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("subprocess did not stop on {}".format(name))
+        script = os.path.join(os.path.dirname(__file__),
+                              "win_console_handler.py")
+        cmd = [sys.executable, script, tagname]
+        proc = subprocess.Popen(cmd,
+                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        with proc:
+            # Let the interpreter startup before we send signals. See #3137.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if proc.poll() is None:
+                    break
+            else:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("Subprocess didn't finish initialization")
+
+            os.kill(proc.pid, event)
+
+            try:
+                # proc.send_signal(event) could also be done here.
+                # Allow time for the signal to be passed and the process to exit.
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("subprocess did not stop on {}".format(name))
 
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
     @support.requires_subprocess()
@@ -3989,13 +4000,41 @@ class OSErrorTests(unittest.TestCase):
                     self.fail(f"No exception thrown by {func}")
 
 class CPUCountTests(unittest.TestCase):
+    def check_cpu_count(self, cpus):
+        if cpus is None:
+            self.skipTest("Could not determine the number of CPUs")
+
+        self.assertIsInstance(cpus, int)
+        self.assertGreater(cpus, 0)
+
     def test_cpu_count(self):
         cpus = os.cpu_count()
-        if cpus is not None:
-            self.assertIsInstance(cpus, int)
-            self.assertGreater(cpus, 0)
-        else:
+        self.check_cpu_count(cpus)
+
+    def test_process_cpu_count(self):
+        cpus = os.process_cpu_count()
+        self.assertLessEqual(cpus, os.cpu_count())
+        self.check_cpu_count(cpus)
+
+    @unittest.skipUnless(hasattr(os, 'sched_setaffinity'),
+                         "don't have sched affinity support")
+    def test_process_cpu_count_affinity(self):
+        ncpu = os.cpu_count()
+        if ncpu is None:
             self.skipTest("Could not determine the number of CPUs")
+
+        # Disable one CPU
+        mask = os.sched_getaffinity(0)
+        if len(mask) <= 1:
+            self.skipTest(f"sched_getaffinity() returns less than "
+                          f"2 CPUs: {sorted(mask)}")
+        self.addCleanup(os.sched_setaffinity, 0, list(mask))
+        mask.pop()
+        os.sched_setaffinity(0, mask)
+
+        # test process_cpu_count()
+        affinity = os.process_cpu_count()
+        self.assertEqual(affinity, ncpu - 1)
 
 
 # FD inheritance check is only useful for systems with process support.
@@ -4640,6 +4679,51 @@ class TestPEP519(unittest.TestCase):
     def test_pathlike_class_getitem(self):
         self.assertIsInstance(os.PathLike[bytes], types.GenericAlias)
 
+    def test_pathlike_subclass_slots(self):
+        class A(os.PathLike):
+            __slots__ = ()
+            def __fspath__(self):
+                return ''
+        self.assertFalse(hasattr(A(), '__dict__'))
+
+    def test_fspath_set_to_None(self):
+        class Foo:
+            __fspath__ = None
+
+        class Bar:
+            def __fspath__(self):
+                return 'bar'
+
+        class Baz(Bar):
+            __fspath__ = None
+
+        good_error_msg = (
+            r"expected str, bytes or os.PathLike object, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            self.fspath(Foo())
+
+        self.assertEqual(self.fspath(Bar()), 'bar')
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            self.fspath(Baz())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Foo")):
+            open(Foo())
+
+        with self.assertRaisesRegex(TypeError, good_error_msg("Baz")):
+            open(Baz())
+
+        other_good_error_msg = (
+            r"should be string, bytes or os.PathLike, not {}".format
+        )
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Foo")):
+            os.rename(Foo(), "foooo")
+
+        with self.assertRaisesRegex(TypeError, other_good_error_msg("Baz")):
+            os.rename(Baz(), "bazzz")
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
@@ -4699,6 +4783,22 @@ class ForkTests(unittest.TestCase):
         _, out, err = assert_python_ok("-c", code, PYTHONOPTIMIZE='0')
         self.assertEqual(err.decode("utf-8"), "")
         self.assertEqual(out.decode("utf-8"), "")
+
+    def test_fork_at_exit(self):
+        code = """if 1:
+            import atexit
+            import os
+
+            def exit_handler():
+                pid = os.fork()
+                if pid != 0:
+                    print("shouldn't be printed")
+
+            atexit.register(exit_handler)
+        """
+        _, out, err = assert_python_ok("-c", code)
+        self.assertEqual(b"", out)
+        self.assertIn(b"can't fork at interpreter shutdown", err)
 
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested

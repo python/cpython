@@ -443,7 +443,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 task = self._task_factory(self, coro, context=context)
 
-            tasks._set_task_name(task, name)
+            task.set_name(name)
 
         return task
 
@@ -727,7 +727,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         always relative to the current time.
 
         Each callback will be called exactly once.  If two callbacks
-        are scheduled for exactly the same time, it undefined which
+        are scheduled for exactly the same time, it is undefined which
         will be called first.
 
         Any positional arguments after the callback will be passed to

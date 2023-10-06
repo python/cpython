@@ -1,0 +1,3 @@
+Deprecate the :c:func:`PyWeakref_GetObject` and
+:c:func:`PyWeakref_GET_OBJECT` functions: use the new
+:c:func:`PyWeakref_GetRef` function instead. Patch by Victor Stinner.

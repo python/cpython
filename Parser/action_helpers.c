@@ -122,12 +122,6 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     PyObject *first_identifier = first_name->v.Name.id;
     PyObject *second_identifier = second_name->v.Name.id;
 
-    if (PyUnicode_READY(first_identifier) == -1) {
-        return NULL;
-    }
-    if (PyUnicode_READY(second_identifier) == -1) {
-        return NULL;
-    }
     const char *first_str = PyUnicode_AsUTF8(first_identifier);
     if (!first_str) {
         return NULL;
@@ -752,20 +746,25 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
         return _PyAST_AsyncFunctionDef(
-            function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
-            function_def->v.FunctionDef.body, decorators, function_def->v.FunctionDef.returns,
-            function_def->v.FunctionDef.type_comment, function_def->lineno,
-            function_def->col_offset, function_def->end_lineno, function_def->end_col_offset,
-            p->arena);
+            function_def->v.AsyncFunctionDef.name,
+            function_def->v.AsyncFunctionDef.args,
+            function_def->v.AsyncFunctionDef.body, decorators,
+            function_def->v.AsyncFunctionDef.returns,
+            function_def->v.AsyncFunctionDef.type_comment,
+            function_def->v.AsyncFunctionDef.type_params,
+            function_def->lineno, function_def->col_offset,
+            function_def->end_lineno, function_def->end_col_offset, p->arena);
     }
 
     return _PyAST_FunctionDef(
-        function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
+        function_def->v.FunctionDef.name,
+        function_def->v.FunctionDef.args,
         function_def->v.FunctionDef.body, decorators,
         function_def->v.FunctionDef.returns,
-        function_def->v.FunctionDef.type_comment, function_def->lineno,
-        function_def->col_offset, function_def->end_lineno,
-        function_def->end_col_offset, p->arena);
+        function_def->v.FunctionDef.type_comment,
+        function_def->v.FunctionDef.type_params,
+        function_def->lineno, function_def->col_offset,
+        function_def->end_lineno, function_def->end_col_offset, p->arena);
 }
 
 /* Construct a ClassDef equivalent to class_def, but with decorators */
@@ -774,8 +773,10 @@ _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty clas
 {
     assert(class_def != NULL);
     return _PyAST_ClassDef(
-        class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
-        class_def->v.ClassDef.keywords, class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.name,
+        class_def->v.ClassDef.bases, class_def->v.ClassDef.keywords,
+        class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.type_params,
         class_def->lineno, class_def->col_offset, class_def->end_lineno,
         class_def->end_col_offset, p->arena);
 }
@@ -996,7 +997,39 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
     if (!spec) {
         return NULL;
     }
-    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+
+    // This is needed to keep compatibility with 3.11, where an empty format
+    // spec is parsed as an *empty* JoinedStr node, instead of having an empty
+    // constant in it.
+    Py_ssize_t n_items = asdl_seq_LEN(spec);
+    Py_ssize_t non_empty_count = 0;
+    for (Py_ssize_t i = 0; i < n_items; i++) {
+        expr_ty item = asdl_seq_GET(spec, i);
+        non_empty_count += !(item->kind == Constant_kind &&
+                             PyUnicode_CheckExact(item->v.Constant.value) &&
+                             PyUnicode_GET_LENGTH(item->v.Constant.value) == 0);
+    }
+    if (non_empty_count != n_items) {
+        asdl_expr_seq *resized_spec =
+            _Py_asdl_expr_seq_new(non_empty_count, p->arena);
+        if (resized_spec == NULL) {
+            return NULL;
+        }
+        Py_ssize_t j = 0;
+        for (Py_ssize_t i = 0; i < n_items; i++) {
+            expr_ty item = asdl_seq_GET(spec, i);
+            if (item->kind == Constant_kind &&
+                PyUnicode_CheckExact(item->v.Constant.value) &&
+                PyUnicode_GET_LENGTH(item->v.Constant.value) == 0) {
+                continue;
+            }
+            asdl_seq_SET(resized_spec, j++, item);
+        }
+        assert(j == non_empty_count);
+        spec = resized_spec;
+    }
+    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
+                                   end_col_offset, p->arena);
     if (!res) {
         return NULL;
     }
@@ -1224,7 +1257,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 // Fstring stuff
 
 static expr_ty
-_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
+_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
@@ -1240,7 +1273,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
     }
 
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
-    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, NULL);
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
         _Pypegen_raise_decode_error(p);
         return NULL;
@@ -1314,7 +1347,7 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     for (Py_ssize_t i = 0; i < n_items; i++) {
         expr_ty item = asdl_seq_GET(expr, i);
         if (item->kind == Constant_kind) {
-            item = _PyPegen_decode_fstring_part(p, is_raw, item);
+            item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
             if (item == NULL) {
                 return NULL;
             }
@@ -1347,6 +1380,25 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
+}
+
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
+    Py_ssize_t bsize;
+    char* bstr;
+    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
+        return NULL;
+    }
+    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {

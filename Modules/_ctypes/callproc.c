@@ -54,12 +54,17 @@
 
  */
 
+/*[clinic input]
+module _ctypes
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+
 #ifndef Py_BUILD_CORE_BUILTIN
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <stdbool.h>
 
@@ -96,8 +101,11 @@
 #define DONT_USE_SEH
 #endif
 
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_global_objects.h"// _Py_ID()
+#include "pycore_traceback.h"     // _PyTraceback_Add()
+
+#include "clinic/callproc.c.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
@@ -581,8 +589,8 @@ PyCArg_repr(PyCArgObject *self)
 }
 
 static PyMemberDef PyCArgType_members[] = {
-    { "_obj", T_OBJECT,
-      offsetof(PyCArgObject, obj), READONLY,
+    { "_obj", _Py_T_OBJECT,
+      offsetof(PyCArgObject, obj), Py_READONLY,
       "the wrapped object" },
     { NULL },
 };
@@ -727,7 +735,7 @@ static int ConvParam(PyObject *obj, Py_ssize_t index, struct argument *pa)
 
     {
         PyObject *arg;
-        if (_PyObject_LookupAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
+        if (PyObject_GetOptionalAttr(obj, &_Py_ID(_as_parameter_), &arg) < 0) {
             return -1;
         }
         /* Which types should we exactly allow here?
@@ -1115,7 +1123,8 @@ GetComError(HRESULT errcode, GUID *riid, IUnknown *pIunk)
         descr, source, helpfile, helpcontext,
         progid);
     if (obj) {
-        PyErr_SetObject(ComError, obj);
+        ctypes_state *st = GLOBAL_STATE();
+        PyErr_SetObject((PyObject *)st->PyComError_Type, obj);
         Py_DECREF(obj);
     }
     LocalFree(text);
@@ -1823,7 +1832,7 @@ resize(PyObject *self, PyObject *args)
     dict = PyObject_stgdict((PyObject *)obj);
     if (dict == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "excepted ctypes instance");
+                        "expected ctypes instance");
         return NULL;
     }
     if (size < dict->size) {
@@ -1892,8 +1901,22 @@ error:
     return NULL;
 }
 
+/*[clinic input]
+_ctypes.POINTER as create_pointer_type
+
+    type as cls: object
+        A ctypes type.
+    /
+
+Create and return a new ctypes pointer type.
+
+Pointer types are cached and reused internally,
+so calling this function repeatedly is cheap.
+[clinic start generated code]*/
+
 static PyObject *
-POINTER(PyObject *self, PyObject *cls)
+create_pointer_type(PyObject *module, PyObject *cls)
+/*[clinic end generated code: output=98c3547ab6f4f40b input=3b81cff5ff9b9d5b]*/
 {
     PyObject *result;
     PyTypeObject *typ;
@@ -1943,8 +1966,22 @@ POINTER(PyObject *self, PyObject *cls)
     return result;
 }
 
+/*[clinic input]
+_ctypes.pointer as create_pointer_inst
+
+    obj as arg: object
+    /
+
+Create a new pointer instance, pointing to 'obj'.
+
+The returned object is of the type POINTER(type(obj)). Note that if you
+just want to pass a pointer to an object to a foreign function call, you
+should use byref(obj) which is much faster.
+[clinic start generated code]*/
+
 static PyObject *
-pointer(PyObject *self, PyObject *arg)
+create_pointer_inst(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=3b543bc9f0de2180 input=713685fdb4d9bc27]*/
 {
     PyObject *result;
     PyObject *typ;
@@ -1956,7 +1993,7 @@ pointer(PyObject *self, PyObject *arg)
     else if (PyErr_Occurred()) {
         return NULL;
     }
-    typ = POINTER(NULL, (PyObject *)Py_TYPE(arg));
+    typ = create_pointer_type(NULL, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
     result = PyObject_CallOneArg(typ, arg);
@@ -1996,8 +2033,8 @@ buffer_info(PyObject *self, PyObject *arg)
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
-    {"POINTER", POINTER, METH_O },
-    {"pointer", pointer, METH_O },
+    CREATE_POINTER_TYPE_METHODDEF
+    CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
     {"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},

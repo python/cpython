@@ -1,0 +1,2 @@
+Remove ``PyEval_AcquireLock()`` and ``PyEval_ReleaseLock()`` functions,
+deprecated in Python 3.2. Patch by Victor Stinner.

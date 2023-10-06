@@ -1,5 +1,5 @@
 import sys
-from ctypes import *
+from ctypes import Array, Structure, Union
 
 _array_type = type(Array)
 

@@ -3,8 +3,6 @@
  * APIs that parse and build arguments.
  */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "parts.h"
 
 static PyObject *
@@ -592,54 +590,6 @@ getargs_y_hash(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-getargs_u(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    if (!PyArg_ParseTuple(args, "u", &str)) {
-        return NULL;
-    }
-    return PyUnicode_FromWideChar(str, -1);
-}
-
-static PyObject *
-getargs_u_hash(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "u#", &str, &size)) {
-        return NULL;
-    }
-    return PyUnicode_FromWideChar(str, size);
-}
-
-static PyObject *
-getargs_Z(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    if (!PyArg_ParseTuple(args, "Z", &str)) {
-        return NULL;
-    }
-    if (str != NULL) {
-        return PyUnicode_FromWideChar(str, -1);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-getargs_Z_hash(PyObject *self, PyObject *args)
-{
-    Py_UNICODE *str;
-    Py_ssize_t size;
-    if (!PyArg_ParseTuple(args, "Z#", &str, &size)) {
-        return NULL;
-    }
-    if (str != NULL) {
-        return PyUnicode_FromWideChar(str, size);
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 getargs_es(PyObject *self, PyObject *args)
 {
     PyObject *arg;
@@ -816,44 +766,6 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-#undef PyArg_ParseTupleAndKeywords
-PyAPI_FUNC(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
-                                            const char *, char **, ...);
-
-static PyObject *
-getargs_s_hash_int(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|s#i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-getargs_s_hash_int2(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    static char *keywords[] = {"", "", "x", NULL};
-    Py_buffer buf = {NULL};
-    const char *s;
-    int len;
-    int i = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "w*|(s#)i", keywords,
-                                     &buf, &s, &len, &i))
-    {
-        return NULL;
-    }
-    PyBuffer_Release(&buf);
-    Py_RETURN_NONE;
-}
-
 static PyObject *
 gh_99240_clear_args(PyObject *self, PyObject *args)
 {
@@ -885,8 +797,6 @@ static PyMethodDef test_methods[] = {
     {"getargs_S",               getargs_S,                       METH_VARARGS},
     {"getargs_U",               getargs_U,                       METH_VARARGS},
     {"getargs_Y",               getargs_Y,                       METH_VARARGS},
-    {"getargs_Z",               getargs_Z,                       METH_VARARGS},
-    {"getargs_Z_hash",          getargs_Z_hash,                  METH_VARARGS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_c",               getargs_c,                       METH_VARARGS},
     {"getargs_d",               getargs_d,                       METH_VARARGS},
@@ -906,12 +816,8 @@ static PyMethodDef test_methods[] = {
     {"getargs_positional_only_and_keywords", _PyCFunction_CAST(getargs_positional_only_and_keywords), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
     {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
-    {"getargs_s_hash_int", _PyCFunction_CAST(getargs_s_hash_int), METH_VARARGS|METH_KEYWORDS},
-    {"getargs_s_hash_int2", _PyCFunction_CAST(getargs_s_hash_int2), METH_VARARGS|METH_KEYWORDS},
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
-    {"getargs_u",               getargs_u,                       METH_VARARGS},
-    {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},

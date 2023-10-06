@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
 static PyObject *
 long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase);
@@ -105,9 +105,6 @@ int___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -346,9 +343,6 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
             _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -444,9 +438,6 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
             _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
             goto exit;
         }
-        if (PyUnicode_READY(args[1]) == -1) {
-            goto exit;
-        }
         byteorder = args[1];
         if (!--noptargs) {
             goto skip_optional_pos;
@@ -484,4 +475,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=cfdf35d916158d4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=009a537ab558763c input=a9049054013a1b77]*/
