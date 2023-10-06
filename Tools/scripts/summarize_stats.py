@@ -10,23 +10,27 @@ from __future__ import annotations
 
 import argparse
 import collections
+from collections.abc import KeysView
 from datetime import date
 import enum
+import functools
 import itertools
 import json
+from operator import itemgetter
 import os
 from pathlib import Path
 import re
 import sys
-from typing import Callable, TextIO, TypeAlias
+from typing import Any, Callable, TextIO, TypeAlias
 
 
-OpcodeStats: TypeAlias = dict[str, dict[str, int]]
-PairCounts: TypeAlias = list[tuple[int, tuple[str, str]]]
-Defines: TypeAlias = dict[int, list[str]]
+RawData: TypeAlias = dict[str, Any]
 Rows: TypeAlias = list[tuple]
 Columns: TypeAlias = tuple[str, ...]
 RowCalculator: TypeAlias = Callable[["Stats"], Rows]
+
+
+# TODO: Check for parity
 
 
 if os.name == "nt":
@@ -45,135 +49,363 @@ def pretty(name: str) -> str:
     return name.replace("_", " ").lower()
 
 
-class Stats:
-    _data: dict
+def _load_metadata_from_source():
+    def get_defines(filepath: Path, prefix: str = "SPEC_FAIL"):
+        with open(SOURCE_DIR / filepath) as spec_src:
+            defines = collections.defaultdict(list)
+            start = "#define " + prefix + "_"
+            for line in spec_src:
+                line = line.strip()
+                if not line.startswith(start):
+                    continue
+                line = line[len(start) :]
+                name, val = line.split()
+                defines[int(val.strip())].append(name.strip())
+        return defines
 
-    def __init__(self, input: Path):
-        super().__init__()
+    import opcode
 
-        if input.is_file():
-            with open(input, "r") as fd:
-                self._data = json.load(fd)
+    return {
+        "_specialized_instructions": [
+            op for op in opcode._specialized_opmap.keys() if "__" not in op  # type: ignore
+        ],
+        "_stats_defines": get_defines(
+            Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
+        ),
+        "_defines": get_defines(Path("Python") / "specialize.c"),
+    }
 
-            self._data["_stats_defines"] = {
-                int(k): v for k, v in self["_stats_defines"].items()
-            }
-            self._data["_defines"] = {int(k): v for k, v in self["_defines"].items()}
 
-        elif input.is_dir():
-            stats = collections.Counter[str]()
+def load_raw_data(input: Path) -> RawData:
+    if input.is_file():
+        with open(input, "r") as fd:
+            data = json.load(fd)
 
-            for filename in input.iterdir():
-                with open(filename) as fd:
-                    for line in fd:
-                        try:
-                            key, value = line.split(":")
-                        except ValueError:
-                            print(
-                                f"Unparsable line: '{line.strip()}' in {filename}",
-                                file=sys.stderr,
-                            )
-                            continue
-                        stats[key.strip()] += int(value)
-                stats["__nfiles__"] += 1
+        data["_stats_defines"] = {int(k): v for k, v in data["_stats_defines"].items()}
+        data["_defines"] = {int(k): v for k, v in data["_defines"].items()}
 
-            self._data = dict(stats)
-            self._load_metadata_from_source()
+        return data
 
-        else:
-            raise ValueError(f"{input:r} is not a file or directory path")
+    elif input.is_dir():
+        stats = collections.Counter[str]()
 
-        self._opcode_stats: dict[str, OpcodeStats] = {}
+        for filename in input.iterdir():
+            with open(filename) as fd:
+                for line in fd:
+                    try:
+                        key, value = line.split(":")
+                    except ValueError:
+                        print(
+                            f"Unparsable line: '{line.strip()}' in {filename}",
+                            file=sys.stderr,
+                        )
+                        continue
+                    stats[key.strip()] += int(value)
+            stats["__nfiles__"] += 1
 
-    def __getitem__(self, key):
-        return self._data[key]
+        data = dict(stats)
+        data.update(_load_metadata_from_source())
+        return data
 
-    def __contains__(self, key):
-        return key in self._data
+    else:
+        raise ValueError(f"{input:r} is not a file or directory path")
 
-    def get(self, key, default=None):
-        return self._data.get(key, default)
 
-    def items(self):
-        return self._data.items()
+def save_raw_data(data: RawData, json_output: TextIO):
+    json.dump(data, json_output)
 
-    def keys(self):
+
+class OpcodeStats:
+    """
+    Manages the data related to specific set of opcodes, e.g. tier1 (with prefix
+    "opcode") or tier2 (with prefix "uops").
+    """
+
+    def __init__(self, data: dict[str, Any], defines, specialized_instructions):
+        self._data = data
+        self._defines = defines
+        self._specialized_instructions = specialized_instructions
+
+    def get_opcode_names(self) -> KeysView[str]:
         return self._data.keys()
 
-    def values(self):
-        return self._data.values()
+    def get_pair_counts(self) -> dict[tuple[str, str], int]:
+        pair_counts = {}
+        for name_i, opcode_stat in self._data.items():
+            for key, value in opcode_stat.items():
+                if value and key.startswith("pair_count"):
+                    name_j, _, _ = key[len("pair_count") + 1 :].partition("]")
+                    pair_counts[(name_i, name_j)] = value
+        return pair_counts
 
-    def save(self, json_output: TextIO):
-        json.dump(self._data, json_output)
+    def get_total_execution_count(self) -> int:
+        return sum(x.get("execution_count", 0) for x in self._data.values())
 
-    def _load_metadata_from_source(self):
-        def get_defines(filepath: Path, prefix: str = "SPEC_FAIL") -> Defines:
-            with open(SOURCE_DIR / filepath) as spec_src:
-                defines = collections.defaultdict(list)
-                start = "#define " + prefix + "_"
-                for line in spec_src:
-                    line = line.strip()
-                    if not line.startswith(start):
-                        continue
-                    line = line[len(start) :]
-                    name, val = line.split()
-                    defines[int(val.strip())].append(name.strip())
-            return defines
+    def get_execution_counts(self) -> dict[str, tuple[int, int]]:
+        counts = {}
+        for name, opcode_stat in self._data.items():
+            if "execution_count" in opcode_stat:
+                count = opcode_stat["execution_count"]
+                miss = 0
+                if "specializable" not in opcode_stat:
+                    miss = opcode_stat.get("specialization.miss", 0)
+                counts[name] = (count, miss)
+        return counts
 
-        import opcode
+    @functools.cache
+    def _get_pred_succ(
+        self,
+    ) -> tuple[dict[str, collections.Counter], dict[str, collections.Counter]]:
+        pair_counts = self.get_pair_counts()
 
-        self._data["_specialized_instructions"] = [
-            op
-            for op in opcode._specialized_opmap.keys()  # type: ignore
-            if "__" not in op
-        ]
-        self._data["_stats_defines"] = get_defines(
-            Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
+        predecessors: dict[str, collections.Counter] = collections.defaultdict(
+            collections.Counter
         )
-        self._data["_defines"] = get_defines(Path("Python") / "specialize.c")
+        successors: dict[str, collections.Counter] = collections.defaultdict(
+            collections.Counter
+        )
+        for (first, second), count in pair_counts.items():
+            if count:
+                predecessors[second][first] = count
+                successors[first][second] = count
 
-    @property
-    def defines(self) -> Defines:
-        return self._data["_defines"]
+        return predecessors, successors
 
-    @property
-    def pystats_defines(self) -> Defines:
-        return self._data["_stats_defines"]
+    def get_predecessors(self, opcode: str) -> collections.Counter[str]:
+        return self._get_pred_succ()[0][opcode]
 
-    @property
-    def specialized_instructions(self) -> list[str]:
-        return self._data["_specialized_instructions"]
+    def get_successors(self, opcode: str) -> collections.Counter[str]:
+        return self._get_pred_succ()[1][opcode]
 
+    def _get_stats_for_opcode(self, opcode: str) -> dict[str, int]:
+        return self._data[opcode]
+
+    def get_specialization_total(self, opcode: str) -> int:
+        family_stats = self._get_stats_for_opcode(opcode)
+        return sum(family_stats.get(kind, 0) for kind in TOTAL)
+
+    def get_specialization_counts(self, opcode: str) -> dict[str, int]:
+        family_stats = self._get_stats_for_opcode(opcode)
+
+        result = {}
+        for key, value in sorted(family_stats.items()):
+            if key.startswith("specialization."):
+                label = key[len("specialization.") :]
+                if label in ("success", "failure") or label.startswith("failure_kinds"):
+                    continue
+            elif key in (
+                "execution_count",
+                "specializable",
+            ) or key.startswith("pair"):
+                continue
+            else:
+                label = key
+            result[label] = value
+
+        return result
+
+    def get_specialization_success_failure(self, opcode: str) -> dict[str, int]:
+        family_stats = self._get_stats_for_opcode(opcode)
+        result = {}
+        for key in ("specialization.success", "specialization.failure"):
+            label = key[len("specialization.") :]
+            val = family_stats.get(key, 0)
+            result[label] = val
+        return result
+
+    def get_specialization_failure_total(self, opcode: str) -> int:
+        return self._get_stats_for_opcode(opcode).get("specialization.failure", 0)
+
+    def get_specialization_failure_kinds(self, opcode: str) -> dict[str, int]:
+        def kind_to_text(kind: int, opcode: str):
+            if kind <= 8:
+                return pretty(self._defines[kind][0])
+            if opcode == "LOAD_SUPER_ATTR":
+                opcode = "SUPER"
+            elif opcode.endswith("ATTR"):
+                opcode = "ATTR"
+            elif opcode in ("FOR_ITER", "SEND"):
+                opcode = "ITER"
+            elif opcode.endswith("SUBSCR"):
+                opcode = "SUBSCR"
+            for name in self._defines[kind]:
+                if name.startswith(opcode):
+                    return pretty(name[len(opcode) + 1 :])
+            return "kind " + str(kind)
+
+        family_stats = self._get_stats_for_opcode(opcode)
+        failure_kinds = [0] * 40
+        for key in family_stats:
+            if not key.startswith("specialization.failure_kind"):
+                continue
+            index = int(key[:-1].split("[")[1])
+            failure_kinds[index] = family_stats[key]
+        return {
+            kind_to_text(index, opcode): value
+            for (index, value) in enumerate(failure_kinds)
+            if value
+        }
+
+    def is_specializable(self, opcode: str) -> bool:
+        return "specializable" in self._get_stats_for_opcode(opcode)
+
+    def get_specialized_total_counts(self) -> tuple[int, int, int]:
+        basic = 0
+        specialized = 0
+        not_specialized = 0
+        for opcode, opcode_stat in self._data.items():
+            if "execution_count" not in opcode_stat:
+                continue
+            count = opcode_stat["execution_count"]
+            if "specializable" in opcode_stat:
+                not_specialized += count
+            elif opcode in self._specialized_instructions:
+                miss = opcode_stat.get("specialization.miss", 0)
+                not_specialized += miss
+                specialized += count - miss
+            else:
+                basic += count
+        return basic, specialized, not_specialized
+
+    def get_deferred_counts(self) -> dict[str, int]:
+        return {
+            opcode: opcode_stat.get("specialization.deferred", 0)
+            for opcode, opcode_stat in self._data.items()
+        }
+
+    def get_misses_counts(self) -> dict[str, int]:
+        return {
+            opcode: opcode_stat.get("specialization.miss", 0)
+            for opcode, opcode_stat in self._data.items()
+            if not self.is_specializable(opcode)
+        }
+
+    def get_opcode_counts(self) -> dict[str, int]:
+        counts = {}
+        for opcode, entry in self._data.items():
+            count = entry.get("count", 0)
+            if count:
+                counts[opcode] = count
+        return counts
+
+
+class Stats:
+    def __init__(self, data: RawData):
+        self._data = data
+
+    def get(self, key: str) -> int:
+        return self._data.get(key, 0)
+
+    @functools.cache
     def get_opcode_stats(self, prefix: str) -> OpcodeStats:
-        if prefix in self._opcode_stats:
-            return self._opcode_stats[prefix]
-
-        opcode_stats: OpcodeStats = collections.defaultdict(dict)
-        for key, value in self.items():
+        opcode_stats = collections.defaultdict[str, dict](dict)
+        for key, value in self._data.items():
             if not key.startswith(prefix):
                 continue
             name, _, rest = key[len(prefix) + 1 :].partition("]")
             opcode_stats[name][rest.strip(".")] = value
-
-        self._opcode_stats[prefix] = opcode_stats
-        return opcode_stats
-
-    def get_pair_counts(self, prefix: str) -> PairCounts:
-        opcode_stats = self.get_opcode_stats(prefix)
-        pair_counts: PairCounts = []
-        for name_i, opcode_stat in opcode_stats.items():
-            for key, value in opcode_stat.items():
-                if key.startswith("pair_count"):
-                    name_j, _, _ = key[len("pair_count") + 1 :].partition("]")
-                    if value:
-                        pair_counts.append((value, (name_i, name_j)))
-        pair_counts.sort(reverse=True)
-        return pair_counts
-
-    def get_total(self, prefix: str) -> int:
-        return sum(
-            x.get("execution_count", 0) for x in self.get_opcode_stats(prefix).values()
+        return OpcodeStats(
+            opcode_stats,
+            self._data["_defines"],
+            self._data["_specialized_instructions"],
         )
+
+    def get_call_stats(self) -> dict[str, int]:
+        defines = self._data["_stats_defines"]
+        result = {}
+        for key, value in sorted(self._data.items()):
+            if "Calls to" in key:
+                result[key] = value
+            elif key.startswith("Calls "):
+                name, index = key[:-1].split("[")
+                label = f"{name} ({pretty(defines[int(index)][0])})"
+                result[label] = value
+
+        for key, value in sorted(self._data.items()):
+            if key.startswith("Frame"):
+                result[key] = value
+
+        return result
+
+    def get_object_stats(self) -> dict[str, tuple[int, int]]:
+        total_materializations = self._data.get("Object new values", 0)
+        total_allocations = self._data.get("Object allocations", 0) + self._data.get(
+            "Object allocations from freelist", 0
+        )
+        total_increfs = self._data.get(
+            "Object interpreter increfs", 0
+        ) + self._data.get("Object increfs", 0)
+        total_decrefs = self._data.get(
+            "Object interpreter decrefs", 0
+        ) + self._data.get("Object decrefs", 0)
+
+        result = {}
+        for key, value in self._data.items():
+            if key.startswith("Object"):
+                if "materialize" in key:
+                    den = total_materializations
+                elif "allocations" in key:
+                    den = total_allocations
+                elif "increfs" in key:
+                    den = total_increfs
+                elif "decrefs" in key:
+                    den = total_decrefs
+                else:
+                    den = None
+                label = key[6:].strip()
+                label = label[0].upper() + label[1:]
+                result[label] = (value, den)
+        return result
+
+    def get_gc_stats(self) -> list[dict[str, int]]:
+        gc_stats: list[dict[str, int]] = []
+        for key, value in self._data.items():
+            if not key.startswith("GC"):
+                continue
+            n, _, rest = key[3:].partition("]")
+            name = rest.strip()
+            gen_n = int(n)
+            while len(gc_stats) <= gen_n:
+                gc_stats.append({})
+            gc_stats[gen_n][name] = value
+        return gc_stats
+
+    def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
+        if "Optimization attempts" not in self._data:
+            return {}
+
+        attempts = self._data["Optimization attempts"]
+        created = self._data["Optimization traces created"]
+        executed = self._data["Optimization traces executed"]
+        uops = self._data["Optimization uops executed"]
+        trace_stack_overflow = self._data["Optimization trace stack overflow"]
+        trace_stack_underflow = self._data["Optimization trace stack underflow"]
+        trace_too_long = self._data["Optimization trace too long"]
+        trace_too_short = self._data["Optimization trace too short"]
+        inner_loop = self._data["Optimization inner loop"]
+        recursive_call = self._data["Optimization recursive call"]
+
+        return {
+            "Optimization attempts": (attempts, None),
+            "Traces created": (created, attempts),
+            "Traces executed": (executed, None),
+            "Uops executed": (uops, executed),
+            "Trace stack overflow": (trace_stack_overflow, created),
+            "Trace stack underflow": (trace_stack_underflow, created),
+            "Trace too long": (trace_too_long, created),
+            "Trace too short": (trace_too_short, created),
+            "Inner loop found": (inner_loop, created),
+            "Recursive call": (recursive_call, created),
+        }
+
+    def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
+        rows: Rows = []
+        for k, v in self._data.items():
+            match = re.match(f"{prefix}\\[([0-9]+)\\]", k)
+            if match is not None:
+                entry = int(match.groups()[0])
+                rows.append((entry, v))
+        return sorted(rows)
 
 
 class Count(int):
@@ -182,7 +414,7 @@ class Count(int):
 
 
 class Ratio:
-    def __init__(self, num: int, den: int, percentage: bool = True):
+    def __init__(self, num: int, den: int | None, percentage: bool = True):
         self.num = num
         self.den = den
         self.percentage = percentage
@@ -192,11 +424,13 @@ class Ratio:
     def __float__(self):
         if self.den == 0:
             return 0.0
+        elif self.den is None:
+            return self.num
         else:
             return self.num / self.den
 
     def markdown(self) -> str:
-        if self.den == 0:
+        if self.den == 0 or self.den is None:
             return ""
         elif self.percentage:
             return f"{self.num / self.den:,.01%}"
@@ -339,20 +573,13 @@ class Section:
 def calc_execution_count_table(prefix: str) -> RowCalculator:
     def calc(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
-        total = 0
-        counts = []
-        for name, opcode_stat in opcode_stats.items():
-            if "execution_count" in opcode_stat:
-                count = opcode_stat["execution_count"]
-                total += count
-                miss = 0
-                if "specializable" not in opcode_stat:
-                    miss = opcode_stat.get("specialization.miss", 0)
-                counts.append((count, name, miss))
-        counts.sort(reverse=True)
+        counts = opcode_stats.get_execution_counts()
+        total = opcode_stats.get_total_execution_count()
         cumulative = 0
         rows: Rows = []
-        for count, name, miss in counts:
+        for opcode, (count, miss) in sorted(
+            counts.items(), key=itemgetter(1), reverse=True
+        ):
             cumulative += count
             if miss:
                 miss_val = Ratio(miss, count)
@@ -360,7 +587,7 @@ def calc_execution_count_table(prefix: str) -> RowCalculator:
                 miss_val = None
             rows.append(
                 (
-                    name,
+                    opcode,
                     Count(count),
                     Ratio(count, total),
                     Ratio(cumulative, total),
@@ -388,22 +615,24 @@ def execution_count_section() -> Section:
 
 def pair_count_section() -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
-        pair_counts = stats.get_pair_counts("opcode")
-        total = stats.get_total("opcode")
+        opcode_stats = stats.get_opcode_stats("opcode")
+        pair_counts = opcode_stats.get_pair_counts()
+        total = opcode_stats.get_total_execution_count()
 
         cumulative = 0
         rows: Rows = []
-        for count, (name_i, name_j) in itertools.islice(pair_counts, 100):
+        for (opcode_i, opcode_j), count in itertools.islice(
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
+        ):
             cumulative += count
             rows.append(
                 (
-                    f"{name_i} {name_j}",
+                    f"{opcode_i} {opcode_j}",
                     Count(count),
                     Ratio(count, total),
                     Ratio(cumulative, total),
                 )
             )
-
         return rows
 
     return Section(
@@ -424,52 +653,34 @@ def pre_succ_pairs_section() -> Section:
         assert head_stats is None
 
         opcode_stats = base_stats.get_opcode_stats("opcode")
-        pair_counts = base_stats.get_pair_counts("opcode")
 
-        predecessors: dict[str, collections.Counter] = collections.defaultdict(
-            collections.Counter
-        )
-        successors: dict[str, collections.Counter] = collections.defaultdict(
-            collections.Counter
-        )
-        total_predecessors: collections.Counter = collections.Counter()
-        total_successors: collections.Counter = collections.Counter()
-        for count, (first, second) in pair_counts:
-            if count:
-                predecessors[second][first] = count
-                successors[first][second] = count
-                total_predecessors[second] += count
-                total_successors[first] += count
-
-        for name in opcode_stats.keys():
-            total1 = total_predecessors[name]
-            total2 = total_successors[name]
-            if total1 == 0 and total2 == 0:
+        for opcode in opcode_stats.get_opcode_names():
+            predecessors = opcode_stats.get_predecessors(opcode)
+            successors = opcode_stats.get_successors(opcode)
+            predecessors_total = predecessors.total()
+            successors_total = successors.total()
+            if predecessors_total == 0 and successors_total == 0:
                 continue
-            pred_rows: Rows = []
-            succ_rows: Rows = []
-            if total1:
-                pred_rows = [
-                    (pred, Count(count), Ratio(count, total1))
-                    for (pred, count) in predecessors[name].most_common(5)
-                ]
-            if total2:
-                succ_rows = [
-                    (succ, Count(count), Ratio(count, total2))
-                    for (succ, count) in successors[name].most_common(5)
-                ]
+            pred_rows = [
+                (pred, Count(count), Ratio(count, predecessors_total))
+                for (pred, count) in predecessors.most_common(5)
+            ]
+            succ_rows = [
+                (succ, Count(count), Ratio(count, successors_total))
+                for (succ, count) in successors.most_common(5)
+            ]
 
             yield Section(
-                name,
-                f"Successors and predecessors for {name}",
+                opcode,
+                f"Successors and predecessors for {opcode}",
                 [
                     Table(
                         ("Predecessors", "Count:", "Percentage:"),
-                        lambda *_: pred_rows,
+                        lambda *_: pred_rows,  # type: ignore
                     ),
                     Table(
                         ("Successors", "Count:", "Percentage:"),
-                        lambda *_: succ_rows,
+                        lambda *_: succ_rows,  # type: ignore
                     ),
                 ],
             )
@@ -483,138 +694,91 @@ def pre_succ_pairs_section() -> Section:
 
 
 def specialization_section() -> Section:
-    def calc_specialization_table(name: str) -> RowCalculator:
+    def calc_specialization_table(opcode: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             opcode_stats = stats.get_opcode_stats("opcode")
-            family_stats = opcode_stats[name]
-            total = sum(family_stats.get(kind, 0) for kind in TOTAL)
-            if total == 0:
-                return []
-            rows: Rows = []
-            for key in sorted(family_stats):
-                if key.startswith("specialization.failure_kinds"):
-                    continue
-                elif key in ("specialization.hit", "specialization.miss"):
-                    label = key[len("specialization.") :]
-                elif key in (
-                    "execution_count",
-                    "specialization.success",
-                    "specialization.failure",
-                    "specializable",
-                ) or key.startswith("pair"):
-                    continue
-                else:
-                    label = key
-                rows.append(
-                    (
-                        f"{label:>12}",
-                        Count(family_stats[key]),
-                        Ratio(family_stats[key], total),
-                    )
+            total = opcode_stats.get_specialization_total(opcode)
+            specialization_counts = opcode_stats.get_specialization_counts(opcode)
+
+            return [
+                (
+                    f"{label:>12}",
+                    Count(count),
+                    Ratio(count, total),
                 )
-            return rows
+                for label, count in specialization_counts.items()
+            ]
 
         return calc
 
     def calc_specialization_success_failure_table(name: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
-            opcode_stats = stats.get_opcode_stats("opcode")
-            family_stats = opcode_stats[name]
-            total_attempts = 0
-            for key in ("specialization.success", "specialization.failure"):
-                total_attempts += family_stats.get(key, 0)
-            rows: Rows = []
-            if total_attempts:
-                for key in ("specialization.success", "specialization.failure"):
-                    label = key[len("specialization.") :]
-                    label = label[0].upper() + label[1:]
-                    val = family_stats.get(key, 0)
-                    rows.append((label, Count(val), Ratio(val, total_attempts)))
-            return rows
+            values = stats.get_opcode_stats(
+                "opcode"
+            ).get_specialization_success_failure(name)
+            total = sum(values.values())
+            if total:
+                return [
+                    (label.capitalize(), Count(val), Ratio(val, total))
+                    for label, val in values.items()
+                ]
+            else:
+                return []
 
         return calc
 
     def calc_specialization_failure_kind_table(name: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
-            def kind_to_text(kind: int, defines: Defines, opname: str):
-                if kind <= 8:
-                    return pretty(defines[kind][0])
-                if opname == "LOAD_SUPER_ATTR":
-                    opname = "SUPER"
-                elif opname.endswith("ATTR"):
-                    opname = "ATTR"
-                elif opname in ("FOR_ITER", "SEND"):
-                    opname = "ITER"
-                elif opname.endswith("SUBSCR"):
-                    opname = "SUBSCR"
-                for name in defines[kind]:
-                    if name.startswith(opname):
-                        return pretty(name[len(opname) + 1 :])
-                return "kind " + str(kind)
-
-            defines = stats.defines
             opcode_stats = stats.get_opcode_stats("opcode")
-            family_stats = opcode_stats[name]
-            total_failures = family_stats.get("specialization.failure", 0)
-            failure_kinds = [0] * 40
-            for key in family_stats:
-                if not key.startswith("specialization.failure_kind"):
-                    continue
-                index = int(key[:-1].split("[")[1])
-                failure_kinds[index] = family_stats[key]
-            failures = [(value, index) for (index, value) in enumerate(failure_kinds)]
-            failures.sort(reverse=True)
-            rows: Rows = []
-            for value, index in failures:
-                if not value:
-                    continue
-                rows.append(
-                    (
-                        kind_to_text(index, defines, name),
-                        Count(value),
-                        Ratio(value, total_failures),
-                    )
-                )
-            return rows
+            failures = opcode_stats.get_specialization_failure_kinds(name)
+            total = opcode_stats.get_specialization_failure_total(name)
+
+            return sorted(
+                [
+                    (label, Count(value), Ratio(value, total))
+                    for label, value in failures.items()
+                    if value
+                ],
+                key=itemgetter(1),
+                reverse=True,
+            )
 
         return calc
 
     def iter_specialization_tables(base_stats: Stats, head_stats: Stats | None = None):
         opcode_base_stats = base_stats.get_opcode_stats("opcode")
-        names = opcode_base_stats.keys()
+        names = opcode_base_stats.get_opcode_names()
         if head_stats is not None:
             opcode_head_stats = head_stats.get_opcode_stats("opcode")
-            names &= opcode_head_stats.keys()  # type: ignore
+            names &= opcode_head_stats.get_opcode_names()  # type: ignore
         else:
-            opcode_head_stats = {}
+            opcode_head_stats = None
 
-        for name in sorted(names):
-            if "specializable" not in opcode_base_stats.get(name, {}):
+        for opcode in sorted(names):
+            if not opcode_base_stats.is_specializable(opcode):
                 continue
-            total = sum(
-                stats.get(name, {}).get(kind, 0)
-                for kind in TOTAL
-                for stats in (opcode_base_stats, opcode_head_stats)
-            )
-            if total == 0:
+            if opcode_base_stats.get_specialization_total(opcode) == 0 and (
+                opcode_head_stats is None
+                or opcode_head_stats.get_specialization_total(opcode) == 0
+            ):
                 continue
             yield Section(
-                name,
-                f"specialization stats for {name} family",
+                opcode,
+                f"specialization stats for {opcode} family",
                 [
                     Table(
                         ("Kind", "Count:", "Ratio:"),
-                        calc_specialization_table(name),
+                        calc_specialization_table(opcode),
                         JoinMode.CHANGE,
                     ),
                     Table(
                         ("", "Count:", "Ratio:"),
-                        calc_specialization_success_failure_table(name),
+                        calc_specialization_success_failure_table(opcode),
                         JoinMode.CHANGE,
                     ),
                     Table(
                         ("Failure kind", "Count:", "Ratio:"),
-                        calc_specialization_failure_kind_table(name),
+                        calc_specialization_failure_kind_table(opcode),
                         JoinMode.CHANGE,
                     ),
                 ],
@@ -630,24 +794,13 @@ def specialization_section() -> Section:
 def specialization_effectiveness_section() -> Section:
     def calc_specialization_effectiveness_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats("opcode")
-        total = stats.get_total("opcode")
-        specialized_instructions = stats.specialized_instructions
+        total = opcode_stats.get_total_execution_count()
 
-        basic = 0
-        specialized = 0
-        not_specialized = 0
-        for name, opcode_stat in opcode_stats.items():
-            if "execution_count" not in opcode_stat:
-                continue
-            count = opcode_stat["execution_count"]
-            if "specializable" in opcode_stat:
-                not_specialized += count
-            elif name in specialized_instructions:
-                miss = opcode_stat.get("specialization.miss", 0)
-                not_specialized += miss
-                specialized += count - miss
-            else:
-                basic += count
+        (
+            basic,
+            specialized,
+            not_specialized,
+        ) = opcode_stats.get_specialized_total_counts()
 
         return [
             ("Basic", Count(basic), Ratio(basic, total)),
@@ -661,105 +814,75 @@ def specialization_effectiveness_section() -> Section:
 
     def calc_deferred_by_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats("opcode")
-
-        total = 0
-        counts = []
-        for name, opcode_stat in opcode_stats.items():
-            value = opcode_stat.get("specialization.deferred", 0)
-            counts.append((value, name))
-            total += value
-        counts.sort(reverse=True)
-        if total:
-            return [
-                (name, Count(count), Ratio(count, total))
-                for (count, name) in counts[:10]
-            ]
-        else:
+        deferred_counts = opcode_stats.get_deferred_counts()
+        total = sum(deferred_counts.values())
+        if total == 0:
             return []
+
+        return [
+            (name, Count(value), Ratio(value, total))
+            for name, value in sorted(
+                deferred_counts.items(), key=itemgetter(1), reverse=True
+            )[:10]
+        ]
 
     def calc_misses_by_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats("opcode")
-
-        total = 0
-        counts = []
-        for name, opcode_stat in opcode_stats.items():
-            # Avoid double counting misses
-            if "specializable" in opcode_stat:
-                continue
-            value = opcode_stat.get("specialization.misses", 0)
-            counts.append((value, name))
-            total += value
-        counts.sort(reverse=True)
-        if total:
-            return [
-                (name, Count(count), Ratio(count, total))
-                for (count, name) in counts[:10]
-            ]
-        else:
+        misses_counts = opcode_stats.get_misses_counts()
+        total = sum(misses_counts.values())
+        if total == 0:
             return []
 
-    def iter_specialization_effectiveness_tables(
-        base_stats: Stats, head_stats: Stats | None = None
-    ):
-        yield Table(
-            ("Instructions", "Count:", "Ratio:"),
-            calc_specialization_effectiveness_table,
-            JoinMode.CHANGE,
-        )
-        yield Section(
-            "Deferred by instruction",
-            "",
-            [
-                Table(
-                    ("Name", "Count:", "Ratio:"),
-                    calc_deferred_by_table,
-                    JoinMode.CHANGE,
-                )
-            ],
-        )
-        yield Section(
-            "Misses by instruction",
-            "",
-            [
-                Table(
-                    ("Name", "Count:", "Ratio:"),
-                    calc_misses_by_table,
-                    JoinMode.CHANGE,
-                )
-            ],
-        )
+        return [
+            (name, Count(value), Ratio(value, total))
+            for name, value in sorted(
+                misses_counts.items(), key=itemgetter(1), reverse=True
+            )[:10]
+        ]
 
     return Section(
         "Specialization effectiveness",
         "",
-        iter_specialization_effectiveness_tables,
+        [
+            Table(
+                ("Instructions", "Count:", "Ratio:"),
+                calc_specialization_effectiveness_table,
+                JoinMode.CHANGE,
+            ),
+            Section(
+                "Deferred by instruction",
+                "",
+                [
+                    Table(
+                        ("Name", "Count:", "Ratio:"),
+                        calc_deferred_by_table,
+                        JoinMode.CHANGE,
+                    )
+                ],
+            ),
+            Section(
+                "Misses by instruction",
+                "",
+                [
+                    Table(
+                        ("Name", "Count:", "Ratio:"),
+                        calc_misses_by_table,
+                        JoinMode.CHANGE,
+                    )
+                ],
+            ),
+        ],
     )
 
 
 def call_stats_section() -> Section:
     def calc_call_stats_table(stats: Stats) -> Rows:
-        defines = stats.pystats_defines
-
-        total = 0
-        for key, value in stats.items():
-            if "Calls to" in key:
-                total += value
-
-        rows: Rows = []
-        for key, value in sorted(stats.items()):
-            if "Calls to" in key:
-                rows.append((key, Count(value), Ratio(value, total)))
-            elif key.startswith("Calls "):
-                name, index = key[:-1].split("[")
-                index = int(index)
-                label = f"{name} ({pretty(defines[index][0])})"
-                rows.append((label, Count(value), Ratio(value, total)))
-
-        for key, value in sorted(stats.items()):
-            if key.startswith("Frame"):
-                rows.append((key, Count(value), Ratio(value, total)))
-
-        return rows
+        call_stats = stats.get_call_stats()
+        total = sum(v for k, v in call_stats.items() if "Calls to" in k)
+        return [
+            (key, Count(value), Ratio(value, total))
+            for key, value in call_stats.items()
+        ]
 
     return Section(
         "Call stats",
@@ -776,33 +899,11 @@ def call_stats_section() -> Section:
 
 def object_stats_section() -> Section:
     def calc_object_stats_table(stats: Stats) -> Rows:
-        total_materializations = stats.get("Object new values", 0)
-        total_allocations = stats.get("Object allocations", 0) + stats.get(
-            "Object allocations from freelist", 0
-        )
-        total_increfs = stats.get("Object interpreter increfs", 0) + stats.get(
-            "Object increfs", 0
-        )
-        total_decrefs = stats.get("Object interpreter decrefs", 0) + stats.get(
-            "Object decrefs", 0
-        )
-        rows: Rows = []
-        for key, value in stats.items():
-            if key.startswith("Object"):
-                if "materialize" in key:
-                    ratio = Ratio(value, total_materializations)
-                elif "allocations" in key:
-                    ratio = Ratio(value, total_allocations)
-                elif "increfs" in key:
-                    ratio = Ratio(value, total_increfs)
-                elif "decrefs" in key:
-                    ratio = Ratio(value, total_decrefs)
-                else:
-                    ratio = None
-                label = key[6:].strip()
-                label = label[0].upper() + label[1:]
-                rows.append((label, Count(value), ratio))
-        return rows
+        object_stats = stats.get_object_stats()
+        return [
+            (label, Count(value), Ratio(value, den))
+            for label, (value, den) in object_stats.items()
+        ]
 
     return Section(
         "Object stats",
@@ -819,16 +920,8 @@ def object_stats_section() -> Section:
 
 def gc_stats_section() -> Section:
     def calc_gc_stats(stats: Stats) -> Rows:
-        gc_stats: list[dict[str, int]] = []
-        for key, value in stats.items():
-            if not key.startswith("GC"):
-                continue
-            n, _, rest = key[3:].partition("]")
-            name = rest.strip()
-            gen_n = int(n)
-            while len(gc_stats) <= gen_n:
-                gc_stats.append({})
-            gc_stats[gen_n][name] = value
+        gc_stats = stats.get_gc_stats()
+
         return [
             (
                 Count(i),
@@ -853,71 +946,30 @@ def gc_stats_section() -> Section:
 
 def optimization_section() -> Section:
     def calc_optimization_table(stats: Stats) -> Rows:
-        if "Optimization attempts" not in stats:
-            return []
-
-        attempts = stats["Optimization attempts"]
-        created = stats["Optimization traces created"]
-        executed = stats["Optimization traces executed"]
-        uops = stats["Optimization uops executed"]
-        trace_stack_overflow = stats["Optimization trace stack overflow"]
-        trace_stack_underflow = stats["Optimization trace stack underflow"]
-        trace_too_long = stats["Optimization trace too long"]
-        trace_too_short = stats["Optimization trace too short"]
-        inner_loop = stats["Optimization inner loop"]
-        recursive_call = stats["Optimization recursive call"]
+        optimization_stats = stats.get_optimization_stats()
 
         return [
-            ("Optimization attempts", Count(attempts), ""),
-            ("Traces created", Count(created), Ratio(created, attempts)),
-            ("Traces executed", Count(executed), ""),
-            ("Uops executed", Count(uops), Ratio(uops, executed, percentage=False)),
-            (
-                "Trace stack overflow",
-                Count(trace_stack_overflow),
-                Ratio(trace_stack_overflow, created),
-            ),
-            (
-                "Trace stack underflow",
-                Count(trace_stack_underflow),
-                Ratio(trace_stack_underflow, created),
-            ),
-            (
-                "Trace too long",
-                Count(trace_too_long),
-                Ratio(trace_too_long, created),
-            ),
-            (
-                "Trace too short",
-                Count(trace_too_short),
-                Ratio(trace_too_short, created),
-            ),
-            ("Inner loop found", Count(inner_loop), Ratio(inner_loop, created)),
-            (
-                "Recursive call",
-                Count(recursive_call),
-                Ratio(recursive_call, created),
-            ),
+            (label, Count(value), Ratio(value, den, percentage=label != "Uops executed"))
+            for label, (value, den) in optimization_stats.items()
         ]
 
     def calc_histogram_table(key: str, den: str) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
+            histogram = stats.get_histogram(key)
+            denominator = stats.get(den)
+
             rows: Rows = []
             last_non_zero = 0
-            for k, v in stats.items():
-                if k.startswith(key):
-                    match = re.match(r".+\[([0-9]+)\]", k)
-                    if match is not None:
-                        entry = int(match.groups()[0])
-                        if v != 0:
-                            last_non_zero = len(rows)
-                        rows.append(
-                            (
-                                f"<= {entry:,d}",
-                                Count(v),
-                                Ratio(int(v), stats[den]),
-                            )
-                        )
+            for k, v in histogram:
+                if v != 0:
+                    last_non_zero = len(rows)
+                rows.append(
+                    (
+                        f"<= {k:,d}",
+                        Count(v),
+                        Ratio(v, denominator),
+                    )
+                )
             # Don't include any zero entries at the end
             rows = rows[: last_non_zero + 1]
             return rows
@@ -926,15 +978,18 @@ def optimization_section() -> Section:
 
     def calc_unsupported_opcodes_table(stats: Stats) -> Rows:
         unsupported_opcodes = stats.get_opcode_stats("unsupported_opcode")
-        data = []
-        for opcode, entry in unsupported_opcodes.items():
-            data.append((Count(entry["count"]), opcode))
-        data.sort(reverse=True)
-        return [(x[1], x[0]) for x in data]
+        return sorted(
+            [
+                (opcode, Count(count))
+                for opcode, count in unsupported_opcodes.get_opcode_counts().items()
+            ],
+            key=itemgetter(1),
+            reverse=True,
+        )
 
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
-        if "Optimization attempts" not in base_stats or (
-            head_stats is not None and "Optimization attempts" not in head_stats
+        if not base_stats.get_optimization_stats() or (
+            head_stats is not None and not head_stats.get_optimization_stats()
         ):
             return
 
@@ -987,7 +1042,7 @@ def optimization_section() -> Section:
 
 def meta_stats_section() -> Section:
     def calc_rows(stats: Stats) -> Rows:
-        return [("Number of data files", Count(stats.get("__nfiles__", 0)))]
+        return [("Number of data files", Count(stats.get("__nfiles__")))]
 
     return Section(
         "Meta stats",
@@ -1003,6 +1058,7 @@ LAYOUT = [
     specialization_section(),
     specialization_effectiveness_section(),
     call_stats_section(),
+    object_stats_section(),
     gc_stats_section(),
     optimization_section(),
     meta_stats_section(),
@@ -1080,18 +1136,20 @@ def output_markdown(
 def output_stats(inputs: list[Path], json_output=TextIO | None):
     match len(inputs):
         case 1:
-            stats = Stats(Path(inputs[0]))
+            data = load_raw_data(Path(inputs[0]))
             if json_output is not None:
-                stats.save(json_output)  # type: ignore
+                save_raw_data(data, json_output)  # type: ignore
+            stats = Stats(data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
                 raise ValueError(
                     "Can not output to JSON when there are multiple inputs"
                 )
-
-            base_stats = Stats(Path(inputs[0]))
-            head_stats = Stats(Path(inputs[1]))
+            base_data = load_raw_data(Path(inputs[0]))
+            head_data = load_raw_data(Path(inputs[1]))
+            base_stats = Stats(base_data)
+            head_stats = Stats(head_data)
             output_markdown(sys.stdout, LAYOUT, base_stats, head_stats)
 
 
