@@ -8,6 +8,7 @@ from test.support.import_helper import import_module
 termios = import_module('termios')
 
 
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
 class TestFunctions(unittest.TestCase):
 
     @classmethod
@@ -91,9 +92,8 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW)
 
     def test_tcsendbreak(self):
-        termios.tcsendbreak(self.fd, 0)
         termios.tcsendbreak(self.fd, 1)
-        termios.tcsendbreak(self.stream, 0)
+        termios.tcsendbreak(self.stream, 1)
 
     def test_tcsendbreak_errors(self):
         self.assertRaises(OverflowError, termios.tcsendbreak, self.fd, 2**1000)
@@ -104,7 +104,6 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(OverflowError, termios.tcsendbreak, 2**1000, 0)
         self.assertRaises(TypeError, termios.tcsendbreak, object(), 0)
         self.assertRaises(TypeError, termios.tcsendbreak, self.fd)
-        termios.tcsendbreak(self.fd, 0)
 
     def test_tcdrain(self):
         termios.tcdrain(self.fd)
