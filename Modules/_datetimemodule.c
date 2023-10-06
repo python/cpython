@@ -42,13 +42,13 @@
 
 typedef struct {
     /* Conversion factors. */
-    PyObject *us_per_ms;       // 1000
-    PyObject *us_per_second;   // 1000000
+    PyObject *us_per_ms;       // 1_000
+    PyObject *us_per_second;   // 1_000_000
     PyObject *us_per_minute;   // 1e6 * 60 as Python int
     PyObject *us_per_hour;     // 1e6 * 3600 as Python int
     PyObject *us_per_day;      // 1e6 * 3600 * 24 as Python int
-    PyObject *us_per_week;     // 1e6*3600*24*7 as Python int
-    PyObject *seconds_per_day; // 3600*24 as Python int
+    PyObject *us_per_week;     // 1e6 * 3600 * 24 * 7 as Python int
+    PyObject *seconds_per_day; // 3600 * 24 as Python int
 
     /* The interned UTC timezone instance */
     PyObject *PyDateTime_TimeZone_UTC;
