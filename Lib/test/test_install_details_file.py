@@ -78,7 +78,7 @@ needs_installed_python = unittest.skipIf(
 )
 
 
-@unittest.skipIf(os.name == 'nt', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
 class CPythonInstallDetailsFileTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
 
