@@ -636,10 +636,10 @@ _PyTime_AsNanosecondsObject(_PyTime_t t)
 }
 
 _PyTime_t
-_PyTime_FromSecondsDouble(double seconds)
+_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round)
 {
     _PyTime_t tp;
-    if(pytime_from_double(&tp, seconds, _PyTime_ROUND_FLOOR, SEC_TO_NS) < 0) {
+    if(pytime_from_double(&tp, seconds, round, SEC_TO_NS) < 0) {
         return -1;
     }
     return tp;

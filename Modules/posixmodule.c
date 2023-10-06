@@ -10206,11 +10206,11 @@ os_timerfd_settime_impl(PyObject *module, int fd, int flags, double initial,
     struct itimerspec new_value;
     struct itimerspec old_value;
     int result;
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial), &new_value.it_value) < 0) {
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(initial, _PyTime_ROUND_FLOOR), &new_value.it_value) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid initial value");
         return NULL;
     }
-    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval), &new_value.it_interval) < 0) {
+    if (_PyTime_AsTimespec(_PyTime_FromSecondsDouble(interval, _PyTime_ROUND_FLOOR), &new_value.it_interval) < 0) {
         PyErr_SetString(PyExc_ValueError, "invalid interval value");
         return NULL;
     }
