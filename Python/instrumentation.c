@@ -4,6 +4,7 @@
 
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_call.h"
+#include "pycore_ceval.h"         // _PY_EVAL_EVENTS_BITS
 #include "pycore_code.h"          // _PyCode_Clear_Executors()
 #include "pycore_frame.h"
 #include "pycore_interp.h"
@@ -895,10 +896,27 @@ static inline int most_significant_bit(uint8_t bits) {
     return MOST_SIGNIFICANT_BITS[bits];
 }
 
+static uint32_t
+global_version(PyInterpreterState *interp)
+{
+    return interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK;
+}
+
+static void
+set_global_version(PyInterpreterState *interp, uint32_t version)
+{
+    assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+    uintptr_t old = _Py_atomic_load_uintptr(&interp->ceval.eval_breaker);
+    intptr_t new;
+    do {
+        new = (old & _PY_EVAL_EVENTS_MASK) | version;
+    } while (!_Py_atomic_compare_exchange_uintptr(&interp->ceval.eval_breaker, &old, new));
+}
+
 static bool
 is_version_up_to_date(PyCodeObject *code, PyInterpreterState *interp)
 {
-    return interp->monitoring_version == code->_co_instrumentation_version;
+    return global_version(interp) == code->_co_instrumentation_version;
 }
 
 #ifndef NDEBUG
@@ -1556,7 +1574,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
 {
     if (is_version_up_to_date(code, interp)) {
         assert(
-            interp->monitoring_version == 0 ||
+            (interp->ceval.eval_breaker & ~_PY_EVAL_EVENTS_MASK) == 0 ||
             instrumentation_cross_checks(interp, code)
         );
         return 0;
@@ -1594,7 +1612,7 @@ _Py_Instrument(PyCodeObject *code, PyInterpreterState *interp)
         assert(monitors_are_empty(monitors_and(new_events, removed_events)));
     }
     code->_co_monitoring->active_monitors = active_events;
-    code->_co_instrumentation_version = interp->monitoring_version;
+    code->_co_instrumentation_version = global_version(interp);
     if (monitors_are_empty(new_events) && monitors_are_empty(removed_events)) {
 #ifdef INSTRUMENT_DEBUG
         sanity_check_instrumentation(code);
@@ -1761,6 +1779,10 @@ check_tool(PyInterpreterState *interp, int tool_id)
     return 0;
 }
 
+/* We share the eval-breaker with flags, so the monitoring
+ * version goes in the top 24 bits */
+#define MONITORING_VERSION_INCREMENT (1 << _PY_EVAL_EVENTS_BITS)
+
 int
 _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
 {
@@ -1775,7 +1797,12 @@ _PyMonitoring_SetEvents(int tool_id, _PyMonitoringEventSet events)
         return 0;
     }
     set_events(&interp->monitors, tool_id, events);
-    interp->monitoring_version++;
+    uint32_t new_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
+    if (new_version == 0) {
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
+        return -1;
+    }
+    set_global_version(interp, new_version);
     return instrument_all_executing_code_objects(interp);
 }
 
@@ -1803,7 +1830,7 @@ _PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEvent
     set_local_events(local, tool_id, events);
     if (is_version_up_to_date(code, interp)) {
         /* Force instrumentation update */
-        code->_co_instrumentation_version = UINT64_MAX;
+        code->_co_instrumentation_version -= MONITORING_VERSION_INCREMENT;
     }
     if (_Py_Instrument(code, interp)) {
         return -1;
@@ -2086,8 +2113,14 @@ monitoring_restart_events_impl(PyObject *module)
      * last restart version < current version
      */
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    interp->last_restart_version = interp->monitoring_version + 1;
-    interp->monitoring_version = interp->last_restart_version + 1;
+    uint32_t restart_version = global_version(interp) + MONITORING_VERSION_INCREMENT;
+    uint32_t new_version = restart_version + MONITORING_VERSION_INCREMENT;
+    if (new_version <= MONITORING_VERSION_INCREMENT) {
+        PyErr_Format(PyExc_OverflowError, "events set too many times");
+        return NULL;
+    }
+    interp->last_restart_version = restart_version;
+    set_global_version(interp, new_version);
     if (instrument_all_executing_code_objects(interp)) {
         return NULL;
     }

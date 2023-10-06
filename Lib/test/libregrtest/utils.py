@@ -19,8 +19,6 @@ from test.support import os_helper
 from test.support import threading_helper
 
 
-MS_WINDOWS = (sys.platform == 'win32')
-
 # All temporary files and temporary directories created by libregrtest should
 # use TMP_PREFIX so cleanup_temp_dir() can remove them all.
 TMP_PREFIX = 'test_python_'

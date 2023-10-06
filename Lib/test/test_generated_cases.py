@@ -598,6 +598,41 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_override_inst(self):
+        input = """
+        inst(OP, (--)) {
+            spam();
+        }
+        override inst(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(OP) {
+            ham();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_override_op(self):
+        input = """
+        op(OP, (--)) {
+            spam();
+        }
+        macro(M) = OP;
+        override op(OP, (--)) {
+            ham();
+        }
+        """
+        output = """
+        TARGET(M) {
+            ham();
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 if __name__ == "__main__":
     unittest.main()

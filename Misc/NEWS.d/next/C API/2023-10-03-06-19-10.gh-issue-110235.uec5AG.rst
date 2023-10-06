@@ -1,0 +1,2 @@
+Raise :exc:`TypeError` for duplicate/unknown fields in ``PyStructSequence`` constructor.
+Patched by Xuehai Pan.
