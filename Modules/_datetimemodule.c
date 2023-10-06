@@ -6990,9 +6990,9 @@ module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->us_per_day);
     Py_VISIT(state->us_per_week);
     Py_VISIT(state->seconds_per_day);
-    Py_VISIT(state->strptime);
     Py_VISIT(state->PyDateTime_TimeZone_UTC);
     Py_VISIT(state->PyDateTime_Epoch);
+    Py_VISIT(state->strptime);
     Py_VISIT(state->PyDateTime_DateTimeType);
     Py_VISIT(state->PyDateTime_DateType);
     Py_VISIT(state->PyDateTime_DeltaType);
@@ -7014,9 +7014,9 @@ module_clear(PyObject *module)
     Py_CLEAR(state->us_per_day);
     Py_CLEAR(state->us_per_week);
     Py_CLEAR(state->seconds_per_day);
-    Py_CLEAR(state->strptime);
     Py_CLEAR(state->PyDateTime_TimeZone_UTC);
     Py_CLEAR(state->PyDateTime_Epoch);
+    Py_CLEAR(state->strptime);
     Py_CLEAR(state->PyDateTime_DateTimeType);
     Py_CLEAR(state->PyDateTime_DateType);
     Py_CLEAR(state->PyDateTime_DeltaType);
