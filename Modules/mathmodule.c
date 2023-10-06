@@ -1130,8 +1130,7 @@ math_ceil(PyObject *module, PyObject *number)
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
-    else
-    {
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
         if (method != NULL) {
@@ -1200,8 +1199,7 @@ math_floor(PyObject *module, PyObject *number)
     if (PyFloat_CheckExact(number)) {
         x = PyFloat_AS_DOUBLE(number);
     }
-    else
-    {
+    else {
         math_module_state *state = get_math_module_state(module);
         PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
         if (method != NULL) {
