@@ -10,7 +10,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include <signal.h>               // NSIG
 
 
