@@ -384,17 +384,6 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
-def skip_if_buildbot(reason=None):
-    """Decorator raising SkipTest if running on a buildbot."""
-    if not reason:
-        reason = 'not suitable for buildbots'
-    try:
-        isbuildbot = getpass.getuser().lower() == 'buildbot'
-    except (KeyError, EnvironmentError) as err:
-        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
-        isbuildbot = False
-    return unittest.skipIf(isbuildbot, reason)
-
 def check_sanitizer(*, address=False, memory=False, ub=False):
     """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub):
