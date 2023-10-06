@@ -191,9 +191,7 @@ static int
 sys_audit_tstate(PyThreadState *ts, const char *event,
                  const char *argFormat, va_list vargs)
 {
-    /* N format is inappropriate, because you do not know
-       whether the reference is consumed by the call.
-       Assert rather than exception for perf reasons */
+    assert(event != NULL);
     assert(!argFormat || !strchr(argFormat, 'N'));
 
     if (!ts) {
@@ -336,6 +334,21 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;
+}
+
+int
+PySys_AuditTuple(const char *event, PyObject *args)
+{
+    if (args == NULL) {
+        return PySys_Audit(event, NULL);
+    }
+
+    if (!PyTuple_Check(args)) {
+        PyErr_Format(PyExc_TypeError, "args must be tuple, got %s",
+                     Py_TYPE(args)->tp_name);
+        return -1;
+    }
+    return PySys_Audit(event, "O", args);
 }
 
 /* We expose this function primarily for our own cleanup during
@@ -508,6 +521,9 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
                          "'event'");
         return NULL;
     }
+
+    assert(args[0] != NULL);
+    assert(PyUnicode_Check(args[0]));
 
     if (!should_audit(tstate->interp)) {
         Py_RETURN_NONE;

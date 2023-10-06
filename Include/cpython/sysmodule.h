@@ -6,6 +6,10 @@ typedef int(*Py_AuditHookFunction)(const char *, PyObject *, void *);
 
 PyAPI_FUNC(int) PySys_Audit(
     const char *event,
-    const char *argFormat,
+    const char *format,
     ...);
 PyAPI_FUNC(int) PySys_AddAuditHook(Py_AuditHookFunction, void*);
+
+PyAPI_FUNC(int) PySys_AuditTuple(
+    const char *event,
+    PyObject *args);
