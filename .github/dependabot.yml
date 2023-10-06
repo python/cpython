@@ -1,3 +1,5 @@
+
+
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -19,3 +21,4 @@ updates:
     labels:
       - "skip issue"
       - "skip news"
+
