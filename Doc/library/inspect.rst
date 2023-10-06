@@ -1650,6 +1650,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

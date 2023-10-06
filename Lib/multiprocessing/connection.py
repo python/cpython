@@ -9,6 +9,7 @@
 
 __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
+import errno
 import io
 import os
 import sys
@@ -41,6 +42,7 @@ except ImportError:
 BUFSIZE = 8192
 # A very generous timeout when it comes to local connections...
 CONNECTION_TIMEOUT = 20.
+WSA_OPERATION_ABORTED = 995
 
 _mmap_counter = itertools.count()
 
@@ -271,12 +273,22 @@ if _winapi:
         with FILE_FLAG_OVERLAPPED.
         """
         _got_empty_message = False
+        _send_ov = None
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
+            ov = self._send_ov
+            if ov is not None:
+                # Interrupt WaitForMultipleObjects() in _send_bytes()
+                ov.cancel()
             _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
+            if self._send_ov is not None:
+                # A connection should only be used by a single thread
+                raise ValueError("concurrent send_bytes() calls "
+                                 "are not supported")
             ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            self._send_ov = ov
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -286,7 +298,13 @@ if _winapi:
                 ov.cancel()
                 raise
             finally:
+                self._send_ov = None
                 nwritten, err = ov.GetOverlappedResult(True)
+            if err == WSA_OPERATION_ABORTED:
+                # close() was called by another thread while
+                # WaitForMultipleObjects() was waiting for the overlapped
+                # operation.
+                raise OSError(errno.EPIPE, "handle is closed")
             assert err == 0
             assert nwritten == len(buf)
 

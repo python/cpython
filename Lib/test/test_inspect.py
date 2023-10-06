@@ -28,7 +28,7 @@ except ImportError:
 
 from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support.import_helper import DirsOnSysPath
+from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
@@ -37,8 +37,6 @@ from test import support
 from test import inspect_stock_annotations
 from test import inspect_stringized_annotations
 from test import inspect_stringized_annotations_2
-
-from test.test_import import _ready_to_import
 
 
 # Functions tested in this suite:
@@ -4584,7 +4582,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
-        from test.ann_module7 import BufferedReader
+        from test.typinganndata.ann_module7 import BufferedReader
         class MyBufferedReader(BufferedReader):
             """buffer reader class."""
 
@@ -4739,7 +4737,7 @@ def foo():
 
     def test_getsource_reload(self):
         # see issue 1218234
-        with _ready_to_import('reload_bug', self.src_before) as (name, path):
+        with ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
             with open(path, 'w', encoding='utf-8') as src:

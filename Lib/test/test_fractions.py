@@ -7,6 +7,7 @@ import numbers
 import operator
 import fractions
 import functools
+import os
 import sys
 import typing
 import unittest
@@ -15,6 +16,9 @@ import pickle
 from pickle import dumps, loads
 F = fractions.Fraction
 
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -1219,6 +1223,30 @@ class FractionTest(unittest.TestCase):
             with self.subTest(spec=spec):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
+
+    @requires_IEEE_754
+    def test_float_format_testfile(self):
+        with open(format_testfile, encoding="utf-8") as testfile:
+            for line in testfile:
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                if fmt == '%r':
+                    continue
+                fmt2 = fmt[1:]
+                with self.subTest(fmt=fmt, arg=arg):
+                    f = F(float(arg))
+                    self.assertEqual(format(f, fmt2), rhs)
+                    if f:  # skip negative zero
+                        self.assertEqual(format(-f, fmt2), '-' + rhs)
+                    f = F(arg)
+                    self.assertEqual(float(format(f, fmt2)), float(rhs))
+                    self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
 
 
 if __name__ == '__main__':

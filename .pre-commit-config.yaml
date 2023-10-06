@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.288
+    rev: v0.0.292
     hooks:
       - id: ruff
         name: Run Ruff on Lib/test/
@@ -15,7 +15,7 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
         types: [python]
-        exclude: Lib/test/coding20731.py
+        exclude: Lib/test/tokenizedata/coding20731.py
       - id: trailing-whitespace
         types_or: [c, python, rst]
 
