@@ -704,6 +704,19 @@ def collect_test_support(info_add):
     attributes = ('IPV6_ENABLED',)
     copy_attributes(info_add, support, 'test_support.%s', attributes)
 
+    attributes = (
+        'MS_WINDOWS',
+        'has_fork_support',
+        'has_socket_support',
+        'has_strftime_extensions',
+        'has_subprocess_support',
+        'is_android',
+        'is_emscripten',
+        'is_jython',
+        'is_wasi',
+    )
+    copy_attributes(info_add, support, 'support.%s', attributes)
+
     call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
     call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
 
