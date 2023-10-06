@@ -48,6 +48,20 @@ def build_platform():
     return sysconfig.get_config_var("BUILD_GNU_TYPE")
 
 
+def prep_checkout():
+    """Prepare the source checkout for cross-compiling."""
+    # Without `Setup.local`, in-place execution fails to realize it's in a
+    # build tree/checkout (the dreaded "No module named 'encodings'" error).
+    section(CHECKOUT)
+
+    local_setup = CHECKOUT / "Modules" / "Setup.local"
+    if local_setup.exists():
+        print("Modules/Setup.local already exists ...")
+    else:
+        print("Touching Modules/Setup.local ...")
+        local_setup.touch()
+
+
 def compile_host_python(context):
     """Compile the build/host Python.
 
@@ -58,7 +72,7 @@ def compile_host_python(context):
 
     section(build_dir)
 
-    configure = [CHECKOUT / "configure", "-C"]
+    configure = [os.path.relpath(CHECKOUT / 'configure', build_dir), "-C"]
     if context.debug:
         configure.append("--with-pydebug")
 
@@ -67,15 +81,16 @@ def compile_host_python(context):
     else:
         with contextlib.chdir(build_dir):
             call(configure, quiet=context.quiet)
-            call(["make", "--jobs", str(cpu_count()), "all"], quiet=context.quiet)
+            call(["make", "--jobs", str(cpu_count()), "all"],
+                 quiet=context.quiet)
 
+    # XXX `python.exe` on Mac
     binary = build_dir / "python"
     cmd = [binary, "-c",
             "import sys; "
             "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
 
-    # XXX Check if the binary is named `python` on macOS
     return binary, version
 
 
@@ -125,12 +140,20 @@ def compile_wasi_python(context, build_python, version):
     section(build_dir)
 
     config_site = os.fsdecode(CHECKOUT / "Tools" / "wasm" / "config.site-wasm32-wasi")
-    # Map the checkout to / to load the stdlib from /Lib. Also means paths for
-    # PYTHONPATH to include sysconfig data must be anchored to the WASI
-    # runtime's / directory.
+    # Use PYTHONPATH to include sysconfig data (which must be anchored to the
+    # WASI guest's / directory.
+    guest_build_dir = build_dir.relative_to(CHECKOUT)
+    sysconfig_data = f"{guest_build_dir}/build/lib.wasi-wasm32-{version}"
+    if context.debug:
+        sysconfig_data += "-pydebug"
     host_runner = (f"{shutil.which('wasmtime')} run "
+                   # Make sure the stack size will work in a pydebug build.
+                   # The value comes from `ulimit -s` under Linux which is
+                   # 8291 KiB.
+                   "--max-wasm-stack 8388608 "
+                    # Map the checkout to / to load the stdlib from /Lib.
                    f"--mapdir /::{CHECKOUT} "
-                   f"--env PYTHONPATH=/{CROSS_BUILD_DIR.name}/wasi/build/lib.wasi-wasm32-{version} "
+                   f"--env PYTHONPATH=/{sysconfig_data} "
                    f"{build_dir / 'python.wasm'} --")
     env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner,
                      # Python's first commit:
@@ -184,6 +207,8 @@ def main():
         raise ValueError("wasi-sdk not found or specified; "
                          "see https://github.com/WebAssembly/wasi-sdk")
 
+    prep_checkout()
+    print()
     build_python, version = compile_host_python(context)
     print()
     compile_wasi_python(context, build_python, version)
