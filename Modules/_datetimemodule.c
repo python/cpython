@@ -3953,8 +3953,9 @@ timezone_repr(PyDateTime_TimeZone *self)
     const char *type_name = Py_TYPE(self)->tp_name;
 
     datetime_state *st = GLOBAL_STATE();
-    if (((PyObject *)self) == st->PyDateTime_TimeZone_UTC)
+    if (((PyObject *)self) == st->PyDateTime_TimeZone_UTC) {
         return PyUnicode_FromFormat("%s.utc", type_name);
+    }
 
     if (self->name == NULL)
         return PyUnicode_FromFormat("%s(%R)", type_name, self->offset);
@@ -3979,7 +3980,9 @@ timezone_str(PyDateTime_TimeZone *self)
            (GET_TD_DAYS(self->offset) == 0 &&
             GET_TD_SECONDS(self->offset) == 0 &&
             GET_TD_MICROSECONDS(self->offset) == 0))
+    {
         return PyUnicode_FromString("UTC");
+    }
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(self->offset) < 0) {
         sign = '-';
