@@ -19,8 +19,9 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -236,7 +237,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
     Apply a function of two arguments cumulatively to the items of a sequence
     or iterable, from left to right, so as to reduce the iterable to a single
@@ -928,14 +929,14 @@ class singledispatchmethod:
     """
 
     def __init__(self, func):
-        import weakref # see comment in singledispatch function
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
         self.dispatcher = singledispatch(func)
         self.func = func
+
+        import weakref # see comment in singledispatch function
         self._method_cache = weakref.WeakKeyDictionary()
-        self._all_weakrefable_instances = True
 
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
@@ -945,11 +946,11 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._all_weakrefable_instances:
+        if self._method_cache is not None:
             try:
                 _method = self._method_cache[obj]
             except TypeError:
-                self._all_weakrefable_instances = False
+                self._method_cache = None
             except KeyError:
                 pass
             else:
@@ -963,7 +964,7 @@ class singledispatchmethod:
         _method.register = self.register
         update_wrapper(_method, self.func)
 
-        if self._all_weakrefable_instances:
+        if self._method_cache is not None:
             self._method_cache[obj] = _method
 
         return _method
@@ -984,6 +985,7 @@ class cached_property:
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
