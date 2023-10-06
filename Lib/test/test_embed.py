@@ -1,8 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_specialization
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -21,7 +19,6 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -348,7 +345,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    @requires_specialization
+    @support.requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -455,6 +452,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
+        'dump_refs_file': None,
         'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
@@ -504,6 +502,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'run_command': None,
         'run_module': None,
         'run_filename': None,
+        'sys_path_0': None,
 
         '_install_importlib': 1,
         'check_hash_pycs_mode': 'default',
@@ -1131,6 +1130,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 2,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1146,6 +1146,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
             'parse_argv': 2,
             '_init_main': 0,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_main", config,
                                api=API_PYTHON,
@@ -1711,6 +1712,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
+
+    def test_audit_tuple(self):
+        self.run_embedded_interpreter("test_audit_tuple")
 
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
