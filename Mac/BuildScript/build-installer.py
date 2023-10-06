@@ -363,12 +363,12 @@ def library_recipes():
               url="https://sqlite.org/2023/sqlite-autoconf-3430100.tar.gz",
               checksum="77e61befe9c3298da0504f87772a24b0",
 	          extra_cflags=('-Os '
-                '-DSQLITE_ENABLE_FTS5 '
-                '-DSQLITE_ENABLE_FTS4 '
-                '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
-                '-DSQLITE_ENABLE_RTREE '
-                '-DSQLITE_OMIT_AUTOINIT '
-                '-DSQLITE_TCL=0 '
+                            '-DSQLITE_ENABLE_FTS5 '
+                            '-DSQLITE_ENABLE_FTS4 '
+                            '-DSQLITE_ENABLE_FTS3_PARENTHESIS '
+                            '-DSQLITE_ENABLE_RTREE '
+                            '-DSQLITE_OMIT_AUTOINIT '
+                            '-DSQLITE_TCL=0 '
                             ),
               configure_pre=[
                   '--enable-threadsafe',
