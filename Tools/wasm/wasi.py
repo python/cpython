@@ -27,7 +27,7 @@ def call(command, *, quiet, **kwargs):
 
     If 'quiet' is true, then redirect stdout and stderr to a temporary file.
     """
-    print("❯", " ".join(command))
+    print("❯", " ".join(map(str, command)))
     if not quiet:
         stdout = None
         stderr = None
