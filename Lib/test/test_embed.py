@@ -1,7 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -20,7 +19,6 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 PYMEM_ALLOCATOR_NOT_SET = 0
