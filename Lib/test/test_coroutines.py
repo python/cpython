@@ -709,8 +709,15 @@ class CoroutineTest(unittest.TestCase):
         aw = coro.__await__()
         next(aw)
         with self.assertRaises(ZeroDivisionError):
-            aw.throw(ZeroDivisionError, None, None)
+            aw.throw(ZeroDivisionError())
         self.assertEqual(N, 102)
+
+        coro = foo()
+        aw = coro.__await__()
+        next(aw)
+        with self.assertRaises(ZeroDivisionError):
+            with self.assertWarns(DeprecationWarning):
+                aw.throw(ZeroDivisionError, ZeroDivisionError(), None)
 
     def test_func_11(self):
         async def func(): pass
@@ -1280,7 +1287,7 @@ class CoroutineTest(unittest.TestCase):
 
         async def func():
             async with CM():
-                assert (1, ) == 1
+                self.assertEqual((1, ), 1)
 
         with self.assertRaises(AssertionError):
             run_async(func())
@@ -2207,6 +2214,7 @@ class CoroutineTest(unittest.TestCase):
         gen = f()
         with self.assertWarns(RuntimeWarning):
             gen.cr_frame.clear()
+        gen.close()
 
     def test_stack_in_coroutine_throw(self):
         # Regression test for https://github.com/python/cpython/issues/93592
@@ -2357,15 +2365,15 @@ class OriginTrackingTest(unittest.TestCase):
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
                 f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
-                f'    return corofn()  # comment in a1',
+                "    return corofn()  # comment in a1",
             ]))
             check(2, "".join([
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
                 f'  File "{a2_filename}", line {a2_lineno}, in a2\n',
-                f'    return a1()  # comment in a2\n',
+                "    return a1()  # comment in a2\n",
                 f'  File "{a1_filename}", line {a1_lineno}, in a1\n',
-                f'    return corofn()  # comment in a1',
+                "    return corofn()  # comment in a1",
             ]))
 
         finally:
@@ -2411,7 +2419,8 @@ class UnawaitedWarningDuringShutdownTest(unittest.TestCase):
     def test_unawaited_warning_during_shutdown(self):
         code = ("import asyncio\n"
                 "async def f(): pass\n"
-                "asyncio.gather(f())\n")
+                "async def t(): asyncio.gather(f())\n"
+                "asyncio.run(t())\n")
         assert_python_ok("-c", code)
 
         code = ("import sys\n"

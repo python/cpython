@@ -1,2 +1,0 @@
-The PRECALL instruction has been removed. It offered only a small advantage
-for specialization and is not needed in the vast majority of cases.

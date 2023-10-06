@@ -1,3 +1,0 @@
-Restores the behaviour of :ref:`launcher` for ``/usr/bin/env`` shebang
-lines, which will now search :envvar:`PATH` for an executable matching the
-given command. If none is found, the usual search process is used.

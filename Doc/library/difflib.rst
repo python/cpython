@@ -145,8 +145,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       The arguments for this method are the same as those for the :meth:`make_file`
       method.
 
-   :file:`Tools/scripts/diff.py` is a command-line front-end to this class and
-   contains a good example of its use.
 
 
 .. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
@@ -239,8 +237,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    returns if the character is junk, or false if not. The default is module-level
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
-
-   :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.
 
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
       ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
@@ -574,8 +570,8 @@ The :class:`SequenceMatcher` class has this constructor:
 
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
-:meth:`quick_ratio` and :meth:`real_quick_ratio` are always at least as large as
-:meth:`ratio`:
+:meth:`~SequenceMatcher.quick_ratio` and :meth:`~SequenceMatcher.real_quick_ratio`
+are always at least as large as :meth:`~SequenceMatcher.ratio`:
 
    >>> s = SequenceMatcher(None, "abcd", "bcde")
    >>> s.ratio()
@@ -597,15 +593,15 @@ This example compares two strings, considering blanks to be "junk":
    ...                     "private Thread currentThread;",
    ...                     "private volatile Thread currentThread;")
 
-:meth:`ratio` returns a float in [0, 1], measuring the similarity of the
-sequences.  As a rule of thumb, a :meth:`ratio` value over 0.6 means the
+:meth:`~SequenceMatcher.ratio` returns a float in [0, 1], measuring the similarity of the
+sequences.  As a rule of thumb, a :meth:`~SequenceMatcher.ratio` value over 0.6 means the
 sequences are close matches:
 
    >>> print(round(s.ratio(), 3))
    0.866
 
 If you're only interested in where the sequences match,
-:meth:`get_matching_blocks` is handy:
+:meth:`~SequenceMatcher.get_matching_blocks` is handy:
 
    >>> for block in s.get_matching_blocks():
    ...     print("a[%d] and b[%d] match for %d elements" % block)
@@ -613,12 +609,12 @@ If you're only interested in where the sequences match,
    a[8] and b[17] match for 21 elements
    a[29] and b[38] match for 0 elements
 
-Note that the last tuple returned by :meth:`get_matching_blocks` is always a
-dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
+Note that the last tuple returned by :meth:`~SequenceMatcher.get_matching_blocks`
+is always a dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
 tuple element (number of elements matched) is ``0``.
 
 If you want to know how to change the first sequence into the second, use
-:meth:`get_opcodes`:
+:meth:`~SequenceMatcher.get_opcodes`:
 
    >>> for opcode in s.get_opcodes():
    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
@@ -693,7 +689,7 @@ Differ Example
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
-obtained from the :meth:`~io.BaseIO.readlines` method of file-like objects):
+obtained from the :meth:`~io.IOBase.readlines` method of file-like objects):
 
    >>> text1 = '''  1. Beautiful is better than ugly.
    ...   2. Explicit is better than implicit.
@@ -759,7 +755,12 @@ A command-line interface to difflib
 -----------------------------------
 
 This example shows how to use difflib to create a ``diff``-like utility.
-It is also contained in the Python source distribution, as
-:file:`Tools/scripts/diff.py`.
 
-.. literalinclude:: ../../Tools/scripts/diff.py
+.. literalinclude:: ../includes/diff.py
+
+ndiff example
+-------------
+
+This example shows how to use :func:`difflib.ndiff`.
+
+.. literalinclude:: ../includes/ndiff.py

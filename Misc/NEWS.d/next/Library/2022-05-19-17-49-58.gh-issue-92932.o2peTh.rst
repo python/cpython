@@ -1,3 +1,0 @@
-Now :func:`~dis.dis` and :func:`~dis.get_instructions` handle operand values
-for instructions prefixed by ``EXTENDED_ARG_QUICK``.
-Patch by Sam Gross and Dong-hee Na.

@@ -82,7 +82,7 @@ the following::
 
 The first line indicates that 214 calls were monitored.  Of those calls, 207
 were :dfn:`primitive`, meaning that the call was not induced via recursion. The
-next line: ``Ordered by: cumulative name``, indicates that the text string in the
+next line: ``Ordered by: cumulative time``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
@@ -120,6 +120,8 @@ results to a file by specifying a filename to the :func:`run` function::
 
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
+
+.. _profile-cli:
 
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
 profile another script.  For example::
@@ -274,7 +276,7 @@ functions:
       with cProfile.Profile() as pr:
           # ... do something ...
 
-      pr.print_stats()
+          pr.print_stats()
 
    .. versionchanged:: 3.8
       Added context manager support.

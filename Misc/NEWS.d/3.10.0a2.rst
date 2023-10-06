@@ -185,7 +185,7 @@ Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
 
 Micro optimization when compute :c:member:`~PySequenceMethods.sq_item` and
 :c:member:`~PyMappingMethods.mp_subscript` of :class:`range`. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -205,7 +205,7 @@ error message using the current locale's encoding.
 .. nonce: iLoMVF
 .. section: Core and Builtins
 
-Micro optimization for range.index if step is 1. Patch by Dong-hee Na.
+Micro optimization for range.index if step is 1. Patch by Donghee Na.
 
 ..
 
@@ -604,7 +604,7 @@ changes the working directory.  PR by Anthony Sottile.
 .. nonce: 9wXTtY
 .. section: Library
 
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3``.
 
 ..
@@ -847,8 +847,8 @@ Victor Stinner.
 .. section: C API
 
 Fix potential crash in deallocating method objects when dynamically
-allocated `PyMethodDef`'s lifetime is managed through the ``self`` argument
-of a `PyCFunction`.
+allocated :c:type:`PyMethodDef`'s lifetime is managed through the ``self`` argument
+of a :c:type:`PyCFunction`.
 
 ..
 
@@ -888,7 +888,7 @@ file descriptors.
 .. nonce: JUPE59
 .. section: C API
 
-:c:data:`Py_FileSystemDefaultEncodeErrors` and :c:data:`Py_UTF8Mode` are
+:c:data:`!Py_FileSystemDefaultEncodeErrors` and :c:data:`!Py_UTF8Mode` are
 available again in limited API.
 
 ..

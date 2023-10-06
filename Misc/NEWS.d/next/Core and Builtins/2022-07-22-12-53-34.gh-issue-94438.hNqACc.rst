@@ -1,4 +1,0 @@
-Fix an issue that caused extended opcode arguments and some conditional pops
-to be ignored when calculating valid jump targets for assignments to the
-``f_lineno`` attribute of frame objects. In some cases, this could cause
-inconsistent internal state, resulting in a hard crash of the interpreter.

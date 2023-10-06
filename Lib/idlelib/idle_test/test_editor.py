@@ -1,10 +1,10 @@
-"Test editor, coverage 35%."
+"Test editor, coverage 53%."
 
 from idlelib import editor
 import unittest
 from collections import namedtuple
 from test.support import requires
-from tkinter import Tk
+from tkinter import Tk, Text
 
 Editor = editor.EditorWindow
 
@@ -31,7 +31,7 @@ class EditorWindowTest(unittest.TestCase):
         e._close()
 
 
-class TestGetLineIndent(unittest.TestCase):
+class GetLineIndentTest(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:
             for line in ['', '\n']:
@@ -179,6 +179,36 @@ class IndentAndNewlineTest(unittest.TestCase):
         nl(None)
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
+
+
+class IndentSearcherTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = Tk()
+        cls.root.withdraw()
+        cls.text = Text(cls.root)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.destroy()
+        del cls.root
+
+    def test_searcher(self):
+        text = self.text
+        searcher = (self.text)
+        test_info = (# text, (block, indent))
+                     ("", (None, None)),
+                     ("[1,", (None, None)),  # TokenError
+                     ("if 1:\n", ('if 1:\n', None)),
+                     ("if 1:\n  2\n  3\n", ('if 1:\n', '  2\n')),
+                     )
+        for code, expected_pair in test_info:
+            with self.subTest(code=code):
+                insert(text, code)
+                actual_pair = editor.IndentSearcher(text).run()
+                self.assertEqual(actual_pair, expected_pair)
 
 
 class RMenuTest(unittest.TestCase):

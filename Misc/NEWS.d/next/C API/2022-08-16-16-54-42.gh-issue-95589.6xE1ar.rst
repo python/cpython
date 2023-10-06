@@ -1,4 +1,0 @@
-Extensions classes that set ``tp_dictoffset`` and ``tp_weaklistoffset``
-lose the support for multiple inheritance, but are now safe. Extension
-classes should use :const:`Py_TPFLAGS_MANAGED_DICT` and
-:const:`Py_TPFLAGS_MANAGED_WEAKREF` instead.

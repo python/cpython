@@ -3,12 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
 
-
-PyDoc_STRVAR(Struct___init____doc__,
+PyDoc_STRVAR(Struct__doc__,
 "Struct(format)\n"
 "--\n"
 "\n"
@@ -19,13 +19,13 @@ PyDoc_STRVAR(Struct___init____doc__,
 "\n"
 "See help(struct) for more on format strings.");
 
-static int
-Struct___init___impl(PyStructObject *self, PyObject *format);
+static PyObject *
+Struct_impl(PyTypeObject *type, PyObject *format);
 
-static int
-Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *
+Struct(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    int return_value = -1;
+    PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
     #define NUM_KEYWORDS 1
@@ -61,7 +61,7 @@ Struct___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     format = fastargs[0];
-    return_value = Struct___init___impl((PyStructObject *)self, format);
+    return_value = Struct_impl(type, format);
 
 exit:
     return return_value;
@@ -451,4 +451,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=eca7df0e75f8919d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c1bc384ff87df1f input=a9049054013a1b77]*/

@@ -14,7 +14,7 @@ import sys
 import threading
 import unittest
 import weakref
-
+import warnings
 from unittest import mock
 
 from http.server import HTTPServer
@@ -36,21 +36,26 @@ from test.support import socket_helper
 from test.support import threading_helper
 
 
-def data_file(filename):
-    if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
-        if os.path.isfile(fullname):
-            return fullname
-    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+# Use the maximum known clock resolution (gh-75191, gh-110088): Windows
+# GetTickCount64() has a resolution of 15.6 ms.  Use 20 ms to tolerate rounding
+# issues.
+CLOCK_RES = 0.020
+
+
+def data_file(*filename):
+    fullname = os.path.join(support.TEST_HOME_DIR, *filename)
     if os.path.isfile(fullname):
         return fullname
-    raise FileNotFoundError(filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
+    if os.path.isfile(fullname):
+        return fullname
+    raise FileNotFoundError(os.path.join(filename))
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
+ONLYCERT = data_file('certdata', 'ssl_cert.pem')
+ONLYKEY = data_file('certdata', 'ssl_key.pem')
+SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
+SIGNING_CA = data_file('certdata', 'pycacert.pem')
 PEERCERT = {
     'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
     'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
@@ -544,7 +549,9 @@ class TestCase(unittest.TestCase):
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
-                watcher = policy.get_child_watcher()
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', DeprecationWarning)
+                    watcher = policy.get_child_watcher()
             except NotImplementedError:
                 # watcher is not implemented by EventLoopPolicy, e.g. Windows
                 pass
@@ -575,7 +582,7 @@ class TestCase(unittest.TestCase):
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
-        self.assertEqual(sys.exc_info(), (None, None, None))
+        self.assertIsNone(sys.exception())
 
         self.doCleanups()
         threading_helper.threading_cleanup(*self._thread_cleanup)

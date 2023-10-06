@@ -11,12 +11,9 @@ from ._bootstrap_external import decode_source
 from ._bootstrap_external import source_from_cache
 from ._bootstrap_external import spec_from_file_location
 
-from contextlib import contextmanager
 import _imp
-import functools
 import sys
 import types
-import warnings
 
 
 def source_hash(source_bytes):
@@ -63,10 +60,10 @@ def _find_spec_from_path(name, path=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
 
 
@@ -108,115 +105,64 @@ def find_spec(name, package=None):
         try:
             spec = module.__spec__
         except AttributeError:
-            raise ValueError('{}.__spec__ is not set'.format(name)) from None
+            raise ValueError(f'{name}.__spec__ is not set') from None
         else:
             if spec is None:
-                raise ValueError('{}.__spec__ is None'.format(name))
+                raise ValueError(f'{name}.__spec__ is None')
             return spec
 
 
-@contextmanager
-def _module_to_load(name):
-    is_reload = name in sys.modules
+# Normally we would use contextlib.contextmanager.  However, this module
+# is imported by runpy, which means we want to avoid any unnecessary
+# dependencies.  Thus we use a class.
 
-    module = sys.modules.get(name)
-    if not is_reload:
-        # This must be done before open() is called as the 'io' module
-        # implicitly imports 'locale' and would otherwise trigger an
-        # infinite loop.
-        module = type(sys)(name)
-        # This must be done before putting the module in sys.modules
-        # (otherwise an optimization shortcut in import.c becomes wrong)
-        module.__initializing__ = True
-        sys.modules[name] = module
-    try:
-        yield module
-    except Exception:
-        if not is_reload:
-            try:
-                del sys.modules[name]
-            except KeyError:
-                pass
-    finally:
-        module.__initializing__ = False
+class _incompatible_extension_module_restrictions:
+    """A context manager that can temporarily skip the compatibility check.
 
+    NOTE: This function is meant to accommodate an unusual case; one
+    which is likely to eventually go away.  There's is a pretty good
+    chance this is not what you were looking for.
 
-def set_package(fxn):
-    """Set __package__ on the returned module.
+    WARNING: Using this function to disable the check can lead to
+    unexpected behavior and even crashes.  It should only be used during
+    extension module development.
 
-    This function is deprecated.
+    If "disable_check" is True then the compatibility check will not
+    happen while the context manager is active.  Otherwise the check
+    *will* happen.
 
+    Normally, extensions that do not support multiple interpreters
+    may not be imported in a subinterpreter.  That implies modules
+    that do not implement multi-phase init or that explicitly of out.
+
+    Likewise for modules import in a subinterpeter with its own GIL
+    when the extension does not support a per-interpreter GIL.  This
+    implies the module does not have a Py_mod_multiple_interpreters slot
+    set to Py_MOD_PER_INTERPRETER_GIL_SUPPORTED.
+
+    In both cases, this context manager may be used to temporarily
+    disable the check for compatible extension modules.
+
+    You can get the same effect as this function by implementing the
+    basic interface of multi-phase init (PEP 489) and lying about
+    support for mulitple interpreters (or per-interpreter GIL).
     """
-    @functools.wraps(fxn)
-    def set_package_wrapper(*args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically; '
-                      'this decorator is slated for removal in Python 3.12',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(*args, **kwargs)
-        if getattr(module, '__package__', None) is None:
-            module.__package__ = module.__name__
-            if not hasattr(module, '__path__'):
-                module.__package__ = module.__package__.rpartition('.')[0]
-        return module
-    return set_package_wrapper
 
+    def __init__(self, *, disable_check):
+        self.disable_check = bool(disable_check)
 
-def set_loader(fxn):
-    """Set __loader__ on the returned module.
+    def __enter__(self):
+        self.old = _imp._override_multi_interp_extensions_check(self.override)
+        return self
 
-    This function is deprecated.
+    def __exit__(self, *args):
+        old = self.old
+        del self.old
+        _imp._override_multi_interp_extensions_check(old)
 
-    """
-    @functools.wraps(fxn)
-    def set_loader_wrapper(self, *args, **kwargs):
-        warnings.warn('The import system now takes care of this automatically; '
-                      'this decorator is slated for removal in Python 3.12',
-                      DeprecationWarning, stacklevel=2)
-        module = fxn(self, *args, **kwargs)
-        if getattr(module, '__loader__', None) is None:
-            module.__loader__ = self
-        return module
-    return set_loader_wrapper
-
-
-def module_for_loader(fxn):
-    """Decorator to handle selecting the proper module for loaders.
-
-    The decorated function is passed the module to use instead of the module
-    name. The module passed in to the function is either from sys.modules if
-    it already exists or is a new module. If the module is new, then __name__
-    is set the first argument to the method, __loader__ is set to self, and
-    __package__ is set accordingly (if self.is_package() is defined) will be set
-    before it is passed to the decorated function (if self.is_package() does
-    not work for the module it will be set post-load).
-
-    If an exception is raised and the decorator created the module it is
-    subsequently removed from sys.modules.
-
-    The decorator assumes that the decorated function takes the module name as
-    the second argument.
-
-    """
-    warnings.warn('The import system now takes care of this automatically; '
-                  'this decorator is slated for removal in Python 3.12',
-                  DeprecationWarning, stacklevel=2)
-    @functools.wraps(fxn)
-    def module_for_loader_wrapper(self, fullname, *args, **kwargs):
-        with _module_to_load(fullname) as module:
-            module.__loader__ = self
-            try:
-                is_package = self.is_package(fullname)
-            except (ImportError, AttributeError):
-                pass
-            else:
-                if is_package:
-                    module.__package__ = fullname
-                else:
-                    module.__package__ = fullname.rpartition('.')[0]
-            # If __package__ was not set above, __import__() will do it later.
-            return fxn(self, module, *args, **kwargs)
-
-    return module_for_loader_wrapper
+    @property
+    def override(self):
+        return -1 if self.disable_check else 1
 
 
 class _LazyModule(types.ModuleType):

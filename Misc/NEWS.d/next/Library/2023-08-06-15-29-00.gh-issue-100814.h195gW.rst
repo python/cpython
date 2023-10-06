@@ -1,0 +1,2 @@
+Passing a callable object as an option value to a Tkinter image now raises
+the expected TclError instead of an AttributeError.

@@ -1,0 +1,1 @@
+Specialize subscripting :class:`str` objects by :class:`int` indexes.

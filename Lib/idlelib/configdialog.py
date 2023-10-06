@@ -24,7 +24,7 @@ import tkinter.font as tkfont
 from tkinter import messagebox
 
 from idlelib.config import idleConf, ConfigChanges
-from idlelib.config_key import GetKeysDialog
+from idlelib.config_key import GetKeysWindow
 from idlelib.dynoption import DynOptionMenu
 from idlelib import macosx
 from idlelib.query import SectionName, HelpSource
@@ -1397,7 +1397,7 @@ class KeysPage(Frame):
             for event in key_set_changes:
                 current_bindings[event] = key_set_changes[event].split()
         current_key_sequences = list(current_bindings.values())
-        new_keys = GetKeysDialog(self, 'Get New Keys', bind_name,
+        new_keys = GetKeysWindow(self, 'Get New Keys', bind_name,
                 current_key_sequences).result
         if new_keys:
             if self.keyset_source.get():  # Current key set is a built-in.

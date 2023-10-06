@@ -10,8 +10,9 @@ extern "C" {
 
 #include "pycore_token.h" /* For token types */
 
-#define MAXINDENT 100   /* Max indentation level */
-#define MAXLEVEL 200    /* Max parentheses level */
+#define MAXINDENT 100       /* Max indentation level */
+#define MAXLEVEL 200        /* Max parentheses level */
+#define MAXFSTRINGLEVEL 150 /* Max f-string nesting level */
 
 enum decoding_state {
     STATE_INIT,
@@ -20,18 +21,54 @@ enum decoding_state {
 };
 
 enum interactive_underflow_t {
-    /* Normal mode of operation: return a new token when asked in interactie mode */
+    /* Normal mode of operation: return a new token when asked in interactive mode */
     IUNDERFLOW_NORMAL,
     /* Forcefully return ENDMARKER when asked for a new token in interactive mode. This
      * can be used to prevent the tokenizer to prompt the user for new tokens */
     IUNDERFLOW_STOP,
 };
 
+struct token {
+    int level;
+    int lineno, col_offset, end_lineno, end_col_offset;
+    const char *start, *end;
+    PyObject *metadata;
+};
+
+enum tokenizer_mode_kind_t {
+    TOK_REGULAR_MODE,
+    TOK_FSTRING_MODE,
+};
+
+#define MAX_EXPR_NESTING 3
+
+typedef struct _tokenizer_mode {
+    enum tokenizer_mode_kind_t kind;
+
+    int curly_bracket_depth;
+    int curly_bracket_expr_start_depth;
+
+    char f_string_quote;
+    int f_string_quote_size;
+    int f_string_raw;
+    const char* f_string_start;
+    const char* f_string_multi_line_start;
+    int f_string_line_start;
+
+    Py_ssize_t f_string_start_offset;
+    Py_ssize_t f_string_multi_line_start_offset;
+
+    Py_ssize_t last_expr_size;
+    Py_ssize_t last_expr_end;
+    char* last_expr_buffer;
+    int f_string_debug;
+} tokenizer_mode;
+
 /* Tokenizer state */
 struct tok_state {
     /* Input state; buf <= cur <= inp <= end */
     /* NB an entire line is held in the buffer */
-    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL */
+    char *buf;          /* Input buffer, or NULL; malloc'ed if fp != NULL or readline != NULL */
     char *cur;          /* Next character in buffer */
     char *inp;          /* End of data in buffer */
     int fp_interactive; /* If the file descriptor is interactive */
@@ -51,6 +88,8 @@ struct tok_state {
     int lineno;         /* Current line number */
     int first_lineno;   /* First line of a single line or multi line string
                            expression (cf. issue 16806) */
+    int starting_col_offset; /* The column offset at the beginning of a token */
+    int col_offset;     /* Current col offset */
     int level;          /* () [] {} Parentheses nesting level */
             /* Used to allow free continuations inside them */
     char parenstack[MAXLEVEL];
@@ -70,31 +109,36 @@ struct tok_state {
                                      expression (cf. issue 16806) */
     PyObject *decoding_readline; /* open(...).readline */
     PyObject *decoding_buffer;
+    PyObject *readline;     /* readline() function */
     const char* enc;        /* Encoding for the current str. */
     char* str;          /* Source string being tokenized (if tokenizing from a string)*/
     char* input;       /* Tokenizer's newline translated copy of the string. */
 
     int type_comments;      /* Whether to look for type comments */
 
-    /* async/await related fields (still needed depending on feature_version) */
-    int async_hacks;     /* =1 if async/await aren't always keywords */
-    int async_def;        /* =1 if tokens are inside an 'async def' body. */
-    int async_def_indent; /* Indentation level of the outermost 'async def'. */
-    int async_def_nl;     /* =1 if the outermost 'async def' had at least one
-                             NEWLINE token after it. */
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+    int report_warnings;
+    // TODO: Factor this into its own thing
+    tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
+    int tok_mode_stack_index;
+    int tok_extra_tokens;
+    int comment_newline;
+    int implicit_newline;
 #ifdef Py_DEBUG
     int debug;
 #endif
 };
 
-extern struct tok_state *_PyTokenizer_FromString(const char *, int);
-extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int);
+extern struct tok_state *_PyTokenizer_FromString(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int, int);
+extern struct tok_state *_PyTokenizer_FromReadline(PyObject*, const char*, int, int);
 extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
                                               const char *, const char *);
 extern void _PyTokenizer_Free(struct tok_state *);
-extern int _PyTokenizer_Get(struct tok_state *, const char **, const char **);
+extern void _PyToken_Free(struct token *);
+extern void _PyToken_Init(struct token *);
+extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #define tok_dump _Py_tok_dump
 

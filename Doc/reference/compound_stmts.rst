@@ -84,9 +84,9 @@ The :keyword:`!if` statement
 ============================
 
 .. index::
-   ! statement: if
-   keyword: elif
-   keyword: else
+   ! pair: statement; if
+   pair: keyword; elif
+   pair: keyword; else
    single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
@@ -109,8 +109,8 @@ The :keyword:`!while` statement
 ===============================
 
 .. index::
-   ! statement: while
-   keyword: else
+   ! pair: statement; while
+   pair: keyword; else
    pair: loop; statement
    single: : (colon); compound statement
 
@@ -127,8 +127,8 @@ suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 
 .. index::
-   statement: break
-   statement: continue
+   pair: statement; break
+   pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
 without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
@@ -142,12 +142,12 @@ The :keyword:`!for` statement
 =============================
 
 .. index::
-   ! statement: for
-   keyword: in
-   keyword: else
+   ! pair: statement; for
+   pair: keyword; in
+   pair: keyword; else
    pair: target; list
    pair: loop; statement
-   object: sequence
+   pair: object; sequence
    single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
@@ -167,8 +167,8 @@ the suite in the :keyword:`!else` clause,
 if present, is executed, and the loop terminates.
 
 .. index::
-   statement: break
-   statement: continue
+   pair: statement; break
+   pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
 without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
@@ -188,34 +188,31 @@ those made in the suite of the for-loop::
 
 
 .. index::
-   builtin: range
+   pair: built-in function; range
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
-the built-in function :func:`range` returns an iterator of integers suitable to
-emulate the effect of Pascal's ``for i := a to b do``; e.g., ``list(range(3))``
-returns the list ``[0, 1, 2]``.
+the built-in type :func:`range` represents immutable arithmetic sequences of integers.
+For instance, iterating ``range(3)`` successively yields 0, 1, and then 2.
 
 .. versionchanged:: 3.11
    Starred elements are now allowed in the expression list.
 
+
 .. _try:
-.. _except:
-.. _except_star:
-.. _finally:
 
 The :keyword:`!try` statement
 =============================
 
 .. index::
-   ! statement: try
-   keyword: except
-   keyword: finally
-   keyword: else
-   keyword: as
+   ! pair: statement; try
+   pair: keyword; except
+   pair: keyword; finally
+   pair: keyword; else
+   pair: keyword; as
    single: : (colon); compound statement
 
-The :keyword:`try` statement specifies exception handlers and/or cleanup code
+The :keyword:`!try` statement specifies exception handlers and/or cleanup code
 for a group of statements:
 
 .. productionlist:: python-grammar
@@ -231,40 +228,56 @@ for a group of statements:
    try3_stmt: "try" ":" `suite`
             : "finally" ":" `suite`
 
+Additional information on exceptions can be found in section :ref:`exceptions`,
+and information on using the :keyword:`raise` statement to generate exceptions
+may be found in section :ref:`raise`.
 
-The :keyword:`except` clause(s) specify one or more exception handlers. When no
+
+.. _except:
+
+:keyword:`!except` clause
+-------------------------
+
+The :keyword:`!except` clause(s) specify one or more exception handlers. When no
 exception occurs in the :keyword:`try` clause, no exception handler is executed.
 When an exception occurs in the :keyword:`!try` suite, a search for an exception
-handler is started.  This search inspects the except clauses in turn until one
-is found that matches the exception.  An expression-less except clause, if
-present, must be last; it matches any exception.  For an except clause with an
-expression, that expression is evaluated, and the clause matches the exception
+handler is started. This search inspects the :keyword:`!except` clauses in turn
+until one is found that matches the exception.
+An expression-less :keyword:`!except` clause, if present, must be last;
+it matches any exception.
+For an :keyword:`!except` clause with an expression,
+that expression is evaluated, and the clause matches the exception
 if the resulting object is "compatible" with the exception.  An object is
 compatible with an exception if the object is the class or a
 :term:`non-virtual base class <abstract base class>` of the exception object,
 or a tuple containing an item that is the class or a non-virtual base class
 of the exception object.
 
-If no except clause matches the exception, the search for an exception handler
+If no :keyword:`!except` clause matches the exception,
+the search for an exception handler
 continues in the surrounding code and on the invocation stack.  [#]_
 
-If the evaluation of an expression in the header of an except clause raises an
-exception, the original search for a handler is canceled and a search starts for
+If the evaluation of an expression
+in the header of an :keyword:`!except` clause raises an exception,
+the original search for a handler is canceled and a search starts for
 the new exception in the surrounding code and on the call stack (it is treated
 as if the entire :keyword:`try` statement raised the exception).
 
 .. index:: single: as; except clause
 
-When a matching except clause is found, the exception is assigned to the target
-specified after the :keyword:`!as` keyword in that except clause, if present, and
-the except clause's suite is executed.  All except clauses must have an
-executable block.  When the end of this block is reached, execution continues
-normally after the entire try statement.  (This means that if two nested
-handlers exist for the same exception, and the exception occurs in the try
-clause of the inner handler, the outer handler will not handle the exception.)
+When a matching :keyword:`!except` clause is found,
+the exception is assigned to the target
+specified after the :keyword:`!as` keyword in that :keyword:`!except` clause,
+if present, and the :keyword:`!except` clause's suite is executed.
+All :keyword:`!except` clauses must have an executable block.
+When the end of this block is reached, execution continues
+normally after the entire :keyword:`try` statement.
+(This means that if two nested handlers exist for the same exception,
+and the exception occurs in the :keyword:`!try` clause of the inner handler,
+the outer handler will not handle the exception.)
 
 When an exception has been assigned using ``as target``, it is cleared at the
-end of the except clause.  This is as if ::
+end of the :keyword:`!except` clause.  This is as if ::
 
    except E as N:
        foo
@@ -278,51 +291,57 @@ was translated to ::
            del N
 
 This means the exception must be assigned to a different name to be able to
-refer to it after the except clause.  Exceptions are cleared because with the
+refer to it after the :keyword:`!except` clause.
+Exceptions are cleared because with the
 traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
-   module: sys
-   object: traceback
+   pair: module; sys
+   pair: object; traceback
 
-Before an except clause's suite is executed, details about the exception are
-stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
-:func:`sys.exc_info` returns a 3-tuple consisting of the exception class, the
-exception instance and a traceback object (see section :ref:`types`) identifying
-the point in the program where the exception occurred.  The details about the
-exception accessed via :func:`sys.exc_info` are restored to their previous values
-when leaving an exception handler::
+Before an :keyword:`!except` clause's suite is executed,
+the exception is stored in the :mod:`sys` module, where it can be accessed
+from within the body of the :keyword:`!except` clause by calling
+:func:`sys.exception`. When leaving an exception handler, the exception
+stored in the :mod:`sys` module is reset to its previous value::
 
-   >>> print(sys.exc_info())
-   (None, None, None)
+   >>> print(sys.exception())
+   None
    >>> try:
    ...     raise TypeError
    ... except:
-   ...     print(sys.exc_info())
+   ...     print(repr(sys.exception()))
    ...     try:
    ...          raise ValueError
    ...     except:
-   ...         print(sys.exc_info())
-   ...     print(sys.exc_info())
+   ...         print(repr(sys.exception()))
+   ...     print(repr(sys.exception()))
    ...
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   (<class 'ValueError'>, ValueError(), <traceback object at 0x10efad040>)
-   (<class 'TypeError'>, TypeError(), <traceback object at 0x10efad080>)
-   >>> print(sys.exc_info())
-   (None, None, None)
+   TypeError()
+   ValueError()
+   TypeError()
+   >>> print(sys.exception())
+   None
+
 
 .. index::
-   keyword: except_star
+   pair: keyword; except_star
 
-The :keyword:`except*<except_star>` clause(s) are used for handling
-:exc:`ExceptionGroup`\ s. The exception type for matching is interpreted as in
+.. _except_star:
+
+:keyword:`!except*` clause
+--------------------------
+
+The :keyword:`!except*` clause(s) are used for handling
+:exc:`ExceptionGroup`\s. The exception type for matching is interpreted as in
 the case of :keyword:`except`, but in the case of exception groups we can have
 partial matches when the type matches some of the exceptions in the group.
-This means that multiple except* clauses can execute, each handling part of
-the exception group. Each clause executes once and handles an exception group
+This means that multiple :keyword:`!except*` clauses can execute,
+each handling part of the exception group.
+Each clause executes at most once and handles an exception group
 of all matching exceptions.  Each exception in the group is handled by at most
-one except* clause, the first that matches it. ::
+one :keyword:`!except*` clause, the first that matches it. ::
 
    >>> try:
    ...     raise ExceptionGroup("eg",
@@ -340,24 +359,43 @@ one except* clause, the first that matches it. ::
      +-+---------------- 1 ----------------
        | ValueError: 1
        +------------------------------------
-   >>>
 
-   Any remaining exceptions that were not handled by any except* clause
-   are re-raised at the end, combined into an exception group along with
-   all exceptions that were raised from within except* clauses.
 
-   An except* clause must have a matching type, and this type cannot be a
-   subclass of :exc:`BaseExceptionGroup`. It is not possible to mix except
-   and except* in the same :keyword:`try`. :keyword:`break`,
-   :keyword:`continue` and :keyword:`return` cannot appear in an except*
-   clause.
+Any remaining exceptions that were not handled by any :keyword:`!except*`
+clause are re-raised at the end, along with all exceptions that were
+raised from within the :keyword:`!except*` clauses. If this list contains
+more than one exception to reraise, they are combined into an exception
+group.
+
+If the raised exception is not an exception group and its type matches
+one of the :keyword:`!except*` clauses, it is caught and wrapped by an
+exception group with an empty message string. ::
+
+   >>> try:
+   ...     raise BlockingIOError
+   ... except* BlockingIOError as e:
+   ...     print(repr(e))
+   ...
+   ExceptionGroup('', (BlockingIOError()))
+
+An :keyword:`!except*` clause must have a matching type,
+and this type cannot be a subclass of :exc:`BaseExceptionGroup`.
+It is not possible to mix :keyword:`except` and :keyword:`!except*`
+in the same :keyword:`try`.
+:keyword:`break`, :keyword:`continue` and :keyword:`return`
+cannot appear in an :keyword:`!except*` clause.
 
 
 .. index::
-   keyword: else
-   statement: return
-   statement: break
-   statement: continue
+   pair: keyword; else
+   pair: statement; return
+   pair: statement; break
+   pair: statement; continue
+
+.. _except_else:
+
+:keyword:`!else` clause
+-----------------------
 
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
@@ -365,11 +403,17 @@ The optional :keyword:`!else` clause is executed if the control flow leaves the
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
-.. index:: keyword: finally
 
-If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
+.. index:: pair: keyword; finally
+
+.. _finally:
+
+:keyword:`!finally` clause
+--------------------------
+
+If :keyword:`!finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
-:keyword:`!else` clauses.  If an exception occurs in any of the clauses and is
+:keyword:`else` clauses.  If an exception occurs in any of the clauses and is
 not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
@@ -387,19 +431,19 @@ or :keyword:`continue` statement, the saved exception is discarded::
    42
 
 The exception information is not available to the program during execution of
-the :keyword:`finally` clause.
+the :keyword:`!finally` clause.
 
 .. index::
-   statement: return
-   statement: break
-   statement: continue
+   pair: statement; return
+   pair: statement; break
+   pair: statement; continue
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.'
+statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
-statement executed.  Since the :keyword:`finally` clause always executes, a
+statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed::
 
@@ -412,13 +456,9 @@ always be the last one executed::
    >>> foo()
    'finally'
 
-Additional information on exceptions can be found in section :ref:`exceptions`,
-and information on using the :keyword:`raise` statement to generate exceptions
-may be found in section :ref:`raise`.
-
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
-   :keyword:`finally` clause due to a problem with the implementation.
+   :keyword:`!finally` clause due to a problem with the implementation.
 
 
 .. _with:
@@ -428,8 +468,8 @@ The :keyword:`!with` statement
 ==============================
 
 .. index::
-   ! statement: with
-   keyword: as
+   ! pair: statement; with
+   pair: keyword; as
    single: as; with statement
    single: , (comma); with statement
    single: : (colon); compound statement
@@ -464,7 +504,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
       method returns without an error, then :meth:`__exit__` will always be
       called. Thus, if an error occurs during the assignment to the target list,
       it will be treated the same as an error occurring within the suite would
-      be. See step 6 below.
+      be. See step 7 below.
 
 #. The suite is executed.
 
@@ -545,12 +585,13 @@ The :keyword:`!match` statement
 ===============================
 
 .. index::
-   ! statement: match
-   ! keyword: case
+   ! pair: statement; match
+   ! pair: keyword; case
    ! single: pattern matching
-   keyword: if
-   keyword: as
+   pair: keyword; if
+   pair: keyword; as
    pair: match; case
+   single: as; match statement
    single: : (colon); compound statement
 
 .. versionadded:: 3.10
@@ -777,7 +818,7 @@ keyword against a subject.  Syntax:
 
 If the OR pattern fails, the AS pattern fails.  Otherwise, the AS pattern binds
 the subject to the name on the right of the as keyword and succeeds.
-``capture_pattern`` cannot be a a ``_``.
+``capture_pattern`` cannot be a ``_``.
 
 In simple terms ``P as NAME`` will match with ``P``, and on success it will
 set ``NAME = <subject>``.
@@ -1149,12 +1190,12 @@ Function definitions
 ====================
 
 .. index::
-   statement: def
+   pair: statement; def
    pair: function; definition
    pair: function; name
    pair: name; binding
-   object: user-defined function
-   object: function
+   pair: object; user-defined function
+   pair: object; function
    pair: function; name
    pair: name; binding
    single: () (parentheses); function definition
@@ -1165,7 +1206,7 @@ A function definition defines a user-defined function object (see section
 :ref:`types`):
 
 .. productionlist:: python-grammar
-   funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")"
+   funcdef: [`decorators`] "def" `funcname` [`type_params`] "(" [`parameter_list`] ")"
           : ["->" `expression`] ":" `suite`
    decorators: `decorator`+
    decorator: "@" `assignment_expression` NEWLINE
@@ -1214,6 +1255,15 @@ except that the original function is not temporarily bound to the name ``func``.
    Functions may be decorated with any valid
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
+
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+between the function's name and the opening parenthesis for its parameter list.
+This indicates to static type checkers that the function is generic. At runtime,
+the type parameters can be retrieved from the function's ``__type_params__``
+attribute. See :ref:`generic-functions` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
 
 .. index::
    triple: default; parameter; value
@@ -1322,8 +1372,8 @@ Class definitions
 =================
 
 .. index::
-   object: class
-   statement: class
+   pair: object; class
+   pair: statement; class
    pair: class; definition
    pair: class; name
    pair: name; binding
@@ -1337,7 +1387,7 @@ Class definitions
 A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist:: python-grammar
-   classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
+   classdef: [`decorators`] "class" `classname` [`type_params`] [`inheritance`] ":" `suite`
    inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
@@ -1393,6 +1443,15 @@ decorators.  The result is then bound to the class name.
    :token:`~python-grammar:assignment_expression`. Previously, the grammar was
    much more restrictive; see :pep:`614` for details.
 
+A list of :ref:`type parameters <type-params>` may be given in square brackets
+immediately after the class's name.
+This indicates to static type checkers that the class is generic. At runtime,
+the type parameters can be retrieved from the class's ``__type_params__``
+attribute. See :ref:`generic-classes` for more.
+
+.. versionchanged:: 3.12
+   Type parameter lists are new in Python 3.12.
+
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
 method with ``self.name = value``.  Both class and instance attributes are
@@ -1422,7 +1481,7 @@ Coroutines
 
 .. versionadded:: 3.5
 
-.. index:: statement: async def
+.. index:: pair: statement; async def
 .. _`async def`:
 
 Coroutine function definition
@@ -1433,8 +1492,8 @@ Coroutine function definition
                 : ["->" `expression`] ":" `suite`
 
 .. index::
-   keyword: async
-   keyword: await
+   pair: keyword; async
+   pair: keyword; await
 
 Execution of Python coroutines can be suspended and resumed at many points
 (see :term:`coroutine`). :keyword:`await` expressions, :keyword:`async for` and
@@ -1456,7 +1515,7 @@ An example of a coroutine function::
    ``await`` and ``async`` are now keywords; previously they were only
    treated as such inside the body of a coroutine function.
 
-.. index:: statement: async for
+.. index:: pair: statement; async for
 .. _`async for`:
 
 The :keyword:`!async for` statement
@@ -1501,7 +1560,7 @@ It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
 
 
-.. index:: statement: async with
+.. index:: pair: statement; async with
 .. _`async with`:
 
 The :keyword:`!async with` statement
@@ -1548,6 +1607,228 @@ body of a coroutine function.
       The proposal that made coroutines a proper standalone concept in Python,
       and added supporting syntax.
 
+.. _type-params:
+
+Type parameter lists
+====================
+
+.. versionadded:: 3.12
+
+.. index::
+   single: type parameters
+
+.. productionlist:: python-grammar
+   type_params: "[" `type_param` ("," `type_param`)* "]"
+   type_param: `typevar` | `typevartuple` | `paramspec`
+   typevar: `identifier` (":" `expression`)?
+   typevartuple: "*" `identifier`
+   paramspec: "**" `identifier`
+
+:ref:`Functions <def>` (including :ref:`coroutines <async def>`),
+:ref:`classes <class>` and :ref:`type aliases <type>` may
+contain a type parameter list::
+
+   def max[T](args: list[T]) -> T:
+       ...
+
+   async def amax[T](args: list[T]) -> T:
+       ...
+
+   class Bag[T]:
+       def __iter__(self) -> Iterator[T]:
+           ...
+
+       def add(self, arg: T) -> None:
+           ...
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Semantically, this indicates that the function, class, or type alias is
+generic over a type variable. This information is primarily used by static
+type checkers, and at runtime, generic objects behave much like their
+non-generic counterparts.
+
+Type parameters are declared in square brackets (``[]``) immediately
+after the name of the function, class, or type alias. The type parameters
+are accessible within the scope of the generic object, but not elsewhere.
+Thus, after a declaration ``def func[T](): pass``, the name ``T`` is not available in
+the module scope. Below, the semantics of generic objects are described
+with more precision. The scope of type parameters is modeled with a special
+function (technically, an :ref:`annotation scope <annotation-scopes>`) that
+wraps the creation of the generic object.
+
+Generic functions, classes, and type aliases have a :attr:`!__type_params__`
+attribute listing their type parameters.
+
+Type parameters come in three kinds:
+
+* :data:`typing.TypeVar`, introduced by a plain name (e.g., ``T``). Semantically, this
+  represents a single type to a type checker.
+* :data:`typing.TypeVarTuple`, introduced by a name prefixed with a single
+  asterisk (e.g., ``*Ts``). Semantically, this stands for a tuple of any
+  number of types.
+* :data:`typing.ParamSpec`, introduced by a name prefixed with two asterisks
+  (e.g., ``**P``). Semantically, this stands for the parameters of a callable.
+
+:data:`typing.TypeVar` declarations can define *bounds* and *constraints* with
+a colon (``:``) followed by an expression. A single expression after the colon
+indicates a bound (e.g. ``T: int``). Semantically, this means
+that the :data:`!typing.TypeVar` can only represent types that are a subtype of
+this bound. A parenthesized tuple of expressions after the colon indicates a
+set of constraints (e.g. ``T: (str, bytes)``). Each member of the tuple should be a
+type (again, this is not enforced at runtime). Constrained type variables can only
+take on one of the types in the list of constraints.
+
+For :data:`!typing.TypeVar`\ s declared using the type parameter list syntax,
+the bound and constraints are not evaluated when the generic object is created,
+but only when the value is explicitly accessed through the attributes ``__bound__``
+and ``__constraints__``. To accomplish this, the bounds or constraints are
+evaluated in a separate :ref:`annotation scope <annotation-scopes>`.
+
+:data:`typing.TypeVarTuple`\ s and :data:`typing.ParamSpec`\ s cannot have bounds
+or constraints.
+
+The following example indicates the full set of allowed type parameter declarations::
+
+   def overly_generic[
+      SimpleTypeVar,
+      TypeVarWithBound: int,
+      TypeVarWithConstraints: (str, bytes),
+      *SimpleTypeVarTuple,
+      **SimpleParamSpec,
+   ](
+      a: SimpleTypeVar,
+      b: TypeVarWithBound,
+      c: Callable[SimpleParamSpec, TypeVarWithConstraints],
+      *d: SimpleTypeVarTuple,
+   ): ...
+
+.. _generic-functions:
+
+Generic functions
+-----------------
+
+Generic functions are declared as follows::
+
+   def func[T](arg: T): ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_func():
+       T = typing.TypeVar("T")
+       def func(arg: T): ...
+       func.__type_params__ = (T,)
+       return func
+   func = TYPE_PARAMS_OF_func()
+
+Here ``annotation-def`` indicates an :ref:`annotation scope <annotation-scopes>`,
+which is not actually bound to any name at runtime. (One
+other liberty is taken in the translation: the syntax does not go through
+attribute access on the :mod:`typing` module, but creates an instance of
+:data:`typing.TypeVar` directly.)
+
+The annotations of generic functions are evaluated within the annotation scope
+used for declaring the type parameters, but the function's defaults and
+decorators are not.
+
+The following example illustrates the scoping rules for these cases,
+as well as for additional flavors of type parameters::
+
+   @decorator
+   def func[T: int, *Ts, **P](*args: *Ts, arg: Callable[P, T] = some_default):
+       ...
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the
+:class:`~typing.TypeVar` bound, this is equivalent to::
+
+   DEFAULT_OF_arg = some_default
+
+   annotation-def TYPE_PARAMS_OF_func():
+
+       annotation-def BOUND_OF_T():
+           return int
+       # In reality, BOUND_OF_T() is evaluated only on demand.
+       T = typing.TypeVar("T", bound=BOUND_OF_T())
+
+       Ts = typing.TypeVarTuple("Ts")
+       P = typing.ParamSpec("P")
+
+       def func(*args: *Ts, arg: Callable[P, T] = DEFAULT_OF_arg):
+           ...
+
+       func.__type_params__ = (T, Ts, P)
+       return func
+   func = decorator(TYPE_PARAMS_OF_func())
+
+The capitalized names like ``DEFAULT_OF_arg`` are not actually
+bound at runtime.
+
+.. _generic-classes:
+
+Generic classes
+---------------
+
+Generic classes are declared as follows::
+
+   class Bag[T]: ...
+
+This syntax is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(typing.Generic[T]):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = TYPE_PARAMS_OF_Bag()
+
+Here again ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`, and the name
+``TYPE_PARAMS_OF_Bag`` is not actually bound at runtime.
+
+Generic classes implicitly inherit from :data:`typing.Generic`.
+The base classes and keyword arguments of generic classes are
+evaluated within the type scope for the type parameters,
+and decorators are evaluated outside that scope. This is illustrated
+by this example::
+
+   @decorator
+   class Bag(Base[T], arg=T): ...
+
+This is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_Bag():
+       T = typing.TypeVar("T")
+       class Bag(Base[T], typing.Generic[T], arg=T):
+           __type_params__ = (T,)
+           ...
+       return Bag
+   Bag = decorator(TYPE_PARAMS_OF_Bag())
+
+.. _generic-type-aliases:
+
+Generic type aliases
+--------------------
+
+The :keyword:`type` statement can also be used to create a generic type alias::
+
+   type ListOrSet[T] = list[T] | set[T]
+
+Except for the :ref:`lazy evaluation <lazy-evaluation>` of the value,
+this is equivalent to::
+
+   annotation-def TYPE_PARAMS_OF_ListOrSet():
+       T = typing.TypeVar("T")
+
+       annotation-def VALUE_OF_ListOrSet():
+           return list[T] | set[T]
+       # In reality, the value is lazily evaluated
+       return typing.TypeAliasType("ListOrSet", VALUE_OF_ListOrSet(), type_params=(T,))
+   ListOrSet = TYPE_PARAMS_OF_ListOrSet()
+
+Here, ``annotation-def`` (not a real keyword) indicates an
+:ref:`annotation scope <annotation-scopes>`. The capitalized names
+like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 
 .. rubric:: Footnotes
 
@@ -1559,7 +1840,7 @@ body of a coroutine function.
 
       * a class that inherits from :class:`collections.abc.Sequence`
       * a Python class that has been registered as :class:`collections.abc.Sequence`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_SEQUENCE` bit set
+      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
       * a class that inherits from any of the above
 
    The following standard library classes are sequences:
@@ -1578,7 +1859,7 @@ body of a coroutine function.
 
       * a class that inherits from :class:`collections.abc.Mapping`
       * a Python class that has been registered as :class:`collections.abc.Mapping`
-      * a builtin class that has its (CPython) :data:`Py_TPFLAGS_MAPPING` bit set
+      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
       * a class that inherits from any of the above
 
    The standard library classes :class:`dict` and :class:`types.MappingProxyType`

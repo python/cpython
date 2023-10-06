@@ -1,2 +1,0 @@
-:class:`types.GenericAlias` no longer relays the ``__class__`` attribute.
-For example, ``isinstance(list[int], type)`` no longer returns ``True``.

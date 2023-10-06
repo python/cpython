@@ -1,1 +1,0 @@
-Fix memory leak in :class:`pickle.Pickler` when looking up :attr:`dispatch_table`. Patch by Kumar Aditya.

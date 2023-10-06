@@ -90,7 +90,7 @@ Comparison with ``json``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are fundamental differences between the pickle protocols and
-`JSON (JavaScript Object Notation) <http://json.org>`_:
+`JSON (JavaScript Object Notation) <https://json.org>`_:
 
 * JSON is a text serialization format (it outputs unicode text, although
   most of the time it is then encoded to ``utf-8``), while pickle is
@@ -125,7 +125,7 @@ Data stream format
 
 The data format used by :mod:`pickle` is Python-specific.  This has the
 advantage that there are no restrictions imposed by external standards such as
-JSON or XDR (which can't represent pointer sharing); however it means that
+JSON (which can't represent pointer sharing); however it means that
 non-Python programs may not be able to reconstruct pickled Python objects.
 
 By default, the :mod:`pickle` data format uses a relatively compact binary
@@ -494,7 +494,8 @@ What can be pickled and unpickled?
 
 The following types can be pickled:
 
-* ``None``, ``True``, and ``False``;
+* built-in constants (``None``, ``True``, ``False``, ``Ellipsis``, and
+  ``NotImplemented``);
 
 * integers, floating-point numbers, complex numbers;
 

@@ -1,6 +1,7 @@
 """Tests for sendfile functionality."""
 
 import asyncio
+import errno
 import os
 import socket
 import sys
@@ -484,8 +485,17 @@ class SendfileMixin(SendfileBase):
 
         srv_proto, cli_proto = self.prepare_sendfile(close_after=1024)
         with self.assertRaises(ConnectionError):
-            self.run_loop(
-                self.loop.sendfile(cli_proto.transport, self.file))
+            try:
+                self.run_loop(
+                    self.loop.sendfile(cli_proto.transport, self.file))
+            except OSError as e:
+                # macOS may raise OSError of EPROTOTYPE when writing to a
+                # socket that is in the process of closing down.
+                if e.errno == errno.EPROTOTYPE and sys.platform == "darwin":
+                    raise ConnectionError
+                else:
+                    raise
+
         self.run_loop(srv_proto.done)
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),

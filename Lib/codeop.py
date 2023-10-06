@@ -56,31 +56,21 @@ def _maybe_compile(compiler, source, filename, symbol):
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
 
-    try:
-        return compiler(source, filename, symbol)
-    except SyntaxError:  # Let other compile() errors propagate.
-        pass
-
-    # Catch syntax warnings after the first compile
-    # to emit warnings (SyntaxWarning, DeprecationWarning) at most once.
+    # Disable compiler warnings when checking for incomplete input.
     with warnings.catch_warnings():
-        warnings.simplefilter("error")
-
+        warnings.simplefilter("ignore", (SyntaxWarning, DeprecationWarning))
         try:
-            compiler(source + "\n", filename, symbol)
-        except SyntaxError as e:
-            if "incomplete input" in str(e):
+            compiler(source, filename, symbol)
+        except SyntaxError:  # Let other compile() errors propagate.
+            try:
+                compiler(source + "\n", filename, symbol)
                 return None
-            raise
+            except SyntaxError as e:
+                if "incomplete input" in str(e):
+                    return None
+                # fallthrough
 
-def _is_syntax_error(err1, err2):
-    rep1 = repr(err1)
-    rep2 = repr(err2)
-    if "was never closed" in rep1 and "was never closed" in rep2:
-        return False
-    if rep1 == rep2:
-        return True
-    return False
+    return compiler(source, filename, symbol)
 
 def _compile(source, filename, symbol):
     return compile(source, filename, symbol, PyCF_DONT_IMPLY_DEDENT | PyCF_ALLOW_INCOMPLETE_INPUT)

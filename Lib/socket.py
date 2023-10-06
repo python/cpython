@@ -785,11 +785,11 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases. In case no FQDN is available and `name`
-    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',
     hostname from gethostname() is returned.
     """
     name = name.strip()
-    if not name or name == '0.0.0.0':
+    if not name or name in ('0.0.0.0', '::'):
         name = gethostname()
     try:
         hostname, aliases, ipaddrs = gethostbyaddr(name)
@@ -910,7 +910,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
-        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        # See: https://learn.microsoft.com/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse
         if os.name not in ('nt', 'cygwin') and \
                 hasattr(_socket, 'SO_REUSEADDR'):
             try:

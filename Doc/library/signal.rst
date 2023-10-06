@@ -4,6 +4,8 @@
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
 
+**Source code:** :source:`Lib/signal.py`
+
 --------------
 
 This module provides mechanisms to use signal handlers in Python.
@@ -362,9 +364,9 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: strsignal(signalnum)
 
-   Return the system description of the signal *signalnum*, such as
-   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
-   is not recognized.
+   Returns the description of signal *signalnum*, such as "Interrupt"
+   for :const:`SIGINT`. Returns :const:`None` if *signalnum* has no
+   description. Raises :exc:`ValueError` if *signalnum* is invalid.
 
    .. versionadded:: 3.8
 
@@ -560,7 +562,7 @@ The :mod:`signal` module defines the following functions:
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
-   :c:func:`siginterrupt` with a true *flag* value for the given signal.
+   :c:func:`!siginterrupt` with a true *flag* value for the given signal.
 
 
 .. function:: signal(signalnum, handler)
@@ -654,7 +656,7 @@ The :mod:`signal` module defines the following functions:
 .. function:: sigtimedwait(sigset, timeout)
 
    Like :func:`sigwaitinfo`, but takes an additional *timeout* argument
-   specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
+   specifying a timeout. If *timeout* is specified as ``0``, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
    .. availability:: Unix.

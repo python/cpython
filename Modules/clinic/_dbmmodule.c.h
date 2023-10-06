@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -138,6 +132,28 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_dbm_dbm_clear__doc__,
+"clear($self, /)\n"
+"--\n"
+"\n"
+"Remove all items from the database.");
+
+#define _DBM_DBM_CLEAR_METHODDEF    \
+    {"clear", _PyCFunction_CAST(_dbm_dbm_clear), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _dbm_dbm_clear__doc__},
+
+static PyObject *
+_dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls);
+
+static PyObject *
+_dbm_dbm_clear(dbmobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    if (nargs) {
+        PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
+        return NULL;
+    }
+    return _dbm_dbm_clear_impl(self, cls);
+}
+
 PyDoc_STRVAR(dbmopen__doc__,
 "open($module, filename, flags=\'r\', mode=0o666, /)\n"
 "--\n"
@@ -190,7 +206,7 @@ dbmopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    mode = _PyLong_AsInt(args[2]);
+    mode = PyLong_AsInt(args[2]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -200,4 +216,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=28dcf736654137c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=972d221f9da819d3 input=a9049054013a1b77]*/

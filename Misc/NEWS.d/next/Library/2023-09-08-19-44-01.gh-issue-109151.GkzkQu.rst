@@ -1,0 +1,1 @@
+Enable ``readline`` editing features in the :ref:`sqlite3 command-line interface <sqlite3-cli>` (``python -m sqlite3``).

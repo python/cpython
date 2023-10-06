@@ -1,5 +1,0 @@
-Dependencies of :mod:`readline` and :mod:`curses` module are now detected in
-``configure`` script with ``pkg-config``. Only ``ncurses`` / ``ncursesw``
-are detected automatically. The old ``curses`` library is not configured
-automatically. Workaround for missing ``termcap`` or ``tinfo`` library
-has been removed.

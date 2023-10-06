@@ -14,14 +14,20 @@ interpreter when it prints a stack trace.  This is useful when you want to print
 stack traces under program control, such as in a "wrapper" around the
 interpreter.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
-The module uses traceback objects --- this is the object type that is stored in
-the :data:`sys.last_traceback` variable and returned as the third item from
-:func:`sys.exc_info`.
+The module uses traceback objects --- these are objects of type :class:`types.TracebackType`,
+which are assigned to the ``__traceback__`` field of :class:`BaseException` instances.
+
+.. seealso::
+
+   Module :mod:`faulthandler`
+      Used to dump Python tracebacks explicitly, on a fault, after a timeout, or on a user signal.
+
+   Module :mod:`pdb`
+      Interactive source code debugger for Python programs.
 
 The module defines the following functions:
-
 
 .. function:: print_tb(tb, limit=None, file=None)
 
@@ -74,16 +80,15 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
+   This is a shorthand for ``print_exception(sys.exception(), limit, file,
    chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file, chain)``.  In general it will work only
-   after an exception has reached an interactive prompt (see
-   :data:`sys.last_type`).
+   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
+   chain)``.  In general it will work only after an exception has reached
+   an interactive prompt (see :data:`sys.last_exc`).
 
 
 .. function:: print_stack(f=None, limit=None, file=None)
@@ -134,11 +139,11 @@ The module defines the following functions:
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
-   ending in a newline.  Normally, the list contains a single string; however,
-   for :exc:`SyntaxError` exceptions, it contains several lines that (when
-   printed) display detailed information about where the syntax error occurred.
-   The message indicating which exception occurred is the always last string in
-   the list.
+   ending in a newline.  The list contains the exception's message, which is
+   normally a single string; however, for :exc:`SyntaxError` exceptions, it
+   contains several lines that (when printed) display detailed information
+   about where the syntax error occurred. Following the message, the list
+   contains the exception's :attr:`notes <BaseException.__notes__>`.
 
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
@@ -147,6 +152,9 @@ The module defines the following functions:
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
+
+   .. versionchanged:: 3.11
+      The returned list now includes any notes attached to the exception.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
@@ -212,7 +220,7 @@ The module also defines the following classes:
 :class:`TracebackException` objects are created from actual exceptions to
 capture data for later printing in a lightweight fashion.
 
-.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False)
+.. class:: TracebackException(exc_type, exc_value, exc_traceback, *, limit=None, lookup_lines=True, capture_locals=False, compact=False, max_group_width=15, max_group_depth=10)
 
    Capture an exception for later rendering. *limit*, *lookup_lines* and
    *capture_locals* are as for the :class:`StackSummary` class.
@@ -224,6 +232,18 @@ capture data for later printing in a lightweight fashion.
 
    Note that when locals are captured, they are also shown in the traceback.
 
+   *max_group_width* and *max_group_depth* control the formatting of exception
+   groups (see :exc:`BaseExceptionGroup`). The depth refers to the nesting
+   level of the group, and the width refers to the size of a single exception
+   group's exceptions array. The formatted output is truncated when either
+   limit is exceeded.
+
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *max_group_width* and *max_group_depth* parameters.
+
    .. attribute:: __cause__
 
       A :class:`TracebackException` of the original ``__cause__``.
@@ -231,6 +251,14 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: __context__
 
       A :class:`TracebackException` of the original ``__context__``.
+
+   .. attribute:: exceptions
+
+      If ``self`` represents an :exc:`ExceptionGroup`, this field holds a list of
+      :class:`TracebackException` instances representing the nested exceptions.
+      Otherwise it is ``None``.
+
+      .. versionadded:: 3.11
 
    .. attribute:: __suppress_context__
 
@@ -260,6 +288,13 @@ capture data for later printing in a lightweight fashion.
 
       For syntax errors - the line number where the error occurred.
 
+   .. attribute:: end_lineno
+
+      For syntax errors - the end line number where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
+
    .. attribute:: text
 
       For syntax errors - the text where the error occurred.
@@ -267,6 +302,13 @@ capture data for later printing in a lightweight fashion.
    .. attribute:: offset
 
       For syntax errors - the offset into the text where the error occurred.
+
+   .. attribute:: end_offset
+
+      For syntax errors - the end offset into the text where the error occurred.
+      Can be ``None`` if not present.
+
+      .. versionadded:: 3.10
 
    .. attribute:: msg
 
@@ -297,25 +339,27 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
-
-   .. method::  format_exception_only()
+   .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
       The return value is a generator of strings, each ending in a newline.
 
-      Normally, the generator emits a single string; however, for
-      :exc:`SyntaxError` exceptions, it emits several lines that (when
-      printed) display detailed information about where the syntax
-      error occurred.
+      When *show_group* is ``False``, the generator emits the exception's
+      message followed by its notes (if it has any). The exception message
+      is normally a single string; however, for :exc:`SyntaxError` exceptions,
+      it consists of several lines that (when printed) display detailed
+      information about where the syntax error occurred.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
+      When *show_group* is ``True``, and the exception is an instance of
+      :exc:`BaseExceptionGroup`, the nested exceptions are included as
+      well, recursively, with indentation relative to their nesting depth.
 
-   .. versionchanged:: 3.10
-      Added the *compact* parameter.
+      .. versionchanged:: 3.11
+         The exception's notes are now included in the output.
+
+      .. versionchanged:: 3.13
+         Added the *show_group* parameter.
 
 
 :class:`StackSummary` Objects
@@ -429,21 +473,19 @@ exception and traceback:
    import sys, traceback
 
    def lumberjack():
-       bright_side_of_death()
+       bright_side_of_life()
 
-   def bright_side_of_death():
+   def bright_side_of_life():
        return tuple()[0]
 
    try:
        lumberjack()
    except IndexError:
-       exc_type, exc_value, exc_traceback = sys.exc_info()
+       exc = sys.exception()
        print("*** print_tb:")
-       traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
+       traceback.print_tb(exc.__traceback__, limit=1, file=sys.stdout)
        print("*** print_exception:")
-       # exc_type below is ignored on 3.5 and later
-       traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                 limit=2, file=sys.stdout)
+       traceback.print_exception(exc, limit=2, file=sys.stdout)
        print("*** print_exc:")
        traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
@@ -451,14 +493,12 @@ exception and traceback:
        print(formatted_lines[0])
        print(formatted_lines[-1])
        print("*** format_exception:")
-       # exc_type below is ignored on 3.5 and later
-       print(repr(traceback.format_exception(exc_type, exc_value,
-                                             exc_traceback)))
+       print(repr(traceback.format_exception(exc)))
        print("*** extract_tb:")
-       print(repr(traceback.extract_tb(exc_traceback)))
+       print(repr(traceback.extract_tb(exc.__traceback__)))
        print("*** format_tb:")
-       print(repr(traceback.format_tb(exc_traceback)))
-       print("*** tb_lineno:", exc_traceback.tb_lineno)
+       print(repr(traceback.format_tb(exc.__traceback__)))
+       print("*** tb_lineno:", exc.__traceback__.tb_lineno)
 
 The output for the example would look similar to this:
 
@@ -473,14 +513,14 @@ The output for the example would look similar to this:
      File "<doctest...>", line 10, in <module>
        lumberjack()
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** print_exc:
    Traceback (most recent call last):
      File "<doctest...>", line 10, in <module>
        lumberjack()
      File "<doctest...>", line 4, in lumberjack
-       bright_side_of_death()
+       bright_side_of_life()
    IndexError: tuple index out of range
    *** format_exc, first and last line:
    Traceback (most recent call last):
@@ -488,17 +528,17 @@ The output for the example would look similar to this:
    *** format_exception:
    ['Traceback (most recent call last):\n',
     '  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n',
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
    [<FrameSummary file <doctest...>, line 10 in <module>>,
     <FrameSummary file <doctest...>, line 4 in lumberjack>,
-    <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
+    <FrameSummary file <doctest...>, line 7 in bright_side_of_life>]
    *** format_tb:
    ['  File "<doctest default[0]>", line 10, in <module>\n    lumberjack()\n',
-    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_death()\n',
-    '  File "<doctest default[0]>", line 7, in bright_side_of_death\n    return tuple()[0]\n           ~~~~~~~^^^\n']
+    '  File "<doctest default[0]>", line 4, in lumberjack\n    bright_side_of_life()\n',
+    '  File "<doctest default[0]>", line 7, in bright_side_of_life\n    return tuple()[0]\n           ~~~~~~~^^^\n']
    *** tb_lineno: 10
 
 

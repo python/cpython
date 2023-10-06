@@ -9,12 +9,14 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  field_size_limit, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
+                 QUOTE_STRINGS, QUOTE_NOTNULL, \
                  __doc__
 from _csv import Dialect as _Dialect
 
 from io import StringIO
 
 __all__ = ["QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
+           "QUOTE_STRINGS", "QUOTE_NOTNULL",
            "Error", "Dialect", "__doc__", "excel", "excel_tab",
            "field_size_limit", "reader", "writer",
            "register_dialect", "get_dialect", "list_dialects", "Sniffer",
@@ -139,7 +141,8 @@ class DictWriter:
             fieldnames = list(fieldnames)
         self.fieldnames = fieldnames    # list of keys for the dict
         self.restval = restval          # for writing short dicts
-        if extrasaction.lower() not in ("raise", "ignore"):
+        extrasaction = extrasaction.lower()
+        if extrasaction not in ("raise", "ignore"):
             raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
                              % extrasaction)
         self.extrasaction = extrasaction
@@ -165,11 +168,6 @@ class DictWriter:
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
-# Guard Sniffer's type checking against builds that exclude complex()
-try:
-    complex
-except NameError:
-    complex = float
 
 class Sniffer:
     '''

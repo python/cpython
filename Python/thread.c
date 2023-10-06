@@ -7,50 +7,46 @@
 
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
-
-#ifndef _POSIX_THREADS
-/* This means pthreads are not implemented in libc headers, hence the macro
-   not present in unistd.h. But they still can be implemented as an external
-   library (e.g. gnu pth in pthread emulation) */
-# ifdef HAVE_PTHREAD_H
-#  include <pthread.h> /* _POSIX_THREADS */
-# endif
-#endif
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_pythread.h"      // _POSIX_THREADS
 
 #ifndef DONT_HAVE_STDIO_H
-#include <stdio.h>
+#  include <stdio.h>
 #endif
 
 #include <stdlib.h>
 
-#ifndef _POSIX_THREADS
 
-/* Check if we're running on HP-UX and _SC_THREADS is defined. If so, then
-   enough of the Posix threads package is implemented to support python
-   threads.
-
-   This is valid for HP-UX 11.23 running on an ia64 system. If needed, add
-   a check of __ia64 to verify that we're running on an ia64 system instead
-   of a pa-risc system.
-*/
-#ifdef __hpux
-#ifdef _SC_THREADS
-#define _POSIX_THREADS
+// Define PY_TIMEOUT_MAX constant.
+#ifdef _POSIX_THREADS
+   // PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
+   // convert microseconds to nanoseconds.
+#  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
+#elif defined (NT_THREADS)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL < LLONG_MAX / 1000
+#    define PY_TIMEOUT_MAX_VALUE (0xFFFFFFFELL * 1000)
+#  else
+#    define PY_TIMEOUT_MAX_VALUE LLONG_MAX
+#  endif
+#else
+#  define PY_TIMEOUT_MAX_VALUE LLONG_MAX
 #endif
-#endif
+const long long PY_TIMEOUT_MAX = PY_TIMEOUT_MAX_VALUE;
 
-#endif /* _POSIX_THREADS */
-
-static int initialized;
 
 static void PyThread__init_thread(void); /* Forward */
+
+#define initialized _PyRuntime.threads.initialized
 
 void
 PyThread_init_thread(void)
 {
-    if (initialized)
+    if (initialized) {
         return;
+    }
     initialized = 1;
     PyThread__init_thread();
 }
@@ -58,7 +54,7 @@ PyThread_init_thread(void)
 #if defined(HAVE_PTHREAD_STUBS)
 #   define PYTHREAD_NAME "pthread-stubs"
 #   include "thread_pthread_stubs.h"
-#elif defined(_POSIX_THREADS)
+#elif defined(_USE_PTHREADS)  /* AKA _PTHREADS */
 #   if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
 #     define PYTHREAD_NAME "pthread-stubs"
 #   else
@@ -161,10 +157,9 @@ PyThread_GetInfo(void)
     int len;
 #endif
 
-    if (ThreadInfoType.tp_name == 0) {
-        if (_PyStructSequence_InitBuiltin(&ThreadInfoType,
-                                          &threadinfo_desc) < 0)
-            return NULL;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (_PyStructSequence_InitBuiltin(interp, &ThreadInfoType, &threadinfo_desc) < 0) {
+        return NULL;
     }
 
     threadinfo = PyStructSequence_New(&ThreadInfoType);
@@ -207,8 +202,7 @@ PyThread_GetInfo(void)
     if (value == NULL)
 #endif
     {
-        Py_INCREF(Py_None);
-        value = Py_None;
+        value = Py_NewRef(Py_None);
     }
     PyStructSequence_SET_ITEM(threadinfo, pos++, value);
     return threadinfo;
@@ -218,9 +212,5 @@ PyThread_GetInfo(void)
 void
 _PyThread_FiniType(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
-
-    _PyStructSequence_FiniType(&ThreadInfoType);
+    _PyStructSequence_FiniBuiltin(interp, &ThreadInfoType);
 }

@@ -1,1 +1,0 @@
-Code for exception handlers is emitted at the end of the code unit's bytecode. This avoids one jump when no exception is raised.

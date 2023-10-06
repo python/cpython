@@ -32,7 +32,7 @@ The :func:`getmembers` function retrieves the members of an object such as a
 class or module. The functions whose names begin with "is" are mainly
 provided as convenient choices for the second argument to :func:`getmembers`.
 They also help you determine when you can expect to find the following special
-attributes:
+attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. this function name is too big to fit in the ascii-art table below
 .. |coroutine-origin-link| replace:: :func:`sys.set_coroutine_origin_tracking_depth`
@@ -40,11 +40,6 @@ attributes:
 +-----------+-------------------+---------------------------+
 | Type      | Attribute         | Description               |
 +===========+===================+===========================+
-| module    | __doc__           | documentation string      |
-+-----------+-------------------+---------------------------+
-|           | __file__          | filename (missing for     |
-|           |                   | built-in modules)         |
-+-----------+-------------------+---------------------------+
 | class     | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -348,14 +343,35 @@ attributes:
 
 .. function:: iscoroutinefunction(object)
 
-   Return ``True`` if the object is a :term:`coroutine function`
-   (a function defined with an :keyword:`async def` syntax).
+   Return ``True`` if the object is a :term:`coroutine function` (a function
+   defined with an :keyword:`async def` syntax), a :func:`functools.partial`
+   wrapping a :term:`coroutine function`, or a sync function marked with
+   :func:`markcoroutinefunction`.
 
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.8
       Functions wrapped in :func:`functools.partial` now return ``True`` if the
       wrapped function is a :term:`coroutine function`.
+
+   .. versionchanged:: 3.12
+      Sync functions marked with :func:`markcoroutinefunction` now return
+      ``True``.
+
+
+.. function:: markcoroutinefunction(func)
+
+   Decorator to mark a callable as a :term:`coroutine function` if it would not
+   otherwise be detected by :func:`iscoroutinefunction`.
+
+   This may be of use for sync functions that return a :term:`coroutine`, if
+   the function is passed to an API that requires :func:`iscoroutinefunction`.
+
+   When possible, using an :keyword:`async def` function is preferred. Also
+   acceptable is calling the function and testing the return with
+   :func:`iscoroutine`.
+
+   .. versionadded:: 3.12
 
 
 .. function:: iscoroutine(object)
@@ -434,8 +450,10 @@ attributes:
 
    Return ``True`` if the type of object is a :class:`~types.MethodWrapperType`.
 
-   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object().__str__`,
-   :meth:`~object().__eq__` and :meth:`~object().__repr__`
+   These are instances of :class:`~types.MethodWrapperType`, such as :meth:`~object.__str__`,
+   :meth:`~object.__eq__` and :meth:`~object.__repr__`.
+
+   .. versionadded:: 3.11
 
 
 .. function:: isroutine(object)
@@ -556,6 +574,8 @@ Retrieving source code
    object and the line number indicates where in the original source file the first
    line of code was found.  An :exc:`OSError` is raised if the source code cannot
    be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -568,6 +588,8 @@ Retrieving source code
    class, method, function, traceback, frame, or code object.  The source code is
    returned as a single string.  An :exc:`OSError` is raised if the source code
    cannot be retrieved.
+   A :exc:`TypeError` is raised if the object is a built-in module, class, or
+   function.
 
    .. versionchanged:: 3.3
       :exc:`OSError` is raised instead of :exc:`IOError`, now an alias of the
@@ -667,11 +689,11 @@ function.
    The optional *return_annotation* argument, can be an arbitrary Python object,
    is the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
-      Signature objects are picklable and hashable.
+      Signature objects are picklable and :term:`hashable`.
 
    .. attribute:: Signature.empty
 
@@ -708,7 +730,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in
@@ -718,10 +740,14 @@ function.
 
          >>> def test(a, b):
          ...     pass
+         ...
          >>> sig = signature(test)
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
+
+      Signature objects are also supported by generic function
+      :func:`copy.replace`.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
@@ -746,10 +772,10 @@ function.
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
-      Parameter objects are picklable and hashable.
+      Parameter objects are picklable and :term:`hashable`.
 
    .. attribute:: Parameter.empty
 
@@ -783,8 +809,9 @@ function.
 
    .. attribute:: Parameter.kind
 
-      Describes how argument values are bound to the parameter.  Possible values
-      (accessible via :class:`Parameter`, like ``Parameter.KEYWORD_ONLY``):
+      Describes how argument values are bound to the parameter.  The possible
+      values are accessible via :class:`Parameter` (like ``Parameter.KEYWORD_ONLY``),
+      and support comparison and ordering, in the following order:
 
       .. tabularcolumns:: |l|L|
 
@@ -867,6 +894,8 @@ function.
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
+
+      Parameter objects are also supported by generic function :func:`copy.replace`.
 
    .. versionchanged:: 3.4
       In Python 3.3 Parameter objects were allowed to have ``name`` set
@@ -1057,6 +1086,7 @@ Classes and functions
     >>> from inspect import getcallargs
     >>> def f(a, b=1, *pos, **named):
     ...     pass
+    ...
     >>> getcallargs(f, 1, 2, 3) == {'a': 1, 'named': {}, 'b': 2, 'pos': (3,)}
     True
     >>> getcallargs(f, a=2, x=4) == {'a': 2, 'named': {'x': 4}, 'b': 1, 'pos': ()}
@@ -1206,12 +1236,13 @@ is considered deprecated and may be removed in the future.
       number, start column offset, and end column offset associated with the
       instruction being executed by the frame this record corresponds to.
 
-.. versionchanged:: 3.5
-   Return a named tuple instead of a tuple.
+   .. versionchanged:: 3.5
+      Return a :term:`named tuple` instead of a :class:`tuple`.
 
-.. versionchanged:: 3.11
-   Changed the return object from a named tuple to a regular object (that is
-   backwards compatible with the previous named tuple).
+   .. versionchanged:: 3.11
+      :class:`!FrameInfo` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. class:: Traceback
 
@@ -1244,6 +1275,11 @@ is considered deprecated and may be removed in the future.
       line number, start column offset, and end column offset associated with
       the instruction being executed by the frame this traceback corresponds
       to.
+
+   .. versionchanged:: 3.11
+      :class:`!Traceback` is now a class instance
+      (that is backwards compatible with the previous :term:`named tuple`).
+
 
 .. note::
 
@@ -1413,8 +1449,8 @@ code execution::
            pass
 
 
-Current State of Generators and Coroutines
-------------------------------------------
+Current State of Generators, Coroutines, and Asynchronous Generators
+--------------------------------------------------------------------
 
 When implementing coroutine schedulers and for other advanced uses of
 generators, it is useful to determine whether a generator is currently
@@ -1449,6 +1485,22 @@ generator to be determined easily.
 
    .. versionadded:: 3.5
 
+.. function:: getasyncgenstate(agen)
+
+   Get current state of an asynchronous generator object.  The function is
+   intended to be used with asynchronous iterator objects created by
+   :keyword:`async def` functions which use the :keyword:`yield` statement,
+   but will accept any asynchronous generator-like object that has
+   ``ag_running`` and ``ag_frame`` attributes.
+
+   Possible states are:
+    * AGEN_CREATED: Waiting to start execution.
+    * AGEN_RUNNING: Currently being executed by the interpreter.
+    * AGEN_SUSPENDED: Currently suspended at a yield expression.
+    * AGEN_CLOSED: Execution has completed.
+
+   .. versionadded:: 3.12
+
 The current internal state of the generator can also be queried. This is
 mostly useful for testing purposes, to ensure that internal state is being
 updated as expected:
@@ -1479,6 +1531,14 @@ updated as expected:
    works for coroutine objects created by :keyword:`async def` functions.
 
    .. versionadded:: 3.5
+
+.. function:: getasyncgenlocals(agen)
+
+   This function is analogous to :func:`~inspect.getgeneratorlocals`, but
+   works for asynchronous generator objects created by :keyword:`async def`
+   functions which use the :keyword:`yield` statement.
+
+   .. versionadded:: 3.12
 
 
 .. _inspect-module-co-flags:
@@ -1548,6 +1608,39 @@ the following flags:
    for any introspection needs.
 
 
+Buffer flags
+------------
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`~object.__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
+
+   .. versionadded:: 3.12
+
 .. _inspect-module-cli:
 
 Command Line Interface
@@ -1562,6 +1655,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

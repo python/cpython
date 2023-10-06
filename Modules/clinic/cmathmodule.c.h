@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(cmath_acos__doc__,
 "acos($module, z, /)\n"
@@ -644,7 +643,7 @@ PyDoc_STRVAR(cmath_log__doc__,
 "\n"
 "log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
-"If the base not specified, returns the natural logarithm (base e) of z.");
+"If the base is not specified, returns the natural logarithm (base e) of z.");
 
 #define CMATH_LOG_METHODDEF    \
     {"log", _PyCFunction_CAST(cmath_log), METH_FASTCALL, cmath_log__doc__},
@@ -982,4 +981,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0146c656e67f5d5f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=96a5c4ae198dd5bf input=a9049054013a1b77]*/
