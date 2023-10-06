@@ -5652,7 +5652,7 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION == 510)
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
 /* issue #18259, sethostname is not declared in any useful header file on AIX
  * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
