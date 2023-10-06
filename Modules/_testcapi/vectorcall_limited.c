@@ -1,12 +1,8 @@
+/* Test Vectorcall in the limited API */
+
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
 #include "clinic/vectorcall_limited.c.h"
-
-#ifdef LIMITED_API_AVAILABLE
-
-
-
-/* Test Vectorcall in the limited API */
 
 /*[clinic input]
 module _testcapi
@@ -197,5 +193,3 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
 
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

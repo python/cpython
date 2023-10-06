@@ -607,9 +607,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the <ieeefp.h> header file. */
-#undef HAVE_IEEEFP_H
-
 /* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
@@ -1609,6 +1606,9 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if you want to disable the GIL */
+#undef Py_NOGIL
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
@@ -1787,6 +1787,9 @@
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
+
+/* Define to build the readline module against Apple BSD editline. */
+#undef WITH_APPLE_EDITLINE
 
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */

@@ -2029,17 +2029,17 @@ Utility functions
    specifying an address, or a ctypes instance.
 
 
-.. function:: POINTER(type)
+.. function:: POINTER(type, /)
 
-   This factory function creates and returns a new ctypes pointer type. Pointer
-   types are cached and reused internally, so calling this function repeatedly is
-   cheap. *type* must be a ctypes type.
+   Create and return a new ctypes pointer type. Pointer types are cached and
+   reused internally, so calling this function repeatedly is cheap.
+   *type* must be a ctypes type.
 
 
-.. function:: pointer(obj)
+.. function:: pointer(obj, /)
 
-   This function creates a new pointer instance, pointing to *obj*. The returned
-   object is of the type ``POINTER(type(obj))``.
+   Create a new pointer instance, pointing to *obj*.
+   The returned object is of the type ``POINTER(type(obj))``.
 
    Note: If you just want to pass a pointer to an object to a foreign function
    call, you should use ``byref(obj)`` which is much faster.

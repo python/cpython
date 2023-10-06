@@ -23,12 +23,13 @@ with test_tools.imports_under_tool('clinic'):
 
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename)
+    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
 
-def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
+def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None,
+                    strip=True):
     """Helper for the parser tests.
 
     tc: unittest.TestCase; passed self in the wrapper
@@ -38,7 +39,9 @@ def _expect_failure(tc, parser, code, errmsg, *, filename=None, lineno=None):
     filename: str, optional filename
     lineno: int, optional line number
     """
-    code = dedent(code).strip()
+    code = dedent(code)
+    if strip:
+        code = code.strip()
     errmsg = re.escape(errmsg)
     with tc.assertRaisesRegex(clinic.ClinicError, errmsg) as cm:
         parser(code)
@@ -122,7 +125,7 @@ class ClinicWholeFileTest(TestCase):
         clang.body_prefix = "//"
         clang.start_line = "//[{dsl_name} start]"
         clang.stop_line = "//[{dsl_name} stop]"
-        cl = clinic.Clinic(clang, filename="test.c")
+        cl = clinic.Clinic(clang, filename="test.c", limited_capi=False)
         raw = dedent("""
             //[clinic start]
             //module test
@@ -609,6 +612,79 @@ class ClinicWholeFileTest(TestCase):
         """
         self.expect_failure(block, err, lineno=2)
 
+    def test_validate_cloned_init(self):
+        block = """
+            /*[clinic input]
+            class C "void *" ""
+            C.meth
+              a: int
+            [clinic start generated code]*/
+            /*[clinic input]
+            @classmethod
+            C.__init__ = C.meth
+            [clinic start generated code]*/
+        """
+        err = "'__init__' must be a normal method, not a class or static method"
+        self.expect_failure(block, err, lineno=8)
+
+    def test_validate_cloned_new(self):
+        block = """
+            /*[clinic input]
+            class C "void *" ""
+            C.meth
+              a: int
+            [clinic start generated code]*/
+            /*[clinic input]
+            C.__new__ = C.meth
+            [clinic start generated code]*/
+        """
+        err = "'__new__' must be a class method"
+        self.expect_failure(block, err, lineno=7)
+
+    def test_no_c_basename_cloned(self):
+        block = """
+            /*[clinic input]
+            foo2
+            [clinic start generated code]*/
+            /*[clinic input]
+            foo as = foo2
+            [clinic start generated code]*/
+        """
+        err = "No C basename provided after 'as' keyword"
+        self.expect_failure(block, err, lineno=5)
+
+    def test_cloned_with_custom_c_basename(self):
+        raw = dedent("""
+            /*[clinic input]
+            # Make sure we don't create spurious clinic/ directories.
+            output everything suppress
+            foo2
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            foo as foo1 = foo2
+            [clinic start generated code]*/
+        """)
+        self.clinic.parse(raw)
+        funcs = self.clinic.functions
+        self.assertEqual(len(funcs), 2)
+        self.assertEqual(funcs[1].name, "foo")
+        self.assertEqual(funcs[1].c_basename, "foo1")
+
+    def test_cloned_with_illegal_c_basename(self):
+        block = """
+            /*[clinic input]
+            class C "void *" ""
+            foo1
+            [clinic start generated code]*/
+
+            /*[clinic input]
+            foo2 as .illegal. = foo1
+            [clinic start generated code]*/
+        """
+        err = "Illegal C basename: '.illegal.'"
+        self.expect_failure(block, err, lineno=7)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -616,7 +692,7 @@ class ParseFileUnitTest(TestCase):
     ):
         errmsg = re.escape(dedent(expected_error).strip())
         with self.assertRaisesRegex(clinic.ClinicError, errmsg):
-            clinic.parse_file(filename)
+            clinic.parse_file(filename, limited_capi=False)
 
     def test_parse_file_no_extension(self) -> None:
         self.expect_parsing_failure(
@@ -756,8 +832,9 @@ class ClinicBlockParserTest(TestCase):
 
         blocks = list(clinic.BlockParser(input, language))
         writer = clinic.BlockPrinter(language)
+        c = _make_clinic()
         for block in blocks:
-            writer.print_block(block)
+            writer.print_block(block, limited_capi=c.limited_capi, header_includes=c.includes)
         output = writer.f.getvalue()
         assert output == input, "output != input!\n\noutput " + repr(output) + "\n\n input " + repr(input)
 
@@ -783,7 +860,7 @@ xyz
 
     def _test_clinic(self, input, output):
         language = clinic.CLanguage(None)
-        c = clinic.Clinic(language, filename="file")
+        c = clinic.Clinic(language, filename="file", limited_capi=False)
         c.parsers['inert'] = InertParser(c)
         c.parsers['copy'] = CopyParser(c)
         computed = c.parse(input)
@@ -828,9 +905,10 @@ class ClinicParserTest(TestCase):
         assert isinstance(s[function_index], clinic.Function)
         return s[function_index]
 
-    def expect_failure(self, block, err, *, filename=None, lineno=None):
+    def expect_failure(self, block, err, *,
+                       filename=None, lineno=None, strip=True):
         return _expect_failure(self, self.parse_function, block, err,
-                               filename=filename, lineno=lineno)
+                               filename=filename, lineno=lineno, strip=strip)
 
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
@@ -1447,6 +1525,27 @@ class ClinicParserTest(TestCase):
         err = "Function 'empty_group' has a ']' without a matching '['"
         self.expect_failure(block, err)
 
+    def test_disallowed_grouping__must_be_position_only(self):
+        dataset = ("""
+            with_kwds
+                [
+                *
+                a: object
+                ]
+        """, """
+            with_kwds
+                [
+                a: object
+                ]
+        """)
+        err = (
+            "You cannot use optional groups ('[' and ']') unless all "
+            "parameters are positional-only ('/')"
+        )
+        for block in dataset:
+            with self.subTest(block=block):
+                self.expect_failure(block, err)
+
     def test_no_parameters(self):
         function = self.parse_function("""
             module foo
@@ -1491,6 +1590,11 @@ class ClinicParserTest(TestCase):
         err = "Illegal C basename: '935'"
         self.expect_failure(block, err)
 
+    def test_no_c_basename(self):
+        block = "foo as "
+        err = "No C basename provided after 'as' keyword"
+        self.expect_failure(block, err, strip=False)
+
     def test_single_star(self):
         block = """
             module foo
@@ -1508,7 +1612,7 @@ class ClinicParserTest(TestCase):
             "module foo\nfoo.bar\n  this: int\n  *",
             "module foo\nfoo.bar\n  this: int\n  *\nDocstring.",
         )
-        err = "Function 'foo.bar' specifies '*' without any parameters afterwards."
+        err = "Function 'bar' specifies '*' without following parameters."
         for block in dataset:
             with self.subTest(block=block):
                 self.expect_failure(block, err)
@@ -1576,7 +1680,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got '3'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1590,7 +1694,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got 'a.b'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1604,7 +1708,7 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar': expected format '* [from major.minor]' "
+            "Function 'bar': expected format '[from major.minor]' "
             "where 'major' and 'minor' are integers; got '1.2.3'"
         )
         self.expect_failure(block, err, lineno=3)
@@ -1618,8 +1722,24 @@ class ClinicParserTest(TestCase):
             Docstring.
         """
         err = (
-            "Function 'foo.bar' specifies '* [from ...]' without "
-            "any parameters afterwards"
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
+
+    def test_parameters_required_after_depr_star2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                *
+                b: int
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '* [from ...]' without "
+            "following parameters."
         )
         self.expect_failure(block, err, lineno=4)
 
@@ -1632,7 +1752,7 @@ class ClinicParserTest(TestCase):
                 * [from 3.14]
             Docstring.
         """
-        err = "Function 'foo.bar': '* [from ...]' must come before '*'"
+        err = "Function 'bar': '* [from ...]' must precede '*'"
         self.expect_failure(block, err, lineno=4)
 
     def test_depr_star_duplicate(self):
@@ -1646,7 +1766,49 @@ class ClinicParserTest(TestCase):
                 c: int
             Docstring.
         """
-        err = "Function 'foo.bar' uses '[from ...]' more than once"
+        err = "Function 'bar' uses '* [from 3.14]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_star_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                b: int
+                * [from 3.15]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar': '* [from 3.15]' must precede '* [from 3.14]'"
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_slash_duplicate(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                b: int
+                / [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar' uses '/ [from 3.14]' more than once."
+        self.expect_failure(block, err, lineno=5)
+
+    def test_depr_slash_duplicate2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.15]
+                b: int
+                / [from 3.14]
+                c: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from 3.14]' must precede '/ [from 3.15]'"
         self.expect_failure(block, err, lineno=5)
 
     def test_single_slash(self):
@@ -1661,6 +1823,34 @@ class ClinicParserTest(TestCase):
             "(Unexpected state 0.d)"
         )
         self.expect_failure(block, err)
+
+    def test_parameters_required_before_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                / [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '/ [from ...]' without "
+            "preceding parameters."
+        )
+        self.expect_failure(block, err, lineno=2)
+
+    def test_parameters_required_before_depr_slash2(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                /
+                / [from 3.14]
+            Docstring.
+        """
+        err = (
+            "Function 'bar' specifies '/ [from ...]' without "
+            "preceding parameters."
+        )
+        self.expect_failure(block, err, lineno=4)
 
     def test_double_slash(self):
         block = """
@@ -1684,11 +1874,60 @@ class ClinicParserTest(TestCase):
                z: int
                /
         """
-        err = (
-            "Function 'bar' mixes keyword-only and positional-only parameters, "
-            "which is unsupported."
-        )
+        err = "Function 'bar': '/' must precede '*'"
         self.expect_failure(block, err)
+
+    def test_depr_star_must_come_after_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                /
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/' must precede '* [from ...]'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_star_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                * [from 3.14]
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '* [from ...]'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_star_must_come_after_depr_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                *
+                / [from 3.14]
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/ [from ...]' must precede '*'"
+        self.expect_failure(block, err, lineno=4)
+
+    def test_depr_slash_must_come_after_slash(self):
+        block = """
+            module foo
+            foo.bar
+                a: int
+                / [from 3.14]
+                /
+                b: int
+            Docstring.
+        """
+        err = "Function 'bar': '/' must precede '/ [from ...]'"
+        self.expect_failure(block, err, lineno=4)
 
     def test_parameters_not_permitted_after_slash_for_now(self):
         block = """
@@ -1918,7 +2157,7 @@ class ClinicParserTest(TestCase):
             self.parse_function(block)
 
     def test_new_must_be_a_class_method(self):
-        err = "__new__ must be a class method!"
+        err = "'__new__' must be a class method!"
         block = """
             module foo
             class Foo "" ""
@@ -1927,7 +2166,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_init_must_be_a_normal_method(self):
-        err = "__init__ must be a normal method, not a class or static method!"
+        err = "'__init__' must be a normal method, not a class or static method!"
         block = """
             module foo
             class Foo "" ""
@@ -2030,7 +2269,7 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=2)
 
     def test_cannot_convert_special_method(self):
-        err = "__len__ is a special method and cannot be converted"
+        err = "'__len__' is a special method and cannot be converted"
         block = """
             class T "" ""
             T.__len__
@@ -2071,10 +2310,10 @@ class ClinicParserTest(TestCase):
         self.expect_failure(block, err, lineno=1)
 
     def test_parent_class_or_module_does_not_exist(self):
-        err = "Parent class or module 'z' does not exist"
+        err = "Parent class or module 'baz' does not exist"
         block = """
             module m
-            z.func
+            baz.func
         """
         self.expect_failure(block, err, lineno=1)
 
@@ -2225,11 +2464,12 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+                "output=c16447c01510dfb3 input=9543a8d2da235301]*/\n"
             )
             with open(fn, 'r', encoding='utf-8') as f:
                 generated = f.read()
-            self.assertTrue(generated.endswith(checksum))
+            self.assertTrue(generated.endswith(checksum),
+                            (generated, checksum))
 
     def test_cli_make(self):
         c_code = dedent("""
@@ -2433,12 +2673,6 @@ class ClinicExternalTest(TestCase):
             preserve
             [clinic start generated code]*/
 
-            #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-            #  include "pycore_gc.h"            // PyGC_Head
-            #  include "pycore_runtime.h"       // _Py_ID()
-            #endif
-
-
             PyDoc_VAR(func__doc__);
 
             PyDoc_STRVAR(func__doc__,
@@ -2451,7 +2685,7 @@ class ClinicExternalTest(TestCase):
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=56c09670e89a0d9a input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")
@@ -2486,18 +2720,38 @@ class ClinicFunctionalTest(unittest.TestCase):
     locals().update((name, getattr(ac_tester, name))
                     for name in dir(ac_tester) if name.startswith('test_'))
 
-    def check_depr_star(self, pnames, fn, *args, **kwds):
-        regex = (
-            fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
-            fr"{fn.__name__}\(\) is deprecated. Parameter(s)? {pnames} will "
-            fr"become( a)? keyword-only parameter(s)? in Python 3\.14"
-        )
+    def check_depr(self, regex, fn, /, *args, **kwds):
         with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
             # Record the line number, so we're sure we've got the correct stack
             # level on the deprecation warning.
             _, lineno = fn(*args, **kwds), sys._getframe().f_lineno
         self.assertEqual(cm.filename, __file__)
         self.assertEqual(cm.lineno, lineno)
+
+    def check_depr_star(self, pnames, fn, /, *args, name=None, **kwds):
+        if name is None:
+            name = fn.__qualname__
+            if isinstance(fn, type):
+                name = f'{fn.__module__}.{name}'
+        regex = (
+            fr"Passing( more than)?( [0-9]+)? positional argument(s)? to "
+            fr"{re.escape(name)}\(\) is deprecated. Parameters? {pnames} will "
+            fr"become( a)? keyword-only parameters? in Python 3\.14"
+        )
+        self.check_depr(regex, fn, *args, **kwds)
+
+    def check_depr_kwd(self, pnames, fn, *args, name=None, **kwds):
+        if name is None:
+            name = fn.__qualname__
+            if isinstance(fn, type):
+                name = f'{fn.__module__}.{name}'
+        pl = 's' if ' ' in pnames else ''
+        regex = (
+            fr"Passing keyword argument{pl} {pnames} to "
+            fr"{re.escape(name)}\(\) is deprecated. Parameter{pl} {pnames} "
+            fr"will become positional-only in Python 3\.14."
+        )
+        self.check_depr(regex, fn, *args, **kwds)
 
     def test_objects_converter(self):
         with self.assertRaises(TypeError):
@@ -2964,46 +3218,67 @@ class ClinicFunctionalTest(unittest.TestCase):
                 self.assertEqual(func(), name)
 
     def test_depr_star_new(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarNew() is "
-            "deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            ac_tester.DeprStarNew(None)
-        self.assertEqual(cm.filename, __file__)
+        cls = ac_tester.DeprStarNew
+        cls()
+        cls(a=None)
+        self.check_depr_star("'a'", cls, None)
 
     def test_depr_star_new_cloned(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarNew.cloned() "
-            "is deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        obj = ac_tester.DeprStarNew(a=None)
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            obj.cloned(None)
-        self.assertEqual(cm.filename, __file__)
+        fn = ac_tester.DeprStarNew().cloned
+        fn()
+        fn(a=None)
+        self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarNew.cloned')
 
     def test_depr_star_init(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarInit() is "
-            "deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            ac_tester.DeprStarInit(None)
-        self.assertEqual(cm.filename, __file__)
+        cls = ac_tester.DeprStarInit
+        cls()
+        cls(a=None)
+        self.check_depr_star("'a'", cls, None)
 
     def test_depr_star_init_cloned(self):
-        regex = re.escape(
-            "Passing positional arguments to _testclinic.DeprStarInit.cloned() "
-            "is deprecated. Parameter 'a' will become a keyword-only parameter "
-            "in Python 3.14."
-        )
-        obj = ac_tester.DeprStarInit(a=None)
-        with self.assertWarnsRegex(DeprecationWarning, regex) as cm:
-            obj.cloned(None)
-        self.assertEqual(cm.filename, __file__)
+        fn = ac_tester.DeprStarInit().cloned
+        fn()
+        fn(a=None)
+        self.check_depr_star("'a'", fn, None, name='_testclinic.DeprStarInit.cloned')
+
+    def test_depr_star_init_noinline(self):
+        cls = ac_tester.DeprStarInitNoInline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
+
+    def test_depr_kwd_new(self):
+        cls = ac_tester.DeprKwdNew
+        cls()
+        cls(None)
+        self.check_depr_kwd("'a'", cls, a=None)
+
+    def test_depr_kwd_init(self):
+        cls = ac_tester.DeprKwdInit
+        cls()
+        cls(None)
+        self.check_depr_kwd("'a'", cls, a=None)
+
+    def test_depr_kwd_init_noinline(self):
+        cls = ac_tester.DeprKwdInitNoInline
+        cls = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, cls, "a")
+        cls(a="a", b="b")
+        cls(a="a", b="b", c="c")
+        cls("a", b="b")
+        cls("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", cls)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, cls, "a", "b", "c", "d")
 
     def test_depr_star_pos0_len1(self):
         fn = ac_tester.depr_star_pos0_len1
@@ -3073,6 +3348,191 @@ class ClinicFunctionalTest(unittest.TestCase):
         check = partial(self.check_depr_star, "'c' and 'd'", fn)
         check("a", "b", "c", d=0, e=0)
         check("a", "b", "c", "d", e=0)
+
+    def test_depr_star_noinline(self):
+        fn = ac_tester.depr_star_noinline
+        self.assertRaises(TypeError, fn, "a")
+        fn(a="a", b="b")
+        fn(a="a", b="b", c="c")
+        fn("a", b="b")
+        fn("a", b="b", c="c")
+        check = partial(self.check_depr_star, "'b' and 'c'", fn)
+        check("a", "b")
+        check("a", "b", "c")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+
+    def test_depr_star_multi(self):
+        fn = ac_tester.depr_star_multi
+        self.assertRaises(TypeError, fn, "a")
+        fn("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+        errmsg = (
+            "Passing more than 1 positional argument to depr_star_multi() is deprecated. "
+            "Parameter 'b' will become a keyword-only parameter in Python 3.16. "
+            "Parameters 'c' and 'd' will become keyword-only parameters in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become keyword-only parameters in Python 3.14.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", "e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", "e", "f", g="g", h="h")
+        check("a", "b", "c", "d", "e", "f", "g", h="h")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g", "h")
+
+    def test_depr_kwd_required_1(self):
+        fn = ac_tester.depr_kwd_required_1
+        fn("a", "b")
+        self.assertRaises(TypeError, fn, "a")
+        self.assertRaises(TypeError, fn, "a", "b", "c")
+        check = partial(self.check_depr_kwd, "'b'", fn)
+        check("a", b="b")
+        self.assertRaises(TypeError, fn, a="a", b="b")
+
+    def test_depr_kwd_required_2(self):
+        fn = ac_tester.depr_kwd_required_2
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a", "b")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", "b", c="c")
+        check("a", b="b", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_optional_1(self):
+        fn = ac_tester.depr_kwd_optional_1
+        fn("a")
+        fn("a", "b")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a", "b", "c")
+        check = partial(self.check_depr_kwd, "'b'", fn)
+        check("a", b="b")
+        self.assertRaises(TypeError, fn, a="a", b="b")
+
+    def test_depr_kwd_optional_2(self):
+        fn = ac_tester.depr_kwd_optional_2
+        fn("a")
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", c="c")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_optional_3(self):
+        fn = ac_tester.depr_kwd_optional_3
+        fn()
+        fn("a")
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'a', 'b' and 'c'", fn)
+        check("a", "b", c="c")
+        check("a", b="b")
+        check(a="a")
+
+    def test_depr_kwd_required_optional(self):
+        fn = ac_tester.depr_kwd_required_optional
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, "a")
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_noinline(self):
+        fn = ac_tester.depr_kwd_noinline
+        fn("a", "b")
+        fn("a", "b", "c")
+        self.assertRaises(TypeError, fn, "a")
+        check = partial(self.check_depr_kwd, "'b' and 'c'", fn)
+        check("a", b="b")
+        check("a", b="b", c="c")
+        check("a", c="c", b="b")
+        check("a", "b", c="c")
+        self.assertRaises(TypeError, fn, "a", c="c")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c")
+
+    def test_depr_kwd_multi(self):
+        fn = ac_tester.depr_kwd_multi
+        fn("a", "b", "c", "d", "e", "f", "g", h="h")
+        errmsg = (
+            "Passing keyword arguments 'b', 'c', 'd', 'e', 'f' and 'g' to depr_kwd_multi() is deprecated. "
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameters 'c' and 'd' will become positional-only in Python 3.15. "
+            "Parameters 'e', 'f' and 'g' will become positional-only in Python 3.16.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", "c", "d", "e", "f", g="g", h="h")
+        check("a", "b", "c", "d", "e", f="f", g="g", h="h")
+        check("a", "b", "c", "d", e="e", f="f", g="g", h="h")
+        check("a", "b", "c", d="d", e="e", f="f", g="g", h="h")
+        check("a", "b", c="c", d="d", e="e", f="f", g="g", h="h")
+        check("a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g", h="h")
+
+    def test_depr_multi(self):
+        fn = ac_tester.depr_multi
+        self.assertRaises(TypeError, fn, "a", "b", "c", "d", "e", "f", "g")
+        errmsg = (
+            "Passing more than 4 positional arguments to depr_multi() is deprecated. "
+            "Parameter 'e' will become a keyword-only parameter in Python 3.15. "
+            "Parameter 'f' will become a keyword-only parameter in Python 3.14.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", "c", "d", "e", "f", g="g")
+        check("a", "b", "c", "d", "e", f="f", g="g")
+        fn("a", "b", "c", "d", e="e", f="f", g="g")
+        fn("a", "b", "c", d="d", e="e", f="f", g="g")
+        errmsg = (
+            "Passing keyword arguments 'b' and 'c' to depr_multi() is deprecated. "
+            "Parameter 'b' will become positional-only in Python 3.14. "
+            "Parameter 'c' will become positional-only in Python 3.15.")
+        check = partial(self.check_depr, re.escape(errmsg), fn)
+        check("a", "b", c="c", d="d", e="e", f="f", g="g")
+        check("a", b="b", c="c", d="d", e="e", f="f", g="g")
+        self.assertRaises(TypeError, fn, a="a", b="b", c="c", d="d", e="e", f="f", g="g")
+
+
+try:
+    import _testclinic_limited
+except ImportError:
+    _testclinic_limited = None
+
+@unittest.skipIf(_testclinic_limited is None, "_testclinic_limited is missing")
+class LimitedCAPIFunctionalTest(unittest.TestCase):
+    locals().update((name, getattr(_testclinic_limited, name))
+                    for name in dir(_testclinic_limited) if name.startswith('test_'))
+
+    def test_my_int_func(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func()
+        self.assertEqual(_testclinic_limited.my_int_func(3), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func(1.0)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_func("xyz")
+
+    def test_my_int_sum(self):
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum()
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1)
+        self.assertEqual(_testclinic_limited.my_int_sum(1, 2), 3)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1.0, 2)
+        with self.assertRaises(TypeError):
+            _testclinic_limited.my_int_sum(1, "str")
+
 
 
 class PermutationTests(unittest.TestCase):

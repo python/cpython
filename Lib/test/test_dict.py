@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper, C_RECURSION_LIMIT
+from test.support import import_helper, Py_C_RECURSION_LIMIT
 
 
 class DictTest(unittest.TestCase):
@@ -596,7 +596,7 @@ class DictTest(unittest.TestCase):
 
     def test_repr_deep(self):
         d = {}
-        for i in range(C_RECURSION_LIMIT + 1):
+        for i in range(Py_C_RECURSION_LIMIT + 1):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -1582,8 +1582,8 @@ class CAPITest(unittest.TestCase):
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        dict_getitem_knownhash = _testinternalcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)
