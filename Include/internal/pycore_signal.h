@@ -38,12 +38,12 @@ PyAPI_FUNC(void) _Py_RestoreSignals(void);
 #define INVALID_FD (-1)
 
 struct _signals_runtime_state {
-    volatile struct {
-        _Py_atomic_int tripped;
+    struct {
+        int tripped;
         /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
          * (even though it would probably be otherwise, anyway).
          */
-        _Py_atomic_address func;
+        uintptr_t func;
     } handlers[Py_NSIG];
 
     volatile struct {
@@ -64,7 +64,7 @@ struct _signals_runtime_state {
     } wakeup;
 
     /* Speed up sigcheck() when none tripped */
-    _Py_atomic_int is_tripped;
+    int is_tripped;
 
     /* These objects necessarily belong to the main interpreter. */
     PyObject *default_handler;

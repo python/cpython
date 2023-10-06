@@ -4,7 +4,6 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
-#include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -124,13 +123,13 @@ typedef struct {
 Py_LOCAL_INLINE(PyObject *)
 get_handler(int i)
 {
-    return (PyObject *)_Py_atomic_load(&Handlers[i].func);
+    return (PyObject *)_Py_atomic_load_uintptr(&Handlers[i].func);
 }
 
 Py_LOCAL_INLINE(void)
 set_handler(int i, PyObject* func)
 {
-    _Py_atomic_store(&Handlers[i].func, (uintptr_t)func);
+    _Py_atomic_store_uintptr(&Handlers[i].func, (uintptr_t)func);
 }
 
 
@@ -267,11 +266,11 @@ report_wakeup_send_error(void* data)
 static void
 trip_signal(int sig_num)
 {
-    _Py_atomic_store_relaxed(&Handlers[sig_num].tripped, 1);
+    _Py_atomic_store_int_relaxed(&Handlers[sig_num].tripped, 1);
 
     /* Set is_tripped after setting .tripped, as it gets
        cleared in PyErr_CheckSignals() before .tripped. */
-    _Py_atomic_store(&is_tripped, 1);
+    _Py_atomic_store_int(&is_tripped, 1);
 
     /* Signals are always handled by the main interpreter */
     PyInterpreterState *interp = _PyInterpreterState_Main();
@@ -1731,7 +1730,7 @@ _PySignal_Fini(void)
     // Restore default signals and clear handlers
     for (int signum = 1; signum < Py_NSIG; signum++) {
         PyObject *func = get_handler(signum);
-        _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
+        _Py_atomic_store_int_relaxed(&Handlers[signum].tripped, 0);
         set_handler(signum, NULL);
         if (func != NULL
             && func != Py_None
@@ -1785,7 +1784,7 @@ int
 _PyErr_CheckSignalsTstate(PyThreadState *tstate)
 {
     _Py_CHECK_EMSCRIPTEN_SIGNALS();
-    if (!_Py_atomic_load(&is_tripped)) {
+    if (!_Py_atomic_load_int(&is_tripped)) {
         return 0;
     }
 
@@ -1803,15 +1802,15 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
      *       we receive a signal i after we zero is_tripped and before we
      *       check Handlers[i].tripped.
      */
-    _Py_atomic_store(&is_tripped, 0);
+    _Py_atomic_store_int(&is_tripped, 0);
 
     _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
     signal_state_t *state = &signal_global_state;
     for (int i = 1; i < Py_NSIG; i++) {
-        if (!_Py_atomic_load_relaxed(&Handlers[i].tripped)) {
+        if (!_Py_atomic_load_int_relaxed(&Handlers[i].tripped)) {
             continue;
         }
-        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
+        _Py_atomic_store_int_relaxed(&Handlers[i].tripped, 0);
 
         /* Signal handlers can be modified while a signal is received,
          * and therefore the fact that trip_signal() or PyErr_SetInterrupt()
@@ -1857,7 +1856,7 @@ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
         }
         if (!result) {
             /* On error, re-schedule a call to _PyErr_CheckSignalsTstate() */
-            _Py_atomic_store(&is_tripped, 1);
+            _Py_atomic_store_int(&is_tripped, 1);
             return -1;
         }
 
@@ -1975,7 +1974,7 @@ _PySignal_Init(int install_signal_handlers)
 #endif
 
     for (int signum = 1; signum < Py_NSIG; signum++) {
-        _Py_atomic_store_relaxed(&Handlers[signum].tripped, 0);
+        _Py_atomic_store_int_relaxed(&Handlers[signum].tripped, 0);
     }
 
     if (install_signal_handlers) {
@@ -1997,11 +1996,11 @@ _PyOS_InterruptOccurred(PyThreadState *tstate)
         return 0;
     }
 
-    if (!_Py_atomic_load_relaxed(&Handlers[SIGINT].tripped)) {
+    if (!_Py_atomic_load_int_relaxed(&Handlers[SIGINT].tripped)) {
         return 0;
     }
 
-    _Py_atomic_store_relaxed(&Handlers[SIGINT].tripped, 0);
+    _Py_atomic_store_int_relaxed(&Handlers[SIGINT].tripped, 0);
     return 1;
 }
 
@@ -2019,13 +2018,13 @@ PyOS_InterruptOccurred(void)
 static void
 _clear_pending_signals(void)
 {
-    if (!_Py_atomic_load(&is_tripped)) {
+    if (!_Py_atomic_load_int(&is_tripped)) {
         return;
     }
 
-    _Py_atomic_store(&is_tripped, 0);
+    _Py_atomic_store_int(&is_tripped, 0);
     for (int i = 1; i < Py_NSIG; ++i) {
-        _Py_atomic_store_relaxed(&Handlers[i].tripped, 0);
+        _Py_atomic_store_int_relaxed(&Handlers[i].tripped, 0);
     }
 }
 
