@@ -4,7 +4,6 @@
 /* XXX Signals should be recorded per thread, now we have thread state. */
 
 #include "Python.h"
-#include "pyatomic.h"             // _Py_atomic_store_uintptr _Py_atomic_load_uintptr
 #include "pycore_call.h"          // _PyObject_Call()
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
