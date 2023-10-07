@@ -10714,7 +10714,7 @@ PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *str, Py_ssize_t size
             s += 1;
         }
         else if (ch < 0x800) {
-            if (ends - s < 2 ||
+            if ((ends - s) < 2 ||
                 s[0] != (0xc0 | (ch >> 6)) ||
                 s[1] != (0x80 | (ch & 0x3f)))
             {

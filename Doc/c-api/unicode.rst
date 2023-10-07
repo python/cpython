@@ -1411,7 +1411,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
 .. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
 
-   Similar to :c:func:`PyUnicode_EqualToUTF8AndSize`, but compute the string
+   Similar to :c:func:`PyUnicode_EqualToUTF8AndSize`, but compute *string*
    length using :c:func:`!strlen`.
    If the Unicode object contains null characters, false (``0``) is returned.
 

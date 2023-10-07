@@ -1372,9 +1372,8 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(equaltoutf8andsize(s2, b, len(b) - 1), 0)
 
         # embedded null chars/bytes
-        self.assertEqual(equaltoutf8andsize('abc', b'abc\0def\0'), 0)
-        self.assertEqual(equaltoutf8andsize('a\0bc', b'abc'), 0)
-        self.assertEqual(equaltoutf8andsize('abc', b'a\0bc'), 0)
+        self.assertEqual(equaltoutf8andsize('abc\0def', b'abc\0def', 7), 1)
+        self.assertEqual(equaltoutf8andsize('abc\0def\0', b'abc\0def\0', 8), 1)
 
         # Surrogate characters are always treated as not equal
         self.assertEqual(equaltoutf8andsize('\udcfe',
