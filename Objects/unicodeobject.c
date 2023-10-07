@@ -10724,7 +10724,7 @@ PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *str, Py_ssize_t size
         }
         else if (ch < 0x10000) {
             if (Py_UNICODE_IS_SURROGATE(ch) ||
-                ends - s < 3 ||
+                (ends - s) < 3 ||
                 s[0] != (0xe0 | (ch >> 12)) ||
                 s[1] != (0x80 | ((ch >> 6) & 0x3f)) ||
                 s[2] != (0x80 | (ch & 0x3f)))
@@ -10735,7 +10735,7 @@ PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *str, Py_ssize_t size
         }
         else {
             assert(ch <= MAX_UNICODE);
-            if (ends - s < 4 ||
+            if ((ends - s) < 4 ||
                 s[0] != (0xf0 | (ch >> 18)) ||
                 s[1] != (0x80 | ((ch >> 12) & 0x3f)) ||
                 s[2] != (0x80 | ((ch >> 6) & 0x3f)) ||
