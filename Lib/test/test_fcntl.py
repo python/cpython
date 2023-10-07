@@ -1,6 +1,7 @@
 """Test program for the fcntl C module.
 """
 import multiprocessing
+import multiprocessing.util
 import platform
 import os
 import struct
@@ -46,6 +47,7 @@ class TestFcntl(unittest.TestCase):
         if self.f and not self.f.closed:
             self.f.close()
         unlink(TESTFN)
+        multiprocessing.util._cleanup_tests()
 
     @staticmethod
     def get_lockdata():

@@ -492,6 +492,10 @@ class Listener(object):
             listener.close()
 
     @property
+    def closed(self):
+        return self._listener is None
+
+    @property
     def address(self):
         return self._listener._address
 

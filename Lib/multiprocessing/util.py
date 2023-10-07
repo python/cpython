@@ -7,13 +7,17 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-import os
-import itertools
-import sys
-import weakref
+
 import atexit
+import functools
+import itertools
+import os
+import sys
+import queue
 import threading        # we want threading to install it's
                         # cleanup function before multiprocessing does
+import warnings
+import weakref
 from subprocess import _args_from_interpreter_flags
 
 from . import process
@@ -167,6 +171,165 @@ def _run_after_forkers():
 def register_after_fork(obj, func):
     _afterfork_registry[(next(_afterfork_counter), id(obj), func)] = obj
 
+
+class _WorkQueue:
+    _sentinel = object()
+
+    def __init__(self):
+        self._queue = queue.SimpleQueue()
+        self._lock = threading.RLock()
+        # Note the Condition uses a different lock to avoid a deadlock
+        # when stopping the thread.
+        self._queue_drained_cond = threading.Condition()
+        self._stopped = False
+        self._thread = None
+
+    def __del__(self):
+        self._atexit()
+
+    def ensure_running(self):
+        with self._lock:
+            if self._stopped:
+                return
+            if self._thread is None:
+                self._start_thread()
+
+    def _start_thread(self):
+        thread = threading.Thread(
+            target=self._work_loop,
+            args=(self._queue, self._queue_drained_cond),
+            name='multiprocessing.util._WorkQueue',
+            daemon=True)
+        thread.start()
+        # Avoid setting self._thread before the thread starts successfully.
+        # This should not happen in real life but can happen in
+        # test_concurrent_futures.
+        self._thread = thread
+
+    def _atexit(self):
+        self.stop()
+
+    def _atfork_before(self):
+        import time
+        self._lock.acquire()
+        self._atfork_was_stopped = self._stopped
+        thread_was_running = self._thread is not None
+        # Make sure we don't have a running thread
+        while self._thread is not None:
+            thread = self._stop_unlocked()
+            self._lock.release()
+            try:
+                thread.join()
+            finally:
+                self._lock.acquire()
+        if thread_was_running:
+            # HACK: os.fork() queries the system for the number of running threads.
+            # However, Thread.join() only ensures that the Python thread state
+            # was destroyed, while the system thread could still be running.
+            # Give it time to exit.
+            time.sleep(0.001)
+
+    def _atfork_after_in_parent(self):
+        self._stopped = self._atfork_was_stopped
+        self._lock.release()
+
+    def _atfork_after_in_child(self):
+        self._lock = threading.RLock()
+        self._queue = queue.SimpleQueue()
+
+    @property
+    def stopped(self):
+        with self._lock():
+            return self._stopped
+
+    def _stop_unlocked(self):
+        thread = self._thread
+        self._stopped = True
+        if self._thread is not None:
+            self._queue.put(self._sentinel)
+            self._thread = None
+        return thread
+
+    def stop(self):
+        with self._lock:
+            thread = self._stop_unlocked()
+        # To avoid deadlocks between self._lock and the thread-state lock,
+        # call `thread.join` unlocked.
+        if thread is not None:
+            thread.join()
+
+    def reset(self):
+        # For tests
+        self.stop()
+        assert self._queue.qsize() == 0
+        self._stopped = False
+
+    def wait_until_idle(self):
+        with self._queue_drained_cond:
+            self._queue_drained_cond.wait_for(lambda: self._queue.empty())
+
+    def enqueue_task(self, cb):
+        # Can be run concurrently or reentrantly along stop(), or even
+        # from the work loop.
+        assert callable(cb)
+        with self._lock:
+            if not self._stopped and self._thread is not None:
+                # Even if called reentrantly from stop(), the fact that
+                # self._stopped is False ensures that our callback will
+                # be enqueued before the sentinel.
+                self._queue.put(cb)
+                return
+        # The work loop is not running (perhaps we're shutting down?),
+        # execute callback directly without taking the lock.
+        # This might cause issues if this is a reentrant call, but we cannot
+        # do any better.
+        try:
+            cb()
+        finally:
+            cb = None
+
+    @classmethod
+    def _work_loop(cls, queue, cond):
+        while True:
+            if queue.empty():
+                with cond:
+                    cond.notify_all()
+            cb = queue.get()
+            if cb is cls._sentinel:
+                with cond:
+                    cond.notify_all()
+                return
+            try:
+                cb()
+            except BaseException as e:
+                # XXX Ideally would call sys.unraisablehook, but it expects
+                # a specific type not accessible from Python.
+                sys.excepthook(type(e), e, e.__traceback__)
+            finally:
+                # Clear potential refcycle with exception
+                cb = None
+
+
+_work_queue = _WorkQueue()
+atexit.register(_work_queue._atexit)
+if os.name == 'posix':
+    os.register_at_fork(before=_work_queue._atfork_before,
+                        after_in_parent=_work_queue._atfork_after_in_parent,
+                        after_in_child=_work_queue._atfork_after_in_child)
+
+def ensure_work_queue():
+    _work_queue.ensure_running()
+
+def reset_work_queue():
+    _work_queue.reset()
+
+def enqueue_task(cb):
+    _work_queue.enqueue_task(cb)
+
+def ensure_finalizers_run():
+    _work_queue.wait_until_idle()
+
+
 #
 # Finalization using weakrefs
 #
@@ -179,7 +342,8 @@ class Finalize(object):
     '''
     Class which supports object finalization using weakrefs
     '''
-    def __init__(self, obj, callback, args=(), kwargs=None, exitpriority=None):
+    def __init__(self, obj, callback, args=(), kwargs=None,
+                 exitpriority=None, reentrant=True):
         if (exitpriority is not None) and not isinstance(exitpriority,int):
             raise TypeError(
                 "Exitpriority ({0!r}) must be None or int, not {1!s}".format(
@@ -190,9 +354,15 @@ class Finalize(object):
         elif exitpriority is None:
             raise ValueError("Without object, exitpriority cannot be None")
 
+        try:
+            ensure_work_queue()
+        except RuntimeError:
+            # Could be at interpreter shutdown, we can only ignore the error
+            pass
         self._callback = callback
         self._args = args
         self._kwargs = kwargs or {}
+        self._reentrant = reentrant
         self._key = (exitpriority, next(_finalizer_counter))
         self._pid = os.getpid()
 
@@ -211,16 +381,26 @@ class Finalize(object):
         except KeyError:
             sub_debug('finalizer no longer registered')
         else:
-            if self._pid != getpid():
-                sub_debug('finalizer ignored because different process')
-                res = None
-            else:
+            try:
+                if self._pid != getpid():
+                    sub_debug('finalizer ignored because different process')
+                    return
                 sub_debug('finalizer calling %s with args %s and kwargs %s',
                           self._callback, self._args, self._kwargs)
-                res = self._callback(*self._args, **self._kwargs)
-            self._weakref = self._callback = self._args = \
-                            self._kwargs = self._key = None
-            return res
+                # If `wr` is None, the Finalize object was called explicitly
+                # to shutdown the object, presumably in a non-reentrant
+                # context.
+                if self._reentrant or wr is None:
+                    return self._callback(*self._args, **self._kwargs)
+                else:
+                    # No need to return a value since we are in a weakref
+                    # callback.
+                    enqueue_task(functools.partial(self._callback,
+                                                   *self._args,
+                                                   **self._kwargs))
+            finally:
+                self._weakref = self._callback = self._args = \
+                                self._kwargs = self._key = None
 
     def cancel(self):
         '''
@@ -475,13 +655,17 @@ def _cleanup_tests():
     from multiprocessing import forkserver
     forkserver._forkserver._stop()
 
-    # Stop the ResourceTracker process if it's running
-    from multiprocessing import resource_tracker
-    resource_tracker._resource_tracker._stop()
+    # Stop the work queue thread
+    reset_work_queue()
 
     # bpo-37421: Explicitly call _run_finalizers() to remove immediately
     # temporary directories created by multiprocessing.util.get_temp_dir().
     _run_finalizers()
     support.gc_collect()
+
+    # Stop the ResourceTracker process if it's running. We do this last
+    # as finalizers may restart it otherwise.
+    from multiprocessing import resource_tracker
+    resource_tracker._resource_tracker._stop()
 
     support.reap_children()

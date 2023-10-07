@@ -180,6 +180,7 @@ class Server(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
         finally:
+            self.listener.close()
             if sys.stdout != sys.__stdout__: # what about stderr?
                 util.debug('resetting stdout, stderr')
                 sys.stdout = sys.__stdout__
@@ -187,7 +188,7 @@ class Server(object):
             sys.exit(0)
 
     def accepter(self):
-        while True:
+        while not self.listener.closed:
             try:
                 c = self.listener.accept()
             except OSError:
@@ -575,7 +576,7 @@ class BaseManager(object):
             self, type(self)._finalize_manager,
             args=(self._process, self._address, self._authkey, self._state,
                   self._Client, self._shutdown_timeout),
-            exitpriority=0
+            exitpriority=0, reentrant=False
             )
 
     @classmethod
@@ -859,12 +860,11 @@ class BaseProxy(object):
         self._idset.add(self._id)
 
         state = self._manager and self._manager._state
-
         self._close = util.Finalize(
             self, BaseProxy._decref,
             args=(self._token, self._authkey, state,
                   self._tls, self._idset, self._Client),
-            exitpriority=10
+            exitpriority=10, reentrant=False
             )
 
     @staticmethod
