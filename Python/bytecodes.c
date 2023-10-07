@@ -136,7 +136,12 @@ dummy_func(
         inst(RESUME, (--)) {
             TIER_ONE_ONLY
             assert(frame == tstate->current_frame);
-            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+            uintptr_t global_version =
+                _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) &
+                ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            assert((code_version & 255) == 0);
+            if (code_version != global_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
                 next_instr--;
@@ -154,17 +159,16 @@ dummy_func(
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
-            /* Possibly combine these two checks */
-            DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version);
-            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker));
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
+            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+            DEOPT_IF(eval_breaker != version);
         }
 
         inst(INSTRUMENTED_RESUME, (--)) {
-            /* Possible performance enhancement:
-             *   We need to check the eval breaker anyway, can we
-             * combine the instrument verison check and the eval breaker test?
-             */
-            if (_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version) {
+            uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & ~_PY_EVAL_EVENTS_MASK;
+            uintptr_t code_version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            if (code_version != global_version) {
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     goto error;
                 }
@@ -1887,11 +1891,15 @@ dummy_func(
             _LOAD_ATTR_INSTANCE_VALUE +
             unused/5;  // Skip over rest of cache
 
-        inst(LOAD_ATTR_MODULE, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
+        op(_CHECK_ATTR_MODULE, (type_version/2, owner -- owner)) {
             DEOPT_IF(!PyModule_CheckExact(owner));
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict != NULL);
             DEOPT_IF(dict->ma_keys->dk_version != type_version);
+        }
+
+        op(_LOAD_ATTR_MODULE, (index/1, owner -- attr, null if (oparg & 1))) {
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
             assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
             assert(index < dict->ma_keys->dk_nentries);
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
@@ -1903,19 +1911,26 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(LOAD_ATTR_WITH_HINT, (unused/1, type_version/2, index/1, unused/5, owner -- attr, null if (oparg & 1))) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-            assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+        macro(LOAD_ATTR_MODULE) =
+            unused/1 +
+            _CHECK_ATTR_MODULE +
+            _LOAD_ATTR_MODULE +
+            unused/5;
+
+        op(_CHECK_ATTR_WITH_HINT, (owner -- owner)) {
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
             DEOPT_IF(_PyDictOrValues_IsValues(dorv));
             PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            uint16_t hint = index;
+        }
+
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr, null if (oparg & 1))) {
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
             DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (DK_IS_UNICODE(dict->ma_keys)) {
                 PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
                 DEOPT_IF(ep->me_key != name);
@@ -1933,6 +1948,13 @@ dummy_func(
             DECREF_INPUTS();
         }
 
+        macro(LOAD_ATTR_WITH_HINT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _CHECK_ATTR_WITH_HINT +
+            _LOAD_ATTR_WITH_HINT +
+            unused/5;
+
         op(_LOAD_ATTR_SLOT, (index/1, owner -- attr, null if (oparg & 1))) {
             char *addr = (char *)owner + index;
             attr = *(PyObject **)addr;
@@ -1949,19 +1971,26 @@ dummy_func(
             _LOAD_ATTR_SLOT +  // NOTE: This action may also deopt
             unused/5;
 
-        inst(LOAD_ATTR_CLASS, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, null if (oparg & 1))) {
-
+        op(_CHECK_ATTR_CLASS, (type_version/2, owner -- owner)) {
             DEOPT_IF(!PyType_Check(owner));
-            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
             assert(type_version != 0);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version);
 
+        }
+
+        op(_LOAD_ATTR_CLASS, (descr/4, owner -- attr, null if (oparg & 1))) {
             STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            attr = Py_NewRef(descr);
             null = NULL;
-            attr = descr;
-            assert(attr != NULL);
-            Py_INCREF(attr);
             DECREF_INPUTS();
         }
+
+        macro(LOAD_ATTR_CLASS) =
+            unused/1 +
+            _CHECK_ATTR_CLASS +
+            unused/2 +
+            _LOAD_ATTR_CLASS;
 
         inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
@@ -2038,7 +2067,7 @@ dummy_func(
 
         macro(STORE_ATTR_INSTANCE_VALUE) =
             unused/1 +
-            _GUARD_TYPE_VERSION_STORE +
+            _GUARD_TYPE_VERSION +
             _GUARD_DORV_VALUES +
             _STORE_ATTR_INSTANCE_VALUE;
 
@@ -2083,12 +2112,6 @@ dummy_func(
             Py_DECREF(owner);
         }
 
-        op(_GUARD_TYPE_VERSION_STORE, (type_version/2, owner -- owner)) {
-            PyTypeObject *tp = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(tp->tp_version_tag != type_version);
-        }
-
         op(_STORE_ATTR_SLOT, (index/1, value, owner --)) {
             char *addr = (char *)owner + index;
             STAT_INC(STORE_ATTR, hit);
@@ -2100,7 +2123,7 @@ dummy_func(
 
         macro(STORE_ATTR_SLOT) =
             unused/1 +
-            _GUARD_TYPE_VERSION_STORE +
+            _GUARD_TYPE_VERSION +
             _STORE_ATTR_SLOT;
 
         family(COMPARE_OP, INLINE_CACHE_ENTRIES_COMPARE_OP) = {
@@ -2255,7 +2278,7 @@ dummy_func(
                 // Double-check that the opcode isn't instrumented or something:
                 here->op.code == JUMP_BACKWARD)
             {
-                OBJECT_STAT_INC(optimization_attempts);
+                OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
@@ -2825,49 +2848,59 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_METHOD_NO_DICT;
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (unused/1, type_version/2, keys_version/2, descr/4, owner -- attr, unused if (0))) {
+        op(_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, (descr/4, owner -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version);
-            assert(owner_cls->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictOrValues *dorv = _PyObject_DictOrValuesPointer(owner);
-            DEOPT_IF(!_PyDictOrValues_IsValues(*dorv) && !_PyObject_MakeInstanceAttributesFromDict(owner, dorv));
-            PyHeapTypeObject *owner_heap_type = (PyHeapTypeObject *)owner_cls;
-            DEOPT_IF(owner_heap_type->ht_cached_keys->dk_version != keys_version);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             DECREF_INPUTS();
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, unused if (0))) {
+        macro(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT +
+            _GUARD_KEYS_VERSION +
+            _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
+
+        op(_LOAD_ATTR_NONDESCRIPTOR_NO_DICT, (descr/4, owner -- attr, unused if (0))) {
             assert((oparg & 1) == 0);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version);
-            assert(owner_cls->tp_dictoffset == 0);
+            assert(Py_TYPE(owner)->tp_dictoffset == 0);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             DECREF_INPUTS();
             attr = Py_NewRef(descr);
         }
 
-        inst(LOAD_ATTR_METHOD_LAZY_DICT, (unused/1, type_version/2, unused/2, descr/4, owner -- attr, self if (1))) {
-            assert(oparg & 1);
-            PyTypeObject *owner_cls = Py_TYPE(owner);
-            DEOPT_IF(owner_cls->tp_version_tag != type_version);
-            Py_ssize_t dictoffset = owner_cls->tp_dictoffset;
+        macro(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            unused/2 +
+            _LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
+
+        op(_CHECK_ATTR_METHOD_LAZY_DICT, (owner -- owner)) {
+            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
             assert(dictoffset > 0);
             PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
             /* This object has a __dict__, just not yet created */
             DEOPT_IF(dict != NULL);
+        }
+
+        op(_LOAD_ATTR_METHOD_LAZY_DICT, (descr/4, owner -- attr, self if (1))) {
+            assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
             attr = Py_NewRef(descr);
             self = owner;
         }
+
+        macro(LOAD_ATTR_METHOD_LAZY_DICT) =
+            unused/1 +
+            _GUARD_TYPE_VERSION +
+            _CHECK_ATTR_METHOD_LAZY_DICT +
+            unused/2 +
+            _LOAD_ATTR_METHOD_LAZY_DICT;
 
         inst(INSTRUMENTED_CALL, ( -- )) {
             int is_meth = PEEK(oparg + 1) != NULL;
@@ -3932,6 +3965,7 @@ dummy_func(
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             return frame;
         }
 

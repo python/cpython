@@ -97,6 +97,9 @@ Other Language Changes
   if supported.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
 
 New Modules
 ===========
@@ -1015,6 +1018,10 @@ New Features
   Previously, the function was private and known as
   ``_PyThreadState_UncheckedGet()``.
   (Contributed by Victor Stinner in :gh:`108867`.)
+
+* Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
+  but pass event arguments as a Python :class:`tuple` object.
+  (Contributed by Victor Stinner in :gh:`85283`.)
 
 Porting to Python 3.13
 ----------------------
