@@ -10101,7 +10101,7 @@ os_times_impl(PyObject *module)
 #endif /* HAVE_TIMES */
 
 
-#if defined(HAVE_TIMERFD_API)
+#if defined(HAVE_TIMERFD_CREATE)
 #define ONE_SECOND_IN_NS (1000 * 1000 * 1000)
 #define EXTRACT_NSEC(value)  (long)( ( (double)(value) - (time_t)(value) ) * 1e9)
 #define CONVERT_SEC_AND_NSEC_TO_DOUBLE(sec, nsec) ( (double)(sec) + (double)(nsec) * 1e-9 )
@@ -10320,7 +10320,7 @@ os_timerfd_gettime_ns_impl(PyObject *module, int fd)
 #undef ONE_SECOND_IN_NS
 #undef EXTRACT_NSEC
 
-#endif  /* HAVE_TIMERFD_API */
+#endif  /* HAVE_TIMERFD_CREATE */
 
 #ifdef HAVE_GETSID
 /*[clinic input]
@@ -16985,8 +16985,8 @@ static const struct have_function {
     {"HAVE_EVENTFD", NULL},
 #endif
 
-#ifdef HAVE_TIMERFD_API
-    {"HAVE_TIMERFD_API", NULL},
+#ifdef HAVE_TIMERFD_CREATE
+    {"HAVE_TIMERFD_CREATE", NULL},
 #endif
 
 #ifdef HAVE_FACCESSAT

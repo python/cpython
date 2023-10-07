@@ -18824,7 +18824,7 @@ printf "%s\n" "$ac_cv_func_timerfd_create" >&6; }
   if test "x$ac_cv_func_timerfd_create" = xyes
 then :
 
-printf "%s\n" "#define HAVE_TIMERFD_API 1" >>confdefs.h
+printf "%s\n" "#define HAVE_TIMERFD_CREATE 1" >>confdefs.h
 
 fi
 
