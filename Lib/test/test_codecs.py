@@ -3567,9 +3567,10 @@ class Rot13UtilTest(unittest.TestCase):
     $ echo "Hello World" | python -m encodings.rot_13
     """
     def test_rot13_func(self):
+        from encodings.rot_13 import rot13
         infile = io.StringIO('Gb or, be abg gb or, gung vf gur dhrfgvba')
         outfile = io.StringIO()
-        encodings.rot_13.rot13(infile, outfile)
+        rot13(infile, outfile)
         outfile.seek(0)
         plain_text = outfile.read()
         self.assertEqual(
