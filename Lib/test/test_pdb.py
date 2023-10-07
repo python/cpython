@@ -2384,12 +2384,13 @@ class PdbTestCase(unittest.TestCase):
             self.addCleanup(os_helper.unlink, '.pdbrc')
         self.addCleanup(os_helper.unlink, filename)
 
+        homesave = None
         if remove_home:
             homesave = os.environ.pop('HOME', None)
         try:
             stdout, stderr = self._run_pdb([filename], commands, expected_returncode)
         finally:
-            if remove_home:
+            if homesave is not None:
                 os.environ['HOME'] = homesave
         return stdout, stderr
 
