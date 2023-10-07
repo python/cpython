@@ -345,6 +345,10 @@ Deprecated
   in :data:`~dis.hasarg` instead.
   (Contributed by Irit Katriel in :gh:`109319`.)
 
+* Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
+  It was not documented and only supported in the C implementation.
+  (Contributed by Serhiy Storchaka in :gh:`89902`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
