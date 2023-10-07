@@ -115,6 +115,12 @@ UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
 
+def reset_gettext():
+    gettext._localedirs.clear()
+    gettext._current_domain = 'messages'
+    gettext._translations.clear()
+
+
 class GettextBaseTest(unittest.TestCase):
     def setUp(self):
         self.addCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
@@ -132,7 +138,8 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(MMO_DATA))
         self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         self.env['LANGUAGE'] = 'xx'
-        gettext._translations.clear()
+        reset_gettext()
+        self.addCleanup(reset_gettext)
 
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
@@ -312,6 +319,10 @@ trggrkg zrffntr pngnybt yvoenel.''')
 class PluralFormsTestCase(GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
+        self.localedir = os.curdir
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', self.localedir)
+        gettext.textdomain('gettext')
         self.mofile = MOFILE
 
     def test_plural_forms1(self):
@@ -355,7 +366,7 @@ class PluralFormsTestCase(GettextBaseTest):
         x = t.npgettext('With context',
                         'There is %s file', 'There are %s files', 2)
         eq(x, 'Hay %s ficheros (context)')
-        x = gettext.pgettext('With context', 'There is %s file')
+        x = t.pgettext('With context', 'There is %s file')
         eq(x, 'Hay %s fichero (context)')
 
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
