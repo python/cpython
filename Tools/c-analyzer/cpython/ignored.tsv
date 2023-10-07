@@ -166,6 +166,9 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
 
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
+
 
 ##################################
 ## not significant
