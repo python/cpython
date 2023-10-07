@@ -12,7 +12,6 @@ from instructions import (
     InstructionOrCacheEffect,
     MacroInstruction,
     MacroParts,
-    OverriddenInstructionPlaceHolder,
     PseudoInstruction,
 )
 import parsing
@@ -26,7 +25,7 @@ RESERVED_WORDS = {
     "co_names": "Use FRAME_CO_NAMES.",
 }
 
-RE_PREDICTED = r"^\s*(?:GO_TO_INSTRUCTION\(|DEOPT_IF\(.*?,\s*)(\w+)\);\s*(?://.*)?$"
+RE_GO_TO_INSTR = r"^\s*GO_TO_INSTRUCTION\((\w+)\);\s*(?://.*)?$"
 
 
 class Analyzer:
@@ -66,7 +65,6 @@ class Analyzer:
         parsing.InstDef
         | parsing.Macro
         | parsing.Pseudo
-        | OverriddenInstructionPlaceHolder
     ]
     instrs: dict[str, Instruction]  # Includes ops
     macros: dict[str, parsing.Macro]
@@ -94,13 +92,8 @@ class Analyzer:
             self.parse_file(filename, instrs_idx)
 
         files = " + ".join(self.input_filenames)
-        n_instrs = 0
-        n_ops = 0
-        for instr in self.instrs.values():
-            if instr.kind == "op":
-                n_ops += 1
-            else:
-                n_instrs += 1
+        n_instrs = len(set(self.instrs) & set(self.macros))
+        n_ops = len(self.instrs) - n_instrs
         print(
             f"Read {n_instrs} instructions, {n_ops} ops, "
             f"{len(self.macros)} macros, {len(self.pseudos)} pseudos, "
@@ -145,6 +138,9 @@ class Analyzer:
 
             match thing:
                 case parsing.InstDef(name=name):
+                    macro: parsing.Macro | None = None
+                    if thing.kind == "inst" and not thing.override:
+                        macro = parsing.Macro(name, [parsing.OpName(name)])
                     if name in self.instrs:
                         if not thing.override:
                             raise psr.make_syntax_error(
@@ -152,9 +148,7 @@ class Analyzer:
                                 f"previous definition @ {self.instrs[name].inst.context}",
                                 thing_first_token,
                             )
-                        self.everything[
-                            instrs_idx[name]
-                        ] = OverriddenInstructionPlaceHolder(name=name)
+                        self.everything[instrs_idx[name]] = thing
                     if name not in self.instrs and thing.override:
                         raise psr.make_syntax_error(
                             f"Definition of '{name}' @ {thing.context} is supposed to be "
@@ -164,6 +158,9 @@ class Analyzer:
                     self.instrs[name] = Instruction(thing)
                     instrs_idx[name] = len(self.everything)
                     self.everything.append(thing)
+                    if macro is not None:
+                        self.macros[macro.name] = macro
+                        self.everything.append(macro)
                 case parsing.Macro(name):
                     self.macros[name] = thing
                     self.everything.append(thing)
@@ -183,23 +180,30 @@ class Analyzer:
         Raises SystemExit if there is an error.
         """
         self.analyze_macros_and_pseudos()
-        self.find_predictions()
         self.map_families()
+        self.mark_predictions()
         self.check_families()
 
-    def find_predictions(self) -> None:
-        """Find the instructions that need PREDICTED() labels."""
+    def mark_predictions(self) -> None:
+        """Mark the instructions that need PREDICTED() labels."""
+        # Start with family heads
+        for family in self.families.values():
+            if family.name in self.instrs:
+                self.instrs[family.name].predicted = True
+            if family.name in self.macro_instrs:
+                self.macro_instrs[family.name].predicted = True
+        # Also look for GO_TO_INSTRUCTION() calls
         for instr in self.instrs.values():
             targets: set[str] = set()
             for line in instr.block_text:
-                if m := re.match(RE_PREDICTED, line):
+                if m := re.match(RE_GO_TO_INSTR, line):
                     targets.add(m.group(1))
             for target in targets:
                 if target_instr := self.instrs.get(target):
                     target_instr.predicted = True
-                elif target_macro := self.macro_instrs.get(target):
+                if target_macro := self.macro_instrs.get(target):
                     target_macro.predicted = True
-                else:
+                if not target_instr and not target_macro:
                     self.error(
                         f"Unknown instruction {target!r} predicted in {instr.name!r}",
                         instr.inst,  # TODO: Use better location
@@ -221,11 +225,18 @@ class Analyzer:
                         )
                     else:
                         member_instr.family = family
-                elif not self.macro_instrs.get(member):
+                if member_mac := self.macro_instrs.get(member):
+                    assert member_mac.family is None, (member, member_mac.family.name)
+                    member_mac.family = family
+                if not member_instr and not member_mac:
                     self.error(
                         f"Unknown instruction {member!r} referenced in family {family.name!r}",
                         family,
                     )
+        # A sanctioned exception:
+        # This opcode is a member of the family but it doesn't pass the checks.
+        if mac := self.macro_instrs.get("BINARY_OP_INPLACE_ADD_UNICODE"):
+            mac.family = self.families.get("BINARY_OP")
 
     def check_families(self) -> None:
         """Check each family:
@@ -263,11 +274,7 @@ class Analyzer:
                     )
 
     def effect_counts(self, name: str) -> tuple[int, int, int]:
-        if instr := self.instrs.get(name):
-            cache = instr.cache_offset
-            input = len(instr.input_effects)
-            output = len(instr.output_effects)
-        elif mac := self.macro_instrs.get(name):
+        if mac := self.macro_instrs.get(name):
             cache = mac.cache_offset
             input, output = 0, 0
             for part in mac.parts:
@@ -365,8 +372,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "SAVE_IP":
-                        # SAVE_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SET_IP":
+                        # _SET_IP in a macro is a no-op in Tier 1
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
@@ -381,7 +388,8 @@ class Analyzer:
         # Make sure the targets have the same fmt
         fmts = list(set([t.instr_fmt for t in targets]))
         assert len(fmts) == 1
-        assert len(list(set([t.instr_flags.bitmap() for t in targets]))) == 1
+        ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
+        assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
         return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
 
     def analyze_instruction(
@@ -406,9 +414,68 @@ class Analyzer:
                 case parsing.OpName(name):
                     if name not in self.instrs:
                         self.error(f"Unknown instruction {name!r}", macro)
-                    components.append(self.instrs[name])
+                    else:
+                        components.append(self.instrs[name])
                 case parsing.CacheEffect():
                     components.append(uop)
                 case _:
                     assert_never(uop)
         return components
+
+    def report_non_viable_uops(self, jsonfile: str) -> None:
+        print("The following ops are not viable uops:")
+        skips = {
+            "CACHE",
+            "RESERVED",
+            "INTERPRETER_EXIT",
+            "JUMP_BACKWARD",
+            "LOAD_FAST_LOAD_FAST",
+            "LOAD_CONST_LOAD_FAST",
+            "STORE_FAST_STORE_FAST",
+            "_BINARY_OP_INPLACE_ADD_UNICODE",
+            "POP_JUMP_IF_TRUE",
+            "POP_JUMP_IF_FALSE",
+            "_ITER_JUMP_LIST",
+            "_ITER_JUMP_TUPLE",
+            "_ITER_JUMP_RANGE",
+        }
+        try:
+            # Secret feature: if bmraw.json exists, print and sort by execution count
+            counts = load_execution_counts(jsonfile)
+        except FileNotFoundError as err:
+            counts = {}
+        non_viable = [
+            instr
+            for instr in self.instrs.values()
+            if instr.name not in skips
+            and not instr.name.startswith("INSTRUMENTED_")
+            and not instr.is_viable_uop()
+        ]
+        non_viable.sort(key=lambda instr: (-counts.get(instr.name, 0), instr.name))
+        for instr in non_viable:
+            if instr.name in counts:
+                scount = f"{counts[instr.name]:,}"
+            else:
+                scount = ""
+            print(f"    {scount:>15} {instr.name:<35}", end="")
+            if instr.name in self.families:
+                print("      (unspecialized)", end="")
+            elif instr.family is not None:
+                print(f" (specialization of {instr.family.name})", end="")
+            print()
+
+
+def load_execution_counts(jsonfile: str) -> dict[str, int]:
+    import json
+
+    with open(jsonfile) as f:
+        jsondata = json.load(f)
+
+    # Look for keys like "opcode[LOAD_FAST].execution_count"
+    prefix = "opcode["
+    suffix = "].execution_count"
+    res: dict[str, int] = {}
+    for key, value in jsondata.items():
+        if key.startswith(prefix) and key.endswith(suffix):
+            res[key[len(prefix) : -len(suffix)]] = value
+    return res

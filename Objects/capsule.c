@@ -1,6 +1,10 @@
 /* Wrap void * pointers to be passed between C modules */
 
 #include "Python.h"
+#include "pycore_capsule.h"       // export _PyCapsule_SetTraverse()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+
 
 /* Internal structure of PyCapsule */
 typedef struct {
@@ -71,7 +75,7 @@ PyCapsule_New(void *pointer, const char *name, PyCapsule_Destructor destructor)
     capsule->destructor = destructor;
     capsule->traverse_func = NULL;
     capsule->clear_func = NULL;
-    // Only track the capsule if _PyCapsule_SetTraverse() is called
+    // Only track the object by the GC when _PyCapsule_SetTraverse() is called
 
     return (PyObject *)capsule;
 }
@@ -204,8 +208,14 @@ _PyCapsule_SetTraverse(PyObject *op, traverseproc traverse_func, inquiry clear_f
     }
     PyCapsule *capsule = (PyCapsule *)op;
 
-    if (!PyObject_GC_IsTracked(op)) {
-        PyObject_GC_Track(op);
+    if (traverse_func == NULL || clear_func == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "_PyCapsule_SetTraverse() called with NULL callback");
+        return -1;
+    }
+
+    if (!_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_TRACK(op);
     }
 
     capsule->traverse_func = traverse_func;
@@ -306,24 +316,22 @@ capsule_repr(PyObject *o)
 static int
 capsule_traverse(PyCapsule *capsule, visitproc visit, void *arg)
 {
-    if (capsule->traverse_func) {
-        return capsule->traverse_func((PyObject*)capsule, visit, arg);
-    }
-    else {
-        return 0;
-    }
+    // Capsule object is only tracked by the GC
+    // if _PyCapsule_SetTraverse() is called
+    assert(capsule->traverse_func != NULL);
+
+    return capsule->traverse_func((PyObject*)capsule, visit, arg);
 }
 
 
 static int
 capsule_clear(PyCapsule *capsule)
 {
-    if (capsule->clear_func) {
-        return capsule->clear_func((PyObject*)capsule);
-    }
-    else {
-        return 0;
-    }
+    // Capsule object is only tracked by the GC
+    // if _PyCapsule_SetTraverse() is called
+    assert(capsule->clear_func != NULL);
+
+    return capsule->clear_func((PyObject*)capsule);
 }
 
 

@@ -4,7 +4,8 @@
 #include "Python.h"
 #include "posixmodule.h"
 
-#include <grp.h>
+#include <grp.h>                  // getgrgid_r()
+#include <unistd.h>               // sysconf()
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]

@@ -35,6 +35,7 @@
 #include "complexobject.h"
 #include "mpdecimal.h"
 
+#include <ctype.h>                // isascii()
 #include <stdlib.h>
 
 #include "docstrings.h"
@@ -5876,6 +5877,7 @@ error:
     return NULL;
 }
 
+static int minalloc_is_set = 0;
 
 static int
 _decimal_exec(PyObject *m)
@@ -5898,7 +5900,12 @@ _decimal_exec(PyObject *m)
     mpd_reallocfunc = PyMem_Realloc;
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
-    mpd_setminalloc(_Py_DEC_MINALLOC);
+
+    /* Suppress the warning caused by multi-phase initialization */
+    if (!minalloc_is_set) {
+        mpd_setminalloc(_Py_DEC_MINALLOC);
+        minalloc_is_set = 1;
+    }
 
     decimal_state *state = get_module_state(m);
 

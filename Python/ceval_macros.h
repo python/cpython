@@ -64,7 +64,7 @@
     do { \
         frame->prev_instr = next_instr++; \
         OPCODE_EXE_INC(op); \
-        if (_py_stats) _py_stats->opcode_stats[lastopcode].pair_count[op]++; \
+        if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
@@ -116,7 +116,7 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             goto error; \
         } \
@@ -311,9 +311,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
-#define KWNAMES_LEN() \
-    (kwnames == NULL ? 0 : ((int)PyTuple_GET_SIZE(kwnames)))
-
 #define DECREF_INPUTS_AND_REUSE_FLOAT(left, right, dval, result) \
 do { \
     if (Py_REFCNT(left) == 1) { \
@@ -356,8 +353,6 @@ static const convertion_func_ptr CONVERSION_FUNCTIONS[4] = {
     [FVC_ASCII] = PyObject_ASCII
 };
 
-#define ASSERT_KWNAMES_IS_NULL() assert(kwnames == NULL)
-
 // GH-89279: Force inlining by using a macro.
 #if defined(_MSC_VER) && SIZEOF_INT == 4
 #define _Py_atomic_load_relaxed_int32(ATOMIC_VAL) (assert(sizeof((ATOMIC_VAL)->_value) == 4), *((volatile int*)&((ATOMIC_VAL)->_value)))
@@ -373,3 +368,41 @@ static inline int _Py_EnterRecursivePy(PyThreadState *tstate) {
 static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
     tstate->py_recursion_remaining++;
 }
+
+/* Marker to specify tier 1 only instructions */
+#define TIER_ONE_ONLY
+
+/* Implementation of "macros" that modify the instruction pointer,
+ * stack pointer, or frame pointer.
+ * These need to treated differently by tier 1 and 2. */
+
+#if TIER_ONE
+
+#define LOAD_IP() \
+do { next_instr = frame->prev_instr+1; } while (0)
+
+#define STORE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
+
+#define LOAD_SP() \
+stack_pointer = _PyFrame_GetStackPointer(frame);
+
+#endif
+
+
+#if TIER_TWO
+
+#define LOAD_IP() \
+do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+
+#define STORE_SP() \
+_PyFrame_SetStackPointer(frame, stack_pointer)
+
+#define LOAD_SP() \
+stack_pointer = _PyFrame_GetStackPointer(frame);
+
+#endif
+
+
+
+

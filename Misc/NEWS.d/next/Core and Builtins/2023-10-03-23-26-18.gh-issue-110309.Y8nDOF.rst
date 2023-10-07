@@ -1,0 +1,1 @@
+Remove unnecessary empty constant nodes in the ast of f-string specs.

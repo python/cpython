@@ -1,0 +1,2 @@
+Add new variables to :py:meth:`sysconfig.get_config_vars` on Windows:
+``LIBRARY``, ``LDLIBRARY``, ``LIBDIR``, ``SOABI``, and ``Py_NOGIL``.
