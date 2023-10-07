@@ -1593,8 +1593,11 @@ def _shutdown():
         # The main thread isn't finished yet, so its thread state lock can't
         # have been released.
         assert tlock is not None
-        assert tlock.locked()
-        tlock.release()
+        if tlock.locked():
+            # It should have been released already by
+            # _PyInterpreterState_SetNotRunningMain(), but there may be
+            # embedders that aren't calling that yet.
+            tlock.release()
         _main_thread._stop()
     else:
         # bpo-1596321: _shutdown() must be called in the main thread.

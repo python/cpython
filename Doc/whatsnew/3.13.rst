@@ -97,6 +97,9 @@ Other Language Changes
   if supported.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
 
 New Modules
 ===========
@@ -176,6 +179,14 @@ os
 * Add :func:`os.process_cpu_count` function to get the number of logical CPUs
   usable by the calling thread of the current process.
   (Contributed by Victor Stinner in :gh:`109649`.)
+
+* Add a low level interface for Linux's timer notification file descriptors
+  via :func:`os.timerfd_create`,
+  :func:`os.timerfd_settime`, :func:`os.timerfd_settime_ns`,
+  :func:`os.timerfd_gettime`, and :func:`os.timerfd_gettime_ns`,
+  :const:`os.TFD_NONBLOCK`, :const:`os.TFD_CLOEXEC`,
+  :const:`os.TFD_TIMER_ABSTIME`, and :const:`os.TFD_TIMER_CANCEL_ON_SET`
+  (Contributed by Masaru Tsuchiyama in :gh:`108277`.)
 
 * :func:`os.cpu_count` and :func:`os.process_cpu_count` can be overridden through
   the new environment variable :envvar:`PYTHON_CPU_COUNT` or the new command-line option
@@ -1004,8 +1015,21 @@ New Features
 * Add :c:func:`PyObject_VisitManagedDict` and
   :c:func:`PyObject_ClearManagedDict` functions which must be called by the
   traverse and clear functions of a type using
-  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
+
+* Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
+  :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
+  if it is NULL. The caller is responsible to check if the result is NULL.
+  Previously, the function was private and known as
+  ``_PyThreadState_UncheckedGet()``.
+  (Contributed by Victor Stinner in :gh:`108867`.)
+
+* Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
+  but pass event arguments as a Python :class:`tuple` object.
+  (Contributed by Victor Stinner in :gh:`85283`.)
 
 Porting to Python 3.13
 ----------------------

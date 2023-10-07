@@ -1,8 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_specialization
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -21,7 +19,6 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -348,7 +345,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    @requires_specialization
+    @support.requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -1717,6 +1714,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
+
+    def test_audit_tuple(self):
+        self.run_embedded_interpreter("test_audit_tuple")
 
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")

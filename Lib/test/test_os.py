@@ -2566,30 +2566,34 @@ class Win32KillTests(unittest.TestCase):
         tagname = "test_os_%s" % uuid.uuid1()
         m = mmap.mmap(-1, 1, tagname)
         m[0] = 0
+
         # Run a script which has console control handling enabled.
-        proc = subprocess.Popen([sys.executable,
-                   os.path.join(os.path.dirname(__file__),
-                                "win_console_handler.py"), tagname],
-                   creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
-        # Let the interpreter startup before we send signals. See #3137.
-        count, max = 0, 100
-        while count < max and proc.poll() is None:
-            if m[0] == 1:
-                break
-            time.sleep(0.1)
-            count += 1
-        else:
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("Subprocess didn't finish initialization")
-        os.kill(proc.pid, event)
-        # proc.send_signal(event) could also be done here.
-        # Allow time for the signal to be passed and the process to exit.
-        time.sleep(0.5)
-        if not proc.poll():
-            # Forcefully kill the process if we weren't able to signal it.
-            os.kill(proc.pid, signal.SIGINT)
-            self.fail("subprocess did not stop on {}".format(name))
+        script = os.path.join(os.path.dirname(__file__),
+                              "win_console_handler.py")
+        cmd = [sys.executable, script, tagname]
+        proc = subprocess.Popen(cmd,
+                                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+
+        with proc:
+            # Let the interpreter startup before we send signals. See #3137.
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if proc.poll() is None:
+                    break
+            else:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("Subprocess didn't finish initialization")
+
+            os.kill(proc.pid, event)
+
+            try:
+                # proc.send_signal(event) could also be done here.
+                # Allow time for the signal to be passed and the process to exit.
+                proc.wait(timeout=support.SHORT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                # Forcefully kill the process if we weren't able to signal it.
+                proc.kill()
+                self.fail("subprocess did not stop on {}".format(name))
 
     @unittest.skip("subprocesses aren't inheriting Ctrl+C property")
     @support.requires_subprocess()
@@ -3922,6 +3926,356 @@ class EventfdTests(unittest.TestCase):
         self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
         os.eventfd_read(fd)
 
+@unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@support.requires_linux_version(2, 6, 30)
+class TimerfdTests(unittest.TestCase):
+    def timerfd_create(self, *args, **kwargs):
+        fd = os.timerfd_create(*args, **kwargs)
+        self.assertGreaterEqual(fd, 0)
+        self.assertFalse(os.get_inheritable(fd))
+        self.addCleanup(os.close, fd)
+        return fd
+
+    def test_timerfd_initval(self):
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        initial_expiration = 0.25
+        interval = 0.125
+
+        # 1st call
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        self.assertAlmostEqual(interval2, 0.0, places=3)
+        self.assertAlmostEqual(next_expiration, 0.0, places=3)
+
+        # 2nd call
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+        # timerfd_gettime
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+    def test_timerfd_non_blocking(self):
+        size = 8  # read 8 bytes
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        # 0.1 second later
+        initial_expiration = 0.1
+        _, _ = os.timerfd_settime(fd, initial=initial_expiration, interval=0)
+
+        # read() raises OSError with errno is EAGAIN for non-blocking timer.
+        with self.assertRaises(OSError) as ctx:
+            _ = os.read(fd, size)
+        self.assertEqual(ctx.exception.errno, errno.EAGAIN)
+
+        # Wait more than 0.1 seconds
+        time.sleep(initial_expiration + 0.1)
+
+        # confirm if timerfd is readable and read() returns 1 as bytes.
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, 1)
+
+    def test_timerfd_negative(self):
+        one_sec_in_nsec = 10**9
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # Any of 'initial' and 'interval' is negative value.
+        for initial, interval in ( (-1, 0), (1, -1), (-1, -1),  (-0.1, 0), (1, -0.1), (-0.1, -0.1)):
+            for flags in (0, os.TFD_TIMER_ABSTIME, os.TFD_TIMER_ABSTIME|os.TFD_TIMER_CANCEL_ON_SET):
+                with self.subTest(flags=flags, initial=initial, interval=interval):
+                    with self.assertRaises(OSError) as context:
+                        _, _ = os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
+                    with self.assertRaises(OSError) as context:
+                        initial_ns = int( one_sec_in_nsec * initial )
+                        interval_ns = int( one_sec_in_nsec * interval )
+                        _, _ = os.timerfd_settime_ns(fd, flags=flags, initial=initial_ns, interval=interval_ns)
+                    self.assertEqual(context.exception.errno, errno.EINVAL)
+
+    def test_timerfd_interval(self):
+        size = 8  # read 8 bytes
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1 second
+        initial_expiration = 1
+        # 0.5 second
+        interval = 0.5
+
+        _, _ = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+
+        # timerfd_gettime
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
+
+        count = 3
+        t = time.perf_counter()
+        for _ in range(count):
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, count)
+
+    def test_timerfd_TFD_TIMER_ABSTIME(self):
+        size = 8  # read 8 bytes
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        now = time.clock_gettime(time.CLOCK_REALTIME)
+
+        # 1 second later from now.
+        offset = 1
+        initial_expiration = now + offset
+        # not interval timer
+        interval = 0
+
+        _, _ = os.timerfd_settime(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration, interval=interval)
+
+        # timerfd_gettime
+        # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
+        next_expiration, interval2 = os.timerfd_gettime(fd)
+        self.assertAlmostEqual(interval2, interval, places=3)
+        self.assertAlmostEqual(next_expiration, offset, places=3)
+
+        t = time.perf_counter()
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        t = time.perf_counter() - t
+        self.assertEqual(count_signaled, 1)
+
+        self.assertGreater(t, offset)
+
+    def test_timerfd_select(self):
+        size = 8  # read 8 bytes
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [], []))
+
+        # 0.25 second
+        initial_expiration = 0.25
+        # every 0.125 second
+        interval = 0.125
+
+        _, _ = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+
+        count = 3
+        t = time.perf_counter()
+        for _ in range(count):
+            rfd, wfd, xfd = select.select([fd], [fd], [fd], initial_expiration + interval)
+            self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time)
+
+    def test_timerfd_epoll(self):
+        size = 8  # read 8 bytes
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        ep = select.epoll()
+        ep.register(fd, select.EPOLLIN)
+        self.addCleanup(ep.close)
+
+        # 0.25 second
+        initial_expiration = 0.25
+        # every 0.125 second
+        interval = 0.125
+
+        _, _ = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+
+        count = 3
+        t = time.perf_counter()
+        for i in range(count):
+            timeout_margin = interval
+            if i == 0:
+                timeout = initial_expiration + interval + timeout_margin
+            else:
+                timeout = interval + timeout_margin
+            # epoll timeout is in seconds.
+            events = ep.poll(timeout)
+            self.assertEqual(events, [(fd, select.EPOLLIN)])
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+
+        t = time.perf_counter() - t
+
+        total_time = initial_expiration + interval * (count - 1)
+        self.assertGreater(t, total_time)
+        ep.unregister(fd)
+
+    def test_timerfd_ns_initval(self):
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1st call
+        initial_expiration_ns = 0
+        interval_ns = one_sec_in_nsec // 1000
+        next_expiration_ns, interval_ns2  = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+        self.assertEqual(interval_ns2, 0)
+        self.assertEqual(next_expiration_ns, 0)
+
+        # 2nd call
+        next_expiration_ns, interval_ns2 = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertEqual(next_expiration_ns, initial_expiration_ns)
+
+        # timerfd_gettime
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
+
+        self.assertAlmostEqual(next_expiration_ns, initial_expiration_ns, delta=limit_error)
+
+    def test_timerfd_ns_interval(self):
+        size = 8  # read 8 bytes
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        # 1 second
+        initial_expiration_ns = one_sec_in_nsec
+        # every 0.5 second
+        interval_ns = one_sec_in_nsec // 2
+
+        _, _ = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+
+        # timerfd_gettime
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertEqual(interval_ns2, interval_ns)
+        self.assertLessEqual(next_expiration_ns, initial_expiration_ns)
+
+        count = 3
+        t = time.perf_counter_ns()
+        for _ in range(count):
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+        t = time.perf_counter_ns() - t
+
+        total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
+        self.assertGreater(t, total_time_ns)
+
+        # wait 3.5 time of interval
+        time.sleep( (count+0.5) * interval_ns / one_sec_in_nsec)
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        self.assertEqual(count_signaled, count)
+
+
+    def test_timerfd_ns_TFD_TIMER_ABSTIME(self):
+        size = 8  # read 8 bytes
+        one_sec_in_nsec = 10**9
+        limit_error = one_sec_in_nsec // 10**3
+        fd = self.timerfd_create(time.CLOCK_REALTIME)
+
+        now_ns = time.clock_gettime_ns(time.CLOCK_REALTIME)
+
+        # 1 second later from now.
+        offset_ns = one_sec_in_nsec
+        initial_expiration_ns = now_ns + offset_ns
+        # not interval timer
+        interval_ns = 0
+
+        _, _ = os.timerfd_settime_ns(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration_ns, interval=interval_ns)
+
+        # timerfd_gettime
+        # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
+        next_expiration_ns, interval_ns2 = os.timerfd_gettime_ns(fd)
+        self.assertLess(abs(interval_ns2 - interval_ns),  limit_error)
+        self.assertLess(abs(next_expiration_ns - offset_ns),  limit_error)
+
+        t = time.perf_counter_ns()
+        n = os.read(fd, size)
+        count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+        t = time.perf_counter_ns() - t
+        self.assertEqual(count_signaled, 1)
+
+        self.assertGreater(t, offset_ns)
+
+    def test_timerfd_ns_select(self):
+        size = 8  # read 8 bytes
+        one_sec_in_nsec = 10**9
+
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        rfd, wfd, xfd = select.select([fd], [fd], [fd], 0)
+        self.assertEqual((rfd, wfd, xfd), ([], [], []))
+
+        # 0.25 second
+        initial_expiration_ns = one_sec_in_nsec // 4
+        # every 0.125 second
+        interval_ns = one_sec_in_nsec // 8
+
+        _, _ = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+
+        count = 3
+        t = time.perf_counter_ns()
+        for _ in range(count):
+            rfd, wfd, xfd = select.select([fd], [fd], [fd], (initial_expiration_ns + interval_ns) / 1e9 )
+            self.assertEqual((rfd, wfd, xfd), ([fd], [], []))
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+        t = time.perf_counter_ns() - t
+
+        total_time_ns = initial_expiration_ns + interval_ns * (count - 1)
+        self.assertGreater(t, total_time_ns)
+
+    def test_timerfd_ns_epoll(self):
+        size = 8  # read 8 bytes
+        one_sec_in_nsec = 10**9
+        fd = self.timerfd_create(time.CLOCK_REALTIME, flags=os.TFD_NONBLOCK)
+
+        ep = select.epoll()
+        ep.register(fd, select.EPOLLIN)
+        self.addCleanup(ep.close)
+
+        # 0.25 second
+        initial_expiration_ns = one_sec_in_nsec // 4
+        # every 0.125 second
+        interval_ns = one_sec_in_nsec // 8
+
+        _, _ = os.timerfd_settime_ns(fd, initial=initial_expiration_ns, interval=interval_ns)
+
+        count = 3
+        t = time.perf_counter_ns()
+        for i in range(count):
+            timeout_margin_ns = interval_ns
+            if i == 0:
+                timeout_ns = initial_expiration_ns + interval_ns + timeout_margin_ns
+            else:
+                timeout_ns = interval_ns + timeout_margin_ns
+
+            # epoll timeout is in seconds.
+            events = ep.poll(timeout_ns / one_sec_in_nsec)
+            self.assertEqual(events, [(fd, select.EPOLLIN)])
+            n = os.read(fd, size)
+            count_signaled = int.from_bytes(n, byteorder=sys.byteorder)
+            self.assertEqual(count_signaled, 1)
+
+        t = time.perf_counter_ns() - t
+
+        total_time = initial_expiration_ns + interval_ns * (count - 1)
+        self.assertGreater(t, total_time)
+        ep.unregister(fd)
 
 class OSErrorTests(unittest.TestCase):
     def setUp(self):

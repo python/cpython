@@ -1279,11 +1279,16 @@ static int _test_audit(Py_ssize_t setValue)
         printf("Set event failed");
         return 4;
     }
+    if (PyErr_Occurred()) {
+        printf("Exception raised");
+        return 5;
+    }
 
     if (sawSet != 42) {
         printf("Failed to see *userData change\n");
-        return 5;
+        return 6;
     }
+
     return 0;
 }
 
@@ -1295,6 +1300,57 @@ static int test_audit(void)
         return 0x1000 | _audit_hook_clear_count;
     }
     return result;
+}
+
+static int test_audit_tuple(void)
+{
+#define ASSERT(TEST, EXITCODE) \
+    if (!(TEST)) { \
+        printf("ERROR test failed at %s:%i\n", __FILE__, __LINE__); \
+        return (EXITCODE); \
+    }
+
+    Py_ssize_t sawSet = 0;
+
+    // we need at least one hook, otherwise code checking for
+    // PySys_AuditTuple() is skipped.
+    PySys_AddAuditHook(_audit_hook, &sawSet);
+    _testembed_Py_InitializeFromConfig();
+
+    ASSERT(!PyErr_Occurred(), 0);
+
+    // pass Python tuple object
+    PyObject *tuple = Py_BuildValue("(i)", 444);
+    if (tuple == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", tuple) == 0, 10);
+    ASSERT(!PyErr_Occurred(), 11);
+    ASSERT(sawSet == 444, 12);
+    Py_DECREF(tuple);
+
+    // pass Python int object
+    PyObject *int_arg = PyLong_FromLong(555);
+    if (int_arg == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", int_arg) == -1, 20);
+    ASSERT(PyErr_ExceptionMatches(PyExc_TypeError), 21);
+    PyErr_Clear();
+    Py_DECREF(int_arg);
+
+    // NULL is accepted and means "no arguments"
+    ASSERT(PySys_AuditTuple("_testembed.test_audit_tuple", NULL) == 0, 30);
+    ASSERT(!PyErr_Occurred(), 31);
+
+    Py_Finalize();
+    return 0;
+
+error:
+    PyErr_Print();
+    return 1;
+
+#undef ASSERT
 }
 
 static volatile int _audit_subinterpreter_interpreter_count = 0;
@@ -2141,6 +2197,7 @@ static struct TestCase TestCases[] = {
     // Audit
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
+    {"test_audit_tuple", test_audit_tuple},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
     {"test_audit_run_command", test_audit_run_command},
     {"test_audit_run_file", test_audit_run_file},

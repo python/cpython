@@ -166,11 +166,11 @@ The following options are accepted:
 
 .. program:: tokenize
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    show this help message and exit
 
-.. cmdoption:: -e, --exact
+.. option:: -e, --exact
 
    display token names using the exact type
 
