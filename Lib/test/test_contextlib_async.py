@@ -216,6 +216,9 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         await ctx.__aenter__()
         with self.assertRaises(RuntimeError):
             await ctx.__aexit__(TypeError, TypeError('foo'), None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.ag_suspended)
 
     @_async_test
     async def test_contextmanager_trap_no_yield(self):
@@ -237,6 +240,9 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         await ctx.__aenter__()
         with self.assertRaises(RuntimeError):
             await ctx.__aexit__(None, None, None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.ag_suspended)
 
     @_async_test
     async def test_contextmanager_non_normalised(self):
