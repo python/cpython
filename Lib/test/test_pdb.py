@@ -2626,6 +2626,7 @@ def bœr():
         """)
 
         pdbrc = textwrap.dedent("""
+            # Comments should be fine
             n
             p f"{a+8=}"
         """)
