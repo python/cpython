@@ -38,6 +38,10 @@ PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 struct _signals_runtime_state {
     struct {
+        /* To access tripped / func with "relaxed" memory order
+         * _signals_runtime_state.is_tripped should be accessed by
+         * "sequentially consistent" order as the memory barrier.
+         */
         int tripped;
         /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
          * (even though it would probably be otherwise, anyway).
@@ -62,7 +66,9 @@ struct _signals_runtime_state {
 #endif
     } wakeup;
 
-    /* Speed up sigcheck() when none tripped */
+    /* Speed up sigcheck() when none tripped and
+     * act as a memory barrier("sequentially consistent" order)
+     */
     int is_tripped;
 
     /* These objects necessarily belong to the main interpreter. */
