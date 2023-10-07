@@ -180,6 +180,14 @@ os
   usable by the calling thread of the current process.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
+* Add a low level interface for Linux's timer notification file descriptors
+  via :func:`os.timerfd_create`,
+  :func:`os.timerfd_settime`, :func:`os.timerfd_settime_ns`,
+  :func:`os.timerfd_gettime`, and :func:`os.timerfd_gettime_ns`,
+  :const:`os.TFD_NONBLOCK`, :const:`os.TFD_CLOEXEC`,
+  :const:`os.TFD_TIMER_ABSTIME`, and :const:`os.TFD_TIMER_CANCEL_ON_SET`
+  (Contributed by Masaru Tsuchiyama in :gh:`108277`.)
+
 pathlib
 -------
 
