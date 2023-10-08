@@ -121,7 +121,7 @@ results to a file by specifying a filename to the :func:`run` function::
 The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
-You can also do inline profiling with :class:`Profile`::
+You can also do inline profiling with :class:`cProfile.Profile`::
 
    import cProfile
    import re
