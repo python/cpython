@@ -149,8 +149,9 @@ the output by. This only applies when ``-o`` is not supplied.
    .. versionadded:: 3.8
       Added the ``-m`` option to :mod:`profile`.
 
-Note that if the process is terminated by ``SIGTERM`` during profiling, no
-results will be generated/printed.
+Note that if the process is terminated abruptly (for example, by
+:data:`~signal.SIGTERM` or :data:`~signal.SIGKILL`) during profiling,
+no results will be generated/printed.
 
 The :mod:`pstats` module's :class:`~pstats.Stats` class has a variety of methods
 for manipulating and printing the data saved into a profile results file::
