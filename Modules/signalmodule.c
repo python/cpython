@@ -266,7 +266,7 @@ report_wakeup_send_error(void* data)
 static void
 trip_signal(int sig_num)
 {
-    _Py_atomic_store_int_relaxed(&Handlers[sig_num].tripped, 1);
+    _Py_atomic_store_int(&Handlers[sig_num].tripped, 1);
 
     /* Set is_tripped after setting .tripped, as it gets
        cleared in PyErr_CheckSignals() before .tripped. */
