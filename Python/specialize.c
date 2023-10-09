@@ -891,7 +891,7 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
         }
         case PROPERTY:
         {
-            _PyLoadMethodCache *lm_cache = (_PyLoadMethodCache *)(instr + 1);
+            _PyLoadPropertyCache *lm_cache = (_PyLoadPropertyCache *)(instr + 1);
             assert(Py_TYPE(descr) == &PyProperty_Type);
             PyObject *fget = ((_PyPropertyObject *)descr)->prop_get;
             if (fget == NULL) {
@@ -917,11 +917,10 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OTHER);
                 goto fail;
             }
-            write_u32(lm_cache->keys_version, version);
             assert(type->tp_version_tag != 0);
             write_u32(lm_cache->type_version, type->tp_version_tag);
-            /* borrowed */
-            write_obj(lm_cache->descr, fget);
+            write_obj(lm_cache->func, fget);  // borrowed
+            write_u32(lm_cache->func_version, version);
             instr->op.code = LOAD_ATTR_PROPERTY;
             goto success;
         }

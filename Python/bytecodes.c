@@ -2021,7 +2021,7 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_CLASS;
 
-        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, func_version/2, fget/4, owner -- unused, unused if (0))) {
+        inst(LOAD_ATTR_PROPERTY, (unused/1, type_version/2, fget/4, func_version/2, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame);
 

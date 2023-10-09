@@ -2927,8 +2927,8 @@
             PyObject *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = read_u32(&this_instr[2].cache);
-            uint32_t func_version = read_u32(&this_instr[4].cache);
-            PyObject *fget = read_obj(&this_instr[6].cache);
+            PyObject *fget = read_obj(&this_instr[4].cache);
+            uint32_t func_version = read_u32(&this_instr[8].cache);
             assert((oparg & 1) == 0);
             DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
 
