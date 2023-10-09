@@ -388,14 +388,14 @@ class Stats:
         return {
             "Optimization attempts": (attempts, None),
             "Traces created": (created, attempts),
+            "Trace stack overflow": (trace_stack_overflow, attempts),
+            "Trace stack underflow": (trace_stack_underflow, attempts),
+            "Trace too long": (trace_too_long, attempts),
+            "Trace too short": (trace_too_short, attempts),
+            "Inner loop found": (inner_loop, attempts),
+            "Recursive call": (recursive_call, attempts),
             "Traces executed": (executed, None),
             "Uops executed": (uops, executed),
-            "Trace stack overflow": (trace_stack_overflow, created),
-            "Trace stack underflow": (trace_stack_underflow, created),
-            "Trace too long": (trace_too_long, created),
-            "Trace too short": (trace_too_short, created),
-            "Inner loop found": (inner_loop, created),
-            "Recursive call": (recursive_call, created),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
