@@ -21,6 +21,14 @@ channels = import_helper.import_module('_xxinterpchannels')
 ##################################
 # helpers
 
+def recv_wait(cid):
+    while True:
+        try:
+            return channels.recv({cid})
+            break
+        except channels.ChannelEmptyError:
+            time.sleep(0.1)
+
 #@contextmanager
 #def run_threaded(id, source, **shared):
 #    def run():
@@ -595,18 +603,13 @@ class ChannelTests(TestBase):
         cid = channels.create()
 
         def f():
-            while True:
-                try:
-                    obj = channels.recv(cid)
-                    break
-                except channels.ChannelEmptyError:
-                    time.sleep(0.1)
+            obj = recv_wait(cid)
             channels.send(cid, obj)
         t = threading.Thread(target=f)
         t.start()
 
         channels.send(cid, b'spam')
-        obj = channels.recv(cid)
+        obj = recv_wait(cid)
         t.join()
 
         self.assertEqual(obj, b'spam')
@@ -634,7 +637,7 @@ class ChannelTests(TestBase):
         t.start()
 
         channels.send(cid, b'spam')
-        obj = channels.recv(cid)
+        obj = recv_wait(cid)
         t.join()
 
         self.assertEqual(obj, b'eggs')
