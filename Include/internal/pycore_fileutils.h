@@ -5,10 +5,11 @@ extern "C" {
 #endif
 
 #ifndef Py_BUILD_CORE
-#  error "Py_BUILD_CORE must be defined to include this header"
+#  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <locale.h>   /* struct lconv */
+#include <locale.h>               // struct lconv
+
 
 /* A routine to check if a file descriptor can be select()-ed. */
 #ifdef _MSC_VER
@@ -34,8 +35,10 @@ typedef enum {
     _Py_ERROR_OTHER
 } _Py_error_handler;
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     const char *arg,
     wchar_t **wstr,
@@ -44,6 +47,7 @@ PyAPI_FUNC(int) _Py_DecodeLocaleEx(
     int current_locale,
     _Py_error_handler errors);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _Py_EncodeLocaleEx(
     const wchar_t *text,
     char **str,
@@ -97,22 +101,27 @@ struct _Py_stat_struct {
 #  define _Py_stat_struct stat
 #endif
 
+// Export for 'mmap' shared extension
 PyAPI_FUNC(int) _Py_fstat(
     int fd,
     struct _Py_stat_struct *status);
 
+// Export for 'mmap' shared extension
 PyAPI_FUNC(int) _Py_fstat_noraise(
     int fd,
     struct _Py_stat_struct *status);
 
+// Export for '_tkinter' shared extension
 PyAPI_FUNC(int) _Py_stat(
     PyObject *path,
     struct stat *status);
 
-extern int _Py_open(
+// Export for 'select' shared extension (Solaris newDevPollObject())
+PyAPI_FUNC(int) _Py_open(
     const char *pathname,
     int flags);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(int) _Py_open_noraise(
     const char *pathname,
     int flags);
@@ -126,11 +135,13 @@ extern Py_ssize_t _Py_read(
     void *buf,
     size_t count);
 
-extern Py_ssize_t _Py_write(
+// Export for 'select' shared extension (Solaris devpoll_flush())
+PyAPI_FUNC(Py_ssize_t) _Py_write(
     int fd,
     const void *buf,
     size_t count);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
     int fd,
     const void *buf,
@@ -162,12 +173,15 @@ extern wchar_t* _Py_wgetcwd(
 
 extern int _Py_get_inheritable(int fd);
 
+// Export for '_socket' shared extension
 PyAPI_FUNC(int) _Py_set_inheritable(int fd, int inheritable,
                                     int *atomic_flag_works);
 
+// Export for '_posixsubprocess' shared extension
 PyAPI_FUNC(int) _Py_set_inheritable_async_safe(int fd, int inheritable,
                                                int *atomic_flag_works);
 
+// Export for '_socket' shared extension
 PyAPI_FUNC(int) _Py_dup(int fd);
 
 extern int _Py_get_blocking(int fd);
@@ -177,6 +191,7 @@ extern int _Py_set_blocking(int fd, int blocking);
 #ifdef MS_WINDOWS
 extern void* _Py_get_osfhandle_noraise(int fd);
 
+// Export for '_testconsole' shared extension
 PyAPI_FUNC(void*) _Py_get_osfhandle(int fd);
 
 extern int _Py_open_osfhandle_noraise(void *handle, int flags);
@@ -231,6 +246,7 @@ extern int _Py_GetLocaleconvNumeric(
     PyObject **decimal_point,
     PyObject **thousands_sep);
 
+// Export for '_posixsubprocess' (on macOS)
 PyAPI_FUNC(void) _Py_closerange(int first, int last);
 
 extern wchar_t* _Py_GetLocaleEncoding(void);
@@ -259,13 +275,17 @@ extern int _Py_add_relfile(wchar_t *dirname,
                            const wchar_t *relfile,
                            size_t bufsize);
 extern size_t _Py_find_basename(const wchar_t *filename);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(wchar_t*) _Py_normpath(wchar_t *path, Py_ssize_t size);
+
+extern wchar_t *_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *length);
 
 // The Windows Games API family does not provide these functions
 // so provide our own implementations. Remove them in case they get added
 // to the Games API family
 #if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
-#include <winerror.h>
+#include <winerror.h>             // HRESULT
 
 extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootEnd);
 #endif /* defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP) */
@@ -291,6 +311,14 @@ extern HRESULT PathCchSkipRoot(const wchar_t *pszPath, const wchar_t **ppszRootE
 #  define _Py_BEGIN_SUPPRESS_IPH
 #  define _Py_END_SUPPRESS_IPH
 #endif /* _MSC_VER >= 1900 */
+
+// Export for 'select' shared extension (Argument Clinic code)
+PyAPI_FUNC(int) _PyLong_FileDescriptor_Converter(PyObject *, void *);
+
+// Export for test_peg_generator
+PyAPI_FUNC(char*) _Py_UniversalNewlineFgetsWithSize(char *, int, FILE*, PyObject *, size_t*);
+
+extern int _PyFile_Flush(PyObject *);
 
 #ifdef __cplusplus
 }

@@ -17,6 +17,9 @@
 #include "pycore_time.h"          // _PyTime_t
 
 #include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -1294,8 +1297,8 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
         self->epfd = fd;
     }
     if (self->epfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -1973,8 +1976,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         self->kqfd = fd;
     }
     if (self->kqfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 

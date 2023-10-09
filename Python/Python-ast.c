@@ -1099,7 +1099,7 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
         return 1;
     }
 
-    i = _PyLong_AsInt(obj);
+    i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
@@ -12659,6 +12659,9 @@ astmodule_exec(PyObject *m)
     if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
         return -1;
     }
+    if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {
+        return -1;
+    }
     if (PyModule_AddObjectRef(m, "mod", state->mod_type) < 0) {
         return -1;
     }
@@ -13078,8 +13081,8 @@ PyObject* PyAST_mod2obj(mod_ty t)
     if (!tstate) {
         return 0;
     }
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    state->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
 

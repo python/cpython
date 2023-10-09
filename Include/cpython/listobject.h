@@ -21,9 +21,6 @@ typedef struct {
     Py_ssize_t allocated;
 } PyListObject;
 
-PyAPI_FUNC(PyObject *) _PyList_Extend(PyListObject *, PyObject *);
-PyAPI_FUNC(void) _PyList_DebugMallocStats(FILE *out);
-
 /* Cast argument to PyListObject* type. */
 #define _PyList_CAST(op) \
     (assert(PyList_Check(op)), _Py_CAST(PyListObject*, (op)))

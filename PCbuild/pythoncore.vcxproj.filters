@@ -144,6 +144,9 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pyatomic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pybuffer.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -297,9 +300,6 @@
     <ClInclude Include="..\PC\pyconfig.h">
       <Filter>PC</Filter>
     </ClInclude>
-    <ClInclude Include="..\Python\importdl.h">
-      <Filter>Python</Filter>
-    </ClInclude>
     <ClInclude Include="..\Python\stdlib_module_names.h">
       <Filter>Python</Filter>
     </ClInclude>
@@ -423,6 +423,18 @@
     <ClInclude Include="..\Include\cpython\pyarena.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyatomic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyatomic_gcc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyatomic_msc.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyatomic_std.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pyctype.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -480,6 +492,9 @@
     <ClInclude Include="..\Include\cpython\pystate.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pystats.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -513,9 +528,6 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\internal\pycore_atomic_funcs.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_bitutils.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -526,6 +538,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_call.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_capsule.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_ceval.h">
@@ -609,7 +624,13 @@
     <ClInclude Include="..\Include\internal\pycore_hashtable.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_identifier.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_import.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_importdl.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
@@ -622,6 +643,12 @@
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_list.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_llist.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_lock.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_long.h">
@@ -648,6 +675,12 @@
     <ClInclude Include="..\Include\internal\pycore_obmalloc_init.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_optimizer.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_parking_lot.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pathconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -672,6 +705,12 @@
     <ClInclude Include="..\Include\internal\pycore_pystate.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pystats.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_pythonrun.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_pythread.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -685,6 +724,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_semaphore.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_setobject.h">
@@ -730,6 +772,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_unionobject.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
@@ -912,6 +957,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\symtablemodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sysconfig.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_threadmodule.c">
@@ -1208,6 +1256,9 @@
     <ClCompile Include="..\Python\legacy_tracing.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\lock.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\marshal.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1221,6 +1272,12 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\optimizer.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\optimizer_analysis.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\parking_lot.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pathconfig.c">

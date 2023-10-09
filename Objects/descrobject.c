@@ -4,6 +4,7 @@
 #include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
 #include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -15,25 +16,6 @@ class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
-
-// see pycore_object.h
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
-    return wasmTable.get(set)(obj, value, closure);
-});
-
-EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
-    return wasmTable.get(get)(obj, closure);
-});
-#else
-#define descr_set_trampoline_call(set, obj, value, closure) \
-    (set)((obj), (value), (closure))
-
-#define descr_get_trampoline_call(get, obj, closure) \
-    (get)((obj), (closure))
-
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 static void
 descr_dealloc(PyDescrObject *descr)
@@ -588,7 +570,9 @@ method_get_doc(PyMethodDescrObject *descr, void *closure)
 static PyObject *
 method_get_text_signature(PyMethodDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name, descr->d_method->ml_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name,
+                                                   descr->d_method->ml_doc,
+                                                   descr->d_method->ml_flags);
 }
 
 static PyObject *
@@ -691,7 +675,8 @@ wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 static PyObject *
 wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->name, descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->name,
+                                                   descr->d_base->doc, 0);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
@@ -1384,7 +1369,8 @@ wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 static PyObject *
 wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name,
+                                                   wp->descr->d_base->doc, 0);
 }
 
 static PyObject *

@@ -43,20 +43,20 @@ interpreter.
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
 
-Example: Given the function :func:`myfunc`::
+Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
        return len(alist)
 
 the following command can be used to display the disassembly of
-:func:`myfunc`:
+:func:`!myfunc`:
 
 .. doctest::
 
    >>> dis.dis(myfunc)
      2           0 RESUME                   0
    <BLANKLINE>
-     3           2 LOAD_GLOBAL              1 (NULL + len)
+     3           2 LOAD_GLOBAL              1 (len + NULL)
                 12 LOAD_FAST                0 (alist)
                 14 CALL                     1
                 22 RETURN_VALUE
@@ -297,6 +297,9 @@ operation is being performed, so the intermediate analysis object isn't useful:
       The :pep:`626` ``co_lines`` method is used instead of the ``co_firstlineno``
       and ``co_lnotab`` attributes of the code object.
 
+   .. versionchanged:: 3.13
+      Line numbers can be ``None`` for bytecode that does not map to source lines.
+
 
 .. function:: findlabels(code)
 
@@ -402,7 +405,12 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. data:: starts_line
 
-      line started by this opcode (if any), otherwise ``None``
+      ``True`` if this opcode starts a source line, otherwise ``False``
+
+
+   .. data:: line_number
+
+      source line number associated with this opcode (if any), otherwise ``None``
 
 
    .. data:: is_jump_target
@@ -429,8 +437,11 @@ details of bytecode instructions as :class:`Instruction` instances:
 
    .. versionchanged:: 3.13
 
+      Changed field ``starts_line``.
+
       Added fields ``start_offset``, ``cache_offset``, ``end_offset``,
-      ``baseopname``, ``baseopcode``, ``jump_target`` and ``oparg``.
+      ``baseopname``, ``baseopcode``, ``jump_target``, ``oparg``, and
+      ``line_number``.
 
 
 .. class:: Positions
@@ -586,7 +597,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR
@@ -851,7 +862,7 @@ iterations of the loop.
 
 .. opcode:: LOAD_BUILD_CLASS
 
-   Pushes :func:`builtins.__build_class__` onto the stack.  It is later called
+   Pushes :func:`!builtins.__build_class__` onto the stack.  It is later called
    to construct a class.
 
 
@@ -909,14 +920,14 @@ iterations of the loop.
 .. opcode:: STORE_NAME (namei)
 
    Implements ``name = STACK.pop()``. *namei* is the index of *name* in the attribute
-   :attr:`co_names` of the code object. The compiler tries to use
-   :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
+   :attr:`!co_names` of the :ref:`code object <code-objects>`.
+   The compiler tries to use :opcode:`STORE_FAST` or :opcode:`STORE_GLOBAL` if possible.
 
 
 .. opcode:: DELETE_NAME (namei)
 
-   Implements ``del name``, where *namei* is the index into :attr:`co_names`
-   attribute of the code object.
+   Implements ``del name``, where *namei* is the index into :attr:`!co_names`
+   attribute of the :ref:`code object <code-objects>`.
 
 
 .. opcode:: UNPACK_SEQUENCE (count)
@@ -955,7 +966,8 @@ iterations of the loop.
       value = STACK.pop()
       obj.name = value
 
-   where *namei* is the index of name in :attr:`co_names`.
+   where *namei* is the index of name in :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 .. opcode:: DELETE_ATTR (namei)
 
@@ -964,7 +976,8 @@ iterations of the loop.
       obj = STACK.pop()
       del obj.name
 
-   where *namei* is the index of name into :attr:`co_names`.
+   where *namei* is the index of name into :attr:`!co_names` of the
+   :ref:`code object <code-objects>`.
 
 
 .. opcode:: STORE_GLOBAL (namei)
@@ -1109,7 +1122,8 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method.
+   Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1377,31 +1391,47 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   Calls a callable object with the number of arguments specified by ``argc``.
+   On the stack are (in ascending order):
 
    * The callable
-   * ``self``
+   * ``self`` or ``NULL``
    * The remaining positional arguments
-   * The named arguments
 
-   ``argc`` is the total of the positional and named arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional arguments, excluding ``self``.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The callable now always appears at the same position on the stack.
+
+   .. versionchanged:: 3.13
+      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+
+.. opcode:: CALL_KW (argc)
+
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including one or more named arguments. On the stack are (in ascending order):
+
+   * The callable
+   * ``self`` or ``NULL``
+   * The remaining positional arguments
+   * The named arguments
+   * A :class:`tuple` of keyword argument names
+
+   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   The length of the tuple of keyword argument names is the number of named arguments.
+
+   ``CALL_KW`` pops all arguments, the keyword names, and the callable object
+   off the stack, calls the callable object with those arguments, and pushes the
+   return value returned by the callable object.
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1424,15 +1454,6 @@ iterations of the loop.
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
    :opcode:`LOAD_METHOD` for non-method calls.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
@@ -1598,8 +1619,8 @@ iterations of the loop.
    opcodes in the range [0,255] which don't use their argument and those
    that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
-   If your application uses pseudo instructions, use the :data:`hasarg`
-   collection instead.
+   If your application uses pseudo instructions or specialized instructions,
+   use the :data:`hasarg` collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
@@ -1610,6 +1631,8 @@ iterations of the loop.
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
+   .. deprecated:: 3.13
+      Use :data:`hasarg` instead.
 
 .. opcode:: CALL_INTRINSIC_1
 

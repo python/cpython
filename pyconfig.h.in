@@ -607,9 +607,6 @@
 /* Define this if you have le64toh() */
 #undef HAVE_HTOLE64
 
-/* Define to 1 if you have the <ieeefp.h> header file. */
-#undef HAVE_IEEEFP_H
-
 /* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
@@ -840,6 +837,9 @@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
+
+/* Define to 1 if you have the <netlink/netlink.h> header file. */
+#undef HAVE_NETLINK_NETLINK_H
 
 /* Define to 1 if you have the <netpacket/packet.h> header file. */
 #undef HAVE_NETPACKET_PACKET_H
@@ -1363,6 +1363,9 @@
 /* Define to 1 if you have the <sys/termio.h> header file. */
 #undef HAVE_SYS_TERMIO_H
 
+/* Define to 1 if you have the <sys/timerfd.h> header file. */
+#undef HAVE_SYS_TIMERFD_H
+
 /* Define to 1 if you have the <sys/times.h> header file. */
 #undef HAVE_SYS_TIMES_H
 
@@ -1404,6 +1407,9 @@
 
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
+
+/* Define if you have the 'timerfd_create' function. */
+#undef HAVE_TIMERFD_CREATE
 
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES
@@ -1606,6 +1612,9 @@
    SipHash13: 3, externally defined: 0 */
 #undef Py_HASH_ALGORITHM
 
+/* Define if you want to disable the GIL */
+#undef Py_NOGIL
+
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
@@ -1784,6 +1793,9 @@
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
+
+/* Define to build the readline module against Apple BSD editline. */
+#undef WITH_APPLE_EDITLINE
 
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */

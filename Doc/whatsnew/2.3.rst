@@ -1886,10 +1886,10 @@ Changes to Python's build process and to the C API include:
   (:file:`libpython2.3.so`) by supplying :option:`!--enable-shared` when running
   Python's :program:`configure` script.  (Contributed by Ondrej Palkovsky.)
 
-* The :c:macro:`DL_EXPORT` and :c:macro:`DL_IMPORT` macros are now deprecated.
+* The :c:macro:`!DL_EXPORT` and :c:macro:`!DL_IMPORT` macros are now deprecated.
   Initialization functions for Python extension modules should now be declared
   using the new macro :c:macro:`PyMODINIT_FUNC`, while the Python core will
-  generally use the :c:macro:`PyAPI_FUNC` and :c:macro:`PyAPI_DATA` macros.
+  generally use the :c:macro:`!PyAPI_FUNC` and :c:macro:`!PyAPI_DATA` macros.
 
 * The interpreter can be compiled without any docstrings for the built-in
   functions and modules by supplying :option:`!--without-doc-strings` to the
@@ -1897,7 +1897,7 @@ Changes to Python's build process and to the C API include:
   but will also mean that you can't get help for Python's built-ins.  (Contributed
   by Gustavo Niemeyer.)
 
-* The :c:func:`PyArg_NoArgs` macro is now deprecated, and code that uses it
+* The :c:func:`!PyArg_NoArgs` macro is now deprecated, and code that uses it
   should be changed.  For Python 2.2 and later, the method definition table can
   specify the :c:macro:`METH_NOARGS` flag, signalling that there are no arguments,
   and the argument checking can then be removed.  If compatibility with pre-2.2

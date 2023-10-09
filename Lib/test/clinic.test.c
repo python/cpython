@@ -4,9 +4,11 @@ output preset block
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3c81ac2402d06a8b]*/
 
 /*[clinic input]
+module m
+class m.T "TestObj *" "TestType"
 class Test "TestObj *" "TestType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=fc7e50384d12b83f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f761b4d55cb179cf]*/
 
 /*[clinic input]
 test_object_converter
@@ -471,7 +473,7 @@ test_bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = _PyLong_AsInt(args[2]);
+    c = PyLong_AsInt(args[2]);
     if (c == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -484,7 +486,7 @@ exit:
 
 static PyObject *
 test_bool_converter_impl(PyObject *module, int a, int b, int c)
-/*[clinic end generated code: output=27f0e653a70b9be3 input=939854fa9f248c60]*/
+/*[clinic end generated code: output=3190e46490de0644 input=939854fa9f248c60]*/
 
 
 /*[clinic input]
@@ -1007,14 +1009,14 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    b = _PyLong_AsInt(args[1]);
+    b = PyLong_AsInt(args[1]);
     if (b == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1033,7 +1035,7 @@ test_int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 4) {
         goto skip_optional;
     }
-    d = _PyLong_AsInt(args[3]);
+    d = PyLong_AsInt(args[3]);
     if (d == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1046,7 +1048,7 @@ exit:
 
 static PyObject *
 test_int_converter_impl(PyObject *module, int a, int b, int c, myenum d)
-/*[clinic end generated code: output=375eedba5ca9a5b3 input=d20541fc1ca0553e]*/
+/*[clinic end generated code: output=5aed87a7589eefb2 input=d20541fc1ca0553e]*/
 
 
 /*[clinic input]
@@ -4507,7 +4509,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (!args) {
         goto exit;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4519,7 +4521,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=00218e7f583e6c81 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=d89b99e83d442be0 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -4701,7 +4703,7 @@ Test_an_metho_arg_named_arg(TestObj *self, PyObject *arg_)
     PyObject *return_value = NULL;
     int arg;
 
-    arg = _PyLong_AsInt(arg_);
+    arg = PyLong_AsInt(arg_);
     if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -4713,7 +4715,7 @@ exit:
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
-/*[clinic end generated code: output=7d590626642194ae input=2a53a57cf5624f95]*/
+/*[clinic end generated code: output=9f04de4a62287e28 input=2a53a57cf5624f95]*/
 
 
 /*[clinic input]
@@ -5060,7 +5062,7 @@ mangled_c_keyword_identifier(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!args) {
         goto exit;
     }
-    int_value = _PyLong_AsInt(args[0]);
+    int_value = PyLong_AsInt(args[0]);
     if (int_value == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -5072,7 +5074,7 @@ exit:
 
 static PyObject *
 mangled_c_keyword_identifier_impl(PyObject *module, int int_value)
-/*[clinic end generated code: output=c049d7d79be26cda input=060876448ab567a2]*/
+/*[clinic end generated code: output=f24b37e0368e0eb8 input=060876448ab567a2]*/
 
 
 /*[clinic input]
@@ -5379,6 +5381,7 @@ exit:
 static PyObject *
 fn_with_default_binop_expr_impl(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=018672772e4092ff input=1b55c8ae68d89453]*/
+
 
 /*[python input]
 class Custom_converter(CConverter):

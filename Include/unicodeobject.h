@@ -1,8 +1,6 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>               // va_list
-
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,
@@ -55,8 +53,6 @@ Copyright (c) Corporation for National Research Initiatives.
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * -------------------------------------------------------------------- */
 
-#include <ctype.h>
-
 /* === Internal API ======================================================= */
 
 /* --- Internal Unicode Format -------------------------------------------- */
@@ -91,10 +87,6 @@ Copyright (c) Corporation for National Research Initiatives.
 # ifndef HAVE_WCHAR_H
 #  define HAVE_WCHAR_H
 # endif
-#endif
-
-#ifdef HAVE_WCHAR_H
-#  include <wchar.h>
 #endif
 
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
