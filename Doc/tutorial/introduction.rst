@@ -480,7 +480,7 @@ First Steps Towards Programming
 
 Of course, we can use Python for more complicated tasks than adding two and two
 together.  For instance, we can write an initial sub-sequence of the
-`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_number>`_
+`Fibonacci series <https://en.wikipedia.org/wiki/Fibonacci_sequence>`_
 as follows::
 
    >>> # Fibonacci series:
