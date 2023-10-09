@@ -140,21 +140,26 @@ test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
     }
     PyObject *num = PyLong_FromLong(1);
     if (num == NULL) {
-        return NULL;
+        goto error;
     }
     if (PySet_Add(fs, num) < 0) {
-        return NULL;
+        goto error;
     }
     int contains = PySet_Contains(fs, num);
-    Py_DECREF(num);
     if (contains < 0) {
-        return NULL;
+        goto error;
     }
     else if (contains == 0) {
-        PyErr_SetString(PyExc_ValueError, "set does not contain expected value");
-        return NULL;
+        goto unexpected;
     }
     Py_RETURN_NONE;
+
+unexpected:
+    PyErr_SetString(PyExc_ValueError, "set does not contain expected value");
+error:
+    Py_DECREF(fs);
+    Py_XDECREF(num);
+    return NULL;
 }
 
 static PyMethodDef test_methods[] = {
