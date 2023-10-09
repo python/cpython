@@ -146,6 +146,7 @@ test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
         return NULL;
     }
     int contains = PySet_Contains(fs, num);
+    Py_DECREF(num);
     if (contains < 0) {
         return NULL;
     }
