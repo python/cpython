@@ -345,7 +345,11 @@ test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     unsigned long value = PyLong_AsUnsignedLongMask(num);
-    if (value != ULONG_MAX) {
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_DECREF(num);
+        goto error;
+    }
+    else if (value != ULONG_MAX) {
         Py_DECREF(num);
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: "
@@ -376,7 +380,12 @@ test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     value = PyLong_AsUnsignedLongMask(num);
-    if (value != (unsigned long)-0x42) {
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_DECREF(num);
+        goto error;
+    }
+    else if (value != (unsigned long)-0x42) {
+        Py_DECREF(num);
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: "
             "PyLong_AsUnsignedLongMask() returned wrong value for long -0xFFF..000042");
