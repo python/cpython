@@ -924,7 +924,6 @@ class CLanguage(Language):
 
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
-        source = os.path.basename(self.cpp.filename)
         message = f"Update the clinic input of {func.full_name!r}."
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
@@ -1847,7 +1846,6 @@ class CLanguage(Language):
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
         new_or_init = f.kind.new_or_init
-        has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
         for i, p in enumerate(parameters, -1):
@@ -6343,7 +6341,6 @@ class DSLParser:
         else:
             return
 
-        no_param_after_symbol = True
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
                 if p.kind == inspect.Parameter.KEYWORD_ONLY:
