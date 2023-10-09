@@ -25345,6 +25345,25 @@ printf "%s\n" "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 
 fi
 
+    # in readline as well as newer editline (April 2023)
+    ac_fn_c_check_type "$LINENO" "rl_compdisp_func_t" "ac_cv_type_rl_compdisp_func_t" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
+"
+if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
+then :
+
+printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
+fi
+
+
 
 
 CFLAGS=$save_CFLAGS
