@@ -86,10 +86,11 @@ class TestSetCAPI(unittest.TestCase):
         self.assertEqual(set_new().__class__, set)
         self.assertEqual(set_new(), set())
         self.assertEqual(set_new((1, 1, 2)), {1, 2})
+        self.assertEqual(set_new([1, 1, 2]), {1, 2})
         with self.assertRaisesRegex(TypeError, 'object is not iterable'):
             set_new(object())
         with self.assertRaisesRegex(TypeError, 'object is not iterable'):
-            set_new(None)
+            set_new(1)
         with self.assertRaisesRegex(TypeError, "unhashable type: 'dict'"):
             set_new((1, {}))
 
@@ -98,10 +99,11 @@ class TestSetCAPI(unittest.TestCase):
         self.assertEqual(frozenset_new().__class__, frozenset)
         self.assertEqual(frozenset_new(), frozenset())
         self.assertEqual(frozenset_new((1, 1, 2)), frozenset({1, 2}))
+        self.assertEqual(frozenset_new([1, 1, 2]), frozenset({1, 2}))
         with self.assertRaisesRegex(TypeError, 'object is not iterable'):
             frozenset_new(object())
         with self.assertRaisesRegex(TypeError, 'object is not iterable'):
-            frozenset_new(None)
+            frozenset_new(1)
         with self.assertRaisesRegex(TypeError, "unhashable type: 'dict'"):
             frozenset_new((1, {}))
 
@@ -114,7 +116,7 @@ class TestSetCAPI(unittest.TestCase):
         self.assertEqual(get_size(set_subclass((1, 2, 3))), 3)
         self.assertEqual(get_size(frozenset_subclass((1, 2, 3))), 3)
         with self.assertRaises(SystemError):
-            get_size([])
+            get_size(object())
         # CRASHES: get_size(NULL)
 
     def test_set_get_size(self):
@@ -137,9 +139,9 @@ class TestSetCAPI(unittest.TestCase):
                 self.assertFalse(contains(instance, 'missing'))
                 with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
                     contains(instance, [])
-                # CRASHES: contains(instance, NULL)
-                # CRASHES: contains(NULL, object())
-                # CRASHES: contains(NULL, NULL)
+        # CRASHES: contains(instance, NULL)
+        # CRASHES: contains(NULL, object())
+        # CRASHES: contains(NULL, NULL)
 
     def test_add(self):
         add = _testcapi.set_add
@@ -152,12 +154,12 @@ class TestSetCAPI(unittest.TestCase):
                 self.assertEqual(instance, {1, 2, 3})
                 with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
                     add(instance, [])
-                # CRASHES: add(NULL, object())
-                # CRASHES: add(instance, NULL)
-                # CRASHES: add(NULL, NULL)
         with self.assertRaises(SystemError):
             add(object(), 1)
         self.assertImmutable(add, 1)
+        # CRASHES: add(NULL, object())
+        # CRASHES: add(instance, NULL)
+        # CRASHES: add(NULL, NULL)
 
     def test_discard(self):
         discard = _testcapi.set_discard
@@ -174,12 +176,12 @@ class TestSetCAPI(unittest.TestCase):
                 self.assertEqual(instance, set())
                 with self.assertRaisesRegex(TypeError, "unhashable type: 'list'"):
                     discard(instance, [])
-                # CRASHES: discard(NULL, object())
-                # CRASHES: discard(instance, NULL)
-                # CRASHES: discard(NULL, NULL)
         with self.assertRaises(SystemError):
             discard(object(), 1)
         self.assertImmutable(discard, 1)
+        # CRASHES: discard(NULL, object())
+        # CRASHES: discard(instance, NULL)
+        # CRASHES: discard(NULL, NULL)
 
     def test_pop(self):
         pop = _testcapi.set_pop
@@ -193,10 +195,10 @@ class TestSetCAPI(unittest.TestCase):
                 self.assertEqual(len(instance), 0)
                 with self.assertRaises(KeyError):
                     pop(instance)
-                # CRASHES: pop(NULL)
         with self.assertRaises(SystemError):
             pop(object())
         self.assertImmutable(pop)
+        # CRASHES: pop(NULL)
 
     def test_clear(self):
         clear = _testcapi.set_clear
@@ -207,7 +209,7 @@ class TestSetCAPI(unittest.TestCase):
                 self.assertEqual(instance, set())
                 self.assertEqual(clear(instance), 0)
                 self.assertEqual(instance, set())
-                # CRASHES: clear(NULL)
         with self.assertRaises(SystemError):
             clear(object())
         self.assertImmutable(clear)
+        # CRASHES: clear(NULL)
