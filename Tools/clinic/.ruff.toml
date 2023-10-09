@@ -8,7 +8,7 @@ select = [
 unfixable = [
     # The autofixes sometimes do the wrong things for these;
     # it's better to have to manually look at the code and see how it needs fixing
-    "F841",
-    "F601",
-    "F602",
+    "F841",  # Detects unused variables
+    "F601",  # Detects dictionaries that have duplicate keys
+    "F602",  # Also detects dictionaries that have duplicate keys
 ]
