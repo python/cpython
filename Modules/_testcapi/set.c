@@ -129,6 +129,33 @@ set_clear(PyObject *self, PyObject *obj)
     RETURN_INT(PySet_Clear(obj));
 }
 
+static PyObject *
+test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
+{
+    // Test that `frozenset` can be used with `PySet_Add`,
+    // when frozenset is just created in CAPI.
+    PyObject *fs = PyFrozenSet_New(NULL);
+    if (fs == NULL) {
+        return NULL;
+    }
+    PyObject *num = PyLong_FromLong(1);
+    if (num == NULL) {
+        return NULL;
+    }
+    if (PySet_Add(fs, num) < 0) {
+        return NULL;
+    }
+    int contains = PySet_Contains(fs, num);
+    if (contains < 0) {
+        return NULL;
+    }
+    else if (contains == 0) {
+        PyErr_SetString(PyExc_ValueError, "set does not contain expected value");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef test_methods[] = {
     {"set_check", set_check, METH_O},
     {"set_checkexact", set_checkexact, METH_O},
@@ -147,6 +174,8 @@ static PyMethodDef test_methods[] = {
     {"set_discard", set_discard, METH_VARARGS},
     {"set_pop", set_pop, METH_O},
     {"set_clear", set_clear, METH_O},
+
+    {"test_frozenset_add_in_capi", test_frozenset_add_in_capi, METH_NOARGS},
 
     {NULL},
 };
