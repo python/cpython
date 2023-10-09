@@ -1743,6 +1743,25 @@
             break;
         }
 
+        case _HELPER_LOAD_FUNC_FROM_CACHE: {
+            PyFunctionObject *func;
+            PyObject *fget = (PyObject *)operand;
+            assert(Py_IS_TYPE(fget, &PyFunction_Type));
+            func = (PyFunctionObject *)fget;
+            STACK_GROW(1);
+            stack_pointer[-1] = (PyObject *)func;
+            break;
+        }
+
+        case _CHECK_FUNC_VERSION: {
+            PyFunctionObject *func;
+            func = (PyFunctionObject *)stack_pointer[-1];
+            uint32_t func_version = (uint32_t)operand;
+            assert(func_version != 0);
+            DEOPT_IF(func->func_version != func_version, _CHECK_FUNC_VERSION);
+            break;
+        }
+
         case _GUARD_DORV_VALUES: {
             PyObject *owner;
             owner = stack_pointer[-1];

@@ -2925,31 +2925,45 @@
             next_instr += 10;
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             PyObject *owner;
+            PyFunctionObject *func;
+            // _CHECK_PEP_523
+            {
+                DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
+            }
+            // _GUARD_TYPE_VERSION
             owner = stack_pointer[-1];
-            uint32_t type_version = read_u32(&this_instr[2].cache);
-            PyObject *fget = read_obj(&this_instr[4].cache);
-            uint32_t func_version = read_u32(&this_instr[8].cache);
-            assert((oparg & 1) == 0);
-            DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
-
-            PyTypeObject *cls = Py_TYPE(owner);
-            assert(type_version != 0);
-            DEOPT_IF(cls->tp_version_tag != type_version, LOAD_ATTR);
-            assert(Py_IS_TYPE(fget, &PyFunction_Type));
-            PyFunctionObject *f = (PyFunctionObject *)fget;
-            assert(func_version != 0);
-            DEOPT_IF(f->func_version != func_version, LOAD_ATTR);
-            PyCodeObject *code = (PyCodeObject *)f->func_code;
-            assert(code->co_argcount == 1);
-            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(fget);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, f, 1);
-            // Manipulate stack directly because we exit with DISPATCH_INLINED().
-            STACK_SHRINK(1);
-            new_frame->localsplus[0] = owner;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            {
+                uint32_t type_version = read_u32(&this_instr[2].cache);
+                PyTypeObject *tp = Py_TYPE(owner);
+                assert(type_version != 0);
+                DEOPT_IF(tp->tp_version_tag != type_version, LOAD_ATTR);
+            }
+            // _HELPER_LOAD_FUNC_FROM_CACHE
+            {
+                PyObject *fget = read_obj(&this_instr[4].cache);
+                assert(Py_IS_TYPE(fget, &PyFunction_Type));
+                func = (PyFunctionObject *)fget;
+            }
+            // _CHECK_FUNC_VERSION
+            {
+                uint32_t func_version = read_u32(&this_instr[8].cache);
+                assert(func_version != 0);
+                DEOPT_IF(func->func_version != func_version, LOAD_ATTR);
+            }
+            // _LOAD_ATTR_PROPERTY
+            {
+                assert((oparg & 1) == 0);
+                PyCodeObject *code = (PyCodeObject *)func->func_code;
+                assert(code->co_argcount == 1);
+                DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
+                STAT_INC(LOAD_ATTR, hit);
+                _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, Py_NewRef(func), 1);
+                // Manipulate stack directly because we exit with DISPATCH_INLINED().
+                STACK_SHRINK(1);
+                new_frame->localsplus[0] = owner;
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                DISPATCH_INLINED(new_frame);
+            }
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
