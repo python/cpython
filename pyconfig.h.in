@@ -1621,6 +1621,9 @@
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
 
+/* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
+#undef Py_SUNOS_VERSION
+
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 
