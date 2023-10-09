@@ -989,7 +989,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Return code.co_firstlineno if no executable line is found.
         """
         for instr in dis.get_instructions(code):
-            if instr.opname != 'RESUME':
+            if instr.opname != 'RESUME' and instr.positions.lineno is not None:
                 return instr.positions.lineno
         return code.co_firstlineno
 
