@@ -237,8 +237,11 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
 static void
 wait_for_lock(PyThread_type_lock mutex)
 {
+    Py_BEGIN_ALLOW_THREADS
     // XXX Handle eintr, etc.
     PyThread_acquire_lock(mutex, WAIT_LOCK);
+    Py_END_ALLOW_THREADS
+
     PyThread_release_lock(mutex);
 }
 
