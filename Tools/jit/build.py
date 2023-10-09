@@ -30,8 +30,35 @@ TOOLS_JIT_TEMPLATE = TOOLS_JIT / "template.c"
 TOOLS_JIT_TRAMPOLINE = TOOLS_JIT / "trampoline.c"
 
 
+HoleKind: typing.TypeAlias = typing.Literal[
+    "R_386_32",
+    "R_386_PC32",
+    "R_AARCH64_ABS64",
+    "R_AARCH64_ADR_GOT_PAGE",
+    "R_AARCH64_CALL26",
+    "R_AARCH64_JUMP26",
+    "R_AARCH64_LD64_GOT_LO12_NC",
+    "R_AARCH64_MOVW_UABS_G0_NC",
+    "R_AARCH64_MOVW_UABS_G1_NC",
+    "R_AARCH64_MOVW_UABS_G2_NC",
+    "R_AARCH64_MOVW_UABS_G3",
+    "R_X86_64_64",
+    "R_X86_64_GOTOFF64",
+    "R_X86_64_GOTPC32",
+    "R_X86_64_GOTPCRELX",
+    "R_X86_64_PC32",
+    "R_X86_64_PLT32",
+    "R_X86_64_REX_GOTPCRELX",
+]
+
+
 class ValueType(typing.TypedDict):
     Value: str
+    RawValue: int
+
+
+class RelocationTypeType(typing.TypedDict):
+    Value: HoleKind
     RawValue: int
 
 
@@ -52,7 +79,7 @@ class SectionData(typing.TypedDict):
 
 class RelocationType(typing.TypedDict):
     Offset: int
-    Type: ValueType
+    Type: RelocationTypeType
     Symbol: ValueType
     Addend: int
 
@@ -109,28 +136,6 @@ class FileType(typing.TypedDict):
 ObjectType = list[dict[str, FileType] | FileType]
 
 
-HoleKind: typing.TypeAlias = typing.Literal[
-    "R_386_32",
-    "R_386_PC32",
-    "R_AARCH64_ABS64",
-    "R_AARCH64_ADR_GOT_PAGE",
-    "R_AARCH64_CALL26",
-    "R_AARCH64_JUMP26",
-    "R_AARCH64_LD64_GOT_LO12_NC",
-    "R_AARCH64_MOVW_UABS_G0_NC",
-    "R_AARCH64_MOVW_UABS_G1_NC",
-    "R_AARCH64_MOVW_UABS_G2_NC",
-    "R_AARCH64_MOVW_UABS_G3",
-    "R_X86_64_64",
-    "R_X86_64_GOTOFF64",
-    "R_X86_64_GOTPC32",
-    "R_X86_64_GOTPCRELX",
-    "R_X86_64_PC32",
-    "R_X86_64_PLT32",
-    "R_X86_64_REX_GOTPCRELX",
-]
-
-
 @enum.unique
 class HoleValue(enum.Enum):
     _JIT_BASE = enum.auto()
@@ -160,7 +165,7 @@ class Stencil:
     # entry: int
 
 
-S = typing.TypeVar("S", bound=str)
+S = typing.TypeVar("S", bound=typing.Literal["Section", "Relocation", "Symbol"])
 T = typing.TypeVar("T")
 
 
@@ -180,10 +185,10 @@ def get_llvm_tool_version(name: str) -> int | None:
     except FileNotFoundError:
         return None
     match = re.search(rb"version\s+(\d+)\.\d+\.\d+\s+", process.stdout)
-    return match and int(match.group(1))
+    return int(match.group(1)) if match else None
 
 
-def find_llvm_tool(tool: str) -> str:
+def find_llvm_tool(tool: str) -> str | None:
     versions = {14, 15, 16}
     forced_version = os.getenv("PYTHON_LLVM_VERSION")
     if forced_version:
@@ -209,6 +214,13 @@ def find_llvm_tool(tool: str) -> str:
             path = f"{prefix}/bin/{tool}"
             if get_llvm_tool_version(path) == version:
                 return path
+    return None
+
+
+def require_llvm_tool(tool: str) -> str:
+    path = find_llvm_tool(tool)
+    if path is not None:
+        return path
     raise RuntimeError(f"Can't find {tool}!")
 
 
@@ -217,7 +229,7 @@ def find_llvm_tool(tool: str) -> str:
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
-async def run(*args: str | os.PathLike, capture: bool = False) -> bytes | None:
+async def run(*args: str | os.PathLike[str], capture: bool = False) -> bytes | None:
     async with _SEMAPHORE:
         print(shlex.join(map(str, args)))
         process = await asyncio.create_subprocess_exec(
@@ -230,7 +242,7 @@ async def run(*args: str | os.PathLike, capture: bool = False) -> bytes | None:
     return stdout
 
 
-class Engine:
+class Parser:
     _ARGS = [
         "--elf-output-style=JSON",
         "--expand-relocs",
@@ -241,32 +253,35 @@ class Engine:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, reader: str, dumper: str) -> None:
+    def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None) -> None:
         self.path = path
         self.body = bytearray()
-        self.body_symbols = {}
-        self.body_offsets = {}
-        self.got = {}
-        self.relocations = []
-        self.reader = reader
-        self.dumper = dumper
+        self.body_symbols: dict[str, int] = {}
+        self.body_offsets: dict[int, int] = {}
+        self.got: dict[str, int] = {}
+        self.relocations: list[tuple[int, RelocationType]] = []
+        self.readobj = readobj
+        self.objdump = objdump
         self.data_size = 0
 
-    async def parse(self):
-        output = await run(
-            self.dumper, self.path, "--disassemble", "--reloc", capture=True
-        )
-        assert output is not None
-        disassembly = [
-            line.expandtabs().strip() for line in output.decode().splitlines()
-        ]
-        disassembly = [line for line in disassembly if line]
-        output = await run(self.reader, *self._ARGS, self.path, capture=True)
+    async def parse(self) -> Stencil:
+        if self.objdump is not None:
+            output = await run(
+                self.objdump, self.path, "--disassemble", "--reloc", capture=True
+            )
+            assert output is not None
+            disassembly = [
+                line.expandtabs().strip() for line in output.decode().splitlines()
+            ]
+            disassembly = [line for line in disassembly if line]
+        else:
+            disassembly = []
+        output = await run(self.readobj, *self._ARGS, self.path, capture=True)
         assert output is not None
         self._data: ObjectType = json.loads(output)
         file = self._data[0]
         if str(self.path) in file:
-            file = file[str(self.path)]
+            file = typing.cast(dict[str, FileType], file)[str(self.path)]
         for section in unwrap(typing.cast(SectionsType, file["Sections"]), "Section"):
             self._handle_section(section)
         if "_JIT_ENTRY" in self.body_symbols:
@@ -292,12 +307,14 @@ class Engine:
             holes.append(newhole)
         offset = got - self.data_size - padding
         if self.data_size:
-            disassembly.append(
-                f"{offset:x}: {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}"
-            )
+            if disassembly:
+                disassembly.append(
+                    f"{offset:x}: {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}"
+                )
             offset += self.data_size
         if padding:
-            disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
+            if disassembly:
+                disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
             offset += padding
         for s, got_offset in self.got.items():
             if s in self.body_symbols:
@@ -306,7 +323,7 @@ class Engine:
             else:
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
-            # XXX: ABS_32 on 32-bit platforms?
+            # XXX: R_386_32 on 32-bit platforms?
             holes.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
             value_part = value.name if value is not HoleValue._JIT_ZERO else ""
             if value_part and not symbol and not addend:
@@ -315,7 +332,8 @@ class Engine:
                 addend_part = format_addend(symbol, addend)
                 if value_part:
                     value_part += "+"
-            disassembly.append(f"{offset:x}: {value_part}{addend_part}")
+            if disassembly:
+                disassembly.append(f"{offset:x}: {value_part}{addend_part}")
             offset += 8
         self.body.extend([0] * 8 * len(self.got))
         holes.sort(key=lambda hole: hole.offset)
@@ -384,14 +402,6 @@ class Engine:
     def _handle_relocation(self, base: int, relocation: RelocationType) -> Hole | None:
         match relocation:
             case {
-                "Type": {"Value": "R_386_32" | "R_386_PC32" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-            }:
-                offset += base
-                value, symbol = self._symbol_to_value(s)
-                addend = self.read_u32(offset)
-            case {
                 "Type": {
                     "Value": "R_AARCH64_ADR_GOT_PAGE"
                     | "R_AARCH64_LD64_GOT_LO12_NC" as kind
@@ -440,6 +450,14 @@ class Engine:
             }:
                 offset += base
                 value, symbol = self._symbol_to_value(s)
+            case {
+                "Type": {"Value": "R_386_32" | "R_386_PC32" as kind},
+                "Symbol": {"Value": s},
+                "Offset": offset,
+            }:
+                offset += base
+                value, symbol = self._symbol_to_value(s)
+                addend = self.read_u32(offset)
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
@@ -542,10 +560,10 @@ class Compiler:
         ghccc: bool,
         target: Target,
     ) -> None:
-        self._stencils_built = {}
+        self._stencils_built: dict[str, Stencil] = {}
         self._verbose = verbose
-        self._clang = find_llvm_tool("clang")
-        self._readobj = find_llvm_tool("llvm-readobj")
+        self._clang = require_llvm_tool("clang")
+        self._readobj = require_llvm_tool("llvm-readobj")
         self._objdump = find_llvm_tool("llvm-objdump")
         self._ghccc = ghccc
         self._target = target
@@ -561,9 +579,11 @@ class Compiler:
             assert before != after, after
             ll.write_text(after)
 
-    async def _compile(self, opname, c, tempdir) -> None:
-        ll = pathlib.Path(tempdir, f"{opname}.ll").resolve()
-        o = pathlib.Path(tempdir, f"{opname}.o").resolve()
+    async def _compile(
+        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+    ) -> None:
+        ll = tempdir / f"{opname}.ll"
+        o = tempdir / f"{opname}.o"
         backend_flags = [
             *CFLAGS,
             f"--target={self._target.backend}",
@@ -583,7 +603,7 @@ class Compiler:
         await run(self._clang, *frontend_flags, "-o", ll, c)
         self._use_ghccc(ll)
         await run(self._clang, *backend_flags, "-o", o, ll)
-        self._stencils_built[opname] = await Engine(
+        self._stencils_built[opname] = await Parser(
             o, self._readobj, self._objdump
         ).parse()
 
@@ -591,11 +611,12 @@ class Compiler:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         with tempfile.TemporaryDirectory() as tempdir:
+            work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                task = self._compile("trampoline", TOOLS_JIT_TRAMPOLINE, tempdir)
+                task = self._compile("trampoline", TOOLS_JIT_TRAMPOLINE, work)
                 group.create_task(task)
                 for opname in opnames:
-                    task = self._compile(opname, TOOLS_JIT_TEMPLATE, tempdir)
+                    task = self._compile(opname, TOOLS_JIT_TEMPLATE, work)
                     group.create_task(task)
 
 
@@ -637,13 +658,6 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"}} Stencil;"
     yield f""
     opnames = []
-    symbols = {
-        hole.symbol
-        for stencil in stencils.values()
-        for hole in stencil.holes
-        if hole.symbol is not None
-    }
-    symbols = sorted(symbols)
     for opname, stencil in sorted(stencils.items()):
         opnames.append(opname)
         yield f"// {opname}"
@@ -652,19 +666,19 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             yield f"// {line}"
         body = ",".join(f"0x{byte:02x}" for byte in stencil.body)
         yield f"static const unsigned char {opname}_stencil_bytes[{len(stencil.body)}] = {{{body}}};"
-        holes = []
-        for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
-            addend = format_addend(hole.symbol, hole.addend)
-            holes.append(
-                f"    {{{hex(hole.offset)}, {hole.kind}, {hole.value.name}, {addend}}},"
-            )
-        if holes:
-            yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}] = {{"
-            for hole in holes:
-                yield hole
+        if stencil.holes:
+            yield f"static const Hole {opname}_stencil_holes[{len(stencil.holes) + 1}] = {{"
+            for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
+                parts = [
+                    str(hole.offset),
+                    hole.kind,
+                    hole.value.name,
+                    format_addend(hole.symbol, hole.addend),
+                ]
+                yield f"    {{{', '.join(parts)}}},"
             yield f"}};"
         else:
-            yield f"static const Hole {opname}_stencil_holes[{len(holes) + 1}];"
+            yield f"static const Hole {opname}_stencil_holes[1];"
         yield f""
     yield f"#define INIT_STENCIL(OP) {{                             \\"
     yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\"
@@ -693,8 +707,8 @@ def main(host: str) -> None:
     hasher = hashlib.sha256(host.encode())
     hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
     hasher.update(target.pyconfig.read_bytes())
-    for file in sorted(TOOLS_JIT.iterdir()):
-        hasher.update(file.read_bytes())
+    for source in sorted(TOOLS_JIT.iterdir()):
+        hasher.update(source.read_bytes())
     digest = hasher.hexdigest()
     if PYTHON_JIT_STENCILS_H.exists():
         with PYTHON_JIT_STENCILS_H.open() as file:
