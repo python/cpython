@@ -97,7 +97,7 @@ register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
     int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
     if (res == 0) {
         assert(classes->count < MAX_XID_CLASSES);
-        Py_INCREF(cls);
+        // The class has refs elsewhere, so we need to incref here.
         classes->added[classes->count].cls = cls;
         classes->count += 1;
     }
@@ -111,7 +111,6 @@ clear_xid_class_registry(struct xid_class_registry *classes)
         classes->count -= 1;
         PyTypeObject *cls = classes->added[classes->count].cls;
         _PyCrossInterpreterData_UnregisterClass(cls);
-        Py_DECREF(cls);
     }
 }
 
@@ -2770,17 +2769,18 @@ module_exec(PyObject *mod)
     }
     struct xid_class_registry *xid_classes = NULL;
 
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        goto error;
+    }
+    xid_classes = &state->xid_classes;
+
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
         goto error;
     }
 
     /* Add other types */
-    module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        goto error;
-    }
-    xid_classes = &state->xid_classes;
 
     // ChannelID
     state->ChannelIDType = add_new_type(
@@ -2799,7 +2799,7 @@ module_exec(PyObject *mod)
         goto error;
     }
 
-    // Make sure chnnels drop objects owned by this interpreter
+    /* Make sure chnnels drop objects owned by this interpreter. */
     PyInterpreterState *interp = _get_current_interp();
     PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
 
@@ -2847,7 +2847,13 @@ module_free(void *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
+
+    // Before clearing anything, we unregister the various XID types. */
+    clear_xid_class_registry(&state->xid_classes);
+
+    // Now we clear the module state.
     clear_module_state(state);
+
     _globals_fini();
 }
 
