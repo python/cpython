@@ -3,7 +3,6 @@ import sys
 from test.support import import_helper
 
 import_helper.import_module('_testcapi')
-_testinternalcapi = import_helper.import_module('_testinteralcapi')
 
 
 NULL = None
@@ -504,6 +503,7 @@ class CAPITest(unittest.TestCase):
 
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
+        import_helper.import_module('_testinteralcapi')
         from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
 
         self.assertEqual(transform_decimal('123'),
