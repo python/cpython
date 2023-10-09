@@ -2021,28 +2021,26 @@ dummy_func(
             unused/2 +
             _LOAD_ATTR_CLASS;
 
-        op(_HELPER_LOAD_FUNC_FROM_CACHE, (fget/4 -- func: PyFunctionObject *)) {
+        op(_HELPER_LOAD_FUNC_FROM_CACHE, (fget/4 -- func: PyFunctionObject*)) {
             assert(Py_IS_TYPE(fget, &PyFunction_Type));
             func = (PyFunctionObject *)fget;
         }
 
-        op(_CHECK_FUNC_VERSION, (func_version/2, func: PyFunctionObject * -- func: PyFunctionObject *)) {
+        op(_CHECK_FUNC_VERSION, (func_version/2, func: PyFunctionObject* -- func: PyFunctionObject*)) {
             assert(func_version != 0);
             DEOPT_IF(func->func_version != func_version);
         }
 
-        op(_LOAD_ATTR_PROPERTY, (owner, func: PyFunctionObject * -- unused, unused if (0))) {
+        op(_LOAD_ATTR_PROPERTY, (owner, func: PyFunctionObject* -- new_frame: _PyInterpreterFrame*, unused if (0))) {
             assert((oparg & 1) == 0);
             PyCodeObject *code = (PyCodeObject *)func->func_code;
             assert(code->co_argcount == 1);
             DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize));
             STAT_INC(LOAD_ATTR, hit);
-            _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, Py_NewRef(func), 1);
-            // Manipulate stack directly because we exit with DISPATCH_INLINED().
-            STACK_SHRINK(1);
+            Py_INCREF(func);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, 1);
             new_frame->localsplus[0] = owner;
-            frame->return_offset = (uint16_t)(next_instr - this_instr);
-            DISPATCH_INLINED(new_frame);
+            stack_pointer[-1] = (PyObject *)new_frame;  // Unfortunately this is needed
         }
 
         macro(LOAD_ATTR_PROPERTY) =
@@ -2051,7 +2049,9 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _HELPER_LOAD_FUNC_FROM_CACHE +
             _CHECK_FUNC_VERSION +
-            _LOAD_ATTR_PROPERTY;
+            _LOAD_ATTR_PROPERTY +
+            _SAVE_RETURN_OFFSET +
+            _PUSH_FRAME;
 
         inst(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN, (unused/1, type_version/2, func_version/2, getattribute/4, owner -- unused, unused if (0))) {
             assert((oparg & 1) == 0);

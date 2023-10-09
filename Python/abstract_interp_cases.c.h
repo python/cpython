@@ -528,6 +528,13 @@
             break;
         }
 
+        case _LOAD_ATTR_PROPERTY: {
+            STACK_SHRINK(1);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(0)), true);
+            break;
+        }
+
         case _GUARD_DORV_VALUES: {
             break;
         }

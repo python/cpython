@@ -1762,6 +1762,26 @@
             break;
         }
 
+        case _LOAD_ATTR_PROPERTY: {
+            PyFunctionObject *func;
+            PyObject *owner;
+            _PyInterpreterFrame *new_frame;
+            func = (PyFunctionObject *)stack_pointer[-1];
+            owner = stack_pointer[-2];
+            assert((oparg & 1) == 0);
+            PyCodeObject *code = (PyCodeObject *)func->func_code;
+            assert(code->co_argcount == 1);
+            DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), _LOAD_ATTR_PROPERTY);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(func);
+            new_frame = _PyFrame_PushUnchecked(tstate, func, 1);
+            new_frame->localsplus[0] = owner;
+            stack_pointer[-1] = (PyObject *)new_frame;  // Unfortunately this is needed
+            STACK_SHRINK(1);
+            stack_pointer[-1] = (PyObject *)new_frame;
+            break;
+        }
+
         case _GUARD_DORV_VALUES: {
             PyObject *owner;
             owner = stack_pointer[-1];

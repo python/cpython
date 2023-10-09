@@ -2926,6 +2926,7 @@
             INSTRUCTION_STATS(LOAD_ATTR_PROPERTY);
             PyObject *owner;
             PyFunctionObject *func;
+            _PyInterpreterFrame *new_frame;
             // _CHECK_PEP_523
             {
                 DEOPT_IF(tstate->interp->eval_frame, LOAD_ATTR);
@@ -2957,13 +2958,42 @@
                 assert(code->co_argcount == 1);
                 DEOPT_IF(!_PyThreadState_HasStackSpace(tstate, code->co_framesize), LOAD_ATTR);
                 STAT_INC(LOAD_ATTR, hit);
-                _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(tstate, Py_NewRef(func), 1);
-                // Manipulate stack directly because we exit with DISPATCH_INLINED().
-                STACK_SHRINK(1);
+                Py_INCREF(func);
+                new_frame = _PyFrame_PushUnchecked(tstate, func, 1);
                 new_frame->localsplus[0] = owner;
-                frame->return_offset = (uint16_t)(next_instr - this_instr);
-                DISPATCH_INLINED(new_frame);
+                stack_pointer[-1] = (PyObject *)new_frame;  // Unfortunately this is needed
             }
+            // _SAVE_RETURN_OFFSET
+            {
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - this_instr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
+            }
+            // _PUSH_FRAME
+            new_frame = (_PyInterpreterFrame *)stack_pointer[-1];
+            STACK_SHRINK(1);
+            {
+                // Write it out explicitly because it's subtly different.
+                // Eventually this should be the only occurrence of this code.
+                assert(tstate->interp->eval_frame == NULL);
+                STORE_SP();
+                new_frame->previous = frame;
+                CALL_STAT_INC(inlined_py_calls);
+                frame = tstate->current_frame = new_frame;
+                tstate->py_recursion_remaining--;
+                LOAD_SP();
+                LOAD_IP(0);
+    #if LLTRACE && TIER_ONE
+                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+                if (lltrace < 0) {
+                    goto exit_unwind;
+                }
+    #endif
+            }
+            DISPATCH();
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {

@@ -1903,6 +1903,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [LOAD_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 0 }, { _LOAD_ATTR_WITH_HINT, 1, 3 } } },
     [LOAD_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_SLOT, 1, 3 } } },
     [LOAD_ATTR_CLASS] = { .nuops = 2, .uops = { { _CHECK_ATTR_CLASS, 2, 1 }, { _LOAD_ATTR_CLASS, 4, 5 } } },
+    [LOAD_ATTR_PROPERTY] = { .nuops = 7, .uops = { { _CHECK_PEP_523, 0, 0 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _HELPER_LOAD_FUNC_FROM_CACHE, 4, 3 }, { _CHECK_FUNC_VERSION, 2, 7 }, { _LOAD_ATTR_PROPERTY, 0, 0 }, { _SAVE_RETURN_OFFSET, 7, 9 }, { _PUSH_FRAME, 0, 0 } } },
     [STORE_ATTR_INSTANCE_VALUE] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES, 0, 0 }, { _STORE_ATTR_INSTANCE_VALUE, 1, 3 } } },
     [STORE_ATTR_SLOT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _STORE_ATTR_SLOT, 1, 3 } } },
     [COMPARE_OP] = { .nuops = 1, .uops = { { _COMPARE_OP, 0, 0 } } },
