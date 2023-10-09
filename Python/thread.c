@@ -8,13 +8,33 @@
 #include "Python.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_pythread.h"
+#include "pycore_pythread.h"      // _POSIX_THREADS
 
 #ifndef DONT_HAVE_STDIO_H
 #  include <stdio.h>
 #endif
 
 #include <stdlib.h>
+
+
+// Define PY_TIMEOUT_MAX constant.
+#ifdef _POSIX_THREADS
+   // PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
+   // convert microseconds to nanoseconds.
+#  define PY_TIMEOUT_MAX_VALUE (LLONG_MAX / 1000)
+#elif defined (NT_THREADS)
+   // WaitForSingleObject() accepts timeout in milliseconds in the range
+   // [0; 0xFFFFFFFE] (DWORD type). INFINITE value (0xFFFFFFFF) means no
+   // timeout. 0xFFFFFFFE milliseconds is around 49.7 days.
+#  if 0xFFFFFFFELL < LLONG_MAX / 1000
+#    define PY_TIMEOUT_MAX_VALUE (0xFFFFFFFELL * 1000)
+#  else
+#    define PY_TIMEOUT_MAX_VALUE LLONG_MAX
+#  endif
+#else
+#  define PY_TIMEOUT_MAX_VALUE LLONG_MAX
+#endif
+const long long PY_TIMEOUT_MAX = PY_TIMEOUT_MAX_VALUE;
 
 
 static void PyThread__init_thread(void); /* Forward */

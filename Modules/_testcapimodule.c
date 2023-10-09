@@ -5,19 +5,13 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* This module tests the public (Include/ and Include/cpython/) C API.
-   The internal C API must not be used here: use _testinternalcapi for that.
+// Include parts.h first since it takes care of NDEBUG and Py_BUILD_CORE macros
+// and including Python.h.
+//
+// Several parts of this module are broken out into files in _testcapi/.
+// Include definitions from there.
+#include "_testcapi/parts.h"
 
-   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   macro defined, but only the public C API must be tested here. */
-
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
-
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
@@ -29,17 +23,10 @@
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
 
-#ifdef Py_BUILD_CORE
-#  error "_testcapi must test the public Python C API, not CPython internal C API"
-#endif
-
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
-// Several parts of this module are broken out into files in _testcapi/.
-// Include definitions from there.
-#include "_testcapi/parts.h"
 #include "_testcapi/util.h"
 
 
@@ -2034,6 +2021,26 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
 #endif
 
 
@@ -2451,8 +2458,8 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate2 = PyThreadState_Get();
     assert(tstate2 == tstate);
 
-    // private _PyThreadState_UncheckedGet()
-    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    // PyThreadState_GetUnchecked()
+    PyThreadState *tstate3 = PyThreadState_GetUnchecked();
     assert(tstate3 == tstate);
 
     // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
@@ -2916,7 +2923,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 
@@ -3299,6 +3306,7 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
@@ -3971,6 +3979,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Dict(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Set(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {

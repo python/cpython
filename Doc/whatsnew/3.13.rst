@@ -91,6 +91,16 @@ Other Language Changes
   of the ``optimize`` argument.
   (Contributed by Irit Katriel in :gh:`108113`).
 
+* :mod:`multiprocessing`, :mod:`concurrent.futures`, :mod:`compileall`:
+  Replace :func:`os.cpu_count` with :func:`os.process_cpu_count` to select the
+  default number of worker threads and processes. Get the CPU affinity
+  if supported.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
+
 New Modules
 ===========
 
@@ -119,7 +129,7 @@ copy
 ----
 
 * Add :func:`copy.replace` function which allows to create a modified copy of
-  an object, which is especially usefule for immutable objects.
+  an object, which is especially useful for immutable objects.
   It supports named tuples created with the factory function
   :func:`collections.namedtuple`, :class:`~dataclasses.dataclass` instances,
   various :mod:`datetime` objects, :class:`~inspect.Signature` objects,
@@ -132,7 +142,7 @@ dbm
 
 * Add :meth:`dbm.gnu.gdbm.clear` and :meth:`dbm.ndbm.ndbm.clear`  methods that remove all items
   from the database.
-  (Contributed by Dong-hee Na in :gh:`107122`.)
+  (Contributed by Donghee Na in :gh:`107122`.)
 
 doctest
 -------
@@ -163,12 +173,31 @@ opcode
   documented or exposed through ``dis``, and were not intended to be
   used externally.
 
+os
+--
+
+* Add :func:`os.process_cpu_count` function to get the number of logical CPUs
+  usable by the calling thread of the current process.
+  (Contributed by Victor Stinner in :gh:`109649`.)
+
+* Add a low level interface for Linux's timer notification file descriptors
+  via :func:`os.timerfd_create`,
+  :func:`os.timerfd_settime`, :func:`os.timerfd_settime_ns`,
+  :func:`os.timerfd_gettime`, and :func:`os.timerfd_gettime_ns`,
+  :const:`os.TFD_NONBLOCK`, :const:`os.TFD_CLOEXEC`,
+  :const:`os.TFD_TIMER_ABSTIME`, and :const:`os.TFD_TIMER_CANCEL_ON_SET`
+  (Contributed by Masaru Tsuchiyama in :gh:`108277`.)
+
 pathlib
 -------
 
 * Add :exc:`pathlib.UnsupportedOperation`, which is raised instead of
   :exc:`NotImplementedError` when a path operation isn't supported.
   (Contributed by Barney Gale in :gh:`89812`.)
+
+* Add :meth:`pathlib.Path.from_uri`, a new constructor to create a :class:`pathlib.Path`
+  object from a 'file' URI (``file:/``).
+  (Contributed by Barney Gale in :gh:`107465`.)
 
 * Add support for recursive wildcards in :meth:`pathlib.PurePath.match`.
   (Contributed by Barney Gale in :gh:`73435`.)
@@ -208,7 +237,7 @@ tkinter
 traceback
 ---------
 
-* Add *show_group* paramter to :func:`traceback.TracebackException.format_exception_only`
+* Add *show_group* parameter to :func:`traceback.TracebackException.format_exception_only`
   to format the nested exceptions of a :exc:`BaseExceptionGroup` instance, recursively.
   (Contributed by Irit Katriel in :gh:`105292`.)
 
@@ -219,6 +248,16 @@ typing
   defining a :class:`typing.Protocol`. Add :func:`typing.is_protocol` to
   check whether a class is a :class:`typing.Protocol`. (Contributed by Jelle Zijlstra in
   :gh:`104873`.)
+
+venv
+----
+
+* Add support for adding source control management (SCM) ignore files to a
+  virtual environment's directory. By default, Git is supported. This is
+  implemented as opt-in via the API which can be extended to support other SCMs
+  (:class:`venv.EnvBuilder` and :func:`venv.create`), and opt-out via the CLI
+  (using ``--without-scm-ignore-files``). (Contributed by Brett Cannon in
+  :gh:`108125`.)
 
 Optimizations
 =============
@@ -248,10 +287,19 @@ Deprecated
   practice.
   (Contributed by Victor Stinner in :gh:`106535`.)
 
-* :mod:`typing`: Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
-  the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
-  be disallowed in Python 3.15. Use the class-based syntax or the functional
-  syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
+* :mod:`http.server`: :class:`http.server.CGIHTTPRequestHandler` now emits a
+  :exc:`DeprecationWarning` as it will be removed in 3.15.  Process based CGI
+  http servers have been out of favor for a very long time.  This code was
+  outdated, unmaintained, and rarely used.  It has a high potential for both
+  security and functionality bugs.  This includes removal of the ``--cgi``
+  flag to the ``python -m http.server`` command line in 3.15.
+
+* :mod:`typing`:
+
+  * Creating a :class:`typing.NamedTuple` class using keyword arguments to denote
+    the fields (``NT = NamedTuple("NT", x=int, y=int)``) is deprecated, and will
+    be disallowed in Python 3.15. Use the class-based syntax or the functional
+    syntax instead. (Contributed by Alex Waygood in :gh:`105566`.)
 
   * When using the functional syntax to create a :class:`typing.NamedTuple`
     class or a :class:`typing.TypedDict` class, failing to pass a value to the
@@ -304,6 +352,10 @@ Deprecated
 * The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
   in :data:`~dis.hasarg` instead.
   (Contributed by Irit Katriel in :gh:`109319`.)
+
+* Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
+  It was not documented and only supported in the C implementation.
+  (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
 
 Pending Removal in Python 3.14
@@ -413,6 +465,11 @@ Pending Removal in Python 3.14
 
 Pending Removal in Python 3.15
 ------------------------------
+
+* :class:`http.server.CGIHTTPRequestHandler` will be removed along with its
+  related ``--cgi`` flag to ``python -m http.server``.  It was obsolete and
+  rarely used.  No direct replacement exists.  *Anything* is better than CGI
+  to interface a web server with a request handler.
 
 * :class:`typing.NamedTuple`:
 
@@ -904,6 +961,18 @@ New Features
   be treated as a failure.
   (Contributed by Serhiy Storchaka in :gh:`106307`.)
 
+* Add fixed variants of functions which silently ignore errors:
+
+  - :c:func:`PyObject_HasAttrWithError` replaces :c:func:`PyObject_HasAttr`.
+  - :c:func:`PyObject_HasAttrStringWithError` replaces :c:func:`PyObject_HasAttrString`.
+  - :c:func:`PyMapping_HasKeyWithError` replaces :c:func:`PyMapping_HasKey`.
+  - :c:func:`PyMapping_HasKeyStringWithError` replaces :c:func:`PyMapping_HasKeyString`.
+
+  New functions return not only ``1`` for true and ``0`` for false, but also
+  ``-1`` for error.
+
+  (Contributed by Serhiy Storchaka in :gh:`108511`.)
+
 * If Python is built in :ref:`debug mode <debug-build>` or :option:`with
   assertions <--with-assertions>`, :c:func:`PyTuple_SET_ITEM` and
   :c:func:`PyList_SET_ITEM` now check the index argument with an assertion.
@@ -941,6 +1010,25 @@ New Features
   references) now supports the :ref:`Limited API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`108634`.)
 
+* Add :c:func:`PyObject_VisitManagedDict` and
+  :c:func:`PyObject_ClearManagedDict` functions which must be called by the
+  traverse and clear functions of a type using
+  :c:macro:`Py_TPFLAGS_MANAGED_DICT` flag.  The `pythoncapi-compat project
+  <https://github.com/python/pythoncapi-compat/>`__ can be used to get these
+  functions on Python 3.11 and 3.12.
+  (Contributed by Victor Stinner in :gh:`107073`.)
+
+* Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
+  :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
+  if it is NULL. The caller is responsible to check if the result is NULL.
+  Previously, the function was private and known as
+  ``_PyThreadState_UncheckedGet()``.
+  (Contributed by Victor Stinner in :gh:`108867`.)
+
+* Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
+  but pass event arguments as a Python :class:`tuple` object.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -952,7 +1040,12 @@ Porting to Python 3.13
 
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
-  functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
+  functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
+  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
+  longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
+  macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
+  ``<pthread.h>`` header files can be included.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
 * ``Python.h`` no longer includes these standard header files: ``<time.h>``,
@@ -1231,3 +1324,6 @@ removed, although there is currently no date scheduled for their removal.
   * :c:func:`PyThread_get_key_value`: use :c:func:`PyThread_tss_get`.
   * :c:func:`PyThread_delete_key_value`: use :c:func:`PyThread_tss_delete`.
   * :c:func:`PyThread_ReInitTLS`: no longer needed.
+
+* Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
+  (Contributed by Victor Stinner in :gh:`110014`.)
