@@ -151,7 +151,7 @@ The module defines three convenience functions and a public class:
       so that the total time >= 0.2 second, returning the eventual
       (number of loops, time taken for that number of loops). It calls
       :meth:`.timeit` with increasing numbers from the sequence 1, 2, 5,
-      10, 20, 50, ... until the time taken is at least 0.2 second.
+      10, 20, 50, ... until the time taken is at least 0.2 seconds.
 
       If *callback* is given and is not ``None``, it will be called after
       each trial with two arguments: ``callback(number, time_taken)``.

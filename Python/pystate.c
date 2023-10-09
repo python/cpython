@@ -263,10 +263,10 @@ static void
 unbind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
-    // XXX assert(!tstate->_status.active);
+#ifndef HAVE_PTHREAD_STUBS
     assert(tstate->thread_id > 0);
+#endif
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     assert(tstate->native_thread_id > 0);
 #endif
@@ -998,6 +998,7 @@ _PyInterpreterState_Clear(PyThreadState *tstate)
 
 
 static inline void tstate_deactivate(PyThreadState *tstate);
+static void tstate_set_detached(PyThreadState *tstate);
 static void zapthreads(PyInterpreterState *interp);
 
 void
@@ -1011,9 +1012,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
     PyThreadState *tcur = current_fast_get(runtime);
     if (tcur != NULL && interp == tcur->interp) {
         /* Unset current thread.  After this, many C API calls become crashy. */
-        current_fast_clear(runtime);
-        tstate_deactivate(tcur);
-        _PyEval_ReleaseLock(interp, NULL);
+        _PyThreadState_Detach(tcur);
     }
 
     zapthreads(interp);
@@ -1651,6 +1650,7 @@ static void
 tstate_delete_common(PyThreadState *tstate)
 {
     assert(tstate->_status.cleared && !tstate->_status.finalized);
+    assert(tstate->state != _Py_THREAD_ATTACHED);
 
     PyInterpreterState *interp = tstate->interp;
     if (interp == NULL) {
@@ -1711,6 +1711,7 @@ void
 _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    tstate_set_detached(tstate);
     tstate_delete_common(tstate);
     current_fast_clear(tstate->interp->runtime);
     _PyEval_ReleaseLock(tstate->interp, NULL);
@@ -1867,6 +1868,79 @@ tstate_deactivate(PyThreadState *tstate)
     // It will still be used in PyGILState_Ensure().
 }
 
+static int
+tstate_try_attach(PyThreadState *tstate)
+{
+#ifdef Py_NOGIL
+    int expected = _Py_THREAD_DETACHED;
+    if (_Py_atomic_compare_exchange_int(
+            &tstate->state,
+            &expected,
+            _Py_THREAD_ATTACHED)) {
+        return 1;
+    }
+    return 0;
+#else
+    assert(tstate->state == _Py_THREAD_DETACHED);
+    tstate->state = _Py_THREAD_ATTACHED;
+    return 1;
+#endif
+}
+
+static void
+tstate_set_detached(PyThreadState *tstate)
+{
+    assert(tstate->state == _Py_THREAD_ATTACHED);
+#ifdef Py_NOGIL
+    _Py_atomic_store_int(&tstate->state, _Py_THREAD_DETACHED);
+#else
+    tstate->state = _Py_THREAD_DETACHED;
+#endif
+}
+
+void
+_PyThreadState_Attach(PyThreadState *tstate)
+{
+#if defined(Py_DEBUG)
+    // This is called from PyEval_RestoreThread(). Similar
+    // to it, we need to ensure errno doesn't change.
+    int err = errno;
+#endif
+
+    _Py_EnsureTstateNotNULL(tstate);
+    if (current_fast_get(&_PyRuntime) != NULL) {
+        Py_FatalError("non-NULL old thread state");
+    }
+
+    _PyEval_AcquireLock(tstate);
+
+    // XXX assert(tstate_is_alive(tstate));
+    current_fast_set(&_PyRuntime, tstate);
+    tstate_activate(tstate);
+
+    if (!tstate_try_attach(tstate)) {
+        // TODO: Once stop-the-world GC is implemented for --disable-gil builds
+        // this will need to wait until the GC completes. For now, this case
+        // should never happen.
+        Py_FatalError("thread attach failed");
+    }
+
+#if defined(Py_DEBUG)
+    errno = err;
+#endif
+}
+
+void
+_PyThreadState_Detach(PyThreadState *tstate)
+{
+    // XXX assert(tstate_is_alive(tstate) && tstate_is_bound(tstate));
+    assert(tstate->state == _Py_THREAD_ATTACHED);
+    assert(tstate == current_fast_get(&_PyRuntime));
+    tstate_set_detached(tstate);
+    tstate_deactivate(tstate);
+    current_fast_clear(&_PyRuntime);
+    _PyEval_ReleaseLock(tstate->interp, tstate);
+}
 
 //----------
 // other API
@@ -1939,56 +2013,15 @@ PyThreadState_Get(void)
     return tstate;
 }
 
-
-static void
-_swap_thread_states(_PyRuntimeState *runtime,
-                    PyThreadState *oldts, PyThreadState *newts)
-{
-    // XXX Do this only if oldts != NULL?
-    current_fast_clear(runtime);
-
-    if (oldts != NULL) {
-        // XXX assert(tstate_is_alive(oldts) && tstate_is_bound(oldts));
-        tstate_deactivate(oldts);
-    }
-
-    if (newts != NULL) {
-        // XXX assert(tstate_is_alive(newts));
-        assert(tstate_is_bound(newts));
-        current_fast_set(runtime, newts);
-        tstate_activate(newts);
-    }
-}
-
-PyThreadState *
-_PyThreadState_SwapNoGIL(PyThreadState *newts)
-{
-#if defined(Py_DEBUG)
-    /* This can be called from PyEval_RestoreThread(). Similar
-       to it, we need to ensure errno doesn't change.
-    */
-    int err = errno;
-#endif
-
-    PyThreadState *oldts = current_fast_get(&_PyRuntime);
-    _swap_thread_states(&_PyRuntime, oldts, newts);
-
-#if defined(Py_DEBUG)
-    errno = err;
-#endif
-    return oldts;
-}
-
 PyThreadState *
 _PyThreadState_Swap(_PyRuntimeState *runtime, PyThreadState *newts)
 {
     PyThreadState *oldts = current_fast_get(runtime);
     if (oldts != NULL) {
-        _PyEval_ReleaseLock(oldts->interp, oldts);
+        _PyThreadState_Detach(oldts);
     }
-    _swap_thread_states(runtime, oldts, newts);
     if (newts != NULL) {
-        _PyEval_AcquireLock(newts);
+        _PyThreadState_Attach(newts);
     }
     return oldts;
 }
