@@ -1845,7 +1845,7 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind.new_or_init
+        has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
         for i, p in enumerate(parameters, -1):
