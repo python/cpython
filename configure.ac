@@ -5918,6 +5918,20 @@ if test "$py_cv_lib_readline" = yes; then
   AC_CHECK_LIB($LIBREADLINE, append_history,
     AC_DEFINE(HAVE_RL_APPEND_HISTORY, 1,
       [Define if readline supports append_history]),,$READLINE_LIBS)
+
+  # in readline as well as newer editline (April 2023)
+  AC_CHECK_TYPE([rl_compdisp_func_t],
+                [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                           [Define if readline supports rl_compdisp_func_t])],
+                [],
+                [
+#include <stdio.h> /* Must be first for Gnu Readline */
+#ifdef WITH_EDITLINE
+# include <editline/readline.h>
+#else
+# include <readline/readline.h>
+#endif
+                ])
 fi
 
 # End of readline checks: restore LIBS
