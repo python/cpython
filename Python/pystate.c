@@ -2584,18 +2584,36 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
     return data->new_object(data);
 }
 
-static int
-_release_xidata_pending(void *data)
+int
+_Py_CallInInterpreter(PyInterpreterState *interp,
+                      _Py_simple_func func, void *arg)
 {
-    _xidata_clear((_PyCrossInterpreterData *)data);
+    if (interp == current_fast_get(interp->runtime)->interp) {
+        return func(arg);
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, (_Py_pending_call_func)func, arg, 0);
+    return 0;
+}
+
+int
+_Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
+                                _Py_simple_func func, void *arg)
+{
+    if (interp == current_fast_get(interp->runtime)->interp) {
+        int res = func(arg);
+        PyMem_RawFree(arg);
+        return res;
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_RAWFREE);
     return 0;
 }
 
 static int
-_xidata_release_and_rawfree_pending(void *data)
+_call_clear_xidata(void *data)
 {
     _xidata_clear((_PyCrossInterpreterData *)data);
-    PyMem_RawFree(data);
     return 0;
 }
 
@@ -2627,21 +2645,12 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // "Release" the data and/or the object.
-    if (interp == current_fast_get(interp->runtime)->interp) {
-        _xidata_clear(data);
-        if (rawfree) {
-            PyMem_RawFree(data);
-        }
+    if (rawfree) {
+        return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, data);
     }
     else {
-        _Py_pending_call_func func = _release_xidata_pending;
-        if (rawfree) {
-            func = _xidata_release_and_rawfree_pending;
-        }
-        // XXX Emit a warning if this fails?
-        _PyEval_AddPendingCall(interp, func, data, 0);
+        return _Py_CallInInterpreter(interp, _call_clear_xidata, data);
     }
-    return 0;
 }
 
 int

@@ -859,9 +859,11 @@ def test_post_mortem_chained():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
     ...     'exceptions 0',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions 1',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions -1',
@@ -882,6 +884,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 0
     > <doctest test.test_pdb.test_post_mortem_chained[0]>(3)test_function_2()
     -> 1/0
+    (Pdb) $_exception
+    ZeroDivisionError('division by zero')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(3)test_function_reraise()
     -> test_function_2()
@@ -891,6 +895,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 1
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
     -> raise ZeroDivisionError('reraised') from e
+    (Pdb) $_exception
+    ZeroDivisionError('reraised')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[2]>(5)test_function()
     -> test_function_reraise()
