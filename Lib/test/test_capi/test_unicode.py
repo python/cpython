@@ -1,16 +1,9 @@
 import unittest
 import sys
-from test import support
 from test.support import import_helper
 
-try:
-    import _testcapi
-except ImportError:
-    _testcapi = None
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
+import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinteralcapi')
 
 
 NULL = None
@@ -20,9 +13,6 @@ class Str(str):
 
 
 class CAPITest(unittest.TestCase):
-
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_new(self):
         """Test PyUnicode_New()"""
         from _testcapi import unicode_new as new
@@ -34,8 +24,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, new, 5, 0x110000)
         self.assertRaises(SystemError, new, -1, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fill(self):
         """Test PyUnicode_Fill()"""
         from _testcapi import unicode_fill as fill
@@ -73,8 +61,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES fill(NULL, 0, 0, 0x78)
         # TODO: Test PyUnicode_Fill() with non-modifiable unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_writechar(self):
         """Test PyUnicode_ReadChar()"""
         from _testcapi import unicode_writechar as writechar
@@ -102,8 +88,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_CopyCharacters() with non-modifiable and legacy
         # unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_resize(self):
         """Test PyUnicode_Resize()"""
         from _testcapi import unicode_resize as resize
@@ -124,8 +108,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_Resize() with non-modifiable and legacy unicode
         # and with NULL as the address.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_append(self):
         """Test PyUnicode_Append()"""
         from _testcapi import unicode_append as append
@@ -152,8 +134,6 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_appendanddel(self):
         """Test PyUnicode_AppendAndDel()"""
         from _testcapi import unicode_appendanddel as appendanddel
@@ -179,8 +159,6 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromstringandsize(self):
         """Test PyUnicode_FromStringAndSize()"""
         from _testcapi import unicode_fromstringandsize as fromstringandsize
@@ -199,8 +177,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         # TODO: Test PyUnicode_FromStringAndSize(NULL, size) for size != 0
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromstring(self):
         """Test PyUnicode_FromString()"""
         from _testcapi import unicode_fromstring as fromstring
@@ -215,8 +191,6 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES fromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromkindanddata(self):
         """Test PyUnicode_FromKindAndData()"""
         from _testcapi import unicode_fromkindanddata as fromkindanddata
@@ -249,8 +223,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES fromkindanddata(1, NULL, 1)
         # CRASHES fromkindanddata(4, b'\xff\xff\xff\xff')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_substring(self):
         """Test PyUnicode_Substring()"""
         from _testcapi import unicode_substring as substring
@@ -271,8 +243,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES substring([], 0, 0)
         # CRASHES substring(NULL, 0, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_getlength(self):
         """Test PyUnicode_GetLength()"""
         from _testcapi import unicode_getlength as getlength
@@ -285,8 +255,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, getlength, [])
         # CRASHES getlength(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_readchar(self):
         """Test PyUnicode_ReadChar()"""
         from _testcapi import unicode_readchar as readchar
@@ -302,8 +270,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, readchar, [], 0)
         # CRASHES readchar(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromobject(self):
         """Test PyUnicode_FromObject()"""
         from _testcapi import unicode_fromobject as fromobject
@@ -321,366 +287,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, fromobject, [])
         # CRASHES fromobject(NULL)
 
-    def test_from_format(self):
-        """Test PyUnicode_FromFormat()"""
-        # Length modifiers "j" and "t" are not tested here because ctypes does
-        # not expose types for intmax_t and ptrdiff_t.
-        # _testcapi.test_string_from_format() has a wider coverage of all
-        # formats.
-        import_helper.import_module('ctypes')
-        from ctypes import (
-            c_char_p,
-            pythonapi, py_object, sizeof,
-            c_int, c_long, c_longlong, c_ssize_t,
-            c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p,
-            c_wchar, c_wchar_p)
-        name = "PyUnicode_FromFormat"
-        _PyUnicode_FromFormat = getattr(pythonapi, name)
-        _PyUnicode_FromFormat.argtypes = (c_char_p,)
-        _PyUnicode_FromFormat.restype = py_object
-
-        def PyUnicode_FromFormat(format, *args):
-            cargs = tuple(
-                py_object(arg) if isinstance(arg, str) else arg
-                for arg in args)
-            return _PyUnicode_FromFormat(format, *cargs)
-
-        def check_format(expected, format, *args):
-            text = PyUnicode_FromFormat(format, *args)
-            self.assertEqual(expected, text)
-
-        # ascii format, non-ascii argument
-        check_format('ascii\x7f=unicode\xe9',
-                     b'ascii\x7f=%U', 'unicode\xe9')
-
-        # non-ascii format, ascii argument: ensure that PyUnicode_FromFormatV()
-        # raises an error
-        self.assertRaisesRegex(ValueError,
-            r'^PyUnicode_FromFormatV\(\) expects an ASCII-encoded format '
-            'string, got a non-ASCII byte: 0xe9$',
-            PyUnicode_FromFormat, b'unicode\xe9=%s', 'ascii')
-
-        # test "%c"
-        check_format('\uabcd',
-                     b'%c', c_int(0xabcd))
-        check_format('\U0010ffff',
-                     b'%c', c_int(0x10ffff))
-        with self.assertRaises(OverflowError):
-            PyUnicode_FromFormat(b'%c', c_int(0x110000))
-        # Issue #18183
-        check_format('\U00010000\U00100000',
-                     b'%c%c', c_int(0x10000), c_int(0x100000))
-
-        # test "%"
-        check_format('%',
-                     b'%%')
-        check_format('%s',
-                     b'%%s')
-        check_format('[%]',
-                     b'[%%]')
-        check_format('%abc',
-                     b'%%%s', b'abc')
-
-        # truncated string
-        check_format('abc',
-                     b'%.3s', b'abcdef')
-        check_format('abc[\ufffd',
-                     b'%.5s', 'abc[\u20ac]'.encode('utf8'))
-        check_format("'\\u20acABC'",
-                     b'%A', '\u20acABC')
-        check_format("'\\u20",
-                     b'%.5A', '\u20acABCDEF')
-        check_format("'\u20acABC'",
-                     b'%R', '\u20acABC')
-        check_format("'\u20acA",
-                     b'%.3R', '\u20acABCDEF')
-        check_format('\u20acAB',
-                     b'%.3S', '\u20acABCDEF')
-        check_format('\u20acAB',
-                     b'%.3U', '\u20acABCDEF')
-        check_format('\u20acAB',
-                     b'%.3V', '\u20acABCDEF', None)
-        check_format('abc[\ufffd',
-                     b'%.5V', None, 'abc[\u20ac]'.encode('utf8'))
-
-        # following tests comes from #7330
-        # test width modifier and precision modifier with %S
-        check_format("repr=  abc",
-                     b'repr=%5S', 'abc')
-        check_format("repr=ab",
-                     b'repr=%.2S', 'abc')
-        check_format("repr=   ab",
-                     b'repr=%5.2S', 'abc')
-
-        # test width modifier and precision modifier with %R
-        check_format("repr=   'abc'",
-                     b'repr=%8R', 'abc')
-        check_format("repr='ab",
-                     b'repr=%.3R', 'abc')
-        check_format("repr=  'ab",
-                     b'repr=%5.3R', 'abc')
-
-        # test width modifier and precision modifier with %A
-        check_format("repr=   'abc'",
-                     b'repr=%8A', 'abc')
-        check_format("repr='ab",
-                     b'repr=%.3A', 'abc')
-        check_format("repr=  'ab",
-                     b'repr=%5.3A', 'abc')
-
-        # test width modifier and precision modifier with %s
-        check_format("repr=  abc",
-                     b'repr=%5s', b'abc')
-        check_format("repr=ab",
-                     b'repr=%.2s', b'abc')
-        check_format("repr=   ab",
-                     b'repr=%5.2s', b'abc')
-
-        # test width modifier and precision modifier with %U
-        check_format("repr=  abc",
-                     b'repr=%5U', 'abc')
-        check_format("repr=ab",
-                     b'repr=%.2U', 'abc')
-        check_format("repr=   ab",
-                     b'repr=%5.2U', 'abc')
-
-        # test width modifier and precision modifier with %V
-        check_format("repr=  abc",
-                     b'repr=%5V', 'abc', b'123')
-        check_format("repr=ab",
-                     b'repr=%.2V', 'abc', b'123')
-        check_format("repr=   ab",
-                     b'repr=%5.2V', 'abc', b'123')
-        check_format("repr=  123",
-                     b'repr=%5V', None, b'123')
-        check_format("repr=12",
-                     b'repr=%.2V', None, b'123')
-        check_format("repr=   12",
-                     b'repr=%5.2V', None, b'123')
-
-        # test integer formats (%i, %d, %u, %o, %x, %X)
-        check_format('010',
-                     b'%03i', c_int(10))
-        check_format('0010',
-                     b'%0.4i', c_int(10))
-        for conv, signed, value, expected in [
-            (b'i', True, -123, '-123'),
-            (b'd', True, -123, '-123'),
-            (b'u', False, 123, '123'),
-            (b'o', False, 0o123, '123'),
-            (b'x', False, 0xabc, 'abc'),
-            (b'X', False, 0xabc, 'ABC'),
-        ]:
-            for mod, ctype in [
-                (b'', c_int if signed else c_uint),
-                (b'l', c_long if signed else c_ulong),
-                (b'll', c_longlong if signed else c_ulonglong),
-                (b'z', c_ssize_t if signed else c_size_t),
-            ]:
-                with self.subTest(format=b'%' + mod + conv):
-                    check_format(expected,
-                                 b'%' + mod + conv, ctype(value))
-
-        # test long output
-        min_longlong = -(2 ** (8 * sizeof(c_longlong) - 1))
-        max_longlong = -min_longlong - 1
-        check_format(str(min_longlong),
-                     b'%lld', c_longlong(min_longlong))
-        check_format(str(max_longlong),
-                     b'%lld', c_longlong(max_longlong))
-        max_ulonglong = 2 ** (8 * sizeof(c_ulonglong)) - 1
-        check_format(str(max_ulonglong),
-                     b'%llu', c_ulonglong(max_ulonglong))
-        PyUnicode_FromFormat(b'%p', c_void_p(-1))
-
-        # test padding (width and/or precision)
-        check_format('123',        b'%2i', c_int(123))
-        check_format('       123', b'%10i', c_int(123))
-        check_format('0000000123', b'%010i', c_int(123))
-        check_format('123       ', b'%-10i', c_int(123))
-        check_format('123       ', b'%-010i', c_int(123))
-        check_format('123',        b'%.2i', c_int(123))
-        check_format('0000123',    b'%.7i', c_int(123))
-        check_format('       123', b'%10.2i', c_int(123))
-        check_format('   0000123', b'%10.7i', c_int(123))
-        check_format('0000000123', b'%010.7i', c_int(123))
-        check_format('0000123   ', b'%-10.7i', c_int(123))
-        check_format('0000123   ', b'%-010.7i', c_int(123))
-
-        check_format('-123',       b'%2i', c_int(-123))
-        check_format('      -123', b'%10i', c_int(-123))
-        check_format('-000000123', b'%010i', c_int(-123))
-        check_format('-123      ', b'%-10i', c_int(-123))
-        check_format('-123      ', b'%-010i', c_int(-123))
-        check_format('-123',       b'%.2i', c_int(-123))
-        check_format('-0000123',   b'%.7i', c_int(-123))
-        check_format('      -123', b'%10.2i', c_int(-123))
-        check_format('  -0000123', b'%10.7i', c_int(-123))
-        check_format('-000000123', b'%010.7i', c_int(-123))
-        check_format('-0000123  ', b'%-10.7i', c_int(-123))
-        check_format('-0000123  ', b'%-010.7i', c_int(-123))
-
-        check_format('123',        b'%2u', c_uint(123))
-        check_format('       123', b'%10u', c_uint(123))
-        check_format('0000000123', b'%010u', c_uint(123))
-        check_format('123       ', b'%-10u', c_uint(123))
-        check_format('123       ', b'%-010u', c_uint(123))
-        check_format('123',        b'%.2u', c_uint(123))
-        check_format('0000123',    b'%.7u', c_uint(123))
-        check_format('       123', b'%10.2u', c_uint(123))
-        check_format('   0000123', b'%10.7u', c_uint(123))
-        check_format('0000000123', b'%010.7u', c_uint(123))
-        check_format('0000123   ', b'%-10.7u', c_uint(123))
-        check_format('0000123   ', b'%-010.7u', c_uint(123))
-
-        check_format('123',        b'%2o', c_uint(0o123))
-        check_format('       123', b'%10o', c_uint(0o123))
-        check_format('0000000123', b'%010o', c_uint(0o123))
-        check_format('123       ', b'%-10o', c_uint(0o123))
-        check_format('123       ', b'%-010o', c_uint(0o123))
-        check_format('123',        b'%.2o', c_uint(0o123))
-        check_format('0000123',    b'%.7o', c_uint(0o123))
-        check_format('       123', b'%10.2o', c_uint(0o123))
-        check_format('   0000123', b'%10.7o', c_uint(0o123))
-        check_format('0000000123', b'%010.7o', c_uint(0o123))
-        check_format('0000123   ', b'%-10.7o', c_uint(0o123))
-        check_format('0000123   ', b'%-010.7o', c_uint(0o123))
-
-        check_format('abc',        b'%2x', c_uint(0xabc))
-        check_format('       abc', b'%10x', c_uint(0xabc))
-        check_format('0000000abc', b'%010x', c_uint(0xabc))
-        check_format('abc       ', b'%-10x', c_uint(0xabc))
-        check_format('abc       ', b'%-010x', c_uint(0xabc))
-        check_format('abc',        b'%.2x', c_uint(0xabc))
-        check_format('0000abc',    b'%.7x', c_uint(0xabc))
-        check_format('       abc', b'%10.2x', c_uint(0xabc))
-        check_format('   0000abc', b'%10.7x', c_uint(0xabc))
-        check_format('0000000abc', b'%010.7x', c_uint(0xabc))
-        check_format('0000abc   ', b'%-10.7x', c_uint(0xabc))
-        check_format('0000abc   ', b'%-010.7x', c_uint(0xabc))
-
-        check_format('ABC',        b'%2X', c_uint(0xabc))
-        check_format('       ABC', b'%10X', c_uint(0xabc))
-        check_format('0000000ABC', b'%010X', c_uint(0xabc))
-        check_format('ABC       ', b'%-10X', c_uint(0xabc))
-        check_format('ABC       ', b'%-010X', c_uint(0xabc))
-        check_format('ABC',        b'%.2X', c_uint(0xabc))
-        check_format('0000ABC',    b'%.7X', c_uint(0xabc))
-        check_format('       ABC', b'%10.2X', c_uint(0xabc))
-        check_format('   0000ABC', b'%10.7X', c_uint(0xabc))
-        check_format('0000000ABC', b'%010.7X', c_uint(0xabc))
-        check_format('0000ABC   ', b'%-10.7X', c_uint(0xabc))
-        check_format('0000ABC   ', b'%-010.7X', c_uint(0xabc))
-
-        # test %A
-        check_format(r"%A:'abc\xe9\uabcd\U0010ffff'",
-                     b'%%A:%A', 'abc\xe9\uabcd\U0010ffff')
-
-        # test %V
-        check_format('abc',
-                     b'%V', 'abc', b'xyz')
-        check_format('xyz',
-                     b'%V', None, b'xyz')
-
-        # test %ls
-        check_format('abc', b'%ls', c_wchar_p('abc'))
-        check_format('\u4eba\u6c11', b'%ls', c_wchar_p('\u4eba\u6c11'))
-        check_format('\U0001f4bb+\U0001f40d',
-                     b'%ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('   ab', b'%5.2ls', c_wchar_p('abc'))
-        check_format('   \u4eba\u6c11', b'%5ls', c_wchar_p('\u4eba\u6c11'))
-        check_format('  \U0001f4bb+\U0001f40d',
-                     b'%5ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('\u4eba', b'%.1ls', c_wchar_p('\u4eba\u6c11'))
-        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
-                     b'%.1ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
-                     b'%.2ls', c_wchar_p('\U0001f4bb+\U0001f40d'))
-
-        # test %lV
-        check_format('abc',
-                     b'%lV', 'abc', c_wchar_p('xyz'))
-        check_format('xyz',
-                     b'%lV', None, c_wchar_p('xyz'))
-        check_format('\u4eba\u6c11',
-                     b'%lV', None, c_wchar_p('\u4eba\u6c11'))
-        check_format('\U0001f4bb+\U0001f40d',
-                     b'%lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('   ab',
-                     b'%5.2lV', None, c_wchar_p('abc'))
-        check_format('   \u4eba\u6c11',
-                     b'%5lV', None, c_wchar_p('\u4eba\u6c11'))
-        check_format('  \U0001f4bb+\U0001f40d',
-                     b'%5lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('\u4eba',
-                     b'%.1lV', None, c_wchar_p('\u4eba\u6c11'))
-        check_format('\U0001f4bb' if sizeof(c_wchar) > 2 else '\ud83d',
-                     b'%.1lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
-        check_format('\U0001f4bb+' if sizeof(c_wchar) > 2 else '\U0001f4bb',
-                     b'%.2lV', None, c_wchar_p('\U0001f4bb+\U0001f40d'))
-
-        # test variable width and precision
-        check_format('  abc', b'%*s', c_int(5), b'abc')
-        check_format('ab', b'%.*s', c_int(2), b'abc')
-        check_format('   ab', b'%*.*s', c_int(5), c_int(2), b'abc')
-        check_format('  abc', b'%*U', c_int(5), 'abc')
-        check_format('ab', b'%.*U', c_int(2), 'abc')
-        check_format('   ab', b'%*.*U', c_int(5), c_int(2), 'abc')
-        check_format('   ab', b'%*.*V', c_int(5), c_int(2), None, b'abc')
-        check_format('   ab', b'%*.*lV', c_int(5), c_int(2),
-                     None, c_wchar_p('abc'))
-        check_format('     123', b'%*i', c_int(8), c_int(123))
-        check_format('00123', b'%.*i', c_int(5), c_int(123))
-        check_format('   00123', b'%*.*i', c_int(8), c_int(5), c_int(123))
-
-        # test %p
-        # We cannot test the exact result,
-        # because it returns a hex representation of a C pointer,
-        # which is going to be different each time. But, we can test the format.
-        p_format_regex = r'^0x[a-zA-Z0-9]{3,}$'
-        p_format1 = PyUnicode_FromFormat(b'%p', 'abc')
-        self.assertIsInstance(p_format1, str)
-        self.assertRegex(p_format1, p_format_regex)
-
-        p_format2 = PyUnicode_FromFormat(b'%p %p', '123456', b'xyz')
-        self.assertIsInstance(p_format2, str)
-        self.assertRegex(p_format2,
-                         r'0x[a-zA-Z0-9]{3,} 0x[a-zA-Z0-9]{3,}')
-
-        # Extra args are ignored:
-        p_format3 = PyUnicode_FromFormat(b'%p', '123456', None, b'xyz')
-        self.assertIsInstance(p_format3, str)
-        self.assertRegex(p_format3, p_format_regex)
-
-        # Test string decode from parameter of %s using utf-8.
-        # b'\xe4\xba\xba\xe6\xb0\x91' is utf-8 encoded byte sequence of
-        # '\u4eba\u6c11'
-        check_format('repr=\u4eba\u6c11',
-                     b'repr=%V', None, b'\xe4\xba\xba\xe6\xb0\x91')
-
-        #Test replace error handler.
-        check_format('repr=abc\ufffd',
-                     b'repr=%V', None, b'abc\xff')
-
-        # Issue #33817: empty strings
-        check_format('',
-                     b'')
-        check_format('',
-                     b'%s', b'')
-
-        # test invalid format strings. these tests are just here
-        # to check for crashes and should not be considered as specifications
-        for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
-                    b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
-                    b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
-            with self.subTest(fmt=fmt):
-                self.assertRaisesRegex(SystemError, 'invalid format string',
-                    PyUnicode_FromFormat, fmt, b'abc')
-        self.assertRaisesRegex(SystemError, 'invalid format string',
-            PyUnicode_FromFormat, b'%+i', c_int(10))
-
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_interninplace(self):
         """Test PyUnicode_InternInPlace()"""
         from _testcapi import unicode_interninplace as interninplace
@@ -692,8 +298,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES interninplace(b'abc')
         # CRASHES interninplace(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_internfromstring(self):
         """Test PyUnicode_InternFromString()"""
         from _testcapi import unicode_internfromstring as internfromstring
@@ -706,8 +310,6 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES internfromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromwidechar(self):
         """Test PyUnicode_FromWideChar()"""
         from _testcapi import unicode_fromwidechar as fromwidechar
@@ -736,8 +338,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fromwidechar, NULL, 1)
         self.assertRaises(SystemError, fromwidechar, NULL, -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidechar(self):
         """Test PyUnicode_AsWideChar()"""
         from _testcapi import unicode_aswidechar
@@ -784,8 +384,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidechar_null, [], 10)
         self.assertRaises(SystemError, unicode_aswidechar_null, NULL, 10)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidecharstring(self):
         """Test PyUnicode_AsWideCharString()"""
         from _testcapi import unicode_aswidecharstring
@@ -819,8 +417,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidecharstring_null, [])
         self.assertRaises(SystemError, unicode_aswidecharstring_null, NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4(self):
         """Test PyUnicode_AsUCS4()"""
         from _testcapi import unicode_asucs4
@@ -844,8 +440,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_asucs4(NULL, 1, 0)
         # CRASHES unicode_asucs4(NULL, 1, 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4copy(self):
         """Test PyUnicode_AsUCS4Copy()"""
         from _testcapi import unicode_asucs4copy as asucs4copy
@@ -860,8 +454,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES asucs4copy([])
         # CRASHES asucs4copy(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromordinal(self):
         """Test PyUnicode_FromOrdinal()"""
         from _testcapi import unicode_fromordinal as fromordinal
@@ -873,8 +465,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, fromordinal, 0x110000)
         self.assertRaises(ValueError, fromordinal, -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8(self):
         """Test PyUnicode_AsUTF8()"""
         from _testcapi import unicode_asutf8
@@ -889,8 +479,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8andsize(self):
         """Test PyUnicode_AsUTF8AndSize()"""
         from _testcapi import unicode_asutf8andsize
@@ -908,16 +496,12 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8andsize, [], 0)
         # CRASHES unicode_asutf8andsize(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_getdefaultencoding(self):
         """Test PyUnicode_GetDefaultEncoding()"""
         from _testcapi import unicode_getdefaultencoding as getdefaultencoding
 
         self.assertEqual(getdefaultencoding(), b'utf-8')
 
-    @support.cpython_only
-    @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
         from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
@@ -936,8 +520,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, transform_decimal, [])
         # CRASHES transform_decimal(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_concat(self):
         """Test PyUnicode_Concat()"""
         from _testcapi import unicode_concat as concat
@@ -957,8 +539,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES concat(NULL, 'def')
         # CRASHES concat('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_split(self):
         """Test PyUnicode_Split()"""
         from _testcapi import unicode_split as split
@@ -980,8 +560,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, split, [], '|')
         # CRASHES split(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_rsplit(self):
         """Test PyUnicode_RSplit()"""
         from _testcapi import unicode_rsplit as rsplit
@@ -1004,8 +582,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, rsplit, [], '|')
         # CRASHES rsplit(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_partition(self):
         """Test PyUnicode_Partition()"""
         from _testcapi import unicode_partition as partition
@@ -1024,8 +600,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES partition(NULL, '|')
         # CRASHES partition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_rpartition(self):
         """Test PyUnicode_RPartition()"""
         from _testcapi import unicode_rpartition as rpartition
@@ -1044,8 +618,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES rpartition(NULL, '|')
         # CRASHES rpartition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_splitlines(self):
         """Test PyUnicode_SplitLines()"""
         from _testcapi import unicode_splitlines as splitlines
@@ -1062,8 +634,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, splitlines, b'a\nb\rc\r\nd')
         # CRASHES splitlines(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_translate(self):
         """Test PyUnicode_Translate()"""
         from _testcapi import unicode_translate as translate
@@ -1087,8 +657,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(LookupError, translate, 'abc', {ord('b'): None}, 'foo')
         # CRASHES translate(NULL, [])
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_join(self):
         """Test PyUnicode_Join()"""
         from _testcapi import unicode_join as join
@@ -1105,8 +673,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, join, '|', 123)
         self.assertRaises(SystemError, join, '|', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_count(self):
         """Test PyUnicode_Count()"""
         from _testcapi import unicode_count
@@ -1133,8 +699,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_count(NULL, '!', 0, len(str))
         # CRASHES unicode_count(str, NULL, 0, len(str))
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_tailmatch(self):
         """Test PyUnicode_Tailmatch()"""
         from _testcapi import unicode_tailmatch as tailmatch
@@ -1168,8 +732,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES tailmatch(NULL, 'aba', 0, len(str), -1)
         # CRASHES tailmatch(str, NULL, 0, len(str), -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_find(self):
         """Test PyUnicode_Find()"""
         from _testcapi import unicode_find as find
@@ -1201,8 +763,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES find(NULL, '!', 0, len(str), 1)
         # CRASHES find(str, NULL, 0, len(str), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_findchar(self):
         """Test PyUnicode_FindChar()"""
         from _testcapi import unicode_findchar
@@ -1229,8 +789,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_findchar([], ord('!'), 0, len(str), 1)
         # CRASHES unicode_findchar(NULL, ord('!'), 0, len(str), 1), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_replace(self):
         """Test PyUnicode_Replace()"""
         from _testcapi import unicode_replace as replace
@@ -1258,8 +816,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES replace('a', NULL, '=')
         # CRASHES replace(NULL, 'a', '=')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_compare(self):
         """Test PyUnicode_Compare()"""
         from _testcapi import unicode_compare as compare
@@ -1280,8 +836,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES compare(NULL, 'abc')
         # CRASHES compare('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_comparewithasciistring(self):
         """Test PyUnicode_CompareWithASCIIString()"""
         from _testcapi import unicode_comparewithasciistring as comparewithasciistring
@@ -1297,8 +851,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES comparewithasciistring([], b'abc')
         # CRASHES comparewithasciistring(NULL, b'abc')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_richcompare(self):
         """Test PyUnicode_RichCompare()"""
         from _testcapi import unicode_richcompare as richcompare
@@ -1325,8 +877,6 @@ class CAPITest(unittest.TestCase):
             # CRASHES richcompare(NULL, 'abc', op)
             # CRASHES richcompare('abc', NULL, op)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_format(self):
         """Test PyUnicode_Format()"""
         from _testcapi import unicode_format as format
@@ -1338,8 +888,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, format, 'x=%d!', NULL)
         self.assertRaises(SystemError, format, NULL, 42)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_contains(self):
         """Test PyUnicode_Contains()"""
         from _testcapi import unicode_contains as contains
@@ -1360,8 +908,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(NULL, 'b')
         # CRASHES contains('abcd', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_isidentifier(self):
         """Test PyUnicode_IsIdentifier()"""
         from _testcapi import unicode_isidentifier as isidentifier
@@ -1382,8 +928,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES isidentifier([])
         # CRASHES isidentifier(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_copycharacters(self):
         """Test PyUnicode_CopyCharacters()"""
         from _testcapi import unicode_copycharacters
@@ -1431,8 +975,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_CopyCharacters() with non-unicode and
         # non-modifiable unicode as "to".
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_pep393_utf8_caching_bug(self):
         # Issue #25709: Problem with string concatenation and utf-8 cache
         from _testcapi import getargs_s_hash
