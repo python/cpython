@@ -308,7 +308,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
-#define UOP_EXE_INC(opname) ((void)0)
+#define UOP_STAT_INC(opname, name) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #endif  // !Py_STATS
