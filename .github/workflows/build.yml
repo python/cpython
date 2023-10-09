@@ -615,6 +615,7 @@ jobs:
           build_ubuntu_ssltests,
           build_win32,
           build_win_arm64,
+          cifuzz,
           test_hypothesis,
         allowed-skips: >-
           ${{
@@ -635,6 +636,13 @@ jobs:
             build_ubuntu,
             build_ubuntu_ssltests,
             build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_cifuzz)
+            && '
+            cifuzz,
             '
             || ''
           }}
