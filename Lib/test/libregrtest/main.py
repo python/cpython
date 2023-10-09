@@ -397,7 +397,6 @@ class Regrtest:
         print(f"Result: {state}")
 
     def create_run_tests(self, tests: TestTuple):
-        tests = ('test_socket',)
         return RunTests(
             tests,
             fail_fast=self.fail_fast,
