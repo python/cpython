@@ -1403,7 +1403,8 @@ way is to instantiate one of the following classes:
    failure, an :class:`OSError` is automatically raised.
 
    .. versionchanged:: 3.3
-      :exc:`WindowsError` used to be raised.
+      :exc:`WindowsError` used to be raised,
+      which is now an alias of :exc:`OSError`.
 
    .. versionchanged:: 3.12
 
@@ -2088,13 +2089,14 @@ Utility functions
 .. function:: WinError(code=None, descr=None)
 
    Windows only: this function is probably the worst-named thing in ctypes. It
-   creates an instance of OSError.  If *code* is not specified,
+   creates an instance of :exc:`OSError`.  If *code* is not specified,
    ``GetLastError`` is called to determine the error code. If *descr* is not
    specified, :func:`FormatError` is called to get a textual description of the
    error.
 
    .. versionchanged:: 3.3
-      An instance of :exc:`WindowsError` used to be created.
+      An instance of :exc:`WindowsError` used to be created, which is now an
+      alias of :exc:`OSError`.
 
 
 .. function:: wstring_at(address, size=-1)
