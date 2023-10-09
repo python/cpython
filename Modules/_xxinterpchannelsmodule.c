@@ -2556,9 +2556,10 @@ channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(channel_send_doc,
-"channel_send(cid, obj)\n\
+"channel_send(cid, obj, wait=True)\n\
 \n\
-Add the object's data to the channel's queue.");
+Add the object's data to the channel's queue.\n\
+By default this waits for the object to be received.");
 
 static PyObject *
 channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2616,9 +2617,10 @@ channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(channel_send_buffer_doc,
-"channel_send_buffer(cid, obj)\n\
+"channel_send_buffer(cid, obj, wait=True)\n\
 \n\
-Add the object's buffer to the channel's queue.");
+Add the object's buffer to the channel's queue.\n\
+By default this waits for the object to be received.");
 
 static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
