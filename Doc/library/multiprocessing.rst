@@ -2623,7 +2623,6 @@ server::
 The following code uses :func:`~multiprocessing.connection.wait` to
 wait for messages from multiple processes at once::
 
-   import time, random
    from multiprocessing import Process, Pipe, current_process
    from multiprocessing.connection import wait
 
