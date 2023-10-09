@@ -1,0 +1,2 @@
+Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`. It
+was not documented and only supported in the C implementation.

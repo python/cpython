@@ -998,18 +998,38 @@ _PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, in
         return NULL;
     }
 
-    // This is needed to keep compatibility with 3.11, where an empty format spec is parsed
-    // as an *empty* JoinedStr node, instead of having an empty constant in it.
-    if (asdl_seq_LEN(spec) == 1) {
-        expr_ty e = asdl_seq_GET(spec, 0);
-        if (e->kind == Constant_kind
-                && PyUnicode_Check(e->v.Constant.value)
-                && PyUnicode_GetLength(e->v.Constant.value) == 0) {
-            spec = _Py_asdl_expr_seq_new(0, arena);
-        }
+    // This is needed to keep compatibility with 3.11, where an empty format
+    // spec is parsed as an *empty* JoinedStr node, instead of having an empty
+    // constant in it.
+    Py_ssize_t n_items = asdl_seq_LEN(spec);
+    Py_ssize_t non_empty_count = 0;
+    for (Py_ssize_t i = 0; i < n_items; i++) {
+        expr_ty item = asdl_seq_GET(spec, i);
+        non_empty_count += !(item->kind == Constant_kind &&
+                             PyUnicode_CheckExact(item->v.Constant.value) &&
+                             PyUnicode_GET_LENGTH(item->v.Constant.value) == 0);
     }
-
-    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno, end_col_offset, p->arena);
+    if (non_empty_count != n_items) {
+        asdl_expr_seq *resized_spec =
+            _Py_asdl_expr_seq_new(non_empty_count, p->arena);
+        if (resized_spec == NULL) {
+            return NULL;
+        }
+        Py_ssize_t j = 0;
+        for (Py_ssize_t i = 0; i < n_items; i++) {
+            expr_ty item = asdl_seq_GET(spec, i);
+            if (item->kind == Constant_kind &&
+                PyUnicode_CheckExact(item->v.Constant.value) &&
+                PyUnicode_GET_LENGTH(item->v.Constant.value) == 0) {
+                continue;
+            }
+            asdl_seq_SET(resized_spec, j++, item);
+        }
+        assert(j == non_empty_count);
+        spec = resized_spec;
+    }
+    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
+                                   end_col_offset, p->arena);
     if (!res) {
         return NULL;
     }

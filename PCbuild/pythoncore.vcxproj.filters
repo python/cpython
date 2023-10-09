@@ -300,9 +300,6 @@
     <ClInclude Include="..\PC\pyconfig.h">
       <Filter>PC</Filter>
     </ClInclude>
-    <ClInclude Include="..\Python\importdl.h">
-      <Filter>Python</Filter>
-    </ClInclude>
     <ClInclude Include="..\Python\stdlib_module_names.h">
       <Filter>Python</Filter>
     </ClInclude>
@@ -633,6 +630,9 @@
     <ClInclude Include="..\Include\internal\pycore_import.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_importdl.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_initconfig.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
@@ -960,6 +960,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\symtablemodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sysconfig.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_threadmodule.c">

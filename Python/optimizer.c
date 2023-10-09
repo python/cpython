@@ -462,6 +462,7 @@ translate_bytecode_to_trace(
     if (trace_length + (n) > max_length) { \
         DPRINTF(2, "No room for %s (need %d, got %d)\n", \
                 (opname), (n), max_length - trace_length); \
+        OPT_STAT_INC(trace_too_long); \
         goto done; \
     } \
     reserved = (n);  // Keep ADD_TO_TRACE / ADD_TO_STUB honest
@@ -473,6 +474,7 @@ translate_bytecode_to_trace(
 #define TRACE_STACK_PUSH() \
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
+        OPT_STAT_INC(trace_stack_overflow); \
         goto done; \
     } \
     trace_stack[trace_stack_depth].code = code; \
@@ -572,6 +574,7 @@ pop_jump_if_bool:
                     ADD_TO_TRACE(_JUMP_TO_TOP, 0, 0);
                 }
                 else {
+                    OPT_STAT_INC(inner_loop);
                     DPRINTF(2, "JUMP_BACKWARD not to top ends trace\n");
                 }
                 goto done;
@@ -638,7 +641,9 @@ pop_jump_if_bool:
                         // LOAD_CONST + _POP_FRAME.
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
-                            goto done;}
+                            OPT_STAT_INC(trace_stack_underflow);
+                            goto done;
+                        }
                     }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
                     for (int i = 0; i < nuops; i++) {
@@ -713,6 +718,7 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_qualname),
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
+                                    OPT_STAT_INC(recursive_call);
                                     goto done;
                                 }
                                 if (new_code->co_version != func_version) {
@@ -741,6 +747,7 @@ pop_jump_if_bool:
                     break;
                 }
                 DPRINTF(2, "Unsupported opcode %s\n", uop_name(opcode));
+                OPT_UNSUPPORTED_OPCODE(opcode);
                 goto done;  // Break out of loop
             }  // End default
 
@@ -788,6 +795,7 @@ done:
         return trace_length;
     }
     else {
+        OPT_STAT_INC(trace_too_short);
         DPRINTF(4,
                 "No trace for %s (%s:%d) at byte offset %d\n",
                 PyUnicode_AsUTF8(code->co_qualname),
@@ -888,7 +896,8 @@ uop_optimize(
         // Error or nothing translated
         return trace_length;
     }
-    OBJECT_STAT_INC(optimization_traces_created);
+    OPT_HIST(trace_length, trace_length_hist);
+    OPT_STAT_INC(traces_created);
     char *uop_optimize = Py_GETENV("PYTHONUOPSOPTIMIZE");
     if (uop_optimize != NULL && *uop_optimize > '0') {
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
@@ -905,6 +914,7 @@ uop_optimize(
     if (executor == NULL) {
         return -1;
     }
+    OPT_HIST(trace_length, optimized_trace_length_hist);
     executor->base.execute = execute;
     memcpy(executor->trace, trace, trace_length * sizeof(_PyUOpInstruction));
     *exec_ptr = (_PyExecutorObject *)executor;
