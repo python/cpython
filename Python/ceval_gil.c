@@ -76,7 +76,7 @@ update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstat
             _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
         }
         if (_Py_ThreadCanHandleSignals(interp)) {
-            if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+            if (_Py_atomic_load_int(&_PyRuntime.signals.is_tripped)) {
                 _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
             }
         }
