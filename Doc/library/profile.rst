@@ -54,7 +54,7 @@ This section is provided for users that "don't want to read the manual." It
 provides a very brief overview, and allows a user to rapidly perform profiling
 on an existing application.
 
-To profile a statement with the namespace of ``__main__``, you can do::
+To profile a statement with the namespace of :mod:`__main__`, you can do::
 
    import cProfile
    import re
