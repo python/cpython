@@ -152,6 +152,8 @@ test_frozenset_add_in_capi(PyObject *self, PyObject *Py_UNUSED(obj))
     else if (contains == 0) {
         goto unexpected;
     }
+    Py_DECREF(fs);
+    Py_DECREF(num);
     Py_RETURN_NONE;
 
 unexpected:
