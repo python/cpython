@@ -38,6 +38,7 @@ PyAPI_FUNC(void) _Py_RestoreSignals(void);
 
 struct _signals_runtime_state {
     struct {
+        // tripped and func should be accessed by using atomic ops.
         int tripped;
         PyObject* func;
     } handlers[Py_NSIG];
@@ -59,7 +60,8 @@ struct _signals_runtime_state {
 #endif
     } wakeup;
 
-    /* Speed up sigcheck() when none tripped */
+    /* Speed up sigcheck() when none tripped
+       and is_tripped should be accessed by using atomic ops. */
     int is_tripped;
 
     /* These objects necessarily belong to the main interpreter. */
