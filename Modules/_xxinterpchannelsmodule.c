@@ -1,8 +1,14 @@
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "interpreteridobject.h"
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
+#include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 
 
 /*
@@ -76,6 +82,73 @@ API..  The module does not create any objects that are shared globally.
     PyMem_RawFree(VAR)
 
 
+struct xid_class_registry {
+    size_t count;
+#define MAX_XID_CLASSES 5
+    struct {
+        PyTypeObject *cls;
+    } added[MAX_XID_CLASSES];
+};
+
+static int
+register_xid_class(PyTypeObject *cls, crossinterpdatafunc shared,
+                   struct xid_class_registry *classes)
+{
+    int res = _PyCrossInterpreterData_RegisterClass(cls, shared);
+    if (res == 0) {
+        assert(classes->count < MAX_XID_CLASSES);
+        // The class has refs elsewhere, so we need to incref here.
+        classes->added[classes->count].cls = cls;
+        classes->count += 1;
+    }
+    return res;
+}
+
+static void
+clear_xid_class_registry(struct xid_class_registry *classes)
+{
+    while (classes->count > 0) {
+        classes->count -= 1;
+        PyTypeObject *cls = classes->added[classes->count].cls;
+        _PyCrossInterpreterData_UnregisterClass(cls);
+    }
+}
+
+#define XID_IGNORE_EXC 1
+#define XID_FREE 2
+
+static int
+_release_xid_data(_PyCrossInterpreterData *data, int flags)
+{
+    int ignoreexc = flags & XID_IGNORE_EXC;
+    PyObject *exc;
+    if (ignoreexc) {
+        exc = PyErr_GetRaisedException();
+    }
+    int res;
+    if (flags & XID_FREE) {
+        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+    }
+    else {
+        res = _PyCrossInterpreterData_Release(data);
+    }
+    if (res < 0) {
+        /* The owning interpreter is already destroyed. */
+        if (ignoreexc) {
+            // XXX Emit a warning?
+            PyErr_Clear();
+        }
+    }
+    if (flags & XID_FREE) {
+        /* Either way, we free the data. */
+    }
+    if (ignoreexc) {
+        PyErr_SetRaisedException(exc);
+    }
+    return res;
+}
+
+
 static PyInterpreterState *
 _get_current_interp(void)
 {
@@ -140,7 +213,8 @@ add_new_exception(PyObject *mod, const char *name, PyObject *base)
     add_new_exception(MOD, MODULE_NAME "." Py_STRINGIFY(NAME), BASE)
 
 static PyTypeObject *
-add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
+add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
+             struct xid_class_registry *classes)
 {
     PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
                 NULL, mod, spec, NULL);
@@ -152,7 +226,7 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
         return NULL;
     }
     if (shared != NULL) {
-        if (_PyCrossInterpreterData_RegisterClass(cls, shared)) {
+        if (register_xid_class(cls, shared, classes)) {
             Py_DECREF(cls);
             return NULL;
         }
@@ -160,49 +234,149 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
     return cls;
 }
 
-#define XID_IGNORE_EXC 1
-#define XID_FREE 2
+
+/* Cross-interpreter Buffer Views *******************************************/
+
+// XXX Release when the original interpreter is destroyed.
+
+typedef struct {
+    PyObject_HEAD
+    Py_buffer *view;
+    int64_t interp;
+} XIBufferViewObject;
+
+static PyObject *
+xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+{
+    assert(data->data != NULL);
+    assert(data->obj == NULL);
+    assert(data->interp >= 0);
+    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
+    if (self == NULL) {
+        return NULL;
+    }
+    PyObject_Init((PyObject *)self, cls);
+    self->view = (Py_buffer *)data->data;
+    self->interp = data->interp;
+    return (PyObject *)self;
+}
+
+static void
+xibufferview_dealloc(XIBufferViewObject *self)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interp);
+    /* If the interpreter is no longer alive then we have problems,
+       since other objects may be using the buffer still. */
+    assert(interp != NULL);
+
+    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
+        // XXX Emit a warning?
+        PyErr_Clear();
+    }
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    /* "Instances of heap-allocated types hold a reference to their type."
+     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
+     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    */
+    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
+    // like we do for _abc._abc_data?
+    Py_DECREF(tp);
+}
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int flags)
+xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
 {
-    int ignoreexc = flags & XID_IGNORE_EXC;
-    PyObject *exc;
-    if (ignoreexc) {
-        exc = PyErr_GetRaisedException();
+    /* Only PyMemoryView_FromObject() should ever call this,
+       via _memoryview_from_xid() below. */
+    *view = *self->view;
+    view->obj = (PyObject *)self;
+    // XXX Should we leave it alone?
+    view->internal = NULL;
+    return 0;
+}
+
+static PyType_Slot XIBufferViewType_slots[] = {
+    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
+    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
+    // We don't bother with Py_bf_releasebuffer since we don't need it.
+    {0, NULL},
+};
+
+static PyType_Spec XIBufferViewType_spec = {
+    .name = MODULE_NAME ".CrossInterpreterBufferView",
+    .basicsize = sizeof(XIBufferViewObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = XIBufferViewType_slots,
+};
+
+
+/* extra XID types **********************************************************/
+
+static PyTypeObject * _get_current_xibufferview_type(void);
+
+static PyObject *
+_memoryview_from_xid(_PyCrossInterpreterData *data)
+{
+    PyTypeObject *cls = _get_current_xibufferview_type();
+    if (cls == NULL) {
+        return NULL;
     }
-    int res;
-    if (flags & XID_FREE) {
-        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+    PyObject *obj = xibufferview_from_xid(cls, data);
+    if (obj == NULL) {
+        return NULL;
     }
-    else {
-        res = _PyCrossInterpreterData_Release(data);
+    return PyMemoryView_FromObject(obj);
+}
+
+static int
+_memoryview_shared(PyThreadState *tstate, PyObject *obj,
+                   _PyCrossInterpreterData *data)
+{
+    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (view == NULL) {
+        return -1;
     }
-    if (res < 0) {
-        /* The owning interpreter is already destroyed. */
-        if (ignoreexc) {
-            // XXX Emit a warning?
-            PyErr_Clear();
-        }
+    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
+        PyMem_RawFree(view);
+        return -1;
     }
-    if (flags & XID_FREE) {
-        /* Either way, we free the data. */
+    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
+                                 _memoryview_from_xid);
+    return 0;
+}
+
+static int
+register_builtin_xid_types(struct xid_class_registry *classes)
+{
+    PyTypeObject *cls;
+    crossinterpdatafunc func;
+
+    // builtin memoryview
+    cls = &PyMemoryView_Type;
+    func = _memoryview_shared;
+    if (register_xid_class(cls, func, classes)) {
+        return -1;
     }
-    if (ignoreexc) {
-        PyErr_SetRaisedException(exc);
-    }
-    return res;
+
+    return 0;
 }
 
 
 /* module state *************************************************************/
 
 typedef struct {
+    struct xid_class_registry xid_classes;
+
+    /* Added at runtime by interpreters module. */
     PyTypeObject *send_channel_type;
     PyTypeObject *recv_channel_type;
 
     /* heap types */
     PyTypeObject *ChannelIDType;
+    PyTypeObject *XIBufferViewType;
 
     /* exceptions */
     PyObject *ChannelError;
@@ -241,6 +415,7 @@ traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(state->ChannelIDType);
+    Py_VISIT(state->XIBufferViewType);
 
     /* exceptions */
     Py_VISIT(state->ChannelError);
@@ -263,6 +438,7 @@ clear_module_state(module_state *state)
         (void)_PyCrossInterpreterData_UnregisterClass(state->ChannelIDType);
     }
     Py_CLEAR(state->ChannelIDType);
+    Py_CLEAR(state->XIBufferViewType);
 
     /* exceptions */
     Py_CLEAR(state->ChannelError);
@@ -272,6 +448,17 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->ChannelNotEmptyError);
 
     return 0;
+}
+
+
+static PyTypeObject *
+_get_current_xibufferview_type(void)
+{
+    module_state *state = _get_current_module_state();
+    if (state == NULL) {
+        return NULL;
+    }
+    return state->XIBufferViewType;
 }
 
 
@@ -2045,6 +2232,7 @@ set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     if (state == NULL) {
         return -1;
     }
+    struct xid_class_registry *xid_classes = &state->xid_classes;
 
     if (state->send_channel_type != NULL
         || state->recv_channel_type != NULL)
@@ -2055,10 +2243,10 @@ set_channel_end_types(PyObject *mod, PyTypeObject *send, PyTypeObject *recv)
     state->send_channel_type = (PyTypeObject *)Py_NewRef(send);
     state->recv_channel_type = (PyTypeObject *)Py_NewRef(recv);
 
-    if (_PyCrossInterpreterData_RegisterClass(send, _channel_end_shared)) {
+    if (register_xid_class(send, _channel_end_shared, xid_classes)) {
         return -1;
     }
-    if (_PyCrossInterpreterData_RegisterClass(recv, _channel_end_shared)) {
+    if (register_xid_class(recv, _channel_end_shared, xid_classes)) {
         return -1;
     }
 
@@ -2326,6 +2514,40 @@ PyDoc_STRVAR(channel_send_doc,
 Add the object's data to the channel's queue.");
 
 static PyObject *
+channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "obj", NULL};
+    int64_t cid;
+    struct channel_id_converter_data cid_data = {
+        .module = self,
+    };
+    PyObject *obj;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "O&O:channel_send_buffer", kwlist,
+                                     channel_id_converter, &cid_data, &obj)) {
+        return NULL;
+    }
+    cid = cid_data.cid;
+
+    PyObject *tempobj = PyMemoryView_FromObject(obj);
+    if (tempobj == NULL) {
+        return NULL;
+    }
+
+    int err = _channel_send(&_globals.channels, cid, tempobj);
+    Py_DECREF(tempobj);
+    if (handle_channel_error(err, self, cid)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_send_buffer_doc,
+"channel_send_buffer(cid, obj)\n\
+\n\
+Add the object's buffer to the channel's queue.");
+
+static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "default", NULL};
@@ -2516,6 +2738,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"send",                      _PyCFunction_CAST(channel_send),
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
+    {"send_buffer",               _PyCFunction_CAST(channel_send_buffer),
+     METH_VARARGS | METH_KEYWORDS, channel_send_buffer_doc},
     {"recv",                      _PyCFunction_CAST(channel_recv),
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
     {"close",                     _PyCFunction_CAST(channel_close),
@@ -2543,6 +2767,13 @@ module_exec(PyObject *mod)
     if (_globals_init() != 0) {
         return -1;
     }
+    struct xid_class_registry *xid_classes = NULL;
+
+    module_state *state = get_module_state(mod);
+    if (state == NULL) {
+        goto error;
+    }
+    xid_classes = &state->xid_classes;
 
     /* Add exception types */
     if (exceptions_init(mod) != 0) {
@@ -2550,25 +2781,34 @@ module_exec(PyObject *mod)
     }
 
     /* Add other types */
-    module_state *state = get_module_state(mod);
-    if (state == NULL) {
-        goto error;
-    }
 
     // ChannelID
     state->ChannelIDType = add_new_type(
-            mod, &ChannelIDType_spec, _channelid_shared);
+            mod, &ChannelIDType_spec, _channelid_shared, xid_classes);
     if (state->ChannelIDType == NULL) {
         goto error;
     }
 
-    // Make sure chnnels drop objects owned by this interpreter
+    state->XIBufferViewType = add_new_type(mod, &XIBufferViewType_spec, NULL,
+                                           xid_classes);
+    if (state->XIBufferViewType == NULL) {
+        goto error;
+    }
+
+    if (register_builtin_xid_types(xid_classes) < 0) {
+        goto error;
+    }
+
+    /* Make sure chnnels drop objects owned by this interpreter. */
     PyInterpreterState *interp = _get_current_interp();
     PyUnstable_AtExit(interp, clear_interpreter, (void *)interp);
 
     return 0;
 
 error:
+    if (xid_classes != NULL) {
+        clear_xid_class_registry(xid_classes);
+    }
     _globals_fini();
     return -1;
 }
@@ -2593,6 +2833,11 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
+
+    // Before clearing anything, we unregister the various XID types. */
+    clear_xid_class_registry(&state->xid_classes);
+
+    // Now we clear the module state.
     clear_module_state(state);
     return 0;
 }
@@ -2602,7 +2847,13 @@ module_free(void *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
+
+    // Before clearing anything, we unregister the various XID types. */
+    clear_xid_class_registry(&state->xid_classes);
+
+    // Now we clear the module state.
     clear_module_state(state);
+
     _globals_fini();
 }
 
