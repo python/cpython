@@ -86,7 +86,9 @@ jobs:
             # The tests are pretty slow so they are executed only for PRs
             # changing relevant files.
             FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE $FUZZ_RELEVANT_FILES && echo "run_cifuzz=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE $FUZZ_RELEVANT_FILES && echo "run_cifuzz=true" >> $GITHUB_OUTPUT
+          else
+            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
           fi
       - name: Compute hash for config cache key
         id: config_hash
