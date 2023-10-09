@@ -39,9 +39,6 @@ PyAPI_FUNC(void) _Py_RestoreSignals(void);
 struct _signals_runtime_state {
     struct {
         int tripped;
-        /* func is atomic to ensure that PyErr_SetInterrupt is async-signal-safe
-         * (even though it would probably be otherwise, anyway).
-         */
         PyObject* func;
     } handlers[Py_NSIG];
 

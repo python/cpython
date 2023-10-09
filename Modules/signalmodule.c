@@ -129,6 +129,8 @@ get_handler(int i)
 Py_LOCAL_INLINE(void)
 set_handler(int i, PyObject* func)
 {
+    /* Store func with atomic operation to ensure
+       that PyErr_SetInterrupt is async-signal-safe. */
     _Py_atomic_store_ptr(&Handlers[i].func, func);
 }
 
