@@ -1,0 +1,14 @@
+target-version = "py310"
+fix = true
+select = [
+    "F",  # Enable all pyflakes rules
+    "RUF100",  # Ban unused `# noqa` comments
+    "PGH004",  # Ban blanket `# noqa` comments (only ignore specific error codes)
+]
+unfixable = [
+    # The autofixes sometimes do the wrong things for these;
+    # it's better to have to manually look at the code and see how it needs fixing
+    "F841",
+    "F601",
+    "F602",
+]
