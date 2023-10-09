@@ -97,6 +97,9 @@ Other Language Changes
   if supported.
   (Contributed by Victor Stinner in :gh:`109649`.)
 
+* :func:`os.path.realpath` now resolves MS-DOS style file names even if
+  the file is not accessible.
+  (Contributed by Moonsik Park in :gh:`82367`.)
 
 New Modules
 ===========
@@ -176,6 +179,14 @@ os
 * Add :func:`os.process_cpu_count` function to get the number of logical CPUs
   usable by the calling thread of the current process.
   (Contributed by Victor Stinner in :gh:`109649`.)
+
+* Add a low level interface for Linux's timer notification file descriptors
+  via :func:`os.timerfd_create`,
+  :func:`os.timerfd_settime`, :func:`os.timerfd_settime_ns`,
+  :func:`os.timerfd_gettime`, and :func:`os.timerfd_gettime_ns`,
+  :const:`os.TFD_NONBLOCK`, :const:`os.TFD_CLOEXEC`,
+  :const:`os.TFD_TIMER_ABSTIME`, and :const:`os.TFD_TIMER_CANCEL_ON_SET`
+  (Contributed by Masaru Tsuchiyama in :gh:`108277`.)
 
 pathlib
 -------
@@ -341,6 +352,10 @@ Deprecated
 * The ``dis.HAVE_ARGUMENT`` separator is deprecated. Check membership
   in :data:`~dis.hasarg` instead.
   (Contributed by Irit Katriel in :gh:`109319`.)
+
+* Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
+  It was not documented and only supported in the C implementation.
+  (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
 
 Pending Removal in Python 3.14
@@ -1009,6 +1024,10 @@ New Features
   Previously, the function was private and known as
   ``_PyThreadState_UncheckedGet()``.
   (Contributed by Victor Stinner in :gh:`108867`.)
+
+* Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
+  but pass event arguments as a Python :class:`tuple` object.
+  (Contributed by Victor Stinner in :gh:`85283`.)
 
 Porting to Python 3.13
 ----------------------

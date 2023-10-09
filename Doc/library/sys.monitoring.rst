@@ -147,7 +147,7 @@ by another event:
 * C_RAISE
 * C_RETURN
 
-The ``C_RETURN`` and ``C_RAISE`` events are are controlled by the ``CALL``
+The ``C_RETURN`` and ``C_RAISE`` events are controlled by the ``CALL``
 event. ``C_RETURN`` and ``C_RAISE`` events will only be seen if the
 corresponding ``CALL`` event is being monitored.
 

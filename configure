@@ -10710,6 +10710,12 @@ then :
   printf "%s\n" "#define HAVE_SYS_TIMES_H 1" >>confdefs.h
 
 fi
+ac_fn_c_check_header_compile "$LINENO" "sys/timerfd.h" "ac_cv_header_sys_timerfd_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_timerfd_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_TIMERFD_H 1" >>confdefs.h
+
+fi
 ac_fn_c_check_header_compile "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_types_h" = xyes
 then :
@@ -18775,6 +18781,50 @@ printf "%s\n" "$ac_cv_func_eventfd" >&6; }
 then :
 
 printf "%s\n" "#define HAVE_EVENTFD 1" >>confdefs.h
+
+fi
+
+
+
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for timerfd_create" >&5
+printf %s "checking for timerfd_create... " >&6; }
+if test ${ac_cv_func_timerfd_create+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_SYS_TIMERFD_H
+#include <sys/timerfd.h>
+#endif
+
+int
+main (void)
+{
+void *x=timerfd_create
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_timerfd_create=yes
+else $as_nop
+  ac_cv_func_timerfd_create=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_timerfd_create" >&5
+printf "%s\n" "$ac_cv_func_timerfd_create" >&6; }
+  if test "x$ac_cv_func_timerfd_create" = xyes
+then :
+
+printf "%s\n" "#define HAVE_TIMERFD_CREATE 1" >>confdefs.h
 
 fi
 
