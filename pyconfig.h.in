@@ -989,6 +989,9 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
+/* Define if readline supports rl_compdisp_func_t */
+#undef HAVE_RL_COMPDISP_FUNC_T
+
 /* Define if you have readline 2.2 */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
 
