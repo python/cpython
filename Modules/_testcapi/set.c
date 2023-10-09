@@ -6,36 +6,42 @@
 static PyObject *
 set_check(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PySet_Check(obj));
 }
 
 static PyObject *
 set_checkexact(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PySet_CheckExact(obj));
 }
 
 static PyObject *
 frozenset_check(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PyFrozenSet_Check(obj));
 }
 
 static PyObject *
 frozenset_checkexact(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PyFrozenSet_CheckExact(obj));
 }
 
 static PyObject *
 anyset_check(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PyAnySet_Check(obj));
 }
 
 static PyObject *
 anyset_checkexact(PyObject *self, PyObject *obj)
 {
+    NULLABLE(obj);
     RETURN_INT(PyAnySet_CheckExact(obj));
 }
 
