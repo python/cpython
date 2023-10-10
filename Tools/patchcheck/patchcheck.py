@@ -7,7 +7,6 @@ import os.path
 import subprocess
 import sysconfig
 
-import reindent
 import untabify
 
 
@@ -184,21 +183,6 @@ _PYTHON_FILES_WITH_TABS = frozenset({
 })
 
 
-@status("Fixing Python file whitespace", info=report_modified_files)
-def normalize_whitespace(file_paths):
-    """Make sure that the whitespace for .py files have been normalized."""
-    reindent.makebackup = False  # No need to create backups.
-    fixed = [
-        path for path in file_paths
-        if (
-            path.endswith('.py')
-            and path not in _PYTHON_FILES_WITH_TABS
-            and reindent.check(os.path.join(SRCDIR, path))
-        )
-    ]
-    return fixed
-
-
 @status("Fixing C file whitespace", info=report_modified_files)
 def normalize_c_whitespace(file_paths):
     """Report if any C files """
@@ -256,10 +240,8 @@ def ci(pull_request):
         return
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     fixed = []
-    fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
     if not fixed:
         print('No whitespace issues found')
@@ -273,13 +255,10 @@ def ci(pull_request):
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
-    python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
     doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
                  fn.endswith(('.rst', '.inc'))]
     misc_files = {p for p in file_paths if p.startswith('Misc')}
-    # PEP 8 whitespace rules enforcement.
-    normalize_whitespace(python_files)
     # C rules enforcement.
     normalize_c_whitespace(c_files)
     # Docs updated.
@@ -294,10 +273,13 @@ def main():
     regenerated_pyconfig_h_in(file_paths)
 
     # Test suite run and passed.
-    if python_files or c_files:
-        end = " and check for refleaks?" if c_files else "?"
-        print()
-        print("Did you run the test suite" + end)
+    has_c_files = any(fn for fn in file_paths if fn.endswith(('.c', '.h')))
+    has_python_files = any(fn for fn in file_paths if fn.endswith('.py'))
+    print()
+    if has_c_files:
+        print("Did you run the test suite and check for refleaks?")
+    elif has_python_files:
+        print("Did you run the test suite?")
 
 
 if __name__ == '__main__':
