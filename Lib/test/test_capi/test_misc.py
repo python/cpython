@@ -2714,7 +2714,8 @@ class TestUops(unittest.TestCase):
         for index, name in enumerate(uops):
             if name.startswith("CALL"):
                 break
-        self.assertEqual(uops[index+1], "_CHECK_EVAL_BREAKER")
+        self.assertEqual(uops[index+1], "_SET_IP")
+        self.assertEqual(uops[index+2], "_CHECK_EVAL_BREAKER")
 
 
 if __name__ == "__main__":

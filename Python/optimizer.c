@@ -492,12 +492,15 @@ translate_bytecode_to_trace(
             PyUnicode_AsUTF8(code->co_filename),
             code->co_firstlineno,
             2 * INSTR_IP(initial_instr, code));
-
+    bool check_eval_breaker = false;
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        RESERVE_RAW(2 + check_eval_breaker, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
         ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
 
+        if (check_eval_breaker) {
+            ADD_TO_TRACE(_CHECK_EVAL_BREAKER, 0, 0);
+        }
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
         uint32_t extras = 0;
@@ -748,12 +751,11 @@ pop_jump_if_bool:
             }  // End default
 
         }  // End switch (opcode)
-        if (_PyOpcode_opcode_metadata[opcode].flags & HAS_EVAL_BREAK_FLAG) {
-            ADD_TO_TRACE(_CHECK_EVAL_BREAKER, 0, 0);
-        }
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];
+        check_eval_breaker =
+            (_PyOpcode_opcode_metadata[opcode].flags & HAS_EVAL_BREAK_FLAG) != 0;
     }  // End for (;;)
 
 done:
