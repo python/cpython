@@ -633,7 +633,9 @@ class ChannelTests(TestBase):
             cid = channels.create()
             with self.assertRaises(TimeoutError):
                 channels.send(cid, obj, blocking=True, timeout=0.1)
-            # XXX Verify the channel is empty now.
+            with self.assertRaises(channels.ChannelEmptyError):
+                received = channels.recv(cid)
+                print(repr(received))
 
         with self.subTest('timeout not hit'):
             cid = channels.create()
@@ -668,7 +670,9 @@ class ChannelTests(TestBase):
             cid = channels.create()
             with self.assertRaises(TimeoutError):
                 channels.send_buffer(cid, obj, blocking=True, timeout=0.1)
-            # XXX Verify the channel is empty now.
+            with self.assertRaises(channels.ChannelEmptyError):
+                received = channels.recv(cid)
+                print(repr(received))
 
         with self.subTest('timeout not hit'):
             cid = channels.create()
