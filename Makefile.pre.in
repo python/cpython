@@ -100,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/mimalloc
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/internal/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -342,12 +342,12 @@ IO_OBJS=	\
 
 MIMALLOC_HEADERS= \
                 $(srcdir)/Include/internal/pycore_mimalloc.h \
-		$(srcdir)/Include/mimalloc/mimalloc.h \
-		$(srcdir)/Include/mimalloc/mimalloc/atomic.h \
-		$(srcdir)/Include/mimalloc/mimalloc/internal.h \
-		$(srcdir)/Include/mimalloc/mimalloc/prim.h \
-		$(srcdir)/Include/mimalloc/mimalloc/track.h \
-		$(srcdir)/Include/mimalloc/mimalloc/types.h
+		$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc/atomic.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc/internal.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc/prim.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc/track.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc/types.h
 
 
 ##########################################################################
@@ -1551,6 +1551,22 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
+
+Objects/obmalloc.o: $(srcdir)/Objects/mimalloc/alloc.c \
+				    $(srcdir)/Objects/mimalloc/alloc-aligned.c \
+					$(srcdir)/Objects/mimalloc/alloc-posix.c \
+					$(srcdir)/Objects/mimalloc/arena.c \
+					$(srcdir)/Objects/mimalloc/bitmap.c \
+					$(srcdir)/Objects/mimalloc/heap.c \
+					$(srcdir)/Objects/mimalloc/init.c \
+					$(srcdir)/Objects/mimalloc/options.c \
+					$(srcdir)/Objects/mimalloc/os.c \
+					$(srcdir)/Objects/mimalloc/page.c \
+					$(srcdir)/Objects/mimalloc/random.c \
+					$(srcdir)/Objects/mimalloc/segment.c \
+					$(srcdir)/Objects/mimalloc/segment-map.c \
+					$(srcdir)/Objects/mimalloc/stats.c \
+					$(srcdir)/Objects/mimalloc/prim/prim.c
 
 Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
