@@ -358,7 +358,7 @@ class CAPITest(unittest.TestCase):
         from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
         self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
         self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
-        self.assertEqual(buildvalue('I', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
 
         self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
         self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
