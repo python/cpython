@@ -180,6 +180,8 @@ typedef struct PyConfig {
     int safe_path;
     int int_max_str_digits;
 
+    int cpu_count;
+
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
     wchar_t *program_name;
