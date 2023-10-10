@@ -621,6 +621,76 @@ class ChannelTests(TestBase):
     #-------------------
     # send/recv
 
+    def test_send_timeout(self):
+        obj = b'spam'
+
+        with self.subTest('non-blocking with timeout'):
+            cid = channels.create()
+            with self.assertRaises(ValueError):
+                channels.send(cid, obj, blocking=False, timeout=0.1)
+
+        with self.subTest('timeout hit'):
+            cid = channels.create()
+            with self.assertRaises(TimeoutError):
+                channels.send(cid, obj, blocking=True, timeout=0.1)
+            # XXX Verify the channel is empty now.
+
+        with self.subTest('timeout not hit'):
+            cid = channels.create()
+            def f():
+                recv_wait(cid)
+            t = threading.Thread(target=f)
+            t.start()
+            channels.send(cid, obj, blocking=True, timeout=10)
+            t.join()
+
+        with self.subTest('channel closed while waiting'):
+            cid = channels.create()
+            def f():
+                # sleep() isn't a great for this, but definitely simple.
+                time.sleep(1)
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send(cid, obj, blocking=True, timeout=2)
+            t.join()
+
+    def test_send_buffer_timeout(self):
+        obj = bytearray(b'spam')
+
+        with self.subTest('non-blocking with timeout'):
+            cid = channels.create()
+            with self.assertRaises(ValueError):
+                channels.send_buffer(cid, obj, blocking=False, timeout=0.1)
+
+        with self.subTest('timeout hit'):
+            cid = channels.create()
+            with self.assertRaises(TimeoutError):
+                channels.send_buffer(cid, obj, blocking=True, timeout=0.1)
+            # XXX Verify the channel is empty now.
+
+        with self.subTest('timeout not hit'):
+            cid = channels.create()
+            def f():
+                recv_wait(cid)
+            t = threading.Thread(target=f)
+            t.start()
+            channels.send_buffer(cid, obj, blocking=True, timeout=10)
+            t.join()
+
+        with self.subTest('channel closed while waiting'):
+            cid = channels.create()
+            def f():
+                # sleep() isn't a great for this, but definitely simple.
+                time.sleep(1)
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send_buffer(cid, obj, blocking=True, timeout=2)
+            t.join()
+
     def test_send_recv_main(self):
         cid = channels.create()
         orig = b'spam'
