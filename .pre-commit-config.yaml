@@ -30,3 +30,8 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
