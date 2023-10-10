@@ -23,7 +23,7 @@ repos:
         entry: 'python Tools/scripts/reindent.py --nobackup --newline LF'
         language: 'system'
         types: [python]
-        exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/_parser).*$'
+        exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/(_parser|_capi)).*$'
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
