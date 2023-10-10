@@ -964,8 +964,8 @@ class TestSendRecv(TestBase):
 
         orig = b'spam'
         s.send(orig)
-        t.join()
         obj = r.recv()
+        t.join()
 
         self.assertEqual(obj, orig)
         self.assertIsNot(obj, orig)

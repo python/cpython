@@ -82,11 +82,15 @@ jobs:
           # CPython, so CIFuzz should be run only for code that is likely to be
           # merged into the main branch; compatibility with older branches may
           # be broken.
-          if [ "$GITHUB_BASE_REF" = "main" ]; then
+          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
+          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
             # The tests are pretty slow so they are executed only for PRs
             # changing relevant files.
-            FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE $FUZZ_RELEVANT_FILES && echo "run_cifuzz=true" >> $GITHUB_OUTPUT || true
+            echo "Run CIFuzz tests"
+            echo "run_cifuzz=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch too old for CIFuzz tests; or no C files were changed"
+            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
           fi
       - name: Compute hash for config cache key
         id: config_hash
