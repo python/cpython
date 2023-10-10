@@ -537,7 +537,7 @@ CFLAGS = [
     "-Wno-override-module",
     # Keep library calls from sneaking in:
     "-ffreestanding",  # XXX
-    # Position-independent code adds indirection to every load:
+    # Position-independent code adds indirection to every load and jump:
     "-fno-pic",
     # The GHC calling convention uses %rbp as an argument-passing register:
     "-fomit-frame-pointer",  # XXX
@@ -569,6 +569,8 @@ class Compiler:
         self._target = target
 
     def _use_ghccc(self, ll: pathlib.Path) -> None:
+        """LLVM's GHCC calling convention is perfect for our needs"""
+        # TODO: Explore 
         if self._ghccc:
             before = ll.read_text()
             after = re.sub(
@@ -588,6 +590,17 @@ class Compiler:
             *CFLAGS,
             f"--target={self._target.backend}",
             f"-c",
+            # We have three options for code model:
+            # - "small": assumes that code and data reside in the lowest 2GB of
+            #   memory (128MB on aarch64)
+            # - "medium": assumes that code resides in the lowest 2GB of memory,
+            #   and makes no assumptions about data (not available on aarch64)
+            # - "large": makes no assumptions about either code or data
+            # We need 64-bit addresses for data everywhere, but we'd *really*
+            # prefer direct short jumps instead of indirect long ones where
+            # possible. So, we use the "large" code model on aarch64 and the
+            # "medium" code model elsewhere, which gives us correctly-sized
+            # direct jumps and immediate data loads on basically all platforms:
             f"-mcmodel={self._target.model}",
         ]
         frontend_flags = [

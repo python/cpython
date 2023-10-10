@@ -22,6 +22,19 @@
 #define MB (1 << 20)
 #define JIT_POOL_SIZE  (128 * MB)
 
+// This next line looks crazy, but it's actually not *that* bad. Yes, we're
+// statically allocating a huge empty array in our executable, and mapping
+// executable pages inside of it. However, this has a big benefit: we can
+// compile our stencils to use the "small" or "medium" code models, since we
+// know that all calls (for example, to C-API functions like PyNumber_Add) will
+// be less than a relative 32-bit jump away (28 bits on aarch64). If that
+// condition didn't hold (for example, if we mmap some memory far away from the
+// executable), we would need to use trampolines and/or 64-bit indirect branches
+// to extend the range. That's pretty slow and complex, whereas this "just
+// works" (though we could certainly switch to a scheme like that without *too*
+// much trouble). The OS lazily allocates pages for this array anyways (and it's
+// BSS data that's not included in the interpreter executable itself), so it's
+// not like we're *actually* making the executable huge at runtime (or on disk):
 static unsigned char pool[JIT_POOL_SIZE];
 static size_t pool_head;
 static size_t page_size;

@@ -56,7 +56,15 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
         default:
             Py_UNREACHABLE();
     }
-    // Finally, the continuations:
+    // Finally, the continuations. You may be wondering why we pass the next
+    // oparg and operand through the call (instead of just looking them up in
+    // the next instruction if needed). This is because these values are being
+    // encoded in the *addresses* of externs. Unfortunately, clang is incredibly
+    // clever: the ELF ABI actually has some limits on the valid address range
+    // of an extern (it must be in range(1, 2**32 - 2**24)). So, if we load them
+    // in the same compilation unit as they are being used, clang *will*
+    // optimize the function as if the oparg can never be zero and the operand
+    // always fits in 32 bits, for example. That's bad, for obvious reasons.
     if (pc != -1) {
         assert(pc == oparg);
         assert(opcode == _JUMP_TO_TOP ||
