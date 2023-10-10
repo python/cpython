@@ -4304,6 +4304,15 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\(0-9\)$!.0\1!g' | tr -d '.'`
+
+printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+
+    fi
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
