@@ -142,9 +142,8 @@ def changed_files(base_branch=None):
     else:
         sys.exit('need a git checkout to get modified files')
 
-    # Normalize the path to be able to match using .startswith()
-    filenames2 = list(map(os.path.normpath, filenames))
-    return filenames2
+    # Normalize the path to be able to match using str.startswith()
+    return list(map(os.path.normpath, filenames))
 
 
 def report_modified_files(file_paths):
@@ -201,22 +200,6 @@ def regenerated_pyconfig_h_in(file_paths):
         return "not needed"
 
 
-def ci(pull_request):
-    if pull_request == 'false':
-        print('Not a pull request; skipping')
-        return
-    base_branch = get_base_branch()
-    file_paths = changed_files(base_branch)
-    fixed = []
-    if not fixed:
-        print('No whitespace issues found')
-    else:
-        count = len(fixed)
-        print(f'Please fix the {n_files_str(count)} with whitespace issues')
-        print('(on Unix you can run `make patchcheck` to make the fixes)')
-        sys.exit(1)
-
-
 def main():
     base_branch = get_base_branch()
     file_paths = changed_files(base_branch)
@@ -245,12 +228,4 @@ def main():
 
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--ci',
-                        help='Perform pass/fail checks')
-    args = parser.parse_args()
-    if args.ci:
-        ci(args.ci)
-    else:
-        main()
+    main()
