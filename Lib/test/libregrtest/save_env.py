@@ -297,6 +297,11 @@ class saved_test_environment:
             method_suffix = name.replace('.', '_')
             get_name = 'get_' + method_suffix
             restore_name = 'restore_' + method_suffix
+            if self.pgo and method_suffix == 'files':
+                # gh-110313: Running PROFILE_TASK of make creates profile files
+                # like "code-4262.profclangr" in the current directory on
+                # purpose. They must not be removed.
+                continue
             yield name, getattr(self, get_name), getattr(self, restore_name)
 
     def __enter__(self):
