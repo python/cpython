@@ -40,7 +40,12 @@ repos:
         language: "system"
         types_or: ['c', 'c++']
         # Don't check the style of vendored libraries
-        exclude: '^Modules/(_decimal/libmpdec|expat)/.*$'
+        exclude: |
+          (?x)^(
+            Modules/_decimal/.*
+            | Modules/libmpdec/.*
+            | Modules/expat/.*
+          )$
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
