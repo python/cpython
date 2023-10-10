@@ -16,11 +16,6 @@
 #  include <stdlib.h>             // _sys_nerr
 #endif
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Forward declarations */
 static PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
@@ -1513,11 +1508,9 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     /* Explicitly call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }
@@ -1920,7 +1913,3 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
     return _PyErr_ProgramDecodedTextObject(filename, lineno, NULL);
 }
-
-#ifdef __cplusplus
-}
-#endif

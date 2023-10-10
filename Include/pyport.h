@@ -48,6 +48,10 @@
 #  define Py_BUILD_CORE
 #endif
 
+#if defined(Py_LIMITED_API) && defined(Py_BUILD_CORE)
+#  error "Py_LIMITED_API is not compatible with Py_BUILD_CORE"
+#endif
+
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic

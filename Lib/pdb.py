@@ -304,6 +304,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
+
+        if self._chained_exceptions:
+            self.set_convenience_variable(
+                self.curframe,
+                '_exception',
+                self._chained_exceptions[self._chained_exception_index],
+            )
+
         return self.execRcLines()
 
     # Can be executed earlier than 'setup' if desired
@@ -2081,8 +2089,6 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-usage: pdb.py [-c command] ... [-m module | pyfile] [arg] ...
-
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
 the -m switch.
@@ -2097,34 +2103,44 @@ To let the script run up to a given line X in the debugged file, use
 
 
 def main():
-    import getopt
+    import argparse
 
-    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['help', 'command='])
+    parser = argparse.ArgumentParser(prog="pdb",
+                                     description=_usage,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     allow_abbrev=False)
 
-    if not args:
-        print(_usage)
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-m', metavar='module')
+    group.add_argument('pyfile', nargs='?')
+    parser.add_argument('args', nargs="*")
+
+    if len(sys.argv) == 1:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        parser.print_help()
         sys.exit(2)
 
-    if any(opt in ['-h', '--help'] for opt, optarg in opts):
-        print(_usage)
-        sys.exit()
+    opts = parser.parse_args()
 
-    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
-
-    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
-    cls = _ModuleTarget if module_indicated else _ScriptTarget
-    target = cls(args[0])
+    if opts.m:
+        file = opts.m
+        target = _ModuleTarget(file)
+    else:
+        file = opts.pyfile
+        target = _ScriptTarget(file)
 
     target.check()
 
-    sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + opts.args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
     pdb = Pdb()
-    pdb.rcLines.extend(commands)
+    pdb.rcLines.extend(opts.command)
     while True:
         try:
             pdb._run(target)

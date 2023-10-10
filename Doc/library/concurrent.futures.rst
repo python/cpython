@@ -188,6 +188,10 @@ And::
       ThreadPoolExecutor now reuses idle worker threads before starting
       *max_workers* worker threads too.
 
+   .. versionchanged:: 3.13
+      Default value of *max_workers* is changed to
+      ``min(32, (os.process_cpu_count() or 1) + 4)``.
+
 
 .. _threadpoolexecutor-example:
 
@@ -243,7 +247,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
    An :class:`Executor` subclass that executes calls asynchronously using a pool
    of at most *max_workers* processes.  If *max_workers* is ``None`` or not
-   given, it will default to the number of processors on the machine.
+   given, it will default to :func:`os.process_cpu_count`.
    If *max_workers* is less than or equal to ``0``, then a :exc:`ValueError`
    will be raised.
    On Windows, *max_workers* must be less than or equal to ``61``. If it is not
@@ -292,6 +296,18 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    .. versionchanged:: 3.11
       The *max_tasks_per_child* argument was added to allow users to
       control the lifetime of workers in the pool.
+
+   .. versionchanged:: 3.12
+      On POSIX systems, if your application has multiple threads and the
+      :mod:`multiprocessing` context uses the ``"fork"`` start method:
+      The :func:`os.fork` function called internally to spawn workers may raise a
+      :exc:`DeprecationWarning`. Pass a *mp_context* configured to use a
+      different start method. See the :func:`os.fork` documentation for
+      further explanation.
+
+   .. versionchanged:: 3.13
+      *max_workers* uses :func:`os.process_cpu_count` by default, instead of
+      :func:`os.cpu_count`.
 
 .. _processpoolexecutor-example:
 

@@ -18,7 +18,7 @@ F = fractions.Fraction
 
 #locate file with float format test values
 test_dir = os.path.dirname(__file__) or os.curdir
-format_testfile = os.path.join(test_dir, 'formatfloat_testcases.txt')
+format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""

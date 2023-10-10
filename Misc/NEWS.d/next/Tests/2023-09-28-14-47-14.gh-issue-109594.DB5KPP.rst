@@ -1,0 +1,4 @@
+Fix test_timeout() of test_concurrent_futures.test_wait. Remove the future
+which may or may not complete depending if it takes longer than the timeout
+ot not. Keep the second future which does not complete before wait()
+timeout. Patch by Victor Stinner.
