@@ -325,8 +325,8 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
 
 if ssl is not None:
 
-    CERTFILE = os.path.join(os.path.dirname(__file__), "keycert3.pem")
-    CAFILE = os.path.join(os.path.dirname(__file__), "pycacert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__), "certdata", "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__), "certdata", "pycacert.pem")
 
     class SSLConnection(asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""

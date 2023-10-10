@@ -42,21 +42,21 @@ from test.support import threading_helper
 CLOCK_RES = 0.020
 
 
-def data_file(filename):
+def data_file(*filename):
     if hasattr(support, 'TEST_HOME_DIR'):
-        fullname = os.path.join(support.TEST_HOME_DIR, filename)
+        fullname = os.path.join(support.TEST_HOME_DIR, *filename)
         if os.path.isfile(fullname):
             return fullname
-    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', *filename)
     if os.path.isfile(fullname):
         return fullname
-    raise FileNotFoundError(filename)
+    raise FileNotFoundError(os.path.join(filename))
 
 
-ONLYCERT = data_file('ssl_cert.pem')
-ONLYKEY = data_file('ssl_key.pem')
-SIGNED_CERTFILE = data_file('keycert3.pem')
-SIGNING_CA = data_file('pycacert.pem')
+ONLYCERT = data_file('certdata', 'ssl_cert.pem')
+ONLYKEY = data_file('certdata', 'ssl_key.pem')
+SIGNED_CERTFILE = data_file('certdata', 'keycert3.pem')
+SIGNING_CA = data_file('certdata', 'pycacert.pem')
 PEERCERT = {
     'OCSP': ('http://testca.pythontest.net/testca/ocsp/',),
     'caIssuers': ('http://testca.pythontest.net/testca/pycacert.cer',),
