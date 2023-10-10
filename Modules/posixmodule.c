@@ -14592,7 +14592,6 @@ os_get_terminal_size_impl(PyObject *module, int fd)
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
 
-
 /*[clinic input]
 os.cpu_count
 
@@ -14605,7 +14604,12 @@ static PyObject *
 os_cpu_count_impl(PyObject *module)
 /*[clinic end generated code: output=5fc29463c3936a9c input=ba2f6f8980a0e2eb]*/
 {
-    int ncpu;
+    const PyConfig *config = _Py_GetConfig();
+    if (config->cpu_count > 0) {
+        return PyLong_FromLong(config->cpu_count);
+    }
+
+    int ncpu = 0;
 #ifdef MS_WINDOWS
 # ifdef MS_WINDOWS_DESKTOP
     ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);

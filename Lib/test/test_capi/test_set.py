@@ -2,8 +2,9 @@ import unittest
 
 from test.support import import_helper
 
-# Skip this test if the _testcapi module isn't available.
+# Skip this test if the _testcapi or _testinternalcapi modules aren't available.
 _testcapi = import_helper.import_module('_testcapi')
+_testinternalcapi = import_helper.import_module('_testinternalcapi')
 
 class set_subclass(set):
     pass
@@ -12,13 +13,15 @@ class frozenset_subclass(frozenset):
     pass
 
 
-class TestSetCAPI(unittest.TestCase):
+class BaseSetTests:
     def assertImmutable(self, action, *args):
         self.assertRaises(SystemError, action, frozenset(), *args)
         self.assertRaises(SystemError, action, frozenset({1}), *args)
         self.assertRaises(SystemError, action, frozenset_subclass(), *args)
         self.assertRaises(SystemError, action, frozenset_subclass({1}), *args)
 
+
+class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_set_check(self):
         check = _testcapi.set_check
         self.assertTrue(check(set()))
@@ -213,3 +216,50 @@ class TestSetCAPI(unittest.TestCase):
             clear(object())
         self.assertImmutable(clear)
         # CRASHES: clear(NULL)
+
+
+class TestInternalCAPI(BaseSetTests, unittest.TestCase):
+    def test_set_update(self):
+        update = _testinternalcapi.set_update
+        for cls in (set, set_subclass):
+            for it in ('ab', ('a', 'b'), ['a', 'b'],
+                       set('ab'), set_subclass('ab'),
+                       frozenset('ab'), frozenset_subclass('ab')):
+                with self.subTest(cls=cls, it=it):
+                    instance = cls()
+                    self.assertEqual(update(instance, it), 0)
+                    self.assertEqual(instance, {'a', 'b'})
+                    instance = cls(it)
+                    self.assertEqual(update(instance, it), 0)
+                    self.assertEqual(instance, {'a', 'b'})
+            with self.assertRaisesRegex(TypeError, 'object is not iterable'):
+                update(cls(), 1)
+            with self.assertRaisesRegex(TypeError, "unhashable type: 'dict'"):
+                update(cls(), [{}])
+        with self.assertRaises(SystemError):
+            update(object(), 'ab')
+        self.assertImmutable(update, 'ab')
+        # CRASHES: update(NULL, object())
+        # CRASHES: update(instance, NULL)
+        # CRASHES: update(NULL, NULL)
+
+    def test_set_next_entry(self):
+        set_next = _testinternalcapi.set_next_entry
+        for cls in (set, set_subclass, frozenset, frozenset_subclass):
+            with self.subTest(cls=cls):
+                instance = cls('abc')
+                pos = 0
+                items = []
+                while True:
+                    res = set_next(instance, pos)
+                    if res is None:
+                        break
+                    rc, pos, hash_, item = res
+                    items.append(item)
+                    self.assertEqual(rc, 1)
+                    self.assertIn(item, instance)
+                    self.assertEqual(hash(item), hash_)
+                self.assertEqual(items, list(instance))
+        with self.assertRaises(SystemError):
+            set_next(object(), 0)
+        # CRASHES: set_next(NULL, 0)

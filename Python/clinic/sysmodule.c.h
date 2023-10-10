@@ -1380,6 +1380,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
+"_get_cpu_count_config($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting PyConfig.cpu_count");
+
+#define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+
+static int
+sys__get_cpu_count_config_impl(PyObject *module);
+
+static PyObject *
+sys__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__get_cpu_count_config_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1423,4 +1451,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=549bb1f92a15f916 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a7d3fbbcb281c22 input=a9049054013a1b77]*/
