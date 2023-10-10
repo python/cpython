@@ -8,8 +8,8 @@ repos:
         files: ^Lib/test/
       - id: ruff
         name: Run Ruff on Tools/clinic/
-        args: [--exit-non-zero-on-fix]
-        files: ^Tools/clinic/
+        args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
+        files: ^Tools/clinic/|Lib/test/test_clinic.py
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
