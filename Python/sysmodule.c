@@ -23,26 +23,30 @@ Data members:
 #include "pycore_long.h"          // _PY_LONG_MAX_STR_DIGITS_THRESHOLD
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
 #include "pycore_namespace.h"     // _PyNamespace_New()
-#include "pycore_object.h"        // _PyObject_IS_GC(), _PyObject_DebugTypeStats()
+#include "pycore_object.h"        // _PyObject_DebugTypeStats()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ComputeSysPath0()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
-#include "pycore_sysmodule.h"     // Define _PySys_GetSizeOf()
+#include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "frameobject.h"          // PyFrame_FastToLocalsWithError()
-#include "pydtrace.h"
+#include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
 #include "stdlib_module_names.h"  // _Py_stdlib_module_names
-#include <locale.h>
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getpid()
+#endif
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif /* MS_WINDOWS */
 
 #ifdef MS_COREDLL
@@ -52,11 +56,11 @@ extern const char *PyWin_DLLVersionString;
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+#  include <emscripten.h>
 #endif
 
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+#  include <fcntl.h>
 #endif
 
 /*[clinic input]
@@ -65,6 +69,7 @@ module sys
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3726b388feee8cea]*/
 
 #include "clinic/sysmodule.c.h"
+
 
 PyObject *
 _PySys_GetAttr(PyThreadState *tstate, PyObject *name)
@@ -186,9 +191,7 @@ static int
 sys_audit_tstate(PyThreadState *ts, const char *event,
                  const char *argFormat, va_list vargs)
 {
-    /* N format is inappropriate, because you do not know
-       whether the reference is consumed by the call.
-       Assert rather than exception for perf reasons */
+    assert(event != NULL);
     assert(!argFormat || !strchr(argFormat, 'N'));
 
     if (!ts) {
@@ -331,6 +334,21 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     int res = sys_audit_tstate(tstate, event, argFormat, vargs);
     va_end(vargs);
     return res;
+}
+
+int
+PySys_AuditTuple(const char *event, PyObject *args)
+{
+    if (args == NULL) {
+        return PySys_Audit(event, NULL);
+    }
+
+    if (!PyTuple_Check(args)) {
+        PyErr_Format(PyExc_TypeError, "args must be tuple, got %s",
+                     Py_TYPE(args)->tp_name);
+        return -1;
+    }
+    return PySys_Audit(event, "O", args);
 }
 
 /* We expose this function primarily for our own cleanup during
@@ -503,6 +521,9 @@ sys_audit(PyObject *self, PyObject *const *args, Py_ssize_t argc)
                          "'event'");
         return NULL;
     }
+
+    assert(args[0] != NULL);
+    assert(PyUnicode_Check(args[0]));
 
     if (!should_audit(tstate->interp)) {
         Py_RETURN_NONE;
@@ -2036,11 +2057,6 @@ sys_call_tracing_impl(PyObject *module, PyObject *func, PyObject *funcargs)
     return _PyEval_CallTracing(func, funcargs);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*[clinic input]
 sys._debugmallocstats
 
@@ -2067,10 +2083,6 @@ sys__debugmallocstats_impl(PyObject *module)
 #ifdef Py_TRACE_REFS
 /* Defined in objects.c because it uses static globals in that file */
 extern PyObject *_Py_GetObjects(PyObject *, PyObject *);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 
@@ -2104,32 +2116,33 @@ sys_is_finalizing_impl(PyObject *module)
     return PyBool_FromLong(Py_IsFinalizing());
 }
 
+
 #ifdef Py_STATS
 /*[clinic input]
 sys._stats_on
 
-Turns on stats gathering (stats gathering is on by default).
+Turns on stats gathering (stats gathering is off by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_on_impl(PyObject *module)
-/*[clinic end generated code: output=aca53eafcbb4d9fe input=8ddc6df94e484f3a]*/
+/*[clinic end generated code: output=aca53eafcbb4d9fe input=43b5bfe145299e55]*/
 {
-    _py_stats = &_py_stats_struct;
+    _Py_StatsOn();
     Py_RETURN_NONE;
 }
 
 /*[clinic input]
 sys._stats_off
 
-Turns off stats gathering (stats gathering is on by default).
+Turns off stats gathering (stats gathering is off by default).
 [clinic start generated code]*/
 
 static PyObject *
 sys__stats_off_impl(PyObject *module)
-/*[clinic end generated code: output=1534c1ee63812214 input=b3e50e71ecf29f66]*/
+/*[clinic end generated code: output=1534c1ee63812214 input=d1a84c60c56cbce2]*/
 {
-    _py_stats = NULL;
+    _Py_StatsOff();
     Py_RETURN_NONE;
 }
 
@@ -2148,21 +2161,23 @@ sys__stats_clear_impl(PyObject *module)
 }
 
 /*[clinic input]
-sys._stats_dump
+sys._stats_dump -> bool
 
 Dump stats to file, and clears the stats.
+
+Return False if no statistics were not dumped because stats gathering was off.
 [clinic start generated code]*/
 
-static PyObject *
+static int
 sys__stats_dump_impl(PyObject *module)
-/*[clinic end generated code: output=79f796fb2b4ddf05 input=92346f16d64f6f95]*/
+/*[clinic end generated code: output=6e346b4ba0de4489 input=31a489e39418b2a5]*/
 {
-    _Py_PrintSpecializationStats(1);
+    int res = _Py_PrintSpecializationStats(1);
     _Py_StatsClear();
-    Py_RETURN_NONE;
+    return res;
 }
+#endif   // Py_STATS
 
-#endif
 
 #ifdef ANDROID_API_LEVEL
 /*[clinic input]
@@ -2291,11 +2306,6 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     return Py_NewRef(r);
 }
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2363,10 +2373,6 @@ PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void) {
     }
 #endif
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 
 static PyMethodDef sys_methods[] = {
@@ -3496,7 +3502,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     if (config->pycache_prefix != NULL) {
         SET_SYS_FROM_WSTR("pycache_prefix", config->pycache_prefix);
     } else {
-        PyDict_SetItemString(sysdict, "pycache_prefix", Py_None);
+        if (PyDict_SetItemString(sysdict, "pycache_prefix", Py_None) < 0) {
+            return -1;
+        }
     }
 
     COPY_LIST("argv", config->argv);
@@ -3510,7 +3518,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
         SET_SYS_FROM_WSTR("_stdlib_dir", stdlibdir);
     }
     else {
-        PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None);
+        if (PyDict_SetItemString(sysdict, "_stdlib_dir", Py_None) < 0) {
+            return -1;
+        }
     }
 
 #undef SET_SYS_FROM_WSTR
@@ -3520,6 +3530,9 @@ _PySys_UpdateConfig(PyThreadState *tstate)
     // sys.flags
     PyObject *flags = _PySys_GetObject(interp, "flags"); // borrowed ref
     if (flags == NULL) {
+        if (!_PyErr_Occurred(tstate)) {
+            _PyErr_SetString(tstate, PyExc_RuntimeError, "lost sys.flags");
+        }
         return -1;
     }
     if (set_flags_from_config(interp, flags) < 0) {

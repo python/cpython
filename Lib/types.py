@@ -1,6 +1,7 @@
 """
 Define names for built-in types that aren't directly accessible as a builtin.
 """
+
 import sys
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
@@ -330,4 +331,11 @@ EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
 
+def __getattr__(name):
+    if name == 'CapsuleType':
+        import _socket
+        return type(_socket.CAPI)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 __all__ = [n for n in globals() if n[:1] != '_']
+__all__ += ['CapsuleType']

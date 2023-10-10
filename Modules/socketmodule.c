@@ -111,11 +111,6 @@ Local naming conventions:
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
-// gethostname() prototype missing from Solaris standard header files
-#ifdef __sun
-extern int gethostname(char *, int);
-#endif
-
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
 #endif

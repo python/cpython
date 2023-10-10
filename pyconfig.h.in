@@ -1363,6 +1363,9 @@
 /* Define to 1 if you have the <sys/termio.h> header file. */
 #undef HAVE_SYS_TERMIO_H
 
+/* Define to 1 if you have the <sys/timerfd.h> header file. */
+#undef HAVE_SYS_TIMERFD_H
+
 /* Define to 1 if you have the <sys/times.h> header file. */
 #undef HAVE_SYS_TIMES_H
 
@@ -1404,6 +1407,9 @@
 
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
+
+/* Define if you have the 'timerfd_create' function. */
+#undef HAVE_TIMERFD_CREATE
 
 /* Define to 1 if you have the `times' function. */
 #undef HAVE_TIMES
@@ -1787,6 +1793,9 @@
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
+
+/* Define to build the readline module against Apple BSD editline. */
+#undef WITH_APPLE_EDITLINE
 
 /* Define if you want build the _decimal module using a coroutine-local rather
    than a thread-local context */

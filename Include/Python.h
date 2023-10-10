@@ -17,7 +17,6 @@
 
 // Include standard header files
 #include <assert.h>               // assert()
-#include <ctype.h>                // tolower()
 #include <inttypes.h>             // uintptr_t
 #include <limits.h>               // INT_MAX
 #include <math.h>                 // HUGE_VAL
@@ -49,6 +48,7 @@
 #include "pytypedefs.h"
 #include "pybuffer.h"
 #include "pystats.h"
+#include "pyatomic.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"

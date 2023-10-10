@@ -360,9 +360,14 @@ class TestCoverage(unittest.TestCase):
         rmtree(TESTFN)
         unlink(TESTFN)
 
-    def _coverage(self, tracer,
-                  cmd='import test.support, test.test_pprint;'
-                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
+    DEFAULT_SCRIPT = '''if True:
+        import unittest
+        from test.test_pprint import QueryTestCase
+        loader = unittest.TestLoader()
+        tests = loader.loadTestsFromTestCase(QueryTestCase)
+        tests(unittest.TestResult())
+        '''
+    def _coverage(self, tracer, cmd=DEFAULT_SCRIPT):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)

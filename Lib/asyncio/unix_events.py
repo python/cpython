@@ -226,8 +226,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         return transp
 
     def _child_watcher_callback(self, pid, returncode, transp):
-        # Skip one iteration for callbacks to be executed
-        self.call_soon_threadsafe(self.call_soon, transp._process_exited, returncode)
+        self.call_soon_threadsafe(transp._process_exited, returncode)
 
     async def create_unix_connection(
             self, protocol_factory, path=None, *,
