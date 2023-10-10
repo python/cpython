@@ -27,7 +27,7 @@ repos:
     hooks:
       - id: python-file-whitespace
         name: "Check Python file whitespace"
-        entry: 'python Tools/patchcheck/reindent.py --nobackup --newline LF'
+        entry: './Tools/patchcheck/reindent.py --nobackup --newline LF'
         language: 'system'
         types: [python]
         exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/_parser).*$'
@@ -36,7 +36,7 @@ repos:
     hooks:
       - id: c-file-whitespace
         name: "Check C file whitespace"
-        entry: "python Tools/patchcheck/untabify.py"
+        entry: "./Tools/patchcheck/untabify.py"
         language: "system"
         types_or: ['c', 'c++']
         # Don't check the style of vendored libraries
