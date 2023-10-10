@@ -590,6 +590,14 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\([0-9]\)$!.0\1!g' | tr -d '.'`
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
+	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
+    fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
@@ -5998,6 +6006,13 @@ AS_VAR_IF([with_readline], [no], [
     AS_VAR_IF([ac_cv_readline_append_history], [yes], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
+
+    # in readline as well as newer editline (April 2023)
+    AC_CHECK_TYPE([rl_compdisp_func_t],
+                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                             [Define if readline supports rl_compdisp_func_t])],
+                  [],
+                  [readline_includes])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()

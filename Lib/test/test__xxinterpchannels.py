@@ -703,6 +703,21 @@ class ChannelTests(TestBase):
                 channels.recv(cid2)
             del cid2
 
+    def test_send_buffer(self):
+        buf = bytearray(b'spamspamspam')
+        cid = channels.create()
+        channels.send_buffer(cid, buf)
+        obj = channels.recv(cid)
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)
+
     def test_allowed_types(self):
         cid = channels.create()
         objects = [
