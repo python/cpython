@@ -659,9 +659,9 @@ PyUnstable_Code_NewWithPosOnlyArgs(
 
     // gh-110543: Make sure the CO_FAST_HIDDEN flag is set correctly.
     if (!(flags & CO_OPTIMIZED)) {
-        int code_len = PyBytes_GET_SIZE(code);
+        Py_ssize_t code_len = PyBytes_GET_SIZE(code);
         _Py_CODEUNIT *code_data = (_Py_CODEUNIT *)PyBytes_AS_STRING(code);
-        int num_code_units = code_len / sizeof(_Py_CODEUNIT);
+        Py_ssize_t num_code_units = code_len / sizeof(_Py_CODEUNIT);
         int extended_arg = 0;
         for (int i = 0; i < num_code_units; i += 1 + _PyOpcode_Caches[code_data[i].op.code]) {
             _Py_CODEUNIT *instr = &code_data[i];
