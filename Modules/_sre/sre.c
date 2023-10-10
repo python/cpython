@@ -535,6 +535,7 @@ state_fini(SRE_STATE* state)
 #define STATE_OFFSET(state, member)\
     (((char*)(member) - (char*)(state)->beginning) / (state)->charsize)
 
+// Now, CIFuzz should be executed.
 LOCAL(PyObject*)
 getslice(int isbytes, const void *ptr,
          PyObject* string, Py_ssize_t start, Py_ssize_t end)
