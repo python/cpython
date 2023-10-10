@@ -23,7 +23,7 @@ repos:
         entry: 'python Tools/scripts/reindent.py --nobackup --newline LF'
         language: 'system'
         types: [python]
-        exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/_parser).*$'
+        exclude: '^(Lib/test/tokenizedata/|Tools/c-analyzer/cpython/(_parser|_capi)).*$'
 
   - repo: local
     hooks:
@@ -35,7 +35,8 @@ repos:
         # Don't check the style of vendored libraries
         exclude: |
           (?x)^(
-            Modules/_ctypes/libffi_osx/.*
+            Modules/_ctypes/darwin/dlfcn.h
+            | Modules/_ctypes/libffi_osx/.*
             | Modules/_ctypes/libffi_msvc/.*
             | Modules/_decimal/.*
             | Modules/libmpdec/.*
