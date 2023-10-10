@@ -3866,7 +3866,9 @@ then
 	# in most compilers, so we define one here.
 	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\(0-9\)$!.0\1!g' | tr -d '.'`
 
-printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+cat >>confdefs.h <<_ACEOF
+#define Py_SUNOS_VERSION $SUNOS_VERSION
+_ACEOF
 
     fi
 fi
