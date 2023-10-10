@@ -386,6 +386,25 @@ raise_error(void *unused)
     return NULL;
 }
 
+static PyObject *
+py_buildvalue(PyObject *self, PyObject *args)
+{
+    const char *fmt;
+    PyObject *objs[10] = {NULL};
+    if (!PyArg_ParseTuple(args, "s|OOOOOOOOOO", &fmt,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    for(int i = 0; i < 10; i++) {
+        NULLABLE(objs[i]);
+    }
+    return Py_BuildValue(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
+}
+
 static int
 test_buildvalue_N_error(const char *fmt)
 {
@@ -3252,6 +3271,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
+    {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
