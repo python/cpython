@@ -21,7 +21,7 @@ set_next_entry(PyObject *self, PyObject *args)
 {
     int rc;
     Py_ssize_t pos;
-    Py_hash_t hash;
+    Py_hash_t hash = (Py_hash_t)UNINITIALIZED_SIZE;
     PyObject *set, *item = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "On", &set, &pos)) {
         return NULL;
@@ -33,7 +33,8 @@ set_next_entry(PyObject *self, PyObject *args)
         return Py_BuildValue("innO", rc, pos, hash, item);
     }
     assert(item == UNINITIALIZED_PTR);
-    if (PyErr_Occurred()) {
+    assert(hash == (Py_hash_t)UNINITIALIZED_SIZE);
+    if (rc == -1) {
         return NULL;
     }
     Py_RETURN_NONE;
