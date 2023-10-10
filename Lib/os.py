@@ -1147,6 +1147,9 @@ if _exists('sched_getaffinity') and sys._get_cpu_count_config() < 0:
         current process. Return None if indeterminable.
         """
         return len(sched_getaffinity(0))
+    if sys._get_cpu_count_config() == -2:
+        # Just an alias to process_count() (same docstring)
+        cpu_count = process_cpu_count
 else:
     # Just an alias to cpu_count() (same docstring)
     process_cpu_count = cpu_count

@@ -232,7 +232,7 @@ The following implementation-specific options are available:\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
     The default is sys.int_info.default_max_str_digits.  0 disables.\n\
 \n\
--X cpu_count=[n|default]: Override the return value of os.cpu_count(),\n\
+-X cpu_count=[n|default|process]: Override the return value of os.cpu_count(),\n\
     os.process_cpu_count(), and multiprocessing.cpu_count(). This can help users who need\n\
     to limit resources in a container."
 
@@ -1636,6 +1636,9 @@ config_init_cpu_count(PyConfig *config)
         if (strcmp(env, "default") == 0) {
             cpu_count = -1;
         }
+        else if(strcmp(env, "process") == 0) {
+            cpu_count = -2;
+        }
         else if (_Py_str_to_int(env, &cpu_count) < 0 || cpu_count < 1) {
             goto error;
         }
@@ -1649,6 +1652,9 @@ config_init_cpu_count(PyConfig *config)
         if (sep) {
             if (wcscmp(sep + 1, L"default") == 0) {
                 cpu_count = -1;
+            }
+            else if (wcscmp(sep + 1, L"process") == 0) {
+                cpu_count = -2;
             }
             else if (config_wstr_to_int(sep + 1, &cpu_count) < 0 || cpu_count < 1) {
                 goto error;

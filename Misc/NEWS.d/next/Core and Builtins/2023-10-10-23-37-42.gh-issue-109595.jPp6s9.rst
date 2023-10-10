@@ -1,0 +1,4 @@
+Update :option:`-X cpu_count <-X>` command line option to support
+``process`` mode that :func:`os.process_cpu_count` becomes an alias of
+:func:`os.cpu_count` and :func:`multiprocessing.cpu_count`. Patch by Donghee
+Na.

@@ -884,7 +884,7 @@ PyConfig
       override the return values of :func:`os.cpu_count`,
       :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
 
-      Configured by the :samp:`-X cpu_count={n|default}` command line
+      Configured by the :samp:`-X cpu_count={n|default|process}` command line
       flag or the :envvar:`PYTHON_CPU_COUNT` environment variable.
 
       Default: ``-1``.

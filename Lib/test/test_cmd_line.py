@@ -915,6 +915,15 @@ class CmdLineTest(unittest.TestCase):
         es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
+    def test_cpu_count_process(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=process', '-c', code)
+        self.assertEqual(self.res2int(res), (os.process_cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='process')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='process')
+        self.assertEqual(self.res2int(res), (os.process_cpu_count(), os.process_cpu_count()))
+
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())
