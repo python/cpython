@@ -590,6 +590,14 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\([0-9]\)$!.0\1!g' | tr -d '.'`
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
+	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
+    fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
@@ -1488,6 +1496,23 @@ fi
 # For calculating the .so ABI tag.
 AC_SUBST([ABIFLAGS])
 ABIFLAGS=""
+
+# Check for --disable-gil
+# --disable-gil
+AC_MSG_CHECKING([for --disable-gil])
+AC_ARG_ENABLE([gil],
+  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
+  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
+)
+AC_MSG_RESULT([$disable_gil])
+
+if test "$disable_gil" = "yes"
+then
+  AC_DEFINE([Py_NOGIL], [1],
+            [Define if you want to disable the GIL])
+  # Add "t" for "threaded"
+  ABIFLAGS="${ABIFLAGS}t"
+fi
 
 # Check for --with-pydebug
 AC_MSG_CHECKING([for --with-pydebug])
@@ -2674,7 +2699,7 @@ AC_CHECK_HEADERS([ \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
   sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
-  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
+  sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h sys/timerfd.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
   termios.h util.h utime.h utmp.h \
 ])
@@ -4593,8 +4618,8 @@ PLATFORM_OBJS=
 
 AS_CASE([$ac_sys_system],
   [Emscripten], [
-    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
+    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
   ],
 )
 AC_SUBST([PLATFORM_HEADERS])
@@ -4726,6 +4751,13 @@ PY_CHECK_FUNC([eventfd], [
 #include <sys/eventfd.h>
 #endif
 ])
+
+PY_CHECK_FUNC([timerfd_create], [
+#ifdef HAVE_SYS_TIMERFD_H
+#include <sys/timerfd.h>
+#endif
+],
+[HAVE_TIMERFD_CREATE])
 
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
@@ -5669,6 +5701,7 @@ AC_C_BIGENDIAN
 #
 # * The Python implementation (always 'cpython-' for us)
 # * The major and minor version numbers
+# * --disable-gil (adds a 't')
 # * --with-pydebug (adds a 'd')
 #
 # Thus for example, Python 3.2 built with wide unicode, pydebug, and pymalloc,
@@ -5814,6 +5847,7 @@ dnl library (tinfo ncursesw ncurses termcap). We now assume that libreadline
 dnl or readline.pc provide correct linker information.
 
 AH_TEMPLATE([WITH_EDITLINE], [Define to build the readline module against libedit.])
+AH_TEMPLATE([WITH_APPLE_EDITLINE], [Define to build the readline module against Apple BSD editline.])
 
 AC_ARG_WITH(
   [readline],
@@ -5828,6 +5862,15 @@ AC_ARG_WITH(
     )
   ],
   [with_readline=readline]
+)
+
+# gh-105323: Need to handle the macOS editline as an alias of readline.
+AS_CASE([$ac_sys_system/$ac_sys_release],
+  [Darwin/*], [AC_CHECK_TYPE([Function],
+                             [AC_DEFINE([WITH_APPLE_EDITLINE])],
+                             [],
+                             [@%:@include <readline/readline.h>])],
+  []
 )
 
 AS_VAR_IF([with_readline], [readline], [
@@ -5963,6 +6006,13 @@ AS_VAR_IF([with_readline], [no], [
     AS_VAR_IF([ac_cv_readline_append_history], [yes], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
+
+    # in readline as well as newer editline (April 2023)
+    AC_CHECK_TYPE([rl_compdisp_func_t],
+                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                             [Define if readline supports rl_compdisp_func_t])],
+                  [],
+                  [readline_includes])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
@@ -6947,21 +6997,63 @@ AC_ARG_ENABLE([test-modules],
 AC_MSG_RESULT([$TEST_MODULES])
 AC_SUBST([TEST_MODULES])
 
-# Check for --disable-gil
-# --disable-gil
-AC_MSG_CHECKING([for --disable-gil])
-AC_ARG_ENABLE([gil],
-  [AS_HELP_STRING([--disable-gil], [enable experimental support for running without the GIL (default is no)])],
-  [AS_VAR_IF([enable_gil], [yes], [disable_gil=no], [disable_gil=yes])], [disable_gil=no]
-)
-AC_MSG_RESULT([$disable_gil])
+# gh-109054: Check if -latomic is needed to get <pyatomic.h> atomic functions.
+# On Linux aarch64, GCC may require programs and libraries to be linked
+# explicitly to libatomic. Call _Py_atomic_or_uint64() which may require
+# libatomic __atomic_fetch_or_8(), or not, depending on the C compiler and the
+# compiler flags.
+#
+# Avoid #include <Python.h> or #include <pyport.h>. The <Python.h> header
+# requires <pyconfig.h> header which is only written below by AC_OUTPUT below.
+# If the check is done after AC_OUTPUT, modifying LIBS has no effect
+# anymore.  <pyport.h> cannot be included alone, it's designed to be included
+# by <Python.h>: it expects other includes and macros to be defined.
+_SAVE_VAR([CPPFLAGS])
+CPPFLAGS="${BASECPPFLAGS} -I. -I${srcdir}/Include ${CPPFLAGS}"
 
-if test "$disable_gil" = "yes"
-then
-  AC_DEFINE([Py_NOGIL], [1],
-            [Define if you want to disable the GIL])
-fi
+AC_CACHE_CHECK([whether libatomic is needed by <pyatomic.h>],
+               [ac_cv_libatomic_needed],
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+// pyatomic.h needs uint64_t and Py_ssize_t types
+#include <stdint.h>  // int64_t, intptr_t
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h> // ssize_t
+#endif
+// Code adapted from Include/pyport.h
+#if HAVE_SSIZE_T
+typedef ssize_t Py_ssize_t;
+#elif SIZEOF_VOID_P == SIZEOF_SIZE_T
+typedef intptr_t Py_ssize_t;
+#else
+#  error "unable to define Py_ssize_t"
+#endif
 
+#include "pyatomic.h"
+
+int main()
+{
+    uint64_t byte;
+    _Py_atomic_store_uint64(&byte, 2);
+    if (_Py_atomic_or_uint64(&byte, 8) != 2) {
+        return 1; // error
+    }
+    if (_Py_atomic_load_uint64(&byte) != 10) {
+        return 1; // error
+    }
+    return 0; // all good
+}
+]])],
+  [ac_cv_libatomic_needed=no],  dnl build succeeded
+  [ac_cv_libatomic_needed=yes], dnl build failed
+  [ac_cv_libatomic_needed=no])  dnl cross compilation
+])
+
+AS_VAR_IF([ac_cv_libatomic_needed], [yes],
+          [LIBS="${LIBS} -latomic"])
+_RESTORE_VAR([CPPFLAGS])
+
+
+# stdlib
 AC_DEFUN([PY_STDLIB_MOD_SET_NA], [
   m4_foreach([mod], [$@], [
     AS_VAR_SET([py_cv_module_]mod, [n/a])])
@@ -7262,6 +7354,7 @@ AC_CONFIG_FILES(m4_normalize([
   Modules/Setup.stdlib
 ]))
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
+# Generate files like pyconfig.h
 AC_OUTPUT
 
 AC_MSG_NOTICE([creating Modules/Setup.local])

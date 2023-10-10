@@ -3,8 +3,6 @@
 #include <stddef.h>               // max_align_t
 #include <string.h>               // memset
 
-#ifdef LIMITED_API_AVAILABLE
-
 static PyType_Slot empty_slots[] = {
     {0, NULL},
 };
@@ -339,5 +337,3 @@ _PyTestCapi_Init_HeaptypeRelative(PyObject *m) {
 
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

@@ -6,11 +6,10 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
-#include <ctype.h>
-#include <stddef.h>
-#include <stdint.h>
+#include "datetime.h"             // PyDateTime_TZInfo
 
-#include "datetime.h"
+#include <stddef.h>               // offsetof()
+#include <stdint.h>
 
 #include "clinic/_zoneinfo.c.h"
 /*[clinic input]

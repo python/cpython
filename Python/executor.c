@@ -2,6 +2,7 @@
 
 #include "opcode.h"
 
+#include "pycore_bitutils.h"
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"
@@ -21,14 +22,21 @@
 #include "ceval_macros.h"
 
 
-#undef ASSERT_KWNAMES_IS_NULL
-#define ASSERT_KWNAMES_IS_NULL() (void)0
-
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
         goto deoptimize;         \
     }
+
+#ifdef Py_STATS
+// Disable these macros that apply to Tier 1 stats when we are in Tier 2
+#undef STAT_INC
+#define STAT_INC(opname, name) ((void)0)
+#undef STAT_DEC
+#define STAT_DEC(opname, name) ((void)0)
+#undef CALL_STAT_INC
+#define CALL_STAT_INC(name) ((void)0)
+#endif
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
@@ -62,12 +70,15 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
     CHECK_EVAL_BREAKER();
 
-    OBJECT_STAT_INC(optimization_traces_executed);
+    OPT_STAT_INC(traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     int pc = 0;
     int opcode;
     int oparg;
     uint64_t operand;
+#ifdef Py_STATS
+    uint64_t trace_uop_execution_counter = 0;
+#endif
 
     for (;;) {
         opcode = self->trace[pc].opcode;
@@ -81,7 +92,12 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         pc++;
-        OBJECT_STAT_INC(optimization_uops_executed);
+        OPT_STAT_INC(uops_executed);
+        UOP_EXE_INC(opcode);
+#ifdef Py_STATS
+        trace_uop_execution_counter++;
+#endif
+
         switch (opcode) {
 
 #include "executor_cases.c.h"
@@ -109,12 +125,12 @@ pop_3_error:
 pop_2_error:
     STACK_SHRINK(1);
 pop_1_error:
-pop_1_exit_unwind:
     STACK_SHRINK(1);
 error:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -123,6 +139,7 @@ deoptimize:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
+    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
     frame->prev_instr--;  // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);

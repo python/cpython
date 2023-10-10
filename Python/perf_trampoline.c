@@ -130,9 +130,10 @@ any DWARF information available for them).
 */
 
 #include "Python.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE

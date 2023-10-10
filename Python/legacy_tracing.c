@@ -2,12 +2,13 @@
  * Provides callables to forward PEP 669 events to legacy events.
  */
 
-#include <stddef.h>
 #include "Python.h"
-#include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+
+#include "opcode.h"
+#include <stddef.h>
 
 typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
@@ -377,6 +378,11 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
+            (vectorcallfunc)sys_profile_func3, PyTrace_CALL,
+                        PY_MONITORING_EVENT_PY_THROW, -1)) {
+            return -1;
+        }
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
@@ -416,7 +422,8 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
-            (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND);
+            (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND) |
+            (1 << PY_MONITORING_EVENT_PY_THROW);
     }
     return _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
 }

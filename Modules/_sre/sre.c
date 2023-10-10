@@ -43,12 +43,40 @@ static const char copyright[] =
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
+#include "sre.h"                  // SRE_CODE
 
-#include "sre.h"
+#include <ctype.h>                // tolower(), toupper(), isalnum()
 
 #define SRE_CODE_BITS (8 * sizeof(SRE_CODE))
 
-#include <ctype.h>
+// On macOS, use the wide character ctype API using btowc()
+#if defined(__APPLE__)
+#  define USE_CTYPE_WINT_T
+#endif
+
+static int sre_isalnum(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)iswalnum(btowc((int)ch));
+#else
+    return (unsigned int)isalnum((int)ch);
+#endif
+}
+
+static unsigned int sre_tolower(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)towlower(btowc((int)ch));
+#else
+    return (unsigned int)tolower((int)ch);
+#endif
+}
+
+static unsigned int sre_toupper(unsigned int ch) {
+#ifdef USE_CTYPE_WINT_T
+    return (unsigned int)towupper(btowc((int)ch));
+#else
+    return (unsigned int)toupper((int)ch);
+#endif
+}
 
 /* Defining this one controls tracing:
  * 0 -- disabled
@@ -114,17 +142,17 @@ static unsigned int sre_lower_ascii(unsigned int ch)
 /* locale-specific character predicates */
 /* !(c & ~N) == (c < N+1) for any unsigned c, this avoids
  * warnings when c's type supports only numbers < N+1 */
-#define SRE_LOC_IS_ALNUM(ch) (!((ch) & ~255) ? isalnum((ch)) : 0)
+#define SRE_LOC_IS_ALNUM(ch) (!((ch) & ~255) ? sre_isalnum((ch)) : 0)
 #define SRE_LOC_IS_WORD(ch) (SRE_LOC_IS_ALNUM((ch)) || (ch) == '_')
 
 static unsigned int sre_lower_locale(unsigned int ch)
 {
-    return ((ch) < 256 ? (unsigned int)tolower((ch)) : ch);
+    return ((ch) < 256 ? (unsigned int)sre_tolower((ch)) : ch);
 }
 
 static unsigned int sre_upper_locale(unsigned int ch)
 {
-    return ((ch) < 256 ? (unsigned int)toupper((ch)) : ch);
+    return ((ch) < 256 ? (unsigned int)sre_toupper((ch)) : ch);
 }
 
 /* unicode-specific character predicates */
@@ -1480,6 +1508,9 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
         unsigned long value = PyLong_AsUnsignedLong(o);
+        if (value == (unsigned long)-1 && PyErr_Occurred()) {
+            break;
+        }
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,

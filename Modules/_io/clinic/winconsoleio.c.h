@@ -243,7 +243,6 @@ _io__WindowsConsoleIO_readinto(winconsoleio *self, PyTypeObject *cls, PyObject *
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &buffer, PyBUF_WRITABLE) < 0) {
-        PyErr_Clear();
         _PyArg_BadArgument("readinto", "argument 1", "read-write bytes-like object", args[0]);
         goto exit;
     }
@@ -465,4 +464,4 @@ _io__WindowsConsoleIO_isatty(winconsoleio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=7be51d48ddb7c8c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37febc4c96732b3b input=a9049054013a1b77]*/

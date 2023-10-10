@@ -1,0 +1,3 @@
+Fixed an issue that caused :meth:`KqueueSelector.select` to not return all
+the ready events in some cases when a file descriptor is registered for both
+read and write.

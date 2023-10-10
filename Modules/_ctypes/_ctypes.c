@@ -110,6 +110,7 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #include <ffi.h>
@@ -5148,41 +5149,6 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
-
-    PyObject *keep = GetKeepedObjects(self);
-    if (keep != NULL) {
-        // check if it's a pointer to a pointer:
-        // pointers will have '0' key in the _objects
-        int ptr_probe = PyDict_ContainsString(keep, "0");
-        if (ptr_probe < 0) {
-            return NULL;
-        }
-        if (ptr_probe) {
-            PyObject *item;
-            if (PyDict_GetItemStringRef(keep, "1", &item) < 0) {
-                return NULL;
-            }
-            if (item == NULL) {
-                PyErr_SetString(PyExc_ValueError,
-                                "Unexpected NULL pointer in _objects");
-                return NULL;
-            }
-#ifndef NDEBUG
-            CDataObject *ptr2ptr = (CDataObject *)item;
-            // Don't construct a new object,
-            // return existing one instead to preserve refcount.
-            // Double-check that we are returning the same thing.
-            assert(
-                *(void**) self->b_ptr == ptr2ptr->b_ptr ||
-                *(void**) self->b_value.c == ptr2ptr->b_ptr ||
-                *(void**) self->b_ptr == ptr2ptr->b_value.c ||
-                *(void**) self->b_value.c == ptr2ptr->b_value.c
-            );
-#endif
-            return item;
-        }
-    }
-
     return PyCData_FromBaseObj(stgdict->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);

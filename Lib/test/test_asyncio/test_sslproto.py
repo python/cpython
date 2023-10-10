@@ -5,6 +5,7 @@ import socket
 import unittest
 import weakref
 from test import support
+from test.support import socket_helper
 from unittest import mock
 try:
     import ssl
@@ -350,6 +351,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         support.gc_collect()
         self.assertIsNone(client_context())
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
@@ -502,6 +504,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 asyncio.wait_for(client(srv.addr),
                                  timeout=support.SHORT_TIMEOUT))
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
         ANSWER = b'answer'

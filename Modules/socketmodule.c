@@ -111,11 +111,6 @@ Local naming conventions:
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
 
-// gethostname() prototype missing from Solaris standard header files
-#ifdef __sun
-extern int gethostname(char *, int);
-#endif
-
 #ifdef _Py_MEMORY_SANITIZER
 #  include <sanitizer/msan_interface.h>
 #endif
@@ -5657,8 +5652,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
