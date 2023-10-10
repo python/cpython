@@ -65,7 +65,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
         .ob_size = size                       \
     },
 
-void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
+extern void _Py_NO_RETURN _Py_FatalRefcountErrorFunc(
     const char *func,
     const char *message);
 
@@ -452,7 +452,7 @@ PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
 
 extern int _PyObject_IsAbstract(PyObject *);
 
-int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
+extern int _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
 extern PyObject* _PyObject_NextNotImplemented(PyObject *);
 
 // Pickle support.

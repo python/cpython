@@ -29,53 +29,44 @@ jobs:
             architecture: Win32
             runner: windows-latest
             compiler: msvc
-            tier: 1
             exclude: test_asyncio
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-latest
             compiler: msvc
-            tier: 1
             exclude: test_asyncio
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-latest
             compiler: clang
-            tier: 1
             exclude: test_embed
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
             runner: ubuntu-latest
             compiler: gcc
-            tier: 1
           # - target: aarch64-apple-darwin/clang
           #   architecture: aarch64
           #   runner: macos-latest
           #   compiler: clang
-          #   tier: 2
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
             runner: ubuntu-latest
             compiler: gcc
-            tier: 2
             exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: aarch64-unknown-linux-gnu/clang
             architecture: aarch64
             runner: ubuntu-latest
             compiler: clang
-            tier: 2
             exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           # - target: powerpc64le-unknown-linux-gnu/gcc
           #   architecture: ppc64le
           #   runner: ubuntu-latest
           #   compiler: gcc
-          #   tier: 2
           #   exclude: test_asyncio test_cmd_line test_concurrent_futures test_faulthandler test_gdb test_multiprocessing_fork test_multiprocessing_forkserver test_multiprocessing_spawn test_os test_perf_profiler test_posix test_signal test_socket test_subprocess test_venv
           - target: x86_64-unknown-linux-gnu/clang
             architecture: x86_64
             runner: ubuntu-latest
             compiler: clang
-            tier: 2
             exclude: test_tools
     env:
       CC: ${{ matrix.compiler }}
@@ -116,7 +107,6 @@ jobs:
           make all --jobs 2
           echo "::endgroup::"
           echo "::group::Test Python"
-          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: Native Linux
@@ -135,7 +125,6 @@ jobs:
           make all --jobs 2
           echo "::endgroup::"
           echo "::group::Test Python"
-          ./python -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: macOS
@@ -152,7 +141,6 @@ jobs:
           make all --jobs 3
           echo "::endgroup::"
           echo "::group::Test Python"
-          ./python.exe -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./python.exe -m test --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"
       - name: Windows
@@ -165,6 +153,5 @@ jobs:
           ./PCbuild/build.bat ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
           echo "::endgroup::"
           echo "::group::Test Python"
-          ./python.bat -c 'import sys; assert sys._support_tier == ${{ matrix.tier }}, sys._support_tier'
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' }} -p ${{ matrix.architecture }} -q --exclude ${{ matrix.exclude }} --multiprocess 0 --timeout 3600 --verbose2 --verbose3
           echo "::endgroup::"

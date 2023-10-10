@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemDefinitionGroup>
-    <JITProjects>
+    <PreFreezeProjects>
       <Platform>$(Platform)</Platform>
       <Configuration>$(Configuration)</Configuration>
       <Properties></Properties>
@@ -25,7 +25,7 @@
       <CleanTarget>Clean</CleanTarget>
       <CleanAllTarget>CleanAll</CleanAllTarget>
       <BuildInParallel>true</BuildInParallel>
-    </JITProjects>
+    </PreFreezeProjects>
     <FreezeProjects>
       <Platform>$(PreferredToolArchitecture)</Platform>
       <Configuration>$(Configuration)</Configuration>
@@ -102,11 +102,11 @@
     <!-- venv[w]launcher.exe -->
     <Projects2 Include="venvlauncher.vcxproj;venvwlauncher.vcxproj" />
     <!-- JIT -->
-    <JITProjects Include="jit.vcxproj"/>
+    <PreFreezeProjects Include="jit.vcxproj"/>
   </ItemGroup>
 
   <Target Name="Build">
-    <MSBuild Projects="@(JITProjects)"
+    <MSBuild Projects="@(PreFreezeProjects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
              StopOnFirstFailure="true"
@@ -147,7 +147,7 @@
             StopOnFirstFailure="false"
             Condition="%(CleanTarget) != ''"
             Targets="%(CleanTarget)" />
-    <MSBuild Projects="@(JITProjects)"
+    <MSBuild Projects="@(PreFreezeProjects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
              StopOnFirstFailure="false"
@@ -174,7 +174,7 @@
             StopOnFirstFailure="false"
             Condition="%(CleanTarget) != ''"
             Targets="%(CleanTarget)" />
-    <MSBuild Projects="@(JITProjects)"
+    <MSBuild Projects="@(PreFreezeProjects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
              StopOnFirstFailure="false"

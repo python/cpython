@@ -5,6 +5,8 @@ The JIT Compiler
 
 </div>
 
+This branch has an (always-on) JIT compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
+
 ### Installing LLVM
 
 While the JIT compiler does not require end users to install any third-party dependencies, part of it must be *built* using LLVM. It is *not* required for you to build the rest of CPython using LLVM, or the even the same version of LLVM (in fact, this is uncommon).
@@ -25,7 +27,7 @@ sudo ./llvm.sh 16
 
 #### macOS
 
-Install LLVM 16 with Homebrew:
+Install LLVM 16 with [Homebrew](https://brew.sh):
 
 ```sh
 $ brew install llvm@16
