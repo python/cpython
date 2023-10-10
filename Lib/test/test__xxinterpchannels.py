@@ -24,8 +24,7 @@ channels = import_helper.import_module('_xxinterpchannels')
 def recv_wait(cid):
     while True:
         try:
-            return channels.recv({cid})
-            break
+            return channels.recv(cid)
         except channels.ChannelEmptyError:
             time.sleep(0.1)
 
