@@ -78,6 +78,10 @@ The following options are accepted:
 
 .. program:: dis
 
+.. cmdoption:: -C, --show-caches
+
+   Show inline caches.
+
 .. cmdoption:: -h, --help
 
    Display usage and exit.
