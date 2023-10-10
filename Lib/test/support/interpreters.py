@@ -218,7 +218,7 @@ class SendChannel(_ChannelEnd):
 
         This blocks until the object is received.
         """
-        _channels.send(self._id, obj, timeout=timeout)
+        _channels.send(self._id, obj, timeout=timeout, blocking=True)
 
     def send_nowait(self, obj):
         """Send the object to the channel's receiving end.
@@ -231,12 +231,12 @@ class SendChannel(_ChannelEnd):
         # See bpo-32604 and gh-19829.
         return _channels.send(self._id, obj, blocking=False)
 
-    def send_buffer(self, obj):
+    def send_buffer(self, obj, timeout=None):
         """Send the object's buffer to the channel's receiving end.
 
         This blocks until the object is received.
         """
-        _channels.send_buffer(self._id, obj, blocking=True)
+        _channels.send_buffer(self._id, obj, timeout=timeout, blocking=True)
 
     def send_buffer_nowait(self, obj):
         """Send the object's buffer to the channel's receiving end.
