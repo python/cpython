@@ -54,7 +54,7 @@ class LongTests(unittest.TestCase):
                          (False, -1))
 
     def test_long_check(self):
-        """Test PyLong_Check()"""
+        # Test PyLong_Check()
         check = _testcapi.pylong_check
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
@@ -66,7 +66,7 @@ class LongTests(unittest.TestCase):
         # CRASHES check(NULL)
 
     def test_long_checkexact(self):
-        """Test PyLong_CheckExact()"""
+        # Test PyLong_CheckExact()
         check = _testcapi.pylong_checkexact
         self.assertTrue(check(1))
         self.assertTrue(check(123456789012345678901234567890))
@@ -78,7 +78,7 @@ class LongTests(unittest.TestCase):
         # CRASHES check(NULL)
 
     def test_long_fromdouble(self):
-        """Test PyLong_FromDouble()"""
+        # Test PyLong_FromDouble()
         fromdouble = _testcapi.pylong_fromdouble
         self.assertEqual(fromdouble(5.0), 5)
         self.assertEqual(fromdouble(5.1), 5)
@@ -92,7 +92,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(ValueError, fromdouble, float('nan'))
 
     def test_long_fromvoidptr(self):
-        """Test PyLong_FromVoidPtr()"""
+        # Test PyLong_FromVoidPtr()
         fromvoidptr = _testcapi.pylong_fromvoidptr
         obj = object()
         x = fromvoidptr(obj)
@@ -104,7 +104,7 @@ class LongTests(unittest.TestCase):
         self.assertNotEqual(x, y)
 
     def test_long_fromstring(self):
-        """Test PyLong_FromString()"""
+        # Test PyLong_FromString()
         fromstring = _testcapi.pylong_fromstring
         self.assertEqual(fromstring(b'123', 10), (123, 3))
         self.assertEqual(fromstring(b'cafe', 16), (0xcafe, 4))
@@ -134,7 +134,7 @@ class LongTests(unittest.TestCase):
         # CRASHES fromstring(NULL, 16)
 
     def test_long_fromunicodeobject(self):
-        """Test PyLong_FromUnicodeObject()"""
+        # Test PyLong_FromUnicodeObject()
         fromunicodeobject = _testcapi.pylong_fromunicodeobject
         self.assertEqual(fromunicodeobject('123', 10), 123)
         self.assertEqual(fromunicodeobject('cafe', 16), 0xcafe)
@@ -164,7 +164,7 @@ class LongTests(unittest.TestCase):
         # CRASHES fromunicodeobject(NULL, 16)
 
     def test_long_asint(self):
-        """Test PyLong_AsInt()"""
+        # Test PyLong_AsInt()
         PyLong_AsInt = _testcapi.PyLong_AsInt
         from _testcapi import INT_MIN, INT_MAX
 
@@ -187,7 +187,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, PyLong_AsInt, NULL)
 
     def test_long_aslong(self):
-        """Test PyLong_AsLong() and PyLong_FromLong()"""
+        # Test PyLong_AsLong() and PyLong_FromLong()
         aslong = _testcapi.pylong_aslong
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
@@ -207,7 +207,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, aslong, NULL)
 
     def test_long_aslongandoverflow(self):
-        """Test PyLong_AsLongAndOverflow()"""
+        # Test PyLong_AsLongAndOverflow()
         aslongandoverflow = _testcapi.pylong_aslongandoverflow
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
@@ -225,7 +225,7 @@ class LongTests(unittest.TestCase):
         # CRASHES aslongandoverflow(NULL)
 
     def test_long_asunsignedlong(self):
-        """Test PyLong_AsUnsignedLong() and PyLong_FromUnsignedLong()"""
+        # Test PyLong_AsUnsignedLong() and PyLong_FromUnsignedLong()
         asunsignedlong = _testcapi.pylong_asunsignedlong
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
@@ -245,7 +245,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, asunsignedlong, NULL)
 
     def test_long_asunsignedlongmask(self):
-        """Test PyLong_AsUnsignedLongMask()"""
+        # Test PyLong_AsUnsignedLongMask()
         asunsignedlongmask = _testcapi.pylong_asunsignedlongmask
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
@@ -265,7 +265,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, asunsignedlongmask, NULL)
 
     def test_long_aslonglong(self):
-        """Test PyLong_AsLongLong() and PyLong_FromLongLong()"""
+        # Test PyLong_AsLongLong() and PyLong_FromLongLong()
         aslonglong = _testcapi.pylong_aslonglong
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
@@ -285,7 +285,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, aslonglong, NULL)
 
     def test_long_aslonglongandoverflow(self):
-        """Test PyLong_AsLongLongAndOverflow()"""
+        # Test PyLong_AsLongLongAndOverflow()
         aslonglongandoverflow = _testcapi.pylong_aslonglongandoverflow
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
@@ -303,7 +303,7 @@ class LongTests(unittest.TestCase):
         # CRASHES aslonglongandoverflow(NULL)
 
     def test_long_asunsignedlonglong(self):
-        """Test PyLong_AsUnsignedLongLong() and PyLong_FromUnsignedLongLong()"""
+        # Test PyLong_AsUnsignedLongLong() and PyLong_FromUnsignedLongLong()
         asunsignedlonglong = _testcapi.pylong_asunsignedlonglong
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
@@ -323,7 +323,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, asunsignedlonglong, NULL)
 
     def test_long_asunsignedlonglongmask(self):
-        """Test PyLong_AsUnsignedLongLongMask()"""
+        # Test PyLong_AsUnsignedLongLongMask()
         asunsignedlonglongmask = _testcapi.pylong_asunsignedlonglongmask
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
@@ -343,7 +343,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, asunsignedlonglongmask, NULL)
 
     def test_long_as_ssize_t(self):
-        """Test PyLong_AsSsize_t() and PyLong_FromSsize_t()"""
+        # Test PyLong_AsSsize_t() and PyLong_FromSsize_t()
         as_ssize_t = _testcapi.pylong_as_ssize_t
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
         # round trip (object -> Py_ssize_t -> object)
@@ -363,7 +363,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, as_ssize_t, NULL)
 
     def test_long_as_size_t(self):
-        """Test PyLong_AsSize_t() and PyLong_FromSize_t()"""
+        # Test PyLong_AsSize_t() and PyLong_FromSize_t()
         as_size_t = _testcapi.pylong_as_size_t
         from _testcapi import SIZE_MAX
         # round trip (object -> size_t -> object)
@@ -383,7 +383,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, as_size_t, NULL)
 
     def test_long_asdouble(self):
-        """Test PyLong_AsDouble()"""
+        # Test PyLong_AsDouble()
         asdouble = _testcapi.pylong_asdouble
         MAX = int(sys.float_info.max)
         for value in (-MAX, MAX, -1, 0, 1, 1234):
@@ -403,7 +403,7 @@ class LongTests(unittest.TestCase):
         self.assertRaises(SystemError, asdouble, NULL)
 
     def test_long_asvoidptr(self):
-        """Test PyLong_AsVoidPtr()"""
+        # Test PyLong_AsVoidPtr()
         fromvoidptr = _testcapi.pylong_fromvoidptr
         asvoidptr = _testcapi.pylong_asvoidptr
         obj = object()
