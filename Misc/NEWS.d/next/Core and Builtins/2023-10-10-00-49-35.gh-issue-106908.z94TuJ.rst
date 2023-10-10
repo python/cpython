@@ -1,2 +1,0 @@
-Fix a reference leak when running with :envvar:`PYTHONUOPS` or :option:`-X
-uops <-X>` enabled.
