@@ -67,7 +67,6 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
             patch = ((patch >> 12) << 12) - (((uintptr_t)location >> 12) << 12);
             assert((*addr & 0x9F000000) == 0x90000000);
             assert((patch & 0xFFF) == 0);
-            // assert((patch & ((1ULL << 33) - 1)) == patch);  // XXX: This should be signed.
             uint32_t lo = (patch << 17) & 0x60000000;
             uint32_t hi = (patch >> 9) & 0x00FFFFE0;
             *addr = (*addr & 0x9F00001F) | hi | lo;
@@ -79,7 +78,6 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
             assert(((*addr & 0xFC000000) == 0x14000000) ||
                    ((*addr & 0xFC000000) == 0x94000000));
             assert((patch & 0x3) == 0);
-            // assert((patch & ((1ULL << 29) - 1)) == patch);  // XXX: This should be signed.
             *addr = (*addr & 0xFC000000) | ((uint32_t)(patch >> 2) & 0x03FFFFFF);
             return;
         }
