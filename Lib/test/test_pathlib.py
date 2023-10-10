@@ -1801,51 +1801,6 @@ class DummyPathTest(unittest.TestCase):
             p.joinpath('dirB', 'linkD').symlink_to(pathmod.join('..', 'dirB'))
             p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
 
-    def setUpWalk(self):
-        # Build:
-        #     TESTFN/
-        #       TEST1/              a file kid and two directory kids
-        #         tmp1
-        #         SUB1/             a file kid and a directory kid
-        #           tmp2
-        #           SUB11/          no kids
-        #         SUB2/             a file kid and a dirsymlink kid
-        #           tmp3
-        #           link/           a symlink to TEST2
-        #           broken_link
-        #           broken_link2
-        #           broken_link3
-        #       TEST2/
-        #         tmp4              a lone file
-        self.walk_path = self.cls(BASE, "TEST1")
-        self.sub1_path = self.walk_path / "SUB1"
-        self.sub11_path = self.sub1_path / "SUB11"
-        self.sub2_path = self.walk_path / "SUB2"
-        tmp1_path = self.walk_path / "tmp1"
-        tmp2_path = self.sub1_path / "tmp2"
-        tmp3_path = self.sub2_path / "tmp3"
-        self.link_path = self.sub2_path / "link"
-        t2_path = self.cls(BASE, "TEST2")
-        tmp4_path = self.cls(BASE, "TEST2", "tmp4")
-        broken_link_path = self.sub2_path / "broken_link"
-        broken_link2_path = self.sub2_path / "broken_link2"
-
-        self.sub11_path.mkdir(parents=True)
-        self.sub2_path.mkdir(parents=True)
-        t2_path.mkdir(parents=True)
-
-        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
-            with path.open("w", encoding='utf-8') as f:
-                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
-
-        if self.can_symlink:
-            self.link_path.symlink_to(t2_path)
-            broken_link_path.symlink_to('broken')
-            broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
-            self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
-        else:
-            self.sub2_tree = (self.sub2_path, [], ["tmp3"])
-
     def tearDown(self):
         cls = self.cls
         cls._files.clear()
@@ -2659,6 +2614,50 @@ class DummyPathTest(unittest.TestCase):
     def test_complex_symlinks_relative_dot_dot(self):
         self._check_complex_symlinks(os.path.join('dirA', '..'))
 
+    def setUpWalk(self):
+        # Build:
+        #     TESTFN/
+        #       TEST1/              a file kid and two directory kids
+        #         tmp1
+        #         SUB1/             a file kid and a directory kid
+        #           tmp2
+        #           SUB11/          no kids
+        #         SUB2/             a file kid and a dirsymlink kid
+        #           tmp3
+        #           link/           a symlink to TEST2
+        #           broken_link
+        #           broken_link2
+        #       TEST2/
+        #         tmp4              a lone file
+        self.walk_path = self.cls(BASE, "TEST1")
+        self.sub1_path = self.walk_path / "SUB1"
+        self.sub11_path = self.sub1_path / "SUB11"
+        self.sub2_path = self.walk_path / "SUB2"
+        tmp1_path = self.walk_path / "tmp1"
+        tmp2_path = self.sub1_path / "tmp2"
+        tmp3_path = self.sub2_path / "tmp3"
+        self.link_path = self.sub2_path / "link"
+        t2_path = self.cls(BASE, "TEST2")
+        tmp4_path = self.cls(BASE, "TEST2", "tmp4")
+        broken_link_path = self.sub2_path / "broken_link"
+        broken_link2_path = self.sub2_path / "broken_link2"
+
+        self.sub11_path.mkdir(parents=True)
+        self.sub2_path.mkdir(parents=True)
+        t2_path.mkdir(parents=True)
+
+        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
+            with path.open("w", encoding='utf-8') as f:
+                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
+
+        if self.can_symlink:
+            self.link_path.symlink_to(t2_path)
+            broken_link_path.symlink_to('broken')
+            broken_link2_path.symlink_to(self.cls('tmp3', 'broken'))
+            self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
+        else:
+            self.sub2_tree = (self.sub2_path, [], ["tmp3"])
+
     def test_walk_topdown(self):
         self.setUpWalk()
         walker = self.walk_path.walk()
@@ -2761,7 +2760,6 @@ class DummyPathTest(unittest.TestCase):
                 break
 
     def test_walk_above_recursion_limit(self):
-        self.setUpWalk()
         recursion_limit = 40
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
@@ -3345,6 +3343,30 @@ class PathTest(DummyPathTest):
         with self.assertWarns(DeprecationWarning):
             self.cls(foo="bar")
 
+    def setUpWalk(self):
+        super().setUpWalk()
+        sub21_path= self.sub2_path / "SUB21"
+        tmp5_path = sub21_path / "tmp3"
+        broken_link3_path = self.sub2_path / "broken_link3"
+
+        os.makedirs(sub21_path)
+        tmp5_path.write_text("I am tmp5, blame test_pathlib.")
+        if self.can_symlink:
+            os.symlink(tmp5_path, broken_link3_path)
+            self.sub2_tree[2].append('broken_link3')
+            self.sub2_tree[2].sort()
+        if not is_emscripten:
+            # Emscripten fails with inaccessible directories.
+            os.chmod(sub21_path, 0)
+        try:
+            os.listdir(sub21_path)
+        except PermissionError:
+            self.sub2_tree[1].append('SUB21')
+        else:
+            os.chmod(sub21_path, stat.S_IRWXU)
+            os.unlink(tmp5_path)
+            os.rmdir(sub21_path)
+
     def test_walk_bad_dir(self):
         self.setUpWalk()
         errors = []
@@ -3367,7 +3389,6 @@ class PathTest(DummyPathTest):
             path1new.rename(path1)
 
     def test_walk_many_open_files(self):
-        self.setUpWalk()
         depth = 30
         base = self.cls(BASE, 'deep')
         path = self.cls(base, *(['d']*depth))
