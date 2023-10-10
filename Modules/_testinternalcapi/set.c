@@ -37,6 +37,7 @@ set_next_entry(PyObject *self, PyObject *args)
     if (rc == -1) {
         return NULL;
     }
+    assert(rc == 0);
     Py_RETURN_NONE;
 }
 
