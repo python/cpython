@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Check proposed changes for common issues."""
-import re
 import sys
-import shutil
 import os.path
 import subprocess
 import sysconfig
@@ -144,23 +142,6 @@ def changed_files(base_branch=None):
 
     # Normalize the path to be able to match using str.startswith()
     return list(map(os.path.normpath, filenames))
-
-
-def report_modified_files(file_paths):
-    count = len(file_paths)
-    if count == 0:
-        return n_files_str(count)
-    else:
-        lines = [f"{n_files_str(count)}:"]
-        for path in file_paths:
-            lines.append(f"  {path}")
-        return "\n".join(lines)
-
-
-#: Python files that have tabs by design:
-_PYTHON_FILES_WITH_TABS = frozenset({
-    'Tools/c-analyzer/cpython/_parser.py',
-})
 
 
 @status("Docs modified", modal=True)
