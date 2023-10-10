@@ -566,6 +566,32 @@ class ChannelTests(TestBase):
 
     ####################
 
+    def test_send_closed_while_waiting(self):
+        obj = b'spam'
+        cid = channels.create()
+        def f():
+            # sleep() isn't a great for this, but definitely simple.
+            time.sleep(1)
+            channels.close(cid, force=True)
+        t = threading.Thread(target=f)
+        t.start()
+        with self.assertRaises(channels.ChannelClosedError):
+            channels.send(cid, obj, blocking=True)
+        t.join()
+
+    def test_send_buffer_closed_while_waiting(self):
+        obj = bytearray(b'spam')
+        cid = channels.create()
+        def f():
+            # sleep() isn't a great for this, but definitely simple.
+            time.sleep(1)
+            channels.close(cid, force=True)
+        t = threading.Thread(target=f)
+        t.start()
+        with self.assertRaises(channels.ChannelClosedError):
+            channels.send_buffer(cid, obj, blocking=True)
+        t.join()
+
     def test_send_recv_main(self):
         cid = channels.create()
         orig = b'spam'
