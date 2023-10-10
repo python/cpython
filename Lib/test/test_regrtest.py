@@ -1130,7 +1130,6 @@ class ArgsTestCase(BaseTestCase):
     def test_huntrleaks(self):
         self.check_huntrleaks(run_workers=False)
 
-    @unittest.skip("JIT")
     def test_huntrleaks_mp(self):
         self.check_huntrleaks(run_workers=True)
 

@@ -29,12 +29,10 @@ jobs:
             architecture: Win32
             runner: windows-latest
             compiler: msvc
-            exclude: test_asyncio
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-latest
             compiler: msvc
-            exclude: test_asyncio
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-latest
