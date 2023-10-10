@@ -1,4 +1,7 @@
-"""Test case implementation"""
+"""Test case implementation
+
+This should not run CIFuzz
+"""
 
 import sys
 import functools

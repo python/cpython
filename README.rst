@@ -1,4 +1,4 @@
-This is Python version 3.13.0 alpha 0
+This should not run CIFuzz
 =====================================
 
 .. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
