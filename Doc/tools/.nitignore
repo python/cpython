@@ -120,7 +120,6 @@ Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
-Doc/library/socketserver.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
