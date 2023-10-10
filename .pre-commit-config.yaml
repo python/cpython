@@ -7,7 +7,7 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff on Tools/clinic/
+        name: Run Ruff on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
 
