@@ -656,6 +656,26 @@ PyUnstable_Code_NewWithPosOnlyArgs(
         _Py_set_localsplus_info(offset, name, CO_FAST_FREE,
                                localsplusnames, localspluskinds);
     }
+
+    int code_len = PyBytes_GET_SIZE(code);
+    const char *code_data = PyBytes_AS_STRING(code);
+    for (int i = 0; i < code_len; i += 1 + _PyOpcode_Caches[(int)code_data[i]]) {
+        _Py_CODEUNIT *instr = (_Py_CODEUNIT *)&code_data[i];
+        uint8_t opcode = instr->op.code;
+        if (opcode != LOAD_FAST_AND_CLEAR) {
+            continue;
+        }
+        uint8_t oparg = instr->op.arg;
+        if (oparg >= nlocalsplus) {
+            PyErr_Format(PyExc_ValueError,
+                         "code: LOAD_FAST_AND_CLEAR oparg %d out of range",
+                         oparg);
+            goto error;
+        }
+        _PyLocals_Kind kind = _PyLocals_GetKind(localspluskinds, oparg);
+        _PyLocals_SetKind(localspluskinds, oparg, kind | CO_FAST_HIDDEN);
+    }
+
     // If any cells were args then nlocalsplus will have shrunk.
     if (nlocalsplus != PyTuple_GET_SIZE(localsplusnames)) {
         if (_PyTuple_Resize(&localsplusnames, nlocalsplus) < 0

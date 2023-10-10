@@ -1,5 +1,6 @@
 import doctest
 import textwrap
+import types
 import unittest
 
 
@@ -92,7 +93,8 @@ Make sure that None is a valid return value
 
 
 class ListComprehensionTest(unittest.TestCase):
-    def _check_in_scopes(self, code, outputs=None, ns=None, scopes=None, raises=()):
+    def _check_in_scopes(self, code, outputs=None, ns=None, scopes=None, raises=(),
+                         exec_func=exec):
         code = textwrap.dedent(code)
         scopes = scopes or ["module", "class", "function"]
         for scope in scopes:
@@ -119,7 +121,7 @@ class ListComprehensionTest(unittest.TestCase):
                         return moddict[name]
                 newns = ns.copy() if ns else {}
                 try:
-                    exec(newcode, newns)
+                    exec_func(newcode, newns)
                 except raises as e:
                     # We care about e.g. NameError vs UnboundLocalError
                     self.assertIs(type(e), raises)
@@ -612,6 +614,30 @@ class ListComprehensionTest(unittest.TestCase):
         """
         import sys
         self._check_in_scopes(code, {"val": 0}, ns={"sys": sys})
+
+    def test_code_replace(self):
+        code = """
+            x = 3
+            [x for x in (1, 2)]
+            dir()
+            y = [x]
+        """
+        self._check_in_scopes(code, {"y": [3], "x": 3})
+
+        def _recursive_replace(maybe_code):
+            print(maybe_code)
+            if not isinstance(maybe_code, types.CodeType):
+                return maybe_code
+            return maybe_code.replace(co_consts=tuple(
+                _recursive_replace(c) for c in maybe_code.co_consts
+            ))
+
+        def _replacing_exec(code_string, ns):
+            co = compile(code_string, "<string>", "exec")
+            co = _recursive_replace(co)
+            exec(co, ns)
+
+        self._check_in_scopes(code, {"y": [3], "x": 3}, exec_func=_replacing_exec)
 
 
 __test__ = {'doctests' : doctests}
