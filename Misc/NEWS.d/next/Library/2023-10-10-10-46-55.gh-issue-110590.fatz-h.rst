@@ -1,0 +1,2 @@
+Fix ``_sre.compile`` error overwriting `TypeError` with `OverflowError` when
+`code` arguments was a list of non-ints.
