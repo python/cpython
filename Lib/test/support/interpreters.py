@@ -241,4 +241,4 @@ class SendChannel(_ChannelEnd):
 
 
 # XXX This is causing leaks (gh-110318):
-#_channels._register_end_types(SendChannel, RecvChannel)
+_channels._register_end_types(SendChannel, RecvChannel)
