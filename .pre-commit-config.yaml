@@ -30,6 +30,7 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]
+        require_serial: true
 
   - repo: meta
     hooks:
