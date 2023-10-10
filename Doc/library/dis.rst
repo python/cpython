@@ -63,6 +63,8 @@ the following command can be used to display the disassembly of
 
 (The "2" is a line number).
 
+.. _dis-cli:
+
 Command-line interface
 ----------------------
 
