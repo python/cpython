@@ -3,6 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
+from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
 USAGE = """\
@@ -130,19 +131,6 @@ Pattern examples:
 - test class: FileTests
 - test identifier: test_os.FileTests.test_stat_attributes
 """
-
-
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 
 class Namespace(argparse.Namespace):
