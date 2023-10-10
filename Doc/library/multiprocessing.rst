@@ -493,4 +493,3 @@ process which created it.
    :maxdepth: 1
 
    multiprocessing-guidelines.rst
-
