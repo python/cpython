@@ -88,8 +88,8 @@ startup by the :c:func:`PyConfig_Read` function: see
    On some systems, conversion using the file system encoding may fail. In this
    case, Python uses the :ref:`surrogateescape encoding error handler
    <surrogateescape>`, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again translated to the
-   original byte on encoding.
+   Unicode character U+DC\ *xx* on decoding, and these are again
+   translated to the original byte on encoding.
 
 
 The :term:`file system encoding <filesystem encoding and error handler>` must
@@ -1618,25 +1618,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking, /)
-
-   Set the blocking mode of the specified file descriptor. Set the
-   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
-
-   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
-
-   .. availability:: Unix, Windows.
-
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
-
-      On Windows, this function is limited to pipes.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.12
-      Added support for pipes on Windows.
-
 .. data:: SF_NODISKIO
           SF_MNOWAIT
           SF_SYNC
@@ -1656,6 +1637,26 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. availability:: Unix, not Emscripten, not WASI.
 
    .. versionadded:: 3.11
+
+
+.. function:: set_blocking(fd, blocking, /)
+
+   Set the blocking mode of the specified file descriptor. Set the
+   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
+
+   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
+
+   .. availability:: Unix, Windows.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
+      On Windows, this function is limited to pipes.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
 
 
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
@@ -3780,6 +3781,217 @@ features:
    .. versionadded:: 3.10
 
 
+Timer File Descriptors
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 3.13
+
+These functions provide support for Linux's *timer file descriptor* API.
+Naturally, they are all only available on Linux.
+
+.. function:: timerfd_create(clockid, /, *, flags=0)
+
+   Create and return a timer file descriptor (*timerfd*).
+
+   The file descriptor returned by :func:`timerfd_create` supports:
+
+      - :func:`read`
+      - :func:`~select.select`
+      - :func:`~select.poll`.
+
+   The file descriptor's :func:`read` method can be called with a buffer size
+   of 8. If the timer has already expired one or more times, :func:`read`
+   returns the number of expirations with the host's endianness, which may be
+   converted to an :class:`int` by ``int.from_bytes(x, byteorder=sys.byteorder)``.
+
+   :func:`~select.select` and :func:`~select.poll` can be used to wait until
+   timer expires and the file descriptor is readable.
+
+   *clockid* must be a valid :ref:`clock ID <time-clock-id-constants>`,
+   as defined in the :py:mod:`time` module:
+
+   - :const:`time.CLOCK_REALTIME`
+   - :const:`time.CLOCK_MONOTONIC`
+   - :const:`time.CLOCK_BOOTTIME` (Since Linux 3.15 for timerfd_create)
+
+   If *clockid* is :const:`time.CLOCK_REALTIME`, a settable system-wide
+   real-time clock is used. If system clock is changed, timer setting need
+   to be updated. To cancel timer when system clock is changed, see
+   :const:`TFD_TIMER_CANCEL_ON_SET`.
+
+   If *clockid* is :const:`time.CLOCK_MONOTONIC`, a non-settable monotonically
+   increasing clock is used. Even if the system clock is changed, the timer
+   setting will not be affected.
+
+   If *clockid* is :const:`time.CLOCK_BOOTTIME`, same as :const:`time.CLOCK_MONOTONIC`
+   except it includes any time that the system is suspended.
+
+   The file descriptor's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   - :const:`TFD_NONBLOCK`
+   - :const:`TFD_CLOEXEC`
+
+   If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks until
+   the timer expires. If it is set as a flag, :func:`read` doesn't block, but
+   If there hasn't been an expiration since the last call to read,
+   :func:`read` raises :class:`OSError` with ``errno`` is set to
+   :const:`errno.EAGAIN`.
+
+   :const:`TFD_CLOEXEC` is always set by Python automatically.
+
+   The file descriptor must be closed with :func:`os.close` when it is no
+   longer needed, or else the file descriptor will be leaked.
+
+   .. seealso:: The :manpage:`timerfd_create(2)` man page.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_settime(fd, /, *, flags=flags, initial=0.0, interval=0.0)
+
+   Alter a timer file descriptor's internal timer.
+   This function operates the same interval timer as :func:`timerfd_settime_ns`.
+
+   *fd* must be a valid timer file descriptor.
+
+   The timer's behaviour can be modified by specifying a *flags* value.
+   Any of the following variables may used, combined using bitwise OR
+   (the ``|`` operator):
+
+   - :const:`TFD_TIMER_ABSTIME`
+   - :const:`TFD_TIMER_CANCEL_ON_SET`
+
+   The timer is disabled by setting *initial* to zero (``0``).
+   If *initial* is equal to or greater than zero, the timer is enabled.
+   If *initial* is less than zero, it raises an :class:`OSError` exception
+   with ``errno`` set to :const:`errno.EINVAL`
+
+   By default the timer will fire when *initial* seconds have elapsed.
+   (If *initial* is zero, timer will fire immediately.)
+
+   However, if the :const:`TFD_TIMER_ABSTIME` flag is set,
+   the timer will fire when the timer's clock
+   (set by *clockid* in :func:`timerfd_create`) reaches *initial* seconds.
+
+   The timer's interval is set by the *interval* :py:class:`float`.
+   If *interval* is zero, the timer only fires once, on the initial expiration.
+   If *interval* is greater than zero, the timer fires every time *interval*
+   seconds have elapsed since the previous expiration.
+   If *interval* is less than zero, it raises :class:`OSError` with ``errno``
+   set to :const:`errno.EINVAL`
+
+   If the :const:`TFD_TIMER_CANCEL_ON_SET` flag is set along with
+   :const:`TFD_TIMER_ABSTIME` and the clock for this timer is
+   :const:`time.CLOCK_REALTIME`, the timer is marked as cancelable if the
+   real-time clock is changed discontinuously. Reading the descriptor is
+   aborted with the error ECANCELED.
+
+   Linux manages system clock as UTC. A daylight-savings time transition is
+   done by changing time offset only and doesn't cause discontinuous system
+   clock change.
+
+   Discontinuous system clock change will be caused by the following events:
+
+      - ``settimeofday``
+      - ``clock_settime``
+      - set the system date and time by ``date`` command
+
+   Return a two-item tuple of (``next_expiration``, ``interval``) from
+   the previous timer state, before this function executed.
+
+   .. seealso::
+
+      :manpage:`timerfd_create(2)`, :manpage:`timerfd_settime(2)`,
+      :manpage:`settimeofday(2)`, :manpage:`clock_settime(2)`,
+      and :manpage:`date(1)`.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_settime_ns(fd, /, *, flags=0, initial=0, interval=0)
+
+   Similar to :func:`timerfd_settime`, but use time as nanoseconds.
+   This function operates the same interval timer as :func:`timerfd_settime`.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_gettime(fd, /)
+
+   Return a two-item tuple of floats (``next_expiration``, ``interval``).
+
+   ``next_expiration`` denotes the relative time until next the timer next fires,
+   regardless of if the :const:`TFD_TIMER_ABSTIME` flag is set.
+
+   ``interval`` denotes the timer's interval.
+   If zero, the timer will only fire once, after ``next_expiration`` seconds
+   have elapsed.
+
+   .. seealso:: :manpage:`timerfd_gettime(2)`
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
+.. function:: timerfd_gettime_ns(fd, /)
+
+   Similar to :func:`timerfd_gettime`, but return time as nanoseconds.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_NONBLOCK
+
+   A flag for the :func:`timerfd_create` function,
+   which sets the :const:`O_NONBLOCK` status flag for the new timer file
+   descriptor. If :const:`TFD_NONBLOCK` is not set as a flag, :func:`read` blocks.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_CLOEXEC
+
+   A flag for the :func:`timerfd_create` function,
+   If :const:`TFD_CLOEXEC` is set as a flag, set close-on-exec flag for new file
+   descriptor.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_TIMER_ABSTIME
+
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns` functions.
+   If this flag is set, *initial* is interpreted as an absolute value on the
+   timer's clock (in UTC seconds or nanoseconds since the Unix Epoch).
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+.. data:: TFD_TIMER_CANCEL_ON_SET
+
+   A flag for the :func:`timerfd_settime` and :func:`timerfd_settime_ns`
+   functions along with :const:`TFD_TIMER_ABSTIME`.
+   The timer is cancelled when the time of the underlying clock changes
+   discontinuously.
+
+   .. availability:: Linux >= 2.6.27 with glibc >= 2.8
+
+   .. versionadded:: 3.13
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -4156,15 +4368,38 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.fork "" os.fork
 
+   .. warning::
+
+      If you use TLS sockets in an application calling ``fork()``, see
+      the warning in the :mod:`ssl` documentation.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. warning::
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, :func:`os.fork` now raises a :exc:`DeprecationWarning`.
 
-      See :mod:`ssl` for applications that use the SSL module with fork().
+      We chose to surface this as a warning, when detectable, to better
+      inform developers of a design problem that the POSIX platform
+      specifically notes as not supported. Even in code that
+      *appears* to work, it has never been safe to mix threading with
+      :func:`os.fork` on POSIX platforms. The CPython runtime itself has
+      always made API calls that are not safe for use in the child
+      process when threads existed in the parent (such as ``malloc`` and
+      ``free``).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+      Users of macOS or users of libc or malloc implementations other
+      than those typically found in glibc to date are among those
+      already more likely to experience deadlocks running such code.
+
+      See `this discussion on fork being incompatible with threads
+      <https://discuss.python.org/t/33555>`_
+      for technical details of why we're surfacing this longstanding
+      platform compatibility problem to developers.
+
+   .. availability:: POSIX, not Emscripten, not WASI.
 
 
 .. function:: forkpty()
@@ -4176,6 +4411,11 @@ written in Python, such as a mail server's external command delivery program.
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
 
    .. audit-event:: os.forkpty "" os.forkpty
+
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, this now raises a :exc:`DeprecationWarning`. See the
+      longer explanation on :func:`os.fork`.
 
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
@@ -5112,8 +5352,12 @@ operating system.
 
 .. function:: sched_getaffinity(pid, /)
 
-   Return the set of CPUs the process with PID *pid* (or the current process
-   if zero) is restricted to.
+   Return the set of CPUs the process with PID *pid* is restricted to.
+
+   If *pid* is zero, return the set of CPUs the calling thread of the current
+   process is restricted to.
+
+   See also the :func:`process_cpu_count` function.
 
 
 .. _os-path:
@@ -5154,12 +5398,11 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the **system**. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
-
+   The :func:`process_cpu_count` function can be used to get the number of
+   logical CPUs usable by the calling thread of the **current process**.
 
    .. versionadded:: 3.4
 
@@ -5171,6 +5414,20 @@ Miscellaneous System Information
    unobtainable.
 
    .. availability:: Unix.
+
+
+.. function:: process_cpu_count()
+
+   Get the number of logical CPUs usable by the calling thread of the **current
+   process**. Returns ``None`` if undetermined. It can be less than
+   :func:`cpu_count` depending on the CPU affinity.
+
+   The :func:`cpu_count` function can be used to get the number of logical CPUs
+   in the **system**.
+
+   See also the :func:`sched_getaffinity` functions.
+
+   .. versionadded:: 3.13
 
 
 .. function:: sysconf(name, /)

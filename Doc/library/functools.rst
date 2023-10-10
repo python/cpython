@@ -403,25 +403,27 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.4
 
 
-.. function:: reduce(function, iterable[, initializer])
+.. function:: reduce(function, iterable[, initial], /)
 
    Apply *function* of two arguments cumulatively to the items of *iterable*, from
    left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *iterable*.  If the optional *initializer* is present,
+   the update value from the *iterable*.  If the optional *initial* is present,
    it is placed before the items of the iterable in the calculation, and serves as
-   a default when the iterable is empty.  If *initializer* is not given and
+   a default when the iterable is empty.  If *initial* is not given and
    *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
-      def reduce(function, iterable, initializer=None):
+      initial_missing = object()
+
+      def reduce(function, iterable, initial=initial_missing, /):
           it = iter(iterable)
-          if initializer is None:
+          if initial is initial_missing:
               value = next(it)
           else:
-              value = initializer
+              value = initial
           for element in it:
               value = function(value, element)
           return value

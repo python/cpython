@@ -39,6 +39,32 @@ struct _Py_long_state {
     int max_str_digits;
 };
 
+
+/* cross-interpreter data registry */
+
+/* For now we use a global registry of shareable classes.  An
+   alternative would be to add a tp_* slot for a class's
+   crossinterpdatafunc. It would be simpler and more efficient. */
+
+struct _xidregitem;
+
+struct _xidregitem {
+    struct _xidregitem *prev;
+    struct _xidregitem *next;
+    /* This can be a dangling pointer, but only if weakref is set. */
+    PyTypeObject *cls;
+    /* This is NULL for builtin types. */
+    PyObject *weakref;
+    size_t refcount;
+    crossinterpdatafunc getdata;
+};
+
+struct _xidregistry {
+    PyThread_type_lock mutex;
+    struct _xidregitem *head;
+};
+
+
 /* interpreter state */
 
 /* PyInterpreterState holds the global state for one of the runtime's
@@ -67,12 +93,13 @@ struct _is {
     int _initialized;
     int finalizing;
 
-    uint64_t monitoring_version;
-    uint64_t last_restart_version;
+    uintptr_t last_restart_version;
     struct pythreads {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        /* The thread currently executing in the __main__ module, if any. */
+        PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
         long count;
         /* Support for runtime thread stack size tuning.
@@ -93,6 +120,8 @@ struct _is {
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct _gc_runtime_state gc;
 
@@ -146,6 +175,9 @@ struct _is {
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry xidregistry;
+
 #ifdef HAVE_FORK
     PyObject *before_forkers;
     PyObject *after_forkers_parent;
@@ -186,8 +218,9 @@ struct _is {
     _PyOptimizerObject *optimizer;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
+    uint32_t next_func_version;
 
-    _Py_Monitors monitors;
+    _Py_GlobalMonitors monitors;
     bool f_opcode_trace_set;
     bool sys_profile_initialized;
     bool sys_trace_initialized;
@@ -214,26 +247,25 @@ _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
     return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
 }
 
+static inline unsigned long
+_PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
+    return _Py_atomic_load_ulong_relaxed(&interp->_finalizing_id);
+}
+
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
-
-/* cross-interpreter data registry */
-
-/* For now we use a global registry of shareable classes.  An
-   alternative would be to add a tp_* slot for a class's
-   crossinterpdatafunc. It would be simpler and more efficient. */
-
-struct _xidregitem;
-
-struct _xidregitem {
-    struct _xidregitem *prev;
-    struct _xidregitem *next;
-    PyObject *cls;  // weakref to a PyTypeObject
-    crossinterpdatafunc getdata;
-};
 
 extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
 
