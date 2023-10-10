@@ -1394,7 +1394,7 @@ class ClinicExternalTest(TestCase):
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
         source = support.findfile(CLINIC_TEST)
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             orig_contents = f.read()
 
         # Run clinic CLI and verify that it does not complain.
@@ -1402,7 +1402,7 @@ class ClinicExternalTest(TestCase):
         out = self.expect_success("-f", "-o", TESTFN, source)
         self.assertEqual(out, "")
 
-        with open(TESTFN, 'r', encoding='utf-8') as f:
+        with open(TESTFN, encoding='utf-8') as f:
             new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
@@ -1463,7 +1463,7 @@ class ClinicExternalTest(TestCase):
                 "/*[clinic end generated code: "
                 "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
             )
-            with open(fn, 'r', encoding='utf-8') as f:
+            with open(fn, encoding='utf-8') as f:
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum))
 
