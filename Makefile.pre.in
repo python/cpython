@@ -1947,7 +1947,8 @@ TESTSUBDIRS=	ctypes/test \
 		lib2to3/tests/data/fixers/myfixes \
 		test \
 		test/audiodata \
-		test/capath \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
 		test/data \
