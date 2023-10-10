@@ -1731,17 +1731,21 @@ class DummyPath(pathlib._PathBase):
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
     def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+        path = str(self.resolve())
+        if path in self._directories:
+            if exist_ok:
+                return
+            else:
+                raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
-            self._directories[str(self.parent)].add(self.name)
-            self._directories[str(self)] = set()
+            if self.name:
+                self._directories[str(self.parent)].add(self.name)
+            self._directories[path] = set()
         except KeyError:
-            if not parents or self.parent == self:
+            if not parents:
                 raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
             self.parent.mkdir(parents=True, exist_ok=True)
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
-        except FileExistsError:
-            if not exist_ok:
-                raise
 
 
 class DummyPathTest(unittest.TestCase):
@@ -1771,33 +1775,37 @@ class DummyPathTest(unittest.TestCase):
     #
 
     def setUp(self):
-        # note: this must be kept in sync with `PathTest.setUp()`
+        pathmod = self.cls.pathmod
+        p = self.cls(BASE)
+        p.mkdir(parents=True)
+        p.joinpath('dirA').mkdir()
+        p.joinpath('dirB').mkdir()
+        p.joinpath('dirC').mkdir()
+        p.joinpath('dirC', 'dirD').mkdir()
+        p.joinpath('dirE').mkdir()
+        with p.joinpath('fileA').open('wb') as f:
+            f.write(b"this is file A\n")
+        with p.joinpath('dirB', 'fileB').open('wb') as f:
+            f.write(b"this is file B\n")
+        with p.joinpath('dirC', 'fileC').open('wb') as f:
+            f.write(b"this is file C\n")
+        with p.joinpath('dirC', 'novel.txt').open('wb') as f:
+            f.write(b"this is a novel\n")
+        with p.joinpath('dirC', 'dirD', 'fileD').open('wb') as f:
+            f.write(b"this is file D\n")
+        if self.can_symlink:
+            p.joinpath('linkA').symlink_to('fileA')
+            p.joinpath('brokenLink').symlink_to('non-existing')
+            p.joinpath('linkB').symlink_to('dirB')
+            p.joinpath('dirA', 'linkC').symlink_to(pathmod.join('..', 'dirB'))
+            p.joinpath('dirB', 'linkD').symlink_to(pathmod.join('..', 'dirB'))
+            p.joinpath('brokenLinkLoop').symlink_to('brokenLinkLoop')
+
+    def tearDown(self):
         cls = self.cls
         cls._files.clear()
         cls._directories.clear()
         cls._symlinks.clear()
-        join = cls.pathmod.join
-        cls._files.update({
-            join(BASE, 'fileA'): b'this is file A\n',
-            join(BASE, 'dirB', 'fileB'): b'this is file B\n',
-            join(BASE, 'dirC', 'fileC'): b'this is file C\n',
-            join(BASE, 'dirC', 'dirD', 'fileD'): b'this is file D\n',
-            join(BASE, 'dirC', 'novel.txt'): b'this is a novel\n',
-        })
-        cls._directories.update({
-            BASE: {'dirA', 'dirB', 'dirC', 'dirE', 'fileA'},
-            join(BASE, 'dirA'): set(),
-            join(BASE, 'dirB'): {'fileB'},
-            join(BASE, 'dirC'): {'dirD', 'fileC', 'novel.txt'},
-            join(BASE, 'dirC', 'dirD'): {'fileD'},
-            join(BASE, 'dirE'): {},
-        })
-        dirname = BASE
-        while True:
-            dirname, basename = cls.pathmod.split(dirname)
-            if not basename:
-                break
-            cls._directories[dirname] = {basename}
 
     def tempdir(self):
         path = self.cls(BASE).with_name('tmp-dirD')
@@ -2626,22 +2634,6 @@ class DummyPathWithSymlinksTest(DummyPathTest):
     cls = DummyPathWithSymlinks
     can_symlink = True
 
-    def setUp(self):
-        super().setUp()
-        cls = self.cls
-        join = cls.pathmod.join
-        cls._symlinks.update({
-            join(BASE, 'linkA'): 'fileA',
-            join(BASE, 'linkB'): 'dirB',
-            join(BASE, 'dirA', 'linkC'): join('..', 'dirB'),
-            join(BASE, 'dirB', 'linkD'): join('..', 'dirB'),
-            join(BASE, 'brokenLink'): 'non-existing',
-            join(BASE, 'brokenLinkLoop'): 'brokenLinkLoop',
-        })
-        cls._directories[BASE].update({'linkA', 'linkB', 'brokenLink', 'brokenLinkLoop'})
-        cls._directories[join(BASE, 'dirA')].add('linkC')
-        cls._directories[join(BASE, 'dirB')].add('linkD')
-
 
 #
 # Tests for the concrete classes.
@@ -2653,38 +2645,12 @@ class PathTest(DummyPathTest):
     can_symlink = os_helper.can_symlink()
 
     def setUp(self):
-        # note: this must be kept in sync with `DummyPathTest.setUp()`
-        def cleanup():
-            os.chmod(join('dirE'), 0o777)
-            os_helper.rmtree(BASE)
-        self.addCleanup(cleanup)
-        os.mkdir(BASE)
-        os.mkdir(join('dirA'))
-        os.mkdir(join('dirB'))
-        os.mkdir(join('dirC'))
-        os.mkdir(join('dirC', 'dirD'))
-        os.mkdir(join('dirE'))
-        with open(join('fileA'), 'wb') as f:
-            f.write(b"this is file A\n")
-        with open(join('dirB', 'fileB'), 'wb') as f:
-            f.write(b"this is file B\n")
-        with open(join('dirC', 'fileC'), 'wb') as f:
-            f.write(b"this is file C\n")
-        with open(join('dirC', 'novel.txt'), 'wb') as f:
-            f.write(b"this is a novel\n")
-        with open(join('dirC', 'dirD', 'fileD'), 'wb') as f:
-            f.write(b"this is file D\n")
+        super().setUp()
         os.chmod(join('dirE'), 0)
-        if self.can_symlink:
-            # Relative symlinks.
-            os.symlink('fileA', join('linkA'))
-            os.symlink('non-existing', join('brokenLink'))
-            os.symlink('dirB', join('linkB'), target_is_directory=True)
-            os.symlink(os.path.join('..', 'dirB'), join('dirA', 'linkC'), target_is_directory=True)
-            # This one goes upwards, creating a loop.
-            os.symlink(os.path.join('..', 'dirB'), join('dirB', 'linkD'), target_is_directory=True)
-            # Broken symlink (pointing to itself).
-            os.symlink('brokenLinkLoop',  join('brokenLinkLoop'))
+
+    def tearDown(self):
+        os.chmod(join('dirE'), 0o777)
+        os_helper.rmtree(BASE)
 
     def tempdir(self):
         d = os_helper._longpath(tempfile.mkdtemp(suffix='-dirD',
