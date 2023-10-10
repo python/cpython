@@ -991,6 +991,7 @@ extern "C" {
     INIT_ID(instructions), \
     INIT_ID(intern), \
     INIT_ID(intersection), \
+    INIT_ID(interval), \
     INIT_ID(is_running), \
     INIT_ID(isatty), \
     INIT_ID(isinstance), \

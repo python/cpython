@@ -11,6 +11,13 @@ import reindent
 import untabify
 
 
+def get_python_source_dir():
+    src_dir = sysconfig.get_config_var('abs_srcdir')
+    if not src_dir:
+        src_dir = sysconfig.get_config_var('srcdir')
+    return os.path.abspath(src_dir)
+
+
 # Excluded directories which are copies of external libraries:
 # don't check their coding style
 EXCLUDE_DIRS = [
@@ -18,7 +25,7 @@ EXCLUDE_DIRS = [
     os.path.join('Modules', 'expat'),
     os.path.join('Modules', 'zlib'),
     ]
-SRCDIR = sysconfig.get_config_var('srcdir')
+SRCDIR = get_python_source_dir()
 
 
 def n_files_str(count):
