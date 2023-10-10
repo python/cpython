@@ -1,0 +1,1 @@
+Add :func:`os.timerfd_create`, :func:`os.timerfd_settime`, :func:`os.timerfd_gettime`, :func:`os.timerfd_settime_ns`, and :func:`os.timerfd_gettime_ns` to provide a low level interface for Linux's timer notification file descriptor.

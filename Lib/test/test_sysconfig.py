@@ -17,7 +17,9 @@ from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
                        _expand_vars, _get_preferred_schemes, _main)
+import _imp
 import _osx_support
+import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -394,6 +396,24 @@ class TestSysConfig(unittest.TestCase):
 
         self.assertIn(ldflags, ldshared)
 
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
+    def test_soabi(self):
+        soabi = sysconfig.get_config_var('SOABI')
+        self.assertIn(soabi, _imp.extension_suffixes()[0])
+
+    def test_library(self):
+        library = sysconfig.get_config_var('LIBRARY')
+        ldlibrary = sysconfig.get_config_var('LDLIBRARY')
+        major, minor = sys.version_info[:2]
+        if sys.platform == 'win32':
+            self.assertTrue(library.startswith(f'python{major}{minor}'))
+            self.assertTrue(library.endswith('.dll'))
+            self.assertEqual(library, ldlibrary)
+        else:
+            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
+            self.assertTrue(library.endswith('.a'))
+            self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
     def test_platform_in_subprocess(self):
@@ -472,10 +492,8 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
     def test_EXT_SUFFIX_in_vars(self):
-        import _imp
-        if not _imp.extension_suffixes():
-            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
