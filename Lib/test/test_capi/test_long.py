@@ -80,13 +80,10 @@ class LongTests(unittest.TestCase):
     def test_long_fromdouble(self):
         # Test PyLong_FromDouble()
         fromdouble = _testcapi.pylong_fromdouble
-        self.assertEqual(fromdouble(5.0), 5)
-        self.assertEqual(fromdouble(5.1), 5)
-        self.assertEqual(fromdouble(5.9), 5)
-        self.assertEqual(fromdouble(-5.1), -5)
-        self.assertEqual(fromdouble(-5.9), -5)
-        self.assertEqual(fromdouble(sys.float_info.max), int(sys.float_info.max))
-        self.assertEqual(fromdouble(-sys.float_info.max), -int(sys.float_info.max))
+        float_max = sys.float_info.max
+        for value in (5.0, 5.1, 5.9, -5.1, -5.9, 0.0, -0.0, float_max, -float_max):
+            with self.subTest(value=value):
+                self.assertEqual(fromdouble(value), int(value))
         self.assertRaises(OverflowError, fromdouble, float('inf'))
         self.assertRaises(OverflowError, fromdouble, float('-inf'))
         self.assertRaises(ValueError, fromdouble, float('nan'))
@@ -100,7 +97,7 @@ class LongTests(unittest.TestCase):
         self.assertIsInstance(x, int)
         self.assertGreaterEqual(x, 0)
         self.assertIsInstance(y, int)
-        self.assertGreaterEqual(y, 0)
+        self.assertEqual(y, 0)
         self.assertNotEqual(x, y)
 
     def test_long_fromstring(self):
