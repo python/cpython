@@ -82,8 +82,8 @@ jobs:
           # CPython, so CIFuzz should be run only for code that is likely to be
           # merged into the main branch; compatibility with older branches may
           # be broken.
-          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
-          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" ]; then
+          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^Modules/_xxtestfuzz)'
+          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
             # The tests are pretty slow so they are executed only for PRs
             # changing relevant files.
             echo "Run CIFuzz tests"
