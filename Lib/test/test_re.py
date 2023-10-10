@@ -2735,6 +2735,9 @@ class ImplementationTest(unittest.TestCase):
             _sre.compile("abc", 0, [long_overflow], 0, {}, ())
         with self.assertRaises(TypeError):
             _sre.compile({}, 0, [], 0, [], [])
+        # gh-110590: `TypeError` was overwritten with `OverflowError`:
+        with self.assertRaises(TypeError):
+            _sre.compile('', 0, ['abc'], 0, {}, ())
 
     @cpython_only
     def test_repeat_minmax_overflow_maxrepeat(self):

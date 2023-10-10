@@ -2,6 +2,7 @@ import os
 import base64
 import gettext
 import unittest
+from functools import partial
 
 from test import support
 from test.support import os_helper
@@ -122,8 +123,9 @@ def reset_gettext():
 
 
 class GettextBaseTest(unittest.TestCase):
-    def setUp(self):
-        self.addCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
         if not os.path.isdir(LOCALEDIR):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
@@ -136,6 +138,8 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
+
+    def setUp(self):
         self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         self.env['LANGUAGE'] = 'xx'
         reset_gettext()
@@ -316,59 +320,137 @@ fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
 trggrkg zrffntr pngnybt yvoenel.''')
 
 
-class PluralFormsTestCase(GettextBaseTest):
+class PluralFormsTests:
+
+    def _test_plural_forms(self, ngettext, gettext,
+                           singular, plural, tsingular, tplural,
+                           numbers_only=True):
+        x = ngettext(singular, plural, 1)
+        self.assertEqual(x, tsingular)
+        x = ngettext(singular, plural, 2)
+        self.assertEqual(x, tplural)
+        x = gettext(singular)
+        self.assertEqual(x, tsingular)
+
+        if numbers_only:
+            lineno = self._test_plural_forms.__code__.co_firstlineno + 9
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, 1.0)
+            self.assertEqual(cm.filename, __file__)
+            self.assertEqual(cm.lineno, lineno + 4)
+            self.assertEqual(x, tsingular)
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, 1.1)
+            self.assertEqual(cm.filename, __file__)
+            self.assertEqual(cm.lineno, lineno + 9)
+            self.assertEqual(x, tplural)
+            with self.assertRaises(TypeError):
+                ngettext(singular, plural, None)
+        else:
+            x = ngettext(singular, plural, None)
+            self.assertEqual(x, tplural)
+
+    def test_plural_forms(self):
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero', 'Hay %s ficheros')
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_context_forms(self):
+        ngettext = partial(self.npgettext, 'With context')
+        gettext = partial(self.pgettext, 'With context')
+        self._test_plural_forms(
+            ngettext, gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero (context)', 'Hay %s ficheros (context)')
+        self._test_plural_forms(
+            ngettext, gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_wrong_context_forms(self):
+        self._test_plural_forms(
+            partial(self.npgettext, 'Unknown context'),
+            partial(self.pgettext, 'Unknown context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files')
+
+
+class GNUTranslationsPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
-        self.localedir = os.curdir
         # Set up the bindings
-        gettext.bindtextdomain('gettext', self.localedir)
+        gettext.bindtextdomain('gettext', os.curdir)
         gettext.textdomain('gettext')
-        self.mofile = MOFILE
 
-    def test_plural_forms1(self):
-        eq = self.assertEqual
-        x = gettext.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = gettext.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
-        x = gettext.gettext('There is %s file')
-        eq(x, 'Hay %s fichero')
+        self.gettext = gettext.gettext
+        self.ngettext = gettext.ngettext
+        self.pgettext = gettext.pgettext
+        self.npgettext = gettext.npgettext
 
-    def test_plural_context_forms1(self):
-        eq = self.assertEqual
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
-        x = gettext.pgettext('With context', 'There is %s file')
-        eq(x, 'Hay %s fichero (context)')
 
-    def test_plural_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
+class GNUTranslationsWithDomainPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+
+        self.gettext = partial(gettext.dgettext, 'gettext')
+        self.ngettext = partial(gettext.dngettext, 'gettext')
+        self.pgettext = partial(gettext.dpgettext, 'gettext')
+        self.npgettext = partial(gettext.dnpgettext, 'gettext')
+
+    def test_plural_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dngettext, 'unknown'),
+            partial(gettext.dgettext, 'unknown'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dnpgettext, 'unknown', 'With context'),
+            partial(gettext.dpgettext, 'unknown', 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
-        x = t.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = t.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
-        x = t.gettext('There is %s file')
-        eq(x, 'Hay %s fichero')
 
-    def test_plural_context_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
-        x = t.pgettext('With context', 'There is %s file')
-        eq(x, 'Hay %s fichero (context)')
+        self.gettext = t.gettext
+        self.ngettext = t.ngettext
+        self.pgettext = t.pgettext
+        self.npgettext = t.npgettext
 
+    def test_plural_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            t.ngettext, t.gettext,
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            partial(t.npgettext, 'With context'),
+            partial(t.pgettext, 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class PluralFormsInternalTestCase:
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
