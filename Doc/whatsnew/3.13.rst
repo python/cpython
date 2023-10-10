@@ -192,7 +192,7 @@ os
   the new environment variable :envvar:`PYTHON_CPU_COUNT` or the new command-line option
   :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
   CPU resources of a container system without having to modify the container (application code).
-  (Contributed by Donghee Na in :gh:`109595`)
+  (Contributed by Donghee Na in :gh:`109595` and :gh:`110649`)
 
 pathlib
 -------
