@@ -1,3 +1,3 @@
 Fix ``_sre.compile`` error overwriting ``TypeError``
-with ``OverflowError`` when ``code`` arguments
+with ``OverflowError`` when ``code`` argument
 was a list of non-ints.
