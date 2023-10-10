@@ -1300,7 +1300,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_equaltoutf8(self):
-        """Test PyUnicode_EqualToUTF8()"""
+        # Test PyUnicode_EqualToUTF8()
         from _testcapi import unicode_equaltoutf8 as equaltoutf8
         from _testcapi import unicode_asutf8andsize as asutf8andsize
 
@@ -1341,7 +1341,7 @@ class CAPITest(unittest.TestCase):
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_equaltoutf8andsize(self):
-        """Test PyUnicode_EqualToUTF8AndSize()"""
+        # Test PyUnicode_EqualToUTF8AndSize()
         from _testcapi import unicode_equaltoutf8andsize as equaltoutf8andsize
         from _testcapi import unicode_asutf8andsize as asutf8andsize
 
