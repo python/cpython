@@ -65,7 +65,7 @@ import _random
 
 try:
     # hashlib is pretty heavy to load, try lean internal module first
-    from _sha512 import sha512 as _sha512
+    from _sha2 import sha512 as _sha512
 except ImportError:
     # fallback to official implementation
     from hashlib import sha512 as _sha512
@@ -492,7 +492,14 @@ class Random(_random.Random):
     ## -------------------- real-valued distributions  -------------------
 
     def uniform(self, a, b):
-        "Get a random number in the range [a, b) or [a, b] depending on rounding."
+        """Get a random number in the range [a, b) or [a, b] depending on rounding.
+
+        The mean (expected value) and variance of the random variable are:
+
+            E[X] = (a + b) / 2
+            Var[X] = (b - a) ** 2 / 12
+
+        """
         return a + (b - a) * self.random()
 
     def triangular(self, low=0.0, high=1.0, mode=None):
@@ -502,6 +509,11 @@ class Random(_random.Random):
         and having a given mode value in-between.
 
         http://en.wikipedia.org/wiki/Triangular_distribution
+
+        The mean (expected value) and variance of the random variable are:
+
+            E[X] = (low + high + mode) / 3
+            Var[X] = (low**2 + high**2 + mode**2 - low*high - low*mode - high*mode) / 18
 
         """
         u = self.random()
@@ -593,12 +605,15 @@ class Random(_random.Random):
         positive infinity if lambd is positive, and from negative
         infinity to 0 if lambd is negative.
 
-        """
-        # lambd: rate lambd = 1/mean
-        # ('lambda' is a Python reserved word)
+        The mean (expected value) and variance of the random variable are:
 
+            E[X] = 1 / lambd
+            Var[X] = 1 / lambd ** 2
+
+        """
         # we use 1-random() instead of random() to preclude the
         # possibility of taking the log of zero.
+
         return -_log(1.0 - self.random()) / lambd
 
     def vonmisesvariate(self, mu, kappa):
@@ -654,8 +669,12 @@ class Random(_random.Random):
           pdf(x) =  --------------------------------------
                       math.gamma(alpha) * beta ** alpha
 
+        The mean (expected value) and variance of the random variable are:
+
+            E[X] = alpha * beta
+            Var[X] = alpha * beta ** 2
+
         """
-        # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
 
         # Warning: a few older sources define the gamma distribution in terms
         # of alpha > -1.0
@@ -714,6 +733,11 @@ class Random(_random.Random):
         Conditions on the parameters are alpha > 0 and beta > 0.
         Returned values range between 0 and 1.
 
+        The mean (expected value) and variance of the random variable are:
+
+            E[X] = alpha / (alpha + beta)
+            Var[X] = alpha * beta / ((alpha + beta)**2 * (alpha + beta + 1))
+
         """
         ## See
         ## http://mail.python.org/pipermail/python-bugs-list/2001-January/003752.html
@@ -765,6 +789,11 @@ class Random(_random.Random):
             sum(random() < p for i in range(n))
 
         Returns an integer in the range:   0 <= X <= n
+
+        The mean (expected value) and variance of the random variable are:
+
+            E[X] = n * p
+            Var[x] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases

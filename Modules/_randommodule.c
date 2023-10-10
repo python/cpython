@@ -74,12 +74,15 @@
 #include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getpid()
+#endif
 #ifdef HAVE_PROCESS_H
 #  include <process.h>            // getpid()
 #endif
-
 #ifdef MS_WINDOWS
-#  include <windows.h>
+#  include <windows.h>            // GetCurrentProcessId()
 #endif
 
 /* Period parameters -- These are all magic.  Don't change. */
