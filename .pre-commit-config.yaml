@@ -26,7 +26,7 @@ repos:
         entry: "python Tools/patchcheck/untabify.py"
         language: "system"
         types_or: ['c', 'c++']
-        # Don't check the style of copies directories containing external libraries
+        # Don't check the style of vendored libraries
         exclude: '^Modules/(_decimal/libmpdec|expat)/.*$'
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
