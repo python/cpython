@@ -1,0 +1,2 @@
+Skip test_threading tests using thread+fork if Python is built with Address
+Sanitizer (ASAN). Patch by Victor Stinner.
