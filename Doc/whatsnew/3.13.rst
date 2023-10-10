@@ -1135,37 +1135,37 @@ Removed
 
 * Remove old buffer protocols deprecated in Python 3.0. Use :ref:`bufferobjects` instead.
 
-   * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
-     test if the object supports the buffer protocol.
-     Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
-     :c:func:`PyObject_GetBuffer` will succeed.
-     To test if the object is actually readable, see the next example
-     of :c:func:`PyObject_GetBuffer`.
+  * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
+    test if the object supports the buffer protocol.
+    Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
+    :c:func:`PyObject_GetBuffer` will succeed.
+    To test if the object is actually readable, see the next example
+    of :c:func:`PyObject_GetBuffer`.
 
-   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
-     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+  * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
+    :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
 
-     .. code-block:: c
+    .. code-block:: c
 
-        Py_buffer view;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
-            return NULL;
-        }
-        // Use `view.buf` and `view.len` to read from the buffer.
-        // You may need to cast buf as `(const char*)view.buf`.
-        PyBuffer_Release(&view);
+       Py_buffer view;
+       if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
+           return NULL;
+       }
+       // Use `view.buf` and `view.len` to read from the buffer.
+       // You may need to cast buf as `(const char*)view.buf`.
+       PyBuffer_Release(&view);
 
-   * :c:func:`!PyObject_AsWriteBuffer`: Use
-     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+  * :c:func:`!PyObject_AsWriteBuffer`: Use
+    :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
 
-     .. code-block:: c
+    .. code-block:: c
 
-        Py_buffer view;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
-            return NULL;
-        }
-        // Use `view.buf` and `view.len` to write to the buffer.
-        PyBuffer_Release(&view);
+       Py_buffer view;
+       if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
+           return NULL;
+       }
+       // Use `view.buf` and `view.len` to write to the buffer.
+       PyBuffer_Release(&view);
 
   (Contributed by Inada Naoki in :gh:`85275`.)
 

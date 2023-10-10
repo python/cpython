@@ -2368,7 +2368,7 @@ Port-Specific Changes: Mac OS X
   installation and a user-installed copy of the same version.
   (Changed by Ronald Oussoren; :issue:`4865`.)
 
-   .. versionchanged:: 2.7.13
+  .. versionchanged:: 2.7.13
 
      As of 2.7.13, this change was removed.
      ``/Library/Python/2.7/site-packages``, the site-packages directory
