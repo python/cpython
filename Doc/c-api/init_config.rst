@@ -82,6 +82,8 @@ PyWideStringList
    If *length* is non-zero, *items* must be non-``NULL`` and all strings must be
    non-``NULL``.
 
+   .. c:namespace:: NULL
+
    Methods:
 
    .. c:function:: PyStatus PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
@@ -100,6 +102,8 @@ PyWideStringList
       *index* must be greater than or equal to ``0``.
 
       Python must be preinitialized to call this function.
+
+   .. c:namespace:: PyWideStringList
 
    Structure fields:
 
@@ -873,6 +877,19 @@ PyConfig
       (:data:`sys.int_info.default_max_str_digits`) in isolated mode.
 
       .. versionadded:: 3.12
+
+   .. c:member:: int cpu_count
+
+      If the value of :c:member:`~PyConfig.cpu_count` is not ``-1`` then it will
+      override the return values of :func:`os.cpu_count`,
+      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
+
+      Configured by the :samp:`-X cpu_count={n|default}` command line
+      flag or the :envvar:`PYTHON_CPU_COUNT` environment variable.
+
+      Default: ``-1``.
+
+      .. versionadded:: 3.13
 
    .. c:member:: int isolated
 

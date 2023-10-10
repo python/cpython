@@ -147,7 +147,7 @@ Quick Reference
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
-   | [:c:member:`~PyTypeObject.tp_watched`]         | char                              |                   |   |   |   |   |
+   | [:c:member:`~PyTypeObject.tp_watched`]         | unsigned char                     |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
 .. [#slots]
@@ -526,28 +526,6 @@ type objects) *must* have the :c:member:`~PyVarObject.ob_size` field.
    **Inheritance:**
 
    This field is inherited by subtypes.
-
-
-.. c:member:: PyObject* PyObject._ob_next
-             PyObject* PyObject._ob_prev
-
-   These fields are only present when the macro ``Py_TRACE_REFS`` is defined
-   (see the :option:`configure --with-trace-refs option <--with-trace-refs>`).
-
-   Their initialization to ``NULL`` is taken care of by the
-   ``PyObject_HEAD_INIT`` macro.  For :ref:`statically allocated objects
-   <static-types>`, these fields always remain ``NULL``.  For :ref:`dynamically
-   allocated objects <heap-types>`, these two fields are used to link the
-   object into a doubly linked list of *all* live objects on the heap.
-
-   This could be used for various debugging purposes; currently the only uses
-   are the :func:`sys.getobjects` function and to print the objects that are
-   still alive at the end of a run when the environment variable
-   :envvar:`PYTHONDUMPREFS` is set.
-
-   **Inheritance:**
-
-   These fields are not inherited by subtypes.
 
 
 PyVarObject Slots
@@ -1153,6 +1131,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
       If this flag is set, :c:macro:`Py_TPFLAGS_HAVE_GC` should also be set.
 
+      The type traverse function must call :c:func:`PyObject_VisitManagedDict`
+      and its clear function must call :c:func:`PyObject_ClearManagedDict`.
+
       .. versionadded:: 3.12
 
       **Inheritance:**
@@ -1390,6 +1371,23 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
    :func:`~gc.get_referents` function will include it.
 
+   Heap types (:c:macro:`Py_TPFLAGS_HEAPTYPE`) must visit their type with::
+
+       Py_VISIT(Py_TYPE(self));
+
+   It is only needed since Python 3.9. To support Python 3.8 and older, this
+   line must be conditionnal::
+
+       #if PY_VERSION_HEX >= 0x03090000
+           Py_VISIT(Py_TYPE(self));
+       #endif
+
+   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:func:`PyObject_VisitManagedDict` like this::
+
+       PyObject_VisitManagedDict((PyObject*)self, visit, arg);
+
    .. warning::
        When implementing :c:member:`~PyTypeObject.tp_traverse`, only the
        members that the instance *owns* (by having :term:`strong references
@@ -1403,7 +1401,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        are allowed to be removed even if the instance is still alive).
 
    Note that :c:func:`Py_VISIT` requires the *visit* and *arg* parameters to
-   :c:func:`local_traverse` to have these specific names; don't name them just
+   :c:func:`!local_traverse` to have these specific names; don't name them just
    anything.
 
    Instances of :ref:`heap-allocated types <heap-types>` hold a reference to
@@ -1472,6 +1470,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    it's important that the pointer to the contained object be ``NULL`` at that time,
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
+
+   If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
+   :c:member:`~PyTypeObject.tp_flags` field, the traverse function must call
+   :c:func:`PyObject_ClearManagedDict` like this::
+
+       PyObject_ClearManagedDict((PyObject*)self);
 
    Note that :c:member:`~PyTypeObject.tp_clear` is not *always* called
    before an instance is deallocated. For example, when reference counting
@@ -1697,7 +1701,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
        to a pointer, are valid C99 address constants.
 
        However, the unary '&' operator applied to a non-static variable
-       like :c:func:`PyBaseObject_Type` is not required to produce an address
+       like :c:data:`PyBaseObject_Type` is not required to produce an address
        constant.  Compilers may support this (gcc does), MSVC does not.
        Both compilers are strictly standard conforming in this particular
        behavior.
@@ -1728,7 +1732,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    treated as read-only.
 
    Some types may not store their dictionary in this slot.
-   Use :c:func:`PyType_GetDict` to retreive the dictionary for an arbitrary
+   Use :c:func:`PyType_GetDict` to retrieve the dictionary for an arbitrary
    type.
 
    .. versionchanged:: 3.12
@@ -1823,7 +1827,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    field is ``NULL`` then no :attr:`~object.__dict__` gets created for instances.
 
    If the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit is set in the
-   :c:member:`~PyTypeObject.tp_dict` field, then
+   :c:member:`~PyTypeObject.tp_flags` field, then
    :c:member:`~PyTypeObject.tp_dictoffset` will be set to ``-1``, to indicate
    that it is unsafe to use this field.
 
@@ -2141,7 +2145,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
 
-.. c:member:: char PyTypeObject.tp_watched
+.. c:member:: unsigned char PyTypeObject.tp_watched
 
    Internal. Do not use.
 
@@ -2443,7 +2447,7 @@ Buffer Object Structures
    Except for point (3), an implementation of this function MUST take these
    steps:
 
-   (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
+   (1) Check if the request can be met. If not, raise :exc:`BufferError`,
        set :c:expr:`view->obj` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.

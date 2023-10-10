@@ -24,6 +24,7 @@
 */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyDict_MaybeUntrack()
 #include "pycore_initconfig.h"
@@ -1200,8 +1201,8 @@ gc_collect_main(PyThreadState *tstate, int generation,
 {
     GC_STAT_ADD(generation, collections, 1);
 #ifdef Py_STATS
-    if (_py_stats) {
-        _py_stats->object_stats.object_visits = 0;
+    if (_Py_stats) {
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
     int i;
@@ -1362,10 +1363,10 @@ gc_collect_main(PyThreadState *tstate, int generation,
 
     GC_STAT_ADD(generation, objects_collected, m);
 #ifdef Py_STATS
-    if (_py_stats) {
+    if (_Py_stats) {
         GC_STAT_ADD(generation, object_visits,
-            _py_stats->object_stats.object_visits);
-        _py_stats->object_stats.object_visits = 0;
+            _Py_stats->object_stats.object_visits);
+        _Py_stats->object_stats.object_visits = 0;
     }
 #endif
 
@@ -2274,11 +2275,7 @@ _Py_ScheduleGC(PyInterpreterState *interp)
     if (gcstate->collecting == 1) {
         return;
     }
-    struct _ceval_state *ceval = &interp->ceval;
-    if (!_Py_atomic_load_relaxed(&ceval->gc_scheduled)) {
-        _Py_atomic_store_relaxed(&ceval->gc_scheduled, 1);
-        _Py_atomic_store_relaxed(&ceval->eval_breaker, 1);
-    }
+    _Py_set_eval_breaker_bit(interp, _PY_GC_SCHEDULED_BIT, 1);
 }
 
 void

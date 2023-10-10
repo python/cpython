@@ -101,8 +101,10 @@ module _ctypes
 #define DONT_USE_SEH
 #endif
 
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_global_objects.h"  // _Py_ID()
+#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_global_objects.h"// _Py_ID()
+#include "pycore_traceback.h"     // _PyTraceback_Add()
+
 #include "clinic/callproc.c.h"
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"

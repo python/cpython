@@ -1,0 +1,2 @@
+The :class:`codecs.CodecInfo` object has been made copyable and pickleable.
+Patched by Robert Lehmann and Furkan Onder.

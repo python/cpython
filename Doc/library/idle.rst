@@ -479,7 +479,7 @@ Search and Replace
 
 Any selection becomes a search target.  However, only selections within
 a line work because searches are only performed within lines with the
-terminal newline removed.  If ``[x] Regular expresion`` is checked, the
+terminal newline removed.  If ``[x] Regular expression`` is checked, the
 target is interpreted according to the Python re module.
 
 .. _completions:

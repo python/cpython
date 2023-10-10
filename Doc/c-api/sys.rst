@@ -291,18 +291,23 @@ accessible to C code.  They all work with the current interpreter thread's
    Raise an auditing event with any active hooks. Return zero for success
    and non-zero with an exception set on failure.
 
+   The *event* string argument must not be *NULL*.
+
    If any hooks have been added, *format* and other arguments will be used
    to construct a tuple to pass. Apart from ``N``, the same format characters
    as used in :c:func:`Py_BuildValue` are available. If the built value is not
-   a tuple, it will be added into a single-element tuple. (The ``N`` format
-   option consumes a reference, but since there is no way to know whether
-   arguments to this function will be consumed, using it may cause reference
-   leaks.)
+   a tuple, it will be added into a single-element tuple.
+
+   The ``N`` format option must not be used. It consumes a reference, but since
+   there is no way to know whether arguments to this function will be consumed,
+   using it may cause reference leaks.
 
    Note that ``#`` format characters should always be treated as
    :c:type:`Py_ssize_t`, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
 
    :func:`sys.audit` performs the same function from Python code.
+
+   See also :c:func:`PySys_AuditTuple`.
 
    .. versionadded:: 3.8
 
@@ -310,6 +315,14 @@ accessible to C code.  They all work with the current interpreter thread's
 
       Require :c:type:`Py_ssize_t` for ``#`` format characters. Previously, an
       unavoidable deprecation warning was raised.
+
+
+.. c:function:: int PySys_AuditTuple(const char *event, PyObject *args)
+
+   Similar to :c:func:`PySys_Audit`, but pass arguments as a Python object.
+   *args* must be a :class:`tuple`. To pass no arguments, *args* can be *NULL*.
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)

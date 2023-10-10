@@ -1,6 +1,7 @@
 import asyncio
 import builtins
 import collections
+import copy
 import datetime
 import functools
 import importlib
@@ -13,7 +14,9 @@ from os.path import normcase
 import _pickle
 import pickle
 import shutil
+import stat
 import sys
+import time
 import types
 import tempfile
 import textwrap
@@ -22,6 +25,7 @@ import unittest
 import unittest.mock
 import warnings
 
+
 try:
     from concurrent.futures import ThreadPoolExecutor
 except ImportError:
@@ -29,7 +33,7 @@ except ImportError:
 
 from test.support import cpython_only
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support.import_helper import DirsOnSysPath
+from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
@@ -38,8 +42,6 @@ from test import support
 from test import inspect_stock_annotations
 from test import inspect_stringized_annotations
 from test import inspect_stringized_annotations_2
-
-from test.test_import import _ready_to_import
 
 
 # Functions tested in this suite:
@@ -135,6 +137,14 @@ async def coroutine_function_example(self):
 def gen_coroutine_function_example(self):
     yield
     return 'spam'
+
+def meth_noargs(): pass
+def meth_o(object, /): pass
+def meth_self_noargs(self, /): pass
+def meth_self_o(self, object, /): pass
+def meth_type_noargs(type, /): pass
+def meth_type_o(type, object, /): pass
+
 
 class TestPredicates(IsTestBase):
 
@@ -1172,6 +1182,47 @@ class TestClassesAndFunctions(unittest.TestCase):
         builtin = _testcapi.docstring_no_signature
         with self.assertRaises(TypeError):
             inspect.getfullargspec(builtin)
+
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        tests = [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_self_noargs),
+            (obj.meth_o, meth_self_o),
+            (cls.meth_noargs_class, meth_type_noargs),
+            (cls.meth_o_class, meth_type_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_self_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_self_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_self_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_type_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_type_o),
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.getfullargspec(builtin),
+                                 inspect.getfullargspec(template))
 
     def test_getfullargspec_definition_order_preserved_on_kwonly(self):
         for fn in signatures_with_lexicographic_keyword_only_parameters():
@@ -2888,6 +2939,47 @@ class TestSignatureObject(unittest.TestCase):
                                     'no signature found for builtin'):
             inspect.signature(str)
 
+        cls = _testcapi.DocStringNoSignatureTest
+        obj = _testcapi.DocStringNoSignatureTest()
+        tests = [
+            (_testcapi.docstring_no_signature_noargs, meth_noargs),
+            (_testcapi.docstring_no_signature_o, meth_o),
+            (cls.meth_noargs, meth_self_noargs),
+            (cls.meth_o, meth_self_o),
+            (obj.meth_noargs, meth_noargs),
+            (obj.meth_o, meth_o),
+            (cls.meth_noargs_class, meth_noargs),
+            (cls.meth_o_class, meth_o),
+            (cls.meth_noargs_static, meth_noargs),
+            (cls.meth_o_static, meth_o),
+            (cls.meth_noargs_coexist, meth_self_noargs),
+            (cls.meth_o_coexist, meth_self_o),
+
+            (time.time, meth_noargs),
+            (str.lower, meth_self_noargs),
+            (''.lower, meth_noargs),
+            (set.add, meth_self_o),
+            (set().add, meth_o),
+            (set.__contains__, meth_self_o),
+            (set().__contains__, meth_o),
+            (datetime.datetime.__dict__['utcnow'], meth_type_noargs),
+            (datetime.datetime.utcnow, meth_noargs),
+            (dict.__dict__['__class_getitem__'], meth_type_o),
+            (dict.__class_getitem__, meth_o),
+        ]
+        try:
+            import _stat
+        except ImportError:
+            # if the _stat extension is not available, stat.S_IMODE() is
+            # implemented in Python, not in C
+            pass
+        else:
+            tests.append((stat.S_IMODE, meth_o))
+        for builtin, template in tests:
+            with self.subTest(builtin):
+                self.assertEqual(inspect.signature(builtin),
+                                 inspect.signature(template))
+
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
             inspect.signature(42)
@@ -3737,6 +3829,28 @@ class TestSignatureObject(unittest.TestCase):
                                 P('bar', P.VAR_POSITIONAL)])),
                          '(foo, /, *bar)')
 
+    def test_signature_replace_parameters(self):
+        def test(a, b) -> 42:
+            pass
+
+        sig = inspect.signature(test)
+        parameters = sig.parameters
+        sig = sig.replace(parameters=list(parameters.values())[1:])
+        self.assertEqual(list(sig.parameters), ['b'])
+        self.assertEqual(sig.parameters['b'], parameters['b'])
+        self.assertEqual(sig.return_annotation, 42)
+        sig = sig.replace(parameters=())
+        self.assertEqual(dict(sig.parameters), {})
+
+        sig = inspect.signature(test)
+        parameters = sig.parameters
+        sig = copy.replace(sig, parameters=list(parameters.values())[1:])
+        self.assertEqual(list(sig.parameters), ['b'])
+        self.assertEqual(sig.parameters['b'], parameters['b'])
+        self.assertEqual(sig.return_annotation, 42)
+        sig = copy.replace(sig, parameters=())
+        self.assertEqual(dict(sig.parameters), {})
+
     def test_signature_replace_anno(self):
         def test() -> 42:
             pass
@@ -3747,6 +3861,15 @@ class TestSignatureObject(unittest.TestCase):
         sig = sig.replace(return_annotation=sig.empty)
         self.assertIs(sig.return_annotation, sig.empty)
         sig = sig.replace(return_annotation=42)
+        self.assertEqual(sig.return_annotation, 42)
+        self.assertEqual(sig, inspect.signature(test))
+
+        sig = inspect.signature(test)
+        sig = copy.replace(sig, return_annotation=None)
+        self.assertIs(sig.return_annotation, None)
+        sig = copy.replace(sig, return_annotation=sig.empty)
+        self.assertIs(sig.return_annotation, sig.empty)
+        sig = copy.replace(sig, return_annotation=42)
         self.assertEqual(sig.return_annotation, 42)
         self.assertEqual(sig, inspect.signature(test))
 
@@ -4094,41 +4217,66 @@ class TestParameterObject(unittest.TestCase):
         p = inspect.Parameter('foo', default=42,
                               kind=inspect.Parameter.KEYWORD_ONLY)
 
-        self.assertIsNot(p, p.replace())
-        self.assertEqual(p, p.replace())
+        self.assertIsNot(p.replace(), p)
+        self.assertEqual(p.replace(), p)
+        self.assertIsNot(copy.replace(p), p)
+        self.assertEqual(copy.replace(p), p)
 
         p2 = p.replace(annotation=1)
         self.assertEqual(p2.annotation, 1)
         p2 = p2.replace(annotation=p2.empty)
-        self.assertEqual(p, p2)
+        self.assertEqual(p2, p)
+        p3 = copy.replace(p, annotation=1)
+        self.assertEqual(p3.annotation, 1)
+        p3 = copy.replace(p3, annotation=p3.empty)
+        self.assertEqual(p3, p)
 
         p2 = p2.replace(name='bar')
         self.assertEqual(p2.name, 'bar')
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, name='bar')
+        self.assertEqual(p3.name, 'bar')
+        self.assertNotEqual(p3, p)
 
         with self.assertRaisesRegex(ValueError,
                                     'name is a required attribute'):
             p2 = p2.replace(name=p2.empty)
+        with self.assertRaisesRegex(ValueError,
+                                    'name is a required attribute'):
+            p3 = copy.replace(p3, name=p3.empty)
 
         p2 = p2.replace(name='foo', default=None)
         self.assertIs(p2.default, None)
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, name='foo', default=None)
+        self.assertIs(p3.default, None)
+        self.assertNotEqual(p3, p)
 
         p2 = p2.replace(name='foo', default=p2.empty)
         self.assertIs(p2.default, p2.empty)
-
+        p3 = copy.replace(p3, name='foo', default=p3.empty)
+        self.assertIs(p3.default, p3.empty)
 
         p2 = p2.replace(default=42, kind=p2.POSITIONAL_OR_KEYWORD)
         self.assertEqual(p2.kind, p2.POSITIONAL_OR_KEYWORD)
         self.assertNotEqual(p2, p)
+        p3 = copy.replace(p3, default=42, kind=p3.POSITIONAL_OR_KEYWORD)
+        self.assertEqual(p3.kind, p3.POSITIONAL_OR_KEYWORD)
+        self.assertNotEqual(p3, p)
 
         with self.assertRaisesRegex(ValueError,
                                     "value <class 'inspect._empty'> "
                                     "is not a valid Parameter.kind"):
             p2 = p2.replace(kind=p2.empty)
+        with self.assertRaisesRegex(ValueError,
+                                    "value <class 'inspect._empty'> "
+                                    "is not a valid Parameter.kind"):
+            p3 = copy.replace(p3, kind=p3.empty)
 
         p2 = p2.replace(kind=p2.KEYWORD_ONLY)
         self.assertEqual(p2, p)
+        p3 = copy.replace(p3, kind=p3.KEYWORD_ONLY)
+        self.assertEqual(p3, p)
 
     def test_signature_parameter_positional_only(self):
         with self.assertRaisesRegex(TypeError, 'name must be a str'):
@@ -4649,7 +4797,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_base_class_have_text_signature(self):
         # see issue 43118
-        from test.ann_module7 import BufferedReader
+        from test.typinganndata.ann_module7 import BufferedReader
         class MyBufferedReader(BufferedReader):
             """buffer reader class."""
 
@@ -4804,7 +4952,7 @@ def foo():
 
     def test_getsource_reload(self):
         # see issue 1218234
-        with _ready_to_import('reload_bug', self.src_before) as (name, path):
+        with ready_to_import('reload_bug', self.src_before) as (name, path):
             module = importlib.import_module(name)
             self.assertInspectEqual(path, module)
             with open(path, 'w', encoding='utf-8') as src:
