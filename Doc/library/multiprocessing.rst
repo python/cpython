@@ -996,13 +996,20 @@ Miscellaneous
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with
-   :func:`os.process_cpu_count`.
+   :func:`os.process_cpu_count` (or ``len(os.sched_getaffinity(0))``).
 
    When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
 
    .. seealso::
-      :func:`os.cpu_count` and :func:`os.process_cpu_count`
+      :func:`os.cpu_count`
+      :func:`os.process_cpu_count`
+
+   .. versionchanged:: 3.13
+
+      The return value can also be overridden using the
+      :option:`-X cpu_count <-X>` flag or :envvar:`PYTHON_CPU_COUNT` as this is
+      merely a wrapper around the :mod:`os` cpu count APIs.
 
 .. function:: current_process()
 
@@ -2623,7 +2630,6 @@ server::
 The following code uses :func:`~multiprocessing.connection.wait` to
 wait for messages from multiple processes at once::
 
-   import time, random
    from multiprocessing import Process, Pipe, current_process
    from multiprocessing.connection import wait
 

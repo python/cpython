@@ -42,8 +42,6 @@ EXITCODE_NO_TESTS_RAN = 4
 EXITCODE_RERUN_FAIL = 5
 EXITCODE_INTERRUPTED = 130
 
-MS_WINDOWS = (sys.platform == 'win32')
-
 TEST_INTERRUPTED = textwrap.dedent("""
     from signal import SIGINT, raise_signal
     try:
@@ -2072,7 +2070,7 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   stats=0, parallel=True)
-        if not MS_WINDOWS:
+        if not support.MS_WINDOWS:
             exitcode = -int(signal.SIGSEGV)
             self.assertIn(f"Exit code {exitcode} (SIGSEGV)", output)
         self.check_line(output, "just before crash!", full=True, regex=False)

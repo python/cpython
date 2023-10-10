@@ -730,6 +730,7 @@ def collect_support(info_add):
         return
 
     attributes = (
+        'MS_WINDOWS',
         'has_fork_support',
         'has_socket_support',
         'has_strftime_extensions',
