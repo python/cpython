@@ -3,6 +3,8 @@ select = [
     "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
 extend-exclude = [
+    # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
+    "test_clinic.py",
     # Failed to lint
     "badsyntax_pep3120.py",
     "encoded_modules/module_iso_8859_1.py",
