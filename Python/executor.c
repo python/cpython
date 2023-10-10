@@ -22,9 +22,6 @@
 #include "ceval_macros.h"
 
 
-#undef ASSERT_KWNAMES_IS_NULL
-#define ASSERT_KWNAMES_IS_NULL() (void)0
-
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
