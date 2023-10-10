@@ -27,68 +27,69 @@
 
 #define _EXIT_TRACE 300
 #define _SET_IP 301
-#define _GUARD_BOTH_INT 302
-#define _BINARY_OP_MULTIPLY_INT 303
-#define _BINARY_OP_ADD_INT 304
-#define _BINARY_OP_SUBTRACT_INT 305
-#define _GUARD_BOTH_FLOAT 306
-#define _BINARY_OP_MULTIPLY_FLOAT 307
-#define _BINARY_OP_ADD_FLOAT 308
-#define _BINARY_OP_SUBTRACT_FLOAT 309
-#define _GUARD_BOTH_UNICODE 310
-#define _BINARY_OP_ADD_UNICODE 311
-#define _BINARY_OP_INPLACE_ADD_UNICODE 312
-#define _POP_FRAME 313
-#define _GUARD_GLOBALS_VERSION 314
-#define _GUARD_BUILTINS_VERSION 315
-#define _LOAD_GLOBAL_MODULE 316
-#define _LOAD_GLOBAL_BUILTINS 317
-#define _GUARD_TYPE_VERSION 318
-#define _CHECK_MANAGED_OBJECT_HAS_VALUES 319
-#define _LOAD_ATTR_INSTANCE_VALUE 320
-#define _CHECK_ATTR_MODULE 321
-#define _LOAD_ATTR_MODULE 322
-#define _CHECK_ATTR_WITH_HINT 323
-#define _LOAD_ATTR_WITH_HINT 324
-#define _LOAD_ATTR_SLOT 325
-#define _CHECK_ATTR_CLASS 326
-#define _LOAD_ATTR_CLASS 327
-#define _GUARD_DORV_VALUES 328
-#define _STORE_ATTR_INSTANCE_VALUE 329
-#define _STORE_ATTR_SLOT 330
-#define _IS_NONE 331
-#define _ITER_CHECK_LIST 332
-#define _ITER_JUMP_LIST 333
-#define _IS_ITER_EXHAUSTED_LIST 334
-#define _ITER_NEXT_LIST 335
-#define _ITER_CHECK_TUPLE 336
-#define _ITER_JUMP_TUPLE 337
-#define _IS_ITER_EXHAUSTED_TUPLE 338
-#define _ITER_NEXT_TUPLE 339
-#define _ITER_CHECK_RANGE 340
-#define _ITER_JUMP_RANGE 341
-#define _IS_ITER_EXHAUSTED_RANGE 342
-#define _ITER_NEXT_RANGE 343
-#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 344
-#define _GUARD_KEYS_VERSION 345
-#define _LOAD_ATTR_METHOD_WITH_VALUES 346
-#define _LOAD_ATTR_METHOD_NO_DICT 347
-#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 348
-#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 349
-#define _CHECK_ATTR_METHOD_LAZY_DICT 350
-#define _LOAD_ATTR_METHOD_LAZY_DICT 351
-#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 352
-#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 353
-#define _CHECK_PEP_523 354
-#define _CHECK_FUNCTION_EXACT_ARGS 355
-#define _CHECK_STACK_SPACE 356
-#define _INIT_CALL_PY_EXACT_ARGS 357
-#define _PUSH_FRAME 358
-#define _POP_JUMP_IF_FALSE 359
-#define _POP_JUMP_IF_TRUE 360
-#define _JUMP_TO_TOP 361
-#define _SAVE_CURRENT_IP 362
-#define _INSERT 363
+#define _CHECK_EVAL_BREAKER 302
+#define _GUARD_BOTH_INT 303
+#define _BINARY_OP_MULTIPLY_INT 304
+#define _BINARY_OP_ADD_INT 305
+#define _BINARY_OP_SUBTRACT_INT 306
+#define _GUARD_BOTH_FLOAT 307
+#define _BINARY_OP_MULTIPLY_FLOAT 308
+#define _BINARY_OP_ADD_FLOAT 309
+#define _BINARY_OP_SUBTRACT_FLOAT 310
+#define _GUARD_BOTH_UNICODE 311
+#define _BINARY_OP_ADD_UNICODE 312
+#define _BINARY_OP_INPLACE_ADD_UNICODE 313
+#define _POP_FRAME 314
+#define _GUARD_GLOBALS_VERSION 315
+#define _GUARD_BUILTINS_VERSION 316
+#define _LOAD_GLOBAL_MODULE 317
+#define _LOAD_GLOBAL_BUILTINS 318
+#define _GUARD_TYPE_VERSION 319
+#define _CHECK_MANAGED_OBJECT_HAS_VALUES 320
+#define _LOAD_ATTR_INSTANCE_VALUE 321
+#define _CHECK_ATTR_MODULE 322
+#define _LOAD_ATTR_MODULE 323
+#define _CHECK_ATTR_WITH_HINT 324
+#define _LOAD_ATTR_WITH_HINT 325
+#define _LOAD_ATTR_SLOT 326
+#define _CHECK_ATTR_CLASS 327
+#define _LOAD_ATTR_CLASS 328
+#define _GUARD_DORV_VALUES 329
+#define _STORE_ATTR_INSTANCE_VALUE 330
+#define _STORE_ATTR_SLOT 331
+#define _IS_NONE 332
+#define _ITER_CHECK_LIST 333
+#define _ITER_JUMP_LIST 334
+#define _IS_ITER_EXHAUSTED_LIST 335
+#define _ITER_NEXT_LIST 336
+#define _ITER_CHECK_TUPLE 337
+#define _ITER_JUMP_TUPLE 338
+#define _IS_ITER_EXHAUSTED_TUPLE 339
+#define _ITER_NEXT_TUPLE 340
+#define _ITER_CHECK_RANGE 341
+#define _ITER_JUMP_RANGE 342
+#define _IS_ITER_EXHAUSTED_RANGE 343
+#define _ITER_NEXT_RANGE 344
+#define _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT 345
+#define _GUARD_KEYS_VERSION 346
+#define _LOAD_ATTR_METHOD_WITH_VALUES 347
+#define _LOAD_ATTR_METHOD_NO_DICT 348
+#define _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES 349
+#define _LOAD_ATTR_NONDESCRIPTOR_NO_DICT 350
+#define _CHECK_ATTR_METHOD_LAZY_DICT 351
+#define _LOAD_ATTR_METHOD_LAZY_DICT 352
+#define _CHECK_CALL_BOUND_METHOD_EXACT_ARGS 353
+#define _INIT_CALL_BOUND_METHOD_EXACT_ARGS 354
+#define _CHECK_PEP_523 355
+#define _CHECK_FUNCTION_EXACT_ARGS 356
+#define _CHECK_STACK_SPACE 357
+#define _INIT_CALL_PY_EXACT_ARGS 358
+#define _PUSH_FRAME 359
+#define _POP_JUMP_IF_FALSE 360
+#define _POP_JUMP_IF_TRUE 361
+#define _JUMP_TO_TOP 362
+#define _SAVE_CURRENT_IP 363
+#define _INSERT 364
 
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #ifdef NEED_OPCODE_METADATA
@@ -97,6 +98,8 @@ int _PyOpcode_num_popped(int opcode, int oparg, bool jump)  {
         case NOP:
             return 0;
         case RESUME:
+            return 0;
+        case _CHECK_EVAL_BREAKER:
             return 0;
         case RESUME_CHECK:
             return 0;
@@ -673,6 +676,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg, bool jump)  {
         case NOP:
             return 0;
         case RESUME:
+            return 0;
+        case _CHECK_EVAL_BREAKER:
             return 0;
         case RESUME_CHECK:
             return 0;
@@ -1311,6 +1316,7 @@ extern const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SI
 const struct opcode_metadata _PyOpcode_opcode_metadata[OPCODE_METADATA_SIZE] = {
     [NOP] = { true, INSTR_FMT_IX, 0 },
     [RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
+    [_CHECK_EVAL_BREAKER] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [RESUME_CHECK] = { true, INSTR_FMT_IX, HAS_DEOPT_FLAG },
     [INSTRUMENTED_RESUME] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG },
     [LOAD_CLOSURE] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_LOCAL_FLAG },
@@ -1599,7 +1605,7 @@ extern const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACR
 #ifdef NEED_OPCODE_METADATA
 const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPANSION_SIZE] = {
     [NOP] = { .nuops = 1, .uops = { { NOP, 0, 0 } } },
-    [RESUME_CHECK] = { .nuops = 1, .uops = { { RESUME_CHECK, 0, 0 } } },
+    [RESUME_CHECK] = { .nuops = 1, .uops = { { _CHECK_EVAL_BREAKER, 0, 0 } } },
     [LOAD_FAST_CHECK] = { .nuops = 1, .uops = { { LOAD_FAST_CHECK, 0, 0 } } },
     [LOAD_FAST] = { .nuops = 1, .uops = { { LOAD_FAST, 0, 0 } } },
     [LOAD_FAST_AND_CLEAR] = { .nuops = 1, .uops = { { LOAD_FAST_AND_CLEAR, 0, 0 } } },
@@ -1752,6 +1758,7 @@ extern const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE];
 const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE] = {
     [_EXIT_TRACE] = "_EXIT_TRACE",
     [_SET_IP] = "_SET_IP",
+    [_CHECK_EVAL_BREAKER] = "_CHECK_EVAL_BREAKER",
     [_GUARD_BOTH_INT] = "_GUARD_BOTH_INT",
     [_BINARY_OP_MULTIPLY_INT] = "_BINARY_OP_MULTIPLY_INT",
     [_BINARY_OP_ADD_INT] = "_BINARY_OP_ADD_INT",

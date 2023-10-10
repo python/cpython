@@ -748,7 +748,9 @@ pop_jump_if_bool:
             }  // End default
 
         }  // End switch (opcode)
-
+        if (_PyOpcode_opcode_metadata[opcode].flags & HAS_EVAL_BREAK_FLAG) {
+            ADD_TO_TRACE(_CHECK_EVAL_BREAKER, 0, 0);
+        }
         instr++;
         // Add cache size for opcode
         instr += _PyOpcode_Caches[_PyOpcode_Deopt[opcode]];

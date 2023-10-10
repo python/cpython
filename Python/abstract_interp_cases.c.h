@@ -7,7 +7,7 @@
             break;
         }
 
-        case RESUME_CHECK: {
+        case _CHECK_EVAL_BREAKER: {
             break;
         }
 

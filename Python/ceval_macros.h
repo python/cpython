@@ -122,6 +122,15 @@
         } \
     }
 
+#if defined(__EMSCRIPTEN__)
+#define EMSCRIPTEN_CHECK \
+    if (_Py_emscripten_signal_clock == 0) { \
+        goto handle_pending; \
+    } \
+    _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
+#else
+#define EMSCRIPTEN_CHECK
+#endif
 
 /* Tuple access macros */
 

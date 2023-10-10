@@ -1226,6 +1226,7 @@ PyObject *descr, DescriptorClassification kind, bool is_method)
     return 1;
 }
 
+
 void
 _Py_Specialize_LoadGlobal(
     PyObject *globals, PyObject *builtins,

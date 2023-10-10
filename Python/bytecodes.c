@@ -154,7 +154,7 @@ dummy_func(
             }
         }
 
-        inst(RESUME_CHECK, (--)) {
+        op(_CHECK_EVAL_BREAKER, (--)) {
 #if defined(__EMSCRIPTEN__)
             DEOPT_IF(_Py_emscripten_signal_clock == 0);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
@@ -164,6 +164,8 @@ dummy_func(
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
             DEOPT_IF(eval_breaker != version);
         }
+
+        macro(RESUME_CHECK) = _CHECK_EVAL_BREAKER;
 
         inst(INSTRUMENTED_RESUME, (--)) {
             uintptr_t global_version = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & ~_PY_EVAL_EVENTS_MASK;

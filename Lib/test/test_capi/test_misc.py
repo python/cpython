@@ -2699,6 +2699,23 @@ class TestUops(unittest.TestCase):
         uops = {opname for opname, _, _ in ex}
         self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
+    def test_eval_breaker_after_call(self):
+
+        def testfunc(n):
+            for i in range(n):
+                range(0)
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        uops = [opname for opname, _, _ in ex]
+        for index, name in enumerate(uops):
+            if name.startswith("CALL"):
+                break
+        self.assertEqual(uops[index+1], "_CHECK_EVAL_BREAKER")
+
 
 if __name__ == "__main__":
     unittest.main()

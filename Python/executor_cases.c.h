@@ -7,15 +7,15 @@
             break;
         }
 
-        case RESUME_CHECK: {
+        case _CHECK_EVAL_BREAKER: {
 #if defined(__EMSCRIPTEN__)
-            DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
+            DEOPT_IF(_Py_emscripten_signal_clock == 0, _CHECK_EVAL_BREAKER);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
             uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
             assert((version & _PY_EVAL_EVENTS_MASK) == 0);
-            DEOPT_IF(eval_breaker != version, RESUME);
+            DEOPT_IF(eval_breaker != version, _CHECK_EVAL_BREAKER);
             break;
         }
 
@@ -2647,7 +2647,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2671,7 +2670,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2716,7 +2714,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2755,7 +2752,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2798,7 +2794,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2835,7 +2830,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2949,7 +2943,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -2989,7 +2982,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3030,7 +3022,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3069,7 +3060,6 @@
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
-            CHECK_EVAL_BREAKER();
             break;
         }
 
@@ -3265,7 +3255,6 @@
 
         case _JUMP_TO_TOP: {
             pc = 0;
-            CHECK_EVAL_BREAKER();
             break;
         }
 

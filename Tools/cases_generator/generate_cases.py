@@ -806,8 +806,6 @@ class Generator(Analyzer):
                     self.out.emit("")
                     with self.out.block(f"case {instr.name}:"):
                         stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
-                        if instr.check_eval_breaker:
-                            self.out.emit("CHECK_EVAL_BREAKER();")
                         self.out.emit("break;")
         print(
             f"Wrote {n_uops} cases to {executor_filename}",
