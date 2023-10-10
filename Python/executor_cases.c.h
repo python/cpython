@@ -2596,7 +2596,6 @@
             tstate->py_recursion_remaining--;
             LOAD_SP();
             LOAD_IP();
-            frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3271,7 +3270,7 @@
         }
 
         case _SET_IP: {
-            frame->prev_instr = (_Py_CODEUNIT *)(uintptr_t)operand;
+            frame->prev_instr = ip_offset + oparg;
             break;
         }
 

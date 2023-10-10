@@ -475,6 +475,7 @@ translate_bytecode_to_trace(
     if (trace_stack_depth >= TRACE_STACK_SIZE) { \
         DPRINTF(2, "Trace stack overflow\n"); \
         OPT_STAT_INC(trace_stack_overflow); \
+        ADD_TO_TRACE(_SET_IP, 0, 0); \
         goto done; \
     } \
     trace_stack[trace_stack_depth].code = code; \
@@ -497,8 +498,8 @@ translate_bytecode_to_trace(
 
 top:  // Jump here after _PUSH_FRAME or likely branches
     for (;;) {
-        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and EXIT_TRACE
-        ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr);
+        RESERVE_RAW(2, "epilogue");  // Always need space for _SET_IP and _EXIT_TRACE
+        ADD_TO_TRACE(_SET_IP, INSTR_IP(instr, code), 0);
 
         uint32_t opcode = instr->op.code;
         uint32_t oparg = instr->op.arg;
@@ -556,7 +557,7 @@ pop_jump_if_bool:
                         uop_name(opcode), oparg,
                         counter, bitcount, jump_likely, jump_sense, uop_name(uopcode));
                 ADD_TO_TRACE(uopcode, max_length, 0);
-                ADD_TO_STUB(max_length, _SET_IP, 0, (uintptr_t)stub_target);
+                ADD_TO_STUB(max_length, _SET_IP, INSTR_IP(stub_target, code), 0);
                 ADD_TO_STUB(max_length + 1, _EXIT_TRACE, 0, 0);
                 if (jump_likely) {
                     DPRINTF(2, "Jump likely (%x = %d bits), continue at byte offset %d\n",
@@ -623,7 +624,7 @@ pop_jump_if_bool:
                 ADD_TO_TRACE(next_op, 0, 0);
 
                 ADD_TO_STUB(max_length + 0, POP_TOP, 0, 0);
-                ADD_TO_STUB(max_length + 1, _SET_IP, 0, (uintptr_t)target_instr);
+                ADD_TO_STUB(max_length + 1, _SET_IP, INSTR_IP(target_instr, code), 0);
                 ADD_TO_STUB(max_length + 2, _EXIT_TRACE, 0, 0);
                 break;
             }
@@ -679,7 +680,7 @@ pop_jump_if_bool:
                                 oparg = orig_oparg & 0xF;
                                 break;
                             case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
-                                operand = (uintptr_t)(instr + offset);
+                                oparg = INSTR_IP(instr + offset, code);
                                 break;
 
                             default:
@@ -719,6 +720,7 @@ pop_jump_if_bool:
                                             PyUnicode_AsUTF8(new_code->co_filename),
                                             new_code->co_firstlineno);
                                     OPT_STAT_INC(recursive_call);
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 if (new_code->co_version != func_version) {
@@ -726,6 +728,7 @@ pop_jump_if_bool:
                                     // Perhaps it may happen again, so don't bother tracing.
                                     // TODO: Reason about this -- is it better to bail or not?
                                     DPRINTF(2, "Bailing because co_version != func_version\n");
+                                    ADD_TO_TRACE(_SET_IP, 0, 0);
                                     goto done;
                                 }
                                 // Increment IP to the return address
@@ -741,6 +744,7 @@ pop_jump_if_bool:
                                     2 * INSTR_IP(instr, code));
                                 goto top;
                             }
+                            ADD_TO_TRACE(_SET_IP, 0, 0);
                             goto done;
                         }
                     }

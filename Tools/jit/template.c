@@ -47,6 +47,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
            PyThreadState *tstate, int32_t oparg, uint64_t operand)
 {
     // Locals that the instruction implementations expect to exist:
+    _Py_CODEUNIT *ip_offset = _PyCode_CODE(_PyFrame_GetCode(frame));
     uint32_t opcode = _JIT_OPCODE;
     int pc = -1;  // XXX
     switch (opcode) {

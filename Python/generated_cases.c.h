@@ -3964,7 +3964,6 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP();
-                frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -4043,7 +4042,6 @@
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
                 LOAD_IP();
-                frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
