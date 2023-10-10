@@ -570,16 +570,6 @@ pylong_checkexact(PyObject *module, PyObject *obj)
 }
 
 static PyObject *
-pylong_fromlong(PyObject *module, PyObject *arg)
-{
-    long value;
-    if (!PyArg_Parse(arg, "l", &value)) {
-        return NULL;
-    }
-    return PyLong_FromLong(value);
-}
-
-static PyObject *
 pylong_fromdouble(PyObject *module, PyObject *arg)
 {
     double value;
@@ -740,7 +730,7 @@ pylong_asunsignedlonglongmask(PyObject *module, PyObject *arg)
 }
 
 static PyObject *
-pylong_asssize_t(PyObject *module, PyObject *arg)
+pylong_as_ssize_t(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     Py_ssize_t value = PyLong_AsSsize_t(arg);
@@ -751,7 +741,7 @@ pylong_asssize_t(PyObject *module, PyObject *arg)
 }
 
 static PyObject *
-pylong_assize_t(PyObject *module, PyObject *arg)
+pylong_as_size_t(PyObject *module, PyObject *arg)
 {
     NULLABLE(arg);
     size_t value = PyLong_AsSize_t(arg);
@@ -797,7 +787,6 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
     {"pylong_check",                pylong_check,               METH_O},
     {"pylong_checkexact",           pylong_checkexact,          METH_O},
-    {"pylong_fromlong",             pylong_fromlong,            METH_O},
     {"pylong_fromdouble",           pylong_fromdouble,          METH_O},
     {"pylong_fromstring",           pylong_fromstring,          METH_VARARGS},
     {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
@@ -811,8 +800,8 @@ static PyMethodDef test_methods[] = {
     {"pylong_aslonglongandoverflow", pylong_aslonglongandoverflow, METH_O},
     {"pylong_asunsignedlonglong",   pylong_asunsignedlonglong,  METH_O},
     {"pylong_asunsignedlonglongmask", pylong_asunsignedlonglongmask, METH_O},
-    {"pylong_asssize_t",            pylong_asssize_t,           METH_O},
-    {"pylong_assize_t",             pylong_assize_t,            METH_O},
+    {"pylong_as_ssize_t",           pylong_as_ssize_t,          METH_O},
+    {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
     {"pylong_asdouble",             pylong_asdouble,            METH_O},
     {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {NULL},

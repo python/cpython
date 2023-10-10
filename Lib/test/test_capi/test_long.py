@@ -342,45 +342,45 @@ class LongTests(unittest.TestCase):
         self.assertRaises(TypeError, asunsignedlonglongmask, '3')
         self.assertRaises(SystemError, asunsignedlonglongmask, NULL)
 
-    def test_long_asssize_t(self):
+    def test_long_as_ssize_t(self):
         """Test PyLong_AsSsize_t() and PyLong_FromSsize_t()"""
-        asssize_t = _testcapi.pylong_asssize_t
+        as_ssize_t = _testcapi.pylong_as_ssize_t
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
         # round trip (object -> Py_ssize_t -> object)
         for value in (PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1, 0, 1, 1234):
             with self.subTest(value=value):
-                self.assertEqual(asssize_t(value), value)
+                self.assertEqual(as_ssize_t(value), value)
 
-        self.assertEqual(asssize_t(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, asssize_t, Index(42))
-        self.assertRaises(TypeError, asssize_t, MyIndexAndInt())
+        self.assertEqual(as_ssize_t(IntSubclass(42)), 42)
+        self.assertRaises(TypeError, as_ssize_t, Index(42))
+        self.assertRaises(TypeError, as_ssize_t, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, asssize_t, PY_SSIZE_T_MIN - 1)
-        self.assertRaises(OverflowError, asssize_t, PY_SSIZE_T_MAX + 1)
-        self.assertRaises(TypeError, asssize_t, 1.0)
-        self.assertRaises(TypeError, asssize_t, b'2')
-        self.assertRaises(TypeError, asssize_t, '3')
-        self.assertRaises(SystemError, asssize_t, NULL)
+        self.assertRaises(OverflowError, as_ssize_t, PY_SSIZE_T_MIN - 1)
+        self.assertRaises(OverflowError, as_ssize_t, PY_SSIZE_T_MAX + 1)
+        self.assertRaises(TypeError, as_ssize_t, 1.0)
+        self.assertRaises(TypeError, as_ssize_t, b'2')
+        self.assertRaises(TypeError, as_ssize_t, '3')
+        self.assertRaises(SystemError, as_ssize_t, NULL)
 
-    def test_long_assize_t(self):
+    def test_long_as_size_t(self):
         """Test PyLong_AsSize_t() and PyLong_FromSize_t()"""
-        assize_t = _testcapi.pylong_assize_t
+        as_size_t = _testcapi.pylong_as_size_t
         from _testcapi import SIZE_MAX
         # round trip (object -> size_t -> object)
         for value in (SIZE_MAX, 0, 1, 1234):
             with self.subTest(value=value):
-                self.assertEqual(assize_t(value), value)
+                self.assertEqual(as_size_t(value), value)
 
-        self.assertEqual(assize_t(IntSubclass(42)), 42)
-        self.assertRaises(TypeError, assize_t, Index(42))
-        self.assertRaises(TypeError, assize_t, MyIndexAndInt())
+        self.assertEqual(as_size_t(IntSubclass(42)), 42)
+        self.assertRaises(TypeError, as_size_t, Index(42))
+        self.assertRaises(TypeError, as_size_t, MyIndexAndInt())
 
-        self.assertRaises(OverflowError, assize_t, -1)
-        self.assertRaises(OverflowError, assize_t, SIZE_MAX + 1)
-        self.assertRaises(TypeError, assize_t, 1.0)
-        self.assertRaises(TypeError, assize_t, b'2')
-        self.assertRaises(TypeError, assize_t, '3')
-        self.assertRaises(SystemError, assize_t, NULL)
+        self.assertRaises(OverflowError, as_size_t, -1)
+        self.assertRaises(OverflowError, as_size_t, SIZE_MAX + 1)
+        self.assertRaises(TypeError, as_size_t, 1.0)
+        self.assertRaises(TypeError, as_size_t, b'2')
+        self.assertRaises(TypeError, as_size_t, '3')
+        self.assertRaises(SystemError, as_size_t, NULL)
 
     def test_long_asdouble(self):
         """Test PyLong_AsDouble()"""
