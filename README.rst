@@ -76,6 +76,9 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
 
+To build Windows installer, see `Tools/msi/README.txt
+<https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
+
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
 
