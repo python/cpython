@@ -157,9 +157,24 @@ class ContextManagerTestCase(unittest.TestCase):
                 yield
         ctx = whoo()
         ctx.__enter__()
-        self.assertRaises(
-            RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
-        )
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(TypeError, TypeError("foo"), None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
+
+    def test_contextmanager_trap_second_yield(self):
+        @contextmanager
+        def whoo():
+            yield
+            yield
+        ctx = whoo()
+        ctx.__enter__()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
 
     def test_contextmanager_except(self):
         state = []
