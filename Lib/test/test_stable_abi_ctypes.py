@@ -853,6 +853,7 @@ SYMBOL_NAMES = (
     "Py_InitializeEx",
     "Py_Is",
     "Py_IsFalse",
+    "Py_IsFinalizing",
     "Py_IsInitialized",
     "Py_IsNone",
     "Py_IsTrue",
