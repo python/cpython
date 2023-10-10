@@ -78,13 +78,13 @@ The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -C, --show-caches
-
-   Show inline caches.
-
 .. cmdoption:: -h, --help
 
    Display usage and exit.
+
+.. cmdoption:: -C, --show-caches
+
+   Show inline caches.
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code recieved from stdin.
