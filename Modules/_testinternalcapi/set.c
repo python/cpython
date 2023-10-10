@@ -17,58 +17,32 @@ set_update(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-set_next_entry(PyObject *self, PyObject *obj)
+set_next_entry(PyObject *self, PyObject *args)
 {
-    NULLABLE(obj);
-    PyObject *result = PyList_New(0);
-    if (result == NULL) {
+    int rc;
+    Py_ssize_t pos;
+    Py_hash_t hash;
+    PyObject *set, *item = UNINITIALIZED_PTR;
+    if (!PyArg_ParseTuple(args, "On", &set, &pos)) {
         return NULL;
     }
+    NULLABLE(set);
 
-    int set_next = 0;
-    Py_ssize_t i = 0, count = 0;
-    Py_hash_t h;
-    PyObject *item;
-    while ((set_next = _PySet_NextEntry(obj, &i, &item, &h))) {
-        if (set_next == -1 && PyErr_Occurred()) {  // obj is not a set
-            goto error;
-        }
-
-        count++;
-        PyObject *index = PyLong_FromSsize_t(count);
-        if (index == NULL) {
-            goto error;
-        }
-        PyObject *hash = PyLong_FromSize_t((size_t)h);
-        if (hash == NULL) {
-            Py_DECREF(index);
-            goto error;
-        }
-        PyObject *tup = PyTuple_Pack(3, index, item, hash);
-        Py_DECREF(index);
-        Py_DECREF(item);
-        Py_DECREF(hash);
-        if (tup == NULL) {
-            goto error;
-        }
-        int res = PyList_Append(result, tup);
-        Py_DECREF(tup);
-        if (res < 0) {
-            goto error;
-        }
+    rc = _PySet_NextEntry(set, &pos, &item, &hash);
+    if (rc == 1) {
+        return Py_BuildValue("innO", rc, pos, hash, item);
     }
-    assert(count == PyList_GET_SIZE(result));
-    return result;
-
-error:
-    Py_DECREF(result);
-    return NULL;
+    assert(item == UNINITIALIZED_PTR);
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 
 static PyMethodDef TestMethods[] = {
     {"set_update", set_update, METH_VARARGS},
-    {"set_next_entry", set_next_entry, METH_O},
+    {"set_next_entry", set_next_entry, METH_VARARGS},
 
     {NULL},
 };

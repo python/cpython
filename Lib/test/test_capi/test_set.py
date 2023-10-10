@@ -247,8 +247,17 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
         set_next = _testinternalcapi.set_next_entry
         for cls in (set, set_subclass, frozenset, frozenset_subclass):
             with self.subTest(cls=cls):
-                res = set_next(cls([1, 2, 3]))
-                self.assertEqual(set(res), {(1, 1, 1), (2, 2, 2), (3, 3, 3)})
+                instance = cls([1, 2, 3])
+                pos = 0
+                while True:
+                    res = set_next(instance, pos)
+                    if res is None:
+                        break
+                    rc, pos, hash_, item = res
+                    self.assertEqual(rc, 1)
+                    self.assertIsInstance(pos, int)
+                    self.assertIn(item, instance)
+                    self.assertEqual(hash(item), hash_)
         with self.assertRaises(SystemError):
-            set_next(object())
-        # CRASHES: set_next(NULL)
+            set_next(object(), 0)
+        # CRASHES: set_next(NULL, 0)
