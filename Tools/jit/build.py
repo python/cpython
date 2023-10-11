@@ -26,8 +26,10 @@ PYCONFIG_H = ROOT / "pyconfig.h"
 PYTHON = ROOT / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
-TOOLS_JIT_TEMPLATE = TOOLS_JIT / "template.c"
-TOOLS_JIT_TRAMPOLINE = TOOLS_JIT / "trampoline.c"
+TOOLS_JIT_OPARG_C = TOOLS_JIT / "oparg.c"
+TOOLS_JIT_OPERAND_C = TOOLS_JIT / "operand.c"
+TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
+TOOLS_JIT_TRAMPOLINE_C = TOOLS_JIT / "trampoline.c"
 
 
 HoleKind: typing.TypeAlias = typing.Literal[
@@ -140,11 +142,9 @@ ObjectType = list[dict[str, FileType] | FileType]
 class HoleValue(enum.Enum):
     _JIT_BASE = enum.auto()
     _JIT_CONTINUE = enum.auto()
-    _JIT_CONTINUE_OPARG = enum.auto()
-    _JIT_CONTINUE_OPERAND = enum.auto()
     _JIT_JUMP = enum.auto()
-    _JIT_JUMP_OPARG = enum.auto()
-    _JIT_JUMP_OPERAND = enum.auto()
+    _JIT_OPARG = enum.auto()
+    _JIT_OPERAND = enum.auto()
     _JIT_ZERO = enum.auto()
 
 
@@ -626,10 +626,14 @@ class Compiler:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                task = self._compile("trampoline", TOOLS_JIT_TRAMPOLINE, work)
+                task = self._compile("oparg", TOOLS_JIT_OPARG_C, work)
+                group.create_task(task)
+                task = self._compile("operand", TOOLS_JIT_OPERAND_C, work)
+                group.create_task(task)
+                task = self._compile("trampoline", TOOLS_JIT_TRAMPOLINE_C, work)
                 group.create_task(task)
                 for opname in opnames:
-                    task = self._compile(opname, TOOLS_JIT_TEMPLATE, work)
+                    task = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     group.create_task(task)
 
 
@@ -700,11 +704,13 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    .holes = OP##_stencil_holes,                       \\"
     yield f"}}"
     yield f""
+    yield f"static const Stencil oparg_stencil = INIT_STENCIL(oparg);"
+    yield f"static const Stencil operand_stencil = INIT_STENCIL(operand);"
     yield f"static const Stencil trampoline_stencil = INIT_STENCIL(trampoline);"
     yield f""
     yield f"static const Stencil stencils[512] = {{"
-    assert opnames[-1] == "trampoline"
-    for opname in opnames[:-1]:
+    assert opnames[-3:] == ["oparg", "operand", "trampoline"]
+    for opname in opnames[:-3]:
         yield f"    [{opname}] = INIT_STENCIL({opname}),"
     yield f"}};"
     yield f""

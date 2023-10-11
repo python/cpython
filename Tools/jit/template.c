@@ -28,19 +28,8 @@
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
-// Stuff that will be patched at "JIT time":
-extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame,
-                                          PyObject **stack_pointer,
-                                          PyThreadState *tstate,
-                                          int32_t oparg, uint64_t operand);
-extern void _JIT_CONTINUE_OPARG;
-extern void _JIT_CONTINUE_OPERAND;
-extern _PyInterpreterFrame *_JIT_JUMP(_PyInterpreterFrame *frame,
-                                      PyObject **stack_pointer,
-                                      PyThreadState *tstate,
-                                      int32_t oparg, uint64_t operand);
-extern void _JIT_JUMP_OPARG;
-extern void _JIT_JUMP_OPERAND;
+extern _PyInterpreterFrame *_JIT_CONTINUE(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate, int32_t oparg, uint64_t operand);
+extern _PyInterpreterFrame *_JIT_JUMP(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate, int32_t oparg, uint64_t operand);
 
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
@@ -56,35 +45,17 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
         default:
             Py_UNREACHABLE();
     }
-    // Finally, the continuations. You may be wondering why we pass the next
-    // oparg and operand through the call (instead of just looking them up in
-    // the next instruction if needed). This is because these values are being
-    // encoded in the *addresses* of externs. Unfortunately, clang is incredibly
-    // clever: the ELF ABI actually has some limits on the valid address range
-    // of an extern (it must be in range(1, 2**32 - 2**24)). So, if we load them
-    // in the same compilation unit as they are being used, clang *will*
-    // optimize the function as if the oparg can never be zero and the operand
-    // always fits in 32 bits, for example. That's bad, for obvious reasons.
     if (pc != -1) {
         assert(pc == oparg);
-        assert(opcode == _JUMP_TO_TOP ||
-               opcode == _POP_JUMP_IF_FALSE ||
-               opcode == _POP_JUMP_IF_TRUE);
-        oparg = (uintptr_t)&_JIT_JUMP_OPARG;
-        operand = (uintptr_t)&_JIT_JUMP_OPERAND;
+        assert(opcode == _JUMP_TO_TOP || opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
         __attribute__((musttail))
-        return _JIT_JUMP(frame, stack_pointer, tstate, oparg, operand);
+        return _JIT_JUMP(frame, stack_pointer, tstate, 0, 0);
     }
-    oparg = (uintptr_t)&_JIT_CONTINUE_OPARG;
-    operand = (uintptr_t)&_JIT_CONTINUE_OPERAND;
     __attribute__((musttail))
-    return _JIT_CONTINUE(frame, stack_pointer, tstate, oparg, operand);
+    return _JIT_CONTINUE(frame, stack_pointer, tstate, 0, 0);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
-    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
-        UNBOUNDLOCAL_ERROR_MSG,
-        PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
-    );
+    _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));
     goto error;
 pop_4_error:
     STACK_SHRINK(1);

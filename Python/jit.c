@@ -200,6 +200,12 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
         nbytes += stencil->nbytes;
+        if (instruction->oparg) {
+            nbytes += oparg_stencil.nbytes;
+        }
+        if (instruction->operand) {
+            nbytes += operand_stencil.nbytes;
+        }
         assert(stencil->nbytes);
     };
     unsigned char *memory = alloc(nbytes);
@@ -225,30 +231,51 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     }
     unsigned char *head = memory;
     // First, the trampoline:
-    _PyUOpInstruction *instruction_continue = &trace[0];
     const Stencil *stencil = &trampoline_stencil;
     uint64_t patches[] = GET_PATCHES();
     patches[_JIT_BASE] = (uintptr_t)head;
     patches[_JIT_CONTINUE] = (uintptr_t)head + offsets[0];
-    patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
-    patches[_JIT_CONTINUE_OPERAND] = instruction_continue->operand;
     patches[_JIT_ZERO] = 0;
     copy_and_patch(head, stencil, patches);
     head += stencil->nbytes;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
-        _PyUOpInstruction *instruction_continue = &trace[(i + 1) % size];
-        _PyUOpInstruction *instruction_jump = &trace[instruction->oparg % size];
+        // You may be wondering why we pass the next oparg and operand through
+        // the call (instead of just looking them up in the next instruction if
+        // needed). This is
+        // because these values are being encoded in the *addresses* of externs.
+        // Unfortunately, clang is incredibly clever: the ELF ABI actually has some
+        // limits on the valid address range of an extern (it must be in
+        // range(1, 2**31 - 2**24)). So, if we load them in the same compilation unit
+        // as they are being used, clang *will* optimize the function as if the oparg
+        // can never be zero and the operand always fits in 32 bits, for example. That's
+        // bad, for obvious reasons:
+        if (instruction->oparg) {
+            const Stencil *stencil = &oparg_stencil;
+            uint64_t patches[] = GET_PATCHES();
+            patches[_JIT_BASE] = (uintptr_t)head;
+            patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+            patches[_JIT_OPARG] = instruction->oparg;
+            patches[_JIT_ZERO] = 0;
+            copy_and_patch(head, stencil, patches);
+            head += stencil->nbytes;
+        }
+        if (instruction->operand) {
+            const Stencil *stencil = &operand_stencil;
+            uint64_t patches[] = GET_PATCHES();
+            patches[_JIT_BASE] = (uintptr_t)head;
+            patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+            patches[_JIT_OPERAND] = instruction->operand;
+            patches[_JIT_ZERO] = 0;
+            copy_and_patch(head, stencil, patches);
+            head += stencil->nbytes;
+        }
         const Stencil *stencil = &stencils[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
-        patches[_JIT_BASE] = (uintptr_t)memory + offsets[i];
-        patches[_JIT_CONTINUE] = (uintptr_t)memory + offsets[(i + 1) % size];
-        patches[_JIT_CONTINUE_OPARG] = instruction_continue->oparg;
-        patches[_JIT_CONTINUE_OPERAND] = instruction_continue->operand;
+        patches[_JIT_BASE] = (uintptr_t)head;
+        patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
-        patches[_JIT_JUMP_OPARG] = instruction_jump->oparg;
-        patches[_JIT_JUMP_OPERAND] = instruction_jump->operand;
         patches[_JIT_ZERO] = 0;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
