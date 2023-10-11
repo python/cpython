@@ -37,8 +37,8 @@ class TestPackages(unittest.TestCase):
             with ensurepip._get_pip_whl_path_ctx() as bundled_wheel_path:
                 self.assertEqual(pip_filename, bundled_wheel_path.name)
 
-    def test_get_pip_info_with_dir(self):
-        # Test _get_pip_info() with a wheel package directory
+    def test_selected_wheel_path_with_dir(self):
+        # Test _get_pip_whl_path_ctx() with a wheel package directory
         pip_filename = "pip-20.2.2-py2.py3-none-any.whl"
 
         with tempfile.TemporaryDirectory() as tmpdir:
