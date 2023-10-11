@@ -2462,3 +2462,7 @@
     added = '3.13'
 [function.Py_IsFinalizing]
     added = '3.13'
+[function.PyUnicode_EqualToUTF8]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8AndSize]
+    added = '3.13'
