@@ -1090,7 +1090,6 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     // This only works when opcode is a non-quickened form:
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
-
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
          instruction < frame->instr_ptr; instruction++)
     {

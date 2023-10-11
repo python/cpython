@@ -805,7 +805,7 @@ dummy_func(
 
         macro(RETURN_VALUE) =
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
+            _SAVE_CURRENT_IP +  // Sets frame->next_instr_offset
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -830,7 +830,7 @@ dummy_func(
         macro(RETURN_CONST) =
             LOAD_CONST +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
+            _SAVE_CURRENT_IP +  // Sets frame->next_instr_offset
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {
@@ -3111,7 +3111,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
+            _SAVE_CURRENT_IP +  // Sets frame->next_instr_offset
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3121,7 +3121,7 @@ dummy_func(
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
             _SET_IP +  // Tier 2 only; special-cased oparg
-            _SAVE_CURRENT_IP +  // Sets frame->instr_ptr
+            _SAVE_CURRENT_IP +  // Sets frame->next_instr_offset
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3667,9 +3667,7 @@ dummy_func(
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
-                if (err) {
-                    goto error;
-                }
+                if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(

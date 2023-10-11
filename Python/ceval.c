@@ -776,6 +776,10 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
+    /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
+     * because it needs to capture frame->instr_ptr before it is updated,
+     * as happens in the standard instruction prologue.
+     */
 #if USE_COMPUTED_GOTOS
         TARGET_INSTRUMENTED_LINE:
 #else
@@ -885,7 +889,6 @@ exception_unwind:
                 monitor_unwind(tstate, frame, next_instr-1);
                 goto exit_unwind;
             }
-
             assert(STACK_LEVEL() >= level);
             PyObject **new_top = _PyFrame_Stackbase(frame) + level;
             while (stack_pointer > new_top) {

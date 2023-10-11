@@ -1053,7 +1053,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
 
     while (! done) {
         done = true;
-        cfg_instr *previous_instr = NULL;
+        cfg_instr *prev_instr = NULL;
         cfg_instr *instr = NULL;
         for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
             remove_redundant_nops(b);
@@ -1062,10 +1062,10 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                 instr = NULL;
             }
             for (int i = 0; i < b->b_iused; i++) {
-                previous_instr = instr;
+                prev_instr = instr;
                 instr = &b->b_instr[i];
-                int prev_opcode = previous_instr ? previous_instr->i_opcode : 0;
-                int prev_oparg = previous_instr ? previous_instr->i_oparg : 0;
+                int prev_opcode = prev_instr ? prev_instr->i_opcode : 0;
+                int prev_oparg = prev_instr ? prev_instr->i_oparg : 0;
                 int opcode = instr->i_opcode;
                 bool is_redundant_pair = false;
                 if (opcode == POP_TOP) {
@@ -1077,7 +1077,7 @@ remove_redundant_nops_and_pairs(basicblock *entryblock)
                    }
                 }
                 if (is_redundant_pair) {
-                    INSTR_SET_OP0(previous_instr, NOP);
+                    INSTR_SET_OP0(prev_instr, NOP);
                     INSTR_SET_OP0(instr, NOP);
                     done = false;
                 }
