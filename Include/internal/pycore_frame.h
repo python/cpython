@@ -84,16 +84,6 @@ static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     return (PyCodeObject *)f->f_executable;
 }
 
-static void
-dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
-    if (frame) {
-        fprintf(stderr, "%s: frame=%p frame->instr_ptr=%p ",
-                title, frame, frame->instr_ptr);
-        fprintf(stderr, "next_instr_offset=%d yield_offset=%d  \n",
-                frame->next_instr_offset, frame->yield_offset);
-    }
-}
-
 static inline PyObject **_PyFrame_Stackbase(_PyInterpreterFrame *f) {
     return f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus;
 }
