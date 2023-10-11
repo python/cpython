@@ -5,6 +5,6 @@
 
 int update_fstring_expr(struct tok_state *tok, char cur);
 
-extern int _PyTokenizer_Get(struct tok_state *, struct token *);
+int _PyTokenizer_Get(struct tok_state *, struct token *);
 
 #endif

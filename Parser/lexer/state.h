@@ -132,10 +132,10 @@ int type_comment_token_setup(struct tok_state *tok, struct token *token, int typ
                          int end_col_offset, const char *start, const char *end);
 int token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
-extern struct tok_state *tok_new();
-extern void _PyTokenizer_Free(struct tok_state *);
-extern void _PyToken_Free(struct token *);
-extern void _PyToken_Init(struct token *);
+struct tok_state *tok_new(void);
+void _PyTokenizer_Free(struct tok_state *);
+void _PyToken_Free(struct token *);
+void _PyToken_Init(struct token *);
 
 
 #endif
