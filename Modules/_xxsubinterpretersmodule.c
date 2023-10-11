@@ -476,7 +476,6 @@ _run_script_in_interpreter(PyObject *mod, PyInterpreterState *interp,
     PyThreadState *tstate = NULL;
     if (interp != PyInterpreterState_Get()) {
         tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
         // XXX Possible GILState issues?
         save_tstate = PyThreadState_Swap(tstate);
     }
@@ -604,7 +603,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 
     // Destroy the interpreter.
     PyThreadState *tstate = PyThreadState_New(interp);
-    tstate->_whence = _PyThreadState_WHENCE_INTERP;
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
     Py_EndInterpreter(tstate);

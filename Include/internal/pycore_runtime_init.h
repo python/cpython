@@ -127,7 +127,6 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyThreadState_INIT \
     { \
-        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }
