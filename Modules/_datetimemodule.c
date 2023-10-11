@@ -53,13 +53,13 @@ typedef struct {
     /* The interned UTC timezone instance */
     PyObject *utc;
 
-    /* The interned Epoch datetime instance */
+    /* The interned Unix epoch datetime instance */
     PyObject *epoch;
 } datetime_state;
 
 static datetime_state _datetime_global_state;
 
-#define GLOBAL_STATE() (&_datetime_global_state)
+#define STATIC_STATE() (&_datetime_global_state)
 
 /*[clinic input]
 module datetime
@@ -1193,7 +1193,7 @@ new_timezone(PyObject *offset, PyObject *name)
     assert(name == NULL || PyUnicode_Check(name));
 
     if (name == NULL && delta_bool((PyDateTime_Delta *)offset) == 0) {
-        datetime_state *st = GLOBAL_STATE();
+        datetime_state *st = STATIC_STATE();
         return Py_NewRef(st->utc);
     }
     if ((GET_TD_DAYS(offset) == -1 &&
@@ -1407,7 +1407,7 @@ tzinfo_from_isoformat_results(int rv, int tzoffset, int tz_useconds)
     if (rv == 1) {
         // Create a timezone from offset in seconds (0 returns UTC)
         if (tzoffset == 0) {
-            datetime_state *st = GLOBAL_STATE();
+            datetime_state *st = STATIC_STATE();
             return Py_NewRef(st->utc);
         }
 
@@ -1850,7 +1850,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     x1 = PyLong_FromLong(GET_TD_DAYS(self));
     if (x1 == NULL)
         goto Done;
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     x2 = PyNumber_Multiply(x1, st->seconds_per_day);        /* days in seconds */
     if (x2 == NULL)
         goto Done;
@@ -1923,7 +1923,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     tuple = checked_divmod(pyus, st->us_per_second);
     if (tuple == NULL) {
         goto Done;
@@ -2542,7 +2542,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
         CLEANUP;
     }
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     if (ms) {
         y = accum("milliseconds", x, ms, st->us_per_ms, &leftover_us);
         CLEANUP;
@@ -2719,7 +2719,7 @@ delta_total_seconds(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (total_microseconds == NULL)
         return NULL;
 
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     total_seconds = PyNumber_TrueDivide(total_microseconds, st->us_per_second);
 
     Py_DECREF(total_microseconds);
@@ -3952,7 +3952,7 @@ timezone_repr(PyDateTime_TimeZone *self)
        to use Py_TYPE(self)->tp_name here. */
     const char *type_name = Py_TYPE(self)->tp_name;
 
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     if (((PyObject *)self) == st->utc) {
         return PyUnicode_FromFormat("%s.utc", type_name);
     }
@@ -3975,7 +3975,7 @@ timezone_str(PyDateTime_TimeZone *self)
     if (self->name != NULL) {
         return Py_NewRef(self->name);
     }
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     if ((PyObject *)self == st->utc ||
            (GET_TD_DAYS(self->offset) == 0 &&
             GET_TD_SECONDS(self->offset) == 0 &&
@@ -6148,7 +6148,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *one_second;
     PyObject *seconds;
 
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     delta = datetime_subtract((PyObject *)utc_time, st->epoch);
     if (delta == NULL)
         return NULL;
@@ -6261,7 +6261,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     if (result == NULL)
         return NULL;
 
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     /* Make sure result is aware and UTC. */
     if (!HASTZINFO(result)) {
         temp = (PyObject *)result;
@@ -6386,7 +6386,7 @@ datetime_timestamp(PyDateTime_DateTime *self, PyObject *Py_UNUSED(ignored))
     PyObject *result;
 
     if (HASTZINFO(self) && self->tzinfo != Py_None) {
-        datetime_state *st = GLOBAL_STATE();
+        datetime_state *st = STATIC_STATE();
         PyObject *delta;
         delta = datetime_subtract((PyObject *)self, st->epoch);
         if (delta == NULL)
@@ -6711,7 +6711,7 @@ get_datetime_capi(void)
     capi->Time_FromTimeAndFold = new_time_ex2;
     // Make sure this function is called after utc has
     // been initialized.
-    datetime_state *st = GLOBAL_STATE();
+    datetime_state *st = STATIC_STATE();
     assert(st->utc != NULL);
     capi->TimeZone_UTC = st->utc; // borrowed ref
     return capi;
@@ -6722,6 +6722,23 @@ datetime_destructor(PyObject *op)
 {
     void *ptr = PyCapsule_GetPointer(op, PyDateTime_CAPSULE_NAME);
     PyMem_Free(ptr);
+}
+
+static int
+datetime_clear(PyObject *module)
+{
+    datetime_state *st = STATIC_STATE();
+
+    Py_CLEAR(st->us_per_ms);
+    Py_CLEAR(st->us_per_second);
+    Py_CLEAR(st->us_per_minute);
+    Py_CLEAR(st->us_per_hour);
+    Py_CLEAR(st->us_per_day);
+    Py_CLEAR(st->us_per_week);
+    Py_CLEAR(st->seconds_per_day);
+    Py_CLEAR(st->utc);
+    Py_CLEAR(st->epoch);
+    return 0;
 }
 
 static int
@@ -6810,8 +6827,8 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    datetime_state *st = GLOBAL_STATE();
-    st->utc = utc;
+    datetime_state *st = STATIC_STATE();
+    Py_SETREF(st->utc, utc);
 
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
@@ -6920,13 +6937,7 @@ _datetime_exec(PyObject *module)
     return 0;
 
 error:
-    Py_CLEAR(st->us_per_ms);
-    Py_CLEAR(st->us_per_second);
-    Py_CLEAR(st->us_per_minute);
-    Py_CLEAR(st->us_per_hour);
-    Py_CLEAR(st->us_per_day);
-    Py_CLEAR(st->us_per_week);
-    Py_CLEAR(st->seconds_per_day);
+    datetime_clear(module);
     return -1;
 }
 
