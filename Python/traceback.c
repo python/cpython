@@ -578,157 +578,8 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
                                            NULL, truncation, line);
 }
 
-/* AST based Traceback Specialization
- *
- * When displaying a new traceback line, for certain syntactical constructs
- * (e.g a subscript, an arithmetic operation) we try to create a representation
- * that separates the primary source of error from the rest.
- *
- * Example specialization of BinOp nodes:
- *  Traceback (most recent call last):
- *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
- *      add_values(1, 2, 'x', 3, 4)
- *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
- *      return a + b + c + d + e
- *             ~~~~~~^~~
- *  TypeError: 'NoneType' object is not subscriptable
- */
 
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\f'))
-
-static int
-extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    switch (expr->kind) {
-        case BinOp_kind: {
-            expr_ty left = expr->v.BinOp.left;
-            expr_ty right = expr->v.BinOp.right;
-            for (int i = left->end_col_offset; i < right->col_offset; i++) {
-                if (IS_WHITESPACE(segment_str[i])) {
-                    continue;
-                }
-
-                *left_anchor = i;
-                *right_anchor = i + 1;
-
-                // Check whether if this a two-character operator (e.g //)
-                if (i + 1 < right->col_offset && !IS_WHITESPACE(segment_str[i + 1])) {
-                    ++*right_anchor;
-                }
-
-                // Keep going if the current char is not ')'
-                if (i+1 < right->col_offset && (segment_str[i] == ')')) {
-                    continue;
-                }
-
-                // Set the error characters
-                *primary_error_char = "~";
-                *secondary_error_char = "^";
-                break;
-            }
-            return 1;
-        }
-        case Subscript_kind: {
-            *left_anchor = expr->v.Subscript.value->end_col_offset;
-            *right_anchor = expr->v.Subscript.slice->end_col_offset + 1;
-            Py_ssize_t str_len = strlen(segment_str);
-
-            // Move right_anchor and left_anchor forward to the first non-whitespace character that is not ']' and '['
-            while (*left_anchor < str_len && (IS_WHITESPACE(segment_str[*left_anchor]) || segment_str[*left_anchor] != '[')) {
-                ++*left_anchor;
-            }
-            while (*right_anchor < str_len && (IS_WHITESPACE(segment_str[*right_anchor]) || segment_str[*right_anchor] != ']')) {
-                ++*right_anchor;
-            }
-            if (*right_anchor < str_len){
-                *right_anchor += 1;
-            }
-
-            // Set the error characters
-            *primary_error_char = "~";
-            *secondary_error_char = "^";
-            return 1;
-        }
-        default:
-            return 0;
-    }
-}
-
-static int
-extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    switch (statement->kind) {
-        case Expr_kind: {
-            return extract_anchors_from_expr(segment_str, statement->v.Expr.value, left_anchor, right_anchor,
-                                             primary_error_char, secondary_error_char);
-        }
-        default:
-            return 0;
-    }
-}
-
-static int
-extract_anchors_from_line(PyObject *filename, PyObject *line,
-                          Py_ssize_t start_offset, Py_ssize_t end_offset,
-                          Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    int res = -1;
-    PyArena *arena = NULL;
-    PyObject *segment = PyUnicode_Substring(line, start_offset, end_offset);
-    if (!segment) {
-        goto done;
-    }
-
-    const char *segment_str = PyUnicode_AsUTF8(segment);
-    if (!segment_str) {
-        goto done;
-    }
-
-    arena = _PyArena_New();
-    if (!arena) {
-        goto done;
-    }
-
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-
-    mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
-                                            &flags, arena);
-    if (!module) {
-        goto done;
-    }
-    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
-        goto done;
-    }
-
-    assert(module->kind == Module_kind);
-    if (asdl_seq_LEN(module->v.Module.body) == 1) {
-        stmt_ty statement = asdl_seq_GET(module->v.Module.body, 0);
-        res = extract_anchors_from_stmt(segment_str, statement, left_anchor, right_anchor,
-                                        primary_error_char, secondary_error_char);
-    } else {
-        res = 0;
-    }
-
-done:
-    if (res > 0) {
-        // Normalize the AST offsets to byte offsets and adjust them with the
-        // start of the actual line (instead of the source code segment).
-        assert(segment != NULL);
-        assert(*left_anchor >= 0);
-        assert(*right_anchor >= 0);
-        *left_anchor = _PyPegen_byte_offset_to_character_offset(segment, *left_anchor) + start_offset;
-        *right_anchor = _PyPegen_byte_offset_to_character_offset(segment, *right_anchor) + start_offset;
-    }
-    Py_XDECREF(segment);
-    if (arena) {
-        _PyArena_Free(arena);
-    }
-    return res;
-}
-
 #define _TRACEBACK_SOURCE_LINE_INDENT 4
 
 static inline int
@@ -738,30 +589,6 @@ ignore_source_errors(void) {
             return -1;
         }
         PyErr_Clear();
-    }
-    return 0;
-}
-
-static inline int
-print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py_ssize_t end_offset,
-                            Py_ssize_t right_start_offset, Py_ssize_t left_end_offset,
-                            const char *primary, const char *secondary) {
-    int special_chars = (left_end_offset != -1 || right_start_offset != -1);
-    const char *str;
-    while (++offset <= end_offset) {
-        if (offset <= start_offset) {
-            str = " ";
-        } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
-            str = secondary;
-        } else {
-            str = primary;
-        }
-        if (PyFile_WriteString(str, f) < 0) {
-            return -1;
-        }
-    }
-    if (PyFile_WriteString("\n", f) < 0) {
-        return -1;
     }
     return 0;
 }
@@ -823,84 +650,21 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         goto done;
     }
 
-    // When displaying errors, we will use the following generic structure:
-    //
-    //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
-    //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
-    //        |              |-> left_end_offset     |                  |-> end_offset
-    //        |-> start_offset                       |-> right_start_offset
-    //
-    // In general we will only have (start_offset, end_offset) but we can gather more information
-    // by analyzing the AST of the text between *start_offset* and *end_offset*. If this succeeds
-    // we could get *left_end_offset* and *right_start_offset* and some selection of characters for
-    // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
-    // AST information or we cannot identify special ranges within it, then left_end_offset and
-    // right_end_offset will be set to -1.
-    //
-    // To keep the column indicators pertinent, they are not shown when the primary character
-    // spans the whole line.
-
-    // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
-    assert(source_line);
-    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
-    if (start_offset < 0) {
-        err = ignore_source_errors() < 0;
+    // If this is a multi-line expression, then we will highlight until
+    // the last non-whitespace character.
+    const char *source_line_str = PyUnicode_AsUTF8(source_line);
+    if (!source_line_str) {
         goto done;
     }
 
-    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
-    if (end_offset < 0) {
-        err = ignore_source_errors() < 0;
-        goto done;
-    }
-
-    Py_ssize_t left_end_offset = -1;
-    Py_ssize_t right_start_offset = -1;
-
-    char *primary_error_char = "^";
-    char *secondary_error_char = primary_error_char;
-
-    if (start_line == end_line) {
-        int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
-                                            &left_end_offset, &right_start_offset,
-                                            &primary_error_char, &secondary_error_char);
-        if (res < 0 && ignore_source_errors() < 0) {
-            goto done;
+    Py_ssize_t i = source_line_len;
+    while (--i >= 0) {
+        if (!IS_WHITESPACE(source_line_str[i])) {
+            break;
         }
-    }
-    else {
-        // If this is a multi-line expression, then we will highlight until
-        // the last non-whitespace character.
-        const char *source_line_str = PyUnicode_AsUTF8(source_line);
-        if (!source_line_str) {
-            goto done;
-        }
-
-        Py_ssize_t i = source_line_len;
-        while (--i >= 0) {
-            if (!IS_WHITESPACE(source_line_str[i])) {
-                break;
-            }
-        }
-
-        end_offset = i + 1;
-    }
-
-    // Elide indicators if primary char spans the frame line
-    Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
-    bool has_secondary_ranges = (left_end_offset != -1 || right_start_offset != -1);
-    if (end_offset - start_offset == stripped_line_len && !has_secondary_ranges) {
-        goto done;
     }
 
     if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
-        err = -1;
-        goto done;
-    }
-
-    if (print_error_location_carets(f, truncation, start_offset, end_offset,
-                                    right_start_offset, left_end_offset,
-                                    primary_error_char, secondary_error_char) < 0) {
         err = -1;
         goto done;
     }
