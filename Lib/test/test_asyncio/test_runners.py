@@ -3,6 +3,7 @@ import asyncio
 import contextvars
 import re
 import signal
+import sys
 import threading
 import unittest
 from test.test_asyncio import utils as test_utils
