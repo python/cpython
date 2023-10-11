@@ -1060,7 +1060,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run deepfreeze.py
@@ -1161,7 +1161,7 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
