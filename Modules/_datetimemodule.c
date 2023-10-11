@@ -6741,6 +6741,68 @@ datetime_clear(PyObject *module)
     return 0;
 }
 
+static PyObject *
+create_timezone_from_delta(int days, int sec, int ms, int normalize)
+{
+    PyObject *delta = new_delta(days, sec, ms, normalize);
+    if (delta == NULL) {
+        return NULL;
+    }
+    PyObject *tz = create_timezone(delta, NULL);
+    Py_DECREF(delta);
+    return tz;
+}
+
+static int
+init_state(datetime_state *st)
+{
+    st->us_per_ms = PyLong_FromLong(1000);
+    if (st->us_per_ms == NULL) {
+        return -1;
+    }
+    st->us_per_second = PyLong_FromLong(1000000);
+    if (st->us_per_second == NULL) {
+        return -1;
+    }
+    st->us_per_minute = PyLong_FromLong(60000000);
+    if (st->us_per_minute == NULL) {
+        return -1;
+    }
+    st->seconds_per_day = PyLong_FromLong(24 * 3600);
+    if (st->seconds_per_day == NULL) {
+        return -1;
+    }
+
+    /* The rest are too big for 32-bit ints, but even
+     * us_per_week fits in 40 bits, so doubles should be exact.
+     */
+    st->us_per_hour = PyLong_FromDouble(3600000000.0);
+    if (st->us_per_hour == NULL) {
+        return -1;
+    }
+    st->us_per_day = PyLong_FromDouble(86400000000.0);
+    if (st->us_per_day == NULL) {
+        return -1;
+    }
+    st->us_per_week = PyLong_FromDouble(604800000000.0);
+    if (st->us_per_week == NULL) {
+        return -1;
+    }
+
+    /* Init UTC timezone */
+    st->utc = create_timezone_from_delta(0, 0, 0, 0);
+    if (st->utc == NULL) {
+        return -1;
+    }
+
+    /* Init Unix epoch */
+    st->epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0, st->utc, 0);
+    if (st->epoch == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 static int
 _datetime_exec(PyObject *module)
 {
@@ -6762,23 +6824,23 @@ _datetime_exec(PyObject *module)
 
     for (size_t i = 0; i < Py_ARRAY_LENGTH(types); i++) {
         if (PyModule_AddType(module, types[i]) < 0) {
-            return -1;
+            goto error;
         }
     }
 
     if (PyType_Ready(&PyDateTime_IsoCalendarDateType) < 0) {
-        return -1;
+        goto error;
     }
 
 #define DATETIME_ADD_MACRO(dict, c, value_expr)         \
     do {                                                \
         PyObject *value = (value_expr);                 \
         if (value == NULL) {                            \
-            return -1;                                  \
+            goto error;                                 \
         }                                               \
         if (PyDict_SetItemString(dict, c, value) < 0) { \
             Py_DECREF(value);                           \
-            return -1;                                  \
+            goto error;                                 \
         }                                               \
         Py_DECREF(value);                               \
     } while(0)
@@ -6810,19 +6872,13 @@ _datetime_exec(PyObject *module)
                                               999999, Py_None, 0));
     DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 1, 0));
 
-    /* timezone values */
-    d = PyDateTime_TimeZoneType.tp_dict;
-    PyObject *delta = new_delta(0, 0, 0, 0);
-    if (delta == NULL) {
-        return -1;
-    }
-
     datetime_state *st = STATIC_STATE();
-    st->utc = create_timezone(delta, NULL);
-    Py_DECREF(delta);
-    if (st->utc == NULL) {
+    if (init_state(st) < 0) {
         goto error;
     }
+
+    /* timezone values */
+    d = PyDateTime_TimeZoneType.tp_dict;
     if (PyDict_SetItemString(d, "utc", st->utc) < 0) {
         goto error;
     }
@@ -6830,53 +6886,39 @@ _datetime_exec(PyObject *module)
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
      * values. This may change in the future.*/
-    delta = new_delta(-1, 60, 0, 1); /* -23:59 */
-    if (delta == NULL) {
-        goto error;
-    }
 
-    PyObject *x = create_timezone(delta, NULL);
-    Py_DECREF(delta);
-    DATETIME_ADD_MACRO(d, "min", x);
+    /* -23:59 */
+    PyObject *min = create_timezone_from_delta(-1, 60, 0, 1);
+    DATETIME_ADD_MACRO(d, "min", min);
 
-    delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
-    if (delta == NULL) {
-        goto error;
-    }
+    /* 23:59 */
+    PyObject *max = create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0);
+    DATETIME_ADD_MACRO(d, "max", max);
 
-    x = create_timezone(delta, NULL);
-    Py_DECREF(delta);
-    DATETIME_ADD_MACRO(d, "max", x);
-
-    /* Epoch */
-    st->epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0, st->utc, 0);
-    if (st->epoch == NULL) {
-        goto error;
-    }
-
-    /* module initialization */
+    /* Add module level attributes */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
         goto error;
     }
     if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
         goto error;
     }
+    if (PyModule_AddObjectRef(module, "UTC", st->utc) < 0) {
+        goto error;
+    }
 
+    /* At last, set up and add the encapsulated C API */
     PyDateTime_CAPI *capi = get_datetime_capi();
     if (capi == NULL) {
         goto error;
     }
-    x = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, datetime_destructor);
-    if (x == NULL) {
+    PyObject *capsule = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME,
+                                      datetime_destructor);
+    if (capsule == NULL) {
         PyMem_Free(capi);
         goto error;
     }
-
-    if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
-        goto error;
-    }
-
-    if (PyModule_AddObjectRef(module, "UTC", st->utc) < 0) {
+    if (PyModule_Add(module, "datetime_CAPI", capsule) < 0) {
+        PyMem_Free(capi);
         goto error;
     }
 
@@ -6898,45 +6940,13 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    st->us_per_ms = PyLong_FromLong(1000);
-    if (st->us_per_ms == NULL) {
-        goto error;
-    }
-    st->us_per_second = PyLong_FromLong(1000000);
-    if (st->us_per_second == NULL) {
-        goto error;
-    }
-    st->us_per_minute = PyLong_FromLong(60000000);
-    if (st->us_per_minute == NULL) {
-        goto error;
-    }
-    st->seconds_per_day = PyLong_FromLong(24 * 3600);
-    if (st->seconds_per_day == NULL) {
-        goto error;
-    }
-
-    /* The rest are too big for 32-bit ints, but even
-     * us_per_week fits in 40 bits, so doubles should be exact.
-     */
-    st->us_per_hour = PyLong_FromDouble(3600000000.0);
-    if (st->us_per_hour == NULL) {
-        goto error;
-    }
-    st->us_per_day = PyLong_FromDouble(86400000000.0);
-    if (st->us_per_day == NULL) {
-        goto error;
-    }
-    st->us_per_week = PyLong_FromDouble(604800000000.0);
-    if (st->us_per_week == NULL) {
-        goto error;
-    }
-
     return 0;
 
 error:
     datetime_clear(module);
     return -1;
 }
+#undef DATETIME_ADD_MACRO
 
 static struct PyModuleDef datetimemodule = {
     .m_base = PyModuleDef_HEAD_INIT,
