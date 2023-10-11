@@ -256,14 +256,12 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class PurePath:
-    """Base class for manipulating paths without I/O.
+class _PurePathBase:
+    """Base class for pure path objects.
 
-    PurePath represents a filesystem path and offers operations which
-    don't imply any actual filesystem I/O.  Depending on your system,
-    instantiating a PurePath will return either a PurePosixPath or a
-    PureWindowsPath object.  You can also instantiate either of these classes
-    directly, regardless of your system.
+    This class *does not* provide several magic methods that are defined in
+    its subclass PurePath. They are: __fspath__, __bytes__, __reduce__,
+    __hash__, __eq__, __lt__, __le__, __gt__, __ge__.
     """
 
     __slots__ = (
@@ -285,25 +283,9 @@ class PurePath:
         # for the first time. It's used to implement `_str_normcase`
         '_str',
 
-        # The `_str_normcase_cached` slot stores the string path with
-        # normalized case. It is set when the `_str_normcase` property is
-        # accessed for the first time. It's used to implement `__eq__()`
-        # `__hash__()`, and `_parts_normcase`
-        '_str_normcase_cached',
-
-        # The `_parts_normcase_cached` slot stores the case-normalized
-        # string path after splitting on path separators. It's set when the
-        # `_parts_normcase` property is accessed for the first time. It's used
-        # to implement comparison methods like `__lt__()`.
-        '_parts_normcase_cached',
-
         # The `_lines_cached` slot stores the string path with path separators
         # and newlines swapped. This is used to implement `match()`.
         '_lines_cached',
-
-        # The `_hash` slot stores the hash of the case-normalized string
-        # path. It's set when `__hash__()` is called for the first time.
-        '_hash',
 
         # The '_resolving' slot stores a boolean indicating whether the path
         # is being processed by `_PathBase.resolve()`. This prevents duplicate
@@ -312,41 +294,7 @@ class PurePath:
     )
     pathmod = os.path
 
-    def __new__(cls, *args, **kwargs):
-        """Construct a PurePath from one or several strings and or existing
-        PurePath objects.  The strings and path objects are combined so as
-        to yield a canonicalized path, which is incorporated into the
-        new PurePath object.
-        """
-        if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return object.__new__(cls)
-
-    def __reduce__(self):
-        # Using the parts tuple helps share interned path parts
-        # when pickling related paths.
-        return (self.__class__, self.parts)
-
-    def __init__(self, *args):
-        paths = []
-        for arg in args:
-            if isinstance(arg, PurePath):
-                if arg.pathmod is ntpath and self.pathmod is posixpath:
-                    # GH-103631: Convert separators for backwards compatibility.
-                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
-                else:
-                    paths.extend(arg._raw_paths)
-            else:
-                try:
-                    path = os.fspath(arg)
-                except TypeError:
-                    path = arg
-                if not isinstance(path, str):
-                    raise TypeError(
-                        "argument should be a str or an os.PathLike "
-                        "object where __fspath__ returns a str, "
-                        f"not {type(path).__name__!r}")
-                paths.append(path)
+    def __init__(self, *paths):
         self._raw_paths = paths
         self._resolving = False
 
@@ -417,63 +365,13 @@ class PurePath:
                                                   self._tail) or '.'
             return self._str
 
-    def __fspath__(self):
-        return str(self)
-
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
         return str(self).replace(self.pathmod.sep, '/')
 
-    def __bytes__(self):
-        """Return the bytes representation of the path.  This is only
-        recommended to use under Unix."""
-        return os.fsencode(self)
-
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
-
-    def as_uri(self):
-        """Return the path as a URI."""
-        if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
-
-        drive = self.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            prefix = 'file:///' + drive
-            path = self.as_posix()[2:]
-        elif drive:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            prefix = 'file:'
-            path = self.as_posix()
-        else:
-            # It's a posix path => 'file:///etc/hosts'
-            prefix = 'file://'
-            path = str(self)
-        from urllib.parse import quote_from_bytes
-        return prefix + quote_from_bytes(os.fsencode(path))
-
-    @property
-    def _str_normcase(self):
-        # String with normalized case, for hashing and equality checks
-        try:
-            return self._str_normcase_cached
-        except AttributeError:
-            if _is_case_sensitive(self.pathmod):
-                self._str_normcase_cached = str(self)
-            else:
-                self._str_normcase_cached = str(self).lower()
-            return self._str_normcase_cached
-
-    @property
-    def _parts_normcase(self):
-        # Cached parts with normalized case, for comparisons.
-        try:
-            return self._parts_normcase_cached
-        except AttributeError:
-            self._parts_normcase_cached = self._str_normcase.split(self.pathmod.sep)
-            return self._parts_normcase_cached
 
     @property
     def _lines(self):
@@ -488,38 +386,6 @@ class PurePath:
                 trans = _SWAP_SEP_AND_NEWLINE[self.pathmod.sep]
                 self._lines_cached = path_str.translate(trans)
             return self._lines_cached
-
-    def __eq__(self, other):
-        if not isinstance(other, PurePath):
-            return NotImplemented
-        return self._str_normcase == other._str_normcase and self.pathmod is other.pathmod
-
-    def __hash__(self):
-        try:
-            return self._hash
-        except AttributeError:
-            self._hash = hash(self._str_normcase)
-            return self._hash
-
-    def __lt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
-            return NotImplemented
-        return self._parts_normcase < other._parts_normcase
-
-    def __le__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
-            return NotImplemented
-        return self._parts_normcase <= other._parts_normcase
-
-    def __gt__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
-            return NotImplemented
-        return self._parts_normcase > other._parts_normcase
-
-    def __ge__(self, other):
-        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
-            return NotImplemented
-        return self._parts_normcase >= other._parts_normcase
 
     @property
     def drive(self):
@@ -648,7 +514,8 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+        if not isinstance(other, _PurePathBase) or _deprecated:
+            other = self.with_segments(other, *_deprecated)
         for step, path in enumerate([other] + list(other.parents)):
             if self.is_relative_to(path):
                 break
@@ -670,7 +537,8 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+        if not isinstance(other, _PurePathBase) or _deprecated:
+            other = self.with_segments(other, *_deprecated)
         return other == self or other in self.parents
 
     @property
@@ -688,7 +556,7 @@ class PurePath:
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(self, *pathsegments)
+        return self.with_segments(*self._raw_paths, *pathsegments)
 
     def __truediv__(self, key):
         try:
@@ -698,7 +566,7 @@ class PurePath:
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, self)
+            return self.with_segments(key, *self._raw_paths)
         except TypeError:
             return NotImplemented
 
@@ -756,7 +624,7 @@ class PurePath:
         """
         Return True if this path matches the given pattern.
         """
-        if not isinstance(path_pattern, PurePath):
+        if not isinstance(path_pattern, _PurePathBase):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = _is_case_sensitive(self.pathmod)
@@ -767,6 +635,154 @@ class PurePath:
             return pattern.search(self._lines) is not None
         else:
             raise ValueError("empty pattern")
+
+
+class PurePath(_PurePathBase):
+    """Base class for manipulating paths without I/O.
+
+    PurePath represents a filesystem path and offers operations which
+    don't imply any actual filesystem I/O.  Depending on your system,
+    instantiating a PurePath will return either a PurePosixPath or a
+    PureWindowsPath object.  You can also instantiate either of these classes
+    directly, regardless of your system.
+    """
+
+    __slots__ = (
+        # The `_str_normcase_cached` slot stores the string path with
+        # normalized case. It is set when the `_str_normcase` property is
+        # accessed for the first time. It's used to implement `__eq__()`
+        # `__hash__()`, and `_parts_normcase`
+        '_str_normcase_cached',
+
+        # The `_parts_normcase_cached` slot stores the case-normalized
+        # string path after splitting on path separators. It's set when the
+        # `_parts_normcase` property is accessed for the first time. It's used
+        # to implement comparison methods like `__lt__()`.
+        '_parts_normcase_cached',
+
+        # The `_hash` slot stores the hash of the case-normalized string
+        # path. It's set when `__hash__()` is called for the first time.
+        '_hash',
+    )
+
+    def __new__(cls, *args, **kwargs):
+        """Construct a PurePath from one or several strings and or existing
+        PurePath objects.  The strings and path objects are combined so as
+        to yield a canonicalized path, which is incorporated into the
+        new PurePath object.
+        """
+        if cls is PurePath:
+            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+        return object.__new__(cls)
+
+    def __init__(self, *args):
+        paths = []
+        for arg in args:
+            if isinstance(arg, PurePath):
+                if arg.pathmod is ntpath and self.pathmod is posixpath:
+                    # GH-103631: Convert separators for backwards compatibility.
+                    paths.extend(path.replace('\\', '/') for path in arg._raw_paths)
+                else:
+                    paths.extend(arg._raw_paths)
+            else:
+                try:
+                    path = os.fspath(arg)
+                except TypeError:
+                    path = arg
+                if not isinstance(path, str):
+                    raise TypeError(
+                        "argument should be a str or an os.PathLike "
+                        "object where __fspath__ returns a str, "
+                        f"not {type(path).__name__!r}")
+                paths.append(path)
+        super().__init__(*paths)
+
+    def __reduce__(self):
+        # Using the parts tuple helps share interned path parts
+        # when pickling related paths.
+        return (self.__class__, self.parts)
+
+    def __fspath__(self):
+        return str(self)
+
+    def __bytes__(self):
+        """Return the bytes representation of the path.  This is only
+        recommended to use under Unix."""
+        return os.fsencode(self)
+
+    @property
+    def _str_normcase(self):
+        # String with normalized case, for hashing and equality checks
+        try:
+            return self._str_normcase_cached
+        except AttributeError:
+            if _is_case_sensitive(self.pathmod):
+                self._str_normcase_cached = str(self)
+            else:
+                self._str_normcase_cached = str(self).lower()
+            return self._str_normcase_cached
+
+    def __hash__(self):
+        try:
+            return self._hash
+        except AttributeError:
+            self._hash = hash(self._str_normcase)
+            return self._hash
+
+    def __eq__(self, other):
+        if not isinstance(other, PurePath):
+            return NotImplemented
+        return self._str_normcase == other._str_normcase and self.pathmod is other.pathmod
+
+    @property
+    def _parts_normcase(self):
+        # Cached parts with normalized case, for comparisons.
+        try:
+            return self._parts_normcase_cached
+        except AttributeError:
+            self._parts_normcase_cached = self._str_normcase.split(self.pathmod.sep)
+            return self._parts_normcase_cached
+
+    def __lt__(self, other):
+        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+            return NotImplemented
+        return self._parts_normcase < other._parts_normcase
+
+    def __le__(self, other):
+        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+            return NotImplemented
+        return self._parts_normcase <= other._parts_normcase
+
+    def __gt__(self, other):
+        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+            return NotImplemented
+        return self._parts_normcase > other._parts_normcase
+
+    def __ge__(self, other):
+        if not isinstance(other, PurePath) or self.pathmod is not other.pathmod:
+            return NotImplemented
+        return self._parts_normcase >= other._parts_normcase
+
+    def as_uri(self):
+        """Return the path as a URI."""
+        if not self.is_absolute():
+            raise ValueError("relative path can't be expressed as a file URI")
+
+        drive = self.drive
+        if len(drive) == 2 and drive[1] == ':':
+            # It's a path on a local drive => 'file:///c:/a/b'
+            prefix = 'file:///' + drive
+            path = self.as_posix()[2:]
+        elif drive:
+            # It's a path on a network drive => 'file://host/share/a/b'
+            prefix = 'file:'
+            path = self.as_posix()
+        else:
+            # It's a posix path => 'file:///etc/hosts'
+            prefix = 'file://'
+            path = str(self)
+        from urllib.parse import quote_from_bytes
+        return prefix + quote_from_bytes(os.fsencode(path))
 
 
 # Subclassing os.PathLike makes isinstance() checks slower,
@@ -797,7 +813,7 @@ class PureWindowsPath(PurePath):
 # Filesystem-accessing classes
 
 
-class _PathBase(PurePath):
+class _PathBase(_PurePathBase):
     """Base class for concrete path objects.
 
     This class provides dummy implementations for many methods that derived
@@ -811,8 +827,6 @@ class _PathBase(PurePath):
     such as paths in archive files or on remote storage systems.
     """
     __slots__ = ()
-    __bytes__ = None
-    __fspath__ = None  # virtual paths have no local file system representation
 
     @classmethod
     def _unsupported(cls, method_name):
@@ -1429,7 +1443,7 @@ class _PathBase(PurePath):
         self._unsupported("as_uri")
 
 
-class Path(_PathBase):
+class Path(PurePath, _PathBase):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -1439,9 +1453,6 @@ class Path(_PathBase):
     but cannot instantiate a WindowsPath on a POSIX system or vice versa.
     """
     __slots__ = ()
-    __bytes__ = PurePath.__bytes__
-    __fspath__ = PurePath.__fspath__
-    as_uri = PurePath.as_uri
 
     def __init__(self, *args, **kwargs):
         if kwargs:

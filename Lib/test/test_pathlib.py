@@ -46,8 +46,35 @@ only_posix = unittest.skipIf(os.name == 'nt',
 # Tests for the pure classes.
 #
 
-class PurePathTest(unittest.TestCase):
-    cls = pathlib.PurePath
+
+class PurePathBaseTest(unittest.TestCase):
+    cls = pathlib._PurePathBase
+
+    def test_magic_methods(self):
+        P = self.cls
+        self.assertFalse(hasattr(P, '__fspath__'))
+        self.assertFalse(hasattr(P, '__bytes__'))
+        self.assertIs(P.__reduce__, object.__reduce__)
+        self.assertIs(P.__hash__, object.__hash__)
+        self.assertIs(P.__eq__, object.__eq__)
+        self.assertIs(P.__lt__, object.__lt__)
+        self.assertIs(P.__le__, object.__le__)
+        self.assertIs(P.__gt__, object.__gt__)
+        self.assertIs(P.__ge__, object.__ge__)
+
+
+class DummyPurePath(pathlib._PurePathBase):
+    def __eq__(self, other):
+        if not isinstance(other, DummyPurePath):
+            return NotImplemented
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
+
+class DummyPurePathTest(unittest.TestCase):
+    cls = DummyPurePath
 
     # Keys are canonical paths, values are list of tuples of arguments
     # supposed to produce equal paths.
@@ -79,12 +106,6 @@ class PurePathTest(unittest.TestCase):
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
-        P(FakePath("a/b/c"))
-        self.assertEqual(P(P('a')), P('a'))
-        self.assertEqual(P(P('a'), 'b'), P('a/b'))
-        self.assertEqual(P(P('a'), P('b')), P('a/b'))
-        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
-        self.assertEqual(P(P('./a:b')), P('./a:b'))
 
     def test_concrete_class(self):
         if self.cls is pathlib.PurePath:
@@ -116,33 +137,6 @@ class PurePathTest(unittest.TestCase):
             p > q
         with self.assertRaises(TypeError):
             p >= q
-
-    def test_bytes(self):
-        P = self.cls
-        message = (r"argument should be a str or an os\.PathLike object "
-                   r"where __fspath__ returns a str, not 'bytes'")
-        with self.assertRaisesRegex(TypeError, message):
-            P(b'a')
-        with self.assertRaisesRegex(TypeError, message):
-            P(b'a', 'b')
-        with self.assertRaisesRegex(TypeError, message):
-            P('a', b'b')
-        with self.assertRaises(TypeError):
-            P('a').joinpath(b'b')
-        with self.assertRaises(TypeError):
-            P('a') / b'b'
-        with self.assertRaises(TypeError):
-            b'a' / P('b')
-        with self.assertRaises(TypeError):
-            P('a').match(b'b')
-        with self.assertRaises(TypeError):
-            P('a').relative_to(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_name(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_stem(b'b')
-        with self.assertRaises(TypeError):
-            P('a').with_suffix(b'b')
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -232,8 +226,6 @@ class PurePathTest(unittest.TestCase):
         self.assertIs(type(pp), type(p))
         pp = p.joinpath('c', 'd')
         self.assertEqual(pp, P('a/b/c/d'))
-        pp = p.joinpath(P('c'))
-        self.assertEqual(pp, P('a/b/c'))
         pp = p.joinpath('/c')
         self.assertEqual(pp, P('/c'))
 
@@ -250,8 +242,6 @@ class PurePathTest(unittest.TestCase):
         self.assertEqual(pp, P('a/b/c/d'))
         pp = 'c' / p / 'd'
         self.assertEqual(pp, P('c/a/b/d'))
-        pp = p / P('c')
-        self.assertEqual(pp, P('a/b/c'))
         pp = p/ '/c'
         self.assertEqual(pp, P('/c'))
 
@@ -273,18 +263,6 @@ class PurePathTest(unittest.TestCase):
             self.assertEqual(P(pathstr).as_posix(), pathstr)
         # Other tests for as_posix() are in test_equivalences().
 
-    def test_as_bytes_common(self):
-        sep = os.fsencode(self.sep)
-        P = self.cls
-        self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
-
-    def test_as_uri_common(self):
-        P = self.cls
-        with self.assertRaises(ValueError):
-            P('a').as_uri()
-        with self.assertRaises(ValueError):
-            P().as_uri()
-
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
             with self.subTest(pathstr=pathstr):
@@ -296,17 +274,6 @@ class PurePathTest(unittest.TestCase):
                 self.assertTrue(r.endswith(')'), r)
                 inner = r[len(clsname) + 1 : -1]
                 self.assertEqual(eval(inner), p.as_posix())
-
-    def test_repr_roundtrips(self):
-        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
-                p = self.cls(pathstr)
-                r = repr(p)
-                # The repr() roundtrips.
-                q = eval(r, pathlib.__dict__)
-                self.assertIs(q.__class__, p.__class__)
-                self.assertEqual(q, p)
-                self.assertEqual(repr(q), r)
 
     def test_eq_common(self):
         P = self.cls
@@ -390,34 +357,6 @@ class PurePathTest(unittest.TestCase):
         self.assertTrue(P().match('**'))
         self.assertFalse(P().match('**/*'))
 
-    def test_ordering_common(self):
-        # Ordering is tuple-alike.
-        def assertLess(a, b):
-            self.assertLess(a, b)
-            self.assertGreater(b, a)
-        P = self.cls
-        a = P('a')
-        b = P('a/b')
-        c = P('abc')
-        d = P('b')
-        assertLess(a, b)
-        assertLess(a, c)
-        assertLess(a, d)
-        assertLess(b, c)
-        assertLess(c, d)
-        P = self.cls
-        a = P('/a')
-        b = P('/a/b')
-        c = P('/abc')
-        d = P('/b')
-        assertLess(a, b)
-        assertLess(a, c)
-        assertLess(a, d)
-        assertLess(b, c)
-        assertLess(c, d)
-        with self.assertRaises(TypeError):
-            P() < {}
-
     def test_parts_common(self):
         # `parts` returns a tuple.
         sep = self.sep
@@ -429,12 +368,6 @@ class PurePathTest(unittest.TestCase):
         p = P('/a/b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
-
-    def test_fspath_common(self):
-        P = self.cls
-        p = P('a/b')
-        self._check_str(p.__fspath__(), ('a/b',))
-        self._check_str(os.fspath(p), ('a/b',))
 
     def test_equivalences(self):
         for k, tuples in self.equivalences.items():
@@ -773,6 +706,113 @@ class PurePathTest(unittest.TestCase):
         self.assertFalse(p.is_relative_to(P()))
         self.assertFalse(p.is_relative_to(''))
         self.assertFalse(p.is_relative_to(P('a')))
+
+
+class PurePathTest(DummyPurePathTest):
+    cls = pathlib.PurePath
+
+    def test_bytes(self):
+        P = self.cls
+        message = (r"argument should be a str or an os\.PathLike object "
+                   r"where __fspath__ returns a str, not 'bytes'")
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a')
+        with self.assertRaisesRegex(TypeError, message):
+            P(b'a', 'b')
+        with self.assertRaisesRegex(TypeError, message):
+            P('a', b'b')
+        with self.assertRaises(TypeError):
+            P('a').joinpath(b'b')
+        with self.assertRaises(TypeError):
+            P('a') / b'b'
+        with self.assertRaises(TypeError):
+            b'a' / P('b')
+        with self.assertRaises(TypeError):
+            P('a').match(b'b')
+        with self.assertRaises(TypeError):
+            P('a').relative_to(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_name(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_stem(b'b')
+        with self.assertRaises(TypeError):
+            P('a').with_suffix(b'b')
+
+    def test_constructor_nested(self):
+        P = self.cls
+        P(FakePath("a/b/c"))
+        self.assertEqual(P(P('a')), P('a'))
+        self.assertEqual(P(P('a'), 'b'), P('a/b'))
+        self.assertEqual(P(P('a'), P('b')), P('a/b'))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(FakePath("a/b/c")))
+        self.assertEqual(P(P('./a:b')), P('./a:b'))
+
+    def test_join_nested(self):
+        P = self.cls
+        p = P('a/b').joinpath(P('c'))
+        self.assertEqual(p, P('a/b/c'))
+
+    def test_div_nested(self):
+        P = self.cls
+        p = P('a/b') / P('c')
+        self.assertEqual(p, P('a/b/c'))
+
+    def test_repr_roundtrips(self):
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            with self.subTest(pathstr=pathstr):
+                p = self.cls(pathstr)
+                r = repr(p)
+                # The repr() roundtrips.
+                q = eval(r, pathlib.__dict__)
+                self.assertIs(q.__class__, p.__class__)
+                self.assertEqual(q, p)
+                self.assertEqual(repr(q), r)
+
+    def test_as_uri_common(self):
+        P = self.cls
+        with self.assertRaises(ValueError):
+            P('a').as_uri()
+        with self.assertRaises(ValueError):
+            P().as_uri()
+
+    def test_fspath_common(self):
+        P = self.cls
+        p = P('a/b')
+        self._check_str(p.__fspath__(), ('a/b',))
+        self._check_str(os.fspath(p), ('a/b',))
+
+    def test_as_bytes_common(self):
+        sep = os.fsencode(self.sep)
+        P = self.cls
+        self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
+
+    def test_ordering_common(self):
+        # Ordering is tuple-alike.
+        def assertLess(a, b):
+            self.assertLess(a, b)
+            self.assertGreater(b, a)
+        P = self.cls
+        a = P('a')
+        b = P('a/b')
+        c = P('abc')
+        d = P('b')
+        assertLess(a, b)
+        assertLess(a, c)
+        assertLess(a, d)
+        assertLess(b, c)
+        assertLess(c, d)
+        P = self.cls
+        a = P('/a')
+        b = P('/a/b')
+        c = P('/abc')
+        d = P('/b')
+        assertLess(a, b)
+        assertLess(a, c)
+        assertLess(a, d)
+        assertLess(b, c)
+        assertLess(c, d)
+        with self.assertRaises(TypeError):
+            P() < {}
 
     def test_pickling_common(self):
         P = self.cls
@@ -1563,30 +1603,11 @@ class PurePathSubclassTest(PurePathTest):
     test_repr_roundtrips = None
 
 
-@only_posix
-class PosixPathAsPureTest(PurePosixPathTest):
-    cls = pathlib.PosixPath
-
-@only_nt
-class WindowsPathAsPureTest(PureWindowsPathTest):
-    cls = pathlib.WindowsPath
-
-    def test_owner(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').owner()
-
-    def test_group(self):
-        P = self.cls
-        with self.assertRaises(pathlib.UnsupportedOperation):
-            P('c:/').group()
-
-
 #
 # Tests for the virtual classes.
 #
 
-class PathBaseTest(PurePathTest):
+class PathBaseTest(PurePathBaseTest):
     cls = pathlib._PathBase
 
     def test_unsupported_operation(self):
@@ -1677,6 +1698,14 @@ class DummyPath(pathlib._PathBase):
     _directories = {}
     _symlinks = {}
 
+    def __eq__(self, other):
+        if not isinstance(other, DummyPath):
+            return NotImplemented
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(str(self))
+
     def stat(self, *, follow_symlinks=True):
         if follow_symlinks:
             path = str(self.resolve())
@@ -1748,7 +1777,7 @@ class DummyPath(pathlib._PathBase):
             self.mkdir(mode, parents=False, exist_ok=exist_ok)
 
 
-class DummyPathTest(unittest.TestCase):
+class DummyPathTest(DummyPurePathTest):
     """Tests for PathBase methods that use stat(), open() and iterdir()."""
 
     cls = DummyPath
@@ -1775,6 +1804,7 @@ class DummyPathTest(unittest.TestCase):
     #
 
     def setUp(self):
+        super().setUp()
         pathmod = self.cls.pathmod
         p = self.cls(BASE)
         p.mkdir(parents=True)
@@ -2039,7 +2069,7 @@ class DummyPathTest(unittest.TestCase):
 
     def test_rglob_common(self):
         def _check(glob, expected):
-            self.assertEqual(sorted(glob), sorted(P(BASE, q) for q in expected))
+            self.assertEqual(set(glob), {P(BASE, q) for q in expected})
         P = self.cls
         p = P(BASE)
         it = p.rglob("fileA")
@@ -2223,7 +2253,7 @@ class DummyPathTest(unittest.TestCase):
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = self.cls(BASE, 'deep')
-        path = self.cls(base, *(['d'] * directory_depth))
+        path = base.joinpath(*(['d'] * directory_depth))
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
@@ -2639,7 +2669,7 @@ class DummyPathWithSymlinksTest(DummyPathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(DummyPathTest):
+class PathTest(PurePathTest, DummyPathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -3731,6 +3761,16 @@ class WindowsPathTest(PathTest):
         P = self.cls
         self.assertEqual(P.from_uri('file:' + pathname2url(r'c:\path\to\file')), P('c:/path/to/file'))
         self.assertEqual(P.from_uri('file:' + pathname2url(r'\\server\path\to\file')), P('//server/path/to/file'))
+
+    def test_owner(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').owner()
+
+    def test_group(self):
+        P = self.cls
+        with self.assertRaises(pathlib.UnsupportedOperation):
+            P('c:/').group()
 
 
 class PathSubclassTest(PathTest):
