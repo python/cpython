@@ -514,7 +514,7 @@ _PyTokenizer_ensure_utf8(char *line, struct tok_state *tok)
 
 /* ############## DEBUGGING STUFF ############## */
 
-#if defined(Py_DEBUG)
+#ifdef Py_DEBUG
 void
 _PyTokenizer_print_escape(FILE *f, const char *s, Py_ssize_t size)
 {
