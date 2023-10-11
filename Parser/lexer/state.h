@@ -1,18 +1,14 @@
-#ifndef Py_TOKENIZER_H
-#define Py_TOKENIZER_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef _PY_LEXER_H_
+#define _PY_LEXER_H_
 
 #include "object.h"
-
-/* Tokenizer interface */
-
-#include "pycore_token.h" /* For token types */
 
 #define MAXINDENT 100       /* Max indentation level */
 #define MAXLEVEL 200        /* Max parentheses level */
 #define MAXFSTRINGLEVEL 150 /* Max f-string nesting level */
+
+#define INSIDE_FSTRING(tok) (tok->tok_mode_stack_index > 0)
+#define INSIDE_FSTRING_EXPR(tok) (tok->curly_bracket_expr_start_depth >= 0)
 
 enum decoding_state {
     STATE_INIT,
@@ -118,6 +114,8 @@ struct tok_state {
 
     /* How to proceed when asked for a new token in interactive mode */
     enum interactive_underflow_t interactive_underflow;
+    int (*underflow)(struct tok_state *); /* Function to call when buffer is empty and we need to refill it*/
+
     int report_warnings;
     // TODO: Factor this into its own thing
     tokenizer_mode tok_mode_stack[MAXFSTRINGLEVEL];
@@ -130,19 +128,14 @@ struct tok_state {
 #endif
 };
 
-extern struct tok_state *_PyTokenizer_FromString(const char *, int, int);
-extern struct tok_state *_PyTokenizer_FromUTF8(const char *, int, int);
-extern struct tok_state *_PyTokenizer_FromReadline(PyObject*, const char*, int, int);
-extern struct tok_state *_PyTokenizer_FromFile(FILE *, const char*,
-                                              const char *, const char *);
+int type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
+                         int end_col_offset, const char *start, const char *end);
+int token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
+
+extern struct tok_state *tok_new();
 extern void _PyTokenizer_Free(struct tok_state *);
 extern void _PyToken_Free(struct token *);
 extern void _PyToken_Init(struct token *);
-extern int _PyTokenizer_Get(struct tok_state *, struct token *);
 
-#define tok_dump _Py_tok_dump
 
-#ifdef __cplusplus
-}
 #endif
-#endif /* !Py_TOKENIZER_H */
