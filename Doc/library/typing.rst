@@ -27,6 +27,7 @@ This module provides runtime support for type hints. For the original
 specification of the typing system, see :pep:`484`. For a simplified
 introduction to type hints, see :pep:`483`.
 
+
 The function below takes and returns a string and is annotated as follows::
 
    def greeting(name: str) -> str:
@@ -1063,7 +1064,7 @@ Special forms
 These can be used as types in annotations. They all support subscription using
 ``[]``, but each has a unique syntax.
 
-.. data:: Union
+.. class:: Union
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 

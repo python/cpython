@@ -8,6 +8,7 @@
 #include "internal/pycore_interp.h"
 #include "internal/pycore_typevarobject.h"
 #include "internal/pycore_unionobject.h"  // _PyUnion_Type
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "clinic/_typingmodule.c.h"
 
 /*[clinic input]

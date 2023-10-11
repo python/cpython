@@ -5224,7 +5224,7 @@ enables cleaner type hinting syntax compared to subscripting :class:`typing.Unio
 The user-exposed type for the union object can be accessed from
 :class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
+   >>> import typing
    >>> isinstance(int | str, typing.Union)
    True
 

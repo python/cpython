@@ -340,11 +340,14 @@ union_origin(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef union_properties[] = {
-    {"__name__", union_name, NULL, "Name of the type", NULL},
-    {"__qualname__", union_name, NULL, "Qualified name of the type", NULL},
-    {"__origin__", union_origin, NULL, "Always returns the type", NULL},
+    {"__name__", union_name, NULL,
+     PyDoc_STR("Name of the type"), NULL},
+    {"__qualname__", union_name, NULL,
+     PyDoc_STR("Qualified name of the type"), NULL},
+    {"__origin__", union_origin, NULL,
+     PyDoc_STR("Always returns the type"), NULL},
     {"__parameters__", union_parameters, (setter)NULL,
-     "Type variables in the types.UnionType.", NULL},
+     PyDoc_STR("Type variables in the types.UnionType."), NULL},
     {0}
 };
 
