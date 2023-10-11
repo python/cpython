@@ -290,7 +290,7 @@ strings are treated as if they were docstrings.  In output, a key ``K`` in
 
 An example is to place this block of code at the top of :file:`example.py`.
 
-.. code-block:: none
+.. code-block:: pycon
 
    __test__ = {
        'numbers': """
