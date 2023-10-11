@@ -2777,6 +2777,7 @@ def bœr():
             stdout)
 
     def test_nonexistent_module(self):
+        assert not os.path.exists(os_helper.TESTFN)
         stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
         self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
 
