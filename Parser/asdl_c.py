@@ -1044,7 +1044,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     }
 
     PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
-             *positional_args = NULL;
+             *remaining_dict = NULL, *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
@@ -1054,7 +1054,6 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         // serialize them as a dict, during unpickling they are set only *after*
         // the object is constructed, which will now trigger a DeprecationWarning
         // if the AST type has required fields.
-        PyObject *fields = NULL;
         if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
             goto cleanup;
         }
@@ -1064,12 +1063,12 @@ ast_type_reduce(PyObject *self, PyObject *unused)
                 Py_DECREF(dict);
                 goto cleanup;
             }
-            PyObject *remaining_dict = PyDict_Copy(dict);
+            remaining_dict = PyDict_Copy(dict);
             Py_DECREF(dict);
             if (!remaining_dict) {
                 goto cleanup;
             }
-            PyObject *positional_args = PyList_New(0);
+            positional_args = PyList_New(0);
             if (!positional_args) {
                 goto cleanup;
             }
@@ -1097,7 +1096,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
             if (!args_tuple) {
                 goto cleanup;
             }
-            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple,
+            result = Py_BuildValue("ONO", Py_TYPE(self), args_tuple,
                                    remaining_dict);
         }
         else {
@@ -1110,6 +1109,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 cleanup:
     Py_XDECREF(fields);
     Py_XDECREF(remaining_fields);
+    Py_XDECREF(remaining_dict);
     Py_XDECREF(positional_args);
     return result;
 }
