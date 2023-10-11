@@ -25960,7 +25960,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26003,7 +26006,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26046,7 +26052,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26089,7 +26098,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26132,7 +26144,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26175,7 +26190,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26218,7 +26236,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26261,7 +26282,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26304,7 +26328,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26347,7 +26374,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {
@@ -26390,7 +26420,10 @@ then :
 else $as_nop
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <curses.h>
+
+        #define NCURSES_OPAQUE 0
+        #include <curses.h>
+
 int
 main (void)
 {

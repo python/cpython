@@ -23,7 +23,7 @@
 # endif
 #endif
 
-#if !defined(HAVE_CURSES_IS_PAD) && defined(WINDOW_HAS_FLAGS)
+#if defined(WINDOW_HAS_FLAGS)
 /* The following definition is necessary for ncurses 5.7; without it,
    some of [n]curses.h set NCURSES_OPAQUE to 1, and then Python
    can't get at the WINDOW flags field. */
@@ -39,7 +39,8 @@
 #ifdef HAVE_NCURSES_H
 /* configure was checking <curses.h>, but we will
    use <ncurses.h>, which has some or all these features. */
-#if !defined(WINDOW_HAS_FLAGS) && !(NCURSES_OPAQUE+0)
+#if !defined(WINDOW_HAS_FLAGS) && \
+    (NCURSES_VERSION_PATCH+0 < 20070303 || !(NCURSES_OPAQUE+0))
 #define WINDOW_HAS_FLAGS 1
 #endif
 #if !defined(HAVE_CURSES_IS_PAD) && NCURSES_VERSION_PATCH+0 >= 20090906
