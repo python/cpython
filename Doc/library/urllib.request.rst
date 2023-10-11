@@ -315,10 +315,10 @@ The following classes are provided:
    list of hostname suffixes, optionally with ``:port`` appended, for example
    ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
 
-    .. note::
+   .. note::
 
-       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
-       see the documentation on :func:`~urllib.request.getproxies`.
+      ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
+      see the documentation on :func:`~urllib.request.getproxies`.
 
 
 .. class:: HTTPPasswordMgr()
@@ -1536,9 +1536,9 @@ some point in the future.
 :mod:`urllib.request` Restrictions
 ----------------------------------
 
-  .. index::
-     pair: HTTP; protocol
-     pair: FTP; protocol
+.. index::
+   pair: HTTP; protocol
+   pair: FTP; protocol
 
 * Currently, only the following protocols are supported: HTTP (versions 0.9 and
   1.0), FTP, local files, and data URLs.

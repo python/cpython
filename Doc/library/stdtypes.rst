@@ -48,9 +48,9 @@ By default, an object is considered true unless its class defines either a
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
 * constants defined to be false: ``None`` and ``False``
 
