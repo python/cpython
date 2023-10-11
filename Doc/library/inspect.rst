@@ -1435,10 +1435,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1450,10 +1451,11 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
 
