@@ -319,6 +319,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
 
         self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('O,', 1), 1)
         self.assertEqual(buildvalue('   O   ', 1), 1)
         self.assertEqual(buildvalue('\tO\t', 1), 1)
         self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
@@ -327,17 +328,18 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
         self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
         self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
-        self.assertEqual(buildvalue('(O, O)', 1, 2), (1, 2))
-        self.assertEqual(buildvalue(' ( O O) ', 1, 2), (1, 2))
-        self.assertEqual(buildvalue('\t(\tO\tO)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O,)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O ) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO\t)\t', 1, 2), (1, 2))
         self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
-        self.assertEqual(buildvalue('[O, O]', 1, 2), [1, 2])
-        self.assertEqual(buildvalue(' [ O O] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O,]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O ] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [\tO\tO\t] ', 1, 2), [1, 2])
         self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
         self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
-        self.assertEqual(buildvalue('{O: O, O: O}', 1, 2, 3, 4), {1: 2, 3: 4})
-        self.assertEqual(buildvalue(' { O O O O} ', 1, 2, 3, 4), {1: 2, 3: 4})
-        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O,}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O } ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO\t}\t', 1, 2, 3, 4), {1: 2, 3: 4})
 
         self.assertRaises(SystemError, buildvalue, 'O', NULL)
         self.assertRaises(SystemError, buildvalue, '(O)', NULL)
@@ -378,6 +380,8 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
         self.assertRaises(ValueError, buildvalue, 'C', -1)
         self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
+
+
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 

@@ -501,31 +501,6 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
-static PyObject *
-test_buildvalue_ignore_char(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *res = Py_BuildValue("(i )", 0);
-        if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
-    res = Py_BuildValue("i, ", 0);
-    if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
-    res = Py_BuildValue("i, :", 0);
-    if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
-    res = Py_BuildValue("i, :   ", 0);
-        if (res == NULL) {
-        return NULL;
-    }
-    Py_DECREF(res);
-    Py_RETURN_NONE;
-}
 
 static PyObject *
 test_get_statictype_slots(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -3315,7 +3290,6 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
-    {"test_buildvalue_ignore_char", test_buildvalue_ignore_char, METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
