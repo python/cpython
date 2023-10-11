@@ -45,14 +45,16 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
         default:
             Py_UNREACHABLE();
     }
+    // Trick clang into not caring what's passed to the continuation:
+    asm inline ("" : "=r"(oparg), "=r"(operand));
     if (pc != -1) {
         assert(pc == oparg);
         assert(opcode == _JUMP_TO_TOP || opcode == _POP_JUMP_IF_FALSE || opcode == _POP_JUMP_IF_TRUE);
         __attribute__((musttail))
-        return _JIT_JUMP(frame, stack_pointer, tstate, 0, 0);
+        return _JIT_JUMP(frame, stack_pointer, tstate, oparg, operand);
     }
     __attribute__((musttail))
-    return _JIT_CONTINUE(frame, stack_pointer, tstate, 0, 0);
+    return _JIT_CONTINUE(frame, stack_pointer, tstate, oparg, operand);
     // Labels that the instruction implementations expect to exist:
 unbound_local_error:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError, UNBOUNDLOCAL_ERROR_MSG, PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg));

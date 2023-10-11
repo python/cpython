@@ -19,6 +19,7 @@ class InstructionFlags:
     HAS_EVAL_BREAK_FLAG: bool = False
     HAS_DEOPT_FLAG: bool = False
     HAS_ERROR_FLAG: bool = False
+    HAS_OPERAND_FLAG: bool = False
 
     def __post_init__(self) -> None:
         self.bitmask = {name: (1 << i) for i, name in enumerate(self.names())}

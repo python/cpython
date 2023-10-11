@@ -200,10 +200,10 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
         nbytes += stencil->nbytes;
-        if (instruction->oparg) {
+        if (OPCODE_HAS_ARG(instruction->opcode)) {
             nbytes += oparg_stencil.nbytes;
         }
-        if (instruction->operand) {
+        if (OPCODE_HAS_OPERAND(instruction->opcode)) {
             nbytes += operand_stencil.nbytes;
         }
         assert(stencil->nbytes);
@@ -251,7 +251,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         // as they are being used, clang *will* optimize the function as if the oparg
         // can never be zero and the operand always fits in 32 bits, for example. That's
         // bad, for obvious reasons:
-        if (instruction->oparg) {
+        if (OPCODE_HAS_ARG(instruction->opcode)) {
             const Stencil *stencil = &oparg_stencil;
             uint64_t patches[] = GET_PATCHES();
             patches[_JIT_BASE] = (uintptr_t)head;
@@ -261,7 +261,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
             copy_and_patch(head, stencil, patches);
             head += stencil->nbytes;
         }
-        if (instruction->operand) {
+        if (OPCODE_HAS_OPERAND(instruction->opcode)) {
             const Stencil *stencil = &operand_stencil;
             uint64_t patches[] = GET_PATCHES();
             patches[_JIT_BASE] = (uintptr_t)head;
