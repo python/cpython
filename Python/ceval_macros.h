@@ -72,6 +72,8 @@
     do { \
 if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
         frame->instr_ptr = next_instr++; \
+        frame->new_return_offset = 0; \
+        assert(frame->yield_offset == 0); \
 if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
     } while(0)
 #endif
@@ -352,6 +354,7 @@ do { \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
+    frame->new_return_offset = frame->yield_offset = 0; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (next_instr == NULL) { \
         next_instr = (dest)+1; \
@@ -393,9 +396,7 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #if TIER_ONE
 
 #define LOAD_IP() do { \
-        frame->instr_ptr += frame->new_return_offset; \
-        frame->new_return_offset = 0; \
-        next_instr = frame->instr_ptr; \
+        next_instr = frame->instr_ptr + frame->new_return_offset; \
     } while (0)
 
 #define STORE_SP() \

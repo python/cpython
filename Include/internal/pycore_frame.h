@@ -58,11 +58,6 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    // NOTE: This is not necessarily the last instruction started in the given
-    // frame. Rather, it is the code unit *prior to* the *next* instruction. For
-    // example, it may be an inline CACHE entry, an instruction we just jumped
-    // over, or (in the case of a newly-created frame) a totally invalid value:
-    _Py_CODEUNIT *prev_traced_instr;
     /* The instruction that is currently executing (possibly not started yet). */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
@@ -151,7 +146,6 @@ _PyFrame_Initialize(
     frame->f_locals = locals;
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
-    frame->prev_traced_instr = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->new_return_offset = 0;
     frame->yield_offset = 0;
@@ -316,7 +310,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
-    frame->prev_traced_instr = NULL;
     frame->instr_ptr = _PyCode_CODE(code) + previous_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->new_return_offset = 0;

@@ -692,11 +692,10 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->new_return_offset;
-            frame->new_return_offset = 0;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
+            frame->yield_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3108,8 +3107,12 @@
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
-            assert(frame->new_return_offset == 0);
-            frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
+            if (frame->new_return_offset == 0) {
+                frame->new_return_offset = next_instr - frame->instr_ptr;
+            }
+            else {
+                assert(next_instr == frame->instr_ptr);
+            }
             #endif
             #if TIER_TWO
             // Relies on a preceding _SET_IP

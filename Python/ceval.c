@@ -785,8 +785,8 @@ resume_frame:
 #endif
     {
         DUMP_FRAME("INSTRUMENTED_LINE");
-        _Py_CODEUNIT *prev = frame->prev_traced_instr;
-        _Py_CODEUNIT *here = frame->instr_ptr = frame->prev_traced_instr = next_instr;
+        _Py_CODEUNIT *prev = frame->instr_ptr;
+        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(
                 tstate, frame, here, prev);

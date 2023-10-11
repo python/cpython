@@ -988,8 +988,12 @@
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-                assert(frame->new_return_offset == 0);
-                frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
+                if (frame->new_return_offset == 0) {
+                    frame->new_return_offset = next_instr - frame->instr_ptr;
+                }
+                else {
+                    assert(next_instr == frame->instr_ptr);
+                }
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1009,11 +1013,10 @@
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-                frame->instr_ptr += frame->new_return_offset;
-                frame->new_return_offset = 0;
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
+                frame->yield_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1040,8 +1043,7 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->new_return_offset;
-            frame->new_return_offset = 0;
+            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -1057,8 +1059,12 @@
             // _SAVE_CURRENT_IP
             {
                 #if TIER_ONE
-                assert(frame->new_return_offset == 0);
-                frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
+                if (frame->new_return_offset == 0) {
+                    frame->new_return_offset = next_instr - frame->instr_ptr;
+                }
+                else {
+                    assert(next_instr == frame->instr_ptr);
+                }
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -1077,11 +1083,10 @@
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-                frame->instr_ptr += frame->new_return_offset;
-                frame->new_return_offset = 0;
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
+                frame->yield_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1107,8 +1112,7 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->new_return_offset;
-            frame->new_return_offset = 0;
+            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -1336,6 +1340,8 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+            frame->new_return_offset = frame->yield_offset;
+            frame->yield_offset = 0;
             goto resume_frame;
         }
 
@@ -1358,8 +1364,8 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->instr_ptr += frame->yield_offset;
-            frame->new_return_offset =  frame->yield_offset = 0;
+            frame->new_return_offset = frame->yield_offset;
+            frame->yield_offset = 0;
             goto resume_frame;
         }
 
@@ -3839,8 +3845,6 @@
                 Py_DECREF(args[i]);
             }
             if (res == NULL) { STACK_SHRINK(oparg); goto pop_2_error; }
-            frame->yield_offset = 0;
-            frame->new_return_offset = 0;
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);
             stack_pointer[-1] = res;
@@ -3914,8 +3918,12 @@
             next_instr += 3;
             {
                 #if TIER_ONE
-                assert(frame->new_return_offset == 0);
-                frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
+                if (frame->new_return_offset == 0) {
+                    frame->new_return_offset = next_instr - frame->instr_ptr;
+                }
+                else {
+                    assert(next_instr == frame->instr_ptr);
+                }
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -3993,8 +4001,12 @@
             next_instr += 3;
             {
                 #if TIER_ONE
-                assert(frame->new_return_offset == 0);
-                frame->new_return_offset = next_instr - frame->instr_ptr + frame->new_return_offset;
+                if (frame->new_return_offset == 0) {
+                    frame->new_return_offset = next_instr - frame->instr_ptr;
+                }
+                else {
+                    assert(next_instr == frame->instr_ptr);
+                }
                 #endif
                 #if TIER_TWO
                 // Relies on a preceding _SET_IP
@@ -4897,8 +4909,7 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            frame->instr_ptr += frame->new_return_offset;
-            frame->new_return_offset = 0;
+            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }
