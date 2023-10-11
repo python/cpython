@@ -1,16 +1,8 @@
 import unittest
 import sys
-from test import support
 from test.support import import_helper
 
-try:
-    import _testcapi
-except ImportError:
-    _testcapi = None
-try:
-    import _testinternalcapi
-except ImportError:
-    _testinternalcapi = None
+import_helper.import_module('_testcapi')
 
 
 NULL = None
@@ -20,9 +12,6 @@ class Str(str):
 
 
 class CAPITest(unittest.TestCase):
-
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_new(self):
         """Test PyUnicode_New()"""
         from _testcapi import unicode_new as new
@@ -34,8 +23,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, new, 5, 0x110000)
         self.assertRaises(SystemError, new, -1, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fill(self):
         """Test PyUnicode_Fill()"""
         from _testcapi import unicode_fill as fill
@@ -73,8 +60,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES fill(NULL, 0, 0, 0x78)
         # TODO: Test PyUnicode_Fill() with non-modifiable unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_writechar(self):
         """Test PyUnicode_ReadChar()"""
         from _testcapi import unicode_writechar as writechar
@@ -102,8 +87,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_CopyCharacters() with non-modifiable and legacy
         # unicode.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_resize(self):
         """Test PyUnicode_Resize()"""
         from _testcapi import unicode_resize as resize
@@ -124,8 +107,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_Resize() with non-modifiable and legacy unicode
         # and with NULL as the address.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_append(self):
         """Test PyUnicode_Append()"""
         from _testcapi import unicode_append as append
@@ -152,8 +133,6 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_appendanddel(self):
         """Test PyUnicode_AppendAndDel()"""
         from _testcapi import unicode_appendanddel as appendanddel
@@ -179,8 +158,6 @@ class CAPITest(unittest.TestCase):
         # and with NULL as the address.
         # TODO: Check reference counts.
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromstringandsize(self):
         """Test PyUnicode_FromStringAndSize()"""
         from _testcapi import unicode_fromstringandsize as fromstringandsize
@@ -199,8 +176,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fromstringandsize, b'abc', -1)
         # TODO: Test PyUnicode_FromStringAndSize(NULL, size) for size != 0
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromstring(self):
         """Test PyUnicode_FromString()"""
         from _testcapi import unicode_fromstring as fromstring
@@ -215,8 +190,6 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES fromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromkindanddata(self):
         """Test PyUnicode_FromKindAndData()"""
         from _testcapi import unicode_fromkindanddata as fromkindanddata
@@ -249,8 +222,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES fromkindanddata(1, NULL, 1)
         # CRASHES fromkindanddata(4, b'\xff\xff\xff\xff')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_substring(self):
         """Test PyUnicode_Substring()"""
         from _testcapi import unicode_substring as substring
@@ -271,8 +242,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES substring([], 0, 0)
         # CRASHES substring(NULL, 0, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_getlength(self):
         """Test PyUnicode_GetLength()"""
         from _testcapi import unicode_getlength as getlength
@@ -285,8 +254,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, getlength, [])
         # CRASHES getlength(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_readchar(self):
         """Test PyUnicode_ReadChar()"""
         from _testcapi import unicode_readchar as readchar
@@ -302,8 +269,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, readchar, [], 0)
         # CRASHES readchar(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromobject(self):
         """Test PyUnicode_FromObject()"""
         from _testcapi import unicode_fromobject as fromobject
@@ -679,8 +644,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaisesRegex(SystemError, 'invalid format string',
             PyUnicode_FromFormat, b'%+i', c_int(10))
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_interninplace(self):
         """Test PyUnicode_InternInPlace()"""
         from _testcapi import unicode_interninplace as interninplace
@@ -692,8 +655,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES interninplace(b'abc')
         # CRASHES interninplace(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_internfromstring(self):
         """Test PyUnicode_InternFromString()"""
         from _testcapi import unicode_internfromstring as internfromstring
@@ -706,8 +667,6 @@ class CAPITest(unittest.TestCase):
 
         # CRASHES internfromstring(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromwidechar(self):
         """Test PyUnicode_FromWideChar()"""
         from _testcapi import unicode_fromwidechar as fromwidechar
@@ -736,8 +695,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, fromwidechar, NULL, 1)
         self.assertRaises(SystemError, fromwidechar, NULL, -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidechar(self):
         """Test PyUnicode_AsWideChar()"""
         from _testcapi import unicode_aswidechar
@@ -784,8 +741,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidechar_null, [], 10)
         self.assertRaises(SystemError, unicode_aswidechar_null, NULL, 10)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_aswidecharstring(self):
         """Test PyUnicode_AsWideCharString()"""
         from _testcapi import unicode_aswidecharstring
@@ -819,8 +774,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_aswidecharstring_null, [])
         self.assertRaises(SystemError, unicode_aswidecharstring_null, NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4(self):
         """Test PyUnicode_AsUCS4()"""
         from _testcapi import unicode_asucs4
@@ -844,8 +797,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_asucs4(NULL, 1, 0)
         # CRASHES unicode_asucs4(NULL, 1, 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asucs4copy(self):
         """Test PyUnicode_AsUCS4Copy()"""
         from _testcapi import unicode_asucs4copy as asucs4copy
@@ -860,8 +811,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES asucs4copy([])
         # CRASHES asucs4copy(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_fromordinal(self):
         """Test PyUnicode_FromOrdinal()"""
         from _testcapi import unicode_fromordinal as fromordinal
@@ -873,8 +822,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, fromordinal, 0x110000)
         self.assertRaises(ValueError, fromordinal, -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8(self):
         """Test PyUnicode_AsUTF8()"""
         from _testcapi import unicode_asutf8
@@ -889,8 +836,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8, [], 0)
         # CRASHES unicode_asutf8(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_asutf8andsize(self):
         """Test PyUnicode_AsUTF8AndSize()"""
         from _testcapi import unicode_asutf8andsize
@@ -908,18 +853,15 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, unicode_asutf8andsize, [], 0)
         # CRASHES unicode_asutf8andsize(NULL, 0)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_getdefaultencoding(self):
         """Test PyUnicode_GetDefaultEncoding()"""
         from _testcapi import unicode_getdefaultencoding as getdefaultencoding
 
         self.assertEqual(getdefaultencoding(), b'utf-8')
 
-    @support.cpython_only
-    @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
+        import_helper.import_module('_testinteralcapi')
         from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
 
         self.assertEqual(transform_decimal('123'),
@@ -936,8 +878,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, transform_decimal, [])
         # CRASHES transform_decimal(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_concat(self):
         """Test PyUnicode_Concat()"""
         from _testcapi import unicode_concat as concat
@@ -957,8 +897,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES concat(NULL, 'def')
         # CRASHES concat('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_split(self):
         """Test PyUnicode_Split()"""
         from _testcapi import unicode_split as split
@@ -980,8 +918,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, split, [], '|')
         # CRASHES split(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_rsplit(self):
         """Test PyUnicode_RSplit()"""
         from _testcapi import unicode_rsplit as rsplit
@@ -1004,8 +940,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, rsplit, [], '|')
         # CRASHES rsplit(NULL, '|')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_partition(self):
         """Test PyUnicode_Partition()"""
         from _testcapi import unicode_partition as partition
@@ -1024,8 +958,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES partition(NULL, '|')
         # CRASHES partition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_rpartition(self):
         """Test PyUnicode_RPartition()"""
         from _testcapi import unicode_rpartition as rpartition
@@ -1044,8 +976,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES rpartition(NULL, '|')
         # CRASHES rpartition('a|b|c', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_splitlines(self):
         """Test PyUnicode_SplitLines()"""
         from _testcapi import unicode_splitlines as splitlines
@@ -1062,8 +992,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, splitlines, b'a\nb\rc\r\nd')
         # CRASHES splitlines(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_translate(self):
         """Test PyUnicode_Translate()"""
         from _testcapi import unicode_translate as translate
@@ -1087,8 +1015,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(LookupError, translate, 'abc', {ord('b'): None}, 'foo')
         # CRASHES translate(NULL, [])
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_join(self):
         """Test PyUnicode_Join()"""
         from _testcapi import unicode_join as join
@@ -1105,8 +1031,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, join, '|', 123)
         self.assertRaises(SystemError, join, '|', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_count(self):
         """Test PyUnicode_Count()"""
         from _testcapi import unicode_count
@@ -1133,8 +1057,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_count(NULL, '!', 0, len(str))
         # CRASHES unicode_count(str, NULL, 0, len(str))
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_tailmatch(self):
         """Test PyUnicode_Tailmatch()"""
         from _testcapi import unicode_tailmatch as tailmatch
@@ -1168,8 +1090,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES tailmatch(NULL, 'aba', 0, len(str), -1)
         # CRASHES tailmatch(str, NULL, 0, len(str), -1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_find(self):
         """Test PyUnicode_Find()"""
         from _testcapi import unicode_find as find
@@ -1201,8 +1121,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES find(NULL, '!', 0, len(str), 1)
         # CRASHES find(str, NULL, 0, len(str), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_findchar(self):
         """Test PyUnicode_FindChar()"""
         from _testcapi import unicode_findchar
@@ -1229,8 +1147,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES unicode_findchar([], ord('!'), 0, len(str), 1)
         # CRASHES unicode_findchar(NULL, ord('!'), 0, len(str), 1), 1)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_replace(self):
         """Test PyUnicode_Replace()"""
         from _testcapi import unicode_replace as replace
@@ -1258,8 +1174,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES replace('a', NULL, '=')
         # CRASHES replace(NULL, 'a', '=')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_compare(self):
         """Test PyUnicode_Compare()"""
         from _testcapi import unicode_compare as compare
@@ -1280,8 +1194,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES compare(NULL, 'abc')
         # CRASHES compare('abc', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_comparewithasciistring(self):
         """Test PyUnicode_CompareWithASCIIString()"""
         from _testcapi import unicode_comparewithasciistring as comparewithasciistring
@@ -1297,8 +1209,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES comparewithasciistring([], b'abc')
         # CRASHES comparewithasciistring(NULL, b'abc')
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_richcompare(self):
         """Test PyUnicode_RichCompare()"""
         from _testcapi import unicode_richcompare as richcompare
@@ -1325,8 +1235,6 @@ class CAPITest(unittest.TestCase):
             # CRASHES richcompare(NULL, 'abc', op)
             # CRASHES richcompare('abc', NULL, op)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_format(self):
         """Test PyUnicode_Format()"""
         from _testcapi import unicode_format as format
@@ -1338,8 +1246,6 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, format, 'x=%d!', NULL)
         self.assertRaises(SystemError, format, NULL, 42)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_contains(self):
         """Test PyUnicode_Contains()"""
         from _testcapi import unicode_contains as contains
@@ -1360,8 +1266,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES contains(NULL, 'b')
         # CRASHES contains('abcd', NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_isidentifier(self):
         """Test PyUnicode_IsIdentifier()"""
         from _testcapi import unicode_isidentifier as isidentifier
@@ -1382,8 +1286,6 @@ class CAPITest(unittest.TestCase):
         # CRASHES isidentifier([])
         # CRASHES isidentifier(NULL)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_copycharacters(self):
         """Test PyUnicode_CopyCharacters()"""
         from _testcapi import unicode_copycharacters
@@ -1431,8 +1333,6 @@ class CAPITest(unittest.TestCase):
         # TODO: Test PyUnicode_CopyCharacters() with non-unicode and
         # non-modifiable unicode as "to".
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
     def test_pep393_utf8_caching_bug(self):
         # Issue #25709: Problem with string concatenation and utf-8 cache
         from _testcapi import getargs_s_hash
