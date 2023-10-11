@@ -35,19 +35,12 @@ threading_helper.requires_working_threading(module=True)
 platforms_to_skip = ('netbsd5', 'hp-ux11')
 
 
-# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
-# to work around a libasan race condition, dead lock in pthread_create().
-skip_if_asan_fork = support.skip_if_sanitizer(
-                        "libasan has a pthread_create() dead lock",
-                        address=True)
-
-
 def skip_unless_reliable_fork(test):
     if not support.has_fork_support:
         return unittest.skip("requires working os.fork()")(test)
     if sys.platform in platforms_to_skip:
         return unittest.skip("due to known OS bug related to thread+fork")(test)
-    if support.check_sanitizer(address=True):
+    if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
     return test
 
