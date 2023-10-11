@@ -1128,8 +1128,6 @@ func_type_comment[Token*]:
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
-
-
     | ((','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' b='*' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
