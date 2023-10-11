@@ -6817,25 +6817,22 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    PyObject *utc = create_timezone(delta, NULL);
-    Py_DECREF(delta);
-    if (utc == NULL) {
-        return -1;
-    }
-    if (PyDict_SetItemString(d, "utc", utc) < 0) {
-        Py_DECREF(utc);
-        return -1;
-    }
-
     datetime_state *st = STATIC_STATE();
-    Py_SETREF(st->utc, utc);
+    st->utc = create_timezone(delta, NULL);
+    Py_DECREF(delta);
+    if (st->utc == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(d, "utc", st->utc) < 0) {
+        goto error;
+    }
 
     /* bpo-37642: These attributes are rounded to the nearest minute for backwards
      * compatibility, even though the constructor will accept a wider range of
      * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL) {
-        return -1;
+        goto error;
     }
 
     PyObject *x = create_timezone(delta, NULL);
@@ -6844,7 +6841,7 @@ _datetime_exec(PyObject *module)
 
     delta = new_delta(0, (23 * 60 + 59) * 60, 0, 0); /* +23:59 */
     if (delta == NULL) {
-        return -1;
+        goto error;
     }
 
     x = create_timezone(delta, NULL);
@@ -6854,33 +6851,33 @@ _datetime_exec(PyObject *module)
     /* Epoch */
     st->epoch = new_datetime(1970, 1, 1, 0, 0, 0, 0, st->utc, 0);
     if (st->epoch == NULL) {
-        return -1;
+        goto error;
     }
 
     /* module initialization */
     if (PyModule_AddIntMacro(module, MINYEAR) < 0) {
-        return -1;
+        goto error;
     }
     if (PyModule_AddIntMacro(module, MAXYEAR) < 0) {
-        return -1;
+        goto error;
     }
 
     PyDateTime_CAPI *capi = get_datetime_capi();
     if (capi == NULL) {
-        return -1;
+        goto error;
     }
     x = PyCapsule_New(capi, PyDateTime_CAPSULE_NAME, datetime_destructor);
     if (x == NULL) {
         PyMem_Free(capi);
-        return -1;
+        goto error;
     }
 
     if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
-        return -1;
+        goto error;
     }
 
     if (PyModule_AddObjectRef(module, "UTC", st->utc) < 0) {
-        return -1;
+        goto error;
     }
 
     /* A 4-year cycle has an extra leap day over what we'd get from
