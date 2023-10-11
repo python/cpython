@@ -1,1 +1,1 @@
-Fix misleading error message in the multiprocesing module. Patch by Joannah Nanjekye
+Add some missing attributes to multiprocessing.dummy. Patch by Joannah Nanjekye
