@@ -559,10 +559,10 @@ pymain_run_python(int *exitcode)
         goto error;
     }
 
-    // XXX Calculate config->sys_path_0 in getpath.py.
+    // XXX Calculate runtime->sys_path_0 in getpath.py.
     // The tricky part is that we can't check the path importers yet
     // at that point.
-    assert(config->sys_path_0 == NULL);
+    assert(interp->runtime->sys_path_0 == NULL);
 
     if (config->run_filename != NULL) {
         /* If filename is a package (ex: directory or ZIP file) which contains
@@ -592,7 +592,7 @@ pymain_run_python(int *exitcode)
             Py_CLEAR(path0);
         }
     }
-    // XXX Apply config->sys_path_0 in init_interp_main().  We have
+    // XXX Apply runtime->sys_path_0 in init_interp_main().  We have
     // to be sure to get readline/rlcompleter imported at the correct time.
     if (path0 != NULL) {
         wchar_t *wstr = PyUnicode_AsWideCharString(path0, NULL);
@@ -600,9 +600,12 @@ pymain_run_python(int *exitcode)
             Py_DECREF(path0);
             goto error;
         }
-        config->sys_path_0 = _PyMem_RawWcsdup(wstr);
+        PyMemAllocatorEx old_alloc;
+        _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+        interp->runtime->sys_path_0 = _PyMem_RawWcsdup(wstr);
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
         PyMem_Free(wstr);
-        if (config->sys_path_0 == NULL) {
+        if (interp->runtime->sys_path_0 == NULL) {
             Py_DECREF(path0);
             goto error;
         }

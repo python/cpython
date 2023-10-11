@@ -105,6 +105,11 @@ typedef struct pyruntimestate {
 
     unsigned long main_thread;
 
+    /* The value to use for sys.path[0] in new subinterpreters.
+       Normally this would be part of the PyConfig struct.  However,
+       we cannot add it there in 3.12 since that's an ABI change. */
+    wchar_t *sys_path_0;
+
     /* ---------- IMPORTANT ---------------------------
      The fields above this line are declared as early as
      possible to facilitate out-of-process observability

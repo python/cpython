@@ -1202,8 +1202,9 @@ init_interp_main(PyThreadState *tstate)
 
     if (!is_main_interp) {
         // The main interpreter is handled in Py_Main(), for now.
-        if (config->sys_path_0 != NULL) {
-            PyObject *path0 = PyUnicode_FromWideChar(config->sys_path_0, -1);
+        wchar_t *sys_path_0 = interp->runtime->sys_path_0;
+        if (sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(sys_path_0, -1);
             if (path0 == NULL) {
                 return _PyStatus_ERR("can't initialize sys.path[0]");
             }
