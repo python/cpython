@@ -1380,18 +1380,18 @@ to speed up repeated connections from the same clients.
    Here's a table showing which versions in a client (down the side) can connect
    to which versions in a server (along the top):
 
-     .. table::
+   .. table::
 
-       ========================  ============  ============  =============  =========  ===========  ===========
-        *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
-       ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
-        *SSLv2*                    yes           no            no [1]_        no         no         no
-        *SSLv3*                    no            yes           no [2]_        no         no         no
-        *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
-        *TLSv1*                    no            no            yes            yes        no         no
-        *TLSv1.1*                  no            no            yes            no         yes        no
-        *TLSv1.2*                  no            no            yes            no         no         yes
-       ========================  ============  ============  =============  =========  ===========  ===========
+      ========================  ============  ============  =============  =========  ===========  ===========
+       *client* / **server**    **SSLv2**     **SSLv3**     **TLS** [3]_   **TLSv1**  **TLSv1.1**  **TLSv1.2**
+      ------------------------  ------------  ------------  -------------  ---------  -----------  -----------
+       *SSLv2*                    yes           no            no [1]_        no         no         no
+       *SSLv3*                    no            yes           no [2]_        no         no         no
+       *TLS* (*SSLv23*) [3]_      no [1]_       no [2]_       yes            yes        yes        yes
+       *TLSv1*                    no            no            yes            yes        no         no
+       *TLSv1.1*                  no            no            yes            no         yes        no
+       *TLSv1.2*                  no            no            yes            no         no         yes
+      ========================  ============  ============  =============  =========  ===========  ===========
 
    .. rubric:: Footnotes
    .. [1] :class:`SSLContext` disables SSLv2 with :data:`OP_NO_SSLv2` by default.

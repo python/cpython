@@ -235,11 +235,11 @@ inserted data and retrieved values from it in multiple ways.
 
    * :ref:`sqlite3-howtos` for further reading:
 
-      * :ref:`sqlite3-placeholders`
-      * :ref:`sqlite3-adapters`
-      * :ref:`sqlite3-converters`
-      * :ref:`sqlite3-connection-context-manager`
-      * :ref:`sqlite3-howto-row-factory`
+     * :ref:`sqlite3-placeholders`
+     * :ref:`sqlite3-adapters`
+     * :ref:`sqlite3-converters`
+     * :ref:`sqlite3-connection-context-manager`
+     * :ref:`sqlite3-howto-row-factory`
 
    * :ref:`sqlite3-explanation` for in-depth background on transaction control.
 
@@ -523,13 +523,13 @@ Module constants
    the default `threading mode <https://sqlite.org/threadsafe.html>`_ the
    underlying SQLite library is compiled with. The SQLite threading modes are:
 
-     1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
-        unsafe to use in more than a single thread at once.
-     2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
-        threads provided that no single database connection is used
-        simultaneously in two or more threads.
-     3. **Serialized**: In serialized mode, SQLite can be safely used by
-        multiple threads with no restriction.
+   1. **Single-thread**: In this mode, all mutexes are disabled and SQLite is
+      unsafe to use in more than a single thread at once.
+   2. **Multi-thread**: In this mode, SQLite can be safely used by multiple
+      threads provided that no single database connection is used
+      simultaneously in two or more threads.
+   3. **Serialized**: In serialized mode, SQLite can be safely used by
+      multiple threads with no restriction.
 
    The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
    are as follows:
