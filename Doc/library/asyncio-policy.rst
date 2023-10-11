@@ -7,6 +7,8 @@
 Policies
 ========
 
+The policy system is deprecated as of Python 3.13 and will
+be removed in Python 3.15.
 An event loop policy is a global object
 used to get and set the current :ref:`event loop <asyncio-event-loop>`,
 as well as create new event loops.
@@ -45,6 +47,8 @@ for the current process:
    Set the current process-wide policy to *policy*.
 
    If *policy* is set to ``None``, the default policy is restored.
+
+   .. deprecated-removed:: 3.13 3.15
 
 
 .. _asyncio-policy-objects:
