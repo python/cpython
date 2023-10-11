@@ -427,6 +427,7 @@ Other functions
 
    Return the path of :file:`Makefile`.
 
+.. _sysconfig-cli:
 
 Using :mod:`sysconfig` as a script
 ----------------------------------
