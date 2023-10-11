@@ -302,9 +302,9 @@ An example is to place this block of code at the top of :file:`example.py`.
    """
    }
 
-The value of ``example.__test__["numbers"]`` value will be treated as
-docstring and all the tests inside it will be run. It is also
-important to note that the value can also be mapped to a function,
+The value of ``example.__test__["numbers"]`` will be treated as a
+docstring and all the tests inside it will be run. It is
+important to note that the value can be mapped to a function,
 class object, or module. If the value is a function, class, or module, :mod:`doctest`
 searches them recursively for docstrings, which are then scanned for tests.
 
