@@ -1725,7 +1725,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
 .. class:: EventLoop
 
-    Uses the most effiecient available event loop for the given
+    Uses the most efficient available event loop for the given
     platform.
 
    .. versionadded:: 3.13
