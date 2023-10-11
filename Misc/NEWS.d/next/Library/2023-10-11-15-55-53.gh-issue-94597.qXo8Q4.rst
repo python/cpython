@@ -1,0 +1,1 @@
+deprecate :func:`asyncio.set_event_loop_policy`
