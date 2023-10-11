@@ -78,10 +78,10 @@ except ImportError:
     msvcrt = None
 
 
-if support.check_sanitizer(address=True):
+if support.HAVE_ASAN_FORK_BUG:
     # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
     # work around a libasan race condition: dead lock in pthread_create().
-    raise unittest.SkipTest("libasan has a pthread_create() dead lock")
+    raise unittest.SkipTest("libasan has a pthread_create() dead lock related to thread+fork")
 
 
 def latin(s):
