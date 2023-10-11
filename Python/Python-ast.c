@@ -5096,7 +5096,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t size = PySet_Size(remaining_fields);
     PyObject *field_types = NULL, *remaining_list = NULL;
     if (size > 0) {
-        if (!_PyObject_LookupAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types), &field_types)) {
+        if (!PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), &_Py_ID(_field_types),
+                                      &field_types)) {
             res = -1;
             goto cleanup;
         }
