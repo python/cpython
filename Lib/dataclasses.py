@@ -946,6 +946,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # override earlier field definitions in base classes.  As long as
     # we're iterating over them, see if all or any of them are frozen.
     any_frozen_base = False
+    # By default `all_frozen_bases` is `None` to represent a case,
+    # where some dataclasses does not have any bases with `_FIELDS`
     all_frozen_bases = None
     has_dataclass_bases = False
     for b in cls.__mro__[-1:0:-1]:
@@ -960,8 +962,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                 all_frozen_bases = True
             current_frozen = getattr(b, _PARAMS).frozen
             all_frozen_bases = all_frozen_bases and current_frozen
-            if current_frozen:
-                any_frozen_base = True
+            any_frozen_base = any_frozen_base or current_frozen
 
     # Annotations defined specifically in this class (not in base classes).
     #

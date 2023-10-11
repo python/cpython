@@ -2865,21 +2865,21 @@ class TestFrozen(unittest.TestCase):
 
     def test_inherit_frozen_mutliple_inheritance(self):
         @dataclass
-        class A:
+        class NotFrozen:
             pass
 
         @dataclass(frozen=True)
-        class B:
+        class Frozen:
             pass
 
-        class M:
+        class NotDataclass:
             pass
 
         for bases in (
-            (A, B),
-            (B, A),
-            (B, M),
-            (M, B),
+            (NotFrozen, Frozen),
+            (Frozen, NotFrozen),
+            (Frozen, NotDataclass),
+            (NotDataclass, Frozen),
         ):
             with self.subTest(bases=bases):
                 with self.assertRaisesRegex(
@@ -2887,14 +2887,14 @@ class TestFrozen(unittest.TestCase):
                     'cannot inherit non-frozen dataclass from a frozen one',
                 ):
                     @dataclass
-                    class C(*bases):
+                    class NotFrozenChild(*bases):
                         pass
 
         for bases in (
-            (A, B),
-            (B, A),
-            (A, M),
-            (M, A),
+            (NotFrozen, Frozen),
+            (Frozen, NotFrozen),
+            (NotFrozen, NotDataclass),
+            (NotDataclass, NotFrozen),
         ):
             with self.subTest(bases=bases):
                 with self.assertRaisesRegex(
@@ -2902,61 +2902,61 @@ class TestFrozen(unittest.TestCase):
                     'cannot inherit frozen dataclass from a non-frozen one',
                 ):
                     @dataclass(frozen=True)
-                    class C(*bases):
+                    class FrozenChild(*bases):
                         pass
 
     def test_inherit_frozen_mutliple_inheritance_regular_mixins(self):
         @dataclass(frozen=True)
-        class D:
+        class Frozen:
             pass
 
-        class M:
+        class NotDataclass:
             pass
 
-        class C1(D, M):
+        class C1(Frozen, NotDataclass):
             pass
-        self.assertEqual(C1.__mro__, (C1, D, M, object))
+        self.assertEqual(C1.__mro__, (C1, Frozen, NotDataclass, object))
 
-        class C2(M, D):
+        class C2(NotDataclass, Frozen):
             pass
-        self.assertEqual(C2.__mro__, (C2, M, D, object))
-
-        @dataclass(frozen=True)
-        class C3(D, M):
-            pass
-        self.assertEqual(C3.__mro__, (C3, D, M, object))
+        self.assertEqual(C2.__mro__, (C2, NotDataclass, Frozen, object))
 
         @dataclass(frozen=True)
-        class C4(M, D):
+        class C3(Frozen, NotDataclass):
             pass
-        self.assertEqual(C4.__mro__, (C4, M, D, object))
+        self.assertEqual(C3.__mro__, (C3, Frozen, NotDataclass, object))
+
+        @dataclass(frozen=True)
+        class C4(NotDataclass, Frozen):
+            pass
+        self.assertEqual(C4.__mro__, (C4, NotDataclass, Frozen, object))
 
     def test_multiple_frozen_dataclasses_inheritance(self):
         @dataclass(frozen=True)
-        class A:
+        class FrozenA:
             pass
 
         @dataclass(frozen=True)
-        class B:
+        class FrozenB:
             pass
 
-        class C1(A, B):
+        class C1(FrozenA, FrozenB):
             pass
-        self.assertEqual(C1.__mro__, (C1, A, B, object))
+        self.assertEqual(C1.__mro__, (C1, FrozenA, FrozenB, object))
 
-        class C2(B, A):
+        class C2(FrozenB, FrozenA):
             pass
-        self.assertEqual(C2.__mro__, (C2, B, A, object))
-
-        @dataclass(frozen=True)
-        class C3(A, B):
-            pass
-        self.assertEqual(C3.__mro__, (C3, A, B, object))
+        self.assertEqual(C2.__mro__, (C2, FrozenB, FrozenA, object))
 
         @dataclass(frozen=True)
-        class C4(B, A):
+        class C3(FrozenA, FrozenB):
             pass
-        self.assertEqual(C4.__mro__, (C4, B, A, object))
+        self.assertEqual(C3.__mro__, (C3, FrozenA, FrozenB, object))
+
+        @dataclass(frozen=True)
+        class C4(FrozenB, FrozenA):
+            pass
+        self.assertEqual(C4.__mro__, (C4, FrozenB, FrozenA, object))
 
     def test_inherit_nonfrozen_from_empty(self):
         @dataclass
