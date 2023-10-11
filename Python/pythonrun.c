@@ -685,7 +685,6 @@ struct exception_print_context
 {
     PyObject *file;
     PyObject *seen;            // Prevent cycles in recursion
-    bool need_close;           // Need a closing bottom frame
 };
 
 static int
@@ -926,9 +925,7 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
     if (_Py_EnterRecursiveCall(" in print_chained")) {
         return -1;
     }
-    bool need_close = ctx->need_close;
     int res = print_exception_recursive(ctx, value);
-    ctx->need_close = need_close;
     _Py_LeaveRecursiveCall();
     if (res < 0) {
         return -1;
@@ -1099,7 +1096,6 @@ fallback:
 
     struct exception_print_context ctx;
     ctx.file = file;
-    ctx.need_close = false;
 
     /* We choose to ignore seen being possibly NULL, and report
        at least the main exception (it could be a MemoryError).
