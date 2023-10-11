@@ -66,13 +66,11 @@ typedef struct _PyInterpreterFrame {
      * It must be set by SEND, SEND_GEN, FOR_ITER_GEN and used by YIELD_VALUE.
      */
     uint16_t yield_offset;
-    /* The new_return_offset determines where a `RETURN` should go in the caller,
-     * relative to `instr_ptr`.
-     * It is only meaningful to the callee,
-     * so it needs to be set in any CALL (to a Python function)
-     * or SEND (to a coroutine or generator).
-     * If there is no callee, then it is meaningless. */
-    uint16_t new_return_offset;
+    /* The next_instr_offset determines where the next instruction is relative
+     * to instr_ptr. It enables us to keep instr_ptr pointing to the current
+     * instruction until it is time to begin executing the next one. This is
+     * necessary for tracebacks and tracing. */
+    uint16_t next_instr_offset;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -91,8 +89,8 @@ dump_frame_ip(const char* title, _PyInterpreterFrame *frame) {
     if (frame) {
         fprintf(stderr, "%s: frame=%p frame->instr_ptr=%p ",
                 title, frame, frame->instr_ptr);
-        fprintf(stderr, "new_return_offset=%d yield_offset=%d  \n",
-                frame->new_return_offset, frame->yield_offset);
+        fprintf(stderr, "next_instr_offset=%d yield_offset=%d  \n",
+                frame->next_instr_offset, frame->yield_offset);
     }
 }
 
@@ -147,7 +145,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
-    frame->new_return_offset = 0;
+    frame->next_instr_offset = 0;
     frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
@@ -312,7 +310,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code) + previous_instr + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
-    frame->new_return_offset = 0;
+    frame->next_instr_offset = 0;
     frame->yield_offset = 0;
     return frame;
 }

@@ -658,7 +658,7 @@ dummy_func(
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->yield_offset = 0;
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -986,7 +986,7 @@ dummy_func(
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 frame->yield_offset = next_instr - frame->instr_ptr;
-                frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
+                frame->next_instr_offset = next_instr - frame->instr_ptr + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1025,7 +1025,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             frame->yield_offset = next_instr - frame->instr_ptr;
-            frame->new_return_offset = next_instr - frame->instr_ptr + oparg;
+            frame->next_instr_offset = next_instr - frame->instr_ptr + oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -1047,7 +1047,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->new_return_offset = frame->yield_offset;
+            frame->next_instr_offset = frame->yield_offset;
             frame->yield_offset = 0;
             goto resume_frame;
         }
@@ -1069,7 +1069,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->new_return_offset = frame->yield_offset;
+            frame->next_instr_offset = frame->yield_offset;
             frame->yield_offset = 0;
             goto resume_frame;
         }
@@ -2022,7 +2022,7 @@ dummy_func(
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2049,7 +2049,7 @@ dummy_func(
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2686,7 +2686,7 @@ dummy_func(
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             frame->yield_offset = next_instr - frame->instr_ptr;
-            frame->new_return_offset = oparg + next_instr - frame->instr_ptr;
+            frame->next_instr_offset = oparg + next_instr - frame->instr_ptr;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2997,7 +2997,7 @@ dummy_func(
                     goto error;
                 }
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-                frame->new_return_offset = next_instr - frame->instr_ptr;
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3085,7 +3085,7 @@ dummy_func(
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
             frame->yield_offset = 0;
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
             new_frame->previous = frame;
@@ -3156,7 +3156,7 @@ dummy_func(
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->yield_offset = 0;
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3234,7 +3234,7 @@ dummy_func(
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->yield_offset = 0;
-            frame->new_return_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
@@ -3604,7 +3604,7 @@ dummy_func(
                     goto error;
                 }
                 frame->yield_offset = 0;
-                frame->new_return_offset = next_instr - frame->instr_ptr;
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3703,7 +3703,7 @@ dummy_func(
                         goto error;
                     }
                     frame->yield_offset = 0;
-                    frame->new_return_offset = next_instr - frame->instr_ptr;
+                    frame->next_instr_offset = next_instr - frame->instr_ptr;
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -3973,8 +3973,8 @@ dummy_func(
 
         op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
-            if (frame->new_return_offset == 0) {
-                frame->new_return_offset = next_instr - frame->instr_ptr;
+            if (frame->next_instr_offset == 0) {
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             else {
                 assert(next_instr == frame->instr_ptr);

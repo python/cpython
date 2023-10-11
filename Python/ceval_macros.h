@@ -70,11 +70,11 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
-if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
+if (VERBOSE) fprintf(stderr, "--- %s: frame=%p frame->instr_ptr=%p next_instr=%p next_instr_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->next_instr_offset, frame->yield_offset); \
         frame->instr_ptr = next_instr++; \
-        frame->new_return_offset = 0; \
+        frame->next_instr_offset = 0; \
         assert(frame->yield_offset == 0); \
-if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->instr_ptr=%p next_instr=%p new_return_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->new_return_offset, frame->yield_offset); \
+if (VERBOSE) fprintf(stderr, "=== %s: frame=%p frame->instr_ptr=%p next_instr=%p next_instr_offset=%d  yield_offset=%d\n", _PyOpcode_OpName[op], frame, frame->instr_ptr, next_instr, frame->next_instr_offset, frame->yield_offset); \
     } while(0)
 #endif
 
@@ -154,7 +154,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0)
 #define JUMPTO(x)       do { \
                             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x); \
-                            frame->new_return_offset = 0; \
+                            frame->next_instr_offset = 0; \
                         } while(0)
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
@@ -354,7 +354,7 @@ do { \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    frame->new_return_offset = frame->yield_offset = 0; \
+    frame->next_instr_offset = frame->yield_offset = 0; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (next_instr == NULL) { \
         next_instr = (dest)+1; \
@@ -396,7 +396,7 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #if TIER_ONE
 
 #define LOAD_IP() do { \
-        next_instr = frame->instr_ptr + frame->new_return_offset; \
+        next_instr = frame->instr_ptr + frame->next_instr_offset; \
     } while (0)
 
 #define STORE_SP() \

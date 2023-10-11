@@ -702,7 +702,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.yield_offset = 0;
-    entry_frame.new_return_offset = 0;
+    entry_frame.next_instr_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
@@ -747,8 +747,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
     DUMP_FRAME("SET_LOCALS_FROM_FRAME1"); \
-    next_instr = frame->instr_ptr + frame->new_return_offset; \
-    frame->new_return_offset = frame->yield_offset = 0; \
+    next_instr = frame->instr_ptr + frame->next_instr_offset; \
+    frame->next_instr_offset = frame->yield_offset = 0; \
     DUMP_FRAME("SET_LOCALS_FROM_FRAME2"); \
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
@@ -945,7 +945,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
-    frame->yield_offset = frame->new_return_offset = 0;
+    frame->yield_offset = frame->next_instr_offset = 0;
     DUMP_FRAME("exit_unwind");
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */

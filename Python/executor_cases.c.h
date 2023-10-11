@@ -3252,8 +3252,8 @@
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
-            if (frame->new_return_offset == 0) {
-                frame->new_return_offset = next_instr - frame->instr_ptr;
+            if (frame->next_instr_offset == 0) {
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             else {
                 assert(next_instr == frame->instr_ptr);
