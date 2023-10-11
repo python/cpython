@@ -2564,7 +2564,7 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
             assert(PyType_Check(registered));
             assert(cur->cls == (PyTypeObject *)registered);
             assert(cur->cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
-            Py_DECREF(registered);
+            //Py_DECREF(registered);
         }
         if (cur->cls == cls) {
             return cur;
