@@ -6891,7 +6891,7 @@ _datetime_exec(PyObject *module)
     PyObject *min = create_timezone_from_delta(-1, 60, 0, 1);
     DATETIME_ADD_MACRO(d, "min", min);
 
-    /* 23:59 */
+    /* +23:59 */
     PyObject *max = create_timezone_from_delta(0, (23 * 60 + 59) * 60, 0, 0);
     DATETIME_ADD_MACRO(d, "max", max);
 
