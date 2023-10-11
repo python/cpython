@@ -32,6 +32,7 @@ __all__ = (
     'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
+    'EventLoop',
 )
 
 
