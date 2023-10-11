@@ -101,7 +101,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):

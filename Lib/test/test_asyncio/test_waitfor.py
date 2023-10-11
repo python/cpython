@@ -5,7 +5,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 # The following value can be used as a very small timeout:

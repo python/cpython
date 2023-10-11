@@ -16,7 +16,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 def _fakefunc(f):

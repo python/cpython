@@ -5,6 +5,7 @@ import unittest
 import pickle
 import weakref
 from test.support import requires_working_socket, check_syntax_error, run_code
+from test import support
 
 from typing import Generic, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
 
@@ -850,7 +851,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         co = get_coroutine()
 
-        self.addCleanup(asyncio.set_event_loop_policy, None)
+        self.addCleanup(support.set_event_loop_policy, None)
         a, b = asyncio.run(co())
 
         self.assertIsInstance(a, TypeVar)

@@ -6,6 +6,7 @@ import time
 import threading
 import unittest
 from unittest import mock
+from test import support
 
 if sys.platform != 'win32':
     raise unittest.SkipTest('Windows only')
@@ -19,7 +20,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class UpperProto(asyncio.Protocol):
@@ -294,11 +295,11 @@ class WinPolicyTests(test_utils.TestCase):
 
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
+            support.set_event_loop_policy(
                 asyncio.WindowsSelectorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            support.set_event_loop_policy(old_policy)
 
     def test_proactor_win_policy(self):
         async def main():
@@ -308,11 +309,11 @@ class WinPolicyTests(test_utils.TestCase):
 
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(
+            support.set_event_loop_policy(
                 asyncio.WindowsProactorEventLoopPolicy())
             asyncio.run(main())
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            support.set_event_loop_policy(old_policy)
 
 
 if __name__ == '__main__':

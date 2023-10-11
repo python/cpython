@@ -35,7 +35,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):

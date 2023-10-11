@@ -6,10 +6,11 @@ import unittest
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class BaseStartServer(func_tests.FunctionalTestCaseMixin):

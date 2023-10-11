@@ -11,7 +11,7 @@ from test.test_contextlib import TestBaseExitStack
 support.requires_working_socket(module=True)
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class TestAbstractAsyncContextManager(unittest.IsolatedAsyncioTestCase):

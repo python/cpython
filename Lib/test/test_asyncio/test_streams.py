@@ -18,10 +18,11 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class StreamTests(test_utils.TestCase):

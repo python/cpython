@@ -462,7 +462,7 @@ class BuiltinTest(unittest.TestCase):
                 asyncio.run(eval(co, globals_))
                 self.assertEqual(globals_['a'], 1)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            support.set_event_loop_policy(policy)
 
     def test_compile_top_level_await_invalid_cases(self):
          # helper function just to check we can run top=level async-for
@@ -499,7 +499,7 @@ class BuiltinTest(unittest.TestCase):
                              mode,
                              flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
         finally:
-            asyncio.set_event_loop_policy(policy)
+            support.set_event_loop_policy(policy)
 
 
     def test_compile_async_generator(self):

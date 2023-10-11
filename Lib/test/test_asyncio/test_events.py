@@ -39,7 +39,7 @@ from test.support import ALWAYS_EQ, LARGEST, SMALLEST
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 def broken_unix_getsockname():
@@ -2684,8 +2684,9 @@ class PolicyTests(unittest.TestCase):
         self.assertIs(policy, asyncio.get_event_loop_policy())
 
     def test_set_event_loop_policy(self):
-        self.assertRaises(
-            TypeError, asyncio.set_event_loop_policy, object())
+        with self.assertWarns(DeprecationWarning):
+            self.assertRaises(
+                TypeError, asyncio.set_event_loop_policy, object())
 
         old_policy = asyncio.get_event_loop_policy()
 
@@ -2790,7 +2791,8 @@ class GetEventLoopTestsMixin:
 
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(Policy())
+            with self.assertWarns(DeprecationWarning):
+                asyncio.set_event_loop_policy(Policy())
             loop = asyncio.new_event_loop()
 
             with self.assertRaises(TestError):
@@ -2818,7 +2820,7 @@ class GetEventLoopTestsMixin:
                 asyncio.get_event_loop()
 
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            support.set_event_loop_policy(old_policy)
             if loop is not None:
                 loop.close()
 
@@ -2830,7 +2832,8 @@ class GetEventLoopTestsMixin:
     def test_get_event_loop_returns_running_loop2(self):
         old_policy = asyncio.get_event_loop_policy()
         try:
-            asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
+            with self.assertWarns(DeprecationWarning):
+                asyncio.set_event_loop_policy(asyncio.DefaultEventLoopPolicy())
             loop = asyncio.new_event_loop()
             self.addCleanup(loop.close)
 
@@ -2861,7 +2864,7 @@ class GetEventLoopTestsMixin:
                 asyncio.get_event_loop()
 
         finally:
-            asyncio.set_event_loop_policy(old_policy)
+            support.set_event_loop_policy(old_policy)
             if loop is not None:
                 loop.close()
 

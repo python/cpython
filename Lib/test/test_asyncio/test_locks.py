@@ -6,6 +6,7 @@ import re
 
 import asyncio
 import collections
+from test import support
 
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
@@ -20,7 +21,7 @@ RGX_REPR = re.compile(STR_RGX_REPR)
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class LockTests(unittest.IsolatedAsyncioTestCase):

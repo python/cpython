@@ -22,7 +22,7 @@ except ImportError:
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class MySendfileProto(asyncio.Protocol):

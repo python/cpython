@@ -19,12 +19,13 @@ from asyncio.selector_events import (BaseSelectorEventLoop,
                                      _SelectorSocketTransport,
                                      _SelectorTransport)
 from test.test_asyncio import utils as test_utils
+from test import support
 
 MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class TestBaseSelectorEventLoop(BaseSelectorEventLoop):

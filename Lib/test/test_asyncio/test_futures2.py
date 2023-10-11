@@ -4,10 +4,11 @@ import contextvars
 import traceback
 import unittest
 from asyncio import tasks
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class FutureTests:

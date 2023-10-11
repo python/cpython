@@ -15,10 +15,11 @@ from asyncio.proactor_events import _ProactorDatagramTransport
 from test.support import os_helper
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 def close_transport(transport):

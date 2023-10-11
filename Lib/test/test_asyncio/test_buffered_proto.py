@@ -2,10 +2,11 @@ import asyncio
 import unittest
 
 from test.test_asyncio import functional as func_tests
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class ReceiveStuffProto(asyncio.BufferedProtocol):

@@ -5,6 +5,7 @@ import contextlib
 
 from test.support.import_helper import import_module
 from test.support import gc_collect, requires_working_socket
+from test import support
 asyncio = import_module("asyncio")
 
 
@@ -429,7 +430,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
     def tearDown(self):
         self.loop.close()
         self.loop = None
-        asyncio.set_event_loop_policy(None)
+        support.set_event_loop_policy(None)
 
     def check_async_iterator_anext(self, ait_class):
         with self.subTest(anext="pure-Python"):

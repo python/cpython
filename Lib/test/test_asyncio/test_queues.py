@@ -3,10 +3,11 @@
 import asyncio
 import unittest
 from types import GenericAlias
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class QueueBasicTests(unittest.IsolatedAsyncioTestCase):

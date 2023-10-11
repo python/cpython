@@ -22,7 +22,7 @@ from test.support.script_helper import assert_python_ok
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 async def coroutine_function():

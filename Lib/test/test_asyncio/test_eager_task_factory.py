@@ -8,12 +8,13 @@ from unittest import mock
 from asyncio import tasks
 from test.test_asyncio import utils as test_utils
 from test.support.script_helper import assert_python_ok
+from test import support
 
 MOCK_ANY = mock.ANY
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class EagerTaskFactoryLoopTests:

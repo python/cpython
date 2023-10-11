@@ -1627,7 +1627,7 @@ def test_pdb_next_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     support.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1687,7 +1687,7 @@ def test_pdb_next_command_for_asyncgen():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     support.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1799,7 +1799,7 @@ def test_pdb_return_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     support.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',
@@ -1890,7 +1890,7 @@ def test_pdb_until_command_for_coroutine():
     ...     loop = asyncio.new_event_loop()
     ...     loop.run_until_complete(test_main())
     ...     loop.close()
-    ...     asyncio.set_event_loop_policy(None)
+    ...     support.set_event_loop_policy(None)
     ...     print("finished")
 
     >>> with PdbTestInput(['step',

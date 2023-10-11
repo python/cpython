@@ -11,7 +11,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class TestCM:

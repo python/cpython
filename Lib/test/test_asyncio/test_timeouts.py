@@ -4,10 +4,11 @@ import unittest
 import time
 
 import asyncio
+from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    support.set_event_loop_policy(None)
 
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):

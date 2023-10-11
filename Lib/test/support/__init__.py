@@ -2089,6 +2089,13 @@ def maybe_get_event_loop_policy():
     import asyncio.events
     return asyncio.events._event_loop_policy
 
+def set_event_loop_policy(policy):
+    """Set the global event loop policy ignoring deprecation warnings"""
+    import asyncio
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        asyncio.set_event_loop_policy(policy)
+
 # Helpers for testing hashing.
 NHASHBITS = sys.hash_info.width # number of bits in hash() result
 assert NHASHBITS in (32, 64)

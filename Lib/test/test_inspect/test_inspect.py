@@ -72,7 +72,7 @@ git = mod.StupidGit()
 
 def tearDownModule():
     if support.has_socket_support:
-        asyncio.set_event_loop_policy(None)
+        support.set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -1010,8 +1010,7 @@ class TestBuggyCases(GetSourceBase):
         "socket.accept is broken"
     )
     def test_nested_class_definition_inside_async_function(self):
-        import asyncio
-        self.addCleanup(asyncio.set_event_loop_policy, None)
+        self.addCleanup(support.set_event_loop_policy, None)
         self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
         self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
