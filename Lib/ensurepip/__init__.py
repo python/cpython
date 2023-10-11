@@ -171,7 +171,7 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         if verbosity:
             args += ["-" + "v" * verbosity]
 
-        return _run_pip([*args, "pip"], [os.fsencode(tmp_wheel_path)])
+        return _run_pip([*args, "pip"], [str(tmp_wheel_path)])
 
 
 def _uninstall_helper(*, verbosity=0):
