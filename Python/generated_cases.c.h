@@ -805,7 +805,8 @@
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
             frame->yield_offset = 0;
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - frame->instr_ptr);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -1271,8 +1272,9 @@
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-                frame->yield_offset = next_instr - frame->instr_ptr;
-                frame->next_instr_offset = next_instr - frame->instr_ptr + oparg;
+                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+                frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+                frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1317,8 +1319,9 @@
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-            frame->yield_offset = next_instr - frame->instr_ptr;
-            frame->next_instr_offset = next_instr - frame->instr_ptr + oparg;
+            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+            frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -2618,7 +2621,8 @@
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - frame->instr_ptr);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2650,7 +2654,8 @@
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - frame->instr_ptr);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -3467,8 +3472,9 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            frame->yield_offset = next_instr - frame->instr_ptr;
-            frame->next_instr_offset = oparg + next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - frame->instr_ptr);
+            frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER;
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -3856,7 +3862,8 @@
                     goto error;
                 }
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-                frame->next_instr_offset = next_instr - frame->instr_ptr;
+                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+                frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4119,7 +4126,8 @@
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->yield_offset = 0;
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -4239,7 +4247,8 @@
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
             frame->yield_offset = 0;
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
@@ -4823,9 +4832,7 @@
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
-                if (err) {
-                    goto error;
-                }
+                if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
