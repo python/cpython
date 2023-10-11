@@ -88,8 +88,9 @@ struct _is {
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
     _Py_atomic_address _finalizing;
-    /* The ID of the OS thread in which we are finalizing. */
-    _Py_atomic_ulong _finalizing_id;
+    /* The ID of the OS thread in which we are finalizing.
+       We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
+    _Py_atomic_address _finalizing_id;
 
     struct _gc_runtime_state gc;
 
@@ -225,7 +226,8 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
     else {
         // XXX Re-enable this assert once gh-109860 is fixed.
         //assert(tstate->thread_id == PyThread_get_thread_ident());
-        _Py_atomic_store_relaxed(&interp->_finalizing_id, tstate->thread_id);
+        _Py_atomic_store_relaxed(&interp->_finalizing_id,
+                                 (uintptr_t)tstate->thread_id);
     }
 }
 
