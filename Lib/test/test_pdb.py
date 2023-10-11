@@ -2383,17 +2383,17 @@ def test_pdb_issue_gh_65052():
     > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()-><A instance at ...>
     -> return object.__new__(cls)
     (Pdb) retval
-    *** AttributeError: 'A' object has no attribute 'a' ***
+    *** repr(retval) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) continue
     > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(7)__init__()
     -> self.a = 1
     (Pdb) args
-    self = *** AttributeError: 'A' object has no attribute 'a' ***
+    self = *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) display self
-    display self: *** AttributeError: 'A' object has no attribute 'a' ***
+    display self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) display
     Currently displaying:
-    self: *** AttributeError: 'A' object has no attribute 'a' ***
+    self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) continue
     """
 
