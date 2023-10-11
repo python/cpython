@@ -115,14 +115,14 @@ The module defines the following user-callable items:
    * On Windows, make sure that at least one of the following conditions are
      fulfilled:
 
-         * *delete* is false
-         * additional open shares delete access (e.g. by calling :func:`os.open`
-           with the flag ``O_TEMPORARY``)
-         * *delete* is true but *delete_on_close* is false. Note, that in this
-           case the additional opens that do not share delete access (e.g.
-           created via builtin :func:`open`) must be closed before exiting the
-           context manager, else the :func:`os.unlink` call on context manager
-           exit will fail with a :exc:`PermissionError`.
+     * *delete* is false
+     * additional open shares delete access (e.g. by calling :func:`os.open`
+       with the flag ``O_TEMPORARY``)
+     * *delete* is true but *delete_on_close* is false. Note, that in this
+       case the additional opens that do not share delete access (e.g.
+       created via builtin :func:`open`) must be closed before exiting the
+       context manager, else the :func:`os.unlink` call on context manager
+       exit will fail with a :exc:`PermissionError`.
 
    On Windows, if *delete_on_close* is false, and the file is created in a
    directory for which the user lacks delete access, then the :func:`os.unlink`

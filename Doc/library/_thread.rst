@@ -208,7 +208,7 @@ In addition to these methods, lock objects can also be used via the
 
 **Caveats:**
 
-  .. index:: pair: module; signal
+.. index:: pair: module; signal
 
 * Threads interact strangely with interrupts: the :exc:`KeyboardInterrupt`
   exception will be received by an arbitrary thread.  (When the :mod:`signal`
