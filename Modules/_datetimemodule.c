@@ -57,9 +57,9 @@ typedef struct {
     PyObject *epoch;
 } datetime_state;
 
-static datetime_state global_state;
+static datetime_state _datetime_global_state;
 
-#define GLOBAL_STATE() (&global_state)
+#define GLOBAL_STATE() (&_datetime_global_state)
 
 /*[clinic input]
 module datetime
