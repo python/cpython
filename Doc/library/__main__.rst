@@ -76,7 +76,7 @@ The top-level code environment can be:
 
   .. code-block:: shell-session
 
-     $ echo "import this" | python
+     $ echo "import this" | python3
      The Zen of Python, by Tim Peters
 
      Beautiful is better than ugly.
