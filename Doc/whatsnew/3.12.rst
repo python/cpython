@@ -2399,15 +2399,15 @@ Removed
 
 * Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
-   * :c:macro:`!PyUnicode_WCHAR_KIND`
-   * :c:func:`!PyUnicode_AS_UNICODE`
-   * :c:func:`!PyUnicode_AsUnicode`
-   * :c:func:`!PyUnicode_AsUnicodeAndSize`
-   * :c:func:`!PyUnicode_AS_DATA`
-   * :c:func:`!PyUnicode_FromUnicode`
-   * :c:func:`!PyUnicode_GET_SIZE`
-   * :c:func:`!PyUnicode_GetSize`
-   * :c:func:`!PyUnicode_GET_DATA_SIZE`
+  * :c:macro:`!PyUnicode_WCHAR_KIND`
+  * :c:func:`!PyUnicode_AS_UNICODE`
+  * :c:func:`!PyUnicode_AsUnicode`
+  * :c:func:`!PyUnicode_AsUnicodeAndSize`
+  * :c:func:`!PyUnicode_AS_DATA`
+  * :c:func:`!PyUnicode_FromUnicode`
+  * :c:func:`!PyUnicode_GET_SIZE`
+  * :c:func:`!PyUnicode_GetSize`
+  * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
 * Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
