@@ -701,9 +701,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertRaises(TypeError, sys.intern, S("abc"))
 
     def test_subinterp_intern_dynamically_allocated(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
         self.assertIs(t, s)
 
