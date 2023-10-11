@@ -3,13 +3,17 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
-#include <stddef.h>               // offsetof()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
+#include <stddef.h>               // offsetof()
 #ifdef HAVE_SIGNAL_H
 #  include <signal.h>             // SIGINT
 #endif
@@ -292,7 +296,7 @@ unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.");
 
 static PyMemberDef lock_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(lockobject, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(lockobject, in_weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -486,6 +490,18 @@ PyDoc_STRVAR(rlock_release_save_doc,
 \n\
 For internal use by `threading.Condition`.");
 
+static PyObject *
+rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
+{
+    unsigned long tid = PyThread_get_thread_ident();
+    return PyLong_FromUnsignedLong(
+        self->rlock_owner == tid ? self->rlock_count : 0UL);
+}
+
+PyDoc_STRVAR(rlock_recursion_count_doc,
+"_recursion_count() -> int\n\
+\n\
+For internal use by reentrancy checks.");
 
 static PyObject *
 rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
@@ -561,6 +577,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS, rlock_acquire_restore_doc},
     {"_release_save", (PyCFunction)rlock_release_save,
      METH_NOARGS, rlock_release_save_doc},
+    {"_recursion_count", (PyCFunction)rlock_recursion_count,
+     METH_NOARGS, rlock_recursion_count_doc},
     {"__enter__",    _PyCFunction_CAST(rlock_acquire),
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"__exit__",    (PyCFunction)rlock_release,
@@ -574,7 +592,7 @@ static PyMethodDef rlock_methods[] = {
 
 
 static PyMemberDef rlock_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(rlockobject, in_weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(rlockobject, in_weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -678,7 +696,7 @@ localdummy_dealloc(localdummyobject *self)
 }
 
 static PyMemberDef local_dummy_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(localdummyobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(localdummyobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -958,7 +976,7 @@ local_setattro(localobject *self, PyObject *name, PyObject *v)
 static PyObject *local_getattro(localobject *, PyObject *);
 
 static PyMemberDef local_type_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(localobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(localobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -1024,15 +1042,13 @@ local_getattro(localobject *self, PyObject *name)
 static PyObject *
 _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
 {
-    assert(PyWeakref_CheckRef(localweakref));
-    PyObject *obj = PyWeakref_GET_OBJECT(localweakref);
-    if (obj == Py_None) {
+    localobject *self = (localobject *)_PyWeakref_GET_REF(localweakref);
+    if (self == NULL) {
         Py_RETURN_NONE;
     }
 
     /* If the thread-local object is still alive and not being cleared,
        remove the corresponding local dict */
-    localobject *self = (localobject *)Py_NewRef(obj);
     if (self->dummies != NULL) {
         PyObject *ldict;
         ldict = PyDict_GetItemWithError(self->dummies, dummyweakref);
@@ -1040,31 +1056,31 @@ _localdummy_destroyed(PyObject *localweakref, PyObject *dummyweakref)
             PyDict_DelItem(self->dummies, dummyweakref);
         }
         if (PyErr_Occurred())
-            PyErr_WriteUnraisable(obj);
+            PyErr_WriteUnraisable((PyObject*)self);
     }
-    Py_DECREF(obj);
+    Py_DECREF(self);
     Py_RETURN_NONE;
 }
 
 /* Module functions */
 
 struct bootstate {
-    PyInterpreterState *interp;
+    PyThreadState *tstate;
     PyObject *func;
     PyObject *args;
     PyObject *kwargs;
-    PyThreadState *tstate;
-    _PyRuntimeState *runtime;
 };
 
 
 static void
-thread_bootstate_free(struct bootstate *boot)
+thread_bootstate_free(struct bootstate *boot, int decref)
 {
-    Py_DECREF(boot->func);
-    Py_DECREF(boot->args);
-    Py_XDECREF(boot->kwargs);
-    PyMem_Free(boot);
+    if (decref) {
+        Py_DECREF(boot->func);
+        Py_DECREF(boot->args);
+        Py_XDECREF(boot->kwargs);
+    }
+    PyMem_RawFree(boot);
 }
 
 
@@ -1072,9 +1088,27 @@ static void
 thread_run(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
-    PyThreadState *tstate;
+    PyThreadState *tstate = boot->tstate;
 
-    tstate = boot->tstate;
+    // gh-108987: If _thread.start_new_thread() is called before or while
+    // Python is being finalized, thread_run() can called *after*.
+    // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
+    // threads must exit, except of the thread calling Py_Finalize() whch holds
+    // the GIL and must not exit.
+    //
+    // At this stage, tstate can be a dangling pointer (point to freed memory),
+    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
+    if (_PyThreadState_MustExit(tstate)) {
+        // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
+        // These functions are called on tstate indirectly by Py_Finalize()
+        // which calls _PyInterpreterState_Clear().
+        //
+        // Py_DECREF() cannot be called because the GIL is not held: leak
+        // references on purpose. Python is being finalized anyway.
+        thread_bootstate_free(boot, 0);
+        goto exit;
+    }
+
     _PyThreadState_Bind(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->threads.count++;
@@ -1092,20 +1126,23 @@ thread_run(void *boot_raw)
         Py_DECREF(res);
     }
 
-    thread_bootstate_free(boot);
+    thread_bootstate_free(boot, 1);
+
     tstate->interp->threads.count--;
     PyThreadState_Clear(tstate);
     _PyThreadState_DeleteCurrent(tstate);
 
+exit:
     // bpo-44434: Don't call explicitly PyThread_exit_thread(). On Linux with
     // the glibc, pthread_exit() can abort the whole process if dlopen() fails
     // to open the libgcc_s.so library (ex: EMFILE error).
+    return;
 }
 
 static PyObject *
 thread_daemon_threads_allowed(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyInterpreterState *interp = _PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->feature_flags & Py_RTFLAGS_DAEMON_THREADS) {
         Py_RETURN_TRUE;
     }
@@ -1123,7 +1160,6 @@ and False otherwise.\n");
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *kwargs = NULL;
 
     if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
@@ -1162,20 +1198,21 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
         return NULL;
     }
 
-    struct bootstate *boot = PyMem_NEW(struct bootstate, 1);
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
     if (boot == NULL) {
         return PyErr_NoMemory();
     }
-    boot->interp = _PyInterpreterState_GET();
-    boot->tstate = _PyThreadState_New(boot->interp);
+    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
     if (boot->tstate == NULL) {
-        PyMem_Free(boot);
+        PyMem_RawFree(boot);
         if (!PyErr_Occurred()) {
             return PyErr_NoMemory();
         }
         return NULL;
     }
-    boot->runtime = runtime;
     boot->func = Py_NewRef(func);
     boot->args = Py_NewRef(args);
     boot->kwargs = Py_XNewRef(kwargs);
@@ -1184,7 +1221,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "can't start new thread");
         PyThreadState_Clear(boot->tstate);
-        thread_bootstate_free(boot);
+        thread_bootstate_free(boot, 1);
         return NULL;
     }
     return PyLong_FromUnsignedLong(ident);
@@ -1314,24 +1351,25 @@ This function is meant for internal and specialized purposes only.\n\
 In most applications `threading.enumerate()` should be used instead.");
 
 static void
-release_sentinel(void *wr_raw)
+release_sentinel(void *weakref_raw)
 {
-    PyObject *wr = _PyObject_CAST(wr_raw);
+    PyObject *weakref = _PyObject_CAST(weakref_raw);
+
     /* Tricky: this function is called when the current thread state
        is being deleted.  Therefore, only simple C code can safely
        execute here. */
-    PyObject *obj = PyWeakref_GET_OBJECT(wr);
-    lockobject *lock;
-    if (obj != Py_None) {
-        lock = (lockobject *) obj;
+    lockobject *lock = (lockobject *)_PyWeakref_GET_REF(weakref);
+    if (lock != NULL) {
         if (lock->locked) {
             PyThread_release_lock(lock->lock_lock);
             lock->locked = 0;
         }
+        Py_DECREF(lock);
     }
+
     /* Deallocating a weakref with a NULL callback only calls
        PyObject_GC_Del(), which can't call any Python code. */
-    Py_DECREF(wr);
+    Py_DECREF(weakref);
 }
 
 static PyObject *
@@ -1438,7 +1476,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        if (_PyObject_LookupAttr(thread, &_Py_ID(name), &name) < 0) {
+        if (PyObject_GetOptionalAttr(thread, &_Py_ID(name), &name) < 0) {
             return -1;
         }
     }
@@ -1476,11 +1514,9 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }
@@ -1569,6 +1605,18 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+static PyObject *
+thread__is_main_interpreter(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return PyBool_FromLong(_Py_IsMainInterpreter(interp));
+}
+
+PyDoc_STRVAR(thread__is_main_interpreter_doc,
+"_is_main_interpreter()\n\
+\n\
+Return True if the current interpreter is the main Python interpreter.");
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1598,8 +1646,10 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, stack_size_doc},
     {"_set_sentinel",           thread__set_sentinel,
      METH_NOARGS, _set_sentinel_doc},
-    {"_excepthook",              thread_excepthook,
+    {"_excepthook",             thread_excepthook,
      METH_O, excepthook_doc},
+    {"_is_main_interpreter",    thread__is_main_interpreter,
+     METH_NOARGS, thread__is_main_interpreter_doc},
     {NULL,                      NULL}           /* sentinel */
 };
 
@@ -1671,8 +1721,8 @@ thread_module_exec(PyObject *module)
     // Round towards minus infinity
     timeout_max = floor(timeout_max);
 
-    if (PyModule_AddObject(module, "TIMEOUT_MAX",
-                           PyFloat_FromDouble(timeout_max)) < 0) {
+    if (PyModule_Add(module, "TIMEOUT_MAX",
+                        PyFloat_FromDouble(timeout_max)) < 0) {
         return -1;
     }
 

@@ -1797,6 +1797,9 @@ PyObject_Size:PyObject*:o:0:
 PyObject_Str:PyObject*::+1:
 PyObject_Str:PyObject*:o:0:
 
+Py_TYPE:PyObject*::0:
+Py_TYPE:PyObject*:ob:0:
+
 PyObject_Type:PyObject*::+1:
 PyObject_Type:PyObject*:o:0:
 
@@ -2809,6 +2812,10 @@ PyWeakref_GET_OBJECT:PyObject*:ref:0:
 
 PyWeakref_GetObject:PyObject*::0:
 PyWeakref_GetObject:PyObject*:ref:0:
+
+PyWeakref_GetRef:int:::
+PyWeakref_GetRef:PyObject*:ref:0:
+PyWeakref_GetRef:PyObject**:pobj:+1:
 
 PyWeakref_NewProxy:PyObject*::+1:
 PyWeakref_NewProxy:PyObject*:ob:0:

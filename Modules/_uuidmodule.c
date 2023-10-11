@@ -3,8 +3,6 @@
  * DCE compatible Universally Unique Identifier library.
  */
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #if defined(HAVE_UUID_H)
   // AIX, FreeBSD, libuuid with pkgconf

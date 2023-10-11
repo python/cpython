@@ -142,7 +142,16 @@ class TypeParamsAliasValueTest(unittest.TestCase):
 
     def test_repr(self):
         type Simple = int
+        type VeryGeneric[T, *Ts, **P] = Callable[P, tuple[T, *Ts]]
+
         self.assertEqual(repr(Simple), "Simple")
+        self.assertEqual(repr(VeryGeneric), "VeryGeneric")
+        self.assertEqual(repr(VeryGeneric[int, bytes, str, [float, object]]),
+                         "VeryGeneric[int, bytes, str, [float, object]]")
+        self.assertEqual(repr(VeryGeneric[int, []]),
+                         "VeryGeneric[int, []]")
+        self.assertEqual(repr(VeryGeneric[int, [VeryGeneric[int], list[str]]]),
+                         "VeryGeneric[int, [VeryGeneric[int], list[str]]]")
 
     def test_recursive_repr(self):
         type Recursive = Recursive
@@ -151,6 +160,31 @@ class TypeParamsAliasValueTest(unittest.TestCase):
         type X = list[Y]
         type Y = list[X]
         self.assertEqual(repr(X), "X")
+        self.assertEqual(repr(Y), "Y")
+
+        type GenericRecursive[X] = list[X | GenericRecursive[X]]
+        self.assertEqual(repr(GenericRecursive), "GenericRecursive")
+        self.assertEqual(repr(GenericRecursive[int]), "GenericRecursive[int]")
+        self.assertEqual(repr(GenericRecursive[GenericRecursive[int]]),
+                         "GenericRecursive[GenericRecursive[int]]")
+
+    def test_raising(self):
+        type MissingName = list[_My_X]
+        with self.assertRaisesRegex(
+            NameError,
+            "cannot access free variable '_My_X' where it is not associated with a value",
+        ):
+            MissingName.__value__
+        _My_X = int
+        self.assertEqual(MissingName.__value__, list[int])
+        del _My_X
+        # Cache should still work:
+        self.assertEqual(MissingName.__value__, list[int])
+
+        # Explicit exception:
+        type ExprException = 1 / 0
+        with self.assertRaises(ZeroDivisionError):
+            ExprException.__value__
 
 
 class TypeAliasConstructorTest(unittest.TestCase):

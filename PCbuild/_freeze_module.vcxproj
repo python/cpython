@@ -192,6 +192,7 @@
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
+    <ClCompile Include="..\Python\executor.c" />
     <ClCompile Include="..\Python\fileutils.c" />
     <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
@@ -217,6 +218,7 @@
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
     <ClCompile Include="..\Python\optimizer.c" />
+    <ClCompile Include="..\Python\optimizer_analysis.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
     <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />

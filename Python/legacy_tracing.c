@@ -2,12 +2,13 @@
  * Provides callables to forward PEP 669 events to legacy events.
  */
 
-#include <stddef.h>
 #include "Python.h"
-#include "opcode.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // export _PyEval_SetProfile()
 #include "pycore_object.h"
-#include "pycore_sysmodule.h"
+#include "pycore_sysmodule.h"     // _PySys_Audit()
+
+#include "opcode.h"
+#include <stddef.h>
 
 typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
@@ -62,6 +63,16 @@ sys_profile_func3(
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_profile_func(self, args[2]);
+}
+
+static PyObject *
+sys_profile_unwind(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
+    return call_profile_func(self, Py_None);
 }
 
 static PyObject *
@@ -153,6 +164,16 @@ sys_trace_func2(
 }
 
 static PyObject *
+sys_trace_func3(
+    _PyLegacyEventHandler *self, PyObject *const *args,
+    size_t nargsf, PyObject *kwnames
+) {
+    assert(kwnames == NULL);
+    assert(PyVectorcall_NARGS(nargsf) == 3);
+    return call_trace_func(self, Py_None);
+}
+
+static PyObject *
 sys_trace_return(
     _PyLegacyEventHandler *self, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
@@ -236,7 +257,7 @@ sys_trace_line_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 2);
-    int line = _PyLong_AsInt(args[1]);
+    int line = PyLong_AsInt(args[1]);
     assert(line >= 0);
     PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
@@ -262,9 +283,9 @@ sys_trace_jump_func(
         Py_RETURN_NONE;
     }
     assert(PyVectorcall_NARGS(nargsf) == 3);
-    int from = _PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
+    int from = PyLong_AsInt(args[1])/sizeof(_Py_CODEUNIT);
     assert(from >= 0);
-    int to = _PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
+    int to = PyLong_AsInt(args[2])/sizeof(_Py_CODEUNIT);
     assert(to >= 0);
     if (to > from) {
         /* Forward jump */
@@ -357,12 +378,17 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
+            (vectorcallfunc)sys_profile_func3, PyTrace_CALL,
+                        PY_MONITORING_EVENT_PY_THROW, -1)) {
+            return -1;
+        }
+        if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
             (vectorcallfunc)sys_profile_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
-            (vectorcallfunc)sys_profile_func2, PyTrace_RETURN,
+            (vectorcallfunc)sys_profile_unwind, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }
@@ -396,7 +422,8 @@ _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
         events =
             (1 << PY_MONITORING_EVENT_PY_START) | (1 << PY_MONITORING_EVENT_PY_RESUME) |
             (1 << PY_MONITORING_EVENT_PY_RETURN) | (1 << PY_MONITORING_EVENT_PY_YIELD) |
-            (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND);
+            (1 << PY_MONITORING_EVENT_CALL) | (1 << PY_MONITORING_EVENT_PY_UNWIND) |
+            (1 << PY_MONITORING_EVENT_PY_THROW);
     }
     return _PyMonitoring_SetEvents(PY_MONITORING_SYS_PROFILE_ID, events);
 }
@@ -425,7 +452,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
-            (vectorcallfunc)sys_trace_func2, PyTrace_CALL,
+            (vectorcallfunc)sys_trace_func3, PyTrace_CALL,
                         PY_MONITORING_EVENT_PY_THROW, -1)) {
             return -1;
         }
@@ -450,7 +477,7 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
-            (vectorcallfunc)sys_trace_func2, PyTrace_RETURN,
+            (vectorcallfunc)sys_trace_func3, PyTrace_RETURN,
                         PY_MONITORING_EVENT_PY_UNWIND, -1)) {
             return -1;
         }

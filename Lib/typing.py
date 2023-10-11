@@ -23,10 +23,8 @@ import collections
 from collections import defaultdict
 import collections.abc
 import copyreg
-import contextlib
 import functools
 import operator
-import re as stdlib_re  # Avoid confusion with the typing.re namespace on <=3.11
 import sys
 import types
 from types import (
@@ -875,13 +873,6 @@ def _is_unpacked_typevartuple(x: Any) -> bool:
 
 def _is_typevar_like(x: Any) -> bool:
     return isinstance(x, (TypeVar, ParamSpec)) or _is_unpacked_typevartuple(x)
-
-
-class _PickleUsingNameMixin:
-    """Mixin enabling pickling based on self.__name__."""
-
-    def __reduce__(self):
-        return self.__name__
 
 
 def _typevar_subst(self, arg):
@@ -1748,14 +1739,17 @@ class _ProtocolMeta(ABCMeta):
     def __subclasscheck__(cls, other):
         if cls is Protocol:
             return type.__subclasscheck__(cls, other)
-        if not isinstance(other, type):
-            # Same error message as for issubclass(1, int).
-            raise TypeError('issubclass() arg 1 must be a class')
         if (
             getattr(cls, '_is_protocol', False)
             and not _allow_reckless_class_checks()
         ):
-            if not cls.__callable_proto_members_only__:
+            if not isinstance(other, type):
+                # Same error message as for issubclass(1, int).
+                raise TypeError('issubclass() arg 1 must be a class')
+            if (
+                not cls.__callable_proto_members_only__
+                and cls.__dict__.get("__subclasshook__") is _proto_hook
+            ):
                 raise TypeError(
                     "Protocols with non-method members don't support issubclass()"
                 )
@@ -1797,6 +1791,30 @@ class _ProtocolMeta(ABCMeta):
             return True
 
         return False
+
+
+@classmethod
+def _proto_hook(cls, other):
+    if not cls.__dict__.get('_is_protocol', False):
+        return NotImplemented
+
+    for attr in cls.__protocol_attrs__:
+        for base in other.__mro__:
+            # Check if the members appears in the class dictionary...
+            if attr in base.__dict__:
+                if base.__dict__[attr] is None:
+                    return NotImplemented
+                break
+
+            # ...or in annotations, if it is a sub-protocol.
+            annotations = getattr(base, '__annotations__', {})
+            if (isinstance(annotations, collections.abc.Mapping) and
+                    attr in annotations and
+                    issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
+                break
+        else:
+            return NotImplemented
+    return True
 
 
 class Protocol(Generic, metaclass=_ProtocolMeta):
@@ -1844,37 +1862,11 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
             cls._is_protocol = any(b is Protocol for b in cls.__bases__)
 
         # Set (or override) the protocol subclass hook.
-        def _proto_hook(other):
-            if not cls.__dict__.get('_is_protocol', False):
-                return NotImplemented
-
-            for attr in cls.__protocol_attrs__:
-                for base in other.__mro__:
-                    # Check if the members appears in the class dictionary...
-                    if attr in base.__dict__:
-                        if base.__dict__[attr] is None:
-                            return NotImplemented
-                        break
-
-                    # ...or in annotations, if it is a sub-protocol.
-                    annotations = getattr(base, '__annotations__', {})
-                    if (isinstance(annotations, collections.abc.Mapping) and
-                            attr in annotations and
-                            issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
-                        break
-                else:
-                    return NotImplemented
-            return True
-
         if '__subclasshook__' not in cls.__dict__:
             cls.__subclasshook__ = _proto_hook
 
-        # We have nothing more to do for non-protocols...
-        if not cls._is_protocol:
-            return
-
-        # ... otherwise prohibit instantiation.
-        if cls.__init__ is Protocol.__init__:
+        # Prohibit instantiation for protocol classes
+        if cls._is_protocol and cls.__init__ is Protocol.__init__:
             cls.__init__ = _no_init_or_replace_init
 
 
@@ -1930,7 +1922,8 @@ class _AnnotatedAlias(_NotIterable, _GenericAlias, _root=True):
         return (self.__origin__,)
 
 
-class Annotated:
+@_SpecialForm
+def Annotated(self, params):
     """Add context-specific metadata to a type.
 
     Example: Annotated[int, runtime_check.Unsigned] indicates to the
@@ -1977,30 +1970,17 @@ class Annotated:
       where T1, T2 etc. are TypeVars, which would be invalid, because
       only one type should be passed to Annotated.
     """
-
-    __slots__ = ()
-
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("Type Annotated cannot be instantiated.")
-
-    @_tp_cache
-    def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or len(params) < 2:
-            raise TypeError("Annotated[...] should be used "
-                            "with at least two arguments (a type and an "
-                            "annotation).")
-        if _is_unpacked_typevartuple(params[0]):
-            raise TypeError("Annotated[...] should not be used with an "
-                            "unpacked TypeVarTuple")
-        msg = "Annotated[t, ...]: t must be a type."
-        origin = _type_check(params[0], msg, allow_special_forms=True)
-        metadata = tuple(params[1:])
-        return _AnnotatedAlias(origin, metadata)
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(
-            "Cannot subclass {}.Annotated".format(cls.__module__)
-        )
+    if not isinstance(params, tuple) or len(params) < 2:
+        raise TypeError("Annotated[...] should be used "
+                        "with at least two arguments (a type and an "
+                        "annotation).")
+    if _is_unpacked_typevartuple(params[0]):
+        raise TypeError("Annotated[...] should not be used with an "
+                        "unpacked TypeVarTuple")
+    msg = "Annotated[t, ...]: t must be a type."
+    origin = _type_check(params[0], msg, allow_special_forms=True)
+    metadata = tuple(params[1:])
+    return _AnnotatedAlias(origin, metadata)
 
 
 def runtime_checkable(cls):
@@ -2324,6 +2304,8 @@ def no_type_check_decorator(decorator):
     This wraps the decorator with something that wraps the decorated
     function in @no_type_check.
     """
+    import warnings
+    warnings._deprecated("typing.no_type_check_decorator", remove=(3, 15))
     @functools.wraps(decorator)
     def wrapped_decorator(*args, **kwds):
         func = decorator(*args, **kwds)
@@ -2519,8 +2501,6 @@ MappingView = _alias(collections.abc.MappingView, 1)
 KeysView = _alias(collections.abc.KeysView, 1)
 ItemsView = _alias(collections.abc.ItemsView, 2)
 ValuesView = _alias(collections.abc.ValuesView, 1)
-ContextManager = _alias(contextlib.AbstractContextManager, 1, name='ContextManager')
-AsyncContextManager = _alias(contextlib.AbstractAsyncContextManager, 1, name='AsyncContextManager')
 Dict = _alias(dict, 2, inst=False, name='Dict')
 DefaultDict = _alias(collections.defaultdict, 2, name='DefaultDict')
 OrderedDict = _alias(collections.OrderedDict, 2)
@@ -2825,8 +2805,7 @@ class _TypedDictMeta(type):
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
-        if not hasattr(tp_dict, '__total__'):
-            tp_dict.__total__ = total
+        tp_dict.__total__ = total
         return tp_dict
 
     __call__ = dict  # static method
@@ -3178,10 +3157,6 @@ class TextIO(IO[str]):
         pass
 
 
-Pattern = _alias(stdlib_re.Pattern, 1)
-Match = _alias(stdlib_re.Match, 1)
-
-
 def reveal_type[T](obj: T, /) -> T:
     """Reveal the inferred type of a variable.
 
@@ -3366,3 +3341,21 @@ def get_protocol_members(tp: type, /) -> frozenset[str]:
     if not is_protocol(tp):
         raise TypeError(f'{tp!r} is not a Protocol')
     return frozenset(tp.__protocol_attrs__)
+
+
+def __getattr__(attr):
+    """Improve the import time of the typing module.
+
+    Soft-deprecated objects which are costly to create
+    are only created on-demand here.
+    """
+    if attr in {"Pattern", "Match"}:
+        import re
+        obj = _alias(getattr(re, attr), 1)
+    elif attr in {"ContextManager", "AsyncContextManager"}:
+        import contextlib
+        obj = _alias(getattr(contextlib, f"Abstract{attr}"), 1, name=attr)
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+    globals()[attr] = obj
+    return obj

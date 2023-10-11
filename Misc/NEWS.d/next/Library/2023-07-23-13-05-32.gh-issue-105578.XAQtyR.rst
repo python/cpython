@@ -1,0 +1,2 @@
+Deprecate :class:`typing.AnyStr` in favor of the new Type Parameter syntax.
+See PEP 695.

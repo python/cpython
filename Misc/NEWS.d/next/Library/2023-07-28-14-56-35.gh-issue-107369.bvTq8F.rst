@@ -1,0 +1,2 @@
+Optimize :func:`textwrap.indent`. It is ~30% faster for large input. Patch
+by Inada Naoki.

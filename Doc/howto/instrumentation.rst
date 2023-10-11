@@ -292,11 +292,11 @@ Available static markers
 
 .. object:: function__return(str filename, str funcname, int lineno)
 
-   This marker is the converse of :c:func:`function__entry`, and indicates that
+   This marker is the converse of :c:func:`!function__entry`, and indicates that
    execution of a Python function has ended (either via ``return``, or via an
    exception).  It is only triggered for pure-Python (bytecode) functions.
 
-   The arguments are the same as for :c:func:`function__entry`
+   The arguments are the same as for :c:func:`!function__entry`
 
 .. object:: line(str filename, str funcname, int lineno)
 
@@ -304,7 +304,7 @@ Available static markers
    the equivalent of line-by-line tracing with a Python profiler.  It is
    not triggered within C functions.
 
-   The arguments are the same as for :c:func:`function__entry`.
+   The arguments are the same as for :c:func:`!function__entry`.
 
 .. object:: gc__start(int generation)
 

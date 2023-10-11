@@ -1,4 +1,10 @@
 #include "Python.h"
+#include "pycore_time.h"          // _PyTime_t
+
+#include <time.h>                 // gmtime_r()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // gettimeofday()
+#endif
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
 #endif
@@ -464,7 +470,7 @@ _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 
 #ifdef HAVE_CLOCK_GETTIME
 static int
-pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
+pytime_fromtimespec(_PyTime_t *tp, const struct timespec *ts, int raise_exc)
 {
     _PyTime_t t, tv_nsec;
 
@@ -487,7 +493,7 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
 }
 
 int
-_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
+_PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts)
 {
     return pytime_fromtimespec(tp, ts, 1);
 }
@@ -627,6 +633,16 @@ _PyTime_AsNanosecondsObject(_PyTime_t t)
     static_assert(sizeof(long long) >= sizeof(_PyTime_t),
                   "_PyTime_t is larger than long long");
     return PyLong_FromLongLong((long long)ns);
+}
+
+_PyTime_t
+_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round)
+{
+    _PyTime_t tp;
+    if(pytime_from_double(&tp, seconds, round, SEC_TO_NS) < 0) {
+        return -1;
+    }
+    return tp;
 }
 
 
@@ -969,7 +985,7 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     }
 
 #if defined(HAVE_CLOCK_GETTIME_RUNTIME) && defined(HAVE_CLOCK_GETTIME)
-    } /* end of availibity block */
+    } /* end of availability block */
 #endif
 
 #endif   /* !HAVE_CLOCK_GETTIME */

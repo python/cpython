@@ -1364,26 +1364,33 @@ class TextboxTest(unittest.TestCase):
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_LEFT)
         self.mock_win.move.assert_called_with(1, 0)
+        self.mock_win.reset_mock()
+
+    def test_move_right(self):
+        """Test moving the cursor right."""
+        self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_RIGHT)
         self.mock_win.move.assert_called_with(1, 2)
         self.mock_win.reset_mock()
 
-    def test_move_left(self):
-        """Test moving the cursor left."""
+    def test_move_left_and_right(self):
+        """Test moving the cursor left and then right."""
         self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_LEFT)
+        self.mock_win.move.assert_called_with(1, 0)
         self.textbox.do_command(curses.KEY_RIGHT)
         self.mock_win.move.assert_called_with(1, 2)
         self.mock_win.reset_mock()
 
     def test_move_up(self):
-        """Test moving the cursor left."""
+        """Test moving the cursor up."""
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_UP)
         self.mock_win.move.assert_called_with(0, 1)
         self.mock_win.reset_mock()
 
     def test_move_down(self):
-        """Test moving the cursor left."""
+        """Test moving the cursor down."""
         self.mock_win.reset_mock()
         self.textbox.do_command(curses.KEY_DOWN)
         self.mock_win.move.assert_called_with(2, 1)

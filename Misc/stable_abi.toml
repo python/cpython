@@ -2430,3 +2430,35 @@
     added = '3.12'
 [function.PyImport_AddModuleRef]
     added = '3.13'
+[function.PyWeakref_GetRef]
+    added = '3.13'
+[function.PyObject_DelAttr]
+    added = '3.13'
+[function.PyObject_DelAttrString]
+    added = '3.13'
+[function.PyObject_GetOptionalAttr]
+    added = '3.13'
+[function.PyObject_GetOptionalAttrString]
+    added = '3.13'
+[function.PyMapping_GetOptionalItem]
+    added = '3.13'
+[function.PyMapping_GetOptionalItemString]
+    added = '3.13'
+[function.PyModule_Add]
+    added = '3.13'
+[function.PyDict_GetItemRef]
+    added = '3.13'
+[function.PyDict_GetItemStringRef]
+    added = '3.13'
+[function.PyLong_AsInt]
+    added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
+    added = '3.13'
+[function.Py_IsFinalizing]
+    added = '3.13'

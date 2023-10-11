@@ -1,0 +1,2 @@
+Add tests for pickling and copying PyStructSequence objects.
+Patched by Xuehai Pan.

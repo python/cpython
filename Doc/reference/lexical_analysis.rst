@@ -315,7 +315,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <https://www.unicode.org/Public/15.0.0/ucd/PropList.txt>`_ to support backwards
+  <https://www.unicode.org/Public/15.1.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -323,8 +323,8 @@ All identifiers are converted into the normal form NFKC while parsing; compariso
 of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
-15.0.0 can be found at
-https://www.unicode.org/Public/15.0.0/ucd/DerivedCoreProperties.txt
+15.1.0 can be found at
+https://www.unicode.org/Public/15.1.0/ucd/DerivedCoreProperties.txt
 
 
 .. _keywords:
@@ -549,55 +549,59 @@ retained), except that three unescaped quotes in a row terminate the literal.  (
 
 .. _escape-sequences:
 
+
+Escape sequences
+^^^^^^^^^^^^^^^^
+
 Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
 
-+-----------------+---------------------------------+-------+
-| Escape Sequence | Meaning                         | Notes |
-+=================+=================================+=======+
-| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
-+-----------------+---------------------------------+-------+
-| ``\\``          | Backslash (``\``)               |       |
-+-----------------+---------------------------------+-------+
-| ``\'``          | Single quote (``'``)            |       |
-+-----------------+---------------------------------+-------+
-| ``\"``          | Double quote (``"``)            |       |
-+-----------------+---------------------------------+-------+
-| ``\a``          | ASCII Bell (BEL)                |       |
-+-----------------+---------------------------------+-------+
-| ``\b``          | ASCII Backspace (BS)            |       |
-+-----------------+---------------------------------+-------+
-| ``\f``          | ASCII Formfeed (FF)             |       |
-+-----------------+---------------------------------+-------+
-| ``\n``          | ASCII Linefeed (LF)             |       |
-+-----------------+---------------------------------+-------+
-| ``\r``          | ASCII Carriage Return (CR)      |       |
-+-----------------+---------------------------------+-------+
-| ``\t``          | ASCII Horizontal Tab (TAB)      |       |
-+-----------------+---------------------------------+-------+
-| ``\v``          | ASCII Vertical Tab (VT)         |       |
-+-----------------+---------------------------------+-------+
-| ``\ooo``        | Character with octal value      | (2,4) |
-|                 | *ooo*                           |       |
-+-----------------+---------------------------------+-------+
-| ``\xhh``        | Character with hex value *hh*   | (3,4) |
-+-----------------+---------------------------------+-------+
++-------------------------+---------------------------------+-------+
+| Escape Sequence         | Meaning                         | Notes |
++=========================+=================================+=======+
+| ``\``\ <newline>        | Backslash and newline ignored   | \(1)  |
++-------------------------+---------------------------------+-------+
+| ``\\``                  | Backslash (``\``)               |       |
++-------------------------+---------------------------------+-------+
+| ``\'``                  | Single quote (``'``)            |       |
++-------------------------+---------------------------------+-------+
+| ``\"``                  | Double quote (``"``)            |       |
++-------------------------+---------------------------------+-------+
+| ``\a``                  | ASCII Bell (BEL)                |       |
++-------------------------+---------------------------------+-------+
+| ``\b``                  | ASCII Backspace (BS)            |       |
++-------------------------+---------------------------------+-------+
+| ``\f``                  | ASCII Formfeed (FF)             |       |
++-------------------------+---------------------------------+-------+
+| ``\n``                  | ASCII Linefeed (LF)             |       |
++-------------------------+---------------------------------+-------+
+| ``\r``                  | ASCII Carriage Return (CR)      |       |
++-------------------------+---------------------------------+-------+
+| ``\t``                  | ASCII Horizontal Tab (TAB)      |       |
++-------------------------+---------------------------------+-------+
+| ``\v``                  | ASCII Vertical Tab (VT)         |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\\\{ooo}`       | Character with octal value      | (2,4) |
+|                         | *ooo*                           |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\x{hh}`         | Character with hex value *hh*   | (3,4) |
++-------------------------+---------------------------------+-------+
 
 Escape sequences only recognized in string literals are:
 
-+-----------------+---------------------------------+-------+
-| Escape Sequence | Meaning                         | Notes |
-+=================+=================================+=======+
-| ``\N{name}``    | Character named *name* in the   | \(5)  |
-|                 | Unicode database                |       |
-+-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(6)  |
-|                 | *xxxx*                          |       |
-+-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(7)  |
-|                 | *xxxxxxxx*                      |       |
-+-----------------+---------------------------------+-------+
++-------------------------+---------------------------------+-------+
+| Escape Sequence         | Meaning                         | Notes |
++=========================+=================================+=======+
+| :samp:`\\N\\{{name}\\}` | Character named *name* in the   | \(5)  |
+|                         | Unicode database                |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\u{xxxx}`       | Character with 16-bit hex value | \(6)  |
+|                         | *xxxx*                          |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\U{xxxxxxxx}`   | Character with 32-bit hex value | \(7)  |
+|                         | *xxxxxxxx*                      |       |
++-------------------------+---------------------------------+-------+
 
 Notes:
 
@@ -783,7 +787,7 @@ is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
 
 The result is then formatted using the :func:`format` protocol.  The
-format specifier is passed to the :meth:`__format__` method of the
+format specifier is passed to the :meth:`~object.__format__` method of the
 expression or conversion result.  An empty string is passed when the
 format specifier is omitted.  The formatted result is then included in
 the final value of the whole string.
@@ -1041,4 +1045,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] https://www.unicode.org/Public/15.0.0/ucd/NameAliases.txt
+.. [#] https://www.unicode.org/Public/15.1.0/ucd/NameAliases.txt

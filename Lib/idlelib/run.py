@@ -140,11 +140,12 @@ def main(del_exitfunc=False):
 
     capture_warnings(True)
     sys.argv[:] = [""]
-    sockthread = threading.Thread(target=manage_socket,
-                                  name='SockThread',
-                                  args=((LOCALHOST, port),))
-    sockthread.daemon = True
-    sockthread.start()
+    threading.Thread(target=manage_socket,
+                     name='SockThread',
+                     args=((LOCALHOST, port),),
+                     daemon=True,
+                    ).start()
+
     while True:
         try:
             if exit_now:

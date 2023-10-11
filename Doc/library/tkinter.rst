@@ -163,7 +163,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 
@@ -348,7 +348,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find

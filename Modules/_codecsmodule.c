@@ -30,8 +30,8 @@ Copyright (c) Corporation for National Research Initiatives.
 
    ------------------------------------------------------------------------ */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 
 #ifdef MS_WINDOWS
 #include <windows.h>

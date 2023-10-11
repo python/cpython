@@ -15,7 +15,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "datetime.h"
-#include "structmember.h"         // PyMemberDef
+
 
 #include <time.h>
 
@@ -1923,7 +1923,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     }
 
     num = PyTuple_GET_ITEM(tuple, 1);           /* us */
-    us = _PyLong_AsInt(num);
+    us = PyLong_AsInt(num);
     num = NULL;
     if (us == -1 && PyErr_Occurred()) {
         goto Done;
@@ -1941,7 +1941,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     Py_DECREF(num);
 
     num = PyTuple_GET_ITEM(tuple, 1);           /* seconds */
-    s = _PyLong_AsInt(num);
+    s = PyLong_AsInt(num);
     num = NULL;
     if (s == -1 && PyErr_Occurred()) {
         goto Done;
@@ -1951,7 +1951,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     }
 
     num = Py_NewRef(PyTuple_GET_ITEM(tuple, 0));           /* leftover days */
-    d = _PyLong_AsInt(num);
+    d = PyLong_AsInt(num);
     if (d == -1 && PyErr_Occurred()) {
         goto Done;
     }
@@ -2727,13 +2727,13 @@ delta_reduce(PyDateTime_Delta* self, PyObject *Py_UNUSED(ignored))
 
 static PyMemberDef delta_members[] = {
 
-    {"days",         T_INT, OFFSET(days),         READONLY,
+    {"days",         Py_T_INT, OFFSET(days),         Py_READONLY,
      PyDoc_STR("Number of days.")},
 
-    {"seconds",      T_INT, OFFSET(seconds),      READONLY,
+    {"seconds",      Py_T_INT, OFFSET(seconds),      Py_READONLY,
      PyDoc_STR("Number of seconds (>= 0 and less than 1 day).")},
 
-    {"microseconds", T_INT, OFFSET(microseconds), READONLY,
+    {"microseconds", Py_T_INT, OFFSET(microseconds), Py_READONLY,
      PyDoc_STR("Number of microseconds (>= 0 and less than 1 second).")},
     {NULL}
 };
@@ -3590,6 +3590,8 @@ static PyMethodDef date_methods[] = {
     {"replace",     _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return date with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(date_replace),      METH_VARARGS | METH_KEYWORDS},
+
     {"__reduce__", (PyCFunction)date_reduce,        METH_NOARGS,
      PyDoc_STR("__reduce__() -> (cls, state)")},
 
@@ -3791,7 +3793,7 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *args, *state;
     PyObject *getinitargs;
 
-    if (_PyObject_LookupAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
+    if (PyObject_GetOptionalAttr(self, &_Py_ID(__getinitargs__), &getinitargs) < 0) {
         return NULL;
     }
     if (getinitargs != NULL) {
@@ -4719,6 +4721,8 @@ static PyMethodDef time_methods[] = {
     {"replace",     _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return time with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(time_replace),          METH_VARARGS | METH_KEYWORDS},
+
      {"fromisoformat", (PyCFunction)time_fromisoformat, METH_O | METH_CLASS,
      PyDoc_STR("string -> time from a string in ISO 8601 format")},
 
@@ -5136,9 +5140,9 @@ static PyObject *
 datetime_utcnow(PyObject *cls, PyObject *dummy)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "datetime.utcnow() is deprecated and scheduled for removal in a "
+        "datetime.datetime.utcnow() is deprecated and scheduled for removal in a "
         "future version. Use timezone-aware objects to represent datetimes "
-        "in UTC: datetime.now(datetime.UTC).", 1))
+        "in UTC: datetime.datetime.now(datetime.UTC).", 1))
     {
         return NULL;
     }
@@ -5179,9 +5183,9 @@ static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-        "datetime.utcfromtimestamp() is deprecated and scheduled for removal "
+        "datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal "
         "in a future version. Use timezone-aware objects to represent "
-        "datetimes in UTC: datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
+        "datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).", 1))
     {
         return NULL;
     }
@@ -6579,6 +6583,8 @@ static PyMethodDef datetime_methods[] = {
     {"replace",     _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("Return datetime with new specified fields.")},
 
+    {"__replace__", _PyCFunction_CAST(datetime_replace),      METH_VARARGS | METH_KEYWORDS},
+
     {"astimezone",  _PyCFunction_CAST(datetime_astimezone), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("tz -> convert to local time in new timezone tz\n")},
 
@@ -6834,8 +6840,7 @@ _datetime_exec(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "datetime_CAPI", x) < 0) {
-        Py_DECREF(x);
+    if (PyModule_Add(module, "datetime_CAPI", x) < 0) {
         return -1;
     }
 

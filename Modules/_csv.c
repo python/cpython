@@ -11,7 +11,8 @@ module instead.
 #define MODULE_VERSION "1.0"
 
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
 #include <stdbool.h>
 
 /*[clinic input]
@@ -232,7 +233,7 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        value = _PyLong_AsInt(src);
+        value = PyLong_AsInt(src);
         if (value == -1 && PyErr_Occurred()) {
             return -1;
         }
@@ -336,9 +337,9 @@ dialect_check_quoting(int quoting)
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-    { "skipinitialspace",   T_BOOL, D_OFF(skipinitialspace), READONLY },
-    { "doublequote",        T_BOOL, D_OFF(doublequote), READONLY },
-    { "strict",             T_BOOL, D_OFF(strict), READONLY },
+    { "skipinitialspace",   Py_T_BOOL, D_OFF(skipinitialspace), Py_READONLY },
+    { "doublequote",        Py_T_BOOL, D_OFF(doublequote), Py_READONLY },
+    { "strict",             Py_T_BOOL, D_OFF(strict), Py_READONLY },
     { NULL }
 };
 
@@ -970,8 +971,8 @@ static struct PyMethodDef Reader_methods[] = {
 #define R_OFF(x) offsetof(ReaderObj, x)
 
 static struct PyMemberDef Reader_memberlist[] = {
-    { "dialect", T_OBJECT, R_OFF(dialect), READONLY },
-    { "line_num", T_ULONG, R_OFF(line_num), READONLY },
+    { "dialect", _Py_T_OBJECT, R_OFF(dialect), Py_READONLY },
+    { "line_num", Py_T_ULONG, R_OFF(line_num), Py_READONLY },
     { NULL }
 };
 
@@ -1364,7 +1365,7 @@ static struct PyMethodDef Writer_methods[] = {
 #define W_OFF(x) offsetof(WriterObj, x)
 
 static struct PyMemberDef Writer_memberlist[] = {
-    { "dialect", T_OBJECT, W_OFF(dialect), READONLY },
+    { "dialect", _Py_T_OBJECT, W_OFF(dialect), Py_READONLY },
     { NULL }
 };
 
@@ -1450,7 +1451,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    if (_PyObject_LookupAttr(output_file,
+    if (PyObject_GetOptionalAttr(output_file,
                              module_state->str_write,
                              &self->write) < 0) {
         Py_DECREF(self);

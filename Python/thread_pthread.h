@@ -1,4 +1,5 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_pythread.h"      // _POSIX_SEMAPHORES
 
 /* Posix threads interface */
 
@@ -84,10 +85,10 @@
 /* On FreeBSD 4.x, _POSIX_SEMAPHORES is defined empty, so
    we need to add 0 to make it work there as well. */
 #if (_POSIX_SEMAPHORES+0) == -1
-#define HAVE_BROKEN_POSIX_SEMAPHORES
+#  define HAVE_BROKEN_POSIX_SEMAPHORES
 #else
-#include <semaphore.h>
-#include <errno.h>
+#  include <semaphore.h>
+#  include <errno.h>
 #endif
 #endif
 
@@ -356,7 +357,15 @@ PyThread_exit_thread(void)
 {
     if (!initialized)
         exit(0);
+#if defined(__wasi__)
+    /*
+     * wasi-threads doesn't have pthread_exit right now
+     * cf. https://github.com/WebAssembly/wasi-threads/issues/7
+     */
+    abort();
+#else
     pthread_exit(0);
+#endif
 }
 
 #ifdef USE_SEMAPHORES

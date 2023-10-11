@@ -19,8 +19,10 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias, UnionType
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
+UnionType = type(int | str)
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -236,7 +238,7 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, iterable[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
     Apply a function of two arguments cumulatively to the items of a sequence
     or iterable, from left to right, so as to reduce the iterable to a single
@@ -930,6 +932,9 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
+        import weakref # see comment in singledispatch function
+        self._method_cache = weakref.WeakKeyDictionary()
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -938,13 +943,27 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
+        if self._method_cache is not None:
+            try:
+                _method = self._method_cache[obj]
+            except TypeError:
+                self._method_cache = None
+            except KeyError:
+                pass
+            else:
+                return _method
+
+        dispatch = self.dispatcher.dispatch
         def _method(*args, **kwargs):
-            method = self.dispatcher.dispatch(args[0].__class__)
-            return method.__get__(obj, cls)(*args, **kwargs)
+            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+
+        if self._method_cache is not None:
+            self._method_cache[obj] = _method
+
         return _method
 
     @property
@@ -953,15 +972,17 @@ class singledispatchmethod:
 
 
 ################################################################################
-### cached_property() - computed once per instance, cached as attribute
+### cached_property() - property result cached as instance attribute
 ################################################################################
 
+_NOT_FOUND = object()
 
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -986,15 +1007,17 @@ class cached_property:
                 f"instance to cache {self.attrname!r} property."
             )
             raise TypeError(msg) from None
-        val = self.func(instance)
-        try:
-            cache[self.attrname] = val
-        except TypeError:
-            msg = (
-                f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                f"does not support item assignment for caching {self.attrname!r} property."
-            )
-            raise TypeError(msg) from None
+        val = cache.get(self.attrname, _NOT_FOUND)
+        if val is _NOT_FOUND:
+            val = self.func(instance)
+            try:
+                cache[self.attrname] = val
+            except TypeError:
+                msg = (
+                    f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                    f"does not support item assignment for caching {self.attrname!r} property."
+                )
+                raise TypeError(msg) from None
         return val
 
     __class_getitem__ = classmethod(GenericAlias)

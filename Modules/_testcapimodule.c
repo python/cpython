@@ -5,45 +5,30 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* This module tests the public (Include/ and Include/cpython/) C API.
-   The internal C API must not be used here: use _testinternalcapi for that.
-
-   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   macro defined, but only the public C API must be tested here. */
-
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
-
-/* Always enable assertions */
-#undef NDEBUG
-
-#define PY_SSIZE_T_CLEAN
-
-#include "Python.h"
-#include "frameobject.h"          // PyFrame_New
-#include "marshal.h"              // PyMarshal_WriteLongToFile
-#include "structmember.h"         // for offsetof(), T_OBJECT
-#include <float.h>                // FLT_MAX
-#include <signal.h>
-#ifndef MS_WINDOWS
-#include <unistd.h>
-#endif
-
-#ifdef HAVE_SYS_WAIT_H
-#include <sys/wait.h>             // W_STOPCODE
-#endif
-
-#ifdef Py_BUILD_CORE
-#  error "_testcapi must test the public Python C API, not CPython internal C API"
-#endif
-
-#ifdef bool
-#  error "The public headers should not include <stdbool.h>, see bpo-46748"
-#endif
-
+// Include parts.h first since it takes care of NDEBUG and Py_BUILD_CORE macros
+// and including Python.h.
+//
 // Several parts of this module are broken out into files in _testcapi/.
 // Include definitions from there.
 #include "_testcapi/parts.h"
+
+#include "frameobject.h"          // PyFrame_New()
+#include "marshal.h"              // PyMarshal_WriteLongToFile()
+
+#include <float.h>                // FLT_MAX
+#include <signal.h>
+#include <stddef.h>               // offsetof()
+
+#ifdef HAVE_SYS_WAIT_H
+#  include <sys/wait.h>           // W_STOPCODE
+#endif
+
+#ifdef bool
+#  error "The public headers should not include <stdbool.h>, see gh-48924"
+#endif
+
+#include "_testcapi/util.h"
+
 
 // Forward declarations
 static struct PyModuleDef _testcapimodule;
@@ -219,10 +204,13 @@ test_dict_inner(int count)
         Py_DECREF(v);
     }
 
+    k = v = UNINITIALIZED_PTR;
     while (PyDict_Next(dict, &pos, &k, &v)) {
         PyObject *o;
         iterations++;
 
+        assert(k != UNINITIALIZED_PTR);
+        assert(v != UNINITIALIZED_PTR);
         i = PyLong_AS_LONG(v) + 1;
         o = PyLong_FromLong(i);
         if (o == NULL)
@@ -232,7 +220,10 @@ test_dict_inner(int count)
             return -1;
         }
         Py_DECREF(o);
+        k = v = UNINITIALIZED_PTR;
     }
+    assert(k == UNINITIALIZED_PTR);
+    assert(v == UNINITIALIZED_PTR);
 
     Py_DECREF(dict);
 
@@ -260,26 +251,6 @@ test_dict_iteration(PyObject* self, PyObject *Py_UNUSED(ignored))
     }
 
     Py_RETURN_NONE;
-}
-
-static PyObject*
-dict_getitem_knownhash(PyObject *self, PyObject *args)
-{
-    PyObject *mp, *key, *result;
-    Py_ssize_t hash;
-
-    if (!PyArg_ParseTuple(args, "OOn:dict_getitem_knownhash",
-                          &mp, &key, &hash)) {
-        return NULL;
-    }
-
-    result = _PyDict_GetItem_KnownHash(mp, key, (Py_hash_t)hash);
-    if (result == NULL && !PyErr_Occurred()) {
-        _PyErr_SetKeyError(key);
-        return NULL;
-    }
-
-    return Py_XNewRef(result);
 }
 
 /* Issue #4701: Check that PyObject_Hash implicitly calls
@@ -637,6 +608,30 @@ test_get_type_qualname(PyObject *self, PyObject *Py_UNUSED(ignored))
 
   done:
     Py_DECREF(HeapTypeNameType);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_get_type_dict(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    /* Test for PyType_GetDict */
+
+    // Assert ints have a `to_bytes` method
+    PyObject *long_dict = PyType_GetDict(&PyLong_Type);
+    assert(long_dict);
+    assert(PyDict_GetItemString(long_dict, "to_bytes")); // borrowed ref
+    Py_DECREF(long_dict);
+
+    // Make a new type, add an attribute to it and assert it's there
+    PyObject *HeapTypeNameType = PyType_FromSpec(&HeapTypeNameType_Spec);
+    assert(HeapTypeNameType);
+    assert(PyObject_SetAttrString(
+        HeapTypeNameType, "new_attr", Py_NewRef(Py_None)) >= 0);
+    PyObject *type_dict = PyType_GetDict((PyTypeObject*)HeapTypeNameType);
+    assert(type_dict);
+    assert(PyDict_GetItemString(type_dict, "new_attr")); // borrowed ref
+    Py_DECREF(HeapTypeNameType);
+    Py_DECREF(type_dict);
     Py_RETURN_NONE;
 }
 
@@ -1269,9 +1264,15 @@ test_pep3118_obsolete_write_locks(PyObject* self, PyObject *Py_UNUSED(ignored))
     if (ret != -1 || match == 0)
         goto error;
 
+    PyObject *mod_io = PyImport_ImportModule("_io");
+    if (mod_io == NULL) {
+        return NULL;
+    }
+
     /* bytesiobuf_getbuffer() */
-    PyTypeObject *type = (PyTypeObject *)_PyImport_GetModuleAttrString(
-            "_io", "_BytesIOBuffer");
+    PyTypeObject *type = (PyTypeObject *)PyObject_GetAttrString(
+            mod_io, "_BytesIOBuffer");
+    Py_DECREF(mod_io);
     if (type == NULL) {
         return NULL;
     }
@@ -1314,19 +1315,13 @@ static PyObject *
 test_PyBuffer_SizeFromFormat(PyObject *self, PyObject *args)
 {
     const char *format;
-    Py_ssize_t result;
 
     if (!PyArg_ParseTuple(args, "s:test_PyBuffer_SizeFromFormat",
                           &format)) {
         return NULL;
     }
 
-    result = PyBuffer_SizeFromFormat(format);
-    if (result == -1) {
-        return NULL;
-    }
-
-    return PyLong_FromSsize_t(result);
+    RETURN_SIZE(PyBuffer_SizeFromFormat(format));
 }
 
 /* Test that the fatal error from not having a current thread doesn't
@@ -1407,104 +1402,6 @@ run_in_subinterp(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
         return NULL;
     }
-    r = PyRun_SimpleStringFlags(code, &cflags);
-    Py_EndInterpreter(substate);
-
-    PyThreadState_Swap(mainstate);
-
-    return PyLong_FromLong(r);
-}
-
-/* To run some code in a sub-interpreter. */
-static PyObject *
-run_in_subinterp_with_config(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    const char *code;
-    int use_main_obmalloc = -1;
-    int allow_fork = -1;
-    int allow_exec = -1;
-    int allow_threads = -1;
-    int allow_daemon_threads = -1;
-    int check_multi_interp_extensions = -1;
-    int gil = -1;
-    int r;
-    PyThreadState *substate, *mainstate;
-    /* only initialise 'cflags.cf_flags' to test backwards compatibility */
-    PyCompilerFlags cflags = {0};
-
-    static char *kwlist[] = {"code",
-                             "use_main_obmalloc",
-                             "allow_fork",
-                             "allow_exec",
-                             "allow_threads",
-                             "allow_daemon_threads",
-                             "check_multi_interp_extensions",
-                             "gil",
-                             NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "s$ppppppi:run_in_subinterp_with_config", kwlist,
-                    &code, &use_main_obmalloc,
-                    &allow_fork, &allow_exec,
-                    &allow_threads, &allow_daemon_threads,
-                    &check_multi_interp_extensions,
-                    &gil)) {
-        return NULL;
-    }
-    if (use_main_obmalloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing use_main_obmalloc");
-        return NULL;
-    }
-    if (allow_fork < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_fork");
-        return NULL;
-    }
-    if (allow_exec < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_exec");
-        return NULL;
-    }
-    if (allow_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_threads");
-        return NULL;
-    }
-    if (gil < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing gil");
-        return NULL;
-    }
-    if (allow_daemon_threads < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing allow_daemon_threads");
-        return NULL;
-    }
-    if (check_multi_interp_extensions < 0) {
-        PyErr_SetString(PyExc_ValueError, "missing check_multi_interp_extensions");
-        return NULL;
-    }
-
-    mainstate = PyThreadState_Get();
-
-    PyThreadState_Swap(NULL);
-
-    const PyInterpreterConfig config = {
-        .use_main_obmalloc = use_main_obmalloc,
-        .allow_fork = allow_fork,
-        .allow_exec = allow_exec,
-        .allow_threads = allow_threads,
-        .allow_daemon_threads = allow_daemon_threads,
-        .check_multi_interp_extensions = check_multi_interp_extensions,
-        .gil = gil,
-    };
-    PyStatus status = Py_NewInterpreterFromConfig(&substate, &config);
-    if (PyStatus_Exception(status)) {
-        /* Since no new thread state was created, there is no exception to
-           propagate; raise a fresh one after swapping in the old thread
-           state. */
-        PyThreadState_Swap(mainstate);
-        _PyErr_SetFromPyStatus(status);
-        PyObject *exc = PyErr_GetRaisedException();
-        PyErr_SetString(PyExc_RuntimeError, "sub-interpreter creation failed");
-        _PyErr_ChainExceptions1(exc);
-        return NULL;
-    }
-    assert(substate != NULL);
     r = PyRun_SimpleStringFlags(code, &cflags);
     Py_EndInterpreter(substate);
 
@@ -1954,7 +1851,7 @@ return_result_with_error(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject*
+static PyObject *
 getitem_with_error(PyObject *self, PyObject *args)
 {
     PyObject *map, *key;
@@ -2032,90 +1929,6 @@ py_w_stopcode(PyObject *self, PyObject *args)
 
 
 static PyObject *
-get_mapping_keys(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Keys(obj);
-}
-
-static PyObject *
-get_mapping_values(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Values(obj);
-}
-
-static PyObject *
-get_mapping_items(PyObject* self, PyObject *obj)
-{
-    return PyMapping_Items(obj);
-}
-
-static PyObject *
-test_mapping_has_key_string(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyObject *context = PyDict_New();
-    PyObject *val = PyLong_FromLong(1);
-
-    // Since this uses `const char*` it is easier to test this in C:
-    PyDict_SetItemString(context, "a", val);
-    if (!PyMapping_HasKeyString(context, "a")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Existing mapping key does not exist");
-        return NULL;
-    }
-    if (PyMapping_HasKeyString(context, "b")) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Missing mapping key exists");
-        return NULL;
-    }
-
-    Py_DECREF(val);
-    Py_DECREF(context);
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-mapping_has_key(PyObject* self, PyObject *args)
-{
-    PyObject *context, *key;
-    if (!PyArg_ParseTuple(args, "OO", &context, &key)) {
-        return NULL;
-    }
-    return PyLong_FromLong(PyMapping_HasKey(context, key));
-}
-
-static PyObject *
-sequence_set_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence, *obj;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "OnnO", &sequence, &i1, &i2, &obj)) {
-        return NULL;
-    }
-
-    int res = PySequence_SetSlice(sequence, i1, i2, obj);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-sequence_del_slice(PyObject* self, PyObject *args)
-{
-    PyObject *sequence;
-    Py_ssize_t i1, i2;
-    if (!PyArg_ParseTuple(args, "Onn", &sequence, &i1, &i2)) {
-        return NULL;
-    }
-
-    int res = PySequence_DelSlice(sequence, i1, i2);
-    if (res == -1) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
 test_pythread_tss_key_state(PyObject *self, PyObject *args)
 {
     Py_tss_t tss_key = Py_tss_NEEDS_INIT;
@@ -2170,13 +1983,6 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
 }
 
 
-static PyObject*
-new_hamt(PyObject *self, PyObject *args)
-{
-    return _PyContext_NewHamtForTests();
-}
-
-
 /* def bad_get(self, obj, cls):
        cls()
        return repr(self)
@@ -2215,73 +2021,27 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
 #endif
-
-
-static PyObject *
-sequence_getitem(PyObject *self, PyObject *args)
-{
-    PyObject *seq;
-    Py_ssize_t i;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    return PySequence_GetItem(seq, i);
-}
-
-
-static PyObject *
-sequence_setitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq, *val;
-    if (!PyArg_ParseTuple(args, "OnO", &seq, &i, &val)) {
-        return NULL;
-    }
-    if (PySequence_SetItem(seq, i, val)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
-static PyObject *
-sequence_delitem(PyObject *self, PyObject *args)
-{
-    Py_ssize_t i;
-    PyObject *seq;
-    if (!PyArg_ParseTuple(args, "On", &seq, &i)) {
-        return NULL;
-    }
-    if (PySequence_DelItem(seq, i)) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-hasattr_string(PyObject *self, PyObject* args)
-{
-    PyObject* obj;
-    PyObject* attr_name;
-
-    if (!PyArg_UnpackTuple(args, "hasattr_string", 2, 2, &obj, &attr_name)) {
-        return NULL;
-    }
-
-    if (!PyUnicode_Check(attr_name)) {
-        PyErr_SetString(PyExc_TypeError, "attribute name must a be string");
-        return PyErr_Occurred();
-    }
-
-    const char *name_str = PyUnicode_AsUTF8(attr_name);
-    if (PyObject_HasAttrString(obj, name_str)) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
 
 
 /* Functions for testing C calling conventions (METH_*) are named meth_*,
@@ -2698,8 +2458,8 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate2 = PyThreadState_Get();
     assert(tstate2 == tstate);
 
-    // private _PyThreadState_UncheckedGet()
-    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    // PyThreadState_GetUnchecked()
+    PyThreadState *tstate3 = PyThreadState_GetUnchecked();
     assert(tstate3 == tstate);
 
     // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
@@ -2713,11 +2473,6 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     assert(dict != NULL);
     assert(PyDict_Check(dict));
     // dict is a borrowed reference
-
-    // private _PyThreadState_GetDict()
-    PyObject *dict2 = _PyThreadState_GetDict(tstate);
-    assert(dict2 == dict);
-    // dict2 is a borrowed reference
 
     // PyThreadState_GetInterpreter()
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
@@ -3168,7 +2923,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 
@@ -3294,37 +3049,6 @@ function_set_kw_defaults(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-struct atexit_data {
-    int called;
-};
-
-static void
-callback(void *data)
-{
-    ((struct atexit_data *)data)->called += 1;
-}
-
-static PyObject *
-test_atexit(PyObject *self, PyObject *Py_UNUSED(args))
-{
-    PyThreadState *oldts = PyThreadState_Swap(NULL);
-    PyThreadState *tstate = Py_NewInterpreter();
-
-    struct atexit_data data = {0};
-    int res = _Py_AtExit(tstate->interp, callback, (void *)&data);
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(oldts);
-    if (res < 0) {
-        return NULL;
-    }
-    if (data.called == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "atexit callback not called");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-
 static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
@@ -3372,13 +3096,141 @@ error:
 }
 
 
+static PyObject *
+test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // Ignore PyWeakref_GetObject() deprecation, we test it on purpose
+    _Py_COMP_DIAG_PUSH
+    _Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
+    // Create a new heap type, create an instance of this type, and delete the
+    // type. This object supports weak references.
+    PyObject *new_type = PyObject_CallFunction((PyObject*)&PyType_Type,
+                                               "s(){}", "TypeName");
+    if (new_type == NULL) {
+        return NULL;
+    }
+    PyObject *obj = PyObject_CallNoArgs(new_type);
+    Py_DECREF(new_type);
+    if (obj == NULL) {
+        return NULL;
+    }
+    Py_ssize_t refcnt = Py_REFCNT(obj);
+
+    // test PyWeakref_NewRef(), reference is alive
+    PyObject *weakref = PyWeakref_NewRef(obj, NULL);
+    if (weakref == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    // test PyWeakref_Check(), valid weakref object
+    assert(PyWeakref_Check(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(PyWeakref_CheckRefExact(weakref));
+    assert(Py_REFCNT(obj) == refcnt);
+
+    // test PyWeakref_GetRef(), reference is alive
+    PyObject *ref = UNINITIALIZED_PTR;
+    assert(PyWeakref_GetRef(weakref, &ref) == 1);
+    assert(ref == obj);
+    assert(Py_REFCNT(obj) == (refcnt + 1));
+    Py_DECREF(ref);
+
+    // test PyWeakref_GetObject(), reference is alive
+    ref = PyWeakref_GetObject(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is alive
+    ref = PyWeakref_GET_OBJECT(weakref);  // borrowed ref
+    assert(ref == obj);
+
+    // delete the referenced object: clear the weakref
+    assert(Py_REFCNT(obj) == 1);
+    Py_DECREF(obj);
+
+    // test PyWeakref_GET_OBJECT(), reference is dead
+    assert(PyWeakref_GET_OBJECT(weakref) == Py_None);
+
+    // test PyWeakref_GetRef(), reference is dead
+    ref = UNINITIALIZED_PTR;
+    assert(PyWeakref_GetRef(weakref, &ref) == 0);
+    assert(ref == NULL);
+
+    // test PyWeakref_Check(), not a weakref object
+    PyObject *invalid_weakref = Py_None;
+    assert(!PyWeakref_Check(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+    assert(!PyWeakref_CheckRefExact(invalid_weakref));
+
+    // test PyWeakref_GetRef(), invalid type
+    assert(!PyErr_Occurred());
+    ref = UNINITIALIZED_PTR;
+    assert(PyWeakref_GetRef(invalid_weakref, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_TypeError));
+    PyErr_Clear();
+    assert(ref == NULL);
+
+    // test PyWeakref_GetObject(), invalid type
+    assert(PyWeakref_GetObject(invalid_weakref) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    // test PyWeakref_GetRef(NULL)
+    ref = UNINITIALIZED_PTR;
+    assert(PyWeakref_GetRef(NULL, &ref) == -1);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    assert(ref == NULL);
+    PyErr_Clear();
+
+    // test PyWeakref_GetObject(NULL)
+    assert(PyWeakref_GetObject(NULL) == NULL);
+    assert(PyErr_ExceptionMatches(PyExc_SystemError));
+    PyErr_Clear();
+
+    Py_DECREF(weakref);
+
+    Py_RETURN_NONE;
+
+    _Py_COMP_DIAG_POP
+}
+
+
+static PyObject *
+sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+    PyObject *result = PySys_GetObject(name);
+    if (result == NULL) {
+        result = PyExc_AttributeError;
+    }
+    return Py_NewRef(result);
+}
+
+static PyObject *
+sys_setobject(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    const char *name;
+    Py_ssize_t size;
+    PyObject *value;
+    if (!PyArg_ParseTuple(args, "z#O", &name, &size, &value)) {
+        return NULL;
+    }
+    NULLABLE(value);
+    RETURN_INT(PySys_SetObject(name, value));
+}
+
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
     {"test_sizeof_c_types",     test_sizeof_c_types,             METH_NOARGS},
     {"test_list_api",           test_list_api,                   METH_NOARGS},
     {"test_dict_iteration",     test_dict_iteration,             METH_NOARGS},
-    {"dict_getitem_knownhash",  dict_getitem_knownhash,          METH_VARARGS},
     {"test_lazy_hash_inheritance",      test_lazy_hash_inheritance,METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
@@ -3404,6 +3256,7 @@ static PyMethodDef TestMethods[] = {
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
     {"test_get_type_qualname",    test_get_type_qualname,        METH_NOARGS},
+    {"test_get_type_dict",        test_get_type_dict,            METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
 #ifndef MS_WINDOWS
     {"_spawn_pthread_waiter",   spawn_pthread_waiter,            METH_NOARGS},
@@ -3421,9 +3274,6 @@ static PyMethodDef TestMethods[] = {
     {"crash_no_current_thread", crash_no_current_thread,         METH_NOARGS},
     {"test_current_tstate_matches", test_current_tstate_matches, METH_NOARGS},
     {"run_in_subinterp",        run_in_subinterp,                METH_VARARGS},
-    {"run_in_subinterp_with_config",
-     _PyCFunction_CAST(run_in_subinterp_with_config),
-     METH_VARARGS | METH_KEYWORDS},
     {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     {"create_cfunction",        create_cfunction,                METH_NOARGS},
@@ -3452,23 +3302,12 @@ static PyMethodDef TestMethods[] = {
 #ifdef W_STOPCODE
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
-    {"get_mapping_keys", get_mapping_keys, METH_O},
-    {"get_mapping_values", get_mapping_values, METH_O},
-    {"get_mapping_items", get_mapping_items, METH_O},
-    {"test_mapping_has_key_string", test_mapping_has_key_string, METH_NOARGS},
-    {"mapping_has_key", mapping_has_key, METH_VARARGS},
-    {"sequence_set_slice", sequence_set_slice, METH_VARARGS},
-    {"sequence_del_slice", sequence_del_slice, METH_VARARGS},
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"hamt", new_hamt, METH_NOARGS},
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
-    {"sequence_getitem", sequence_getitem, METH_VARARGS},
-    {"sequence_setitem", sequence_setitem, METH_VARARGS},
-    {"sequence_delitem", sequence_delitem, METH_VARARGS},
-    {"hasattr_string", hasattr_string, METH_VARARGS},
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
@@ -3514,8 +3353,10 @@ static PyMethodDef TestMethods[] = {
     {"function_set_defaults", function_set_defaults, METH_VARARGS, NULL},
     {"function_get_kw_defaults", function_get_kw_defaults, METH_O, NULL},
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
-    {"test_atexit", test_atexit, METH_NOARGS},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
+    {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
+    {"sys_getobject", sys_getobject, METH_O},
+    {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3973,7 +3814,7 @@ ContainerNoGC_dealloc(ContainerNoGCobject *self)
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
-    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+    {"value", _Py_T_OBJECT, offsetof(ContainerNoGCobject, value), Py_READONLY,
      PyDoc_STR("a container value for test purposes")},
     {0}
 };
@@ -4089,6 +3930,7 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -4109,13 +3951,13 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_Heaptype(m) < 0) {
         return NULL;
     }
+    if (_PyTestCapi_Init_Abstract(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_Unicode(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_GetArgs(m) < 0) {
-        return NULL;
-    }
-    if (_PyTestCapi_Init_PyTime(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_DateTime(m) < 0) {
@@ -4134,6 +3976,12 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Float(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Dict(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Set(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {
@@ -4157,18 +4005,15 @@ PyInit__testcapi(void)
     if (_PyTestCapi_Init_GC(m) < 0) {
         return NULL;
     }
-
-#ifndef LIMITED_API_AVAILABLE
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_False);
-#else
-    PyModule_AddObjectRef(m, "LIMITED_API_AVAILABLE", Py_True);
+    if (_PyTestCapi_Init_PyAtomic(m) < 0) {
+        return NULL;
+    }
     if (_PyTestCapi_Init_VectorcallLimited(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_HeaptypeRelative(m) < 0) {
         return NULL;
     }
-#endif
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

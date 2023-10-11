@@ -115,7 +115,7 @@
       :meth:`TopologicalSorter.done` is less than the number that have been
       returned by :meth:`TopologicalSorter.get_ready`.
 
-      The :meth:`~TopologicalSorter.__bool__` method of this class defers to
+      The :meth:`~object.__bool__` method of this class defers to
       this function, so instead of::
 
           if ts.is_active():
@@ -204,7 +204,7 @@ The :mod:`graphlib` module defines the following exception classes:
    in the working graph. If multiple cycles exist, only one undefined choice among them will
    be reported and included in the exception.
 
-   The detected cycle can be accessed via the second element in the :attr:`~CycleError.args`
+   The detected cycle can be accessed via the second element in the :attr:`~BaseException.args`
    attribute of the exception instance and consists in a list of nodes, such that each node is,
    in the graph, an immediate predecessor of the next node in the list. In the reported list,
    the first and the last node will be the same, to make it clear that it is cyclic.
