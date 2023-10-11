@@ -381,6 +381,10 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(ValueError, buildvalue, 'C', -1)
         self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
 
+        # gh-84489
+        self.assertRaises(ValueError, buildvalue, '(C )i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '[C ]i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '{Ci }i', -1, 2, 3)
 
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
