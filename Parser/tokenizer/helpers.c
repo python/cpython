@@ -61,7 +61,7 @@ error:
 }
 
 int
-syntaxerror(struct tok_state *tok, const char *format, ...)
+_PyTokenizer_syntaxerror(struct tok_state *tok, const char *format, ...)
 {
     // This errors are cleaned on startup. Todo: Fix it.
     va_list vargs;
@@ -72,7 +72,7 @@ syntaxerror(struct tok_state *tok, const char *format, ...)
 }
 
 int
-syntaxerror_known_range(struct tok_state *tok,
+_PyTokenizer_syntaxerror_known_range(struct tok_state *tok,
                         int col_offset, int end_col_offset,
                         const char *format, ...)
 {
@@ -84,7 +84,7 @@ syntaxerror_known_range(struct tok_state *tok,
 }
 
 int
-indenterror(struct tok_state *tok)
+_PyTokenizer_indenterror(struct tok_state *tok)
 {
     tok->done = E_TABSPACE;
     tok->cur = tok->inp;
@@ -92,7 +92,7 @@ indenterror(struct tok_state *tok)
 }
 
 char *
-error_ret(struct tok_state *tok) /* XXX */
+_PyTokenizer_error_ret(struct tok_state *tok) /* XXX */
 {
     tok->decoding_erred = 1;
     if ((tok->fp != NULL || tok->readline != NULL) && tok->buf != NULL) {/* see _PyTokenizer_Free */
@@ -106,7 +106,7 @@ error_ret(struct tok_state *tok) /* XXX */
 }
 
 int
-warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
+_PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_char)
 {
     if (!tok->report_warnings) {
         return 0;
@@ -129,7 +129,7 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
             /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-            return syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
+            return _PyTokenizer_syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
         }
 
         return -1;
@@ -140,7 +140,7 @@ warn_invalid_escape_sequence(struct tok_state *tok, int first_invalid_escape_cha
 }
 
 int
-parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
+_PyTokenizer_parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
 {
     if (!tok->report_warnings) {
         return 0;
@@ -161,7 +161,7 @@ parser_warn(struct tok_state *tok, PyObject *category, const char *format, ...)
             /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-            syntaxerror(tok, "%U", errmsg);
+            _PyTokenizer_syntaxerror(tok, "%U", errmsg);
         }
         goto error;
     }
@@ -178,7 +178,7 @@ error:
 /* ############## STRING MANIPULATION ############## */
 
 char *
-new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
+_PyTokenizer_new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
 {
     char* result = (char *)PyMem_Malloc(len + 1);
     if (!result) {
@@ -191,7 +191,7 @@ new_string(const char *s, Py_ssize_t len, struct tok_state *tok)
 }
 
 PyObject *
-translate_into_utf8(const char* str, const char* enc) {
+_PyTokenizer_translate_into_utf8(const char* str, const char* enc) {
     PyObject *utf8;
     PyObject* buf = PyUnicode_Decode(str, strlen(str), enc, NULL);
     if (buf == NULL)
@@ -202,7 +202,7 @@ translate_into_utf8(const char* str, const char* enc) {
 }
 
 char *
-translate_newlines(const char *s, int exec_input, int preserve_crlf,
+_PyTokenizer_translate_newlines(const char *s, int exec_input, int preserve_crlf,
                    struct tok_state *tok) {
     int skip_next_lf = 0;
     size_t needed_length = strlen(s) + 2, final_length;
@@ -255,7 +255,7 @@ translate_newlines(const char *s, int exec_input, int preserve_crlf,
    invoke the set_readline function with the new encoding.
    Return 1 on success, 0 on failure.  */
 int
-check_bom(int get_char(struct tok_state *),
+_PyTokenizer_check_bom(int get_char(struct tok_state *),
           void unget_char(int, struct tok_state *),
           int set_readline(struct tok_state *, const char *),
           struct tok_state *tok)
@@ -285,7 +285,7 @@ check_bom(int get_char(struct tok_state *),
     }
     if (tok->encoding != NULL)
         PyMem_Free(tok->encoding);
-    tok->encoding = new_string("utf-8", 5, tok);
+    tok->encoding = _PyTokenizer_new_string("utf-8", 5, tok);
     if (!tok->encoding)
         return 0;
     /* No need to set_readline: input is already utf-8 */
@@ -352,14 +352,14 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
                 t++;
 
             if (begin < t) {
-                char* r = new_string(begin, t - begin, tok);
+                char* r = _PyTokenizer_new_string(begin, t - begin, tok);
                 const char* q;
                 if (!r)
                     return 0;
                 q = get_normal_name(r);
                 if (r != q) {
                     PyMem_Free(r);
-                    r = new_string(q, strlen(q), tok);
+                    r = _PyTokenizer_new_string(q, strlen(q), tok);
                     if (!r)
                         return 0;
                 }
@@ -376,7 +376,7 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
    This function receives the tok_state and the new encoding.
    Return 1 on success, 0 on failure.  */
 int
-check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
+_PyTokenizer_check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
                   int set_readline(struct tok_state *, const char *))
 {
     char *cs;
@@ -406,7 +406,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
     if (tok->encoding == NULL) {
         assert(tok->decoding_readline == NULL);
         if (strcmp(cs, "utf-8") != 0 && !set_readline(tok, cs)) {
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             PyErr_Format(PyExc_SyntaxError, "encoding problem: %s", cs);
             PyMem_Free(cs);
             return 0;
@@ -414,7 +414,7 @@ check_coding_spec(const char* line, Py_ssize_t size, struct tok_state *tok,
         tok->encoding = cs;
     } else {                /* then, compare cs with BOM */
         if (strcmp(tok->encoding, cs) != 0) {
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             PyErr_Format(PyExc_SyntaxError,
                          "encoding problem: %s with BOM", cs);
             PyMem_Free(cs);
@@ -488,7 +488,7 @@ valid_utf8(const unsigned char* s)
 }
 
 int
-ensure_utf8(char *line, struct tok_state *tok)
+_PyTokenizer_ensure_utf8(char *line, struct tok_state *tok)
 {
     int badchar = 0;
     unsigned char *c;
@@ -516,7 +516,7 @@ ensure_utf8(char *line, struct tok_state *tok)
 
 #if defined(Py_DEBUG)
 void
-print_escape(FILE *f, const char *s, Py_ssize_t size)
+_PyTokenizer_print_escape(FILE *f, const char *s, Py_ssize_t size)
 {
     if (s == NULL) {
         fputs("NULL", f);
@@ -543,7 +543,7 @@ print_escape(FILE *f, const char *s, Py_ssize_t size)
 }
 
 void
-tok_dump(int type, char *start, char *end)
+_PyTokenizer_tok_dump(int type, char *start, char *end)
 {
     fprintf(stderr, "%s", _PyParser_TokenNames[type]);
     if (type == NAME || type == NUMBER || type == STRING || type == OP)

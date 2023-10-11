@@ -128,11 +128,11 @@ struct tok_state {
 #endif
 };
 
-int type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
+int _PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
                          int end_col_offset, const char *start, const char *end);
-int token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
+int _PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end);
 
-struct tok_state *tok_new(void);
+struct tok_state *_PyTokenizer_tok_new(void);
 void _PyTokenizer_Free(struct tok_state *);
 void _PyToken_Free(struct token *);
 void _PyToken_Init(struct token *);

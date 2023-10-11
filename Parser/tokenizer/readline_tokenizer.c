@@ -15,26 +15,26 @@ tok_readline_string(struct tok_state* tok) {
             PyErr_Clear();
             return 1;
         }
-        error_ret(tok);
+        _PyTokenizer_error_ret(tok);
         goto error;
     }
     if(tok->encoding != NULL) {
         if (!PyBytes_Check(raw_line)) {
             PyErr_Format(PyExc_TypeError, "readline() returned a non-bytes object");
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             goto error;
         }
         line = PyUnicode_Decode(PyBytes_AS_STRING(raw_line), PyBytes_GET_SIZE(raw_line),
                                 tok->encoding, "replace");
         Py_CLEAR(raw_line);
         if (line == NULL) {
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             goto error;
         }
     } else {
         if(!PyUnicode_Check(raw_line)) {
             PyErr_Format(PyExc_TypeError, "readline() returned a non-string object");
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             goto error;
         }
         line = raw_line;
@@ -43,7 +43,7 @@ tok_readline_string(struct tok_state* tok) {
     Py_ssize_t buflen;
     const char* buf = PyUnicode_AsUTF8AndSize(line, &buflen);
     if (buf == NULL) {
-        error_ret(tok);
+        _PyTokenizer_error_ret(tok);
         goto error;
     }
 
@@ -51,7 +51,7 @@ tok_readline_string(struct tok_state* tok) {
     // an extra newline character that we may need to artificially
     // add.
     size_t buffer_size = buflen + 2;
-    if (!tok_reserve_buf(tok, buffer_size)) {
+    if (!_PyLexer_tok_reserve_buf(tok, buffer_size)) {
         goto error;
     }
     memcpy(tok->inp, buf, buflen);
@@ -90,15 +90,15 @@ tok_underflow_readline(struct tok_state* tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
         return 0;
     }
 
     ADVANCE_LINENO();
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
-        error_ret(tok);
+    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok)) {
+        _PyTokenizer_error_ret(tok);
         return 0;
     }
     assert(tok->done == E_OK);
@@ -109,7 +109,7 @@ struct tok_state *
 _PyTokenizer_FromReadline(PyObject* readline, const char* enc,
                           int exec_input, int preserve_crlf)
 {
-    struct tok_state *tok = tok_new();
+    struct tok_state *tok = _PyTokenizer_tok_new();
     if (tok == NULL)
         return NULL;
     if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
@@ -120,7 +120,7 @@ _PyTokenizer_FromReadline(PyObject* readline, const char* enc,
     tok->end = tok->buf + BUFSIZ;
     tok->fp = NULL;
     if (enc != NULL) {
-        tok->encoding = new_string(enc, strlen(enc), tok);
+        tok->encoding = _PyTokenizer_new_string(enc, strlen(enc), tok);
         if (!tok->encoding) {
             _PyTokenizer_Free(tok);
             return NULL;

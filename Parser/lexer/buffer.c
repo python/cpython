@@ -6,7 +6,7 @@
 /* Traverse and remember all f-string buffers, in order to be able to restore
    them after reallocating tok->buf */
 void
-remember_fstring_buffers(struct tok_state *tok)
+_PyLexer_remember_fstring_buffers(struct tok_state *tok)
 {
     int index;
     tokenizer_mode *mode;
@@ -20,7 +20,7 @@ remember_fstring_buffers(struct tok_state *tok)
 
 /* Traverse and restore all f-string buffers after reallocating tok->buf */
 void
-restore_fstring_buffers(struct tok_state *tok)
+_PyLexer_restore_fstring_buffers(struct tok_state *tok)
 {
     int index;
     tokenizer_mode *mode;
@@ -47,7 +47,7 @@ restore_fstring_buffers(struct tok_state *tok)
        reached): see tok_nextc and its calls to tok_reserve_buf.
 */
 int
-tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
+_PyLexer_tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
 {
     Py_ssize_t cur = tok->cur - tok->buf;
     Py_ssize_t oldsize = tok->inp - tok->buf;
@@ -57,7 +57,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         Py_ssize_t start = tok->start == NULL ? -1 : tok->start - tok->buf;
         Py_ssize_t line_start = tok->start == NULL ? -1 : tok->line_start - tok->buf;
         Py_ssize_t multi_line_start = tok->multi_line_start - tok->buf;
-        remember_fstring_buffers(tok);
+        _PyLexer_remember_fstring_buffers(tok);
         newbuf = (char *)PyMem_Realloc(newbuf, newsize);
         if (newbuf == NULL) {
             tok->done = E_NOMEM;
@@ -70,7 +70,7 @@ tok_reserve_buf(struct tok_state *tok, Py_ssize_t size)
         tok->start = start < 0 ? NULL : tok->buf + start;
         tok->line_start = line_start < 0 ? NULL : tok->buf + line_start;
         tok->multi_line_start = multi_line_start < 0 ? NULL : tok->buf + multi_line_start;
-        restore_fstring_buffers(tok);
+        _PyLexer_restore_fstring_buffers(tok);
     }
     return 1;
 }

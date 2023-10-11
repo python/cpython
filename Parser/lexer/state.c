@@ -10,7 +10,7 @@
 
 /* Create and initialize a new tok_state structure */
 struct tok_state *
-tok_new(void)
+_PyTokenizer_tok_new(void)
 {
     struct tok_state *tok = (struct tok_state *)PyMem_Malloc(
                                             sizeof(struct tok_state));
@@ -113,7 +113,7 @@ _PyToken_Init(struct token *token) {
 }
 
 int
-type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
+_PyLexer_type_comment_token_setup(struct tok_state *tok, struct token *token, int type, int col_offset,
                          int end_col_offset, const char *start, const char *end)
 {
     token->level = tok->level;
@@ -126,7 +126,7 @@ type_comment_token_setup(struct tok_state *tok, struct token *token, int type, i
 }
 
 int
-token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
+_PyLexer_token_setup(struct tok_state *tok, struct token *token, int type, const char *start, const char *end)
 {
     assert((start == NULL && end == NULL) || (start != NULL && end != NULL));
     token->level = tok->level;

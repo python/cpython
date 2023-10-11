@@ -38,9 +38,9 @@ static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
 #define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
 #endif
 
-#define MAKE_TOKEN(token_type) token_setup(tok, token, token_type, p_start, p_end)
+#define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 #define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
-                type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
+                _PyLexer_type_comment_token_setup(tok, token, token_type, col_offset, end_col_offset, p_start, p_end))
 
 /* Spaces in this constant are treated as "zero or more spaces or tabs" when
    tokenizing. */
@@ -69,7 +69,7 @@ tok_nextc(struct tok_state *tok)
 #if defined(Py_DEBUG)
         if (tok->debug) {
             fprintf(stderr, "line[%d] = ", tok->lineno);
-            print_escape(stderr, tok->cur, tok->inp - tok->cur);
+            _PyTokenizer_print_escape(stderr, tok->cur, tok->inp - tok->cur);
             fprintf(stderr, "  tok->done = %d\n", tok->done);
         }
 #endif
@@ -80,7 +80,7 @@ tok_nextc(struct tok_state *tok)
         tok->line_start = tok->cur;
 
         if (contains_null_bytes(tok->line_start, tok->inp - tok->line_start)) {
-            syntaxerror(tok, "source code cannot contain null bytes");
+            _PyTokenizer_syntaxerror(tok, "source code cannot contain null bytes");
             tok->cur = tok->inp;
             return EOF;
         }
@@ -126,7 +126,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 }
 
 int
-update_fstring_expr(struct tok_state *tok, char cur)
+_PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
 {
     assert(tok->cur != NULL);
 
@@ -243,7 +243,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     }
     if (r) {
         tok_backup(tok, c);
-        if (parser_warn(tok, PyExc_SyntaxWarning,
+        if (_PyTokenizer_parser_warn(tok, PyExc_SyntaxWarning,
                 "invalid %s literal", kind))
         {
             return 0;
@@ -253,7 +253,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     else /* In future releases, only error will remain. */
     if (c < 128 && is_potential_identifier_char(c)) {
         tok_backup(tok, c);
-        syntaxerror(tok, "invalid %s literal", kind);
+        _PyTokenizer_syntaxerror(tok, "invalid %s literal", kind);
         return 0;
     }
     return 1;
@@ -304,10 +304,10 @@ verify_identifier(struct tok_state *tok)
         }
         Py_DECREF(s);
         if (Py_UNICODE_ISPRINTABLE(ch)) {
-            syntaxerror(tok, "invalid character '%c' (U+%04X)", ch, ch);
+            _PyTokenizer_syntaxerror(tok, "invalid character '%c' (U+%04X)", ch, ch);
         }
         else {
-            syntaxerror(tok, "invalid non-printable character U+%04X", ch);
+            _PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", ch);
         }
         return 0;
     }
@@ -330,7 +330,7 @@ tok_decimal_tail(struct tok_state *tok)
         c = tok_nextc(tok);
         if (!Py_ISDIGIT(c)) {
             tok_backup(tok, c);
-            syntaxerror(tok, "invalid decimal literal");
+            _PyTokenizer_syntaxerror(tok, "invalid decimal literal");
             return 0;
         }
     }
@@ -432,7 +432,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             if (col == tok->indstack[tok->indent]) {
                 /* No change */
                 if (altcol != tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(indenterror(tok));
+                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
                 }
             }
             else if (col > tok->indstack[tok->indent]) {
@@ -443,7 +443,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 if (altcol <= tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(indenterror(tok));
+                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
                 }
                 tok->pendin++;
                 tok->indstack[++tok->indent] = col;
@@ -462,7 +462,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 if (altcol != tok->altindstack[tok->indent]) {
-                    return MAKE_TOKEN(indenterror(tok));
+                    return MAKE_TOKEN(_PyTokenizer_indenterror(tok));
                 }
             }
         }
@@ -714,7 +714,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     }
                     if (!Py_ISXDIGIT(c)) {
                         tok_backup(tok, c);
-                        return MAKE_TOKEN(syntaxerror(tok, "invalid hexadecimal literal"));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid hexadecimal literal"));
                     }
                     do {
                         c = tok_nextc(tok);
@@ -733,12 +733,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     }
                     if (c < '0' || c >= '8') {
                         if (Py_ISDIGIT(c)) {
-                            return MAKE_TOKEN(syntaxerror(tok,
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                                     "invalid digit '%c' in octal literal", c));
                         }
                         else {
                             tok_backup(tok, c);
-                            return MAKE_TOKEN(syntaxerror(tok, "invalid octal literal"));
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid octal literal"));
                         }
                     }
                     do {
@@ -746,7 +746,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     } while ('0' <= c && c < '8');
                 } while (c == '_');
                 if (Py_ISDIGIT(c)) {
-                    return MAKE_TOKEN(syntaxerror(tok,
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "invalid digit '%c' in octal literal", c));
                 }
                 if (!verify_end_of_number(tok, c, "octal")) {
@@ -762,11 +762,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     }
                     if (c != '0' && c != '1') {
                         if (Py_ISDIGIT(c)) {
-                            return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                         }
                         else {
                             tok_backup(tok, c);
-                            return MAKE_TOKEN(syntaxerror(tok, "invalid binary literal"));
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid binary literal"));
                         }
                     }
                     do {
@@ -774,7 +774,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     } while (c == '0' || c == '1');
                 } while (c == '_');
                 if (Py_ISDIGIT(c)) {
-                    return MAKE_TOKEN(syntaxerror(tok, "invalid digit '%c' in binary literal", c));
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid digit '%c' in binary literal", c));
                 }
                 if (!verify_end_of_number(tok, c, "binary")) {
                     return MAKE_TOKEN(ERRORTOKEN);
@@ -789,7 +789,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                         if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
-                            return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid decimal literal"));
                         }
                     }
                     if (c != '0') {
@@ -818,7 +818,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 else if (nonzero && !tok->tok_extra_tokens) {
                     /* Old-style octal: now disallowed. */
                     tok_backup(tok, c);
-                    return MAKE_TOKEN(syntaxerror_known_range(
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
                             tok, (int)(tok->start + 1 - tok->line_start),
                             (int)(zeros_end - tok->line_start),
                             "leading zeros in decimal integer "
@@ -859,7 +859,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                         c = tok_nextc(tok);
                         if (!Py_ISDIGIT(c)) {
                             tok_backup(tok, c);
-                            return MAKE_TOKEN(syntaxerror(tok, "invalid decimal literal"));
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid decimal literal"));
                         }
                     } else if (!Py_ISDIGIT(c)) {
                         tok_backup(tok, c);
@@ -928,7 +928,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur;
         if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
-            return MAKE_TOKEN(syntaxerror(tok, "too many nested f-strings"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested f-strings"));
         }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
@@ -1020,12 +1020,12 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->f_string_quote == quote &&
                         the_current_tok->f_string_quote_size == quote_size) {
-                        return MAKE_TOKEN(syntaxerror(tok, "f-string: expecting '}'", start));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expecting '}'", start));
                     }
                 }
 
                 if (quote_size == 3) {
-                    syntaxerror(tok, "unterminated triple-quoted string literal"
+                    _PyTokenizer_syntaxerror(tok, "unterminated triple-quoted string literal"
                                      " (detected at line %d)", start);
                     if (c != '\n') {
                         tok->done = E_EOFS;
@@ -1033,7 +1033,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 else {
-                    syntaxerror(tok, "unterminated string literal (detected at"
+                    _PyTokenizer_syntaxerror(tok, "unterminated string literal (detected at"
                                      " line %d)", start);
                     if (c != '\n') {
                         tok->done = E_EOLS;
@@ -1076,7 +1076,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
-        if (cursor == 0 && !update_fstring_expr(tok, c)) {
+        if (cursor == 0 && !_PyLexer_update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
         if (cursor == 0 && c != '{' && set_fstring_expr(tok, token, c)) {
@@ -1117,7 +1117,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case '[':
     case '{':
         if (tok->level >= MAXLEVEL) {
-            return MAKE_TOKEN(syntaxerror(tok, "too many nested parentheses"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested parentheses"));
         }
         tok->parenstack[tok->level] = c;
         tok->parenlinenostack[tok->level] = tok->lineno;
@@ -1131,10 +1131,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case ']':
     case '}':
         if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
-            return MAKE_TOKEN(syntaxerror(tok, "f-string: single '}' is not allowed"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: single '}' is not allowed"));
         }
         if (!tok->tok_extra_tokens && !tok->level) {
-            return MAKE_TOKEN(syntaxerror(tok, "unmatched '%c'", c));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "unmatched '%c'", c));
         }
         if (tok->level > 0) {
             tok->level--;
@@ -1151,17 +1151,17 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     assert(current_tok->curly_bracket_depth >= 0);
                     int previous_bracket = current_tok->curly_bracket_depth - 1;
                     if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
-                        return MAKE_TOKEN(syntaxerror(tok, "f-string: unmatched '%c'", c));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
                     }
                 }
                 if (tok->parenlinenostack[tok->level] != tok->lineno) {
-                    return MAKE_TOKEN(syntaxerror(tok,
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "closing parenthesis '%c' does not match "
                             "opening parenthesis '%c' on line %d",
                             c, opening, tok->parenlinenostack[tok->level]));
                 }
                 else {
-                    return MAKE_TOKEN(syntaxerror(tok,
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                             "closing parenthesis '%c' does not match "
                             "opening parenthesis '%c'",
                             c, opening));
@@ -1183,7 +1183,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
     if (!Py_UNICODE_ISPRINTABLE(c)) {
-        return MAKE_TOKEN(syntaxerror(tok, "invalid non-printable character U+%04X", c));
+        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid non-printable character U+%04X", c));
     }
 
     if( c == '=' && INSIDE_FSTRING_EXPR(current_tok)) {
@@ -1218,7 +1218,7 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
         if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
             }
             TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
             return tok_get_normal_mode(tok, current_tok, token);
@@ -1294,12 +1294,12 @@ f_string_middle:
             tok->lineno = the_current_tok->f_string_line_start;
 
             if (current_tok->f_string_quote_size == 3) {
-                return MAKE_TOKEN(syntaxerror(tok,
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                                     "unterminated triple-quoted f-string literal"
                                     " (detected at line %d)", start));
             }
             else {
-                return MAKE_TOKEN(syntaxerror(tok,
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
                                     "unterminated f-string literal (detected at"
                                     " line %d)", start));
             }
@@ -1319,7 +1319,7 @@ f_string_middle:
                 tok_backup(tok, c);
                 current_tok->curly_bracket_expr_start_depth++;
                 if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                    return MAKE_TOKEN(syntaxerror(tok, "f-string: expressions nested too deeply"));
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
                 }
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 p_start = tok->start;
@@ -1362,7 +1362,7 @@ f_string_middle:
             // to the loop for the next iteration.
             if (peek == '{' || peek == '}') {
                 if (!current_tok->f_string_raw) {
-                    if (warn_invalid_escape_sequence(tok, peek)) {
+                    if (_PyTokenizer_warn_invalid_escape_sequence(tok, peek)) {
                         return MAKE_TOKEN(ERRORTOKEN);
                     }
                 }

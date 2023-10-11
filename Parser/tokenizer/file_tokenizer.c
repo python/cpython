@@ -56,7 +56,7 @@ static int
 tok_readline_raw(struct tok_state *tok)
 {
     do {
-        if (!tok_reserve_buf(tok, BUFSIZ)) {
+        if (!_PyLexer_tok_reserve_buf(tok, BUFSIZ)) {
             return 0;
         }
         int n_chars = (int)(tok->end - tok->inp);
@@ -86,7 +86,7 @@ tok_readline_recode(struct tok_state *tok) {
     if (line == NULL) {
         line = PyObject_CallNoArgs(tok->decoding_readline);
         if (line == NULL) {
-            error_ret(tok);
+            _PyTokenizer_error_ret(tok);
             goto error;
         }
     }
@@ -95,14 +95,14 @@ tok_readline_recode(struct tok_state *tok) {
     }
     buf = PyUnicode_AsUTF8AndSize(line, &buflen);
     if (buf == NULL) {
-        error_ret(tok);
+        _PyTokenizer_error_ret(tok);
         goto error;
     }
     // Make room for the null terminator *and* potentially
     // an extra newline character that we may need to artificially
     // add.
     size_t buffer_size = buflen + 2;
-    if (!tok_reserve_buf(tok, buffer_size)) {
+    if (!_PyLexer_tok_reserve_buf(tok, buffer_size)) {
         goto error;
     }
     memcpy(tok->inp, buf, buflen);
@@ -132,7 +132,7 @@ static void fp_ungetc(int c, struct tok_state *tok) {
 /* Set the readline function for TOK to a StreamReader's
    readline function. The StreamReader is named ENC.
 
-   This function is called from check_bom and check_coding_spec.
+   This function is called from _PyTokenizer_check_bom and _PyTokenizer_check_coding_spec.
 
    ENC is usually identical to the future value of tok->encoding,
    except for the (currently unsupported) case of UTF-16.
@@ -195,7 +195,7 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     char *newtok = PyOS_Readline(tok->fp ? tok->fp : stdin, stdout, tok->prompt);
     if (newtok != NULL) {
-        char *translated = translate_newlines(newtok, 0, 0, tok);
+        char *translated = _PyTokenizer_translate_newlines(newtok, 0, 0, tok);
         PyMem_Free(newtok);
         if (translated == NULL) {
             return 0;
@@ -206,7 +206,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         /* Recode to UTF-8 */
         Py_ssize_t buflen;
         const char* buf;
-        PyObject *u = translate_into_utf8(newtok, tok->encoding);
+        PyObject *u = _PyTokenizer_translate_into_utf8(newtok, tok->encoding);
         PyMem_Free(newtok);
         if (u == NULL) {
             tok->done = E_DECODE;
@@ -240,10 +240,10 @@ tok_underflow_interactive(struct tok_state *tok) {
     }
     else if (tok->start != NULL) {
         Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
-        remember_fstring_buffers(tok);
+        _PyLexer_remember_fstring_buffers(tok);
         size_t size = strlen(newtok);
         ADVANCE_LINENO();
-        if (!tok_reserve_buf(tok, size + 1)) {
+        if (!_PyLexer_tok_reserve_buf(tok, size + 1)) {
             PyMem_Free(tok->buf);
             tok->buf = NULL;
             PyMem_Free(newtok);
@@ -253,10 +253,10 @@ tok_underflow_interactive(struct tok_state *tok) {
         PyMem_Free(newtok);
         tok->inp += size;
         tok->multi_line_start = tok->buf + cur_multi_line_start;
-        restore_fstring_buffers(tok);
+        _PyLexer_restore_fstring_buffers(tok);
     }
     else {
-        remember_fstring_buffers(tok);
+        _PyLexer_remember_fstring_buffers(tok);
         ADVANCE_LINENO();
         PyMem_Free(tok->buf);
         tok->buf = newtok;
@@ -264,7 +264,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         tok->line_start = tok->buf;
         tok->inp = strchr(tok->buf, '\0');
         tok->end = tok->inp + 1;
-        restore_fstring_buffers(tok);
+        _PyLexer_restore_fstring_buffers(tok);
     }
     if (tok->done != E_OK) {
         if (tok->prompt != NULL) {
@@ -273,7 +273,7 @@ tok_underflow_interactive(struct tok_state *tok) {
         return 0;
     }
 
-    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
         return 0;
     }
     return 1;
@@ -288,8 +288,8 @@ tok_underflow_file(struct tok_state *tok) {
         /* We have not yet determined the encoding.
            If an encoding is found, use the file-pointer
            reader functions from now on. */
-        if (!check_bom(fp_getc, fp_ungetc, fp_setreadl, tok)) {
-            error_ret(tok);
+        if (!_PyTokenizer_check_bom(fp_getc, fp_ungetc, fp_setreadl, tok)) {
+            _PyTokenizer_error_ret(tok);
             return 0;
         }
         assert(tok->decoding_state != STATE_INIT);
@@ -320,7 +320,7 @@ tok_underflow_file(struct tok_state *tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
         return 0;
     }
 
@@ -329,7 +329,7 @@ tok_underflow_file(struct tok_state *tok) {
         if (tok->lineno > 2) {
             tok->decoding_state = STATE_NORMAL;
         }
-        else if (!check_coding_spec(tok->cur, strlen(tok->cur),
+        else if (!_PyTokenizer_check_coding_spec(tok->cur, strlen(tok->cur),
                                     tok, fp_setreadl))
         {
             return 0;
@@ -337,8 +337,8 @@ tok_underflow_file(struct tok_state *tok) {
     }
     /* The default encoding is UTF-8, so make sure we don't have any
        non-UTF-8 sequences in it. */
-    if (!tok->encoding && !ensure_utf8(tok->cur, tok)) {
-        error_ret(tok);
+    if (!tok->encoding && !_PyTokenizer_ensure_utf8(tok->cur, tok)) {
+        _PyTokenizer_error_ret(tok);
         return 0;
     }
     assert(tok->done == E_OK);
@@ -350,7 +350,7 @@ struct tok_state *
 _PyTokenizer_FromFile(FILE *fp, const char* enc,
                       const char *ps1, const char *ps2)
 {
-    struct tok_state *tok = tok_new();
+    struct tok_state *tok = _PyTokenizer_tok_new();
     if (tok == NULL)
         return NULL;
     if ((tok->buf = (char *)PyMem_Malloc(BUFSIZ)) == NULL) {
@@ -370,7 +370,7 @@ _PyTokenizer_FromFile(FILE *fp, const char* enc,
     if (enc != NULL) {
         /* Must copy encoding declaration since it
            gets copied into the parse tree. */
-        tok->encoding = new_string(enc, strlen(enc), tok);
+        tok->encoding = _PyTokenizer_new_string(enc, strlen(enc), tok);
         if (!tok->encoding) {
             _PyTokenizer_Free(tok);
             return NULL;
