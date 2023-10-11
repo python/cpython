@@ -1723,6 +1723,14 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       `MSDN documentation on I/O Completion Ports
       <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
 
+.. class:: EventLoop
+
+    Uses the most effiecient available event loop for the given
+    platform.
+
+   .. versionadded:: 3.13
+
+   .. availability:: Unix, Windows.
 
 .. class:: AbstractEventLoop
 

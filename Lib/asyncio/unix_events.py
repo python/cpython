@@ -1510,3 +1510,4 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 SelectorEventLoop = _UnixSelectorEventLoop
 DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+EventLoop = SelectorEventLoop

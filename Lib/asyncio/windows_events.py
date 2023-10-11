@@ -894,3 +894,4 @@ class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 
 DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
+EventLoop = ProactorEventLoop

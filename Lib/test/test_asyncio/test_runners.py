@@ -272,6 +272,16 @@ class RunTests(BaseTest):
         asyncio.run(main(), loop_factory=factory)
         factory.assert_called_once_with()
 
+    def test_loop_factory_default_event_loop(self):
+        async def main():
+            if sys.platform == "win32":
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.ProactorEventLoop)
+            else:
+                self.assertIsInstance(asyncio.get_running_loop(), asyncio.SelectorEventLoop)
+
+
+        asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
 
 class RunnerTests(BaseTest):
 
