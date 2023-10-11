@@ -2347,7 +2347,6 @@ class TestOptimizerAPI(unittest.TestCase):
                     loop()
                 self.assertEqual(opt.get_count(), 1000)
 
-    @unittest.skip("instr_ptr assertion fails after ENTER_EXECUTOR")
     def test_long_loop(self):
         "Check that we aren't confused by EXTENDED_ARG"
 
