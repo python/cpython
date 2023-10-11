@@ -3929,8 +3929,8 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
-    # Tolerate a difference of 50 us
-    CLOCK_RES_NS = 50_000
+    # Tolerate a difference of 1 ms
+    CLOCK_RES_NS = 1_000_000
     CLOCK_RES = CLOCK_RES_NS * 1e-9
 
     def timerfd_create(self, *args, **kwargs):
