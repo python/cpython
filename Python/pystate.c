@@ -524,6 +524,10 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     }
 
 #undef FREE_LOCK
+    if (runtime->sys_path_0 != NULL) {
+        PyMem_RawFree(runtime->sys_path_0);
+        runtime->sys_path_0 = NULL;
+    }
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
