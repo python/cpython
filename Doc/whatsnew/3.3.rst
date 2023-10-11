@@ -917,12 +917,12 @@ abstract methods. The recommended approach to declaring abstract descriptors is
 now to provide :attr:`__isabstractmethod__` as a dynamically updated
 property. The built-in descriptors have been updated accordingly.
 
-  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-    with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractclassmethod` has been deprecated, use
-    :class:`classmethod` with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+  with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractclassmethod` has been deprecated, use
+  :class:`classmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractstaticmethod` has been deprecated, use
+  :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`.)
 
@@ -1060,32 +1060,32 @@ function to the :mod:`crypt` module.
 curses
 ------
 
- * If the :mod:`curses` module is linked to the ncursesw library, use Unicode
-   functions when Unicode strings or characters are passed (e.g.
-   :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
- * Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
- * :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
- * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
-   method to get a wide character
- * The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
-   push a wide character so the next :meth:`~curses.window.get_wch` will return
-   it
+* If the :mod:`curses` module is linked to the ncursesw library, use Unicode
+  functions when Unicode strings or characters are passed (e.g.
+  :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
+* Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
+* :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
+* The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
+  method to get a wide character
+* The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
+  push a wide character so the next :meth:`~curses.window.get_wch` will return
+  it
 
 (Contributed by Iñigo Serna in :issue:`6755`.)
 
 datetime
 --------
 
- * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances now return :const:`False` instead of raising :exc:`TypeError`
-   (:issue:`15006`).
- * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
-   corresponding to the :class:`~datetime.datetime` instance.
- * The :meth:`datetime.datetime.strftime` method supports formatting years
-   older than 1000.
- * The :meth:`datetime.datetime.astimezone` method can now be
-   called without arguments to convert datetime instance to the system
-   timezone.
+* Equality comparisons between naive and aware :class:`~datetime.datetime`
+  instances now return :const:`False` instead of raising :exc:`TypeError`
+  (:issue:`15006`).
+* New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
+  corresponding to the :class:`~datetime.datetime` instance.
+* The :meth:`datetime.datetime.strftime` method supports formatting years
+  older than 1000.
+* The :meth:`datetime.datetime.astimezone` method can now be
+  called without arguments to convert datetime instance to the system
+  timezone.
 
 
 .. _new-decimal:
@@ -1210,25 +1210,25 @@ the ``Message`` object it is serializing.  The default policy is
 
 The minimum set of controls implemented by all ``policy`` objects are:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    max_line_length     The maximum length, excluding the linesep character(s),
-                        individual lines may have when a ``Message`` is
-                        serialized.  Defaults to 78.
+===============     =======================================================
+max_line_length     The maximum length, excluding the linesep character(s),
+                    individual lines may have when a ``Message`` is
+                    serialized.  Defaults to 78.
 
-    linesep             The character used to separate individual lines when a
-                        ``Message`` is serialized.  Defaults to ``\n``.
+linesep             The character used to separate individual lines when a
+                    ``Message`` is serialized.  Defaults to ``\n``.
 
-    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
-                        ``Bytes`` ``generator``, and means that non-ASCII may
-                        be used where allowed by the protocol (or where it
-                        exists in the original input).
+cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
+                    ``Bytes`` ``generator``, and means that non-ASCII may
+                    be used where allowed by the protocol (or where it
+                    exists in the original input).
 
-    raise_on_defect     Causes a ``parser`` to raise error when defects are
-                        encountered instead of adding them to the ``Message``
-                        object's ``defects`` list.
-    ===============     =======================================================
+raise_on_defect     Causes a ``parser`` to raise error when defects are
+                    encountered instead of adding them to the ``Message``
+                    object's ``defects`` list.
+===============     =======================================================
 
 A new policy instance, with new settings, is created using the
 :meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
@@ -1263,21 +1263,21 @@ removal of the code) may occur if deemed necessary by the core developers.
 The new policies are instances of :class:`~email.policy.EmailPolicy`,
 and add the following additional controls:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    refold_source       Controls whether or not headers parsed by a
-                        :mod:`~email.parser` are refolded by the
-                        :mod:`~email.generator`.  It can be ``none``, ``long``,
-                        or ``all``.  The default is ``long``, which means that
-                        source headers with a line longer than
-                        ``max_line_length`` get refolded.  ``none`` means no
-                        line get refolded, and ``all`` means that all lines
-                        get refolded.
+===============     =======================================================
+refold_source       Controls whether or not headers parsed by a
+                    :mod:`~email.parser` are refolded by the
+                    :mod:`~email.generator`.  It can be ``none``, ``long``,
+                    or ``all``.  The default is ``long``, which means that
+                    source headers with a line longer than
+                    ``max_line_length`` get refolded.  ``none`` means no
+                    line get refolded, and ``all`` means that all lines
+                    get refolded.
 
-    header_factory      A callable that take a ``name`` and ``value`` and
-                        produces a custom header object.
-    ===============     =======================================================
+header_factory      A callable that take a ``name`` and ``value`` and
+                    produces a custom header object.
+===============     =======================================================
 
 The ``header_factory`` is the key to the new features provided by the new
 policies.  When one of the new policies is used, any header retrieved from
@@ -1352,18 +1352,18 @@ API.
 
 New utility functions:
 
-   * :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
-     produce a string formatted for use in an email header.
+* :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
+  produce a string formatted for use in an email header.
 
-   * :func:`~email.utils.parsedate_to_datetime`: given a date string from
-     an email header, convert it into an aware :class:`~datetime.datetime`,
-     or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
+* :func:`~email.utils.parsedate_to_datetime`: given a date string from
+  an email header, convert it into an aware :class:`~datetime.datetime`,
+  or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
 
-   * :func:`~email.utils.localtime`: With no argument, returns the
-     current local time as an aware :class:`~datetime.datetime` using the local
-     :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
-     converts it into an aware :class:`~datetime.datetime` using the
-     local :class:`~datetime.timezone`.
+* :func:`~email.utils.localtime`: With no argument, returns the
+  current local time as an aware :class:`~datetime.datetime` using the local
+  :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
+  converts it into an aware :class:`~datetime.datetime` using the
+  local :class:`~datetime.timezone`.
 
 
 ftplib
