@@ -415,7 +415,7 @@ class StackSummary(list):
         # Only lineno is required, the remaining fields can be None if the
         # information is not available.
         builtin_limit = limit is BUILTIN_EXCEPTION_LIMIT
-        if limit is None or limit is BUILTIN_EXCEPTION_LIMIT:
+        if limit is None or builtin_limit:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
                 limit = 0
