@@ -428,6 +428,10 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     skip = check_sanitizer(address=address, memory=memory, ub=ub)
     return unittest.skipIf(skip, reason)
 
+# gh-89363: True if fork() can hang if Python is built with Address Sanitizer
+# (ASAN): libasan race condition, dead lock in pthread_create().
+HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
+
 
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
