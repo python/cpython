@@ -1024,6 +1024,12 @@ New Features
   functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
 
+* Add :c:func:`PyUnicode_EqualToUTF8AndSize` and :c:func:`PyUnicode_EqualToUTF8`
+  functions: compare Unicode object with a :c:expr:`const char*` UTF-8 encoded
+  string and return true (``1``) if they are equal, or false (``0``) otherwise.
+  These functions do not raise exceptions.
+  (Contributed by Serhiy Storchaka in :gh:`110289`.)
+
 * Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
   :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
   if it is NULL. The caller is responsible to check if the result is NULL.
