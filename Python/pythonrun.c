@@ -1092,6 +1092,9 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         return;
     }
 fallback:
+#ifdef Py_DEBUG
+    _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
+#endif
     PyErr_Clear();
 
     struct exception_print_context ctx;
