@@ -1,0 +1,1 @@
+Optimize asyncio :meth:`BaseEventLoop._run_once` for many iteration case.
