@@ -2191,7 +2191,7 @@ def test_pdb_issue_gh_94215():
     ...     'jump 3',
     ...     'continue'
     ... ]):
-    ...     test_function()  # doctest: +SKIP
+    ...     test_function()
     > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(9)test_function()
     -> func()
     (Pdb) step
