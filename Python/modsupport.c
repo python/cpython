@@ -91,13 +91,13 @@ static PyObject *do_mkvalue(const char**, va_list *);
 static int
 check_end(const char *f, char endchar)
 {
-    while (*f == ',' || *f == ':' || *f == ' ' || *f == '\t') {
+    while (*f != endchar) {
+        if (*f != ' ' && *f != '\t' && *f != ',' && *f != ':') {
+            PyErr_SetString(PyExc_SystemError,
+                            "Unmatched paren in format");
+            return 0;
+        }
         f++;
-    }
-    if (*f != endchar) {
-        PyErr_SetString(PyExc_SystemError,
-                        "Unmatched paren in format");
-        return 0;
     }
     return 1;
 }
