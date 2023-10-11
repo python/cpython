@@ -1614,10 +1614,10 @@ Basic customization
    not considered.
 
    When no method returns any value other than NotImplemented, comparisons raise
-   a :exc:`TypeError`. However, the `==` and `!=` operators will not raise an
-   exception in that case, and will instead fall back to `is` and `is not`,
-   respectively. That way, even though `object().__eq__(object())` returns
-   NotImplemented, `object() == object()` returns False.
+   a :exc:`TypeError`. However, the ``==`` and ``!=`` operators will not raise an
+   exception in that case, and will instead fall back to ``is`` and ``is not``,
+   respectively. That way, even though ``object().__eq__(object())`` returns
+   NotImplemented, ``object() == object()`` returns False.
 
 .. method:: object.__hash__(self)
 
