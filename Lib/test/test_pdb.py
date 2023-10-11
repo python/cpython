@@ -1973,7 +1973,7 @@ def test_pdb_next_command_subiterator():
     ...                    'next',
     ...                    'next',
     ...                    'continue']):
-    ...     test_function()    # doctest: +SKIP
+    ...     test_function()
     > <doctest test.test_pdb.test_pdb_next_command_subiterator[2]>(3)test_function()
     -> for i in test_gen():
     (Pdb) step
@@ -2077,7 +2077,7 @@ def test_pdb_issue_20766():
     >>> reset_Breakpoint()
     >>> with PdbTestInput(['continue',
     ...                    'continue']):
-    ...     test_function()     # doctest: +SKIP
+    ...     test_function()
     > <doctest test.test_pdb.test_pdb_issue_20766[0]>(6)test_function()
     -> print('pdb %d: %s' % (i, sess._previous_sigint_handler))
     (Pdb) continue
@@ -2142,7 +2142,7 @@ def test_pdb_issue_gh_91742():
     ...     'jump 5',
     ...     'continue'
     ... ]):
-    ...     test_function()  # doctest: +SKIP
+    ...     test_function()
     > <doctest test.test_pdb.test_pdb_issue_gh_91742[0]>(12)test_function()
     -> about()
     (Pdb) step
@@ -2296,7 +2296,7 @@ def test_pdb_issue_gh_101517():
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'continue'
     ... ]):
-    ...    test_function()    # doctest: +SKIP
+    ...    test_function()
     --Return--
     > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
     -> Warning: lineno is None

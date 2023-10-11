@@ -233,7 +233,6 @@ class ProfileHookTestCase(TestCaseBase):
                               (1, 'return', j_ident),
                               ])
 
-    @unittest.skip("fails with instr_ptr")
     def test_generator(self):
         def f():
             for i in range(2):
@@ -256,7 +255,6 @@ class ProfileHookTestCase(TestCaseBase):
                               (1, 'return', g_ident),
                               ])
 
-    @unittest.skip("fails with instr_ptr")
     def test_stop_iteration(self):
         def f():
             for i in range(2):
