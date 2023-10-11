@@ -1020,6 +1020,8 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
                 }
             }
         }
+        Py_DECREF(remaining_list);
+        Py_DECREF(field_types);
     }
   cleanup:
     Py_XDECREF(fields);
@@ -1041,14 +1043,75 @@ ast_type_reduce(PyObject *self, PyObject *unused)
         return NULL;
     }
 
-    PyObject *dict;
+    PyObject *dict = NULL, *fields = NULL, *remaining_fields = NULL,
+             *positional_args = NULL;
     if (PyObject_GetOptionalAttr(self, state->__dict__, &dict) < 0) {
         return NULL;
     }
+    PyObject *result = NULL;
     if (dict) {
-        return Py_BuildValue("O()N", Py_TYPE(self), dict);
+        // Serialize the fields as positional args if possible, because if we
+        // serialize them as a dict, during unpickling they are set only *after*
+        // the object is constructed, which will now trigger a DeprecationWarning
+        // if the AST type has required fields.
+        PyObject *fields = NULL;
+        if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+            goto cleanup;
+        }
+        if (fields) {
+            Py_ssize_t numfields = PySequence_Size(fields);
+            if (numfields == -1) {
+                Py_DECREF(dict);
+                goto cleanup;
+            }
+            PyObject *remaining_dict = PyDict_Copy(dict);
+            Py_DECREF(dict);
+            if (!remaining_dict) {
+                goto cleanup;
+            }
+            PyObject *positional_args = PyList_New(0);
+            if (!positional_args) {
+                goto cleanup;
+            }
+            for (Py_ssize_t i = 0; i < numfields; i++) {
+                PyObject *name = PySequence_GetItem(fields, i);
+                if (!name) {
+                    goto cleanup;
+                }
+                PyObject *value = PyDict_GetItemWithError(remaining_dict, name);
+                if (!value) {
+                    if (PyErr_Occurred()) {
+                        goto cleanup;
+                    }
+                    break;
+                }
+                if (PyList_Append(positional_args, value) < 0) {
+                    goto cleanup;
+                }
+                if (PyDict_DelItem(remaining_dict, name) < 0) {
+                    goto cleanup;
+                }
+                Py_DECREF(name);
+            }
+            PyObject *args_tuple = PyList_AsTuple(positional_args);
+            if (!args_tuple) {
+                goto cleanup;
+            }
+            result = Py_BuildValue("ONN", Py_TYPE(self), args_tuple,
+                                   remaining_dict);
+        }
+        else {
+            result = Py_BuildValue("O()N", Py_TYPE(self), dict);
+        }
     }
-    return Py_BuildValue("O()", Py_TYPE(self));
+    else {
+        result = Py_BuildValue("O()", Py_TYPE(self));
+    }
+cleanup:
+    Py_XDECREF(fields);
+    Py_XDECREF(remaining_fields);
+    Py_XDECREF(positional_args);
+    return result;
 }
 
 static PyMemberDef ast_type_members[] = {
