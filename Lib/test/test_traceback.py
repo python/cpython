@@ -1360,10 +1360,10 @@ class TestTracebackFormat(unittest.TestCase, TracebackFormatMixing):
 class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixing):
     DEBUG_RANGES = False
     def setUp(self) -> None:
-        self.original_hook = traceback._print_exception_bltin 
+        self.original_hook = traceback._print_exception_bltin
         traceback._print_exception_bltin = lambda *args: 1/0
         return super().setUp()
-    
+
     def tearDown(self) -> None:
         traceback._print_exception_bltin = self.original_hook
         return super().tearDown()
