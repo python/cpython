@@ -2,8 +2,6 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-#define PY_SSIZE_T_CLEAN
-
 #include <Python.h>
 
 // for shm_open() and shm_unlink()

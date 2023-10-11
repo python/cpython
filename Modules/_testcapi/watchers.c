@@ -295,6 +295,7 @@ _testcapi_unwatch_type_impl(PyObject *module, int watcher_id, PyObject *type)
 // Test code object watching
 
 #define NUM_CODE_WATCHERS 2
+static int code_watcher_ids[NUM_CODE_WATCHERS] = {-1, -1};
 static int num_code_object_created_events[NUM_CODE_WATCHERS] = {0, 0};
 static int num_code_object_destroyed_events[NUM_CODE_WATCHERS] = {0, 0};
 
@@ -345,11 +346,13 @@ add_code_watcher(PyObject *self, PyObject *which_watcher)
     long which_l = PyLong_AsLong(which_watcher);
     if (which_l == 0) {
         watcher_id = PyCode_AddWatcher(first_code_object_callback);
+        code_watcher_ids[0] = watcher_id;
         num_code_object_created_events[0] = 0;
         num_code_object_destroyed_events[0] = 0;
     }
     else if (which_l == 1) {
         watcher_id = PyCode_AddWatcher(second_code_object_callback);
+        code_watcher_ids[1] = watcher_id;
         num_code_object_created_events[1] = 0;
         num_code_object_destroyed_events[1] = 0;
     }
@@ -375,9 +378,14 @@ clear_code_watcher(PyObject *self, PyObject *watcher_id)
         return NULL;
     }
     // reset static events counters
-    if (watcher_id_l >= 0 && watcher_id_l < NUM_CODE_WATCHERS) {
-        num_code_object_created_events[watcher_id_l] = 0;
-        num_code_object_destroyed_events[watcher_id_l] = 0;
+    if (watcher_id_l >= 0) {
+        for (int i = 0; i < NUM_CODE_WATCHERS; i++) {
+            if (watcher_id_l == code_watcher_ids[i]) {
+                code_watcher_ids[i] = -1;
+                num_code_object_created_events[i] = 0;
+                num_code_object_destroyed_events[i] = 0;
+            }
+        }
     }
     Py_RETURN_NONE;
 }
@@ -432,9 +440,9 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
 
 // Test function watchers
 
-#define NUM_FUNC_WATCHERS 2
-static PyObject *pyfunc_watchers[NUM_FUNC_WATCHERS];
-static int func_watcher_ids[NUM_FUNC_WATCHERS] = {-1, -1};
+#define NUM_TEST_FUNC_WATCHERS 2
+static PyObject *pyfunc_watchers[NUM_TEST_FUNC_WATCHERS];
+static int func_watcher_ids[NUM_TEST_FUNC_WATCHERS] = {-1, -1};
 
 static PyObject *
 get_id(PyObject *obj)
@@ -508,7 +516,7 @@ second_func_watcher_callback(PyFunction_WatchEvent event,
     return call_pyfunc_watcher(pyfunc_watchers[1], event, func, new_value);
 }
 
-static PyFunction_WatchCallback func_watcher_callbacks[NUM_FUNC_WATCHERS] = {
+static PyFunction_WatchCallback func_watcher_callbacks[NUM_TEST_FUNC_WATCHERS] = {
     first_func_watcher_callback,
     second_func_watcher_callback
 };
@@ -516,13 +524,7 @@ static PyFunction_WatchCallback func_watcher_callbacks[NUM_FUNC_WATCHERS] = {
 static int
 add_func_event(PyObject *module, const char *name, PyFunction_WatchEvent event)
 {
-    PyObject *value = PyLong_FromLong(event);
-    if (value == NULL) {
-        return -1;
-    }
-    int ok = PyModule_AddObjectRef(module, name, value);
-    Py_DECREF(value);
-    return ok;
+    return PyModule_Add(module, name, PyLong_FromLong(event));
 }
 
 static PyObject *
@@ -533,26 +535,25 @@ add_func_watcher(PyObject *self, PyObject *func)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == -1) {
             idx = i;
             break;
         }
     }
     if (idx == -1) {
-        PyErr_SetString(PyExc_RuntimeError, "no free watchers");
-        return NULL;
-    }
-    PyObject *result = PyLong_FromLong(idx);
-    if (result == NULL) {
+        PyErr_SetString(PyExc_RuntimeError, "no free test watchers");
         return NULL;
     }
     func_watcher_ids[idx] = PyFunction_AddWatcher(func_watcher_callbacks[idx]);
     if (func_watcher_ids[idx] < 0) {
-        Py_DECREF(result);
         return NULL;
     }
     pyfunc_watchers[idx] = Py_NewRef(func);
+    PyObject *result = PyLong_FromLong(func_watcher_ids[idx]);
+    if (result == NULL) {
+        return NULL;
+    }
     return result;
 }
 
@@ -569,7 +570,7 @@ clear_func_watcher(PyObject *self, PyObject *watcher_id_obj)
         return NULL;
     }
     int idx = -1;
-    for (int i = 0; i < NUM_FUNC_WATCHERS; i++) {
+    for (int i = 0; i < NUM_TEST_FUNC_WATCHERS; i++) {
         if (func_watcher_ids[i] == wid) {
             idx = i;
             break;

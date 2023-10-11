@@ -4,9 +4,13 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 #include <stdbool.h>
-#include <stddef.h>
-#include "pycore_code.h"         // STATS
+#include <stddef.h>               // offsetof()
+#include "pycore_code.h"          // STATS
 
 /* See Objects/frame_layout.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -196,7 +200,7 @@ _PyFrame_GetFirstComplete(_PyInterpreterFrame *frame)
 static inline _PyInterpreterFrame *
 _PyThreadState_GetFrame(PyThreadState *tstate)
 {
-    return _PyFrame_GetFirstComplete(tstate->cframe->current_frame);
+    return _PyFrame_GetFirstComplete(tstate->current_frame);
 }
 
 /* For use by _PyFrame_GetFrameObject
@@ -233,6 +237,9 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame * frame);
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg);
+
+PyObject *
+_PyFrame_GetLocals(_PyInterpreterFrame *frame, int include_hidden);
 
 int
 _PyFrame_FastToLocalsWithError(_PyInterpreterFrame *frame);
@@ -272,6 +279,30 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
     return new_frame;
 }
 
+/* Pushes a trampoline frame without checking for space.
+ * Must be guarded by _PyThreadState_HasStackSpace() */
+static inline _PyInterpreterFrame *
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
+{
+    CALL_STAT_INC(frames_pushed);
+    _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
+    tstate->datastack_top += code->co_framesize;
+    assert(tstate->datastack_top < tstate->datastack_limit);
+    frame->f_funcobj = Py_None;
+    frame->f_executable = Py_NewRef(code);
+#ifdef Py_DEBUG
+    frame->f_builtins = NULL;
+    frame->f_globals = NULL;
+#endif
+    frame->f_locals = NULL;
+    frame->stacktop = code->co_nlocalsplus + stackdepth;
+    frame->frame_obj = NULL;
+    frame->prev_instr = _PyCode_CODE(code) + prev_instr;
+    frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->return_offset = 0;
+    return frame;
+}
+
 static inline
 PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
 {
@@ -279,14 +310,6 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
-
-#define PY_EXECUTABLE_KIND_SKIP 0
-#define PY_EXECUTABLE_KIND_PY_FUNCTION 1
-#define PY_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
-#define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
-#define PY_EXECUTABLE_KINDS 5
-
-PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
 
 #ifdef __cplusplus
 }

@@ -40,6 +40,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DisableGil)' == 'true'">Py_NOGIL=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -232,7 +233,10 @@ public override bool Execute() {
   </Target>
 
   <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
-    <ItemGroup Condition="$(VCInstallDir) != ''">
+    <ItemGroup Condition="$(VCRuntimeDLL) != ''">
+      <VCRuntimeDLL Include="$(VCRuntimeDLL)" />
+    </ItemGroup>
+    <ItemGroup Condition="$(VCInstallDir) != '' and $(VCRuntimeDLL) == ''">
       <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
     </ItemGroup>
 

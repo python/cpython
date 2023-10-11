@@ -1,0 +1,2 @@
+Fix support for virtual tables in :meth:`sqlite3.Connection.iterdump`. Patch
+by Aviv Palivoda.

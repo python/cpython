@@ -7,11 +7,13 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat
-#include "structmember.h"         // PyMemberDef
+#include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_long.h"          // _PyLong_FromByteArray()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
 
@@ -2268,7 +2270,7 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     if (protocol == -1 && PyErr_Occurred())
         return NULL;
 
-    if (_PyObject_LookupAttr((PyObject *)self, state->str___dict__, &dict) < 0) {
+    if (PyObject_GetOptionalAttr((PyObject *)self, state->str___dict__, &dict) < 0) {
         return NULL;
     }
     if (dict == NULL) {
@@ -2895,7 +2897,7 @@ itemsize -- the length in bytes of one array item\n\
 static PyObject *array_iter(arrayobject *ao);
 
 static struct PyMemberDef array_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(arrayobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(arrayobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -3163,9 +3165,8 @@ array_modexec(PyObject *m)
     CREATE_TYPE(m, state->ArrayIterType, &arrayiter_spec);
     Py_SET_TYPE(state->ArrayIterType, &PyType_Type);
 
-    if (PyModule_AddObject(m, "ArrayType",
-                           Py_NewRef((PyObject *)state->ArrayType)) < 0) {
-        Py_DECREF((PyObject *)state->ArrayType);
+    if (PyModule_AddObjectRef(m, "ArrayType",
+                              (PyObject *)state->ArrayType) < 0) {
         return -1;
     }
 
@@ -3193,8 +3194,7 @@ array_modexec(PyObject *m)
         *p++ = (char)descr->typecode;
     }
     typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
-    if (PyModule_AddObject(m, "typecodes", typecodes) < 0) {
-        Py_XDECREF(typecodes);
+    if (PyModule_Add(m, "typecodes", typecodes) < 0) {
         return -1;
     }
 

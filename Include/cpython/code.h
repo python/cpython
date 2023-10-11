@@ -8,16 +8,21 @@
 extern "C" {
 #endif
 
-
+/* Count of all local monitoring events */
+#define  _PY_MONITORING_LOCAL_EVENTS 10
 /* Count of all "real" monitoring events (not derived from other events) */
-#define PY_MONITORING_UNGROUPED_EVENTS 14
+#define _PY_MONITORING_UNGROUPED_EVENTS 15
 /* Count of all  monitoring events */
-#define PY_MONITORING_EVENTS 16
+#define _PY_MONITORING_EVENTS 17
 
-/* Table of which tools are active for each monitored event. */
-typedef struct _Py_Monitors {
-    uint8_t tools[PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_Monitors;
+/* Tables of which tools are active for each monitored event. */
+typedef struct _Py_LocalMonitors {
+    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
+} _Py_LocalMonitors;
+
+typedef struct _Py_GlobalMonitors {
+    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
+} _Py_GlobalMonitors;
 
 /* Each instruction in a code object is a fixed-width value,
  * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
@@ -88,9 +93,9 @@ typedef struct {
  */
 typedef struct {
     /* Monitoring specific to this code object */
-    _Py_Monitors local_monitors;
+    _Py_LocalMonitors local_monitors;
     /* Monitoring that is active on this code object */
-    _Py_Monitors active_monitors;
+    _Py_LocalMonitors active_monitors;
     /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
     /* Information to support line events */
@@ -162,7 +167,7 @@ typedef struct {
     PyObject *co_weakreflist;     /* to support weakrefs to code objects */    \
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
-    uint64_t _co_instrumentation_version; /* current instrumentation version */  \
+    uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \

@@ -1,0 +1,2 @@
+Fix incorrect matching of empty paths in :meth:`pathlib.PurePath.match`.
+This bug was introduced in Python 3.12.0 beta 1.

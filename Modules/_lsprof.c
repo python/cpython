@@ -4,7 +4,10 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_SetProfile()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "rotatingtree.h"
 
 /************************************************************/
@@ -678,6 +681,7 @@ static const struct {
 } callback_table[] = {
     {PY_MONITORING_EVENT_PY_START, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RESUME, "_pystart_callback"},
+    {PY_MONITORING_EVENT_PY_THROW, "_pystart_callback"},
     {PY_MONITORING_EVENT_PY_RETURN, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_YIELD, "_pyreturn_callback"},
     {PY_MONITORING_EVENT_PY_UNWIND, "_pyreturn_callback"},

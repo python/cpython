@@ -55,9 +55,11 @@ as much as it can.
 
    Get a :term:`strong reference` to the referenced object from a weak
    reference, *ref*, into *\*pobj*.
-   Return 0 on success. Raise an exception and return -1 on error.
 
-   If the referent is no longer live, set *\*pobj* to ``NULL`` and return 0.
+   * On success, set *\*pobj* to a new :term:`strong reference` to the
+     referenced object and return 1.
+   * If the reference is dead, set *\*pobj* to ``NULL`` and return 0.
+   * On error, raise an exception and return -1.
 
    .. versionadded:: 3.13
 
@@ -74,10 +76,16 @@ as much as it can.
       except when it cannot be destroyed before the last usage of the borrowed
       reference.
 
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyWeakref_GetRef` instead.
+
 
 .. c:function:: PyObject* PyWeakref_GET_OBJECT(PyObject *ref)
 
    Similar to :c:func:`PyWeakref_GetObject`, but does no error checking.
+
+   .. deprecated-removed:: 3.13 3.15
+      Use :c:func:`PyWeakref_GetRef` instead.
 
 
 .. c:function:: void PyObject_ClearWeakRefs(PyObject *object)

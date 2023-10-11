@@ -878,7 +878,7 @@ Other Language Changes
   (Contributed by Raymond Hettinger in :issue:`43475`.)
 
 * A :exc:`SyntaxError` (instead of a :exc:`NameError`) will be raised when deleting
-  the :const:`__debug__` constant.  (Contributed by Dong-hee Na in :issue:`45000`.)
+  the :const:`__debug__` constant.  (Contributed by Donghee Na in :issue:`45000`.)
 
 * :exc:`SyntaxError` exceptions now have ``end_lineno`` and
   ``end_offset`` attributes.  They will be ``None`` if not determined.
@@ -887,7 +887,7 @@ Other Language Changes
 New Modules
 ===========
 
-* None yet.
+* None.
 
 
 Improved Modules
@@ -1253,9 +1253,9 @@ descriptors without copying between kernel address space and user
 address space, where one of the file descriptors must refer to a
 pipe. (Contributed by Pablo Galindo in :issue:`41625`.)
 
-Add :data:`~os.O_EVTONLY`, :data:`~os.O_FSYNC`, :data:`~os.O_SYMLINK`
-and :data:`~os.O_NOFOLLOW_ANY` for macOS.
-(Contributed by Dong-hee Na in :issue:`43106`.)
+Add :const:`~os.O_EVTONLY`, :const:`~os.O_FSYNC`, :const:`~os.O_SYMLINK`
+and :const:`~os.O_NOFOLLOW_ANY` for macOS.
+(Contributed by Donghee Na in :issue:`43106`.)
 
 os.path
 -------
@@ -1319,7 +1319,7 @@ objects in the tree returned by :func:`pyclbr.readline` and
 shelve
 ------
 
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3`` when creating shelves.
 (Contributed by Zackery Spytz in :issue:`34204`.)
 
@@ -1356,7 +1356,7 @@ The ssl module requires OpenSSL 1.1.1 or newer.
 (Contributed by Christian Heimes in :pep:`644` and :issue:`43669`.)
 
 The ssl module has preliminary support for OpenSSL 3.0.0 and new option
-:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF`.
+:const:`~ssl.OP_IGNORE_UNEXPECTED_EOF`.
 (Contributed by Christian Heimes in :issue:`38820`, :issue:`43794`,
 :issue:`43788`, :issue:`43791`, :issue:`43799`, :issue:`43920`,
 :issue:`43789`, and :issue:`43811`.)
@@ -1387,7 +1387,7 @@ Add a *timeout* parameter to the :func:`ssl.get_server_certificate` function.
 The ssl module uses heap-types and multi-phase initialization.
 (Contributed by Christian Heimes in :issue:`42333`.)
 
-A new verify flag :data:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
+A new verify flag :const:`~ssl.VERIFY_X509_PARTIAL_CHAIN` has been added.
 (Contributed by l0x in :issue:`40849`.)
 
 sqlite3
@@ -1413,7 +1413,7 @@ _thread
 -------
 
 :func:`_thread.interrupt_main` now takes an optional signal number to
-simulate (the default is still :data:`signal.SIGINT`).
+simulate (the default is still :const:`signal.SIGINT`).
 (Contributed by Antoine Pitrou in :issue:`43356`.)
 
 threading
@@ -1582,7 +1582,7 @@ Optimizations
 
 * The following built-in functions now support the faster :pep:`590` vectorcall calling convention:
   :func:`map`, :func:`filter`, :func:`reversed`, :func:`bool` and :func:`float`.
-  (Contributed by Dong-hee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
+  (Contributed by Donghee Na and Jeroen Demeyer in :issue:`43575`, :issue:`43287`, :issue:`41922`, :issue:`41873` and :issue:`41870`.)
 
 * :class:`BZ2File` performance is improved by removing internal ``RLock``.
   This makes :class:`BZ2File` thread unsafe in the face of multiple simultaneous
@@ -1757,8 +1757,8 @@ Deprecated
   * :data:`~ssl.PROTOCOL_SSLv2`, :data:`~ssl.PROTOCOL_SSLv3`,
     :data:`~ssl.PROTOCOL_SSLv23`, :data:`~ssl.PROTOCOL_TLSv1`,
     :data:`~ssl.PROTOCOL_TLSv1_1`, :data:`~ssl.PROTOCOL_TLSv1_2`, and
-    :data:`~ssl.PROTOCOL_TLS` are deprecated in favor of
-    :data:`~ssl.PROTOCOL_TLS_CLIENT` and :data:`~ssl.PROTOCOL_TLS_SERVER`
+    :const:`~ssl.PROTOCOL_TLS` are deprecated in favor of
+    :const:`~ssl.PROTOCOL_TLS_CLIENT` and :const:`~ssl.PROTOCOL_TLS_SERVER`
 
   * :func:`~ssl.wrap_socket` is replaced by :meth:`ssl.SSLContext.wrap_socket`
 
@@ -1817,10 +1817,10 @@ Removed
   scheduled to be removed in Python 3.6, but such removals were delayed until
   after Python 2.7 EOL. Existing users should copy whatever classes they use
   into their code.
-  (Contributed by Dong-hee Na and Terry J. Reedy in :issue:`42299`.)
+  (Contributed by Donghee Na and Terry J. Reedy in :issue:`42299`.)
 
-* Removed the :c:func:`PyModule_GetWarningsModule` function that was useless
-  now due to the _warnings module was converted to a builtin module in 2.6.
+* Removed the :c:func:`!PyModule_GetWarningsModule` function that was useless
+  now due to the :mod:`!_warnings` module was converted to a builtin module in 2.6.
   (Contributed by Hai Shi in :issue:`42599`.)
 
 * Remove deprecated aliases to :ref:`collections-abstract-base-classes` from
@@ -2124,11 +2124,11 @@ New Features
   These functions allow to activate, deactivate and query the state of the garbage collector from C code without
   having to import the :mod:`gc` module.
 
-* Add a new :c:data:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
+* Add a new :c:macro:`Py_TPFLAGS_DISALLOW_INSTANTIATION` type flag to disallow
   creating type instances.
   (Contributed by Victor Stinner in :issue:`43916`.)
 
-* Add a new :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
+* Add a new :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag for creating immutable
   type objects: type attributes cannot be set nor deleted.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 
@@ -2187,9 +2187,9 @@ Porting to Python 3.10
   been included directly, consider including ``Python.h`` instead.
   (Contributed by Nicholas Sim in :issue:`35134`.)
 
-* Use the :c:data:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
-  objects. Do not rely on :c:data:`Py_TPFLAGS_HEAPTYPE` to decide if a type
-  object is mutable or not; check if :c:data:`Py_TPFLAGS_IMMUTABLETYPE` is set
+* Use the :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` type flag to create immutable type
+  objects. Do not rely on :c:macro:`Py_TPFLAGS_HEAPTYPE` to decide if a type
+  object is mutable or not; check if :c:macro:`Py_TPFLAGS_IMMUTABLETYPE` is set
   instead.
   (Contributed by Victor Stinner and Erlend E. Aasland in :issue:`43908`.)
 

@@ -3,8 +3,12 @@
 Converted to C by Dmitry Vasiliev (dima at hlabs.spb.ru).
 */
 
-#define PY_SSIZE_T_CLEAN
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
+#include "pycore_call.h"          // _PyObject_CallMethod()
 
 /*[clinic input]
 module _bisect
