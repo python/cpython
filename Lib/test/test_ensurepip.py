@@ -6,6 +6,8 @@ import tempfile
 import test.support
 import unittest
 import unittest.mock
+from importlib.resources.abc import Traversable
+from pathlib import Path
 
 import ensurepip
 import ensurepip._uninstall
@@ -20,22 +22,20 @@ class TestPackages(unittest.TestCase):
         # Test version()
         with tempfile.TemporaryDirectory() as tmpdir:
             self.touch(tmpdir, "pip-1.2.3b1-py2.py3-none-any.whl")
-            with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir):
+            with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', Path(tmpdir)):
                 self.assertEqual(ensurepip.version(), '1.2.3b1')
 
-    def test_get_pip_info_no_dir(self):
-        # Test _get_pip_info() without a wheel package directory
+    def test_version_no_dir(self):
+        # Test version() without a wheel package directory
         with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):
-            pip_info = ensurepip._get_pip_info()
-
             # when the bundled pip wheel is used, we get _PIP_VERSION
             self.assertEqual(ensurepip._PIP_VERSION, ensurepip.version())
 
-        # use the bundled pip wheel
+    def test_selected_wheel_path_no_dir(self):
         pip_filename = f'pip-{ensurepip._PIP_VERSION}-py3-none-any.whl'
-        expected = {"version": ensurepip._PIP_VERSION, "filename": pip_filename,
-                    "bundled": True}
-        self.assertDictEqual(pip_info, expected)
+        with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', None):
+            with ensurepip._get_pip_whl_path_ctx() as bundled_wheel_path:
+                self.assertEqual(pip_filename, bundled_wheel_path.name)
 
     def test_get_pip_info_with_dir(self):
         # Test _get_pip_info() with a wheel package directory
@@ -48,11 +48,9 @@ class TestPackages(unittest.TestCase):
             self.touch(tmpdir, "wheel-0.34.2-py2.py3-none-any.whl")
             self.touch(tmpdir, "pip-script.py")
 
-            with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', tmpdir):
-                pip_info = ensurepip._get_pip_info()
-
-            expected = {"version": '20.2.2', "filename": pip_filename, "bundled": False}
-            self.assertDictEqual(pip_info, expected)
+            with unittest.mock.patch.object(ensurepip, '_WHEEL_PKG_DIR', Path(tmpdir)):
+                with ensurepip._get_pip_whl_path_ctx() as bundled_wheel_path:
+                    self.assertEqual(pip_filename, bundled_wheel_path.name)
 
 
 class EnsurepipMixin:
