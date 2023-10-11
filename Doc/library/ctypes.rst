@@ -1738,70 +1738,70 @@ See :ref:`ctypes-callback-functions` for examples.
 Function prototypes created by these factory functions can be instantiated in
 different ways, depending on the type and number of the parameters in the call:
 
+.. function:: prototype(address)
+   :noindex:
+   :module:
 
-   .. function:: prototype(address)
-      :noindex:
-      :module:
-
-      Returns a foreign function at the specified address which must be an integer.
-
-
-   .. function:: prototype(callable)
-      :noindex:
-      :module:
-
-      Create a C callable function (a callback function) from a Python *callable*.
+   Returns a foreign function at the specified address which must be an integer.
 
 
-   .. function:: prototype(func_spec[, paramflags])
-      :noindex:
-      :module:
+.. function:: prototype(callable)
+   :noindex:
+   :module:
 
-      Returns a foreign function exported by a shared library. *func_spec* must
-      be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
-      the exported function as string, or the ordinal of the exported function
-      as small integer.  The second item is the shared library instance.
+   Create a C callable function (a callback function) from a Python *callable*.
 
 
-   .. function:: prototype(vtbl_index, name[, paramflags[, iid]])
-      :noindex:
-      :module:
+.. function:: prototype(func_spec[, paramflags])
+   :noindex:
+   :module:
 
-      Returns a foreign function that will call a COM method. *vtbl_index* is
-      the index into the virtual function table, a small non-negative
-      integer. *name* is name of the COM method. *iid* is an optional pointer to
-      the interface identifier which is used in extended error reporting.
+   Returns a foreign function exported by a shared library. *func_spec* must
+   be a 2-tuple ``(name_or_ordinal, library)``. The first item is the name of
+   the exported function as string, or the ordinal of the exported function
+   as small integer.  The second item is the shared library instance.
 
-      COM methods use a special calling convention: They require a pointer to
-      the COM interface as first argument, in addition to those parameters that
-      are specified in the :attr:`!argtypes` tuple.
 
-   The optional *paramflags* parameter creates foreign function wrappers with much
-   more functionality than the features described above.
+.. function:: prototype(vtbl_index, name[, paramflags[, iid]])
+   :noindex:
+   :module:
 
-   *paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
+   Returns a foreign function that will call a COM method. *vtbl_index* is
+   the index into the virtual function table, a small non-negative
+   integer. *name* is name of the COM method. *iid* is an optional pointer to
+   the interface identifier which is used in extended error reporting.
 
-   Each item in this tuple contains further information about a parameter, it must
-   be a tuple containing one, two, or three items.
+   COM methods use a special calling convention: They require a pointer to
+   the COM interface as first argument, in addition to those parameters that
+   are specified in the :attr:`!argtypes` tuple.
 
-   The first item is an integer containing a combination of direction
-   flags for the parameter:
+The optional *paramflags* parameter creates foreign function wrappers with much
+more functionality than the features described above.
 
-      1
-         Specifies an input parameter to the function.
+*paramflags* must be a tuple of the same length as :attr:`~_FuncPtr.argtypes`.
 
-      2
-         Output parameter.  The foreign function fills in a value.
+Each item in this tuple contains further information about a parameter, it must
+be a tuple containing one, two, or three items.
 
-      4
-         Input parameter which defaults to the integer zero.
+The first item is an integer containing a combination of direction
+flags for the parameter:
 
-   The optional second item is the parameter name as string.  If this is specified,
-   the foreign function can be called with named parameters.
+   1
+      Specifies an input parameter to the function.
 
-   The optional third item is the default value for this parameter.
+   2
+      Output parameter.  The foreign function fills in a value.
 
-This example demonstrates how to wrap the Windows ``MessageBoxW`` function so
+   4
+      Input parameter which defaults to the integer zero.
+
+The optional second item is the parameter name as string.  If this is specified,
+the foreign function can be called with named parameters.
+
+The optional third item is the default value for this parameter.
+
+
+The following example demonstrates how to wrap the Windows ``MessageBoxW`` function so
 that it supports default parameters and named arguments. The C declaration from
 the windows header file is this::
 
