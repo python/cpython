@@ -670,15 +670,29 @@ _push_pending_call(struct _pending_calls *pending,
         return -1; /* Queue full */
     }
 
-    struct _pending_call *call = PyMem_RawMalloc(sizeof(struct _pending_call));
-    if (call == NULL) {
-        return -1;
+    // Allocate for the pending call.
+    struct _pending_call *call;
+    if (pending->npending < NPENDINGCALLS) {
+        int i = pending->_last;
+        int j = (i + 1) % NPENDINGCALLS;
+        assert(j != pending->_first);
+        call = &pending->_preallocated[i];
+        pending->_last = j;
     }
+    else {
+        call = PyMem_RawMalloc(sizeof(struct _pending_call));
+        if (call == NULL) {
+            return -1;
+        }
+    }
+
+    // Initialize the data.
     call->func = func;
     call->arg = arg;
     call->flags = flags;
     call->next = NULL;
 
+    // Add the call to the list.
     if (pending->head == NULL) {
         pending->head = call;
     }
@@ -688,6 +702,7 @@ _push_pending_call(struct _pending_calls *pending,
     pending->tail = call;
     assert(pending->npending < NPENDINGCALLS);
     pending->npending++;
+
     return 0;
 }
 
@@ -699,20 +714,35 @@ _pop_pending_call(struct _pending_calls *pending,
     struct _pending_call *call = pending->head;
     if (call == NULL) {
         /* Queue empty */
+        assert(pending->npending == 0);
+        assert(pending->_first == pending->_last);
         return;
     }
+    assert(pending->npending > 0);
 
+    // Remove the next one from the list.
     pending->head = call->next;
     if (pending->tail == call) {
         pending->tail = NULL;
     }
     pending->npending--;
 
+    // Copy its data.
     *func = call->func;
     *arg = call->arg;
     *flags = call->flags;
 
-    PyMem_RawFree(call);
+    // Deallocate the list entry.
+    if (pending->npending < NPENDINGCALLS) {
+        assert(pending->_first != pending->_last);
+        int i = pending->_first;
+        pending->_preallocated[i] = (struct _pending_call){0};
+        pending->_first = (i + 1) % NPENDINGCALLS;
+    }
+    else {
+        assert(pending->_first == pending->_last);
+        PyMem_RawFree(call);
+    }
 }
 
 /* This implementation is thread-safe.  It allows

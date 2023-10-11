@@ -34,6 +34,13 @@ struct _pending_calls {
     int32_t npending;
     struct _pending_call *head;
     struct _pending_call *tail;
+
+    // We have a set of pre-allocated pending calls, to avoid
+    // possible allocation failures (at least when the number
+    // of pending calls is small).
+    int _first;
+    int _last;
+    struct _pending_call _preallocated[NPENDINGCALLS];
 };
 
 typedef enum {
