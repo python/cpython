@@ -4570,7 +4570,14 @@ make_ncurses_version(PyTypeObject *type)
     if (ncurses_version == NULL) {
         return NULL;
     }
-
+    const char *str = curses_version();
+    unsigned long major = 0, minor = 0, patch = 0;
+    if (!str || sscanf(str, "%*[^0-9]%lu.%lu.%lu", &major, &minor, &patch) < 3) {
+        // Fallback to header version, which cannot be that wrong
+        major = NCURSES_VERSION_MAJOR;
+        minor = NCURSES_VERSION_MINOR;
+        patch = NCURSES_VERSION_PATCH;
+    }
 #define SetIntItem(flag) \
     PyStructSequence_SET_ITEM(ncurses_version, pos++, PyLong_FromLong(flag)); \
     if (PyErr_Occurred()) { \
@@ -4578,9 +4585,9 @@ make_ncurses_version(PyTypeObject *type)
         return NULL; \
     }
 
-    SetIntItem(NCURSES_VERSION_MAJOR)
-    SetIntItem(NCURSES_VERSION_MINOR)
-    SetIntItem(NCURSES_VERSION_PATCH)
+    SetIntItem(major)
+    SetIntItem(minor)
+    SetIntItem(patch)
 #undef SetIntItem
 
     return ncurses_version;
