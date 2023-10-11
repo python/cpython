@@ -1319,11 +1319,16 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(equaltoutf8(s2, b), 1)
             self.assertEqual(equaltoutf8(s + 'x', b + b'x'), 1)
             self.assertEqual(equaltoutf8(s + 'x', b + b'y'), 0)
+            self.assertEqual(equaltoutf8(s, b + b'\0'), 1)
+            self.assertEqual(equaltoutf8(s2, b + b'\0'), 1)
             self.assertEqual(equaltoutf8(s + '\0', b + b'\0'), 0)
             self.assertEqual(equaltoutf8(s + '\0', b), 0)
             self.assertEqual(equaltoutf8(s2, b + b'x'), 0)
             self.assertEqual(equaltoutf8(s2, b[:-1]), 0)
             self.assertEqual(equaltoutf8(s2, b[:-1] + b'x'), 0)
+
+        self.assertEqual(equaltoutf8('', b''), 1)
+        self.assertEqual(equaltoutf8('', b'\0'), 1)
 
         # embedded null chars/bytes
         self.assertEqual(equaltoutf8('abc', b'abc\0def\0'), 1)
@@ -1360,6 +1365,8 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(equaltoutf8andsize(s2, b), 1)
             self.assertEqual(equaltoutf8andsize(s + 'x', b + b'x'), 1)
             self.assertEqual(equaltoutf8andsize(s + 'x', b + b'y'), 0)
+            self.assertEqual(equaltoutf8andsize(s, b + b'\0'), 0)
+            self.assertEqual(equaltoutf8andsize(s2, b + b'\0'), 0)
             self.assertEqual(equaltoutf8andsize(s + '\0', b + b'\0'), 1)
             self.assertEqual(equaltoutf8andsize(s + '\0', b), 0)
             self.assertEqual(equaltoutf8andsize(s2, b + b'x'), 0)
@@ -1370,6 +1377,10 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(equaltoutf8andsize(s2, b + b'x', len(b)), 1)
             self.assertEqual(equaltoutf8andsize(s + '\0', b + b'\0x', len(b) + 1), 1)
             self.assertEqual(equaltoutf8andsize(s2, b, len(b) - 1), 0)
+
+        self.assertEqual(equaltoutf8andsize('', b''), 1)
+        self.assertEqual(equaltoutf8andsize('', b'\0'), 0)
+        self.assertEqual(equaltoutf8andsize('', b'x', 0), 1)
 
         # embedded null chars/bytes
         self.assertEqual(equaltoutf8andsize('abc\0def', b'abc\0def'), 1)
