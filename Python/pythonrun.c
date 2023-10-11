@@ -687,13 +687,11 @@ struct exception_print_context
     PyObject *seen;            // Prevent cycles in recursion
     bool need_close;           // Need a closing bottom frame
 };
-#define EXC_MARGIN(ctx) ("")
-#define EXC_INDENT(ctx) (0)
 
 static int
 write_indented_margin(struct exception_print_context *ctx, PyObject *f)
 {
-    return _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
+    return _Py_WriteIndentedMargin(0, "", f);
 }
 
 static int
@@ -701,7 +699,7 @@ print_exception_invalid_type(struct exception_print_context *ctx,
                              PyObject *value)
 {
     PyObject *f = ctx->file;
-    if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
+    if (_Py_WriteIndent(0, f) < 0) {
         return -1;
     }
     const char *const msg = "TypeError: print_exception(): Exception expected "
@@ -727,9 +725,9 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
     PyObject *tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
-        const char *header_margin = EXC_MARGIN(ctx);
+        const char *header_margin = "";
         err = _PyTraceBack_Print_Indented(
-            tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), header_margin, header, f);
+            tb, 0, "", header_margin, header, f);
     }
     Py_XDECREF(tb);
     return err;
