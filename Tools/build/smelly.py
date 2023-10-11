@@ -82,8 +82,8 @@ def get_smelly_symbols(stdout, dynamic=False):
         symbol = parts[-1]
         result = '%s (type: %s)' % (symbol, symtype)
 
-        if (symbol.startswith(ALLOWED_PREFIXES) or 
-            symbol in EXCEPTIONS or 
+        if (symbol.startswith(ALLOWED_PREFIXES) or
+            symbol in EXCEPTIONS or
             (not dynamic and symbol.startswith(ALLOWED_STATIC_PREFIXES))):
             python_symbols.append(result)
             continue

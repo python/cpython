@@ -4,7 +4,7 @@
     <Filter Include="Include">
       <UniqueIdentifier>{086b0afb-270c-4603-a02a-63d46f0b2b92}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Include\mimalloc">
+    <Filter Include="Include\internal\mimalloc">
       <UniqueIdentifier>{1dc8d8bd-d493-478e-9b7a-7eb108bb8bd5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Modules">
@@ -795,22 +795,22 @@
     <ClInclude Include="..\Include\internal\pycore_uops.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc\atomic.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc\internal.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\internal.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc\prim.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc\track.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\mimalloc\mimalloc\types.h">
+    <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h">
       <Filter>Include\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">

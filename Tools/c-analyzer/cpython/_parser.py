@@ -91,8 +91,8 @@ Python/bytecodes.c
 
 # mimalloc
 Objects/mimalloc/*.c
-Include/mimalloc/*.h
-Include/mimalloc/mimalloc/*.h
+Include/internal/mimalloc/*.h
+Include/internal/mimalloc/mimalloc/*.h
 
 # @end=conf@
 ''')
@@ -114,7 +114,7 @@ glob	dirname
 *	.
 *	./Include
 *	./Include/internal
-*   ./Include/mimalloc
+*   ./Include/internal/mimalloc
 
 Modules/_decimal/**/*.c	Modules/_decimal/libmpdec
 Modules/_elementtree.c	Modules/expat

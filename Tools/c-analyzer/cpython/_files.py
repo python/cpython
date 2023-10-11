@@ -9,7 +9,7 @@ GLOBS = [
     # Technically, this is covered by "Include/*.h":
     #'Include/cpython/*.h',
     'Include/internal/*.h',
-    'Include/mimalloc/**/*.h',
+    'Include/internal/mimalloc/**/*.h',
     'Modules/**/*.h',
     'Modules/**/*.c',
     'Objects/**/*.h',
