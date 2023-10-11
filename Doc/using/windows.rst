@@ -1187,21 +1187,22 @@ Otherwise, your users may experience problems using your application. Note that
 the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
-.. versionchanged::
-   3.6
+.. versionchanged:: 3.6
 
-      * Adds ``._pth`` file support and removes ``applocal`` option from
-        ``pyvenv.cfg``.
-      * Adds :file:`python{XX}.zip` as a potential landmark when directly adjacent
-        to the executable.
+   Add ``._pth`` file support and removes ``applocal`` option from
+   ``pyvenv.cfg``.
 
-.. deprecated::
-   3.6
+.. versionchanged:: 3.6
 
-      Modules specified in the registry under ``Modules`` (not ``PythonPath``)
-      may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
-      This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :data:`sys.meta_path` in the future.
+   Add :file:`python{XX}.zip` as a potential landmark when directly adjacent
+   to the executable.
+
+.. deprecated:: 3.6
+
+   Modules specified in the registry under ``Modules`` (not ``PythonPath``)
+   may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
+   This finder is enabled on Windows in 3.6.0 and earlier, but may need to
+   be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================

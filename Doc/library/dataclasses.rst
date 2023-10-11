@@ -319,13 +319,11 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`Field` object directly.  Its documented attributes are:
 
-     - ``name``: The name of the field.
-
-     - ``type``: The type of the field.
-
-     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` function.
+   - ``name``: The name of the field.
+   - ``type``: The type of the field.
+   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+     ``compare``, ``metadata``, and ``kw_only`` have the identical
+     meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
