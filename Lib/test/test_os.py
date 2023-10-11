@@ -3929,6 +3929,10 @@ class EventfdTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
+    # Tolerate a difference of 50 us
+    CLOCK_RES_NS = 50_000
+    CLOCK_RES = CLOCK_RES_NS * 1e-9
+
     def timerfd_create(self, *args, **kwargs):
         fd = os.timerfd_create(*args, **kwargs)
         self.assertGreaterEqual(fd, 0)
@@ -3982,9 +3986,13 @@ class TimerfdTests(unittest.TestCase):
         one_sec_in_nsec = 10**9
         fd = self.timerfd_create(time.CLOCK_REALTIME)
 
+        test_flags = [0, os.TFD_TIMER_ABSTIME]
+        if hasattr(os, 'TFD_TIMER_CANCEL_ON_SET'):
+            test_flags.append(os.TFD_TIMER_ABSTIME | os.TFD_TIMER_CANCEL_ON_SET)
+
         # Any of 'initial' and 'interval' is negative value.
         for initial, interval in ( (-1, 0), (1, -1), (-1, -1),  (-0.1, 0), (1, -0.1), (-0.1, -0.1)):
-            for flags in (0, os.TFD_TIMER_ABSTIME, os.TFD_TIMER_ABSTIME|os.TFD_TIMER_CANCEL_ON_SET):
+            for flags in test_flags:
                 with self.subTest(flags=flags, initial=initial, interval=interval):
                     with self.assertRaises(OSError) as context:
                         _, _ = os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
@@ -4055,7 +4063,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter() - t
         self.assertEqual(count_signaled, 1)
 
-        self.assertGreater(t, offset)
+        self.assertGreater(t, offset - self.CLOCK_RES)
 
     def test_timerfd_select(self):
         size = 8  # read 8 bytes
@@ -4208,7 +4216,7 @@ class TimerfdTests(unittest.TestCase):
         t = time.perf_counter_ns() - t
         self.assertEqual(count_signaled, 1)
 
-        self.assertGreater(t, offset_ns)
+        self.assertGreater(t, offset_ns - self.CLOCK_RES_NS)
 
     def test_timerfd_ns_select(self):
         size = 8  # read 8 bytes

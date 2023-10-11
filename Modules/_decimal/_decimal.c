@@ -3593,6 +3593,12 @@ dec_format(PyObject *dec, PyObject *args)
     if (replace_fillchar) {
         dec_replace_fillchar(decstring);
     }
+    if (strchr(fmt, 'N') != NULL) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Format specifier 'N' is deprecated", 1) < 0) {
+            goto finish;
+        }
+    }
 
     result = PyUnicode_DecodeUTF8(decstring, size, NULL);
 

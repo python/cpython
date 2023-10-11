@@ -1,0 +1,1 @@
+In :mod:`pdb`, set convenience variable ``$_exception`` for post mortem debugging.
