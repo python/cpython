@@ -6526,6 +6526,8 @@ SRCDIRS="\
   Modules/expat \
   Objects \
   Parser \
+  Parser/tokenizer \
+  Parser/lexer \
   Programs \
   Python \
   Python/frozen_modules \

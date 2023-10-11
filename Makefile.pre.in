@@ -347,20 +347,36 @@ PEGEN_OBJS=		\
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
+TOKENIZER_OBJS=		\
+		Parser/lexer/buffer.o \
+		Parser/lexer/lexer.o \
+		Parser/lexer/state.o \
+		Parser/tokenizer/file_tokenizer.o \
+		Parser/tokenizer/readline_tokenizer.o \
+		Parser/tokenizer/string_tokenizer.o \
+		Parser/tokenizer/utf8_tokenizer.o \
+		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
+TOKENIZER_HEADERS= \
+		Parser/lexer/buffer.h \
+		Parser/lexer/lexer.h \
+		Parser/lexer/state.h \
+		Parser/tokenizer/tokenizer.h \
+		Parser/tokenizer/helpers.h
+
 POBJS=		\
 		Parser/token.o \
 
-PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) $(TOKENIZER_OBJS) Parser/myreadline.o
 
 PARSER_HEADERS= \
 		$(PEGEN_HEADERS) \
-		$(srcdir)/Parser/tokenizer.h
+		$(TOKENIZER_HEADERS)
 
 ##########################################################################
 # Python
@@ -1397,6 +1413,8 @@ regen-pegen-metaparser:
 .PHONY: regen-pegen
 regen-pegen:
 	@$(MKDIR_P) $(srcdir)/Parser
+	@$(MKDIR_P) $(srcdir)/Parser/tokenizer
+	@$(MKDIR_P) $(srcdir)/Parser/lexer
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
