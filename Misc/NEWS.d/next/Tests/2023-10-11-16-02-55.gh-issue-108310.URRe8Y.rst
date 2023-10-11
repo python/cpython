@@ -1,0 +1,2 @@
+SSL tests for pre-handshake close were previously not enabled on Python 3.8
+due to an incorrect backport. This is now fixed. Patch by Lumír Balhar.
