@@ -215,6 +215,14 @@ class BaseTest:
     # outside: An entry that is not in example
     # minitemsize: the minimum guaranteed itemsize
 
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
+
     def assertEntryEqual(self, entry1, entry2):
         self.assertEqual(entry1, entry2)
 

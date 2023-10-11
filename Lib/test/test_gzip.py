@@ -665,6 +665,18 @@ class TestGzip(BaseTest):
         ]
         self.assertEqual(fc.modes, expected_modes)
 
+    def test_write_seek_write(self):
+        # Make sure that offset is up-to-date before seeking
+        # See issue GH-108111
+        b = io.BytesIO()
+        message = b"important message here."
+        with gzip.GzipFile(fileobj=b, mode='w') as f:
+            f.write(message)
+            f.seek(len(message))
+            f.write(message)
+        data = b.getvalue()
+        self.assertEqual(gzip.decompress(data), message * 2)
+
 
 class TestOpen(BaseTest):
     def test_binary_modes(self):

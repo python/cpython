@@ -692,8 +692,8 @@ function.
    The optional *return_annotation* argument, can be an arbitrary Python object,
    is the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
       Signature objects are picklable and :term:`hashable`.
@@ -733,7 +733,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in
@@ -748,6 +748,9 @@ function.
          >>> new_sig = sig.replace(return_annotation="new return anno")
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
+
+      Signature objects are also supported by generic function
+      :func:`copy.replace`.
 
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
@@ -774,7 +777,7 @@ function.
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
       Parameter objects are picklable and :term:`hashable`.
@@ -896,6 +899,8 @@ function.
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
+
+      Parameter objects are also supported by generic function :func:`copy.replace`.
 
    .. versionchanged:: 3.4
       In Python 3.3 Parameter objects were allowed to have ``name`` set
@@ -1655,6 +1660,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

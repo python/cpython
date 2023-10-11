@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_import.h"
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"
 #include "pycore_runtime.h"
 
@@ -14,7 +15,7 @@
 */
 #ifdef HAVE_DYNAMIC_LOADING
 
-#include "importdl.h"
+#include "pycore_importdl.h"
 
 #ifdef MS_WINDOWS
 extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,

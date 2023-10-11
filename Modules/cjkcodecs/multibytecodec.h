@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#include "pycore_unicodeobject.h" // _PyUnicodeWriter
+
 #ifdef uint16_t
 typedef uint16_t ucs2_t, DBCHAR;
 #else

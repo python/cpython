@@ -358,7 +358,7 @@ Common patterns for working with :class:`Counter` objects::
     list(c)                         # list unique elements
     set(c)                          # convert to a set
     dict(c)                         # convert to a regular dictionary
-    c.items()                       # convert to a list of (elem, cnt) pairs
+    c.items()                       # access the (elem, cnt) pairs
     Counter(dict(list_of_pairs))    # convert from a list of (elem, cnt) pairs
     c.most_common()[:-n-1:-1]       # n least common elements
     +c                              # remove zero and negative counts
@@ -979,6 +979,8 @@ field names, the method and attribute names start with an underscore.
         >>> for partnum, record in inventory.items():
         ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
+    Named tuples are also supported by generic function :func:`copy.replace`.
+
 .. attribute:: somenamedtuple._fields
 
     Tuple of strings listing the field names.  Useful for introspection
@@ -1224,7 +1226,7 @@ variants of :func:`functools.lru_cache`:
             result = self.func(*args)
             self.cache[args] = time(), result
             if len(self.cache) > self.maxsize:
-                self.cache.popitem(0)
+                self.cache.popitem(last=False)
             return result
 
 
@@ -1256,12 +1258,12 @@ variants of :func:`functools.lru_cache`:
             if self.requests[args] <= self.cache_after:
                 self.requests.move_to_end(args)
                 if len(self.requests) > self.maxrequests:
-                    self.requests.popitem(0)
+                    self.requests.popitem(last=False)
             else:
                 self.requests.pop(args, None)
                 self.cache[args] = result
                 if len(self.cache) > self.maxsize:
-                    self.cache.popitem(0)
+                    self.cache.popitem(last=False)
             return result
 
 .. doctest::

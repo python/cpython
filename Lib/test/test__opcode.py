@@ -7,8 +7,47 @@ _opcode = import_module("_opcode")
 from _opcode import stack_effect
 
 
-class OpcodeTests(unittest.TestCase):
+class OpListTests(unittest.TestCase):
+    def test_invalid_opcodes(self):
+        invalid = [-100, -1, 255, 512, 513, 1000]
+        self.check_bool_function_result(_opcode.is_valid, invalid, False)
+        self.check_bool_function_result(_opcode.has_arg, invalid, False)
+        self.check_bool_function_result(_opcode.has_const, invalid, False)
+        self.check_bool_function_result(_opcode.has_name, invalid, False)
+        self.check_bool_function_result(_opcode.has_jump, invalid, False)
+        self.check_bool_function_result(_opcode.has_free, invalid, False)
+        self.check_bool_function_result(_opcode.has_local, invalid, False)
+        self.check_bool_function_result(_opcode.has_exc, invalid, False)
 
+    def test_is_valid(self):
+        names = [
+            'CACHE',
+            'POP_TOP',
+            'IMPORT_NAME',
+            'JUMP',
+            'INSTRUMENTED_RETURN_VALUE',
+        ]
+        opcodes = [dis.opmap[opname] for opname in names]
+        self.check_bool_function_result(_opcode.is_valid, opcodes, True)
+
+    def test_oplists(self):
+        def check_function(self, func, expected):
+            for op in [-10, 520]:
+                with self.subTest(opcode=op, func=func):
+                    res = func(op)
+                    self.assertIsInstance(res, bool)
+                    self.assertEqual(res, op in expected)
+
+        check_function(self, _opcode.has_arg, dis.hasarg)
+        check_function(self, _opcode.has_const, dis.hasconst)
+        check_function(self, _opcode.has_name, dis.hasname)
+        check_function(self, _opcode.has_jump, dis.hasjump)
+        check_function(self, _opcode.has_free, dis.hasfree)
+        check_function(self, _opcode.has_local, dis.haslocal)
+        check_function(self, _opcode.has_exc, dis.hasexc)
+
+
+class OpListTests(unittest.TestCase):
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
@@ -67,7 +106,7 @@ class SpecializationStatsTests(unittest.TestCase):
         specialized_opcodes = [
             op.lower()
             for op in opcode._specializations
-            if opcode._inline_cache_entries[opcode.opmap[op]]
+            if opcode._inline_cache_entries.get(op, 0)
         ]
         self.assertIn('load_attr', specialized_opcodes)
         self.assertIn('binary_subscr', specialized_opcodes)

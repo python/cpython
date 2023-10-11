@@ -1,0 +1,8 @@
+It is now possible to deprecate passing parameters positionally with
+Argument Clinic, using the new ``* [from X.Y]`` syntax.
+(To be read as *"keyword-only from Python version X.Y"*.)
+See `documentation in the Python Developer's Guide
+<https://devguide.python.org/development-tools/clinic/#clinic-howto-deprecate-positional>`__
+for more information.
+Patch by Erlend E. Aasland with help from Alex Waygood,
+Nikita Sobolev, and Serhiy Storchaka.
