@@ -1,0 +1,2 @@
+Protocols used to check for ``__match_args__`` attribute in
+``__instancecheck__``. Now, this attribute is ignored.
