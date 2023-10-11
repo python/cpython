@@ -964,7 +964,7 @@ class CPythonTracebackLegacyErrorCaretTests(
     """
 
 
-class TracebackFormatMixing:
+class TracebackFormatMixin:
     DEBUG_RANGES = True
 
     def some_exception(self):
@@ -1353,11 +1353,11 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
-class TestTracebackFormat(unittest.TestCase, TracebackFormatMixing):
+class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     pass
 
 @cpython_only
-class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixing):
+class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
         self.original_hook = traceback._print_exception_bltin
