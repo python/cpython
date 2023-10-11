@@ -1075,6 +1075,11 @@ Porting to Python 3.13
   :c:func:`!Py_TOLOWER`.
   (Contributed by Victor Stinner in :gh:`108765`.)
 
+* If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`Py_BUILD_CORE`,
+  :c:macro:`Py_BUILD_CORE_BUILTIN` and :c:macro:`Py_BUILD_CORE_MODULE` macros
+  are now undefined by ``<Python.h>``.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 Deprecated
 ----------
 
