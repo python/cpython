@@ -88,6 +88,10 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
 
+# Internal constant list
+Python/initconfig.c	-	PYCONFIG_SPEC	-
+
+
 ##-----------------------
 ## public C-API
 
@@ -161,6 +165,9 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
+
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
 
 
 ##################################
@@ -603,6 +610,7 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
@@ -664,7 +672,6 @@ Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
-Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 Modules/expat/xmlrole.c	-	prolog0	-
 Modules/expat/xmlrole.c	-	prolog1	-
 Modules/expat/xmlrole.c	-	prolog2	-

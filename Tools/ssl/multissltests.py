@@ -151,7 +151,10 @@ class AbstractBuilder(object):
     build_template = None
     depend_target = None
     install_target = 'install'
-    jobs = os.cpu_count()
+    if hasattr(os, 'process_cpu_count'):
+        jobs = os.process_cpu_count()
+    else:
+        jobs = os.cpu_count()
 
     module_files = (
         os.path.join(PYTHONROOT, "Modules/_ssl.c"),

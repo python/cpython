@@ -3,8 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
-
-from .utils import MS_WINDOWS
+from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
 USAGE = """\
@@ -29,8 +28,10 @@ EPILOG = """\
 Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer; this is useful for reproducing troublesome
-test orders.
+int seed value for the randomizer. The randseed value will be used
+to set seeds for all random usages in tests
+(including randomizing the tests order if -r is set).
+By default we always set random seed, but do not randomize test order.
 
 -s On the first invocation of regrtest using -s, the first test file found
 or the first test file given on the command line is run, and the name of
@@ -132,19 +133,6 @@ Pattern examples:
 """
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs) -> None:
         self.ci = False
@@ -231,6 +219,9 @@ def _create_parser():
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a global random seed')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -251,10 +242,6 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED',
-                       dest='random_seed', type=int,
-                       help='pass a random seed to reproduce a previous '
-                            'random run')
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -414,7 +401,7 @@ def _parse_args(args, **kwargs):
         # Similar to options:
         #
         #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
-        #     --slowest --verbose3 --nowindows
+        #     --slowest --verbose3
         if ns.use_mp is None:
             ns.use_mp = 0
         ns.randomize = True
@@ -424,8 +411,6 @@ def _parse_args(args, **kwargs):
             ns.rerun = True
         ns.print_slow = True
         ns.verbose3 = True
-        if MS_WINDOWS:
-            ns.nowindows = True  # Silence alerts under Windows
     else:
         ns._add_python_opts = False
 
