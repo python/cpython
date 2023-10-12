@@ -82,7 +82,7 @@ dots (``.``) in this documentation.
 
 :Type: ``str``
 :Description: An absolute path pointing to an interpreter from the installation.
-:Availability: May be omitted in situations where is is unavailable, there isn't
+:Availability: May be omitted in situations where it is unavailable, there isn't
                a reliable path that can be specified, etc.
 
 ``python.stdlib``
@@ -91,7 +91,7 @@ dots (``.``) in this documentation.
 :Type: ``str``
 :Description: An absolute path pointing to the directory where the standard
               library is installed.
-:Availability: May be omitted in situations where is is unavailable, there isn't
+:Availability: May be omitted in situations where it is unavailable, there isn't
                a reliable path that can be specified, etc.
 
 
