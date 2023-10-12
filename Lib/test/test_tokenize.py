@@ -1435,7 +1435,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(consumed_lines, expected)
 
     def test_latin1_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("latin-1", "iso-8859-1", "iso-latin-1", "latin-1-unix",
                      "iso-8859-1-unix", "iso-latin-1-mac")
         for encoding in encodings:
@@ -1460,7 +1460,7 @@ class TestDetectEncoding(TestCase):
 
 
     def test_utf8_normalization(self):
-        # See get_normal_name() in tokenizer.c.
+        # See get_normal_name() in Parser/tokenizer/helpers.c.
         encodings = ("utf-8", "utf-8-mac", "utf-8-unix")
         for encoding in encodings:
             for rep in ("-", "_"):

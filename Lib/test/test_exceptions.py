@@ -253,7 +253,7 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
-        # Errors thrown by tokenizer.c
+        # Errors thrown by the tokenizer
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
         check('0010 + 2', 1, 1)

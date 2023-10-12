@@ -14,8 +14,9 @@ static int
 warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
     unsigned char c = *first_invalid_escape;
-    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {  // in this case the tokenizer has already emitted a warning,
-                                                                                            // see tokenizer.c:warn_invalid_escape_sequence
+    if ((t->type == FSTRING_MIDDLE || t->type == FSTRING_END) && (c == '{' || c == '}')) {
+        // in this case the tokenizer has already emitted a warning,
+        // see Parser/tokenizer/helpers.c:warn_invalid_escape_sequence
         return 0;
     }
 
