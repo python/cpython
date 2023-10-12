@@ -601,29 +601,59 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
 
-    def run_forever(self):
-        """Run until stop() is called."""
+    def run_forever_setup(self):
+        """Set up an event loop so that it is ready to start actively looping
+        to process events.
+
+        Returns the state that must be restored when the loop concludes. This state
+        should be passed in as arguments to ``run_forever_cleanup()``.
+
+        This method is only needed if you are writing your own event loop, with
+        customized ``run_forever`` semantics (e.g., integrating a GUI event loop
+        with Python's event loop).
+        """
         self._check_closed()
         self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
 
         old_agen_hooks = sys.get_asyncgen_hooks()
-        try:
-            self._thread_id = threading.get_ident()
-            sys.set_asyncgen_hooks(firstiter=self._asyncgen_firstiter_hook,
-                                   finalizer=self._asyncgen_finalizer_hook)
+        self._thread_id = threading.get_ident()
+        sys.set_asyncgen_hooks(
+            firstiter=self._asyncgen_firstiter_hook,
+            finalizer=self._asyncgen_finalizer_hook
+        )
 
-            events._set_running_loop(self)
+        events._set_running_loop(self)
+
+        return (old_agen_hooks,)
+
+    def run_forever_cleanup(self, orig_state):
+        """Clean up an event loop after the event loop finishes the looping over
+        events.
+
+        Restores any state preserved by ``run_forever_setup()``.
+
+        This method is only needed if you are writing your own event loop, with
+        customized ``run_forever`` semantics (e.g., integrating a GUI event loop
+        with Python's event loop).
+        """
+        old_agen_hooks, = orig_state
+        self._stopping = False
+        self._thread_id = None
+        events._set_running_loop(None)
+        self._set_coroutine_origin_tracking(False)
+        sys.set_asyncgen_hooks(*old_agen_hooks)
+
+    def run_forever(self):
+        """Run until stop() is called."""
+        try:
+            orig_state = self.run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
                     break
         finally:
-            self._stopping = False
-            self._thread_id = None
-            events._set_running_loop(None)
-            self._set_coroutine_origin_tracking(False)
-            sys.set_asyncgen_hooks(*old_agen_hooks)
+            self.run_forever_cleanup(orig_state)
 
     def run_until_complete(self, future):
         """Run until the Future is done.
