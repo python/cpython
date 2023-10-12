@@ -683,9 +683,9 @@ _push_pending_call(struct _pending_calls *pending,
         pending->_first = 0;
         pending->_next = 1;
     }
-    else if (pending->npending < NPENDINGCALLS) {
+    else if (pending->npending < NPENDINGCALLSARRAY) {
         int i = pending->_next;
-        int next = (i + 1) % NPENDINGCALLS;
+        int next = (i + 1) % NPENDINGCALLSARRAY;
         assert(i != pending->_first);
         call = &pending->_preallocated[i];
         pending->_next = next;
@@ -743,12 +743,12 @@ _pop_pending_call(struct _pending_calls *pending,
     *flags = call->flags;
 
     // Deallocate the list entry.
-    if (pending->npending < NPENDINGCALLS) {
+    if (pending->npending < NPENDINGCALLSARRAY) {
         assert(pending->_first != pending->_next
-               || (pending->npending + 1) == NPENDINGCALLS);
+               || (pending->npending + 1) == NPENDINGCALLSARRAY);
         int i = pending->_first;
         pending->_preallocated[i] = (struct _pending_call){0};
-        pending->_first = (i + 1) % NPENDINGCALLS;
+        pending->_first = (i + 1) % NPENDINGCALLSARRAY;
     }
     else {
         assert(pending->_first == pending->_next);

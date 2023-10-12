@@ -102,8 +102,8 @@ extern PyTypeObject _PyExc_MemoryError;
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
             .pending_mainthread = { \
-                .max = NPENDINGCALLS, \
-                .maxloop = NPENDINGCALLS, \
+                .max = NPENDINGCALLSARRAY, \
+                .maxloop = NPENDINGCALLSARRAY, \
             }, \
         }, \
         .gilstate = { \
@@ -154,8 +154,8 @@ extern PyTypeObject _PyExc_MemoryError;
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
             .pending = { \
-                .max = NPENDINGCALLS, \
-                .maxloop = NPENDINGCALLS, \
+                .max = NPENDINGCALLSARRAY, \
+                .maxloop = NPENDINGCALLSARRAY, \
             }, \
         }, \
         .gc = { \
