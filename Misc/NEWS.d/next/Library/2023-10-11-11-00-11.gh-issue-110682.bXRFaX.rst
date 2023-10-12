@@ -1,0 +1,4 @@
+:func:`runtime-checkable protocols <typing.runtime_checkable>` used
+to consider ``__match_args__`` a protocol member in
+``__instancecheck__`` if it was present on the protocol. Now, this attribute is
+ignored if it is present.
