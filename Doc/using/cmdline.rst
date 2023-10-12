@@ -606,6 +606,7 @@ Miscellaneous options
    .. versionadded:: 3.13
       The ``-X cpu_count`` option.
 
+   .. versionadded:: 3.13
       The ``-X presite`` option.
 
 
