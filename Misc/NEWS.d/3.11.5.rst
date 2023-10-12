@@ -793,7 +793,7 @@ and 3.1.2.
 
 Argument Clinic now supports overriding automatically generated signature by
 using directive ``@text_signature``. See
-:ref:`clinic-howto-override-signature`.
+`the Argument Clinic docs <devguide.python.org/development-tools/clinic/>`__.
 
 ..
 
