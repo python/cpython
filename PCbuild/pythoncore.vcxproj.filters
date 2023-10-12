@@ -796,22 +796,22 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\atomic.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\internal.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\prim.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\track.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\mimalloc\mimalloc\types.h">
-      <Filter>Include\mimalloc</Filter>
+      <Filter>Include\internal\mimalloc</Filter>
     </ClInclude>
     <ClInclude Include="$(zlibDir)\crc32.h">
       <Filter>Modules\zlib</Filter>
