@@ -1,16 +1,11 @@
 """
 Collect various information about Python to help debugging test failures.
 """
-from __future__ import print_function
 import errno
 import re
 import sys
 import traceback
-import unittest
 import warnings
-
-
-MS_WINDOWS = (sys.platform == 'win32')
 
 
 def normalize_text(text):
@@ -244,6 +239,7 @@ def collect_os(info_add):
         'getresgid',
         'getresuid',
         'getuid',
+        'process_cpu_count',
         'uname',
     ):
         call_func(info_add, 'os.%s' % func, os, func)
@@ -273,6 +269,7 @@ def collect_os(info_add):
         "ARCHFLAGS",
         "ARFLAGS",
         "AUDIODEV",
+        "BUILDPYTHON",
         "CC",
         "CFLAGS",
         "COLUMNS",
@@ -317,7 +314,6 @@ def collect_os(info_add):
         "TEMP",
         "TERM",
         "TILE_LIBRARY",
-        "TIX_LIBRARY",
         "TMP",
         "TMPDIR",
         "TRAVIS",
@@ -326,15 +322,24 @@ def collect_os(info_add):
         "VIRTUAL_ENV",
         "WAYLAND_DISPLAY",
         "WINDIR",
+        "_PYTHON_HOSTRUNNER",
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
         "__PYVENV_LAUNCHER__",
+
+        # Sanitizer options
+        "ASAN_OPTIONS",
+        "LSAN_OPTIONS",
+        "MSAN_OPTIONS",
+        "TSAN_OPTIONS",
+        "UBSAN_OPTIONS",
     ))
     for name, value in os.environ.items():
         uname = name.upper()
         if (uname in ENV_VARS
-           # Copy PYTHON* and LC_* variables
+           # Copy PYTHON* variables like PYTHONPATH
+           # Copy LC_* variables like LC_ALL
            or uname.startswith(("PYTHON", "LC_"))
            # Visual Studio: VS140COMNTOOLS
            or (uname.startswith("VS") and uname.endswith("COMNTOOLS"))):
@@ -487,12 +492,9 @@ def collect_datetime(info_add):
 
 
 def collect_sysconfig(info_add):
-    # On Windows, sysconfig is not reliable to get macros used
-    # to build Python
-    if MS_WINDOWS:
-        return
-
     import sysconfig
+
+    info_add('sysconfig.is_python_build', sysconfig.is_python_build())
 
     for name in (
         'ABIFLAGS',
@@ -502,6 +504,7 @@ def collect_sysconfig(info_add):
         'CFLAGS',
         'CFLAGSFORSHARED',
         'CONFIG_ARGS',
+        'HOSTRUNNER',
         'HOST_GNU_TYPE',
         'MACHDEP',
         'MULTIARCH',
@@ -514,11 +517,13 @@ def collect_sysconfig(info_add):
         'PY_STDMODULE_CFLAGS',
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
+        'Py_NOGIL',
         'SHELL',
         'SOABI',
         'abs_builddir',
         'abs_srcdir',
         'prefix',
+        'srcdir',
     ):
         value = sysconfig.get_config_var(name)
         if name == 'ANDROID_API_LEVEL' and not value:
@@ -665,7 +670,29 @@ def collect_testcapi(info_add):
     except ImportError:
         return
 
-    call_func(info_add, 'pymem.allocator', _testcapi, 'pymem_getallocatorsname')
+    for name in (
+        'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
+        'PY_SSIZE_T_MAX',
+        'Py_C_RECURSION_LIMIT',
+        'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
+        'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
+    ):
+        copy_attr(info_add, f'_testcapi.{name}', _testcapi, name)
+
+
+def collect_testinternalcapi(info_add):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return
+
+    call_func(info_add, 'pymem.allocator', _testinternalcapi, 'pymem_getallocatorsname')
+
+    for name in (
+        'SIZEOF_PYGC_HEAD',
+        'SIZEOF_PYOBJECT',
+    ):
+        copy_attr(info_add, f'_testinternalcapi.{name}', _testinternalcapi, name)
 
 
 def collect_resource(info_add):
@@ -684,6 +711,7 @@ def collect_resource(info_add):
 
 
 def collect_test_socket(info_add):
+    import unittest
     try:
         from test import test_socket
     except (ImportError, unittest.SkipTest):
@@ -695,14 +723,11 @@ def collect_test_socket(info_add):
     copy_attributes(info_add, test_socket, 'test_socket.%s', attributes)
 
 
-def collect_test_support(info_add):
+def collect_support(info_add):
     try:
         from test import support
     except ImportError:
         return
-
-    attributes = ('IPV6_ENABLED',)
-    copy_attributes(info_add, support, 'test_support.%s', attributes)
 
     attributes = (
         'MS_WINDOWS',
@@ -717,15 +742,62 @@ def collect_test_support(info_add):
     )
     copy_attributes(info_add, support, 'support.%s', attributes)
 
-    call_func(info_add, 'test_support._is_gui_available', support, '_is_gui_available')
-    call_func(info_add, 'test_support.python_is_optimized', support, 'python_is_optimized')
+    call_func(info_add, 'support._is_gui_available', support, '_is_gui_available')
+    call_func(info_add, 'support.python_is_optimized', support, 'python_is_optimized')
 
-    info_add('test_support.check_sanitizer(address=True)',
+    info_add('support.check_sanitizer(address=True)',
              support.check_sanitizer(address=True))
-    info_add('test_support.check_sanitizer(memory=True)',
+    info_add('support.check_sanitizer(memory=True)',
              support.check_sanitizer(memory=True))
-    info_add('test_support.check_sanitizer(ub=True)',
+    info_add('support.check_sanitizer(ub=True)',
              support.check_sanitizer(ub=True))
+
+
+def collect_support_os_helper(info_add):
+    try:
+        from test.support import os_helper
+    except ImportError:
+        return
+
+    for name in (
+        'can_symlink',
+        'can_xattr',
+        'can_chmod',
+        'can_dac_override',
+    ):
+        func = getattr(os_helper, name)
+        info_add(f'support_os_helper.{name}', func())
+
+
+def collect_support_socket_helper(info_add):
+    try:
+        from test.support import socket_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'IPV6_ENABLED',
+        'has_gethostname',
+    )
+    copy_attributes(info_add, socket_helper, 'support_socket_helper.%s', attributes)
+
+    for name in (
+        'tcp_blackhole',
+    ):
+        func = getattr(socket_helper, name)
+        info_add(f'support_socket_helper.{name}', func())
+
+
+def collect_support_threading_helper(info_add):
+    try:
+        from test.support import threading_helper
+    except ImportError:
+        return
+
+    attributes = (
+        'can_start_thread',
+    )
+    copy_attributes(info_add, threading_helper, 'support_threading_helper.%s', attributes)
 
 
 def collect_cc(info_add):
@@ -882,6 +954,12 @@ def collect_fips(info_add):
         pass
 
 
+def collect_tempfile(info_add):
+    import tempfile
+
+    info_add('tempfile.gettempdir', tempfile.gettempdir())
+
+
 def collect_libregrtest_utils(info_add):
     try:
         from test.libregrtest import utils
@@ -924,6 +1002,8 @@ def collect_info(info):
         collect_sys,
         collect_sysconfig,
         collect_testcapi,
+        collect_testinternalcapi,
+        collect_tempfile,
         collect_time,
         collect_tkinter,
         collect_windows,
@@ -932,7 +1012,10 @@ def collect_info(info):
 
         # Collecting from tests should be last as they have side effects.
         collect_test_socket,
-        collect_test_support,
+        collect_support,
+        collect_support_os_helper,
+        collect_support_socket_helper,
+        collect_support_threading_helper,
     ):
         try:
             collect_func(info_add)

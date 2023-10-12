@@ -1,8 +1,9 @@
 import argparse
-import os
+import os.path
 import shlex
 import sys
 from test.support import os_helper
+from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
 USAGE = """\
@@ -27,8 +28,10 @@ EPILOG = """\
 Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer; this is useful for reproducing troublesome
-test orders.
+int seed value for the randomizer. The randseed value will be used
+to set seeds for all random usages in tests
+(including randomizing the tests order if -r is set).
+By default we always set random seed, but do not randomize test order.
 
 -s On the first invocation of regrtest using -s, the first test file found
 or the first test file given on the command line is run, and the name of
@@ -130,25 +133,17 @@ Pattern examples:
 """
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs) -> None:
+        self.ci = False
         self.testdir = None
         self.verbose = 0
         self.quiet = False
         self.exclude = False
+        self.cleanup = False
+        self.wait = False
+        self.list_cases = False
+        self.list_tests = False
         self.single = False
         self.randomize = False
         self.fromfile = None
@@ -157,7 +152,7 @@ class Namespace(argparse.Namespace):
         self.trace = False
         self.coverdir = 'coverage'
         self.runleaks = False
-        self.huntrleaks = False
+        self.huntrleaks: tuple[int, int, str] | None = None
         self.rerun = False
         self.verbose3 = False
         self.print_slow = False
@@ -170,6 +165,14 @@ class Namespace(argparse.Namespace):
         self.ignore_tests = None
         self.pgo = False
         self.pgo_extended = False
+        self.worker_json = None
+        self.start = None
+        self.timeout = None
+        self.memlimit = None
+        self.threshold = None
+        self.fail_rerun = False
+        self.tempdir = None
+        self._add_python_opts = True
 
         super().__init__(**kwargs)
 
@@ -198,19 +201,27 @@ def _create_parser():
     # We add help explicitly to control what argument group it renders under.
     group.add_argument('-h', '--help', action='help',
                        help='show this help message and exit')
-    group.add_argument('--timeout', metavar='TIMEOUT', type=float,
+    group.add_argument('--fast-ci', action='store_true',
+                       help='Fast Continuous Integration (CI) mode used by '
+                            'GitHub Actions')
+    group.add_argument('--slow-ci', action='store_true',
+                       help='Slow Continuous Integration (CI) mode used by '
+                            'buildbot workers')
+    group.add_argument('--timeout', metavar='TIMEOUT',
                         help='dump the traceback and exit if a test takes '
                              'more than TIMEOUT seconds; disabled if TIMEOUT '
                              'is negative or equals to zero')
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--worker-args', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a global random seed')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -231,10 +242,6 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED',
-                       dest='random_seed', type=int,
-                       help='pass a random seed to reproduce a previous '
-                            'random run')
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -324,6 +331,9 @@ def _create_parser():
                        help='override the working directory for the test run')
     group.add_argument('--cleanup', action='store_true',
                        help='remove old test_python_* directories')
+    group.add_argument('--dont-add-python-opts', dest='_add_python_opts',
+                       action='store_false',
+                       help="internal option, don't use it")
     return parser
 
 
@@ -374,7 +384,50 @@ def _parse_args(args, **kwargs):
     for arg in ns.args:
         if arg.startswith('-'):
             parser.error("unrecognized arguments: %s" % arg)
-            sys.exit(1)
+
+    if ns.timeout is not None:
+        # Support "--timeout=" (no value) so Makefile.pre.pre TESTTIMEOUT
+        # can be used by "make buildbottest" and "make test".
+        if ns.timeout != "":
+            try:
+                ns.timeout = float(ns.timeout)
+            except ValueError:
+                parser.error(f"invalid timeout value: {ns.timeout!r}")
+        else:
+            ns.timeout = None
+
+    # Continuous Integration (CI): common options for fast/slow CI modes
+    if ns.slow_ci or ns.fast_ci:
+        # Similar to options:
+        #
+        #     -j0 --randomize --fail-env-changed --fail-rerun --rerun
+        #     --slowest --verbose3
+        if ns.use_mp is None:
+            ns.use_mp = 0
+        ns.randomize = True
+        ns.fail_env_changed = True
+        ns.fail_rerun = True
+        if ns.python is None:
+            ns.rerun = True
+        ns.print_slow = True
+        ns.verbose3 = True
+    else:
+        ns._add_python_opts = False
+
+    # When both --slow-ci and --fast-ci options are present,
+    # --slow-ci has the priority
+    if ns.slow_ci:
+        # Similar to: -u "all" --timeout=1200
+        if not ns.use:
+            ns.use = [['all']]
+        if ns.timeout is None:
+            ns.timeout = 1200  # 20 minutes
+    elif ns.fast_ci:
+        # Similar to: -u "all,-cpu" --timeout=600
+        if not ns.use:
+            ns.use = [['all', '-cpu']]
+        if ns.timeout is None:
+            ns.timeout = 600  # 10 minutes
 
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
@@ -401,10 +454,6 @@ def _parse_args(args, **kwargs):
     if ns.timeout is not None:
         if ns.timeout <= 0:
             ns.timeout = None
-    if ns.use_mp is not None:
-        if ns.use_mp <= 0:
-            # Use all cores + extras for tests that like to sleep
-            ns.use_mp = 2 + (os.cpu_count() or 1)
     if ns.use:
         for a in ns.use:
             for r in a:
@@ -447,5 +496,14 @@ def _parse_args(args, **kwargs):
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
+
+    if ns.huntrleaks:
+        warmup, repetitions, _ = ns.huntrleaks
+        if warmup < 1 or repetitions < 1:
+            msg = ("Invalid values for the --huntrleaks/-R parameters. The "
+                   "number of warmups and repetitions must be at least 1 "
+                   "each (1:1).")
+            print(msg, file=sys.stderr, flush=True)
+            sys.exit(2)
 
     return ns
