@@ -101,6 +101,9 @@ extern PyTypeObject _PyExc_MemoryError;
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
+            .pending_mainthread = { \
+                .max = NPENDINGCALLS, \
+            }, \
         }, \
         .gilstate = { \
             .check_enabled = 1, \
@@ -149,6 +152,9 @@ extern PyTypeObject _PyExc_MemoryError;
         .obmalloc = _obmalloc_state_INIT(INTERP.obmalloc), \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
+            .pending = { \
+                .max = NPENDINGCALLS, \
+            }, \
         }, \
         .gc = { \
             .enabled = 1, \

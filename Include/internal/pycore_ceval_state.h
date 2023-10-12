@@ -32,6 +32,7 @@ struct _pending_calls {
     PyThread_type_lock lock;
     /* The number of pending calls. */
     int32_t npending;
+    int32_t max;
     struct _pending_call *head;
     struct _pending_call *tail;
 

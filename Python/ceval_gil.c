@@ -666,8 +666,11 @@ _push_pending_call(struct _pending_calls *pending,
                    _Py_pending_call_func func, void *arg, int flags)
 {
     // XXX Drop the limit?
-    if (pending->npending == NPENDINGCALLS) {
-        return -1; /* Queue full */
+    if (pending->max >= 0) {
+        if (pending->npending == pending->max) {
+            return -1; /* Queue full */
+        }
+        assert(pending->npending < pending->max);
     }
 
     // Allocate for the pending call.
@@ -708,7 +711,6 @@ _push_pending_call(struct _pending_calls *pending,
         pending->tail->next = call;
     }
     pending->tail = call;
-    assert(pending->npending < NPENDINGCALLS);
     pending->npending++;
 
     return 0;
@@ -812,8 +814,10 @@ handle_signals(PyThreadState *tstate)
 static int
 _make_pending_calls(struct _pending_calls *pending)
 {
+    assert(pending->max > 0);  // XXX Drop this.
     /* perform a bounded number of calls, in case of recursion */
-    for (int i=0; i<NPENDINGCALLS; i++) {
+    // XXX Loop over a fixed maximum and set eval breaker if not empty?
+    for (int i=0; i<pending->max; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
