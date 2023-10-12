@@ -672,12 +672,20 @@ _push_pending_call(struct _pending_calls *pending,
 
     // Allocate for the pending call.
     struct _pending_call *call;
-    if (pending->npending < NPENDINGCALLS) {
-        int i = pending->_last;
-        int j = (i + 1) % NPENDINGCALLS;
-        assert(j != pending->_first);
+    if (pending->npending == 0) {
+        assert(pending->_next == pending->_first);
+        assert(pending->head == NULL);
+        assert(pending->tail == NULL);
+        call = &pending->_preallocated[0];
+        pending->_first = 0;
+        pending->_next = 1;
+    }
+    else if (pending->npending < NPENDINGCALLS) {
+        int i = pending->_next;
+        int next = (i + 1) % NPENDINGCALLS;
+        assert(i != pending->_first);
         call = &pending->_preallocated[i];
-        pending->_last = j;
+        pending->_next = next;
     }
     else {
         call = PyMem_RawMalloc(sizeof(struct _pending_call));
@@ -715,7 +723,7 @@ _pop_pending_call(struct _pending_calls *pending,
     if (call == NULL) {
         /* Queue empty */
         assert(pending->npending == 0);
-        assert(pending->_first == pending->_last);
+        assert(pending->_first == pending->_next);
         return;
     }
     assert(pending->npending > 0);
@@ -734,13 +742,14 @@ _pop_pending_call(struct _pending_calls *pending,
 
     // Deallocate the list entry.
     if (pending->npending < NPENDINGCALLS) {
-        assert(pending->_first != pending->_last);
+        assert(pending->_first != pending->_next
+               || (pending->npending + 1) == NPENDINGCALLS);
         int i = pending->_first;
         pending->_preallocated[i] = (struct _pending_call){0};
         pending->_first = (i + 1) % NPENDINGCALLS;
     }
     else {
-        assert(pending->_first == pending->_last);
+        assert(pending->_first == pending->_next);
         PyMem_RawFree(call);
     }
 }

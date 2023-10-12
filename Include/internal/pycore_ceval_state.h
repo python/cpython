@@ -39,7 +39,7 @@ struct _pending_calls {
     // possible allocation failures (at least when the number
     // of pending calls is small).
     int _first;
-    int _last;
+    int _next;
     struct _pending_call _preallocated[NPENDINGCALLS];
 };
 
