@@ -1732,8 +1732,6 @@ By default asyncio is configured to use :class:`EventLoop`.
 
    .. versionadded:: 3.13
 
-   .. availability:: Unix, Windows.
-
 .. class:: AbstractEventLoop
 
    Abstract base class for asyncio-compliant event loops.
