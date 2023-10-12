@@ -100,9 +100,6 @@ def runtest_refleak(test_name, test_func,
         support.gc_collect()
 
         # Read memory statistics immediately after the garbage collection.
-        # Also, readjust the reference counts and alloc blocks by ignoring
-        # any strings that might have been interned during test_func. These
-        # strings will be deallocated at runtime shutdown
         alloc_after = getallocatedblocks()
         rc_after = gettotalrefcount()
         fd_after = fd_count()
