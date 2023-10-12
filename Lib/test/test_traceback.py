@@ -1329,7 +1329,8 @@ class TracebackFormatMixin:
     def test_print_exception_bad_type_capi(self):
         from _testcapi import exception_print
         with captured_output("stderr") as stderr:
-            exception_print(42)
+            with support.catch_unraisable_exception():
+                exception_print(42)
         self.assertEqual(
             stderr.getvalue(),
             ('TypeError: print_exception(): '
