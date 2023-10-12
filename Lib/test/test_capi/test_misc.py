@@ -1050,6 +1050,11 @@ class CAPITest(unittest.TestCase):
             setobject(b'\xff', value)
         # CRASHES setobject(NULL, value)
 
+    def test_gen_get_code(self):
+        def genf(): yield
+        gen = genf()
+        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
+
 
 @requires_limited_api
 class TestHeapTypeRelative(unittest.TestCase):
@@ -1288,11 +1293,6 @@ class TestPendingCalls(unittest.TestCase):
         n = 64
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
-
-    def test_gen_get_code(self):
-        def genf(): yield
-        gen = genf()
-        self.assertEqual(_testcapi.gen_get_code(gen), gen.gi_code)
 
     class PendingTask(types.SimpleNamespace):
 
