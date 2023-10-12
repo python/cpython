@@ -3795,9 +3795,9 @@ Naturally, they are all only available on Linux.
 
    The file descriptor returned by :func:`timerfd_create` supports:
 
-      - :func:`read`
-      - :func:`~select.select`
-      - :func:`~select.poll`.
+   - :func:`read`
+   - :func:`~select.select`
+   - :func:`~select.poll`
 
    The file descriptor's :func:`read` method can be called with a buffer size
    of 8. If the timer has already expired one or more times, :func:`read`
@@ -3896,9 +3896,9 @@ Naturally, they are all only available on Linux.
 
    Discontinuous system clock change will be caused by the following events:
 
-      - ``settimeofday``
-      - ``clock_settime``
-      - set the system date and time by ``date`` command
+   - ``settimeofday``
+   - ``clock_settime``
+   - set the system date and time by ``date`` command
 
    Return a two-item tuple of (``next_expiration``, ``interval``) from
    the previous timer state, before this function executed.
@@ -5406,6 +5406,10 @@ Miscellaneous System Information
 
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.13
+      If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
+      :func:`cpu_count` returns the overridden value *n*.
+
 
 .. function:: getloadavg()
 
@@ -5424,6 +5428,9 @@ Miscellaneous System Information
 
    The :func:`cpu_count` function can be used to get the number of logical CPUs
    in the **system**.
+
+   If :option:`-X cpu_count <-X>` is given or :envvar:`PYTHON_CPU_COUNT` is set,
+   :func:`process_cpu_count` returns the overridden value *n*.
 
    See also the :func:`sched_getaffinity` functions.
 

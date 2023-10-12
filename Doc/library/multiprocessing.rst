@@ -996,13 +996,20 @@ Miscellaneous
 
    This number is not equivalent to the number of CPUs the current process can
    use.  The number of usable CPUs can be obtained with
-   :func:`os.process_cpu_count`.
+   :func:`os.process_cpu_count` (or ``len(os.sched_getaffinity(0))``).
 
    When the number of CPUs cannot be determined a :exc:`NotImplementedError`
    is raised.
 
    .. seealso::
-      :func:`os.cpu_count` and :func:`os.process_cpu_count`
+      :func:`os.cpu_count`
+      :func:`os.process_cpu_count`
+
+   .. versionchanged:: 3.13
+
+      The return value can also be overridden using the
+      :option:`-X cpu_count <-X>` flag or :envvar:`PYTHON_CPU_COUNT` as this is
+      merely a wrapper around the :mod:`os` cpu count APIs.
 
 .. function:: current_process()
 
@@ -2785,20 +2792,20 @@ worker threads rather than worker processes.
 
    Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
 
-    .. note::
+   .. note::
 
-        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
-        is designed around a pool of processes and predates the introduction of
-        the :class:`concurrent.futures` module.  As such, it inherits some
-        operations that don't make sense for a pool backed by threads, and it
-        has its own type for representing the status of asynchronous jobs,
-        :class:`AsyncResult`, that is not understood by any other libraries.
+      A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+      is designed around a pool of processes and predates the introduction of
+      the :class:`concurrent.futures` module.  As such, it inherits some
+      operations that don't make sense for a pool backed by threads, and it
+      has its own type for representing the status of asynchronous jobs,
+      :class:`AsyncResult`, that is not understood by any other libraries.
 
-        Users should generally prefer to use
-        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
-        interface that was designed around threads from the start, and which
-        returns :class:`concurrent.futures.Future` instances that are
-        compatible with many other libraries, including :mod:`asyncio`.
+      Users should generally prefer to use
+      :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+      interface that was designed around threads from the start, and which
+      returns :class:`concurrent.futures.Future` instances that are
+      compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:

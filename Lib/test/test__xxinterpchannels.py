@@ -21,6 +21,13 @@ channels = import_helper.import_module('_xxinterpchannels')
 ##################################
 # helpers
 
+def recv_wait(cid):
+    while True:
+        try:
+            return channels.recv(cid)
+        except channels.ChannelEmptyError:
+            time.sleep(0.1)
+
 #@contextmanager
 #def run_threaded(id, source, **shared):
 #    def run():
@@ -189,7 +196,7 @@ def run_action(cid, action, end, state, *, hideclosed=True):
 def _run_action(cid, action, end, state):
     if action == 'use':
         if end == 'send':
-            channels.send(cid, b'spam')
+            channels.send(cid, b'spam', blocking=False)
             return state.incr()
         elif end == 'recv':
             if not state.pending:
@@ -332,7 +339,7 @@ class ChannelIDTests(TestBase):
         chan = channels.create()
 
         obj = channels.create()
-        channels.send(chan, obj)
+        channels.send(chan, obj, blocking=False)
         got = channels.recv(chan)
 
         self.assertEqual(got, obj)
@@ -390,7 +397,7 @@ class ChannelTests(TestBase):
         """Test basic listing channel interpreters."""
         interp0 = interpreters.get_main()
         cid = channels.create()
-        channels.send(cid, "send")
+        channels.send(cid, "send", blocking=False)
         # Test for a channel that has one end associated to an interpreter.
         send_interps = channels.list_interpreters(cid, send=True)
         recv_interps = channels.list_interpreters(cid, send=False)
@@ -416,10 +423,10 @@ class ChannelTests(TestBase):
         interp3 = interpreters.create()
         cid = channels.create()
 
-        channels.send(cid, "send")
+        channels.send(cid, "send", blocking=False)
         _run_output(interp1, dedent(f"""
             import _xxinterpchannels as _channels
-            _channels.send({cid}, "send")
+            _channels.send({cid}, "send", blocking=False)
             """))
         _run_output(interp2, dedent(f"""
             import _xxinterpchannels as _channels
@@ -439,7 +446,7 @@ class ChannelTests(TestBase):
         interp0 = interpreters.get_main()
         interp1 = interpreters.create()
         cid = channels.create()
-        channels.send(cid, "send")
+        channels.send(cid, "send", blocking=False)
         _run_output(interp1, dedent(f"""
             import _xxinterpchannels as _channels
             obj = _channels.recv({cid})
@@ -465,12 +472,12 @@ class ChannelTests(TestBase):
         interp1 = interpreters.create()
         interp2 = interpreters.create()
         cid = channels.create()
-        channels.send(cid, "data")
+        channels.send(cid, "data", blocking=False)
         _run_output(interp1, dedent(f"""
             import _xxinterpchannels as _channels
             obj = _channels.recv({cid})
             """))
-        channels.send(cid, "data")
+        channels.send(cid, "data", blocking=False)
         _run_output(interp2, dedent(f"""
             import _xxinterpchannels as _channels
             obj = _channels.recv({cid})
@@ -506,7 +513,7 @@ class ChannelTests(TestBase):
         interp1 = interpreters.create()
         cid = channels.create()
         # Put something in the channel so that it's not empty.
-        channels.send(cid, "send")
+        channels.send(cid, "send", blocking=False)
 
         # Check initial state.
         send_interps = channels.list_interpreters(cid, send=True)
@@ -528,7 +535,7 @@ class ChannelTests(TestBase):
         interp1 = interpreters.create()
         cid = channels.create()
         # Put something in the channel so that it's not empty.
-        channels.send(cid, "send")
+        channels.send(cid, "send", blocking=False)
 
         # Check initial state.
         send_interps = channels.list_interpreters(cid, send=True)
@@ -562,7 +569,7 @@ class ChannelTests(TestBase):
     def test_send_recv_main(self):
         cid = channels.create()
         orig = b'spam'
-        channels.send(cid, orig)
+        channels.send(cid, orig, blocking=False)
         obj = channels.recv(cid)
 
         self.assertEqual(obj, orig)
@@ -574,7 +581,7 @@ class ChannelTests(TestBase):
             import _xxinterpchannels as _channels
             cid = _channels.create()
             orig = b'spam'
-            _channels.send(cid, orig)
+            _channels.send(cid, orig, blocking=False)
             obj = _channels.recv(cid)
             assert obj is not orig
             assert obj == orig
@@ -585,7 +592,7 @@ class ChannelTests(TestBase):
         id1 = interpreters.create()
         out = _run_output(id1, dedent(f"""
             import _xxinterpchannels as _channels
-            _channels.send({cid}, b'spam')
+            _channels.send({cid}, b'spam', blocking=False)
             """))
         obj = channels.recv(cid)
 
@@ -595,19 +602,14 @@ class ChannelTests(TestBase):
         cid = channels.create()
 
         def f():
-            while True:
-                try:
-                    obj = channels.recv(cid)
-                    break
-                except channels.ChannelEmptyError:
-                    time.sleep(0.1)
+            obj = recv_wait(cid)
             channels.send(cid, obj)
         t = threading.Thread(target=f)
         t.start()
 
         channels.send(cid, b'spam')
+        obj = recv_wait(cid)
         t.join()
-        obj = channels.recv(cid)
 
         self.assertEqual(obj, b'spam')
 
@@ -634,8 +636,8 @@ class ChannelTests(TestBase):
         t.start()
 
         channels.send(cid, b'spam')
+        obj = recv_wait(cid)
         t.join()
-        obj = channels.recv(cid)
 
         self.assertEqual(obj, b'eggs')
 
@@ -656,10 +658,10 @@ class ChannelTests(TestBase):
         default = object()
         cid = channels.create()
         obj1 = channels.recv(cid, default)
-        channels.send(cid, None)
-        channels.send(cid, 1)
-        channels.send(cid, b'spam')
-        channels.send(cid, b'eggs')
+        channels.send(cid, None, blocking=False)
+        channels.send(cid, 1, blocking=False)
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'eggs', blocking=False)
         obj2 = channels.recv(cid, default)
         obj3 = channels.recv(cid, default)
         obj4 = channels.recv(cid)
@@ -679,7 +681,7 @@ class ChannelTests(TestBase):
             interp = interpreters.create()
             interpreters.run_string(interp, dedent(f"""
                 import _xxinterpchannels as _channels
-                _channels.send({cid1}, b'spam')
+                _channels.send({cid1}, b'spam', blocking=False)
                 """))
             interpreters.destroy(interp)
 
@@ -692,9 +694,9 @@ class ChannelTests(TestBase):
             interp = interpreters.create()
             interpreters.run_string(interp, dedent(f"""
                 import _xxinterpchannels as _channels
-                _channels.send({cid2}, b'spam')
+                _channels.send({cid2}, b'spam', blocking=False)
                 """))
-            channels.send(cid2, b'eggs')
+            channels.send(cid2, b'eggs', blocking=False)
             interpreters.destroy(interp)
 
             channels.recv(cid2)
@@ -706,7 +708,7 @@ class ChannelTests(TestBase):
     def test_send_buffer(self):
         buf = bytearray(b'spamspamspam')
         cid = channels.create()
-        channels.send_buffer(cid, buf)
+        channels.send_buffer(cid, buf, blocking=False)
         obj = channels.recv(cid)
 
         self.assertIsNot(obj, buf)
@@ -728,7 +730,7 @@ class ChannelTests(TestBase):
         ]
         for obj in objects:
             with self.subTest(obj):
-                channels.send(cid, obj)
+                channels.send(cid, obj, blocking=False)
                 got = channels.recv(cid)
 
                 self.assertEqual(got, obj)
@@ -744,7 +746,7 @@ class ChannelTests(TestBase):
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(cid.end)
-            _channels.send(cid, b'spam')
+            _channels.send(cid, b'spam', blocking=False)
             """),
             dict(cid=cid.send))
         obj = channels.recv(cid)
@@ -764,7 +766,7 @@ class ChannelTests(TestBase):
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(chan.id.end)
-            _channels.send(chan.id, b'spam')
+            _channels.send(chan.id, b'spam', blocking=False)
             """),
             dict(chan=cid.send))
         obj = channels.recv(cid)
@@ -776,7 +778,7 @@ class ChannelTests(TestBase):
 
     def test_close_single_user(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.close(cid)
 
@@ -791,7 +793,7 @@ class ChannelTests(TestBase):
         id2 = interpreters.create()
         interpreters.run_string(id1, dedent(f"""
             import _xxinterpchannels as _channels
-            _channels.send({cid}, b'spam')
+            _channels.send({cid}, b'spam', blocking=False)
             """))
         interpreters.run_string(id2, dedent(f"""
             import _xxinterpchannels as _channels
@@ -811,7 +813,7 @@ class ChannelTests(TestBase):
 
     def test_close_multiple_times(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.close(cid)
 
@@ -828,7 +830,7 @@ class ChannelTests(TestBase):
         for send, recv in tests:
             with self.subTest((send, recv)):
                 cid = channels.create()
-                channels.send(cid, b'spam')
+                channels.send(cid, b'spam', blocking=False)
                 channels.recv(cid)
                 channels.close(cid, send=send, recv=recv)
 
@@ -839,31 +841,31 @@ class ChannelTests(TestBase):
 
     def test_close_defaults_with_unused_items(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
 
         with self.assertRaises(channels.ChannelNotEmptyError):
             channels.close(cid)
         channels.recv(cid)
-        channels.send(cid, b'eggs')
+        channels.send(cid, b'eggs', blocking=False)
 
     def test_close_recv_with_unused_items_unforced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
 
         with self.assertRaises(channels.ChannelNotEmptyError):
             channels.close(cid, recv=True)
         channels.recv(cid)
-        channels.send(cid, b'eggs')
+        channels.send(cid, b'eggs', blocking=False)
         channels.recv(cid)
         channels.recv(cid)
         channels.close(cid, recv=True)
 
     def test_close_send_with_unused_items_unforced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
         channels.close(cid, send=True)
 
         with self.assertRaises(channels.ChannelClosedError):
@@ -875,21 +877,21 @@ class ChannelTests(TestBase):
 
     def test_close_both_with_unused_items_unforced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
 
         with self.assertRaises(channels.ChannelNotEmptyError):
             channels.close(cid, recv=True, send=True)
         channels.recv(cid)
-        channels.send(cid, b'eggs')
+        channels.send(cid, b'eggs', blocking=False)
         channels.recv(cid)
         channels.recv(cid)
         channels.close(cid, recv=True)
 
     def test_close_recv_with_unused_items_forced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
         channels.close(cid, recv=True, force=True)
 
         with self.assertRaises(channels.ChannelClosedError):
@@ -899,8 +901,8 @@ class ChannelTests(TestBase):
 
     def test_close_send_with_unused_items_forced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
         channels.close(cid, send=True, force=True)
 
         with self.assertRaises(channels.ChannelClosedError):
@@ -910,8 +912,8 @@ class ChannelTests(TestBase):
 
     def test_close_both_with_unused_items_forced(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
         channels.close(cid, send=True, recv=True, force=True)
 
         with self.assertRaises(channels.ChannelClosedError):
@@ -930,7 +932,7 @@ class ChannelTests(TestBase):
 
     def test_close_by_unassociated_interp(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
@@ -943,9 +945,9 @@ class ChannelTests(TestBase):
 
     def test_close_used_multiple_times_by_single_user(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'spam')
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.close(cid, force=True)
 
@@ -1017,7 +1019,7 @@ class ChannelReleaseTests(TestBase):
 
     def test_single_user(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.release(cid, send=True, recv=True)
 
@@ -1032,7 +1034,7 @@ class ChannelReleaseTests(TestBase):
         id2 = interpreters.create()
         interpreters.run_string(id1, dedent(f"""
             import _xxinterpchannels as _channels
-            _channels.send({cid}, b'spam')
+            _channels.send({cid}, b'spam', blocking=False)
             """))
         out = _run_output(id2, dedent(f"""
             import _xxinterpchannels as _channels
@@ -1048,7 +1050,7 @@ class ChannelReleaseTests(TestBase):
 
     def test_no_kwargs(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.release(cid)
 
@@ -1059,7 +1061,7 @@ class ChannelReleaseTests(TestBase):
 
     def test_multiple_times(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.release(cid, send=True, recv=True)
 
@@ -1068,8 +1070,8 @@ class ChannelReleaseTests(TestBase):
 
     def test_with_unused_items(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'ham')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'ham', blocking=False)
         channels.release(cid, send=True, recv=True)
 
         with self.assertRaises(channels.ChannelClosedError):
@@ -1086,7 +1088,7 @@ class ChannelReleaseTests(TestBase):
 
     def test_by_unassociated_interp(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
@@ -1105,7 +1107,7 @@ class ChannelReleaseTests(TestBase):
         interp = interpreters.create()
         interpreters.run_string(interp, dedent(f"""
             import _xxinterpchannels as _channels
-            obj = _channels.send({cid}, b'spam')
+            obj = _channels.send({cid}, b'spam', blocking=False)
             _channels.release({cid})
             """))
 
@@ -1115,9 +1117,9 @@ class ChannelReleaseTests(TestBase):
     def test_partially(self):
         # XXX Is partial close too weird/confusing?
         cid = channels.create()
-        channels.send(cid, None)
+        channels.send(cid, None, blocking=False)
         channels.recv(cid)
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
         channels.release(cid, send=True)
         obj = channels.recv(cid)
 
@@ -1125,9 +1127,9 @@ class ChannelReleaseTests(TestBase):
 
     def test_used_multiple_times_by_single_user(self):
         cid = channels.create()
-        channels.send(cid, b'spam')
-        channels.send(cid, b'spam')
-        channels.send(cid, b'spam')
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'spam', blocking=False)
+        channels.send(cid, b'spam', blocking=False)
         channels.recv(cid)
         channels.release(cid, send=True, recv=True)
 
@@ -1212,7 +1214,7 @@ class ChannelCloseFixture(namedtuple('ChannelCloseFixture',
                 cid = _xxsubchannels.create()
                 # We purposefully send back an int to avoid tying the
                 # channel to the other interpreter.
-                _xxsubchannels.send({ch}, int(cid))
+                _xxsubchannels.send({ch}, int(cid), blocking=False)
                 del _xxsubinterpreters
                 """)
             self._cid = channels.recv(ch)
@@ -1442,8 +1444,8 @@ class ExhaustiveChannelTests(TestBase):
                     {repr(fix.state)},
                     hideclosed={hideclosed},
                     )
-                channels.send({_cid}, result.pending.to_bytes(1, 'little'))
-                channels.send({_cid}, b'X' if result.closed else b'')
+                channels.send({_cid}, result.pending.to_bytes(1, 'little'), blocking=False)
+                channels.send({_cid}, b'X' if result.closed else b'', blocking=False)
                 """)
             result = ChannelState(
                 pending=int.from_bytes(channels.recv(_cid), 'little'),
@@ -1490,7 +1492,7 @@ class ExhaustiveChannelTests(TestBase):
                 """)
             run_interp(interp.id, """
                 with helpers.expect_channel_closed():
-                    channels.send(cid, b'spam')
+                    channels.send(cid, b'spam', blocking=False)
                 """)
             run_interp(interp.id, """
                 with helpers.expect_channel_closed():
