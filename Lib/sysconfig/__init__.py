@@ -655,5 +655,3 @@ def expand_makefile_vars(s, vars):
         else:
             break
     return s
-
-
