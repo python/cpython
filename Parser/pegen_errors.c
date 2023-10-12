@@ -233,6 +233,12 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, int use_mark, const char *err
             col_offset = 0;
         } else {
             const char* start = p->tok->buf  ? p->tok->line_start : p->tok->buf;
+            if (p->tok->cur - start > INT_MAX) {
+                PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+                p->error_indicator = 1;
+                return NULL;
+            }
             col_offset = Py_SAFE_DOWNCAST(p->tok->cur - start, intptr_t, int);
         }
     } else {
