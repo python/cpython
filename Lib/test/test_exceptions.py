@@ -318,6 +318,10 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
+    def testMemoryErrorBigSource(self):
+        with self.assertRaises(MemoryError):
+            exec(f"if True:\n {' ' * 2**31}print('hello world')")
+
     @cpython_only
     def testSettingException(self):
         # test that setting an exception at the C level works even if the
