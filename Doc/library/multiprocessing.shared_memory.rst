@@ -65,35 +65,33 @@ copying of data.
    to an existing shared memory block, the ``size`` parameter is ignored.
 
    *track*, when enabled, registers the shared memory block with the resource
-   tracker process. This process ensures proper cleanup of shared memory
+   tracker process.  This process ensures proper cleanup of shared memory
    blocks even when all other processes with access to the memory have failed
-   to do so (mainly due to being killed by signals). The resource tracker is
+   to do so (mainly due to being killed by signals).  The resource tracker is
    overzealous in certain situations and might delete a shared memory block
-   when any process with access to the shared memory has terminated. *track*
+   when any process with access to the shared memory has terminated.  *track*
    should be set to ``False`` if there is already another process in place
-   that does the bookkeeping. In most situations, this means that *track*
+   that does the bookkeeping.  In most situations, this means that *track*
    should be set to ``False`` when *create* is set to ``False``.
 
    .. method:: close()
 
-      Closes access to the shared memory from this instance.  In order to
-      ensure proper cleanup of resources, all instances with *track* set to
-      ``True`` should call ``close()`` once the instance is no longer needed.
-      Note that calling ``close()`` does not cause the shared memory block
-      itself to be destroyed.
+      Closes the file descriptor/handle to the shared memory from this
+      instance.  All instances should call ``close()`` once the instance
+      is no longer needed.  Depending on operating system, the underlying
+      memory may or may not be freed even if all handles to it have been
+      closed.  To ensure proper cleanup, use the ``unlink()`` method.
 
    .. method:: unlink()
 
-      Requests that the underlying shared memory block be destroyed.  In
-      order to ensure proper cleanup of resources, ``unlink()`` should be
-      called once (and only once) across all processes which have need
-      for the shared memory block.  After requesting its destruction, a
-      shared memory block may or may not be immediately destroyed and
-      this behavior may differ across platforms.  Attempts to access data
-      inside the shared memory block after ``unlink()`` has been called may
-      result in memory access errors.  Note: the last process relinquishing
-      its hold on a shared memory block may call ``unlink()`` and
-      :meth:`close()` in either order.
+      Deletes the underlying shared memory block.  This should be called only
+      once per shared memory block regardless of the number of handles to it.
+      After requesting its deletion, a shared memory block may or may not be
+      immediately destroyed and this behavior may differ across platforms.
+      Attempts to access data inside the shared memory block after
+      ``unlink()`` has been called may result in memory access errors.
+      To ensure proper bookkeeping, ``unlink()`` may only be called by
+      an instance with *track* enabled.
 
    .. attribute:: buf
 

@@ -82,6 +82,7 @@ class SharedMemory:
         if name is None and not self._flags & os.O_EXCL:
             raise ValueError("'name' can only be None if create=True")
 
+        self._track = track
         if _USE_POSIX:
 
             # POSIX Shared Memory
@@ -239,6 +240,9 @@ class SharedMemory:
         In order to ensure proper cleanup of resources, unlink should be
         called once (and only once) across all processes which have access
         to the shared memory block."""
+        if not self._track:
+            raise TypeError("unlink() must be called by a tracking instance")
+
         if _USE_POSIX and self._name:
             _posixshmem.shm_unlink(self._name)
             resource_tracker.unregister(self._name, "shared_memory")
