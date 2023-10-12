@@ -1032,10 +1032,10 @@ class UnionTests(unittest.TestCase):
     def test_instantiation(self):
         with self.assertRaises(TypeError):
             types.UnionType()
-        self.assertIs(int, types.UnionType(int))
-        self.assertIs(int, types.UnionType(int, int))
-        self.assertEqual(int | str, types.UnionType(int, str))
-        self.assertEqual(int | typing.ForwardRef("str"), types.UnionType(int, "str"))
+        self.assertIs(int, types.UnionType[int])
+        self.assertIs(int, types.UnionType[int, int])
+        self.assertEqual(int | str, types.UnionType[int, str])
+        self.assertEqual(int | typing.ForwardRef("str"), types.UnionType[int, "str"])
 
 
 class MappingProxyTests(unittest.TestCase):

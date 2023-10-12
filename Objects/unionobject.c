@@ -385,15 +385,6 @@ _Py_union_args(PyObject *self)
 }
 
 static PyObject *
-union_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-    if (!_PyArg_NoKeywords("UnionType", kwds)) {
-        return NULL;
-    }
-    return _Py_union_from_tuple(args);
-}
-
-static PyObject *
 call_typing_func_object(const char *name, PyObject **args, size_t nargs)
 {
     PyObject *typing = PyImport_ImportModule("typing");
@@ -553,7 +544,6 @@ PyTypeObject _PyUnion_Type = {
     .tp_getattro = union_getattro,
     .tp_members = union_members,
     .tp_methods = union_methods,
-    .tp_new = union_new,
     .tp_richcompare = union_richcompare,
     .tp_as_mapping = &union_as_mapping,
     .tp_as_number = &union_as_number,
