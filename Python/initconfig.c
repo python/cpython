@@ -118,6 +118,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #ifdef Py_STATS
     SPEC(_pystats, UINT),
 #endif
+#ifdef Py_DEBUG
+    SPEC(run_presite, WSTR_OPT),
+#endif
     {NULL, 0, 0},
 };
 
@@ -240,6 +243,11 @@ The following implementation-specific options are available:\n\
 "\n\
 \n\
 -X pystats: Enable pystats collection at startup."
+#endif
+#ifdef Py_DEBUG
+"\n\
+\n\
+-X presite=package.module: import this module before site.py is run."
 #endif
 ;
 
@@ -790,6 +798,9 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+#ifdef Py_DEBUG
+    CLEAR(config->run_presite);
+#endif
 
     _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
@@ -1806,6 +1817,36 @@ config_init_pycache_prefix(PyConfig *config)
 }
 
 
+#ifdef Py_DEBUG
+static PyStatus
+config_init_run_presite(PyConfig *config)
+{
+    assert(config->run_presite == NULL);
+
+    const wchar_t *xoption = config_get_xoption(config, L"presite");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep && wcslen(sep) > 1) {
+            config->run_presite = _PyMem_RawWcsdup(sep + 1);
+            if (config->run_presite == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+        }
+        else {
+            // PYTHON_PRESITE env var ignored
+            // if "-X presite=" option is used
+            config->run_presite = NULL;
+        }
+        return _PyStatus_OK();
+    }
+
+    return CONFIG_GET_ENV_DUP(config, &config->run_presite,
+                              L"PYTHON_PRESITE",
+                              "PYTHON_PRESITE");
+}
+#endif
+
+
 static PyStatus
 config_read_complex_options(PyConfig *config)
 {
@@ -1861,6 +1902,16 @@ config_read_complex_options(PyConfig *config)
             return status;
         }
     }
+
+#ifdef Py_DEBUG
+    if (config->run_presite== NULL) {
+        status = config_init_run_presite(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
+
     return _PyStatus_OK();
 }
 

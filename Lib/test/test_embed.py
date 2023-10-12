@@ -515,6 +515,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = 0
+    if support.Py_DEBUG:
+        CONFIG_COMPAT['run_presite'] = None
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,

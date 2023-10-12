@@ -1157,6 +1157,27 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 
+#ifdef Py_DEBUG
+    if (config->run_presite) {
+        PyObject *presite_modname = PyUnicode_FromWideChar(
+            config->run_presite,
+            wcslen(config->run_presite)
+        );
+        if (presite_modname == NULL) {
+            fprintf(stderr, "Could not convert module name to unicode\n");
+            Py_DECREF(presite_modname);
+        }
+        else {
+            PyObject *presite = PyImport_Import(presite_modname);
+            if (presite == NULL) {
+                fprintf(stderr, "pre-site import failed; traceback:\n");
+                _PyErr_Print(tstate);
+            }
+            Py_XDECREF(presite);
+        }
+    }
+#endif
+
     status = add_main_module(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
