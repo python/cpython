@@ -2595,20 +2595,20 @@ instead of a :class:`~collections.namedtuple`.
 How to handle non-UTF-8 text encodings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, :mod:`!sqlite3` adapts SQLite values with the ``TEXT`` data type
-using :class:`str`.
-This works well for UTF-8 encoded text, but it will fail for other encodings
+By default, :mod:`!sqlite3` uses :class:`str` to adapt SQLite values
+with the ``TEXT`` data type.
+This works well for UTF-8 encoded text, but it might fail for other encodings
 and invalid UTF-8.
 You can use a custom :attr:`~Connection.text_factory` to handle such cases.
 
 Because of SQLite's `flexible typing`_, it is not uncommon to encounter table
-columns with the ``TEXT`` data type, containing non-UTF-8 encodings,
+columns with the ``TEXT`` data type containing non-UTF-8 encodings,
 or even arbitrary data.
-To demonstrate, let's assume we've got a database with ISO-8859-2 (Latin 2)
+To demonstrate, let's assume we have a database with ISO-8859-2 (Latin-2)
 encoded text, for example a table of Czech-English dictionary entries.
 Assuming we now have a :class:`Connection` instance :py:data:`!con`
 connected to this database,
-we can decode the Latin 2 encoded text using this :attr:`~Connection.text_factory`:
+we can decode the Latin-2 encoded text using this :attr:`~Connection.text_factory`:
 
 .. testcode::
 
@@ -2623,7 +2623,7 @@ you can use the following technique, borrowed from the :ref:`unicode-howto`:
 
 .. note::
 
-   Strings containing surrogate escapes and must be treated with care.
+   Strings containing surrogate escapes must be treated with care.
    For example, you cannot pass them back to SQLite,
    since the :mod:`!sqlite3` module API does not support strings
    containing surrogate escape codes.
