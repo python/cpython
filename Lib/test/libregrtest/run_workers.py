@@ -13,7 +13,7 @@ import traceback
 from typing import Literal, TextIO
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, MS_WINDOWS
 
 from .logger import Logger
 from .result import TestResult, State
@@ -21,8 +21,8 @@ from .results import TestResults
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, TestName, MS_WINDOWS,
-    format_duration, print_warning, count, plural)
+    StrPath, TestName,
+    format_duration, print_warning, count, plural, get_signal_name)
 from .worker import create_worker_process, USE_PROCESS_GROUP
 
 if MS_WINDOWS:
@@ -42,7 +42,10 @@ MAIN_PROCESS_TIMEOUT = 5 * 60.0
 assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
-JOIN_TIMEOUT = 30.0   # seconds
+WAIT_COMPLETED_TIMEOUT = 30.0   # seconds
+
+# Time to wait a killed process (in seconds)
+WAIT_KILLED_TIMEOUT = 60.0
 
 
 # We do not use a generator so multiple threads can call next().
@@ -89,7 +92,7 @@ class WorkerError(Exception):
                  test_name: TestName,
                  err_msg: str | None,
                  stdout: str | None,
-                 state: str = State.MULTIPROCESSING_ERROR):
+                 state: str):
         result = TestResult(test_name, state=state)
         self.mp_result = MultiprocessResult(result, stdout, err_msg)
         super().__init__()
@@ -138,7 +141,7 @@ class WorkerThread(threading.Thread):
         if USE_PROCESS_GROUP:
             what = f"{self} process group"
         else:
-            what = f"{self}"
+            what = f"{self} process"
 
         print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
@@ -218,7 +221,12 @@ class WorkerThread(threading.Thread):
 
         # gh-94026: Write stdout+stderr to a tempfile as workaround for
         # non-blocking pipes on Emscripten with NodeJS.
-        stdout_file = tempfile.TemporaryFile('w+', encoding=encoding)
+        # gh-109425: Use "backslashreplace" error handler: log corrupted
+        # stdout+stderr, instead of failing with a UnicodeDecodeError and not
+        # logging stdout+stderr at all.
+        stdout_file = tempfile.TemporaryFile('w+',
+                                             encoding=encoding,
+                                             errors='backslashreplace')
         stack.enter_context(stdout_file)
         return stdout_file
 
@@ -254,6 +262,9 @@ class WorkerThread(threading.Thread):
         kwargs = {}
         if match_tests:
             kwargs['match_tests'] = match_tests
+        if self.runtests.output_on_failure:
+            kwargs['verbose'] = True
+            kwargs['output_on_failure'] = False
         return self.runtests.copy(
             tests=tests,
             json_file=json_file,
@@ -290,7 +301,9 @@ class WorkerThread(threading.Thread):
             # gh-101634: Catch UnicodeDecodeError if stdout cannot be
             # decoded from encoding
             raise WorkerError(self.test_name,
-                              f"Cannot read process stdout: {exc}", None)
+                              f"Cannot read process stdout: {exc}",
+                              stdout=None,
+                              state=State.WORKER_BUG)
 
     def read_json(self, json_file: JsonFile, json_tmpfile: TextIO | None,
                   stdout: str) -> tuple[TestResult, str]:
@@ -309,10 +322,11 @@ class WorkerThread(threading.Thread):
             # decoded from encoding
             err_msg = f"Failed to read worker process JSON: {exc}"
             raise WorkerError(self.test_name, err_msg, stdout,
-                              state=State.MULTIPROCESSING_ERROR)
+                              state=State.WORKER_BUG)
 
         if not worker_json:
-            raise WorkerError(self.test_name, "empty JSON", stdout)
+            raise WorkerError(self.test_name, "empty JSON", stdout,
+                              state=State.WORKER_BUG)
 
         try:
             result = TestResult.from_json(worker_json)
@@ -321,7 +335,7 @@ class WorkerThread(threading.Thread):
             # decoded from encoding
             err_msg = f"Failed to parse worker process JSON: {exc}"
             raise WorkerError(self.test_name, err_msg, stdout,
-                              state=State.MULTIPROCESSING_ERROR)
+                              state=State.WORKER_BUG)
 
         return (result, stdout)
 
@@ -337,9 +351,15 @@ class WorkerThread(threading.Thread):
             stdout = self.read_stdout(stdout_file)
 
             if retcode is None:
-                raise WorkerError(self.test_name, None, stdout, state=State.TIMEOUT)
+                raise WorkerError(self.test_name, stdout=stdout,
+                                  err_msg=None,
+                                  state=State.TIMEOUT)
             if retcode != 0:
-                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout)
+                name = get_signal_name(retcode)
+                if name:
+                    retcode = f"{retcode} ({name})"
+                raise WorkerError(self.test_name, f"Exit code {retcode}", stdout,
+                                  state=State.WORKER_FAILED)
 
             result, stdout = self.read_json(json_file, json_tmpfile, stdout)
 
@@ -385,10 +405,10 @@ class WorkerThread(threading.Thread):
         popen = self._popen
 
         try:
-            popen.wait(JOIN_TIMEOUT)
+            popen.wait(WAIT_COMPLETED_TIMEOUT)
         except (subprocess.TimeoutExpired, OSError) as exc:
             print_warning(f"Failed to wait for {self} completion "
-                          f"(timeout={format_duration(JOIN_TIMEOUT)}): "
+                          f"(timeout={format_duration(WAIT_COMPLETED_TIMEOUT)}): "
                           f"{exc!r}")
 
     def wait_stopped(self, start_time: float) -> None:
@@ -409,7 +429,7 @@ class WorkerThread(threading.Thread):
                 break
             dt = time.monotonic() - start_time
             self.log(f"Waiting for {self} thread for {format_duration(dt)}")
-            if dt > JOIN_TIMEOUT:
+            if dt > WAIT_KILLED_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
 
@@ -519,7 +539,7 @@ class RunWorkers:
 
         text = str(result)
         if mp_result.err_msg:
-            # MULTIPROCESSING_ERROR
+            # WORKER_BUG
             text += ' (%s)' % mp_result.err_msg
         elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
             text += ' (%s)' % format_duration(result.duration)
@@ -535,7 +555,7 @@ class RunWorkers:
             # Thread got an exception
             format_exc = item[1]
             print_warning(f"regrtest worker thread failed: {format_exc}")
-            result = TestResult("<regrtest worker>", state=State.MULTIPROCESSING_ERROR)
+            result = TestResult("<regrtest worker>", state=State.WORKER_BUG)
             self.results.accumulate_result(result, self.runtests)
             return result
 
@@ -545,8 +565,16 @@ class RunWorkers:
         self.results.accumulate_result(result, self.runtests)
         self.display_result(mp_result)
 
-        if mp_result.worker_stdout:
-            print(mp_result.worker_stdout, flush=True)
+        # Display worker stdout
+        if not self.runtests.output_on_failure:
+            show_stdout = True
+        else:
+            # --verbose3 ignores stdout on success
+            show_stdout = (result.state != State.PASSED)
+        if show_stdout:
+            stdout = mp_result.worker_stdout
+            if stdout:
+                print(stdout, flush=True)
 
         return result
 

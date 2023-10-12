@@ -11,11 +11,10 @@
  *
  */
 
-#include "Python.h"
+// Need limited C API version 3.13 for PyModule_Add() on Windows
+#define Py_LIMITED_API 0x030d0000
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "Python.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -631,7 +630,3 @@ PyInit__stat(void)
 {
     return PyModuleDef_Init(&statmodule);
 }
-
-#ifdef __cplusplus
-}
-#endif

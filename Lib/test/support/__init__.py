@@ -46,7 +46,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization",
     # sys
-    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
@@ -75,13 +75,7 @@ __all__ = [
 #
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
-LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
-    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
-    # seconds on Windows ARM32 buildbot
-    LOOPBACK_TIMEOUT = 10
-elif sys.platform == 'vxworks':
-    LOOPBACK_TIMEOUT = 10
+LOOPBACK_TIMEOUT = 10.0
 
 # Timeout in seconds for network requests going to the internet. The timeout is
 # short enough to prevent a test to wait for too long if the internet request
@@ -435,6 +429,18 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     skip = check_sanitizer(address=address, memory=memory, ub=ub)
     return unittest.skipIf(skip, reason)
 
+# gh-89363: True if fork() can hang if Python is built with Address Sanitizer
+# (ASAN): libasan race condition, dead lock in pthread_create().
+HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
+
+
+def set_sanitizer_env_var(env, option):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+        if name in env:
+            env[name] += f':{option}'
+        else:
+            env[name] = option
+
 
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
@@ -506,6 +512,8 @@ def has_no_debug_ranges():
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
+
+MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
@@ -771,6 +779,24 @@ def python_is_optimized():
         if opt.startswith('-O'):
             final_opt = opt
     return final_opt not in ('', '-O0', '-Og')
+
+
+def check_cflags_pgo():
+    # Check if Python was built with ./configure --enable-optimizations:
+    # with Profile Guided Optimization (PGO).
+    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    pgo_options = [
+        # GCC
+        '-fprofile-use',
+        # clang: -fprofile-instr-use=code.profclangd
+        '-fprofile-instr-use',
+        # ICC
+        "-prof-use",
+    ]
+    PGO_PROF_USE_FLAG = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+    if PGO_PROF_USE_FLAG:
+        pgo_options.append(PGO_PROF_USE_FLAG)
+    return any(option in cflags_nodist for option in pgo_options)
 
 
 _header = 'nP'
@@ -2550,3 +2576,30 @@ def without_optimizer(func):
         finally:
             _testinternalcapi.set_optimizer(save_opt)
     return wrapper
+
+
+_BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
+    # SRC_DIR/.git
+    '.git',
+    # ignore all __pycache__/ sub-directories
+    '__pycache__',
+})
+
+# Ignore function for shutil.copytree() to copy the Python source code.
+def copy_python_src_ignore(path, names):
+    ignored = _BASE_COPY_SRC_DIR_IGNORED_NAMES
+    if os.path.basename(path) == 'Doc':
+        ignored |= {
+            # SRC_DIR/Doc/build/
+            'build',
+            # SRC_DIR/Doc/venv/
+            'venv',
+        }
+
+    # check if we are at the root of the source code
+    elif 'Modules' in names:
+        ignored |= {
+            # SRC_DIR/build/
+            'build',
+        }
+    return ignored
