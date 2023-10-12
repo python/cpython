@@ -3318,12 +3318,13 @@ handle_eval_breaker:
                     &PEEK(2*oparg), 2,
                     &PEEK(2*oparg - 1), 2,
                     oparg);
-            if (map == NULL)
-                goto error;
 
             while (oparg--) {
                 Py_DECREF(POP());
                 Py_DECREF(POP());
+            }
+            if (map == NULL) {
+                goto error;
             }
             PUSH(map);
             DISPATCH();
