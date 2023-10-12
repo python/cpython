@@ -567,7 +567,7 @@ def fs_is_case_insensitive(directory):
 
 
 class FakePath:
-    """Simple implementing of the path protocol.
+    """Simple implementation of the path protocol.
     """
     def __init__(self, path):
         self.path = path
