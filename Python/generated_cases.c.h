@@ -1233,7 +1233,7 @@
 
         TARGET(SEND) {
             PREDICTED(SEND);
-            static_assert(INLINE_CACHE_ENTRIES_SEND == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_SEND == 4, "incorrect cache size");
             PyObject *v;
             PyObject *receiver;
             PyObject *retval;
@@ -1286,7 +1286,7 @@
             }
             Py_DECREF(v);
             stack_pointer[-1] = retval;
-            next_instr += 1;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3263,7 +3263,7 @@
 
         TARGET(FOR_ITER) {
             PREDICTED(FOR_ITER);
-            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 1, "incorrect cache size");
+            static_assert(INLINE_CACHE_ENTRIES_FOR_ITER == 4, "incorrect cache size");
             PyObject *iter;
             PyObject *next;
             iter = stack_pointer[-1];
@@ -3300,7 +3300,7 @@
             // Common case: no jump, leave it to the code generator
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            next_instr += 1;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3371,7 +3371,7 @@
             }
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            next_instr += 1;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3413,7 +3413,7 @@
             }
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            next_instr += 1;
+            next_instr += 4;
             DISPATCH();
         }
 
@@ -3453,7 +3453,7 @@
             }
             STACK_GROW(1);
             stack_pointer[-1] = next;
-            next_instr += 1;
+            next_instr += 4;
             DISPATCH();
         }
 

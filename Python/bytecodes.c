@@ -960,7 +960,7 @@ dummy_func(
             SEND_GEN,
         };
 
-        inst(SEND, (unused/1, receiver, v -- receiver, retval)) {
+        inst(SEND, (unused/4, receiver, v -- receiver, retval)) {
             #if ENABLE_SPECIALIZATION
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -1009,7 +1009,7 @@ dummy_func(
             Py_DECREF(v);
         }
 
-        inst(SEND_GEN, (unused/1, receiver, v -- receiver, unused)) {
+        inst(SEND_GEN, (unused/4, receiver, v -- receiver, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyGenObject *gen = (PyGenObject *)receiver;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type && Py_TYPE(gen) != &PyCoro_Type);
@@ -2467,7 +2467,7 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        inst(FOR_ITER, (unused/1, iter -- iter, next)) {
+        inst(FOR_ITER, (unused/4, iter -- iter, next)) {
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
@@ -2580,7 +2580,7 @@ dummy_func(
         }
 
         macro(FOR_ITER_LIST) =
-            unused/1 +  // Skip over the counter
+            unused/4 +  // Skip over the counter
             _ITER_CHECK_LIST +
             _ITER_JUMP_LIST +
             _ITER_NEXT_LIST;
@@ -2636,7 +2636,7 @@ dummy_func(
         }
 
         macro(FOR_ITER_TUPLE) =
-            unused/1 +  // Skip over the counter
+            unused/4 +  // Skip over the counter
             _ITER_CHECK_TUPLE +
             _ITER_JUMP_TUPLE +
             _ITER_NEXT_TUPLE;
@@ -2679,12 +2679,12 @@ dummy_func(
         }
 
         macro(FOR_ITER_RANGE) =
-            unused/1 +  // Skip over the counter
+            unused/4 +  // Skip over the counter
             _ITER_CHECK_RANGE +
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        inst(FOR_ITER_GEN, (unused/1, iter -- iter, unused)) {
+        inst(FOR_ITER_GEN, (unused/4, iter -- iter, unused)) {
             DEOPT_IF(tstate->interp->eval_frame);
             PyGenObject *gen = (PyGenObject *)iter;
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);

@@ -95,12 +95,18 @@ typedef struct {
 
 typedef struct {
     uint16_t counter;
+    // Tier 2 FOR_ITER_GEN needs code object and instruction offset
+    uint16_t code_version[2];
+    uint16_t code_offset;
 } _PyForIterCache;
 
 #define INLINE_CACHE_ENTRIES_FOR_ITER CACHE_ENTRIES(_PyForIterCache)
 
 typedef struct {
     uint16_t counter;
+    // Tier 2 SEND_GEN needs code object and instruction offset
+    uint16_t code_version[2];
+    uint16_t code_offset;
 } _PySendCache;
 
 #define INLINE_CACHE_ENTRIES_SEND CACHE_ENTRIES(_PySendCache)
