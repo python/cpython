@@ -715,8 +715,7 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
     PyObject *tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
-        const char *header_margin = "";
-        err = _PyTraceBack_Print(tb, header_margin, header, f);
+        err = _PyTraceBack_Print(tb, header, f);
     }
     Py_XDECREF(tb);
     return err;
@@ -778,6 +777,12 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
                         PyObject *value)
 {
     PyObject *f = ctx->file;
+
+    if (PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
+        // The Python APIs in this function require allocating memory
+        // for various objects. If we're out of memory, we can't do that,
+        return -1;
+    }
 
     assert(PyExceptionClass_Check(type));
 
@@ -1040,7 +1045,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
 
-    if (!value) {
+    if (!value || PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
         goto fallback;
     }
 
@@ -1070,10 +1075,11 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 fallback:
     _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
 #ifdef Py_DEBUG
-    _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
+     if (PyErr_Occurred()) {
+        _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
+     }
 #endif
     PyErr_Clear();
-
     struct exception_print_context ctx;
     ctx.file = file;
 

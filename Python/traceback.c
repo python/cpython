@@ -723,7 +723,7 @@ error:
 #define PyTraceBack_LIMIT 1000
 
 int
-_PyTraceBack_Print(PyObject *v, const char *header_margin, const char *header, PyObject *f)
+_PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
 {
     PyObject *limitv;
     long limit = PyTraceBack_LIMIT;
@@ -761,10 +761,8 @@ _PyTraceBack_Print(PyObject *v, const char *header_margin, const char *header, P
 int
 PyTraceBack_Print(PyObject *v, PyObject *f)
 {
-    const char *header_margin = NULL;
     const char *header = EXCEPTION_TB_HEADER;
-
-    return _PyTraceBack_Print(v, header_margin, header, f);
+    return _PyTraceBack_Print(v, header, f);
 }
 
 /* Format an integer in range [0; 0xffffffff] to decimal and write it

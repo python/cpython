@@ -96,7 +96,7 @@ extern PyObject* _PyTraceBack_FromFrame(
 /* Write the traceback tb to file f. Prefix each line with
    indent spaces followed by the margin (if it is not NULL). */
 extern int _PyTraceBack_Print(
-    PyObject *tb, const char *header_margin, const char *header, PyObject *f);
+    PyObject *tb, const char *header, PyObject *f);
 extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
 extern int _Py_WriteIndent(int, PyObject *);
 
