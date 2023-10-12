@@ -1170,10 +1170,11 @@ init_interp_main(PyThreadState *tstate)
         else {
             PyObject *presite = PyImport_Import(presite_modname);
             if (presite == NULL) {
-                fprintf(stderr, "pre-site import failed; traceback:\n");
+                fprintf(stderr, "pre-site import failed:\n");
                 _PyErr_Print(tstate);
             }
             Py_XDECREF(presite);
+            Py_DECREF(presite_modname);
         }
     }
 #endif

@@ -552,6 +552,10 @@ Miscellaneous options
      This option may be useful for users who need to limit CPU resources of a
      container system. See also :envvar:`PYTHON_CPU_COUNT`.
      If *n* is ``default``, nothing is overridden.
+   * :samp:`-X presite={package.module}` specifies a module that should be
+     imported before ``site.py`` is executed.  Python needs to be
+     :ref:`built in debug mode <debug-build>` for this option to exist.
+     See also :envvar:`PYTHON_PRESITE <PYTHON_PRESITE=package.module>`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -601,6 +605,8 @@ Miscellaneous options
 
    .. versionadded:: 3.13
       The ``-X cpu_count`` option.
+
+      The ``-X presite`` option.
 
 
 Options you shouldn't use
@@ -1100,3 +1106,13 @@ Debug-mode variables
    Need Python configured with the :option:`--with-trace-refs` build option.
 
    .. versionadded:: 3.11
+
+.. envvar:: PYTHON_PRESITE=package.module
+
+   If this variable is set to a module, that module will be imported
+   early in the interpreter lifecycle, before ``site.py`` is executed.
+
+   See also the :option:`-X presite <-X>` command-line option,
+   which takes precedence over this variable.
+
+   .. versionadded:: 3.13

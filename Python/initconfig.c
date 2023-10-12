@@ -305,6 +305,9 @@ static const char usage_envvars[] =
 #ifdef Py_STATS
 "PYTHONSTATS             : turns on statistics gathering\n"
 #endif
+#ifdef Py_DEBUG
+"PYTHON_PRESITE=pkg.mod  : import this module before site.py is run\n"
+#endif
 ;
 
 #if defined(MS_WINDOWS)
