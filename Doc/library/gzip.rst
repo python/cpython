@@ -246,6 +246,8 @@ Example of how to GZIP compress a binary string::
 
 .. program:: gzip
 
+.. _gzip-cli:
+
 Command Line Interface
 ----------------------
 
@@ -262,23 +264,23 @@ Once executed the :mod:`gzip` module keeps the input file(s).
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
-.. cmdoption:: file
+.. option:: file
 
    If *file* is not specified, read from :data:`sys.stdin`.
 
-.. cmdoption:: --fast
+.. option:: --fast
 
    Indicates the fastest compression method (less compression).
 
-.. cmdoption:: --best
+.. option:: --best
 
    Indicates the slowest compression method (best compression).
 
-.. cmdoption:: -d, --decompress
+.. option:: -d, --decompress
 
    Decompress the given file.
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message.
 

@@ -11,6 +11,13 @@ import reindent
 import untabify
 
 
+def get_python_source_dir():
+    src_dir = sysconfig.get_config_var('abs_srcdir')
+    if not src_dir:
+        src_dir = sysconfig.get_config_var('srcdir')
+    return os.path.abspath(src_dir)
+
+
 # Excluded directories which are copies of external libraries:
 # don't check their coding style
 EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
@@ -18,12 +25,13 @@ EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
                 os.path.join('Modules', '_decimal', 'libmpdec'),
                 os.path.join('Modules', 'expat'),
                 os.path.join('Modules', 'zlib')]
-SRCDIR = sysconfig.get_config_var('srcdir')
+SRCDIR = get_python_source_dir()
 
 
 def n_files_str(count):
     """Return 'N file(s)' with the proper plurality on 'file'."""
-    return "{} file{}".format(count, "s" if count != 1 else "")
+    s = "s" if count != 1 else ""
+    return f"{count} file{s}"
 
 
 def status(message, modal=False, info=None):
@@ -77,7 +85,7 @@ def get_git_remote_default_branch(remote_name):
 
     It is typically called 'main', but may differ
     """
-    cmd = "git remote show {}".format(remote_name).split()
+    cmd = f"git remote show {remote_name}".split()
     env = os.environ.copy()
     env['LANG'] = 'C'
     try:
@@ -163,9 +171,9 @@ def report_modified_files(file_paths):
     if count == 0:
         return n_files_str(count)
     else:
-        lines = ["{}:".format(n_files_str(count))]
+        lines = [f"{n_files_str(count)}:"]
         for path in file_paths:
-            lines.append("  {}".format(path))
+            lines.append(f"  {path}")
         return "\n".join(lines)
 
 
@@ -192,27 +200,6 @@ def normalize_c_whitespace(file_paths):
     return fixed
 
 
-ws_re = re.compile(br'\s+(\r?\n)$')
-
-@status("Fixing docs whitespace", info=report_modified_files)
-def normalize_docs_whitespace(file_paths):
-    fixed = []
-    for path in file_paths:
-        abspath = os.path.join(SRCDIR, path)
-        try:
-            with open(abspath, 'rb') as f:
-                lines = f.readlines()
-            new_lines = [ws_re.sub(br'\1', line) for line in lines]
-            if new_lines != lines:
-                shutil.copyfile(abspath, abspath + '.bak')
-                with open(abspath, 'wb') as f:
-                    f.writelines(new_lines)
-                fixed.append(path)
-        except Exception as err:
-            print('Cannot fix %s: %s' % (path, err))
-    return fixed
-
-
 @status("Docs modified", modal=True)
 def docs_modified(file_paths):
     """Report if any file in the Doc directory has been changed."""
@@ -231,6 +218,7 @@ def reported_news(file_paths):
     return any(p.startswith(os.path.join('Misc', 'NEWS.d', 'next'))
                for p in file_paths)
 
+
 @status("configure regenerated", modal=True, info=str)
 def regenerated_configure(file_paths):
     """Check if configure has been regenerated."""
@@ -238,6 +226,7 @@ def regenerated_configure(file_paths):
         return "yes" if 'configure' in file_paths else "no"
     else:
         return "not needed"
+
 
 @status("pyconfig.h.in regenerated", modal=True, info=str)
 def regenerated_pyconfig_h_in(file_paths):
@@ -247,6 +236,7 @@ def regenerated_pyconfig_h_in(file_paths):
     else:
         return "not needed"
 
+
 def ci(pull_request):
     if pull_request == 'false':
         print('Not a pull request; skipping')
@@ -255,18 +245,17 @@ def ci(pull_request):
     file_paths = changed_files(base_branch)
     python_files = [fn for fn in file_paths if fn.endswith('.py')]
     c_files = [fn for fn in file_paths if fn.endswith(('.c', '.h'))]
-    doc_files = [fn for fn in file_paths if fn.startswith('Doc') and
-                 fn.endswith(('.rst', '.inc'))]
     fixed = []
     fixed.extend(normalize_whitespace(python_files))
     fixed.extend(normalize_c_whitespace(c_files))
-    fixed.extend(normalize_docs_whitespace(doc_files))
     if not fixed:
         print('No whitespace issues found')
     else:
-        print(f'Please fix the {len(fixed)} file(s) with whitespace issues')
-        print('(on UNIX you can run `make patchcheck` to make the fixes)')
+        count = len(fixed)
+        print(f'Please fix the {n_files_str(count)} with whitespace issues')
+        print('(on Unix you can run `make patchcheck` to make the fixes)')
         sys.exit(1)
+
 
 def main():
     base_branch = get_base_branch()
@@ -280,8 +269,6 @@ def main():
     normalize_whitespace(python_files)
     # C rules enforcement.
     normalize_c_whitespace(c_files)
-    # Doc whitespace enforcement.
-    normalize_docs_whitespace(doc_files)
     # Docs updated.
     docs_modified(doc_files)
     # Misc/ACKS changed.

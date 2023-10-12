@@ -529,7 +529,7 @@ name are now supported.
 .. section: Core and Builtins
 
 sys.getsizeof() on a code object now returns the sizes which includes the
-code struct and sizes of objects which it references. Patch by Dong-hee Na.
+code struct and sizes of objects which it references. Patch by Donghee Na.
 
 ..
 
@@ -2260,7 +2260,7 @@ Update zlib to 1.2.11.
 .. section: Library
 
 ftplib.FTP.putline() now throws ValueError on commands that contains CR or
-LF. Patch by Dong-hee Na.
+LF. Patch by Donghee Na.
 
 ..
 
@@ -2329,7 +2329,7 @@ always return bytes.
 .. nonce: I2mDTz
 .. section: Library
 
-Functional API of enum allows to create empty enums. Patched by Dong-hee Na
+Functional API of enum allows to create empty enums. Patched by Donghee Na
 
 ..
 
@@ -2612,7 +2612,7 @@ Fix handling escape characters in HZ codec.  Based on patch by Ma Lin.
 .. section: Library
 
 inspect.signature() now supports callables with variable-argument parameters
-wrapped with partialmethod. Patch by Dong-hee Na.
+wrapped with partialmethod. Patch by Donghee Na.
 
 ..
 

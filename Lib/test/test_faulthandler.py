@@ -7,8 +7,7 @@ import signal
 import subprocess
 import sys
 from test import support
-from test.support import os_helper
-from test.support import script_helper, is_android
+from test.support import os_helper, script_helper, is_android, MS_WINDOWS
 from test.support import skip_if_sanitizer
 import tempfile
 import unittest
@@ -23,7 +22,6 @@ if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
 TIMEOUT = 0.5
-MS_WINDOWS = (os.name == 'nt')
 
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):

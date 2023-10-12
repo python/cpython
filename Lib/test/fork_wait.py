@@ -54,10 +54,8 @@ class ForkWait(unittest.TestCase):
             self.threads.append(thread)
 
         # busy-loop to wait for threads
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-        while len(self.alive) < NUM_THREADS:
-            time.sleep(0.1)
-            if deadline < time.monotonic():
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT, error=False):
+            if len(self.alive) >= NUM_THREADS:
                 break
 
         a = sorted(self.alive.keys())

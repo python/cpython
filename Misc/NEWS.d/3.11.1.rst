@@ -179,7 +179,7 @@ back to alternative names ("python<MAJOR>", "python<MAJOR>.<MINOR>").
 .. section: Core and Builtins
 
 Update :mod:`faulthandler` to emit an error message with the proper
-unexpected signal number. Patch by Dong-hee Na.
+unexpected signal number. Patch by Donghee Na.
 
 ..
 
@@ -250,7 +250,7 @@ raising a :exc:`TypeError` when accessed via an instance of an invalid type.
 .. nonce: eOBh8M
 .. section: Core and Builtins
 
-Suppress ImportError for invalid query for help() command. Patch by Dong-hee
+Suppress ImportError for invalid query for help() command. Patch by Donghee
 Na.
 
 ..
@@ -281,7 +281,7 @@ errors from :mod:`ctypes` calls.
 .. section: Core and Builtins
 
 :func:`os.sched_yield` now release the GIL while calling sched_yield(2).
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -1289,7 +1289,7 @@ if :option:`--with-system-expat` is passed to :program:`!configure`.
 .. section: Build
 
 Fix the build process of clang compiler for :program:`_bootstrap_python` if
-LTO optimization is applied. Patch by Matthias Görgens and Dong-hee Na.
+LTO optimization is applied. Patch by Matthias Görgens and Donghee Na.
 
 ..
 

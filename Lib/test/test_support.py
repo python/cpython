@@ -7,9 +7,9 @@ import socket
 import stat
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import textwrap
-import time
 import unittest
 import warnings
 
@@ -461,18 +461,12 @@ class TestSupport(unittest.TestCase):
             # child process: do nothing, just exit
             os._exit(0)
 
-        t0 = time.monotonic()
-        deadline = time.monotonic() + support.SHORT_TIMEOUT
-
         was_altered = support.environment_altered
         try:
             support.environment_altered = False
             stderr = io.StringIO()
 
-            while True:
-                if time.monotonic() > deadline:
-                    self.fail("timeout")
-
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
                 with support.swap_attr(support.print_warning, 'orig_stderr', stderr):
                     support.reap_children()
 
@@ -480,9 +474,6 @@ class TestSupport(unittest.TestCase):
                 # the child process
                 if support.environment_altered:
                     break
-
-                # loop until the child process completed
-                time.sleep(0.100)
 
             msg = "Warning -- reap_children() reaped child process %s" % pid
             self.assertIn(msg, stderr.getvalue())
@@ -703,6 +694,10 @@ class TestSupport(unittest.TestCase):
         code = textwrap.dedent("""
             from test import support
             import sys
+            try:
+                from _testcapi import USE_STACKCHECK
+            except ImportError:
+                USE_STACKCHECK = False
 
             def check(cond):
                 if not cond:
@@ -727,19 +722,24 @@ class TestSupport(unittest.TestCase):
                 check(get_depth == depth)
                 test_recursive(depth + 1, limit)
 
+            if USE_STACKCHECK:
+                # f-string consumes 2 frames and -1 for USE_STACKCHECK
+                IGNORE = 3
+            else:
+                # f-string consumes 2 frames
+                IGNORE = 2
+
             # depth up to 25
             with support.infinite_recursion(max_depth=25):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # Use limit-2 since f-string seems to consume 2 frames.
-                test_recursive(2, limit - 2)
+                test_recursive(2, limit - IGNORE)
 
             # depth up to 500
             with support.infinite_recursion(max_depth=500):
                 limit = sys.getrecursionlimit()
                 print(f"test with sys.getrecursionlimit()={limit}")
-                # limit-2 since f-string seems to consume 2 frames
-                test_recursive(2, limit - 2)
+                test_recursive(2, limit - IGNORE)
         """)
         script_helper.assert_python_ok("-c", code)
 
@@ -776,6 +776,42 @@ class TestSupport(unittest.TestCase):
                 self.fail("RecursionError was not raised")
 
         #self.assertEqual(available, 2)
+
+    def test_copy_python_src_ignore(self):
+        # Get source directory
+        src_dir = sysconfig.get_config_var('abs_srcdir')
+        if not src_dir:
+            src_dir = sysconfig.get_config_var('srcdir')
+        src_dir = os.path.abspath(src_dir)
+
+        # Check that the source code is available
+        if not os.path.exists(src_dir):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {src_dir!r}")
+        # Check that the landmark copy_python_src_ignore() expects is available
+        # (Previously we looked for 'Lib\os.py', which is always present on Windows.)
+        landmark = os.path.join(src_dir, 'Modules')
+        if not os.path.exists(landmark):
+            self.skipTest(f"cannot access Python source code directory:"
+                          f" {landmark!r} landmark is missing")
+
+        # Test support.copy_python_src_ignore()
+
+        # Source code directory
+        ignored = {'.git', '__pycache__'}
+        names = os.listdir(src_dir)
+        self.assertEqual(support.copy_python_src_ignore(src_dir, names),
+                         ignored | {'build'})
+
+        # Doc/ directory
+        path = os.path.join(src_dir, 'Doc')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored | {'build', 'venv'})
+
+        # Another directory
+        path = os.path.join(src_dir, 'Objects')
+        self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
+                         ignored)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

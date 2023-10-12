@@ -545,51 +545,51 @@ Unless an ``'r'`` or ``'R'`` prefix is present, escape sequences in string and
 bytes literals are interpreted according to rules similar to those used by
 Standard C.  The recognized escape sequences are:
 
-+-----------------+---------------------------------+-------+
-| Escape Sequence | Meaning                         | Notes |
-+=================+=================================+=======+
-| ``\``\ <newline>| Backslash and newline ignored   | \(1)  |
-+-----------------+---------------------------------+-------+
-| ``\\``          | Backslash (``\``)               |       |
-+-----------------+---------------------------------+-------+
-| ``\'``          | Single quote (``'``)            |       |
-+-----------------+---------------------------------+-------+
-| ``\"``          | Double quote (``"``)            |       |
-+-----------------+---------------------------------+-------+
-| ``\a``          | ASCII Bell (BEL)                |       |
-+-----------------+---------------------------------+-------+
-| ``\b``          | ASCII Backspace (BS)            |       |
-+-----------------+---------------------------------+-------+
-| ``\f``          | ASCII Formfeed (FF)             |       |
-+-----------------+---------------------------------+-------+
-| ``\n``          | ASCII Linefeed (LF)             |       |
-+-----------------+---------------------------------+-------+
-| ``\r``          | ASCII Carriage Return (CR)      |       |
-+-----------------+---------------------------------+-------+
-| ``\t``          | ASCII Horizontal Tab (TAB)      |       |
-+-----------------+---------------------------------+-------+
-| ``\v``          | ASCII Vertical Tab (VT)         |       |
-+-----------------+---------------------------------+-------+
-| ``\ooo``        | Character with octal value      | (2,4) |
-|                 | *ooo*                           |       |
-+-----------------+---------------------------------+-------+
-| ``\xhh``        | Character with hex value *hh*   | (3,4) |
-+-----------------+---------------------------------+-------+
++-------------------------+---------------------------------+-------+
+| Escape Sequence         | Meaning                         | Notes |
++=========================+=================================+=======+
+| ``\``\ <newline>        | Backslash and newline ignored   | \(1)  |
++-------------------------+---------------------------------+-------+
+| ``\\``                  | Backslash (``\``)               |       |
++-------------------------+---------------------------------+-------+
+| ``\'``                  | Single quote (``'``)            |       |
++-------------------------+---------------------------------+-------+
+| ``\"``                  | Double quote (``"``)            |       |
++-------------------------+---------------------------------+-------+
+| ``\a``                  | ASCII Bell (BEL)                |       |
++-------------------------+---------------------------------+-------+
+| ``\b``                  | ASCII Backspace (BS)            |       |
++-------------------------+---------------------------------+-------+
+| ``\f``                  | ASCII Formfeed (FF)             |       |
++-------------------------+---------------------------------+-------+
+| ``\n``                  | ASCII Linefeed (LF)             |       |
++-------------------------+---------------------------------+-------+
+| ``\r``                  | ASCII Carriage Return (CR)      |       |
++-------------------------+---------------------------------+-------+
+| ``\t``                  | ASCII Horizontal Tab (TAB)      |       |
++-------------------------+---------------------------------+-------+
+| ``\v``                  | ASCII Vertical Tab (VT)         |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\\\{ooo}`       | Character with octal value      | (2,4) |
+|                         | *ooo*                           |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\x{hh}`         | Character with hex value *hh*   | (3,4) |
++-------------------------+---------------------------------+-------+
 
 Escape sequences only recognized in string literals are:
 
-+-----------------+---------------------------------+-------+
-| Escape Sequence | Meaning                         | Notes |
-+=================+=================================+=======+
-| ``\N{name}``    | Character named *name* in the   | \(5)  |
-|                 | Unicode database                |       |
-+-----------------+---------------------------------+-------+
-| ``\uxxxx``      | Character with 16-bit hex value | \(6)  |
-|                 | *xxxx*                          |       |
-+-----------------+---------------------------------+-------+
-| ``\Uxxxxxxxx``  | Character with 32-bit hex value | \(7)  |
-|                 | *xxxxxxxx*                      |       |
-+-----------------+---------------------------------+-------+
++-------------------------+---------------------------------+-------+
+| Escape Sequence         | Meaning                         | Notes |
++=========================+=================================+=======+
+| :samp:`\\N\\{{name}\\}` | Character named *name* in the   | \(5)  |
+|                         | Unicode database                |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\u{xxxx}`       | Character with 16-bit hex value | \(6)  |
+|                         | *xxxx*                          |       |
++-------------------------+---------------------------------+-------+
+| :samp:`\\U{xxxxxxxx}`   | Character with 32-bit hex value | \(7)  |
+|                         | *xxxxxxxx*                      |       |
++-------------------------+---------------------------------+-------+
 
 Notes:
 
@@ -641,10 +641,10 @@ is more easily recognized as broken.)  It is also important to note that the
 escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
-   .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
-      a future Python version they will be a :exc:`SyntaxWarning` and
-      eventually a :exc:`SyntaxError`.
+.. versionchanged:: 3.6
+   Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
+   a future Python version they will be a :exc:`SyntaxWarning` and
+   eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string

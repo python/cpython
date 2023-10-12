@@ -161,7 +161,7 @@ pure Python version did the set up in ``__init__``.
 .. section: Library
 
 Fix :func:`multiprocessing.set_forkserver_preload` to check the given list
-of modules names. Patch by Dong-hee Na.
+of modules names. Patch by Donghee Na.
 
 ..
 
@@ -793,7 +793,7 @@ and 3.1.2.
 
 Argument Clinic now supports overriding automatically generated signature by
 using directive ``@text_signature``. See
-:ref:`clinic-howto-override-signature`.
+`the Argument Clinic docs <devguide.python.org/development-tools/clinic/>`__.
 
 ..
 

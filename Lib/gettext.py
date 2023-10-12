@@ -46,6 +46,7 @@ internationalized, to the local language and cultural habits.
 #   find this format documented anywhere.
 
 
+import operator
 import os
 import re
 import sys
@@ -166,14 +167,21 @@ def _parse(tokens, priority=-1):
 
 def _as_int(n):
     try:
-        i = round(n)
+        round(n)
     except TypeError:
         raise TypeError('Plural value must be an integer, got %s' %
                         (n.__class__.__name__,)) from None
+
     import warnings
+    frame = sys._getframe(1)
+    stacklevel = 2
+    while frame.f_back is not None and frame.f_globals.get('__name__') == __name__:
+        stacklevel += 1
+        frame = frame.f_back
     warnings.warn('Plural value must be an integer, got %s' %
                   (n.__class__.__name__,),
-                  DeprecationWarning, 4)
+                  DeprecationWarning,
+                  stacklevel)
     return n
 
 
@@ -200,7 +208,7 @@ def c2py(plural):
             elif c == ')':
                 depth -= 1
 
-        ns = {'_as_int': _as_int}
+        ns = {'_as_int': _as_int, '__name__': __name__}
         exec('''if True:
             def func(n):
                 if not isinstance(n, int):

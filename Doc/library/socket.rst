@@ -204,14 +204,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
-   .. availability:: Linux >= 2.2.
+  .. availability:: Linux >= 2.2.
 
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
-   .. availability:: Linux >= 4.7.
+  .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -2001,7 +2001,7 @@ The next two examples are identical to the above two, but support both IPv4 and
 IPv6. The server side will listen to the first address family available (it
 should listen to both instead). On most of IPv6-ready systems, IPv6 will take
 precedence and the server may not accept IPv4 traffic. The client side will try
-to connect to the all addresses returned as a result of the name resolution, and
+to connect to all the addresses returned as a result of the name resolution, and
 sends traffic to the first one connected successfully. ::
 
    # Echo server program

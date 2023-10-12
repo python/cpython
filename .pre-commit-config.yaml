@@ -1,10 +1,20 @@
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.292
+    hooks:
+      - id: ruff
+        name: Run Ruff on Lib/test/
+        args: [--exit-non-zero-on-fix]
+        files: ^Lib/test/
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
+      - id: check-toml
+        exclude: ^Lib/test/test_tomllib/
       - id: check-yaml
       - id: trailing-whitespace
-        types_or: [c, python, rst]
+        types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.8
@@ -13,3 +23,9 @@ repos:
         args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]
+        require_serial: true
+
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes

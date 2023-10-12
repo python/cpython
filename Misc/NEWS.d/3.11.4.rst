@@ -147,7 +147,7 @@ Fix bug in line numbers of instructions emitted for :keyword:`except*
 .. section: Core and Builtins
 
 Migrate :meth:`~ssl.SSLContext.set_ecdh_curve` method not to use deprecated
-OpenSSL APIs. Patch by Dong-hee Na.
+OpenSSL APIs. Patch by Donghee Na.
 
 ..
 
@@ -669,7 +669,7 @@ linking with ``libbsd``.
 .. nonce: -W9BJS
 .. section: Build
 
-Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Dong-hee Na.
+Add gcc fallback of mkfifoat/mknodat for macOS. Patch by Donghee Na.
 
 ..
 

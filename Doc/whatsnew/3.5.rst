@@ -921,7 +921,7 @@ and improves their substitutability for lists.
 Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
     Point = namedtuple('Point', ['x', 'y'])
-    Point.__doc__ += ': Cartesian coodinate'
+    Point.__doc__ += ': Cartesian coordinate'
     Point.x.__doc__ = 'abscissa'
     Point.y.__doc__ = 'ordinate'
 

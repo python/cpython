@@ -461,7 +461,7 @@ Module State Access from Slot Methods, Getters and Setters
 
    .. After adding to limited API:
 
-      If you use the :ref:`limited API <stable>,
+      If you use the :ref:`limited API <limited-c-api>`,
       you must update ``Py_LIMITED_API`` to ``0x030b0000``, losing ABI
       compatibility with earlier versions.
 

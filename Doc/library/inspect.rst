@@ -1435,10 +1435,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1450,10 +1451,11 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
 
@@ -1570,6 +1572,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

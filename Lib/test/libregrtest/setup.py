@@ -88,16 +88,19 @@ def setup_tests(ns):
     setup_unraisable_hook()
     setup_threading_excepthook()
 
-    if ns.timeout is not None:
+    timeout = ns.timeout
+    if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
-        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
-        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
         # If --timeout is short: reduce timeouts
-        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
-        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
-        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
-        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, timeout)
 
     if ns.xmlpath:
         from test.support.testresult import RegressionTestResult

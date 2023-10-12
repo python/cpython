@@ -17,7 +17,7 @@ for parsing and creating XML data.
    This module will use a fast implementation whenever available.
 
 .. deprecated:: 3.3
-   The :mod:`xml.etree.cElementTree` module is deprecated.
+   The :mod:`!xml.etree.cElementTree` module is deprecated.
 
 
 .. warning::
@@ -825,6 +825,8 @@ Reference
 Functions
 ^^^^^^^^^
 
+.. module:: xml.etree.ElementInclude
+
 .. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
    :module:
 
@@ -861,6 +863,9 @@ Functions
 
 Element Objects
 ^^^^^^^^^^^^^^^
+
+.. module:: xml.etree.ElementTree
+   :noindex:
 
 .. class:: Element(tag, attrib={}, **extra)
 
