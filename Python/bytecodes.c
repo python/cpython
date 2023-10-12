@@ -803,7 +803,6 @@ dummy_func(
         }
 
         macro(RETURN_VALUE) =
-            _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
@@ -828,7 +827,6 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _POP_FRAME;
 
@@ -2278,7 +2276,7 @@ dummy_func(
                 // Double-check that the opcode isn't instrumented or something:
                 here->op.code == JUMP_BACKWARD)
             {
-                OBJECT_STAT_INC(optimization_attempts);
+                OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 ERROR_IF(optimized < 0, error);
                 if (optimized) {
@@ -3099,7 +3097,6 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
@@ -3109,7 +3106,6 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            _SET_IP +  // Tier 2 only; special-cased oparg
             _SAVE_CURRENT_IP +  // Sets frame->prev_instr
             _PUSH_FRAME;
 
@@ -3208,7 +3204,7 @@ dummy_func(
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
@@ -3948,23 +3944,20 @@ dummy_func(
         }
 
         op(_SET_IP, (--)) {
+            TIER_TWO_ONLY
             frame->prev_instr = ip_offset + oparg;
         }
 
         op(_SAVE_CURRENT_IP, (--)) {
-            #if TIER_ONE
+            TIER_ONE_ONLY
             frame->prev_instr = next_instr - 1;
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding _SET_IP
-            frame->prev_instr--;
-            #endif
         }
 
         op(_EXIT_TRACE, (--)) {
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             return frame;
         }
 

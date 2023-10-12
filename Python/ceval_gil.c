@@ -76,7 +76,7 @@ update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstat
             _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
         }
         if (_Py_ThreadCanHandleSignals(interp)) {
-            if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+            if (_Py_atomic_load_int(&_PyRuntime.signals.is_tripped)) {
                 _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
             }
         }
@@ -462,23 +462,21 @@ PyStatus
 _PyEval_InitGIL(PyThreadState *tstate, int own_gil)
 {
     assert(tstate->interp->ceval.gil == NULL);
-    int locked;
     if (!own_gil) {
         /* The interpreter will share the main interpreter's instead. */
         PyInterpreterState *main_interp = _PyInterpreterState_Main();
         assert(tstate->interp != main_interp);
         struct _gil_runtime_state *gil = main_interp->ceval.gil;
         init_shared_gil(tstate->interp, gil);
-        locked = current_thread_holds_gil(gil, tstate);
+        assert(!current_thread_holds_gil(gil, tstate));
     }
     else {
         PyThread_init_thread();
         init_own_gil(tstate->interp, &tstate->interp->_gil);
-        locked = 0;
     }
-    if (!locked) {
-        take_gil(tstate);
-    }
+
+    // Lock the GIL and mark the current thread as attached.
+    _PyThreadState_Attach(tstate);
 
     return _PyStatus_OK();
 }
@@ -569,24 +567,14 @@ void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-
-    take_gil(tstate);
-
-    if (_PyThreadState_SwapNoGIL(tstate) != NULL) {
-        Py_FatalError("non-NULL old thread state");
-    }
+    _PyThreadState_Attach(tstate);
 }
 
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
     assert(_PyThreadState_CheckConsistency(tstate));
-
-    PyThreadState *new_tstate = _PyThreadState_SwapNoGIL(NULL);
-    if (new_tstate != tstate) {
-        Py_FatalError("wrong thread state");
-    }
-    drop_gil(tstate->interp, tstate);
+    _PyThreadState_Detach(tstate);
 }
 
 #ifdef HAVE_FORK
@@ -629,11 +617,8 @@ _PyEval_SignalAsyncExc(PyInterpreterState *interp)
 PyThreadState *
 PyEval_SaveThread(void)
 {
-    PyThreadState *tstate = _PyThreadState_SwapNoGIL(NULL);
-    _Py_EnsureTstateNotNULL(tstate);
-
-    assert(gil_created(tstate->interp->ceval.gil));
-    drop_gil(tstate->interp, tstate);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadState_Detach(tstate);
     return tstate;
 }
 
@@ -641,10 +626,7 @@ void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-
-    take_gil(tstate);
-
-    _PyThreadState_SwapNoGIL(tstate);
+    _PyThreadState_Attach(tstate);
 }
 
 
@@ -681,7 +663,7 @@ _PyEval_SignalReceived(PyInterpreterState *interp)
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
-                   _Py_pending_call_func func, void *arg)
+                   _Py_pending_call_func func, void *arg, int flags)
 {
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
@@ -690,6 +672,7 @@ _push_pending_call(struct _pending_calls *pending,
     }
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
+    pending->calls[i].flags = flags;
     pending->last = j;
     assert(pending->calls_to_do < NPENDINGCALLS);
     pending->calls_to_do++;
@@ -698,7 +681,7 @@ _push_pending_call(struct _pending_calls *pending,
 
 static int
 _next_pending_call(struct _pending_calls *pending,
-                   int (**func)(void *), void **arg)
+                   int (**func)(void *), void **arg, int *flags)
 {
     int i = pending->first;
     if (i == pending->last) {
@@ -708,15 +691,16 @@ _next_pending_call(struct _pending_calls *pending,
     }
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
+    *flags = pending->calls[i].flags;
     return i;
 }
 
 /* Pop one item off the queue while holding the lock. */
 static void
 _pop_pending_call(struct _pending_calls *pending,
-                  int (**func)(void *), void **arg)
+                  int (**func)(void *), void **arg, int *flags)
 {
-    int i = _next_pending_call(pending, func, arg);
+    int i = _next_pending_call(pending, func, arg, flags);
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
@@ -732,12 +716,12 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       _Py_pending_call_func func, void *arg,
-                       int mainthreadonly)
+                       _Py_pending_call_func func, void *arg, int flags)
 {
-    assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
+    assert(!(flags & _Py_PENDING_MAINTHREADONLY)
+           || _Py_IsMainInterpreter(interp));
     struct _pending_calls *pending = &interp->ceval.pending;
-    if (mainthreadonly) {
+    if (flags & _Py_PENDING_MAINTHREADONLY) {
         /* The main thread only exists in the main interpreter. */
         assert(_Py_IsMainInterpreter(interp));
         pending = &_PyRuntime.ceval.pending_mainthread;
@@ -747,7 +731,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    int result = _push_pending_call(pending, func, arg);
+    int result = _push_pending_call(pending, func, arg, flags);
     PyThread_release_lock(pending->lock);
 
     /* signal main loop */
@@ -761,7 +745,7 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, 1);
+    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
 }
 
 static int
@@ -787,17 +771,22 @@ _make_pending_calls(struct _pending_calls *pending)
     for (int i=0; i<NPENDINGCALLS; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
+        int flags = 0;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-        _pop_pending_call(pending, &func, &arg);
+        _pop_pending_call(pending, &func, &arg, &flags);
         PyThread_release_lock(pending->lock);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
             break;
         }
-        if (func(arg) != 0) {
+        int res = func(arg);
+        if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
+            PyMem_RawFree(arg);
+        }
+        if (res != 0) {
             return -1;
         }
     }
@@ -1015,18 +1004,11 @@ _Py_HandlePending(PyThreadState *tstate)
     /* GIL drop request */
     if (_Py_eval_breaker_bit_is_set(interp, _PY_GIL_DROP_REQUEST_BIT)) {
         /* Give another thread a chance */
-        if (_PyThreadState_SwapNoGIL(NULL) != tstate) {
-            Py_FatalError("tstate mix-up");
-        }
-        drop_gil(interp, tstate);
+        _PyThreadState_Detach(tstate);
 
         /* Other threads may run now */
 
-        take_gil(tstate);
-
-        if (_PyThreadState_SwapNoGIL(tstate) != NULL) {
-            Py_FatalError("orphan tstate");
-        }
+        _PyThreadState_Attach(tstate);
     }
 
     /* Check for asynchronous exception. */

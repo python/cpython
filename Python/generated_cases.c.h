@@ -989,13 +989,8 @@
             PyObject *retval;
             // _SAVE_CURRENT_IP
             {
-                #if TIER_ONE
+                TIER_ONE_ONLY
                 frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding _SET_IP
-                frame->prev_instr--;
-                #endif
             }
             // _POP_FRAME
             retval = stack_pointer[-1];
@@ -1056,13 +1051,8 @@
             }
             // _SAVE_CURRENT_IP
             {
-                #if TIER_ONE
+                TIER_ONE_ONLY
                 frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding _SET_IP
-                frame->prev_instr--;
-                #endif
             }
             // _POP_FRAME
             retval = value;
@@ -2988,7 +2978,7 @@
                 // Double-check that the opcode isn't instrumented or something:
                 here->op.code == JUMP_BACKWARD)
             {
-                OBJECT_STAT_INC(optimization_attempts);
+                OPT_STAT_INC(attempts);
                 int optimized = _PyOptimizer_BackEdge(frame, here, next_instr, stack_pointer);
                 if (optimized < 0) goto error;
                 if (optimized) {
@@ -3941,13 +3931,8 @@
             // _SAVE_CURRENT_IP
             next_instr += 3;
             {
-                #if TIER_ONE
+                TIER_ONE_ONLY
                 frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding _SET_IP
-                frame->prev_instr--;
-                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -4019,13 +4004,8 @@
             // _SAVE_CURRENT_IP
             next_instr += 3;
             {
-                #if TIER_ONE
+                TIER_ONE_ONLY
                 frame->prev_instr = next_instr - 1;
-                #endif
-                #if TIER_TWO
-                // Relies on a preceding _SET_IP
-                frame->prev_instr--;
-                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -4196,7 +4176,7 @@
             }
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
-                tstate, (PyCodeObject *)&_Py_InitCleanup, 1, 0);
+                tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
             assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);

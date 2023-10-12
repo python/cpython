@@ -3270,18 +3270,8 @@
         }
 
         case _SET_IP: {
+            TIER_TWO_ONLY
             frame->prev_instr = ip_offset + oparg;
-            break;
-        }
-
-        case _SAVE_CURRENT_IP: {
-            #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding _SET_IP
-            frame->prev_instr--;
-            #endif
             break;
         }
 
@@ -3289,6 +3279,7 @@
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             return frame;
             break;
         }

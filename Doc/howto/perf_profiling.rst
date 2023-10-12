@@ -162,8 +162,7 @@ the :option:`!-X` option takes precedence over the environment variable.
 
 Example, using the environment variable::
 
-   $ PYTHONPERFSUPPORT=1
-   $ python script.py
+   $ PYTHONPERFSUPPORT=1 python script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::

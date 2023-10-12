@@ -41,12 +41,26 @@ extern void _PyEval_InitState(PyInterpreterState *, PyThread_type_lock);
 extern void _PyEval_FiniState(struct _ceval_state *ceval);
 extern void _PyEval_SignalReceived(PyInterpreterState *interp);
 
+// bitwise flags:
+#define _Py_PENDING_MAINTHREADONLY 1
+#define _Py_PENDING_RAWFREE 2
+
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(int) _PyEval_AddPendingCall(
     PyInterpreterState *interp,
     _Py_pending_call_func func,
     void *arg,
-    int mainthreadonly);
+    int flags);
+
+typedef int (*_Py_simple_func)(void *);
+extern int _Py_CallInInterpreter(
+    PyInterpreterState *interp,
+    _Py_simple_func func,
+    void *arg);
+extern int _Py_CallInInterpreterAndRawFree(
+    PyInterpreterState *interp,
+    _Py_simple_func func,
+    void *arg);
 
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
@@ -121,7 +135,6 @@ extern void _PyEval_FiniGIL(PyInterpreterState *interp);
 
 extern void _PyEval_AcquireLock(PyThreadState *tstate);
 extern void _PyEval_ReleaseLock(PyInterpreterState *, PyThreadState *);
-extern PyThreadState * _PyThreadState_SwapNoGIL(PyThreadState *);
 
 extern void _PyEval_DeactivateOpCache(void);
 
