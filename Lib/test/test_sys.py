@@ -175,7 +175,8 @@ class ExceptHookTest(unittest.TestCase):
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
-            sys.excepthook(1, '1', 1)
+            with test.support.catch_unraisable_exception():
+                sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
                          "value, str found" in stderr.getvalue())
 
