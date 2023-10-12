@@ -23,7 +23,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
+#include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
@@ -688,19 +688,10 @@ struct exception_print_context
 };
 
 static int
-write_indented_margin(struct exception_print_context *ctx, PyObject *f)
-{
-    return _Py_WriteIndentedMargin(0, "", f);
-}
-
-static int
 print_exception_invalid_type(struct exception_print_context *ctx,
                              PyObject *value)
 {
     PyObject *f = ctx->file;
-    if (_Py_WriteIndent(0, f) < 0) {
-        return -1;
-    }
     const char *const msg = "TypeError: print_exception(): Exception expected "
                             "for value, ";
     if (PyFile_WriteString(msg, f) < 0) {
@@ -725,8 +716,7 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
         const char *header_margin = "";
-        err = _PyTraceBack_Print_Indented(
-            tb, 0, "", header_margin, header, f);
+        err = _PyTraceBack_Print(tb, header_margin, header, f);
     }
     Py_XDECREF(tb);
     return err;
@@ -769,9 +759,6 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     if (line == NULL) {
         goto error;
     }
-    if (write_indented_margin(ctx, f) < 0) {
-        goto error;
-    }
     if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
         goto error;
     }
@@ -794,9 +781,6 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
 
     assert(PyExceptionClass_Check(type));
 
-    if (write_indented_margin(ctx, f) < 0) {
-        return -1;
-    }
     PyObject *modulename = PyObject_GetAttr(type, &_Py_ID(__module__));
     if (modulename == NULL || !PyUnicode_Check(modulename)) {
         Py_XDECREF(modulename);
@@ -931,19 +915,10 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
         return -1;
     }
 
-    if (write_indented_margin(ctx, f) < 0) {
-        return -1;
-    }
     if (PyFile_WriteString("\n", f) < 0) {
         return -1;
     }
-    if (write_indented_margin(ctx, f) < 0) {
-        return -1;
-    }
     if (PyFile_WriteString(message, f) < 0) {
-        return -1;
-    }
-    if (write_indented_margin(ctx, f) < 0) {
         return -1;
     }
     if (PyFile_WriteString("\n", f) < 0) {
@@ -1063,35 +1038,37 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         }
     }
 
+    int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
+
     if (!value) {
         goto fallback;
     }
 
-    // Try first with the traceback.
-    int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
+    // Try first with the stdlib traceback module
     PyObject *traceback_module = PyImport_ImportModule("traceback");
 
     if (traceback_module == NULL) {
         goto fallback;
     }
 
-    PyObject *print_tb_func = PyObject_GetAttrString(traceback_module, "_print_exception_bltin");
+    PyObject *print_exception_fn = PyObject_GetAttrString(traceback_module, "_print_exception_bltin");
 
-    if (print_tb_func == NULL || !PyCallable_Check(print_tb_func)) {
+    if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
         Py_DECREF(traceback_module);
         goto fallback;
     }
 
-    PyObject* result = PyObject_CallOneArg(print_tb_func, value);
+    PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
 
     Py_DECREF(traceback_module);
-    Py_XDECREF(print_tb_func);
-    _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
+    Py_XDECREF(print_exception_fn);
     if (result) {
         Py_DECREF(result);
+        _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
         return;
     }
 fallback:
+    _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
 #ifdef Py_DEBUG
     _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
 #endif
