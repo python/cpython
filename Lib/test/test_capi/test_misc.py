@@ -1217,7 +1217,7 @@ class TestPendingCalls(unittest.TestCase):
     # about when pending calls get run.  This is especially relevant
     # here for creating deterministic tests.
 
-    def pendingcalls_submit(self, l, n):
+    def main_pendingcalls_submit(self, l, n):
         def callback():
             #this function can be interrupted by thread switching so let's
             #use an atomic operation
@@ -1232,7 +1232,7 @@ class TestPendingCalls(unittest.TestCase):
                 if _testcapi._pending_threadfunc(callback):
                     break
 
-    def pendingcalls_wait(self, l, n, context = None):
+    def main_pendingcalls_wait(self, l, n, context = None):
         #now, stick around until l[0] has grown to 10
         count = 0
         while len(l) != n:
@@ -1252,7 +1252,7 @@ class TestPendingCalls(unittest.TestCase):
             print("(%i)"%(len(l),))
 
     @threading_helper.requires_working_threading()
-    def test_pendingcalls_threaded(self):
+    def test_main_pendingcalls_threaded(self):
 
         #do every callback on a separate thread
         n = 32 #total callbacks
@@ -1266,15 +1266,15 @@ class TestPendingCalls(unittest.TestCase):
         context.lock = threading.Lock()
         context.event = threading.Event()
 
-        threads = [threading.Thread(target=self.pendingcalls_thread,
+        threads = [threading.Thread(target=self.main_pendingcalls_thread,
                                     args=(context,))
                    for i in range(context.nThreads)]
         with threading_helper.start_threads(threads):
-            self.pendingcalls_wait(context.l, n, context)
+            self.main_pendingcalls_wait(context.l, n, context)
 
-    def pendingcalls_thread(self, context):
+    def main_pendingcalls_thread(self, context):
         try:
-            self.pendingcalls_submit(context.l, context.n)
+            self.main_pendingcalls_submit(context.l, context.n)
         finally:
             with context.lock:
                 context.nFinished += 1
@@ -1284,15 +1284,15 @@ class TestPendingCalls(unittest.TestCase):
             if nFinished == context.nThreads:
                 context.event.set()
 
-    def test_pendingcalls_non_threaded(self):
+    def test_main_pendingcalls_non_threaded(self):
         #again, just using the main thread, likely they will all be dispatched at
         #once.  It is ok to ask for too many, because we loop until we find a slot.
         #the loop can be interrupted to dispatch.
         #there are only 32 dispatch slots, so we go for twice that!
         l = []
         n = 64
-        self.pendingcalls_submit(l, n)
-        self.pendingcalls_wait(l, n)
+        self.main_pendingcalls_submit(l, n)
+        self.main_pendingcalls_wait(l, n)
 
     class PendingTask(types.SimpleNamespace):
 
