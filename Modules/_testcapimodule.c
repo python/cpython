@@ -819,6 +819,7 @@ pending_threadfunc(PyObject *self, PyObject *arg)
         Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
         Py_RETURN_FALSE;
     }
+    /* The callable is decref'ed in _pending_callback() above. */
     Py_RETURN_TRUE;
 }
 

@@ -1049,6 +1049,7 @@ pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
         } while (r < 0);
     }
 
+    /* The callable is decref'ed in _pending_callback() above. */
     Py_RETURN_TRUE;
 }
 
