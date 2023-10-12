@@ -161,13 +161,13 @@ Data Types
 
 .. class:: EnumType
 
-   *EnumType* is the :term:`metaclass` for *enum* enumerations.  It is possible
+   :class:`EnumType` is the :term:`metaclass` for :class:`enum` enumerations.  It is possible
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
 
-   *EnumType* is responsible for setting the correct :meth:`!__repr__`,
+   :class:`EnumType` is responsible for setting the correct :meth:`!__repr__`,
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
-   final *enum*, as well as creating the enum members, properly handling
+   final :class:`enum`, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
    .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
@@ -248,7 +248,7 @@ Data Types
 
 .. class:: Enum
 
-   *Enum* is the base class for all *enum* enumerations.
+   :class:`Enum` is the base class for all *enum* enumerations.
 
    .. attribute:: Enum.name
 
@@ -405,9 +405,9 @@ Data Types
 
 .. class:: IntEnum
 
-   *IntEnum* is the same as *Enum*, but its members are also integers and can be
+   :class:`IntEnum` is the same as :class:`Enum`, but its members are also integers and can be
    used anywhere that an integer can be used.  If any integer operation is performed
-   with an *IntEnum* member, the resulting value loses its enumeration status.
+   with an :class:`IntEnum` member, the resulting value loses its enumeration status.
 
       >>> from enum import IntEnum
       >>> class Number(IntEnum):
@@ -436,9 +436,9 @@ Data Types
 
 .. class:: StrEnum
 
-   *StrEnum* is the same as *Enum*, but its members are also strings and can be used
+   :class:`StrEnum` is the same as :class:`Enum`, but its members are also strings and can be used
    in most of the same places that a string can be used.  The result of any string
-   operation performed on or with a *StrEnum* member is not part of the enumeration.
+   operation performed on or with a :class:`StrEnum` member is not part of the enumeration.
 
    .. note::
 
@@ -462,7 +462,7 @@ Data Types
 
 .. class:: Flag
 
-   *Flag* members support the bitwise operators ``&`` (*AND*), ``|`` (*OR*),
+   :class:`Flag` members support the bitwise operators ``&`` (*AND*), ``|`` (*OR*),
    ``^`` (*XOR*), and ``~`` (*INVERT*); the results of those operators are members
    of the enumeration.
 
@@ -575,7 +575,7 @@ Data Types
 
 .. class:: IntFlag
 
-   *IntFlag* is the same as *Flag*, but its members are also integers and can be
+   :class:`IntFlag` is the same as :class:`Flag`, but its members are also integers and can be
    used anywhere that an integer can be used.
 
       >>> from enum import IntFlag, auto
@@ -589,18 +589,18 @@ Data Types
       >>> Color.RED | 2
       <Color.RED|GREEN: 3>
 
-   If any integer operation is performed with an *IntFlag* member, the result is
-   not an *IntFlag*::
+   If any integer operation is performed with an :class:`IntFlag` member, the result is
+   not an :class:`IntFlag`::
 
         >>> Color.RED + 2
         3
 
-   If a *Flag* operation is performed with an *IntFlag* member and:
+   If a :class:`Flag` operation is performed with an :class:`IntFlag` member and:
 
-   * the result is a valid *IntFlag*: an *IntFlag* is returned
-   * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
+   * the result is a valid :class:`IntFlag`: an :class:`IntFlag` is returned
+   * the result is not a valid :class:`IntFlag`: the result depends on the :class:`FlagBoundary` setting
 
-   The *repr()* of unnamed zero-valued flags has changed.  It is now:
+   The :func:`repr()` of unnamed zero-valued flags has changed.  It is now:
 
       >>> Color(0)
       <Color: 0>
@@ -637,7 +637,7 @@ Data Types
 
 .. class:: EnumCheck
 
-   *EnumCheck* contains the options used by the :func:`verify` decorator to ensure
+   :class:`EnumCheck` contains the options used by the :func:`verify` decorator to ensure
    various constraints; failed constraints result in a :exc:`ValueError`.
 
    .. attribute:: UNIQUE
@@ -696,7 +696,7 @@ Data Types
 
 .. class:: FlagBoundary
 
-   *FlagBoundary* controls how out-of-range values are handled in *Flag* and its
+   :class:`FlagBoundary` controls how out-of-range values are handled in :class:`Flag` and its
    subclasses.
 
    .. attribute:: STRICT
@@ -719,7 +719,7 @@ Data Types
 
    .. attribute:: CONFORM
 
-      Out-of-range values have invalid values removed, leaving a valid *Flag*
+      Out-of-range values have invalid values removed, leaving a valid :class:`Flag`
       value::
 
          >>> from enum import Flag, CONFORM, auto
@@ -733,7 +733,7 @@ Data Types
 
    .. attribute:: EJECT
 
-      Out-of-range values lose their *Flag* membership and revert to :class:`int`.
+      Out-of-range values lose their :class:`Flag` membership and revert to :class:`int`.
 
          >>> from enum import Flag, EJECT, auto
          >>> class EjectFlag(Flag, boundary=EJECT):
@@ -746,7 +746,7 @@ Data Types
 
    .. attribute:: KEEP
 
-      Out-of-range values are kept, and the *Flag* membership is kept.
+      Out-of-range values are kept, and the :class:`Flag` membership is kept.
       This is the default for :class:`IntFlag`::
 
          >>> from enum import Flag, KEEP, auto
@@ -807,11 +807,11 @@ Utilities and Decorators
 
 .. class:: auto
 
-   *auto* can be used in place of a value.  If used, the *Enum* machinery will
-   call an *Enum*'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
-   For *Enum* and *IntEnum* that appropriate value will be the last value plus
-   one; for *Flag* and *IntFlag* it will be the first power-of-two greater
-   than the highest value; for *StrEnum* it will be the lower-cased version of
+   :class:`auto` can be used in place of a value.  If used, the *Enum* machinery will
+   call an :class:`Enum`'s :meth:`~Enum._generate_next_value_` to get an appropriate value.
+   For :class:`Enum` and :class:`IntEnum`` that appropriate value will be the last value plus
+   one; for :class:`Flag` and :class:`IntFlag` it will be the first power-of-two greater
+   than the highest value; for :class:`StrEnum` it will be the lower-cased version of
    the member's name.  Care must be taken if mixing *auto()* with manually
    specified values.
 
