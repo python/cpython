@@ -4060,9 +4060,9 @@ class TestReplace(unittest.TestCase):
         self.assertEqual((c1.x, c1.y, c1.z, c1.t), (3, 2, 10, 100))
 
 
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, x=3, z=20, t=50)
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, z=20)
             replace(c, x=3, z=20, t=50)
 
@@ -4115,10 +4115,10 @@ class TestReplace(unittest.TestCase):
         self.assertEqual((c1.x, c1.y), (5, 10))
 
         # Trying to replace y is an error.
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, x=2, y=30)
 
-        with self.assertRaisesRegex(ValueError, 'init=False'):
+        with self.assertRaisesRegex(TypeError, 'init=False'):
             replace(c, y=30)
 
     def test_classvar(self):
@@ -4151,8 +4151,8 @@ class TestReplace(unittest.TestCase):
 
         c = C(1, 10)
         self.assertEqual(c.x, 10)
-        with self.assertRaisesRegex(ValueError, r"InitVar 'y' must be "
-                                    "specified with replace()"):
+        with self.assertRaisesRegex(TypeError, r"InitVar 'y' must be "
+                                    r"specified with replace\(\)"):
             replace(c, x=3)
         c = replace(c, x=3, y=5)
         self.assertEqual(c.x, 15)

@@ -1,6 +1,5 @@
 #include "Python.h"
 
-#include "tokenizer.h"
 #include "pegen.h"
 
 mod_ty

@@ -180,6 +180,8 @@ typedef struct PyConfig {
     int safe_path;
     int int_max_str_digits;
 
+    int cpu_count;
+
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
     wchar_t *program_name;
@@ -203,6 +205,9 @@ typedef struct PyConfig {
     wchar_t *run_command;
     wchar_t *run_module;
     wchar_t *run_filename;
+
+    /* --- Set by Py_Main() -------------------------- */
+    wchar_t *sys_path_0;
 
     /* --- Private fields ---------------------------- */
 

@@ -11,7 +11,7 @@ from test.support.os_helper import TESTFN_UNDECODABLE, FS_NONASCII
 from .runtests import RunTests
 from .utils import (
     setup_unraisable_hook, setup_threading_excepthook, fix_umask,
-    replace_stdout, adjust_rlimit_nofile)
+    adjust_rlimit_nofile)
 
 
 UNICODE_GUARD_ENV = "PYTHONREGRTEST_UNICODE_GUARD"
@@ -49,7 +49,7 @@ def setup_process():
             faulthandler.register(signum, chain=True, file=stderr_fd)
 
     adjust_rlimit_nofile()
-    replace_stdout()
+
     support.record_original_stdout(sys.stdout)
 
     # Some times __path__ and __file__ are not absolute (e.g. while running from
@@ -111,6 +111,8 @@ def setup_tests(runtests: RunTests):
     timeout = runtests.timeout
     if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
         support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
         support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 
@@ -126,5 +128,4 @@ def setup_tests(runtests: RunTests):
     if runtests.gc_threshold is not None:
         gc.set_threshold(runtests.gc_threshold)
 
-    if runtests.randomize:
-        random.seed(runtests.random_seed)
+    random.seed(runtests.random_seed)

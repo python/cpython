@@ -1,2 +1,3 @@
 Argument Clinic now supports overriding automatically generated signature by
-using directive ``@text_signature``. See :ref:`clinic-howto-override-signature`.
+using directive ``@text_signature``. See `documentation in the Python Developer's Guide
+<https://devguide.python.org/development-tools/clinic/#clinic-howto-override-signature>`__
