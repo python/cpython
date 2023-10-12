@@ -318,6 +318,8 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
+    @support.requires_resource('cpu')
+    @support.bigmemtest(support._2G, memuse=1.5)
     def testMemoryErrorBigSource(self):
         with self.assertRaisesRegex(OverflowError):
             exec(f"if True:\n {' ' * 2**31}print('hello world')")
