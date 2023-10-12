@@ -433,6 +433,14 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
 HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
 
 
+def set_sanitizer_env_var(env, option):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+        if name in env:
+            env[name] += f':{option}'
+        else:
+            env[name] = option
+
+
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
     @functools.wraps(f)
