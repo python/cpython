@@ -1,1 +1,1 @@
-Added :class:`asyncio.EventLoop` for use with the :func:`asyncio.run` *loop_factory* kwarg to avoid calling the asyncio policy system
+Added :class:`asyncio.EventLoop` for use with the :func:`asyncio.run` *loop_factory* kwarg to avoid calling the asyncio policy system.
