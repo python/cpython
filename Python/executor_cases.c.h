@@ -3246,22 +3246,8 @@
         }
 
         case _SET_IP: {
+            TIER_TWO_ONLY
             frame->instr_ptr = ip_offset + oparg;
-            break;
-        }
-
-        case _SAVE_CURRENT_IP: {
-            #if TIER_ONE
-            if (frame->next_instr_offset == 0) {
-                frame->next_instr_offset = next_instr - frame->instr_ptr;
-            }
-            else {
-                assert(next_instr == frame->instr_ptr);
-            }
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding _SET_IP
-            #endif
             break;
         }
 

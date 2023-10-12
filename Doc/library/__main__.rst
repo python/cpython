@@ -54,45 +54,45 @@ The top-level code environment can be:
 
 * the scope of an interactive prompt::
 
-    >>> __name__
-    '__main__'
+   >>> __name__
+   '__main__'
 
 * the Python module passed to the Python interpreter as a file argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python helloworld.py
-       Hello, world!
+     $ python helloworld.py
+     Hello, world!
 
 * the Python module or package passed to the Python interpreter with the
   :option:`-m` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python -m tarfile
-       usage: tarfile.py [-h] [-v] (...)
+     $ python -m tarfile
+     usage: tarfile.py [-h] [-v] (...)
 
 * Python code read by the Python interpreter from standard input:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ echo "import this" | python
-       The Zen of Python, by Tim Peters
+     $ echo "import this" | python
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 * Python code passed to the Python interpreter with the :option:`-c` argument:
 
-    .. code-block:: shell-session
+  .. code-block:: shell-session
 
-       $ python -c "import this"
-       The Zen of Python, by Tim Peters
+     $ python -c "import this"
+     The Zen of Python, by Tim Peters
 
-       Beautiful is better than ugly.
-       Explicit is better than implicit.
-       ...
+     Beautiful is better than ugly.
+     Explicit is better than implicit.
+     ...
 
 In each of these situations, the top-level module's ``__name__`` is set to
 ``'__main__'``.
@@ -102,9 +102,9 @@ top-level environment by checking its own ``__name__``, which allows a common
 idiom for conditionally executing code when the module is not initialized from
 an import statement::
 
-    if __name__ == '__main__':
-        # Execute when the module is not initialized from an import statement.
-        ...
+   if __name__ == '__main__':
+       # Execute when the module is not initialized from an import statement.
+       ...
 
 .. seealso::
 

@@ -3,7 +3,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errcode.h>
 
-#include "tokenizer.h"
+#include "lexer/lexer.h"
+#include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
 // Internal parser functions

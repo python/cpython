@@ -648,6 +648,7 @@ pop_jump_if_bool:
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
                     for (int i = 0; i < nuops; i++) {
                         oparg = orig_oparg;
+                        uint32_t uop = expansion->uops[i].uop;
                         uint64_t operand = 0;
                         // Add one to account for the actual opcode/oparg pair:
                         int offset = expansion->uops[i].offset + 1;
@@ -680,6 +681,7 @@ pop_jump_if_bool:
                                 break;
                             case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
                                 oparg = INSTR_IP(instr + offset, code);
+                                uop = _SET_IP;
                                 break;
 
                             default:
@@ -690,8 +692,8 @@ pop_jump_if_bool:
                                         expansion->uops[i].offset);
                                 Py_FatalError("garbled expansion");
                         }
-                        ADD_TO_TRACE(expansion->uops[i].uop, oparg, operand);
-                        if (expansion->uops[i].uop == _POP_FRAME) {
+                        ADD_TO_TRACE(uop, oparg, operand);
+                        if (uop == _POP_FRAME) {
                             TRACE_STACK_POP();
                             DPRINTF(2,
                                 "Returning to %s (%s:%d) at byte offset %d\n",
@@ -701,7 +703,7 @@ pop_jump_if_bool:
                                 2 * INSTR_IP(instr, code));
                             goto top;
                         }
-                        if (expansion->uops[i].uop == _PUSH_FRAME) {
+                        if (uop == _PUSH_FRAME) {
                             assert(i + 1 == nuops);
                             int func_version_offset =
                                 offsetof(_PyCallCache, func_version)/sizeof(_Py_CODEUNIT)
