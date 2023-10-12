@@ -36,7 +36,7 @@ or other communications requiring the serialization/deserialization and
 copying of data.
 
 
-.. class:: SharedMemory(name=None, create=False, size=0)
+.. class:: SharedMemory(name=None, create=False, size=0, track=True)
 
    Creates a new shared memory block or attaches to an existing shared
    memory block.  Each shared memory block is assigned a unique name.
@@ -64,13 +64,23 @@ copying of data.
    memory block may be larger or equal to the size requested.  When attaching
    to an existing shared memory block, the ``size`` parameter is ignored.
 
+   *track*, when enabled, registers the shared memory block with the resource
+   tracker process. This process ensures proper cleanup of shared memory
+   blocks even when all other processes with access to the memory have failed
+   to do so (mainly due to being killed by signals). The resource tracker is
+   overzealous in certain situations and will delete a shared memory block
+   when any process with access to the shared memory has terminated. *track*
+   should be set to ``False`` if there is already another process in place
+   that does the bookkeeping. In most situations, this means that *track*
+   should be set to ``False`` when *create* is set to ``False``.
+
    .. method:: close()
 
       Closes access to the shared memory from this instance.  In order to
-      ensure proper cleanup of resources, all instances should call
-      ``close()`` once the instance is no longer needed.  Note that calling
-      ``close()`` does not cause the shared memory block itself to be
-      destroyed.
+      ensure proper cleanup of resources, all instances with *track* set to
+      ``True`` should call ``close()`` once the instance is no longer needed.
+      Note that calling ``close()`` does not cause the shared memory block
+      itself to be destroyed.
 
    .. method:: unlink()
 

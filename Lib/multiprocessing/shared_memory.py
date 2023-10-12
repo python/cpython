@@ -72,7 +72,7 @@ class SharedMemory:
     _mode = 0o600
     _prepend_leading_slash = True if _USE_POSIX else False
 
-    def __init__(self, name=None, create=False, size=0):
+    def __init__(self, name=None, create=False, size=0, track=True):
         if not size >= 0:
             raise ValueError("'size' must be a positive integer")
         if create:
@@ -116,8 +116,8 @@ class SharedMemory:
             except OSError:
                 self.unlink()
                 raise
-
-            resource_tracker.register(self._name, "shared_memory")
+            if track:
+                resource_tracker.register(self._name, "shared_memory")
 
         else:
 
