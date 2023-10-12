@@ -68,7 +68,7 @@ copying of data.
    tracker process. This process ensures proper cleanup of shared memory
    blocks even when all other processes with access to the memory have failed
    to do so (mainly due to being killed by signals). The resource tracker is
-   overzealous in certain situations and will delete a shared memory block
+   overzealous in certain situations and might delete a shared memory block
    when any process with access to the shared memory has terminated. *track*
    should be set to ``False`` if there is already another process in place
    that does the bookkeeping. In most situations, this means that *track*
