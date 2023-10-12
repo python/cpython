@@ -1,0 +1,2 @@
+The :mod:`sysconfig` module is now a package, instead of a single-file
+module.
