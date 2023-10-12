@@ -319,7 +319,7 @@ class ExceptionTests(unittest.TestCase):
         check('def f(*):\n  pass', 1, 7)
 
     def testMemoryErrorBigSource(self):
-        with self.assertRaises(MemoryError):
+        with self.assertRaisesRegex(OverflowError, "column offset overflow"):
             exec(f"if True:\n {' ' * 2**31}print('hello world')")
 
     @cpython_only
