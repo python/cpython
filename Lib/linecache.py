@@ -9,6 +9,7 @@ import functools
 import sys
 import os
 import tokenize
+import types
 
 __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 
@@ -42,6 +43,8 @@ def getlines(filename, module_globals=None):
         if len(entry) != 1:
             return cache[filename][2]
 
+    if isinstance(filename, types.CodeType):
+        return []
     try:
         return updatecache(filename, module_globals)
     except MemoryError:
@@ -180,3 +183,10 @@ def lazycache(filename, module_globals):
             cache[filename] = (get_lines,)
             return True
     return False
+
+def _register_code(code, string, name):
+    cache[code] = (
+            len(string),
+            None,
+            [line + '\n' for line in string.splitlines()],
+            name)
