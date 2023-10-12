@@ -816,8 +816,7 @@ _make_pending_calls(struct _pending_calls *pending)
 {
     assert(pending->max > 0);  // XXX Drop this.
     /* perform a bounded number of calls, in case of recursion */
-    // XXX Loop over a fixed maximum and set eval breaker if not empty?
-    for (int i=0; i<pending->max; i++) {
+    for (int i=0; i<pending->maxloop; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
         int flags = 0;
@@ -829,6 +828,7 @@ _make_pending_calls(struct _pending_calls *pending)
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
+            // There are no pending calls left.
             break;
         }
         int res = func(arg);
@@ -836,6 +836,7 @@ _make_pending_calls(struct _pending_calls *pending)
             PyMem_RawFree(arg);
         }
         if (res != 0) {
+            assert(PyErr_Occurred());
             return -1;
         }
     }
@@ -878,6 +879,10 @@ make_pending_calls(PyInterpreterState *interp)
         SIGNAL_PENDING_CALLS(interp);
         return -1;
     }
+    if (pending->npending > 0) {
+        /* We hit pending->maxloop. */
+        SIGNAL_PENDING_CALLS(interp);
+    }
 
     if (_Py_IsMainThread() && _Py_IsMainInterpreter(interp)) {
         if (_make_pending_calls(pending_main) != 0) {
@@ -885,6 +890,10 @@ make_pending_calls(PyInterpreterState *interp)
             /* There might not be more calls to make, but we play it safe. */
             SIGNAL_PENDING_CALLS(interp);
             return -1;
+        }
+        if (pending_main->npending > 0) {
+            /* We hit pending_main->maxloop. */
+            SIGNAL_PENDING_CALLS(interp);
         }
     }
 

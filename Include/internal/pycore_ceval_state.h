@@ -33,6 +33,9 @@ struct _pending_calls {
     /* The number of pending calls. */
     int32_t npending;
     int32_t max;
+    /* How many pending calls are made at a time, at most. */
+    int32_t maxloop;
+    /* The linked list of pending calls. */
     struct _pending_call *head;
     struct _pending_call *tail;
 
