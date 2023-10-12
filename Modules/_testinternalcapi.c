@@ -1019,38 +1019,54 @@ static PyObject *
 pending_threadfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *callable;
+    unsigned int num = 1;
+    int blocking = 0;
     int ensure_added = 0;
-    static char *kwlist[] = {"", "ensure_added", NULL};
+    static char *kwlist[] = {"callback", "num",
+                             "blocking", "ensure_added", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                                     "O|$p:pending_threadfunc", kwlist,
-                                     &callable, &ensure_added))
+                                     "O|I$pp:pending_threadfunc", kwlist,
+                                     &callable, &num, &blocking, &ensure_added))
     {
         return NULL;
     }
     PyInterpreterState *interp = _PyInterpreterState_GET();
 
     /* create the reference for the callbackwhile we hold the lock */
-    Py_INCREF(callable);
+    for (unsigned int i = 0; i < num; i++) {
+        Py_INCREF(callable);
+    }
 
-    int r;
-    Py_BEGIN_ALLOW_THREADS
-    r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-    Py_END_ALLOW_THREADS
-    if (r < 0) {
-        /* unsuccessful add */
-        if (!ensure_added) {
-            Py_DECREF(callable);
-            Py_RETURN_FALSE;
+    PyThreadState *save_tstate;
+    if (!blocking) {
+        save_tstate = PyEval_SaveThread();
+    }
+
+    unsigned int num_added = 0;
+    for (; num_added < num; num_added++) {
+        if (ensure_added) {
+            int r;
+            do {
+                r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
+            } while (r < 0);
         }
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            r = _PyEval_AddPendingCall(interp, &_pending_callback, callable, 0);
-            Py_END_ALLOW_THREADS
-        } while (r < 0);
+        else {
+            if (_PyEval_AddPendingCall(interp, &_pending_callback, callable, 0) < 0) {
+                break;
+            }
+        }
+    }
+
+    if (!blocking) {
+        PyEval_RestoreThread(save_tstate);
+    }
+
+    for (unsigned int i = num_added; i < num; i++) {
+        Py_DECREF(callable); /* unsuccessful add, destroy the extra reference */
     }
 
     /* The callable is decref'ed in _pending_callback() above. */
-    Py_RETURN_TRUE;
+    return PyLong_FromUnsignedLong((unsigned long)num_added);
 }
 
 
