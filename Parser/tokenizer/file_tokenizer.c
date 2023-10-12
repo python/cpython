@@ -1,12 +1,12 @@
-#ifdef HAVE_UNISTD_H
-#  include <unistd.h>             // read()
-#endif
-
 #include "Python.h"
 #include "pycore_call.h"
 #include "pycore_import.h"
 #include "pycore_fileutils.h"
 #include "errcode.h"
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // lseek(), read()
+#endif
 
 #include "helpers.h"
 #include "../lexer/state.h"
