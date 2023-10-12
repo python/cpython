@@ -928,6 +928,10 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
+* The ``_stat`` C extension is now built with the :ref:`limited C API
+  <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 
 C API Changes
 =============
@@ -1024,6 +1028,12 @@ New Features
   functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
 
+* Add :c:func:`PyUnicode_EqualToUTF8AndSize` and :c:func:`PyUnicode_EqualToUTF8`
+  functions: compare Unicode object with a :c:expr:`const char*` UTF-8 encoded
+  string and return true (``1``) if they are equal, or false (``0``) otherwise.
+  These functions do not raise exceptions.
+  (Contributed by Serhiy Storchaka in :gh:`110289`.)
+
 * Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
   :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
   if it is NULL. The caller is responsible to check if the result is NULL.
@@ -1068,6 +1078,11 @@ Porting to Python 3.13
   provides locale independent functions, like :c:func:`!Py_ISALPHA` and
   :c:func:`!Py_TOLOWER`.
   (Contributed by Victor Stinner in :gh:`108765`.)
+
+* If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,
+  :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
+  are now undefined by ``<Python.h>``.
+  (Contributed by Victor Stinner in :gh:`85283`.)
 
 Deprecated
 ----------

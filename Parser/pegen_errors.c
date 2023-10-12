@@ -2,7 +2,8 @@
 #include <errcode.h>
 
 #include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
-#include "tokenizer.h"
+#include "lexer/state.h"
+#include "lexer/lexer.h"
 #include "pegen.h"
 
 // TOKENIZER ERRORS

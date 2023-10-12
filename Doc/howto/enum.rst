@@ -1156,13 +1156,14 @@ the following are true:
 There is a new boundary mechanism that controls how out-of-range / invalid
 bits are handled: ``STRICT``, ``CONFORM``, ``EJECT``, and ``KEEP``:
 
-  * STRICT --> raises an exception when presented with invalid values
-  * CONFORM --> discards any invalid bits
-  * EJECT --> lose Flag status and become a normal int with the given value
-  * KEEP --> keep the extra bits
-           - keeps Flag status and extra bits
-           - extra bits do not show up in iteration
-           - extra bits do show up in repr() and str()
+* STRICT --> raises an exception when presented with invalid values
+* CONFORM --> discards any invalid bits
+* EJECT --> lose Flag status and become a normal int with the given value
+* KEEP --> keep the extra bits
+
+  - keeps Flag status and extra bits
+  - extra bits do not show up in iteration
+  - extra bits do show up in repr() and str()
 
 The default for Flag is ``STRICT``, the default for ``IntFlag`` is ``EJECT``,
 and the default for ``_convert_`` is ``KEEP`` (see ``ssl.Options`` for an
