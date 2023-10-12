@@ -987,11 +987,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _find_first_executable_line(self, code):
         """ Try to find the first executable line of the code object.
 
+        Equivalently, find the line number of the instruction that's
+        after RESUME
+
         Return code.co_firstlineno if no executable line is found.
         """
+        prev = None
         for instr in dis.get_instructions(code):
-            if instr.opname != 'RESUME' and instr.positions.lineno is not None:
-                return instr.positions.lineno
+            if prev is not None and prev.opname == 'RESUME':
+                if instr.positions.lineno is not None:
+                    return instr.positions.lineno
+                return code.co_firstlineno
+            prev = instr
         return code.co_firstlineno
 
     def do_enable(self, arg):
