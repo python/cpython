@@ -32,6 +32,7 @@ __all__ = (
     'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
+    'EventLoop',
 )
 
 
@@ -1510,3 +1511,4 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 SelectorEventLoop = _UnixSelectorEventLoop
 DefaultEventLoopPolicy = _UnixDefaultEventLoopPolicy
+EventLoop = SelectorEventLoop
