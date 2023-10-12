@@ -418,20 +418,12 @@ Modules/_ctypes/_ctypes.c	-	_unpickle	-
 Modules/_ctypes/_ctypes.c	PyCArrayType_from_ctype	cache	-
 Modules/_cursesmodule.c	-	ModDict	-
 Modules/_datetimemodule.c	datetime_strptime	module	-
-Modules/_datetimemodule.c	-	PyDateTime_TimeZone_UTC	-
-Modules/_datetimemodule.c	-	PyDateTime_Epoch	-
-Modules/_datetimemodule.c	-	us_per_ms	-
-Modules/_datetimemodule.c	-	us_per_second	-
-Modules/_datetimemodule.c	-	us_per_minute	-
-Modules/_datetimemodule.c	-	us_per_hour	-
-Modules/_datetimemodule.c	-	us_per_day	-
-Modules/_datetimemodule.c	-	us_per_week	-
-Modules/_datetimemodule.c	-	seconds_per_day	-
 
 ## state
 Modules/_ctypes/_ctypes.c	-	_ctypes_ptrtype_cache	-
 Modules/_ctypes/_ctypes.c	-	global_state	-
 Modules/_ctypes/ctypes.h	-	global_state	-
+Modules/_datetimemodule.c	-	_datetime_global_state	-
 Modules/_tkinter.c	-	tcl_lock	-
 Modules/_tkinter.c	-	excInCmd	-
 Modules/_tkinter.c	-	valInCmd	-
