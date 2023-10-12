@@ -1571,6 +1571,14 @@ Test cases
 
    .. versionadded:: 3.8
 
+   .. attribute:: loop_factory
+
+      The *loop_factory* passed to :class:`asyncio.Runner`. Override
+      in subclasses with :class:`asyncio.EventLoop` to avoid using the
+      asyncio policy system.
+
+      .. versionadded:: 3.13
+
    .. coroutinemethod:: asyncSetUp()
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
