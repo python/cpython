@@ -29,7 +29,7 @@ from .log import logger
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
     'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
-    'WindowsProactorEventLoopPolicy',
+    'WindowsProactorEventLoopPolicy', 'EventLoop',
 )
 
 
@@ -895,3 +895,4 @@ class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
 
 
 DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
+EventLoop = ProactorEventLoop

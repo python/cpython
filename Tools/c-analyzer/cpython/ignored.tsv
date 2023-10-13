@@ -166,6 +166,9 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
 
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
+
 
 ##################################
 ## not significant
@@ -332,7 +335,7 @@ Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
 Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
-Parser/tokenizer.c	-	type_comment_prefix	-
+Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
@@ -607,6 +610,7 @@ Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
 Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
@@ -668,7 +672,6 @@ Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
-Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 Modules/expat/xmlrole.c	-	prolog0	-
 Modules/expat/xmlrole.c	-	prolog1	-
 Modules/expat/xmlrole.c	-	prolog2	-

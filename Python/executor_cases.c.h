@@ -12,9 +12,10 @@
             DEOPT_IF(_Py_emscripten_signal_clock == 0, RESUME);
             _Py_emscripten_signal_clock -= Py_EMSCRIPTEN_SIGNAL_HANDLING;
 #endif
-            /* Possibly combine these two checks */
-            DEOPT_IF(_PyFrame_GetCode(frame)->_co_instrumentation_version != tstate->interp->monitoring_version, RESUME);
-            DEOPT_IF(_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker), RESUME);
+            uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker);
+            uintptr_t version = _PyFrame_GetCode(frame)->_co_instrumentation_version;
+            assert((version & _PY_EVAL_EVENTS_MASK) == 0);
+            DEOPT_IF(eval_breaker != version, RESUME);
             break;
         }
 
@@ -1711,6 +1712,82 @@
             break;
         }
 
+        case _CHECK_ATTR_MODULE: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            DEOPT_IF(!PyModule_CheckExact(owner), _CHECK_ATTR_MODULE);
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict != NULL);
+            DEOPT_IF(dict->ma_keys->dk_version != type_version, _CHECK_ATTR_MODULE);
+            break;
+        }
+
+        case _LOAD_ATTR_MODULE: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t index = (uint16_t)operand;
+            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner)->md_dict;
+            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(index < dict->ma_keys->dk_nentries);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
+            attr = ep->me_value;
+            DEOPT_IF(attr == NULL, _LOAD_ATTR_MODULE);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
+        case _CHECK_ATTR_WITH_HINT: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            assert(Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            DEOPT_IF(_PyDictOrValues_IsValues(dorv), _CHECK_ATTR_WITH_HINT);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            DEOPT_IF(dict == NULL, _CHECK_ATTR_WITH_HINT);
+            assert(PyDict_CheckExact((PyObject *)dict));
+            break;
+        }
+
+        case _LOAD_ATTR_WITH_HINT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            uint16_t hint = (uint16_t)operand;
+            PyDictOrValues dorv = *_PyObject_DictOrValuesPointer(owner);
+            PyDictObject *dict = (PyDictObject *)_PyDictOrValues_GetDict(dorv);
+            DEOPT_IF(hint >= (size_t)dict->ma_keys->dk_nentries, _LOAD_ATTR_WITH_HINT);
+            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
+            if (DK_IS_UNICODE(dict->ma_keys)) {
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                attr = ep->me_value;
+            }
+            else {
+                PyDictKeyEntry *ep = DK_ENTRIES(dict->ma_keys) + hint;
+                DEOPT_IF(ep->me_key != name, _LOAD_ATTR_WITH_HINT);
+                attr = ep->me_value;
+            }
+            DEOPT_IF(attr == NULL, _LOAD_ATTR_WITH_HINT);
+            STAT_INC(LOAD_ATTR, hit);
+            Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
         case _LOAD_ATTR_SLOT: {
             PyObject *owner;
             PyObject *attr;
@@ -1722,6 +1799,33 @@
             DEOPT_IF(attr == NULL, _LOAD_ATTR_SLOT);
             STAT_INC(LOAD_ATTR, hit);
             Py_INCREF(attr);
+            null = NULL;
+            Py_DECREF(owner);
+            STACK_GROW(((oparg & 1) ? 1 : 0));
+            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
+            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
+            break;
+        }
+
+        case _CHECK_ATTR_CLASS: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            uint32_t type_version = (uint32_t)operand;
+            DEOPT_IF(!PyType_Check(owner), _CHECK_ATTR_CLASS);
+            assert(type_version != 0);
+            DEOPT_IF(((PyTypeObject *)owner)->tp_version_tag != type_version, _CHECK_ATTR_CLASS);
+            break;
+        }
+
+        case _LOAD_ATTR_CLASS: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *null = NULL;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            attr = Py_NewRef(descr);
             null = NULL;
             Py_DECREF(owner);
             STACK_GROW(((oparg & 1) ? 1 : 0));
@@ -2328,6 +2432,64 @@
             PyObject *descr = (PyObject *)operand;
             assert(oparg & 1);
             assert(Py_TYPE(owner)->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
+            attr = Py_NewRef(descr);
+            self = owner;
+            STACK_GROW(1);
+            stack_pointer[-2] = attr;
+            stack_pointer[-1] = self;
+            break;
+        }
+
+        case _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES: {
+            PyObject *owner;
+            PyObject *attr;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert((oparg & 1) == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(owner);
+            attr = Py_NewRef(descr);
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
+            PyObject *owner;
+            PyObject *attr;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert((oparg & 1) == 0);
+            assert(Py_TYPE(owner)->tp_dictoffset == 0);
+            STAT_INC(LOAD_ATTR, hit);
+            assert(descr != NULL);
+            Py_DECREF(owner);
+            attr = Py_NewRef(descr);
+            stack_pointer[-1] = attr;
+            break;
+        }
+
+        case _CHECK_ATTR_METHOD_LAZY_DICT: {
+            PyObject *owner;
+            owner = stack_pointer[-1];
+            Py_ssize_t dictoffset = Py_TYPE(owner)->tp_dictoffset;
+            assert(dictoffset > 0);
+            PyObject *dict = *(PyObject **)((char *)owner + dictoffset);
+            /* This object has a __dict__, just not yet created */
+            DEOPT_IF(dict != NULL, _CHECK_ATTR_METHOD_LAZY_DICT);
+            break;
+        }
+
+        case _LOAD_ATTR_METHOD_LAZY_DICT: {
+            PyObject *owner;
+            PyObject *attr;
+            PyObject *self;
+            owner = stack_pointer[-1];
+            PyObject *descr = (PyObject *)operand;
+            assert(oparg & 1);
             STAT_INC(LOAD_ATTR, hit);
             assert(descr != NULL);
             assert(_PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR));
@@ -3108,18 +3270,8 @@
         }
 
         case _SET_IP: {
+            TIER_TWO_ONLY
             frame->prev_instr = ip_offset + oparg;
-            break;
-        }
-
-        case _SAVE_CURRENT_IP: {
-            #if TIER_ONE
-            frame->prev_instr = next_instr - 1;
-            #endif
-            #if TIER_TWO
-            // Relies on a preceding _SET_IP
-            frame->prev_instr--;
-            #endif
             break;
         }
 
@@ -3127,6 +3279,7 @@
             frame->prev_instr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
+            OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
             return frame;
             break;
         }
