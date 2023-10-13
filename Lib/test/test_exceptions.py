@@ -1,6 +1,7 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
+import ctypes
 import os
 import sys
 import unittest
@@ -318,11 +319,18 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
+    @unittest.skipIf(ctypes.sizeof(ctypes.c_int) >= ctypes.sizeof(ctypes.c_ssize_t),
+                     "INT_MAX is bigger than Py_ssize_t, so this is unreachable")
     @support.requires_resource('cpu')
     @support.bigmemtest(support._2G, memuse=1.5)
     def testMemoryErrorBigSource(self, _size):
-        with self.assertRaises(OverflowError):
-            exec(f"if True:\n {' ' * 2**31}print('hello world')")
+        # the line length needs to be more than INT_MAX, but we can't
+        # multiple a sequence by a number that doesn't fit Py_ssize_t,
+        # otherwise we will get an OverflowError (see PySequence_Repeat)
+        INT_MAX = 2 ** (ctypes.sizeof(ctypes.c_int) * 8)
+        padding = '        ' * (INT_MAX // 8)
+        with self.assertRaisesRegex(OverflowError, "column offset overflow"):
+            exec(f"if True:\n {padding}print('hello world')")
 
     @cpython_only
     def testSettingException(self):
