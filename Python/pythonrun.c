@@ -40,7 +40,7 @@
 /* Forward */
 static void flush_io(void);
 static PyObject *run_mod(mod_ty, PyObject *, PyObject *, PyObject *,
-                          PyCompilerFlags *, PyArena *);
+                          PyCompilerFlags *, PyArena *, PyObject*);
 static PyObject *run_pyc_file(FILE *, PyObject *, PyObject *,
                               PyCompilerFlags *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
@@ -178,7 +178,8 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flag
 // Call _PyParser_ASTFromFile() with sys.stdin.encoding, sys.ps1 and sys.ps2
 static int
 pyrun_one_parse_ast(FILE *fp, PyObject *filename,
-                    PyCompilerFlags *flags, PyArena *arena, mod_ty *pmod)
+                    PyCompilerFlags *flags, PyArena *arena,
+                    mod_ty *pmod, PyObject** interactive_src)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
@@ -236,9 +237,9 @@ pyrun_one_parse_ast(FILE *fp, PyObject *filename,
     }
 
     int errcode = 0;
-    *pmod = _PyParser_ASTFromFile(fp, filename, encoding,
-                                  Py_single_input, ps1, ps2,
-                                  flags, &errcode, arena);
+    *pmod = _PyParser_InteractiveASTFromFile(fp, filename, encoding,
+                                             Py_single_input, ps1, ps2,
+                                             flags, &errcode, interactive_src, arena);
     Py_XDECREF(ps1_obj);
     Py_XDECREF(ps2_obj);
     Py_XDECREF(encoding_obj);
@@ -266,7 +267,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     }
 
     mod_ty mod;
-    int parse_res = pyrun_one_parse_ast(fp, filename, flags, arena, &mod);
+    PyObject *interactive_src;
+    int parse_res = pyrun_one_parse_ast(fp, filename, flags, arena, &mod, &interactive_src);
     if (parse_res != 0) {
         _PyArena_Free(arena);
         return parse_res;
@@ -279,7 +281,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     }
     PyObject *main_dict = PyModule_GetDict(main_module);  // borrowed ref
 
-    PyObject *res = run_mod(mod, filename, main_dict, main_dict, flags, arena);
+    PyObject *res = run_mod(mod, filename, main_dict, main_dict, flags, arena, interactive_src);
     _PyArena_Free(arena);
     Py_DECREF(main_module);
     if (res == NULL) {
@@ -1149,7 +1151,7 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
             str, &_Py_STR(anon_string), start, flags, arena);
 
     if (mod != NULL)
-        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, arena);
+        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, arena, NULL);
     _PyArena_Free(arena);
     return ret;
 }
@@ -1174,7 +1176,7 @@ pyrun_file(FILE *fp, PyObject *filename, int start, PyObject *globals,
 
     PyObject *ret;
     if (mod != NULL) {
-        ret = run_mod(mod, filename, globals, locals, flags, arena);
+        ret = run_mod(mod, filename, globals, locals, flags, arena, NULL);
     }
     else {
         ret = NULL;
@@ -1262,12 +1264,45 @@ run_eval_code_obj(PyThreadState *tstate, PyCodeObject *co, PyObject *globals, Py
 
 static PyObject *
 run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
-            PyCompilerFlags *flags, PyArena *arena)
+            PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    PyObject* interactive_filename = NULL;
+    if (interactive_src) {
+        PyInterpreterState *interp = tstate->interp;
+        interactive_filename = PyUnicode_FromFormat("<python-input-%d>", interp->_interactive_src_count++);
+        // TODO: Maybe we are leaking
+        filename = interactive_filename;
+    }
+
     PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
     if (co == NULL)
         return NULL;
+
+    if (interactive_src) {
+        PyObject *linecache_module = PyImport_ImportModule("linecache");
+
+        if (linecache_module == NULL) {
+            return NULL;
+        }
+
+        PyObject *print_tb_func = PyObject_GetAttrString(linecache_module, "_register_code");
+
+        if (print_tb_func == NULL || !PyCallable_Check(print_tb_func)) {
+            Py_DECREF(linecache_module);
+            return NULL;
+        }
+
+        PyObject* result = PyObject_CallFunction(print_tb_func, "OOO", interactive_filename, interactive_src, filename);
+        if (!result) {
+            Py_DECREF(linecache_module);
+            Py_XDECREF(print_tb_func);
+            return NULL;
+        }
+        Py_DECREF(linecache_module);
+        Py_XDECREF(print_tb_func);
+        Py_DECREF(result);
+    }
 
     if (_PySys_Audit(tstate, "exec", "O", co) < 0) {
         Py_DECREF(co);
