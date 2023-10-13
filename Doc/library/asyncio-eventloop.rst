@@ -210,6 +210,44 @@ Running and stopping the loop
    .. versionchanged:: 3.12
       Added the *timeout* parameter.
 
+.. method:: loop.run_forever_setup()
+
+   Set up an event loop so that it is ready to start actively looping and
+   processing events.
+
+   Returns the state that must be restored when the loop concludes. This state
+   should be passed in as arguments to :meth:`loop.run_forever_cleanup()`.
+
+   .. note::
+
+      This method is only needed if you are writing your own ``EventLoop``
+      subclass, with a customized inner event processing loop. For example, if
+      you are integrating Python's asyncio event loop with a GUI library's event
+      loop, you can use this method to ensure that Python's event loop is
+      correctly configured and ready to start processing individual events. Most
+      end users will not need to use this method directly.
+
+   .. versionadded:: 3.13
+
+.. method:: loop.run_forever_cleanup(original_state)
+
+   Perform any cleanup necessary at the conclusion of event processing to ensure
+   that the event loop has been fully shut down.
+
+   The *original_state* argument is the return value provided by the call to
+   :meth:`loop.run_forever_setup()` that was used to set up the event loop.
+
+   .. note::
+
+      This method is only needed if you are writing your own ``EventLoop``
+      subclass, with a customized inner event processing loop. For example, if
+      you are integrating Python's asyncio event loop with a GUI library's event
+      loop, you can use this method to ensure that Python's event loop has been
+      fully shut down at the conclusion of processing events. Most end users
+      will not need to use this method directly.
+
+   .. versionadded:: 3.13
+
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
