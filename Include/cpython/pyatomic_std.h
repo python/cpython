@@ -866,7 +866,7 @@ static inline int
 _Py_atomic_load_int_acquire(const int *obj)
 {
     _Py_USING_STD;
-    return atomic_load_explicit((const _Atomic(int*)*)obj,
+    return atomic_load_explicit((const _Atomic(int)*)obj,
                                 memory_order_acquire);
 }
 
