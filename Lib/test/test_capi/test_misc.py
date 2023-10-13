@@ -1329,7 +1329,8 @@ class TestPendingCalls(unittest.TestCase):
             self.assertEqual(added, maxpending)
 
         with self.subTest('not main-only'):
-            maxpending = 1000
+            # Per-interpreter pending calls do not have a limit
+            # on how many may be pending at a time.
 
             l = []
             added = self.pendingcalls_submit(l, 1, main=False)
@@ -1337,14 +1338,9 @@ class TestPendingCalls(unittest.TestCase):
             self.assertEqual(added, 1)
 
             l = []
-            added = self.pendingcalls_submit(l, maxpending, main=False)
+            added = self.pendingcalls_submit(l, 1000, main=False)
             self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
-
-            l = []
-            added = self.pendingcalls_submit(l, maxpending+1, main=False)
-            self.pendingcalls_wait(l, added)
-            self.assertEqual(added, maxpending)
+            self.assertEqual(added, 1000)
 
     class PendingTask(types.SimpleNamespace):
 

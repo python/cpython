@@ -27,11 +27,11 @@ struct _pending_call {
 // extra stability in the case of signals.
 // We also use the value as the max and loop max for the main thread.
 #define NPENDINGCALLSARRAY 32
-// We technically do not need this limit around any longer since we
-// moved from a circular queue to a linked list.  However, having a
-// size limit is still a good idea for now to reduce
-// the possible impact of bugs.
-#define MAXPENDINGCALLS 1000
+
+// We effectively drop the limit for per-interpreter pending calls.
+#define MAXPENDINGCALLS INT32_MAX
+// We don't want a flood of pending calls to interrupt any one thread
+// for too long, so we keep a limit on the number handled per pass.
 #define MAXPENDINGCALLSLOOP 100
 
 struct _pending_calls {
