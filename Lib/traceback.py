@@ -434,7 +434,6 @@ class StackSummary(list):
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
-
             fnames.add(filename)
             linecache.lazycache(filename, f.f_globals)
             # Must defer line lookups until we have called checkcache.
@@ -447,6 +446,7 @@ class StackSummary(list):
                 end_lineno=end_lineno, colno=colno, end_colno=end_colno))
         for filename in fnames:
             linecache.checkcache(filename)
+
         # If immediate lookup was desired, trigger lookups now.
         if lookup_lines:
             for f in result:
@@ -479,8 +479,12 @@ class StackSummary(list):
         gets called for every frame to be printed in the stack summary.
         """
         row = []
-        row.append('  File "{}", line {}, in {}\n'.format(
-            frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        if frame_summary.filename.startswith("<python-input"):
+            row.append('  File "<stdin>", line {}, in {}\n'.format(
+                frame_summary.lineno, frame_summary.name))
+        else:
+            row.append('  File "{}", line {}, in {}\n'.format(
+                frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
             stripped_line = frame_summary.line.strip()
             row.append('    {}\n'.format(stripped_line))
