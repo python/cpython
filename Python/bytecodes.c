@@ -3962,12 +3962,8 @@ dummy_func(
 
         op(_SAVE_CURRENT_IP, (--)) {
             TIER_ONE_ONLY
-            if (frame->next_instr_offset == 0) {
-                frame->next_instr_offset = next_instr - frame->instr_ptr;
-            }
-            else {
-                assert(next_instr == frame->instr_ptr);
-            }
+            assert(frame->next_instr_offset == 0);
+            frame->next_instr_offset = next_instr - frame->instr_ptr;
         }
 
         op(_EXIT_TRACE, (--)) {

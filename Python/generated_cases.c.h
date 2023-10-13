@@ -991,12 +991,8 @@
             // _SAVE_CURRENT_IP
             {
                 TIER_ONE_ONLY
-                if (frame->next_instr_offset == 0) {
-                    frame->next_instr_offset = next_instr - frame->instr_ptr;
-                }
-                else {
-                    assert(next_instr == frame->instr_ptr);
-                }
+                assert(frame->next_instr_offset == 0);
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             // _POP_FRAME
             retval = stack_pointer[-1];
@@ -1056,12 +1052,8 @@
             // _SAVE_CURRENT_IP
             {
                 TIER_ONE_ONLY
-                if (frame->next_instr_offset == 0) {
-                    frame->next_instr_offset = next_instr - frame->instr_ptr;
-                }
-                else {
-                    assert(next_instr == frame->instr_ptr);
-                }
+                assert(frame->next_instr_offset == 0);
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             // _POP_FRAME
             retval = value;
@@ -3949,12 +3941,8 @@
             next_instr += 3;
             {
                 TIER_ONE_ONLY
-                if (frame->next_instr_offset == 0) {
-                    frame->next_instr_offset = next_instr - frame->instr_ptr;
-                }
-                else {
-                    assert(next_instr == frame->instr_ptr);
-                }
+                assert(frame->next_instr_offset == 0);
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -4027,12 +4015,8 @@
             next_instr += 3;
             {
                 TIER_ONE_ONLY
-                if (frame->next_instr_offset == 0) {
-                    frame->next_instr_offset = next_instr - frame->instr_ptr;
-                }
-                else {
-                    assert(next_instr == frame->instr_ptr);
-                }
+                assert(frame->next_instr_offset == 0);
+                frame->next_instr_offset = next_instr - frame->instr_ptr;
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -5064,14 +5048,14 @@
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
             _Py_CODEUNIT *here = frame->instr_ptr;
-            INSTRUMENTED_JUMP(here, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(here, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
             _Py_CODEUNIT *here = frame->instr_ptr;
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(here, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(here, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
