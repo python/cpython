@@ -2127,6 +2127,7 @@ LIBSUBDIRS=	asyncio \
 		re \
 		site-packages \
 		sqlite3 \
+		sysconfig \
 		tkinter \
 		tomllib \
 		turtledemo \
