@@ -1348,3 +1348,13 @@ removed, although there is currently no date scheduled for their removal.
 
 * Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
   (Contributed by Victor Stinner in :gh:`110014`.)
+
+
+Regression Test Changes
+=======================
+
+* Python built with :file:`configure` :option:`--with-pydebug` now
+  supports a :option:`-X presite=package.module <-X>` command-line
+  option. If used, it specifies a module that should be imported early
+  in the lifecycle of the interpreter, before ``site.py`` is executed.
+  (Contributed by Łukasz Langa in :gh:`110769`.)

@@ -1820,6 +1820,22 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
 
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.strip()
+        self.assertIn("10 times sub", out)
+        self.assertIn("CPU seconds", out)
+        self.assertIn("cmd", out)
+
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
     # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():

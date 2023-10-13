@@ -553,9 +553,10 @@ Miscellaneous options
      container system. See also :envvar:`PYTHON_CPU_COUNT`.
      If *n* is ``default``, nothing is overridden.
    * :samp:`-X presite={package.module}` specifies a module that should be
-     imported before ``site.py`` is executed.  Python needs to be
-     :ref:`built in debug mode <debug-build>` for this option to exist.
-     See also :envvar:`PYTHON_PRESITE <PYTHON_PRESITE=package.module>`.
+     imported before ``site.py`` is executed and before the :mod:`__main__`
+     module exists.  Therefore, the imported module isn't :mod:`__main__`.
+     Python needs to be :ref:`built in debug mode <debug-build>` for this
+     option to exist.  See also :envvar:`PYTHON_PRESITE`.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -1099,19 +1100,22 @@ Debug-mode variables
 
    Need Python configured with the :option:`--with-trace-refs` build option.
 
-.. envvar:: PYTHONDUMPREFSFILE=FILENAME
+.. envvar:: PYTHONDUMPREFSFILE
 
    If set, Python will dump objects and reference counts still alive
-   after shutting down the interpreter into a file called *FILENAME*.
+   after shutting down the interpreter into a file under the path given
+   as the value to this environment variable.
 
    Need Python configured with the :option:`--with-trace-refs` build option.
 
    .. versionadded:: 3.11
 
-.. envvar:: PYTHON_PRESITE=package.module
+.. envvar:: PYTHON_PRESITE
 
    If this variable is set to a module, that module will be imported
-   early in the interpreter lifecycle, before ``site.py`` is executed.
+   early in the interpreter lifecycle, before ``site.py`` is executed,
+   and before the :mod:`__main__` module is created.  Therefore, the
+   imported module is not treated as :mod:`__main__`.
 
    See also the :option:`-X presite <-X>` command-line option,
    which takes precedence over this variable.
