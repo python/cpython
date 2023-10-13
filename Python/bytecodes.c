@@ -1042,7 +1042,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
+            frame->next_instr_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             goto resume_frame;
         }
 
@@ -1063,7 +1063,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
+            frame->next_instr_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             goto resume_frame;
         }
 

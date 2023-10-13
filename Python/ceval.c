@@ -640,7 +640,9 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
     { .op.code = NOP, .op.arg = 0 },
-    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },
+    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
+    { .op.code = NOP, .op.arg = 0 },
+    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
     { .op.code = RESUME, .op.arg = 0 }
 };
 
