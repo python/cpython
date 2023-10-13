@@ -1,6 +1,5 @@
 
 #include "Python.h"
-#include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
@@ -119,9 +118,6 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 #include <stdlib.h>
 #include <errno.h>
-
-#include "pycore_atomic.h"
-
 
 #include "condvar.h"
 
