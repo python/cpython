@@ -1,5 +1,6 @@
 #include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_atomic.h"        // _Py_ANNOTATE_RWLOCK_XXXX
 
 /* Posix threads interface */
 
