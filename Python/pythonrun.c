@@ -1295,10 +1295,19 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         PyObject *print_tb_func = PyObject_GetAttrString(linecache_module, "_register_code");
 
-        if (print_tb_func == NULL || !PyCallable_Check(print_tb_func)) {
+        if (print_tb_func == NULL) {
             Py_DECREF(co);
             Py_DECREF(interactive_filename);
             Py_DECREF(linecache_module);
+            return NULL;
+        }
+
+        if (!PyCallable_Check(print_tb_func)) {
+            Py_DECREF(co);
+            Py_DECREF(interactive_filename);
+            Py_DECREF(linecache_module);
+            Py_DECREF(print_tb_func);
+            PyErr_SetString(PyExc_ValueError, "linecache._register_code is not callable");
             return NULL;
         }
 
@@ -1311,14 +1320,13 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         Py_DECREF(interactive_filename);
 
-        if (!result) {
-            Py_DECREF(linecache_module);
-            Py_XDECREF(print_tb_func);
-            return NULL;
-        }
         Py_DECREF(linecache_module);
         Py_XDECREF(print_tb_func);
-        Py_DECREF(result);
+        Py_XDECREF(result);
+        if (!result) {
+            Py_DECREF(co);
+            return NULL;
+        }
     }
 
     if (_PySys_Audit(tstate, "exec", "O", co) < 0) {
