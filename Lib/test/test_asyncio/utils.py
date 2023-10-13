@@ -546,6 +546,7 @@ class TestCase(unittest.TestCase):
             else:
                 loop._default_executor.shutdown(wait=True)
         loop.close()
+
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:
             try:
@@ -557,9 +558,11 @@ class TestCase(unittest.TestCase):
                 pass
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    threads = list(watcher._threads.values())
-                    for thread in threads:
-                        thread.join()
+                    watcher._join_threads(timeout=support.SHORT_TIMEOUT)
+                    threads = watcher._threads
+                    if threads:
+                        self.fail(f"watcher still has running threads: "
+                                  f"{threads}")
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
