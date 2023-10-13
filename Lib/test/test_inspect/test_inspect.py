@@ -31,12 +31,13 @@ from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN
 from test.support.script_helper import assert_python_ok, assert_python_failure
-from test import inspect_fodder as mod
-from test import inspect_fodder2 as mod2
 from test import support
-from test import inspect_stock_annotations
-from test import inspect_stringized_annotations
-from test import inspect_stringized_annotations_2
+
+from . import inspect_fodder as mod
+from . import inspect_fodder2 as mod2
+from . import inspect_stock_annotations
+from . import inspect_stringized_annotations
+from . import inspect_stringized_annotations_2
 
 
 # Functions tested in this suite:
