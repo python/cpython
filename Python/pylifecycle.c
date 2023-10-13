@@ -1083,8 +1083,11 @@ run_presite(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
-    if (config->run_presite) {
-        PyObject *presite_modname = PyUnicode_FromWideChar(
+    if (!config->run_presite) {
+        return;
+    }
+
+    PyObject *presite_modname = PyUnicode_FromWideChar(
         config->run_presite,
         wcslen(config->run_presite)
     );
@@ -1101,7 +1104,6 @@ run_presite(PyThreadState *tstate)
         Py_XDECREF(presite);
         Py_DECREF(presite_modname);
     }
-}
 }
 #endif
 
