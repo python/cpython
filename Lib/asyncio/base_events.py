@@ -627,7 +627,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         return (old_agen_hooks,)
 
-    def run_forever_cleanup(self, orig_state):
+    def run_forever_cleanup(self, original_state):
         """Clean up an event loop after the event loop finishes the looping over
         events.
 
@@ -637,23 +637,26 @@ class BaseEventLoop(events.AbstractEventLoop):
         customized ``run_forever`` semantics (e.g., integrating a GUI event loop
         with Python's event loop).
         """
-        old_agen_hooks, = orig_state
         self._stopping = False
         self._thread_id = None
         events._set_running_loop(None)
         self._set_coroutine_origin_tracking(False)
-        sys.set_asyncgen_hooks(*old_agen_hooks)
+        if original_state is not None:
+            old_agen_hooks, = original_state
+            sys.set_asyncgen_hooks(*old_agen_hooks)
 
     def run_forever(self):
         """Run until stop() is called."""
+        # Ensure original_state has a value in case setup fails.
+        original_state = None
         try:
-            orig_state = self.run_forever_setup()
+            original_state = self.run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
                     break
         finally:
-            self.run_forever_cleanup(orig_state)
+            self.run_forever_cleanup(original_state)
 
     def run_until_complete(self, future):
         """Run until the Future is done.
