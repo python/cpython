@@ -9,6 +9,7 @@
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
 
 # Build system
 configure*                    @erlend-aasland @corona10

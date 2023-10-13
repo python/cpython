@@ -533,24 +533,24 @@ interpreter will fail.
 
 A number of special cases exist:
 
-  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-    :mod:`tkinter` calls the library from the originating Python thread, even
-    if this is different than the thread that created the Tcl interpreter. A global
-    lock ensures only one call occurs at a time.
+* Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+  :mod:`tkinter` calls the library from the originating Python thread, even
+  if this is different than the thread that created the Tcl interpreter. A global
+  lock ensures only one call occurs at a time.
 
-  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with its own interpreter), all interpreters that are part of the same
-    thread share a common event queue, which gets ugly fast. In practice, don't create
-    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+  object (with its own interpreter), all interpreters that are part of the same
+  thread share a common event queue, which gets ugly fast. In practice, don't create
+  more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
 
-  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
-    reentering the event loop. It is even possible to run multiple nested event loops
-    or abandon the event loop entirely. If you're doing anything tricky when it comes
-    to events or threads, be aware of these possibilities.
+* Blocking event handlers are not the only way to prevent the Tcl interpreter from
+  reentering the event loop. It is even possible to run multiple nested event loops
+  or abandon the event loop entirely. If you're doing anything tricky when it comes
+  to events or threads, be aware of these possibilities.
 
-  * There are a few select :mod:`tkinter` functions that presently work only when
-    called from the thread that created the Tcl interpreter.
+* There are a few select :mod:`tkinter` functions that presently work only when
+  called from the thread that created the Tcl interpreter.
 
 
 Handy Reference

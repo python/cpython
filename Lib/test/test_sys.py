@@ -4,6 +4,7 @@ import gc
 import locale
 import operator
 import os
+import random
 import struct
 import subprocess
 import sys
@@ -18,10 +19,6 @@ import textwrap
 import unittest
 import warnings
 
-
-# count the number of test runs, used to create unique
-# strings to intern in test_intern()
-INTERN_NUMRUNS = 0
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
@@ -685,10 +682,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)

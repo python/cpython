@@ -1087,7 +1087,7 @@ on the ABI.
 Change ``PyAPI_FUNC(type)``, ``PyAPI_DATA(type)`` and ``PyMODINIT_FUNC``
 macros of ``pyport.h`` when ``Py_BUILD_CORE_MODULE`` is defined. The
 ``Py_BUILD_CORE_MODULE`` define must be now be used to build a C extension
-as a dynamic library accessing Python internals: export the PyInit_xxx()
+as a dynamic library accessing Python internals: export the :samp:`PyInit_{xxx}()`
 function in DLL exports on Windows.
 
 ..

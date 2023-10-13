@@ -364,24 +364,26 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         }
     }
 
-    if (!PyTuple_CheckExact(constraints)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "constraints must be a tuple");
-        return NULL;
-    }
-    Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
-    if (n_constraints == 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "A single constraint is not allowed");
-        Py_XDECREF(bound);
-        return NULL;
-    } else if (n_constraints == 0) {
-        constraints = NULL;
-    } else if (bound != NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Constraints cannot be combined with bound=...");
-        Py_XDECREF(bound);
-        return NULL;
+    if (constraints != NULL) {
+        if (!PyTuple_CheckExact(constraints)) {
+            PyErr_SetString(PyExc_TypeError,
+                            "constraints must be a tuple");
+            return NULL;
+        }
+        Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
+        if (n_constraints == 1) {
+            PyErr_SetString(PyExc_TypeError,
+                            "A single constraint is not allowed");
+            Py_XDECREF(bound);
+            return NULL;
+        } else if (n_constraints == 0) {
+            constraints = NULL;
+        } else if (bound != NULL) {
+            PyErr_SetString(PyExc_TypeError,
+                            "Constraints cannot be combined with bound=...");
+            Py_XDECREF(bound);
+            return NULL;
+        }
     }
     PyObject *module = caller();
     if (module == NULL) {

@@ -1165,7 +1165,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_LOCALS, ( -- locals)) {
+        inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1175,9 +1175,7 @@ dummy_func(
             Py_INCREF(locals);
         }
 
-        macro(LOAD_LOCALS) = _LOAD_LOCALS;
-
-        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             if (PyDict_CheckExact(mod_or_class_dict)) {
                 v = PyDict_GetItemWithError(mod_or_class_dict, name);
@@ -1185,7 +1183,6 @@ dummy_func(
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
             }
@@ -1193,13 +1190,74 @@ dummy_func(
                 v = PyObject_GetItem(mod_or_class_dict, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(mod_or_class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
-            Py_DECREF(mod_or_class_dict);
+            if (v == NULL) {
+                v = PyDict_GetItemWithError(GLOBALS(), name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+                else {
+                    if (PyDict_CheckExact(BUILTINS())) {
+                        v = PyDict_GetItemWithError(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (!_PyErr_Occurred(tstate)) {
+                                format_exc_check_arg(
+                                        tstate, PyExc_NameError,
+                                        NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                        Py_INCREF(v);
+                    }
+                    else {
+                        v = PyObject_GetItem(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                                format_exc_check_arg(
+                                            tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                            }
+                            goto error;
+                        }
+                    }
+                }
+            }
+            DECREF_INPUTS();
+        }
+
+        inst(LOAD_NAME, (-- v)) {
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
+            }
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            if (PyDict_CheckExact(mod_or_class_dict)) {
+                v = PyDict_GetItemWithError(mod_or_class_dict, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+            }
+            else {
+                v = PyObject_GetItem(mod_or_class_dict, name);
+                if (v == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        goto error;
+                    }
+                    _PyErr_Clear(tstate);
+                }
+            }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1235,10 +1293,6 @@ dummy_func(
                 }
             }
         }
-
-        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
-
-        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,

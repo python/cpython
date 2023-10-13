@@ -63,6 +63,28 @@ the following command can be used to display the disassembly of
 
 (The "2" is a line number).
 
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
+
 Bytecode analysis
 -----------------
 
@@ -528,7 +550,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR

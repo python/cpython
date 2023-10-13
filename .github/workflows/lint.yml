@@ -5,6 +5,10 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 
+env:
+  FORCE_COLOR: 1
+  RUFF_OUTPUT_FORMAT: github
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true

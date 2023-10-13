@@ -423,6 +423,41 @@ raise_error(void *unused)
     return NULL;
 }
 
+static PyObject *
+py_buildvalue(PyObject *self, PyObject *args)
+{
+    const char *fmt;
+    PyObject *objs[10] = {NULL};
+    if (!PyArg_ParseTuple(args, "s|OOOOOOOOOO", &fmt,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    for(int i = 0; i < 10; i++) {
+        NULLABLE(objs[i]);
+    }
+    return Py_BuildValue(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
+}
+
+static PyObject *
+py_buildvalue_ints(PyObject *self, PyObject *args)
+{
+    const char *fmt;
+    unsigned int values[10] = {0};
+    if (!PyArg_ParseTuple(args, "s|IIIIIIIIII", &fmt,
+            &values[0], &values[1], &values[2], &values[3], &values[4],
+            &values[5], &values[6], &values[7], &values[8], &values[9]))
+    {
+        return NULL;
+    }
+    return Py_BuildValue(fmt,
+            values[0], values[1], values[2], values[3], values[4],
+            values[5], values[6], values[7], values[8], values[9]);
+}
+
 static int
 test_buildvalue_N_error(const char *fmt)
 {
@@ -2157,6 +2192,26 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_RETURN_NONE;
 }
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
 #endif
 
 
@@ -3247,6 +3302,8 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
+    {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
+    {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_buildvalue_issue38913", test_buildvalue_issue38913,   METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
@@ -3306,6 +3363,7 @@ static PyMethodDef TestMethods[] = {
     {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
@@ -3978,6 +4036,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Dict(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Set(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {

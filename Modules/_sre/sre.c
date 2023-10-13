@@ -1462,6 +1462,9 @@ _sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
         unsigned long value = PyLong_AsUnsignedLong(o);
+        if (value == (unsigned long)-1 && PyErr_Occurred()) {
+            break;
+        }
         self->code[i] = (SRE_CODE) value;
         if ((unsigned long) self->code[i] != value) {
             PyErr_SetString(PyExc_OverflowError,

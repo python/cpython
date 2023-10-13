@@ -740,15 +740,13 @@ class TestDocTestFinder(unittest.TestCase):
 
     def test_issue35753(self):
         # This import of `call` should trigger issue35753 when
-        # `support.run_doctest` is called due to unwrap failing,
+        # DocTestFinder.find() is called due to inspect.unwrap() failing,
         # however with a patched doctest this should succeed.
         from unittest.mock import call
         dummy_module = types.ModuleType("dummy")
         dummy_module.__dict__['inject_call'] = call
-        try:
-            support.run_doctest(dummy_module, verbosity=True)
-        except ValueError as e:
-            raise support.TestFailed("Doctest unwrap failed") from e
+        finder = doctest.DocTestFinder()
+        self.assertEqual(finder.find(dummy_module), [])
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'

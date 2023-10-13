@@ -131,6 +131,12 @@ to start a process.  These *start methods* are
        Code that requires *fork* should explicitly specify that via
        :func:`get_context` or :func:`set_start_method`.
 
+    .. versionchanged:: 3.12
+       If Python is able to detect that your process has multiple threads, the
+       :func:`os.fork` function that this start method calls internally will
+       raise a :exc:`DeprecationWarning`. Use a different start method.
+       See the :func:`os.fork` documentation for further explanation.
+
   *forkserver*
     When the program starts and selects the *forkserver* start method,
     a server process is spawned.  From then on, whenever a new process
@@ -2776,20 +2782,20 @@ worker threads rather than worker processes.
 
    Unlike :class:`Pool`, *maxtasksperchild* and *context* cannot be provided.
 
-    .. note::
+   .. note::
 
-        A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
-        is designed around a pool of processes and predates the introduction of
-        the :class:`concurrent.futures` module.  As such, it inherits some
-        operations that don't make sense for a pool backed by threads, and it
-        has its own type for representing the status of asynchronous jobs,
-        :class:`AsyncResult`, that is not understood by any other libraries.
+      A :class:`ThreadPool` shares the same interface as :class:`Pool`, which
+      is designed around a pool of processes and predates the introduction of
+      the :class:`concurrent.futures` module.  As such, it inherits some
+      operations that don't make sense for a pool backed by threads, and it
+      has its own type for representing the status of asynchronous jobs,
+      :class:`AsyncResult`, that is not understood by any other libraries.
 
-        Users should generally prefer to use
-        :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
-        interface that was designed around threads from the start, and which
-        returns :class:`concurrent.futures.Future` instances that are
-        compatible with many other libraries, including :mod:`asyncio`.
+      Users should generally prefer to use
+      :class:`concurrent.futures.ThreadPoolExecutor`, which has a simpler
+      interface that was designed around threads from the start, and which
+      returns :class:`concurrent.futures.Future` instances that are
+      compatible with many other libraries, including :mod:`asyncio`.
 
 
 .. _multiprocessing-programming:

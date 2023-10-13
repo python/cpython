@@ -30,9 +30,10 @@ from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
+    forget, make_legacy_pyc, unlink, unload, ready_to_import,
+    DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
-    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
+    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
@@ -106,25 +107,23 @@ def remove_files(name):
     rmtree('__pycache__')
 
 
-@contextlib.contextmanager
-def _ready_to_import(name=None, source=""):
-    # sets up a temporary directory and removes it
-    # creates the module file
-    # temporarily clears the module from sys.modules (if any)
-    # reverts or removes the module when cleaning up
-    name = name or "spam"
-    with temp_dir() as tempdir:
-        path = script_helper.make_script(tempdir, name, source)
-        old_module = sys.modules.pop(name, None)
-        try:
-            sys.path.insert(0, tempdir)
-            yield name, path
-            sys.path.remove(tempdir)
-        finally:
-            if old_module is not None:
-                sys.modules[name] = old_module
-            elif name in sys.modules:
-                del sys.modules[name]
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
 
 
 if _testsinglephase is not None:
@@ -382,7 +381,7 @@ class ImportTests(unittest.TestCase):
 
     def test_from_import_star_invalid_type(self):
         import re
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
@@ -391,7 +390,7 @@ class ImportTests(unittest.TestCase):
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
@@ -799,7 +798,7 @@ class FilePermissionTests(unittest.TestCase):
     )
     def test_creation_mode(self):
         mask = 0o022
-        with temp_umask(mask), _ready_to_import() as (name, path):
+        with temp_umask(mask), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             module = __import__(name)
             if not os.path.exists(cached_path):
@@ -818,7 +817,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_cached_mode_issue_2051(self):
         # permissions of .pyc should match those of .py, regardless of mask
         mode = 0o600
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -834,7 +833,7 @@ class FilePermissionTests(unittest.TestCase):
     @os_helper.skip_unless_working_chmod
     def test_cached_readonly(self):
         mode = 0o400
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -849,7 +848,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_pyc_always_writable(self):
         # Initially read-only .pyc files on Windows used to cause problems
         # with later updates, see issue #6074 for details
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             # Write a Python file, make it read-only and import it
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("x = 'original'\n")
@@ -2018,10 +2017,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
-            # https://github.com/python/cpython/issues/102251
-            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
-
         spec = importlib.util.find_spec(cls.NAME)
         from importlib.machinery import ExtensionFileLoader
         cls.FILE = spec.origin
@@ -2535,6 +2530,7 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
+    @no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter

@@ -120,26 +120,26 @@ The class can be used to simulate nested scopes and is useful in templating.
 
 .. seealso::
 
-    * The `MultiContext class
-      <https://github.com/enthought/codetools/blob/4.0.0/codetools/contexts/multi_context.py>`_
-      in the Enthought `CodeTools package
-      <https://github.com/enthought/codetools>`_ has options to support
-      writing to any mapping in the chain.
+   * The `MultiContext class
+     <https://github.com/enthought/codetools/blob/4.0.0/codetools/contexts/multi_context.py>`_
+     in the Enthought `CodeTools package
+     <https://github.com/enthought/codetools>`_ has options to support
+     writing to any mapping in the chain.
 
-    * Django's `Context class
-      <https://github.com/django/django/blob/main/django/template/context.py>`_
-      for templating is a read-only chain of mappings.  It also features
-      pushing and popping of contexts similar to the
-      :meth:`~collections.ChainMap.new_child` method and the
-      :attr:`~collections.ChainMap.parents` property.
+   * Django's `Context class
+     <https://github.com/django/django/blob/main/django/template/context.py>`_
+     for templating is a read-only chain of mappings.  It also features
+     pushing and popping of contexts similar to the
+     :meth:`~collections.ChainMap.new_child` method and the
+     :attr:`~collections.ChainMap.parents` property.
 
-    * The `Nested Contexts recipe
-      <https://code.activestate.com/recipes/577434/>`_ has options to control
-      whether writes and other mutations apply only to the first mapping or to
-      any mapping in the chain.
+   * The `Nested Contexts recipe
+     <https://code.activestate.com/recipes/577434/>`_ has options to control
+     whether writes and other mutations apply only to the first mapping or to
+     any mapping in the chain.
 
-    * A `greatly simplified read-only version of Chainmap
-      <https://code.activestate.com/recipes/305268/>`_.
+   * A `greatly simplified read-only version of Chainmap
+     <https://code.activestate.com/recipes/305268/>`_.
 
 
 :class:`ChainMap` Examples and Recipes
@@ -429,22 +429,22 @@ or subtracting from an empty counter.
 
 .. seealso::
 
-    * `Bag class <https://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
-      in Smalltalk.
+   * `Bag class <https://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
+     in Smalltalk.
 
-    * Wikipedia entry for `Multisets <https://en.wikipedia.org/wiki/Multiset>`_.
+   * Wikipedia entry for `Multisets <https://en.wikipedia.org/wiki/Multiset>`_.
 
-    * `C++ multisets <http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
-      tutorial with examples.
+   * `C++ multisets <http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+     tutorial with examples.
 
-    * For mathematical operations on multisets and their use cases, see
-      *Knuth, Donald. The Art of Computer Programming Volume II,
-      Section 4.6.3, Exercise 19*.
+   * For mathematical operations on multisets and their use cases, see
+     *Knuth, Donald. The Art of Computer Programming Volume II,
+     Section 4.6.3, Exercise 19*.
 
-    * To enumerate all distinct multisets of a given size over a given set of
-      elements, see :func:`itertools.combinations_with_replacement`::
+   * To enumerate all distinct multisets of a given size over a given set of
+     elements, see :func:`itertools.combinations_with_replacement`::
 
-          map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC
+        map(Counter, combinations_with_replacement('ABC', 2)) # --> AA AB AC BB BC CC
 
 
 :class:`deque` objects
@@ -1060,20 +1060,20 @@ fields:
 
 .. seealso::
 
-    * See :class:`typing.NamedTuple` for a way to add type hints for named
-      tuples.  It also provides an elegant notation using the :keyword:`class`
-      keyword::
+   * See :class:`typing.NamedTuple` for a way to add type hints for named
+     tuples.  It also provides an elegant notation using the :keyword:`class`
+     keyword::
 
-          class Component(NamedTuple):
-              part_number: int
-              weight: float
-              description: Optional[str] = None
+         class Component(NamedTuple):
+             part_number: int
+             weight: float
+             description: Optional[str] = None
 
-    * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
-      underlying dictionary instead of a tuple.
+   * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
+     underlying dictionary instead of a tuple.
 
-    * The :mod:`dataclasses` module provides a decorator and functions for
-      automatically adding generated special methods to user-defined classes.
+   * The :mod:`dataclasses` module provides a decorator and functions for
+     automatically adding generated special methods to user-defined classes.
 
 
 :class:`OrderedDict` objects

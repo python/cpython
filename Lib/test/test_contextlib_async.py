@@ -49,15 +49,11 @@ class TestAbstractAsyncContextManager(unittest.TestCase):
             async with ctx():
                 yield 11
 
-        ret = []
-        exc = ValueError(22)
-        with self.assertRaises(ValueError):
-            async with ctx():
-                async for val in gen():
-                    ret.append(val)
-                    raise exc
-
-        self.assertEqual(ret, [11])
+        g = gen()
+        async for val in g:
+            self.assertEqual(val, 11)
+            break
+        await g.aclose()
 
     def test_exit_is_abstract(self):
         class MissingAexit(AbstractAsyncContextManager):
@@ -204,6 +200,9 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         await ctx.__aenter__()
         with self.assertRaises(RuntimeError):
             await ctx.__aexit__(TypeError, TypeError('foo'), None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.ag_suspended)
 
     @_async_test
     async def test_contextmanager_trap_no_yield(self):
@@ -225,6 +224,9 @@ class AsyncContextManagerTestCase(unittest.TestCase):
         await ctx.__aenter__()
         with self.assertRaises(RuntimeError):
             await ctx.__aexit__(None, None, None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.ag_suspended)
 
     @_async_test
     async def test_contextmanager_non_normalised(self):

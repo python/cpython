@@ -76,6 +76,13 @@ except ImportError:
     pass
 
 
+# gh-89363: Skip fork() test if Python is built with Address Sanitizer (ASAN)
+# to work around a libasan race condition, dead lock in pthread_create().
+skip_if_asan_fork = unittest.skipIf(
+    support.HAVE_ASAN_FORK_BUG,
+    "libasan has a pthread_create() dead lock related to thread+fork")
+
+
 class BaseTest(unittest.TestCase):
 
     """Base class for logging tests."""
@@ -730,6 +737,7 @@ class HandlerTest(BaseTest):
     # register_at_fork mechanism is also present and used.
     @support.requires_fork()
     @threading_helper.requires_working_threading()
+    @skip_if_asan_fork
     def test_post_fork_child_no_deadlock(self):
         """Ensure child logging locks are not held; bpo-6721 & bpo-36533."""
         class _OurHandler(logging.Handler):
@@ -2170,7 +2178,7 @@ class HTTPHandlerTest(BaseTest):
                     sslctx = None
                 else:
                     here = os.path.dirname(__file__)
-                    localhost_cert = os.path.join(here, "keycert.pem")
+                    localhost_cert = os.path.join(here, "certdata", "keycert.pem")
                     sslctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
                     sslctx.load_cert_chain(localhost_cert)
 

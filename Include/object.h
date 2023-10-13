@@ -679,17 +679,15 @@ static inline void Py_DECREF(PyObject *op) {
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-    }
-    else {
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
