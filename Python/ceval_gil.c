@@ -189,7 +189,7 @@ static void create_gil(struct _gil_runtime_state *gil)
 #ifdef FORCE_SWITCHING
     COND_INIT(gil->switch_cond);
 #endif
-    _Py_atomic_store_relaxed(&gil->last_holder, 0);
+    _Py_atomic_store_ptr_relaxed(&gil->last_holder, 0);
     _Py_ANNOTATE_RWLOCK_CREATE(&gil->locked);
     _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
 }
@@ -233,7 +233,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
@@ -242,7 +242,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
     MUTEX_LOCK(gil->mutex);
@@ -263,7 +263,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     if (tstate != NULL && _Py_eval_breaker_bit_is_set(interp, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
-        if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
+        if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate)
         {
             assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
@@ -361,8 +361,8 @@ _ready:
     _Py_atomic_store_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
-    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) {
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+    if (tstate != (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) {
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
         ++gil->switch_number;
     }
 
@@ -434,7 +434,7 @@ PyEval_ThreadsInitialized(void)
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
-    if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) != tstate) {
+    if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
         return 0;
     }
     return _Py_atomic_load_relaxed(&gil->locked);

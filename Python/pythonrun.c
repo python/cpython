@@ -23,7 +23,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_traceback.h"     // _PyTraceBack_Print_Indented()
+#include "pycore_traceback.h"     // _PyTraceBack_Print()
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
@@ -517,204 +517,6 @@ PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
     return 0;
 }
 
-static int
-parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
-                   Py_ssize_t *lineno, Py_ssize_t *offset,
-                   Py_ssize_t* end_lineno, Py_ssize_t* end_offset,
-                   PyObject **text)
-{
-    Py_ssize_t hold;
-    PyObject *v;
-
-    *message = NULL;
-    *filename = NULL;
-
-    /* new style errors.  `err' is an instance */
-    *message = PyObject_GetAttr(err, &_Py_ID(msg));
-    if (!*message)
-        goto finally;
-
-    v = PyObject_GetAttr(err, &_Py_ID(filename));
-    if (!v)
-        goto finally;
-    if (v == Py_None) {
-        Py_DECREF(v);
-        _Py_DECLARE_STR(anon_string, "<string>");
-        *filename = Py_NewRef(&_Py_STR(anon_string));
-    }
-    else {
-        *filename = v;
-    }
-
-    v = PyObject_GetAttr(err, &_Py_ID(lineno));
-    if (!v)
-        goto finally;
-    hold = PyLong_AsSsize_t(v);
-    Py_DECREF(v);
-    if (hold < 0 && PyErr_Occurred())
-        goto finally;
-    *lineno = hold;
-
-    v = PyObject_GetAttr(err, &_Py_ID(offset));
-    if (!v)
-        goto finally;
-    if (v == Py_None) {
-        *offset = -1;
-        Py_DECREF(v);
-    } else {
-        hold = PyLong_AsSsize_t(v);
-        Py_DECREF(v);
-        if (hold < 0 && PyErr_Occurred())
-            goto finally;
-        *offset = hold;
-    }
-
-    if (Py_TYPE(err) == (PyTypeObject*)PyExc_SyntaxError) {
-        v = PyObject_GetAttr(err, &_Py_ID(end_lineno));
-        if (!v) {
-            PyErr_Clear();
-            *end_lineno = *lineno;
-        }
-        else if (v == Py_None) {
-            *end_lineno = *lineno;
-            Py_DECREF(v);
-        } else {
-            hold = PyLong_AsSsize_t(v);
-            Py_DECREF(v);
-            if (hold < 0 && PyErr_Occurred())
-                goto finally;
-            *end_lineno = hold;
-        }
-
-        v = PyObject_GetAttr(err, &_Py_ID(end_offset));
-        if (!v) {
-            PyErr_Clear();
-            *end_offset = -1;
-        }
-        else if (v == Py_None) {
-            *end_offset = -1;
-            Py_DECREF(v);
-        } else {
-            hold = PyLong_AsSsize_t(v);
-            Py_DECREF(v);
-            if (hold < 0 && PyErr_Occurred())
-                goto finally;
-            *end_offset = hold;
-        }
-    } else {
-        // SyntaxError subclasses
-        *end_lineno = *lineno;
-        *end_offset = -1;
-    }
-
-    v = PyObject_GetAttr(err, &_Py_ID(text));
-    if (!v)
-        goto finally;
-    if (v == Py_None) {
-        Py_DECREF(v);
-        *text = NULL;
-    }
-    else {
-        *text = v;
-    }
-    return 1;
-
-finally:
-    Py_XDECREF(*message);
-    Py_XDECREF(*filename);
-    return 0;
-}
-
-static int
-print_error_text(PyObject *f, Py_ssize_t offset, Py_ssize_t end_offset,
-                 PyObject *text_obj)
-{
-    size_t caret_repetitions = (end_offset > 0 && end_offset > offset) ?
-                               end_offset - offset : 1;
-
-    /* Convert text to a char pointer; return if error */
-    const char *text = PyUnicode_AsUTF8(text_obj);
-    if (text == NULL) {
-        return -1;
-    }
-
-    /* Convert offset from 1-based to 0-based */
-    offset--;
-
-    /* Strip leading whitespace from text, adjusting offset as we go */
-    while (*text == ' ' || *text == '\t' || *text == '\f') {
-        text++;
-        offset--;
-    }
-
-    /* Calculate text length excluding trailing newline */
-    Py_ssize_t len = strlen(text);
-    if (len > 0 && text[len-1] == '\n') {
-        len--;
-    }
-
-    /* Clip offset to at most len */
-    if (offset > len) {
-        offset = len;
-    }
-
-    /* Skip past newlines embedded in text */
-    for (;;) {
-        const char *nl = strchr(text, '\n');
-        if (nl == NULL) {
-            break;
-        }
-        Py_ssize_t inl = nl - text;
-        if (inl >= offset) {
-            break;
-        }
-        inl += 1;
-        text += inl;
-        len -= inl;
-        offset -= (int)inl;
-    }
-
-    /* Print text */
-    if (PyFile_WriteString("    ", f) < 0) {
-        return -1;
-    }
-    if (PyFile_WriteString(text, f) < 0) {
-        return -1;
-    }
-
-    /* Make sure there's a newline at the end */
-    if (text[len] != '\n') {
-        if (PyFile_WriteString("\n", f) < 0) {
-            return -1;
-        }
-    }
-
-    /* Don't print caret if it points to the left of the text */
-    if (offset < 0) {
-        return 0;
-    }
-
-    /* Write caret line */
-    if (PyFile_WriteString("    ", f) < 0) {
-        return -1;
-    }
-    while (--offset >= 0) {
-        if (PyFile_WriteString(" ", f) < 0) {
-            return -1;
-        }
-    }
-    for (size_t caret_iter=0; caret_iter < caret_repetitions ; caret_iter++) {
-        if (PyFile_WriteString("^", f) < 0) {
-            return -1;
-        }
-    }
-    if (PyFile_WriteString("\n", f) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
-
 int
 _Py_HandleSystemExit(int *exitcode_p)
 {
@@ -883,29 +685,13 @@ struct exception_print_context
 {
     PyObject *file;
     PyObject *seen;            // Prevent cycles in recursion
-    int exception_group_depth; // nesting level of current exception group
-    bool need_close;           // Need a closing bottom frame
-    int max_group_width;       // Maximum number of children of each EG
-    int max_group_depth;       // Maximum nesting level of EGs
 };
-
-#define EXC_MARGIN(ctx) ((ctx)->exception_group_depth ? "| " : "")
-#define EXC_INDENT(ctx) (2 * (ctx)->exception_group_depth)
-
-static int
-write_indented_margin(struct exception_print_context *ctx, PyObject *f)
-{
-    return _Py_WriteIndentedMargin(EXC_INDENT(ctx), EXC_MARGIN(ctx), f);
-}
 
 static int
 print_exception_invalid_type(struct exception_print_context *ctx,
                              PyObject *value)
 {
     PyObject *f = ctx->file;
-    if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
-        return -1;
-    }
     const char *const msg = "TypeError: print_exception(): Exception expected "
                             "for value, ";
     if (PyFile_WriteString(msg, f) < 0) {
@@ -929,15 +715,7 @@ print_exception_traceback(struct exception_print_context *ctx, PyObject *value)
     PyObject *tb = PyException_GetTraceback(value);
     if (tb && tb != Py_None) {
         const char *header = EXCEPTION_TB_HEADER;
-        const char *header_margin = EXC_MARGIN(ctx);
-        if (_PyBaseExceptionGroup_Check(value)) {
-            header = EXCEPTION_GROUP_TB_HEADER;
-            if (ctx->exception_group_depth == 1) {
-                header_margin = "+ ";
-            }
-        }
-        err = _PyTraceBack_Print_Indented(
-            tb, EXC_INDENT(ctx), EXC_MARGIN(ctx), header_margin, header, f);
+        err = _PyTraceBack_Print(tb, header, f);
     }
     Py_XDECREF(tb);
     return err;
@@ -959,16 +737,20 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     }
     Py_DECREF(tmp);
 
-    PyObject *message, *filename, *text;
-    Py_ssize_t lineno, offset, end_lineno, end_offset;
-    if (!parse_syntax_error(*value_p, &message, &filename,
-                            &lineno, &offset,
-                            &end_lineno, &end_offset, &text)) {
-        PyErr_Clear();
-        return 0;
+    PyObject *filename = NULL;
+    Py_ssize_t lineno = 0;
+    PyObject* v = PyObject_GetAttr(*value_p, &_Py_ID(filename));
+    if (!v) {
+        return -1;
     }
-
-    Py_SETREF(*value_p, message);
+    if (v == Py_None) {
+        Py_DECREF(v);
+        _Py_DECLARE_STR(anon_string, "<string>");
+        filename = Py_NewRef(&_Py_STR(anon_string));
+    }
+    else {
+        filename = v;
+    }
 
     PyObject *line = PyUnicode_FromFormat("  File \"%S\", line %zd\n",
                                           filename, lineno);
@@ -976,40 +758,16 @@ print_exception_file_and_line(struct exception_print_context *ctx,
     if (line == NULL) {
         goto error;
     }
-    if (write_indented_margin(ctx, f) < 0) {
-        goto error;
-    }
     if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
         goto error;
     }
     Py_CLEAR(line);
 
-    if (text != NULL) {
-        Py_ssize_t line_size;
-        const char *error_line = PyUnicode_AsUTF8AndSize(text, &line_size);
-        // If the location of the error spawn multiple lines, we want
-        // to just print the first one and highlight everything until
-        // the end of that one since we don't support multi-line error
-        // messages.
-        if (end_lineno > lineno) {
-            end_offset = (error_line != NULL) ? line_size : -1;
-        }
-        // Limit the amount of '^' that we can display to
-        // the size of the text in the source line.
-        if (error_line != NULL && end_offset > line_size + 1) {
-            end_offset = line_size + 1;
-        }
-        if (print_error_text(f, offset, end_offset, text) < 0) {
-            goto error;
-        }
-        Py_DECREF(text);
-    }
     assert(!PyErr_Occurred());
     return 0;
 
 error:
     Py_XDECREF(line);
-    Py_XDECREF(text);
     return -1;
 }
 
@@ -1020,11 +778,14 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
 {
     PyObject *f = ctx->file;
 
-    assert(PyExceptionClass_Check(type));
-
-    if (write_indented_margin(ctx, f) < 0) {
+    if (PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
+        // The Python APIs in this function require allocating memory
+        // for various objects. If we're out of memory, we can't do that,
         return -1;
     }
+
+    assert(PyExceptionClass_Check(type));
+
     PyObject *modulename = PyObject_GetAttr(type, &_Py_ID(__module__));
     if (modulename == NULL || !PyUnicode_Check(modulename)) {
         Py_XDECREF(modulename);
@@ -1099,103 +860,8 @@ print_exception_message(struct exception_print_context *ctx, PyObject *type,
 }
 
 static int
-print_exception_suggestions(struct exception_print_context *ctx,
-                            PyObject *value)
-{
-    PyObject *f = ctx->file;
-    PyObject *suggestions = _Py_Offer_Suggestions(value);
-    if (suggestions) {
-        if (PyFile_WriteObject(suggestions, f, Py_PRINT_RAW) < 0) {
-            goto error;
-        }
-        Py_DECREF(suggestions);
-    }
-    else if (PyErr_Occurred()) {
-        PyErr_Clear();
-    }
-    return 0;
-error:
-    Py_XDECREF(suggestions);
-    return -1;
-}
-
-static int
-print_exception_notes(struct exception_print_context *ctx, PyObject *notes)
-{
-    PyObject *f = ctx->file;
-
-    if (notes == NULL) {
-        return 0;
-    }
-
-    if (!PySequence_Check(notes) || PyUnicode_Check(notes) || PyBytes_Check(notes)) {
-        int res = 0;
-        if (write_indented_margin(ctx, f) < 0) {
-            res = -1;
-        }
-        PyObject *s = PyObject_Repr(notes);
-        if (s == NULL) {
-            PyErr_Clear();
-            res = PyFile_WriteString("<__notes__ repr() failed>", f);
-        }
-        else {
-            res = PyFile_WriteObject(s, f, Py_PRINT_RAW);
-            Py_DECREF(s);
-        }
-        if (PyFile_WriteString("\n", f) < 0) {
-            res = -1;
-        }
-        return res;
-    }
-    Py_ssize_t num_notes = PySequence_Length(notes);
-    PyObject *lines = NULL;
-    for (Py_ssize_t ni = 0; ni < num_notes; ni++) {
-        PyObject *note = PySequence_GetItem(notes, ni);
-        PyObject *note_str = PyObject_Str(note);
-        Py_DECREF(note);
-
-        if (note_str == NULL) {
-            PyErr_Clear();
-            if (PyFile_WriteString("<note str() failed>", f) < 0) {
-                goto error;
-            }
-        }
-        else {
-            lines = PyUnicode_Splitlines(note_str, 1);
-            Py_DECREF(note_str);
-
-            if (lines == NULL) {
-                goto error;
-            }
-
-            Py_ssize_t n = PyList_GET_SIZE(lines);
-            for (Py_ssize_t i = 0; i < n; i++) {
-                PyObject *line = PyList_GET_ITEM(lines, i);
-                assert(PyUnicode_Check(line));
-                if (write_indented_margin(ctx, f) < 0) {
-                    goto error;
-                }
-                if (PyFile_WriteObject(line, f, Py_PRINT_RAW) < 0) {
-                    goto error;
-                }
-            }
-            Py_CLEAR(lines);
-        }
-        if (PyFile_WriteString("\n", f) < 0) {
-            goto error;
-        }
-    }
-
-    return 0;
-error:
-    Py_XDECREF(lines);
-    return -1;
-}
-
-static int
 print_exception(struct exception_print_context *ctx, PyObject *value)
 {
-    PyObject *notes = NULL;
     PyObject *f = ctx->file;
 
     if (!PyExceptionInstance_Check(value)) {
@@ -1211,9 +877,6 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
 
     /* grab the type and notes now because value can change below */
     PyObject *type = (PyObject *) Py_TYPE(value);
-    if (PyObject_GetOptionalAttr(value, &_Py_ID(__notes__), &notes) < 0) {
-        goto error;
-    }
 
     if (print_exception_file_and_line(ctx, &value) < 0) {
         goto error;
@@ -1221,22 +884,13 @@ print_exception(struct exception_print_context *ctx, PyObject *value)
     if (print_exception_message(ctx, type, value) < 0) {
         goto error;
     }
-    if (print_exception_suggestions(ctx, value) < 0) {
-        goto error;
-    }
     if (PyFile_WriteString("\n", f) < 0) {
         goto error;
     }
-    if (print_exception_notes(ctx, notes) < 0) {
-        goto error;
-    }
-
-    Py_XDECREF(notes);
     Py_DECREF(value);
     assert(!PyErr_Occurred());
     return 0;
 error:
-    Py_XDECREF(notes);
     Py_DECREF(value);
     return -1;
 }
@@ -1260,27 +914,16 @@ print_chained(struct exception_print_context* ctx, PyObject *value,
     if (_Py_EnterRecursiveCall(" in print_chained")) {
         return -1;
     }
-    bool need_close = ctx->need_close;
     int res = print_exception_recursive(ctx, value);
-    ctx->need_close = need_close;
     _Py_LeaveRecursiveCall();
     if (res < 0) {
         return -1;
     }
 
-    if (write_indented_margin(ctx, f) < 0) {
-        return -1;
-    }
     if (PyFile_WriteString("\n", f) < 0) {
         return -1;
     }
-    if (write_indented_margin(ctx, f) < 0) {
-        return -1;
-    }
     if (PyFile_WriteString(message, f) < 0) {
-        return -1;
-    }
-    if (write_indented_margin(ctx, f) < 0) {
         return -1;
     }
     if (PyFile_WriteString("\n", f) < 0) {
@@ -1360,133 +1003,6 @@ print_exception_cause_and_context(struct exception_print_context *ctx,
 }
 
 static int
-print_exception_group(struct exception_print_context *ctx, PyObject *value)
-{
-    PyObject *f = ctx->file;
-
-    if (ctx->exception_group_depth > ctx->max_group_depth) {
-        /* depth exceeds limit */
-
-        if (write_indented_margin(ctx, f) < 0) {
-            return -1;
-        }
-
-        PyObject *line = PyUnicode_FromFormat("... (max_group_depth is %d)\n",
-                                              ctx->max_group_depth);
-        if (line == NULL) {
-            return -1;
-        }
-        int err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-        Py_DECREF(line);
-        return err;
-    }
-
-    if (ctx->exception_group_depth == 0) {
-        ctx->exception_group_depth += 1;
-    }
-    if (print_exception(ctx, value) < 0) {
-        return -1;
-    }
-
-    PyObject *excs = ((PyBaseExceptionGroupObject *)value)->excs;
-    assert(excs && PyTuple_Check(excs));
-    Py_ssize_t num_excs = PyTuple_GET_SIZE(excs);
-    assert(num_excs > 0);
-    Py_ssize_t n;
-    if (num_excs <= ctx->max_group_width) {
-        n = num_excs;
-    }
-    else {
-        n = ctx->max_group_width + 1;
-    }
-
-    ctx->need_close = false;
-    for (Py_ssize_t i = 0; i < n; i++) {
-        bool last_exc = (i == n - 1);
-        if (last_exc) {
-            // The closing frame may be added in a recursive call
-            ctx->need_close = true;
-        }
-
-        if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
-            return -1;
-        }
-        bool truncated = (i >= ctx->max_group_width);
-        PyObject *line;
-        if (!truncated) {
-            line = PyUnicode_FromFormat(
-                "%s+---------------- %zd ----------------\n",
-                (i == 0) ? "+-" : "  ", i + 1);
-        }
-        else {
-            line = PyUnicode_FromFormat(
-                "%s+---------------- ... ----------------\n",
-                (i == 0) ? "+-" : "  ");
-        }
-        if (line == NULL) {
-            return -1;
-        }
-        int err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-        Py_DECREF(line);
-        if (err < 0) {
-            return -1;
-        }
-
-        ctx->exception_group_depth += 1;
-        PyObject *exc = PyTuple_GET_ITEM(excs, i);
-
-        if (!truncated) {
-            if (_Py_EnterRecursiveCall(" in print_exception_group")) {
-                return -1;
-            }
-            int res = print_exception_recursive(ctx, exc);
-            _Py_LeaveRecursiveCall();
-            if (res < 0) {
-                return -1;
-            }
-        }
-        else {
-            Py_ssize_t excs_remaining = num_excs - ctx->max_group_width;
-
-            if (write_indented_margin(ctx, f) < 0) {
-                return -1;
-            }
-
-            PyObject *line = PyUnicode_FromFormat(
-                "and %zd more exception%s\n",
-                excs_remaining, excs_remaining > 1 ? "s" : "");
-
-            if (line == NULL) {
-                return -1;
-            }
-
-            int err = PyFile_WriteObject(line, f, Py_PRINT_RAW);
-            Py_DECREF(line);
-            if (err < 0) {
-                return -1;
-            }
-        }
-
-        if (last_exc && ctx->need_close) {
-            if (_Py_WriteIndent(EXC_INDENT(ctx), f) < 0) {
-                return -1;
-            }
-            if (PyFile_WriteString(
-                    "+------------------------------------\n", f) < 0) {
-                return -1;
-            }
-            ctx->need_close = false;
-        }
-        ctx->exception_group_depth -= 1;
-    }
-
-    if (ctx->exception_group_depth == 1) {
-        ctx->exception_group_depth -= 1;
-    }
-    return 0;
-}
-
-static int
 print_exception_recursive(struct exception_print_context *ctx, PyObject *value)
 {
     if (_Py_EnterRecursiveCall(" in print_exception_recursive")) {
@@ -1498,12 +1014,7 @@ print_exception_recursive(struct exception_print_context *ctx, PyObject *value)
             goto error;
         }
     }
-    if (!_PyBaseExceptionGroup_Check(value)) {
-        if (print_exception(ctx, value) < 0) {
-            goto error;
-        }
-    }
-    else if (print_exception_group(ctx, value) < 0) {
+    if (print_exception(ctx, value) < 0) {
         goto error;
     }
     assert(!PyErr_Occurred());
@@ -1514,9 +1025,6 @@ error:
     _Py_LeaveRecursiveCall();
     return -1;
 }
-
-#define PyErr_MAX_GROUP_WIDTH 15
-#define PyErr_MAX_GROUP_DEPTH 10
 
 void
 _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
@@ -1535,12 +1043,45 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
         }
     }
 
+    int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
+
+    if (!value || PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
+        goto fallback;
+    }
+
+    // Try first with the stdlib traceback module
+    PyObject *traceback_module = PyImport_ImportModule("traceback");
+
+    if (traceback_module == NULL) {
+        goto fallback;
+    }
+
+    PyObject *print_exception_fn = PyObject_GetAttrString(traceback_module, "_print_exception_bltin");
+
+    if (print_exception_fn == NULL || !PyCallable_Check(print_exception_fn)) {
+        Py_DECREF(traceback_module);
+        goto fallback;
+    }
+
+    PyObject* result = PyObject_CallOneArg(print_exception_fn, value);
+
+    Py_DECREF(traceback_module);
+    Py_XDECREF(print_exception_fn);
+    if (result) {
+        Py_DECREF(result);
+        _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
+        return;
+    }
+fallback:
+    _PyRuntime.signals.unhandled_keyboard_interrupt = unhandled_keyboard_interrupt;
+#ifdef Py_DEBUG
+     if (PyErr_Occurred()) {
+        _PyErr_WriteUnraisableMsg("in the internal traceback machinery", NULL);
+     }
+#endif
+    PyErr_Clear();
     struct exception_print_context ctx;
     ctx.file = file;
-    ctx.exception_group_depth = 0;
-    ctx.need_close = false;
-    ctx.max_group_width = PyErr_MAX_GROUP_WIDTH;
-    ctx.max_group_depth = PyErr_MAX_GROUP_DEPTH;
 
     /* We choose to ignore seen being possibly NULL, and report
        at least the main exception (it could be a MemoryError).

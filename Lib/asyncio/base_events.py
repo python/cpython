@@ -1907,8 +1907,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             timeout = 0
         elif self._scheduled:
             # Compute the desired timeout.
-            when = self._scheduled[0]._when
-            timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
+            timeout = self._scheduled[0]._when - self.time()
+            if timeout > MAXIMUM_SELECT_TIMEOUT:
+                timeout = MAXIMUM_SELECT_TIMEOUT
+            elif timeout < 0:
+                timeout = 0
 
         event_list = self._selector.select(timeout)
         self._process_events(event_list)
