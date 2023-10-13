@@ -106,12 +106,13 @@ Local naming conventions:
 #endif
 
 #include "Python.h"
+#include "pycore_capsule.h"       // _PyCapsule_SetTraverse()
+#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_moduleobject.h"  // _PyModule_GetState
-#include "structmember.h"         // PyMemberDef
 
 #ifdef _Py_MEMORY_SANITIZER
-# include <sanitizer/msan_interface.h>
+#  include <sanitizer/msan_interface.h>
 #endif
 
 /* Socket object documentation */
@@ -263,7 +264,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #ifdef HAVE_NETDB_H
 #  include <netdb.h>
 #endif
-# include <unistd.h>
+#include <unistd.h>               // close()
 
 /* Headers needed for inet_ntoa() and inet_addr() */
 #   include <arpa/inet.h>
@@ -4878,17 +4879,17 @@ sock_sendmsg_afalg(PySocketSockObject *self, PyObject *args, PyObject *kwds)
 
     /* op is a required, keyword-only argument >= 0 */
     if (opobj != NULL) {
-        op = _PyLong_AsInt(opobj);
+        op = PyLong_AsInt(opobj);
     }
     if (op < 0) {
-        /* override exception from _PyLong_AsInt() */
+        /* override exception from PyLong_AsInt() */
         PyErr_SetString(PyExc_TypeError,
                         "Invalid or missing argument 'op'");
         goto finally;
     }
     /* assoclen is optional but must be >= 0 */
     if (assoclenobj != NULL) {
-        assoclen = _PyLong_AsInt(assoclenobj);
+        assoclen = PyLong_AsInt(assoclenobj);
         if (assoclen == -1 && PyErr_Occurred()) {
             goto finally;
         }
@@ -5006,7 +5007,7 @@ sock_shutdown(PySocketSockObject *s, PyObject *arg)
     int how;
     int res;
 
-    how = _PyLong_AsInt(arg);
+    how = PyLong_AsInt(arg);
     if (how == -1 && PyErr_Occurred())
         return NULL;
     Py_BEGIN_ALLOW_THREADS
@@ -5205,9 +5206,9 @@ static PyMethodDef sock_methods[] = {
 
 /* SockObject members */
 static PyMemberDef sock_memberlist[] = {
-       {"family", T_INT, offsetof(PySocketSockObject, sock_family), READONLY, "the socket family"},
-       {"type", T_INT, offsetof(PySocketSockObject, sock_type), READONLY, "the socket type"},
-       {"proto", T_INT, offsetof(PySocketSockObject, sock_proto), READONLY, "the socket protocol"},
+       {"family", Py_T_INT, offsetof(PySocketSockObject, sock_family), Py_READONLY, "the socket family"},
+       {"type", Py_T_INT, offsetof(PySocketSockObject, sock_type), Py_READONLY, "the socket type"},
+       {"proto", Py_T_INT, offsetof(PySocketSockObject, sock_proto), Py_READONLY, "the socket protocol"},
        {0},
 };
 
@@ -5397,8 +5398,8 @@ sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
             }
 
             if (!SetHandleInformation((HANDLE)fd, HANDLE_FLAG_INHERIT, 0)) {
-                closesocket(fd);
                 PyErr_SetFromWindowsErr(0);
+                closesocket(fd);
                 return -1;
             }
 
@@ -5612,8 +5613,9 @@ socket_gethostname(PyObject *self, PyObject *unused)
                            name,
                            &size))
     {
+        PyErr_SetFromWindowsErr(0);
         PyMem_Free(name);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     result = PyUnicode_FromWideChar(name, size);
@@ -5650,8 +5652,9 @@ socket_sethostname(PyObject *self, PyObject *args)
     Py_buffer buf;
     int res, flag = 0;
 
-#ifdef _AIX
-/* issue #18259, not declared in any useful header file */
+#if defined(_AIX) || (defined(__sun) && defined(__SVR4) && Py_SUNOS_VERSION <= 510)
+/* issue #18259, sethostname is not declared in any useful header file on AIX
+ * the same is true for Solaris 10 */
 extern int sethostname(const char *, size_t);
 #endif
 
@@ -5779,9 +5782,15 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 
     /* SF #1511317: h_aliases can be NULL */
     if (h->h_aliases) {
-        for (pch = h->h_aliases; *pch != NULL; pch++) {
+        for (pch = h->h_aliases; ; pch++) {
             int status;
-            tmp = PyUnicode_FromString(*pch);
+            char *host_alias;
+            // pch can be misaligned
+            memcpy(&host_alias, pch, sizeof(host_alias));
+            if (host_alias == NULL) {
+                break;
+            }
+            tmp = PyUnicode_FromString(host_alias);
             if (tmp == NULL)
                 goto err;
 
@@ -5793,8 +5802,14 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
         }
     }
 
-    for (pch = h->h_addr_list; *pch != NULL; pch++) {
+    for (pch = h->h_addr_list; ; pch++) {
         int status;
+        char *host_address;
+        // pch can be misaligned
+        memcpy(&host_address, pch, sizeof(host_address));
+        if (host_address == NULL) {
+            break;
+        }
 
         switch (af) {
 
@@ -5806,7 +5821,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin.sin_len = sizeof(sin);
 #endif
-            memcpy(&sin.sin_addr, *pch, sizeof(sin.sin_addr));
+            memcpy(&sin.sin_addr, host_address, sizeof(sin.sin_addr));
             tmp = make_ipv4_addr(&sin);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin))
@@ -5823,7 +5838,7 @@ gethost_common(socket_state *state, struct hostent *h, struct sockaddr *addr,
 #ifdef HAVE_SOCKADDR_SA_LEN
             sin6.sin6_len = sizeof(sin6);
 #endif
-            memcpy(&sin6.sin6_addr, *pch, sizeof(sin6.sin6_addr));
+            memcpy(&sin6.sin6_addr, host_address, sizeof(sin6.sin6_addr));
             tmp = make_ipv6_addr(&sin6);
 
             if (pch == h->h_addr_list && alen >= sizeof(sin6))
@@ -6199,8 +6214,8 @@ socket_dup(PyObject *self, PyObject *fdobj)
     }
 
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
-        closesocket(newfd);
         PyErr_SetFromWindowsErr(0);
+        closesocket(newfd);
         return NULL;
     }
 #else
@@ -6647,11 +6662,12 @@ socket_inet_ntop(PyObject *self, PyObject *args)
 
     /* inet_ntop guarantee NUL-termination of resulting string. */
     retval = inet_ntop(af, packed_ip.buf, ip, sizeof(ip));
-    PyBuffer_Release(&packed_ip);
     if (!retval) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyBuffer_Release(&packed_ip);
         return NULL;
     } else {
+        PyBuffer_Release(&packed_ip);
         return PyUnicode_FromString(retval);
     }
 }
@@ -6990,8 +7006,8 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
 
     ni = if_nameindex();
     if (ni == NULL) {
-        Py_DECREF(list);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(list);
         return NULL;
     }
 
@@ -7302,20 +7318,39 @@ os_init(void)
 }
 #endif
 
-static void
-sock_free_api(PySocketModule_APIObject *capi)
+static int
+sock_capi_traverse(PyObject *capsule, visitproc visit, void *arg)
 {
-    Py_DECREF(capi->Sock_Type);
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_VISIT(capi->Sock_Type);
+    return 0;
+}
+
+static int
+sock_capi_clear(PyObject *capsule)
+{
+    PySocketModule_APIObject *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
+    assert(capi != NULL);
+    Py_CLEAR(capi->Sock_Type);
+    return 0;
+}
+
+static void
+sock_capi_free(PySocketModule_APIObject *capi)
+{
+    Py_XDECREF(capi->Sock_Type);  // sock_capi_free() can clear it
     Py_DECREF(capi->error);
     Py_DECREF(capi->timeout_error);
     PyMem_Free(capi);
 }
 
 static void
-sock_destroy_api(PyObject *capsule)
+sock_capi_destroy(PyObject *capsule)
 {
     void *capi = PyCapsule_GetPointer(capsule, PySocket_CAPSULE_NAME);
-    sock_free_api(capi);
+    assert(capi != NULL);
+    sock_capi_free(capi);
 }
 
 static PySocketModule_APIObject *
@@ -7420,11 +7455,17 @@ socket_exec(PyObject *m)
     }
     PyObject *capsule = PyCapsule_New(capi,
                                       PySocket_CAPSULE_NAME,
-                                      sock_destroy_api);
+                                      sock_capi_destroy);
     if (capsule == NULL) {
-        sock_free_api(capi);
+        sock_capi_free(capi);
         goto error;
     }
+    if (_PyCapsule_SetTraverse(capsule,
+                               sock_capi_traverse, sock_capi_clear) < 0) {
+        sock_capi_free(capi);
+        goto error;
+    }
+
     if (PyModule_Add(m, PySocket_CAPI_NAME, capsule) < 0) {
         goto error;
     }

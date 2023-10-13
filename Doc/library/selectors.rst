@@ -60,9 +60,9 @@ constants below:
    +-----------------------+-----------------------------------------------+
    | Constant              | Meaning                                       |
    +=======================+===============================================+
-   | :const:`EVENT_READ`   | Available for read                            |
+   | .. data:: EVENT_READ  | Available for read                            |
    +-----------------------+-----------------------------------------------+
-   | :const:`EVENT_WRITE`  | Available for write                           |
+   | .. data:: EVENT_WRITE | Available for write                           |
    +-----------------------+-----------------------------------------------+
 
 
@@ -132,8 +132,8 @@ constants below:
 
       Change a registered file object's monitored events or attached data.
 
-      This is equivalent to :meth:`BaseSelector.unregister(fileobj)` followed
-      by :meth:`BaseSelector.register(fileobj, events, data)`, except that it
+      This is equivalent to ``BaseSelector.unregister(fileobj)`` followed
+      by ``BaseSelector.register(fileobj, events, data)``, except that it
       can be implemented more efficiently.
 
       This returns a new :class:`SelectorKey` instance, or raises a

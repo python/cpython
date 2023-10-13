@@ -167,9 +167,24 @@ class ContextManagerTestCase(unittest.TestCase):
                 yield
         ctx = whoo()
         ctx.__enter__()
-        self.assertRaises(
-            RuntimeError, ctx.__exit__, TypeError, TypeError("foo"), None
-        )
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(TypeError, TypeError("foo"), None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
+
+    def test_contextmanager_trap_second_yield(self):
+        @contextmanager
+        def whoo():
+            yield
+            yield
+        ctx = whoo()
+        ctx.__enter__()
+        with self.assertRaises(RuntimeError):
+            ctx.__exit__(None, None, None)
+        if support.check_impl_detail(cpython=True):
+            # The "gen" attribute is an implementation detail.
+            self.assertFalse(ctx.gen.gi_suspended)
 
     def test_contextmanager_except(self):
         state = []
@@ -1085,7 +1100,7 @@ class TestBaseExitStack:
 class TestExitStack(TestBaseExitStack, unittest.TestCase):
     exit_stack = ExitStack
     callback_error_internal_frames = [
-        ('__exit__', 'raise exc_details[1]'),
+        ('__exit__', 'raise exc'),
         ('__exit__', 'if cb(*exc_details):'),
     ]
 

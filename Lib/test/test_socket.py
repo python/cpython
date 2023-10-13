@@ -215,24 +215,6 @@ class SocketUDPLITETest(SocketUDPTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
         self.port = socket_helper.bind_port(self.serv)
 
-class ThreadSafeCleanupTestCase:
-    """Subclass of unittest.TestCase with thread-safe cleanup methods.
-
-    This subclass protects the addCleanup() and doCleanups() methods
-    with a recursive lock.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cleanup_lock = threading.RLock()
-
-    def addCleanup(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().addCleanup(*args, **kwargs)
-
-    def doCleanups(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().doCleanups(*args, **kwargs)
 
 class SocketCANTest(unittest.TestCase):
 
@@ -626,8 +608,7 @@ class SocketListeningTestMixin(SocketTestBase):
         self.serv.listen()
 
 
-class ThreadedSocketTestMixin(ThreadSafeCleanupTestCase, SocketTestBase,
-                              ThreadableTest):
+class ThreadedSocketTestMixin(SocketTestBase, ThreadableTest):
     """Mixin to add client socket and allow client/server tests.
 
     Client socket is self.cli and its address is self.cli_addr.  See
@@ -2813,7 +2794,7 @@ class BasicUDPLITETest(ThreadedUDPLITESocketTest):
 # here assumes that datagram delivery on the local machine will be
 # reliable.
 
-class SendrecvmsgBase(ThreadSafeCleanupTestCase):
+class SendrecvmsgBase:
     # Base class for sendmsg()/recvmsg() tests.
 
     # Time in seconds to wait before considering a test failed, or
@@ -4679,7 +4660,6 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
 @unittest.skipUnless(hasattr(signal, "alarm") or hasattr(signal, "setitimer"),
                      "Don't have signal.alarm or signal.setitimer")
 class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
-                                 ThreadSafeCleanupTestCase,
                                  SocketListeningTestMixin, TCPTestBase):
     # Test interrupting the interruptible send*() methods with signals
     # when a timeout is set.
@@ -5288,6 +5268,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         finally:
             socket.socket = old_socket
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_connect(self):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5296,6 +5277,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection(self):
         # Issue #9792: errors raised by create_connection() should have
         # a proper errno attribute.
@@ -5354,6 +5336,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
+    cli = None
 
     def __init__(self, methodName='runTest'):
         SocketTCPTest.__init__(self, methodName=methodName)
@@ -5363,7 +5346,8 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.source_port = socket_helper.find_unused_port()
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli is not None:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
@@ -6472,12 +6456,16 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 self.assertEqual(op.recv(512), expected)
 
     def test_hmac_sha1(self):
-        expected = bytes.fromhex("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79")
+        # gh-109396: In FIPS mode, Linux 6.5 requires a key
+        # of at least 112 bits. Use a key of 152 bits.
+        key = b"Python loves AF_ALG"
+        data = b"what do ya want for nothing?"
+        expected = bytes.fromhex("193dbb43c6297b47ea6277ec0ce67119a3f3aa66")
         with self.create_alg('hash', 'hmac(sha1)') as algo:
-            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, b"Jefe")
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, key)
             op, _ = algo.accept()
             with op:
-                op.sendall(b"what do ya want for nothing?")
+                op.sendall(data)
                 self.assertEqual(op.recv(512), expected)
 
     # Although it should work with 3.19 and newer the test blocks on

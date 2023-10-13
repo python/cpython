@@ -38,6 +38,7 @@ from email import iterators
 from email import quoprimime
 from email import utils
 
+from test import support
 from test.support import threading_helper
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
@@ -2235,7 +2236,7 @@ class TestNonConformant(TestEmailBase):
                     "\nContent-Transfer-Encoding: {}".format(cte)))
             self.assertEqual(len(msg.defects), 0)
 
-    # test_headerregistry.TestContentTyopeHeader invalid_1 and invalid_2.
+    # test_headerregistry.TestContentTypeHeader invalid_1 and invalid_2.
     def test_invalid_content_type(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual
@@ -3319,90 +3320,32 @@ Foo
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
-    def test_getaddresses_parsing_errors(self):
-        """Test for parsing errors from CVE-2023-27043"""
-        eq = self.assertEqual
-        eq(utils.getaddresses(['alice@example.org(<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org)<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org<<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org><bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org@<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org,<bob@example.com>']),
-           [('', 'alice@example.org'), ('', 'bob@example.com')])
-        eq(utils.getaddresses(['alice@example.org;<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org:<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org.<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org"<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org[<bob@example.com>']),
-           [('', '')])
-        eq(utils.getaddresses(['alice@example.org]<bob@example.com>']),
-           [('', '')])
-
-    def test_parseaddr_parsing_errors(self):
-        """Test for parsing errors from CVE-2023-27043"""
-        eq = self.assertEqual
-        eq(utils.parseaddr(['alice@example.org(<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org)<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org<<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org><bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org@<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org,<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org;<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org:<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org.<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org"<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org[<bob@example.com>']),
-           ('', ''))
-        eq(utils.parseaddr(['alice@example.org]<bob@example.com>']),
-           ('', ''))
+    def test_getaddresses_comma_in_name(self):
+        """GH-106669 regression test."""
+        self.assertEqual(
+            utils.getaddresses(
+                [
+                    '"Bud, Person" <bperson@dom.ain>',
+                    'aperson@dom.ain (Al Person)',
+                    '"Mariusz Felisiak" <to@example.com>',
+                ]
+            ),
+            [
+                ('Bud, Person', 'bperson@dom.ain'),
+                ('Al Person', 'aperson@dom.ain'),
+                ('Mariusz Felisiak', 'to@example.com'),
+            ],
+        )
 
     def test_getaddresses_nasty(self):
         eq = self.assertEqual
         eq(utils.getaddresses(['foo: ;']), [('', '')])
-        eq(utils.getaddresses(['[]*-- =~$']), [('', '')])
+        eq(utils.getaddresses(
+           ['[]*-- =~$']),
+           [('', ''), ('', ''), ('', '*--')])
         eq(utils.getaddresses(
            ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
            [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
-        eq(utils.getaddresses(
-           [r'Pete(A nice \) chap) <pete(his account)@silly.test(his host)>']),
-           [('Pete (A nice ) chap his account his host)', 'pete@silly.test')])
-        eq(utils.getaddresses(
-           ['(Empty list)(start)Undisclosed recipients  :(nobody(I know))']),
-           [('', '')])
-        eq(utils.getaddresses(
-           ['Mary <@machine.tld:mary@example.net>, , jdoe@test   . example']),
-           [('Mary', 'mary@example.net'), ('', ''), ('', 'jdoe@test.example')])
-        eq(utils.getaddresses(
-           ['John Doe <jdoe@machine(comment).  example>']),
-           [('John Doe (comment)', 'jdoe@machine.example')])
-        eq(utils.getaddresses(
-           ['"Mary Smith: Personal Account" <smith@home.example>']),
-           [('Mary Smith: Personal Account', 'smith@home.example')])
-        eq(utils.getaddresses(
-           ['Undisclosed recipients:;']),
-           [('', '')])
-        eq(utils.getaddresses(
-           [r'<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>']),
-           [('', 'boss@nil.test'), ('Giant; "Big" Box', 'bob@example.net')])
 
     def test_getaddresses_embedded_comment(self):
         """Test proper handling of a nested comment"""
@@ -3416,6 +3359,7 @@ Foo
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
@@ -3769,6 +3713,16 @@ class TestParsers(TestEmailBase):
         self.assertFalse(msg.is_multipart())
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
+
+    def test_header_parser_multipart_is_valid(self):
+        # Don't flag valid multipart emails as having defects
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
 
     def test_bytes_parser_does_not_close_file(self):
         with openfile('msg_02.txt', 'rb') as fp:

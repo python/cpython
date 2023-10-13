@@ -10,16 +10,10 @@
 #include "pycore_sysmodule.h"     // _PySys_Audit()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
-#include <ctype.h>
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
 #  include <stdlib.h>             // _sys_nerr
-#endif
-
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 /* Forward declarations */
@@ -292,8 +286,10 @@ _PyErr_SetString(PyThreadState *tstate, PyObject *exception,
                  const char *string)
 {
     PyObject *value = PyUnicode_FromString(string);
-    _PyErr_SetObject(tstate, exception, value);
-    Py_XDECREF(value);
+    if (value != NULL) {
+        _PyErr_SetObject(tstate, exception, value);
+        Py_DECREF(value);
+    }
 }
 
 void
@@ -891,7 +887,15 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 PyObject *
 PyErr_SetFromErrnoWithFilename(PyObject *exc, const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        int i = errno;
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+        errno = i;
+    }
     PyObject *result = PyErr_SetFromErrnoWithFilenameObjects(exc, name, NULL);
     Py_XDECREF(name);
     return result;
@@ -988,7 +992,16 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        if ((DWORD)ierr == 0) {
+            ierr = (int)GetLastError();
+        }
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+    }
     PyObject *ret = PyErr_SetExcFromWindowsErrWithFilenameObjects(exc,
                                                                  ierr,
                                                                  name,
@@ -1012,7 +1025,16 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
     int ierr,
     const char *filename)
 {
-    PyObject *name = filename ? PyUnicode_DecodeFSDefault(filename) : NULL;
+    PyObject *name = NULL;
+    if (filename) {
+        if ((DWORD)ierr == 0) {
+            ierr = (int)GetLastError();
+        }
+        name = PyUnicode_DecodeFSDefault(filename);
+        if (name == NULL) {
+            return NULL;
+        }
+    }
     PyObject *result = PyErr_SetExcFromWindowsErrWithFilenameObjects(
                                                   PyExc_OSError,
                                                   ierr, name, NULL);
@@ -1137,9 +1159,10 @@ _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
     _PyErr_Clear(tstate);
 
     string = PyUnicode_FromFormatV(format, vargs);
-
-    _PyErr_SetObject(tstate, exception, string);
-    Py_XDECREF(string);
+    if (string != NULL) {
+        _PyErr_SetObject(tstate, exception, string);
+        Py_DECREF(string);
+    }
     return NULL;
 }
 
@@ -1485,11 +1508,9 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
     }
 
     /* Explicitly call file.flush() */
-    PyObject *res = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
-    if (!res) {
+    if (_PyFile_Flush(file) < 0) {
         return -1;
     }
-    Py_DECREF(res);
 
     return 0;
 }
@@ -1748,13 +1769,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
         }
     }
     if ((PyObject *)Py_TYPE(exc) != PyExc_SyntaxError) {
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(msg), &tmp) < 0) {
+        int rc = PyObject_HasAttrWithError(exc, &_Py_ID(msg));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             tmp = PyObject_Str(exc);
             if (tmp) {
                 if (PyObject_SetAttr(exc, &_Py_ID(msg), tmp)) {
@@ -1767,13 +1786,11 @@ PyErr_SyntaxLocationObjectEx(PyObject *filename, int lineno, int col_offset,
             }
         }
 
-        if (PyObject_GetOptionalAttr(exc, &_Py_ID(print_file_and_line), &tmp) < 0) {
+        rc = PyObject_HasAttrWithError(exc, &_Py_ID(print_file_and_line));
+        if (rc < 0) {
             _PyErr_Clear(tstate);
         }
-        else if (tmp) {
-            Py_DECREF(tmp);
-        }
-        else {
+        else if (!rc) {
             if (PyObject_SetAttr(exc, &_Py_ID(print_file_and_line), Py_None)) {
                 _PyErr_Clear(tstate);
             }
@@ -1896,7 +1913,3 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
 {
     return _PyErr_ProgramDecodedTextObject(filename, lineno, NULL);
 }
-
-#ifdef __cplusplus
-}
-#endif

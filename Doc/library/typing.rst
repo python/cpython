@@ -462,7 +462,7 @@ contrast, a variable annotated with ``type[C]`` (or
 themselves -- specifically, it will accept the *class object* of ``C``. For
 example::
 
-   a = 3         # Has type ``int```
+   a = 3         # Has type ``int``
    b = int       # Has type ``type[int]``
    c = type(a)   # Also has type ``type[int]``
 
@@ -849,6 +849,31 @@ using ``[]``.
       concat(b"foo", b"bar")  # OK, output has type 'bytes'
       concat("foo", b"bar")   # Error, cannot mix str and bytes
 
+   Note that, despite its name, ``AnyStr`` has nothing to do with the
+   :class:`Any` type, nor does it mean "any string". In particular, ``AnyStr``
+   and ``str | bytes`` are different from each other and have different use
+   cases::
+
+      # Invalid use of AnyStr:
+      # The type variable is used only once in the function signature,
+      # so cannot be "solved" by the type checker
+      def greet_bad(cond: bool) -> AnyStr:
+          return "hi there!" if cond else b"greetings!"
+
+      # The better way of annotating this function:
+      def greet_proper(cond: bool) -> str | bytes:
+          return "hi there!" if cond else b"greetings!"
+
+   .. deprecated-removed:: 3.13 3.18
+      Deprecated in favor of the new :ref:`type parameter syntax <type-params>`.
+      Use ``class A[T: (str, bytes)]: ...`` instead of importing ``AnyStr``. See
+      :pep:`695` for more details.
+
+      In Python 3.16, ``AnyStr`` will be removed from ``typing.__all__``, and
+      deprecation warnings will be emitted at runtime when it is accessed or
+      imported from ``typing``. ``AnyStr`` will be removed from ``typing``
+      in Python 3.18.
+
 .. data:: LiteralString
 
    Special type that includes only literal strings.
@@ -938,13 +963,17 @@ using ``[]``.
 
    For example::
 
-      from typing import Self
+      from typing import Self, reveal_type
 
       class Foo:
           def return_self(self) -> Self:
               ...
               return self
 
+      class SubclassOfFoo(Foo): pass
+
+      reveal_type(Foo().return_self())  # Revealed type is "Foo"
+      reveal_type(SubclassOfFoo().return_self())  # Revealed type is "SubclassOfFoo"
 
    This annotation is semantically equivalent to the following,
    albeit in a more succinct fashion::
@@ -958,21 +987,28 @@ using ``[]``.
               ...
               return self
 
-   In general if something currently follows the pattern of::
-
-      class Foo:
-          def return_self(self) -> "Foo":
-              ...
-              return self
-
-   You should use :data:`Self` as calls to ``SubclassOfFoo.return_self`` would have
-   ``Foo`` as the return type and not ``SubclassOfFoo``.
+   In general, if something returns ``self``, as in the above examples, you
+   should use ``Self`` as the return annotation. If ``Foo.return_self`` was
+   annotated as returning ``"Foo"``, then the type checker would infer the
+   object returned from ``SubclassOfFoo.return_self`` as being of type ``Foo``
+   rather than ``SubclassOfFoo``.
 
    Other common use cases include:
 
    - :class:`classmethod`\s that are used as alternative constructors and return instances
      of the ``cls`` parameter.
    - Annotating an :meth:`~object.__enter__` method which returns self.
+
+   You should not use ``Self`` as the return annotation if the method is not
+   guaranteed to return an instance of a subclass when the class is
+   subclassed::
+
+      class Eggs:
+          # Self would be an incorrect return annotation here,
+          # as the object returned is always an instance of Eggs,
+          # even in subclasses
+          def returns_eggs(self) -> "Eggs":
+              return Eggs()
 
    See :pep:`673` for more details.
 
@@ -1265,7 +1301,7 @@ These can be used as types in annotations. They all support subscription using
    completely disables typechecking for a function or class.
 
    The responsibility of how to interpret the metadata
-   lies with the the tool or library encountering an
+   lies with the tool or library encountering an
    ``Annotated`` annotation. A tool or library encountering an ``Annotated`` type
    can scan through the metadata elements to determine if they are of interest
    (e.g., using :func:`isinstance`).
@@ -2329,9 +2365,6 @@ types.
 
       class XZ(X, Z): pass  # raises TypeError
 
-      T = TypeVar('T')
-      class XT(X, Generic[T]): pass  # raises TypeError
-
    A ``TypedDict`` can be generic::
 
       class Group[T](TypedDict):
@@ -2371,6 +2404,13 @@ types.
          >>> Point3D.__total__
          True
 
+      This attribute reflects *only* the value of the ``total`` argument
+      to the current ``TypedDict`` class, not whether the class is semantically
+      total. For example, a ``TypedDict`` with ``__total__`` set to True may
+      have keys marked with :data:`NotRequired`, or it may inherit from another
+      ``TypedDict`` with ``total=False``. Therefore, it is generally better to use
+      :attr:`__required_keys__` and :attr:`__optional_keys__` for introspection.
+
    .. attribute:: __required_keys__
 
       .. versionadded:: 3.9
@@ -2405,6 +2445,14 @@ types.
          True
 
       .. versionadded:: 3.9
+
+      .. note::
+
+         If ``from __future__ import annotations`` is used or if annotations
+         are given as strings, annotations are not evaluated when the
+         ``TypedDict`` is defined. Therefore, the runtime introspection that
+         ``__required_keys__`` and ``__optional_keys__`` rely on may not work
+         properly, and the values of the attributes may be incorrect.
 
    See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
@@ -3688,3 +3736,7 @@ convenience. This is subject to change, and not all deprecations are listed.
      - 3.13
      - 3.15
      - :gh:`106309`
+   * - :data:`typing.AnyStr`
+     - 3.13
+     - 3.18
+     - :gh:`105578`

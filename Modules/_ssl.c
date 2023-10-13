@@ -26,6 +26,8 @@
 #define OPENSSL_NO_DEPRECATED 1
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _PyIsSelectable_fd()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 /* Include symbols from _socket module */
@@ -666,6 +668,10 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     errstr = "Some I/O error occurred";
                 }
             } else {
+                if (ERR_GET_LIB(e) == ERR_LIB_SSL &&
+                        ERR_GET_REASON(e) == SSL_R_CERTIFICATE_VERIFY_FAILED) {
+                    type = state->PySSLCertVerificationErrorObject;
+                }
                 p = PY_SSL_ERROR_SYSCALL;
             }
             break;
@@ -3909,8 +3915,8 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -3930,8 +3936,8 @@ _ssl__SSLContext_load_cert_chain_impl(PySSLContext *self, PyObject *certfile,
             /* the password callback has already set the error information */
         }
         else if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrno(PyExc_OSError);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -4160,8 +4166,8 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         PySSL_END_ALLOW_THREADS
         if (r != 1) {
             if (errno != 0) {
-                ERR_clear_error();
                 PyErr_SetFromErrno(PyExc_OSError);
+                ERR_clear_error();
             }
             else {
                 _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -4208,8 +4214,8 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
     PySSL_END_ALLOW_THREADS
     if (dh == NULL) {
         if (errno != 0) {
-            ERR_clear_error();
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, filepath);
+            ERR_clear_error();
         }
         else {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
@@ -5985,7 +5991,7 @@ sslmodule_init_constants(PyObject *m)
 #define addbool(m, key, value) \
     do { \
         PyObject *bool_obj = (value) ? Py_True : Py_False; \
-        PyModule_AddObject((m), (key), Py_NewRef(bool_obj)); \
+        PyModule_AddObjectRef((m), (key), bool_obj); \
     } while (0)
 
     addbool(m, "HAS_SNI", 1);

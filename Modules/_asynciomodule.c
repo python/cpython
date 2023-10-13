@@ -3,12 +3,13 @@
 #endif
 
 #include "Python.h"
+#include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime_init.h"  // _Py_ID()
-#include "structmember.h"         // PyMemberDef
+
 #include <stddef.h>               // offsetof()
 
 
@@ -529,7 +530,7 @@ future_init(FutureObj *fut, PyObject *loop)
     }
     if (is_true && !_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
         /* Only try to capture the traceback if the interpreter is not being
-           finalized.  The original motivation to add a `_Py_IsFinalizing()`
+           finalized.  The original motivation to add a `Py_IsFinalizing()`
            call was to prevent SIGSEGV when a Future is created in a __del__
            method, which is called during the interpreter shutdown and the
            traceback module is already unloaded.
@@ -815,7 +816,7 @@ FutureObj_clear(FutureObj *fut)
     Py_CLEAR(fut->fut_source_tb);
     Py_CLEAR(fut->fut_cancel_msg);
     Py_CLEAR(fut->fut_cancelled_exc);
-    _PyObject_ClearManagedDict((PyObject *)fut);
+    PyObject_ClearManagedDict((PyObject *)fut);
     return 0;
 }
 
@@ -833,7 +834,7 @@ FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 
@@ -1398,7 +1399,8 @@ FutureObj_get_state(FutureObj *fut, void *Py_UNUSED(ignored))
     default:
         assert (0);
     }
-    return Py_XNewRef(ret);
+    assert(_Py_IsImmortal(ret));
+    return ret;
 }
 
 static PyObject *
@@ -2179,7 +2181,7 @@ TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
     Py_VISIT(fut->fut_source_tb);
     Py_VISIT(fut->fut_cancel_msg);
     Py_VISIT(fut->fut_cancelled_exc);
-    _PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
+    PyObject_VisitManagedDict((PyObject *)fut, visit, arg);
     return 0;
 }
 

@@ -897,7 +897,7 @@ ast_type_reduce(PyObject *self, PyObject *unused)
 }
 
 static PyMemberDef ast_type_members[] = {
-    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(AST_object, dict), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1074,7 +1074,7 @@ static int obj2ast_int(struct ast_state* Py_UNUSED(state), PyObject* obj, int* o
         return 1;
     }
 
-    i = _PyLong_AsInt(obj);
+    i = PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
@@ -1206,6 +1206,9 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("return -1;", 2)
         self.emit('}', 1)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
+        self.emit("return -1;", 2)
+        self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_OPTIMIZED_AST) < 0) {', 1)
         self.emit("return -1;", 2)
         self.emit('}', 1)
         for dfn in mod.dfns:
@@ -1393,13 +1396,13 @@ PyObject* PyAST_mod2obj(mod_ty t)
 
     int starting_recursion_depth;
     /* Be careful here to prevent overflow. */
-    int COMPILER_STACK_FRAME_SCALE = 3;
+    int COMPILER_STACK_FRAME_SCALE = 2;
     PyThreadState *tstate = _PyThreadState_GET();
     if (!tstate) {
         return 0;
     }
-    state->recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    state->recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state->recursion_depth = starting_recursion_depth;
 
@@ -1542,7 +1545,6 @@ def generate_module_def(mod, metadata, f, internal_h):
         #include "pycore_ceval.h"         // _Py_EnterRecursiveCall
         #include "pycore_interp.h"        // _PyInterpreterState.ast
         #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-        #include "structmember.h"
         #include <stddef.h>
 
         // Forward declaration
@@ -1583,7 +1585,7 @@ def write_header(mod, metadata, f):
         #  error "this header requires Py_BUILD_CORE define"
         #endif
 
-        #include "pycore_asdl.h"
+        #include "pycore_asdl.h"          // _ASDL_SEQ_HEAD
 
     """).lstrip())
 

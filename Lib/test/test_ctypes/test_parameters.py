@@ -157,7 +157,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         # TypeError: has no from_param method
         self.assertRaises(TypeError, setattr, func, "argtypes", (object,))
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return None
 
@@ -165,7 +165,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertEqual(func(None), None)
         self.assertEqual(func(object()), None)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 return obj
 
@@ -174,7 +174,7 @@ class SimpleTypesTestCase(unittest.TestCase):
         self.assertRaises(ArgumentError, func, object())
         self.assertEqual(func(c_void_p(42)), 42)
 
-        class Adapter(object):
+        class Adapter:
             def from_param(cls, obj):
                 raise ValueError(obj)
 

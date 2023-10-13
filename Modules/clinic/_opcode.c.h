@@ -3,10 +3,9 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
 
 PyDoc_STRVAR(_opcode_stack_effect__doc__,
 "stack_effect($module, opcode, oparg=None, /, *, jump=None)\n"
@@ -61,7 +60,7 @@ _opcode_stack_effect(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -135,7 +134,7 @@ _opcode_is_valid(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -198,7 +197,7 @@ _opcode_has_arg(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -261,7 +260,7 @@ _opcode_has_const(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -324,7 +323,7 @@ _opcode_has_name(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -387,7 +386,7 @@ _opcode_has_jump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -455,7 +454,7 @@ _opcode_has_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -518,7 +517,7 @@ _opcode_has_local(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -581,7 +580,7 @@ _opcode_has_exc(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     if (!args) {
         goto exit;
     }
-    opcode = _PyLong_AsInt(args[0]);
+    opcode = PyLong_AsInt(args[0]);
     if (opcode == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -612,4 +611,60 @@ _opcode_get_specialization_stats(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _opcode_get_specialization_stats_impl(module);
 }
-/*[clinic end generated code: output=e507bf14fb2796f8 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_opcode_get_nb_ops__doc__,
+"get_nb_ops($module, /)\n"
+"--\n"
+"\n"
+"Return array of symbols of binary ops.\n"
+"\n"
+"Indexed by the BINARY_OP oparg value.");
+
+#define _OPCODE_GET_NB_OPS_METHODDEF    \
+    {"get_nb_ops", (PyCFunction)_opcode_get_nb_ops, METH_NOARGS, _opcode_get_nb_ops__doc__},
+
+static PyObject *
+_opcode_get_nb_ops_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_nb_ops(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_nb_ops_impl(module);
+}
+
+PyDoc_STRVAR(_opcode_get_intrinsic1_descs__doc__,
+"get_intrinsic1_descs($module, /)\n"
+"--\n"
+"\n"
+"Return a list of names of the unary intrinsics.");
+
+#define _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF    \
+    {"get_intrinsic1_descs", (PyCFunction)_opcode_get_intrinsic1_descs, METH_NOARGS, _opcode_get_intrinsic1_descs__doc__},
+
+static PyObject *
+_opcode_get_intrinsic1_descs_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_intrinsic1_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_intrinsic1_descs_impl(module);
+}
+
+PyDoc_STRVAR(_opcode_get_intrinsic2_descs__doc__,
+"get_intrinsic2_descs($module, /)\n"
+"--\n"
+"\n"
+"Return a list of names of the binary intrinsics.");
+
+#define _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF    \
+    {"get_intrinsic2_descs", (PyCFunction)_opcode_get_intrinsic2_descs, METH_NOARGS, _opcode_get_intrinsic2_descs__doc__},
+
+static PyObject *
+_opcode_get_intrinsic2_descs_impl(PyObject *module);
+
+static PyObject *
+_opcode_get_intrinsic2_descs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _opcode_get_intrinsic2_descs_impl(module);
+}
+/*[clinic end generated code: output=d608239a4c7a05a1 input=a9049054013a1b77]*/

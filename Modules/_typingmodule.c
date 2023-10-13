@@ -40,7 +40,7 @@ static PyMethodDef typing_methods[] = {
 };
 
 PyDoc_STRVAR(typing_doc,
-"Accelerators for the typing module.\n");
+"Primitives and accelerators for the typing module.\n");
 
 static int
 _typing_exec(PyObject *m)

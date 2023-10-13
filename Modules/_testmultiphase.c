@@ -383,32 +383,20 @@ static int execfunc(PyObject *m)
 
     /* Add a custom type */
     temp = PyType_FromSpec(&Example_Type_spec);
-    if (temp == NULL) {
-        goto fail;
-    }
-    if (PyModule_AddObject(m, "Example", temp) != 0) {
-        Py_DECREF(temp);
+    if (PyModule_Add(m, "Example", temp) != 0) {
         goto fail;
     }
 
 
     /* Add an exception type */
     temp = PyErr_NewException("_testimportexec.error", NULL, NULL);
-    if (temp == NULL) {
-        goto fail;
-    }
-    if (PyModule_AddObject(m, "error", temp) != 0) {
-        Py_DECREF(temp);
+    if (PyModule_Add(m, "error", temp) != 0) {
         goto fail;
     }
 
     /* Add Str */
     temp = PyType_FromSpec(&Str_Type_spec);
-    if (temp == NULL) {
-        goto fail;
-    }
-    if (PyModule_AddObject(m, "Str", temp) != 0) {
-        Py_DECREF(temp);
+    if (PyModule_Add(m, "Str", temp) != 0) {
         goto fail;
     }
 
@@ -857,11 +845,7 @@ meth_state_access_exec(PyObject *m)
     }
 
     temp = PyType_FromModuleAndSpec(m, &StateAccessType_spec, NULL);
-    if (temp == NULL) {
-        return -1;
-    }
-    if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
-        Py_DECREF(temp);
+    if (PyModule_Add(m, "StateAccessType", temp) != 0) {
         return -1;
     }
 
