@@ -2758,6 +2758,8 @@ class DummyPathTest(unittest.TestCase):
             if root == self.sub2_path:
                 self.assertIn("link", dirs)
                 break
+        else:
+            self.fail("symlink not found")
 
     def test_walk_above_recursion_limit(self):
         recursion_limit = 40
