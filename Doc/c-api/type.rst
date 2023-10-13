@@ -504,15 +504,6 @@ The following functions and structs are used to create
         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
         under the :ref:`limited API <limited-c-api>`.
 
-     .. versionchanged:: 3.12
-        Uses of :c:member:`~PyTypeObject.tp_weaklistoffset` and
-        :c:member:`~PyTypeObject.tp_dictoffset` should now be avoided in favor
-        of the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` and
-        :c:macro:`Py_TPFLAGS_MANAGED_DICT` flags, if at all possible.
-        For cases where it's not possible (e.g. to support older versions
-        of Python), use the previous approach documented in
-        :ref:`PyMemberDef <pymemberdef-offsets>`.
-
    .. c:member:: void *pfunc
 
       The desired value of the slot. In most cases, this is a pointer
