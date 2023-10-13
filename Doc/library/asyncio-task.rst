@@ -798,8 +798,7 @@ Timeouts
       Removed the *loop* parameter.
 
    .. versionchanged:: 3.11
-      Changed in version 3.11: Raises builtin :exc:`TimeoutError`
-      instead of :exc:`asyncio.TimeoutError`.
+      Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
 Waiting Primitives
