@@ -1764,7 +1764,7 @@ long_to_decimal_string_internal(PyObject *aa,
     digit *pout, *pin, rem, tenpow;
     int negative;
     int d;
-    int kind;
+    int kind = -1;
 
     a = (PyLongObject *)aa;
     if (a == NULL || !PyLong_Check(a)) {
@@ -1935,6 +1935,7 @@ long_to_decimal_string_internal(PyObject *aa,
     } while (0)
 
     /* fill the string right-to-left */
+    assert (kind > 0);
     if (bytes_writer) {
         char *p = *bytes_str + strlen;
         WRITE_DIGITS(p);
@@ -1993,7 +1994,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
     PyObject *v = NULL;
     Py_ssize_t sz;
     Py_ssize_t size_a;
-    int kind;
+    int kind = -1;
     int negative;
     int bits;
 
@@ -2112,6 +2113,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
             assert(p == (TYPE*)PyUnicode_DATA(v));                      \
     } while (0)
 
+    assert (kind > 0);
     if (bytes_writer) {
         char *p = *bytes_str + sz;
         WRITE_DIGITS(p);
