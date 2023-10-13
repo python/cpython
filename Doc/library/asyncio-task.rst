@@ -764,9 +764,6 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    .. _asyncio_example_waitfor:
 
    Example::
@@ -796,6 +793,9 @@ Timeouts
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
 Waiting Primitives
