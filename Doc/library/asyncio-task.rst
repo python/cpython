@@ -767,9 +767,6 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    .. _asyncio_example_waitfor:
 
    Example::
