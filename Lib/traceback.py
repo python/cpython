@@ -481,7 +481,7 @@ class StackSummary(list):
         """
         row = []
         if frame_summary.filename.startswith("<python-input"):
-            row.append('  REPL, line {}, in {}\n'.format(
+            row.append('  File "<stdin>", line {}, in {}\n'.format(
                 frame_summary.lineno, frame_summary.name))
         else:
             row.append('  File "{}", line {}, in {}\n'.format(
