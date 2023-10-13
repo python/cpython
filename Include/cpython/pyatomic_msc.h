@@ -916,7 +916,7 @@ static inline void
 _Py_atomic_store_int_release(int *obj, int value)
 {
 #if defined(_M_X64) || defined(_M_IX86)
-    *(int * volatile *)obj = value;
+    *(int volatile *)obj = value;
 #elif defined(_M_ARM64)
     __stlr32((unsigned __int32 volatile *)obj, (int)value);
 #else
