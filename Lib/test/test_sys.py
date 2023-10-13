@@ -533,9 +533,6 @@ class SysModuleTest(unittest.TestCase):
         g_raised.wait(timeout=support.LONG_TIMEOUT)
 
         try:
-            # At this point, t has finished its entered_g.set(), although it's
-            # impossible to guess whether it's still on that line or has moved on
-            # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
 
