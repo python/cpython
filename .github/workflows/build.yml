@@ -399,7 +399,6 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: sudo make install
     - name: Tests
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run /usr/local/bin/python3 -m test
 
   build_ubuntu_ssltests:
