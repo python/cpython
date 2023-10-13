@@ -183,11 +183,11 @@ class RecvChannel(_ChannelEnd):
             timeout = int(timeout)
             if timeout < 0:
                 raise ValueError(f'timeout value must be non-negative')
-            end = time.now() + timeout
+            end = time.time() + timeout
         obj = _channels.recv(self._id, _sentinel)
         while obj is _sentinel:
             time.sleep(_delay)
-            if timeout is not None and time.now() >= end:
+            if timeout is not None and time.time() >= end:
                 raise TimeoutError
             obj = _channels.recv(self._id, _sentinel)
         return obj
