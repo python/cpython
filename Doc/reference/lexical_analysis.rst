@@ -657,12 +657,12 @@ is more easily recognized as broken.)  It is also important to note that the
 escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
-   .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
+.. versionchanged:: 3.6
+   Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
 
-   .. versionchanged:: 3.12
-      Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
-      Python version they will be eventually a :exc:`SyntaxError`.
+.. versionchanged:: 3.12
+   Unrecognized escape sequences produce a :exc:`SyntaxWarning`. In a future
+   Python version they will be eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string

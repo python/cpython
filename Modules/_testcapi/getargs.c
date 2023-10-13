@@ -15,9 +15,9 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     const char *sub_format;
     PyObject *sub_keywords;
 
-    double buffers[8][4]; /* double ensures alignment where necessary */
-    PyObject *converted[8];
-    char *keywords[8 + 1]; /* space for NULL at end */
+#define MAX_PARAMS 8
+    double buffers[MAX_PARAMS][4]; /* double ensures alignment where necessary */
+    char *keywords[MAX_PARAMS + 1]; /* space for NULL at end */
 
     PyObject *return_value = NULL;
 
@@ -37,11 +37,10 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
     }
 
     memset(buffers, 0, sizeof(buffers));
-    memset(converted, 0, sizeof(converted));
     memset(keywords, 0, sizeof(keywords));
 
     Py_ssize_t size = PySequence_Fast_GET_SIZE(sub_keywords);
-    if (size > 8) {
+    if (size > MAX_PARAMS) {
         PyErr_SetString(PyExc_ValueError,
             "parse_tuple_and_keywords: too many keywords in sub_keywords");
         goto exit;
@@ -49,29 +48,56 @@ parse_tuple_and_keywords(PyObject *self, PyObject *args)
 
     for (Py_ssize_t i = 0; i < size; i++) {
         PyObject *o = PySequence_Fast_GET_ITEM(sub_keywords, i);
-        if (!PyUnicode_FSConverter(o, (void *)(converted + i))) {
+        if (PyUnicode_Check(o)) {
+            keywords[i] = (char *)PyUnicode_AsUTF8(o);
+            if (keywords[i] == NULL) {
+                goto exit;
+            }
+        }
+        else if (PyBytes_Check(o)) {
+            keywords[i] = PyBytes_AS_STRING(o);
+        }
+        else {
             PyErr_Format(PyExc_ValueError,
                 "parse_tuple_and_keywords: "
-                "could not convert keywords[%zd] to narrow string", i);
+                "keywords must be str or bytes", i);
             goto exit;
         }
-        keywords[i] = PyBytes_AS_STRING(converted[i]);
     }
 
+    assert(MAX_PARAMS == 8);
     int result = PyArg_ParseTupleAndKeywords(sub_args, sub_kwargs,
         sub_format, keywords,
         buffers + 0, buffers + 1, buffers + 2, buffers + 3,
         buffers + 4, buffers + 5, buffers + 6, buffers + 7);
 
     if (result) {
-        return_value = Py_NewRef(Py_None);
+        int objects_only = 1;
+        for (const char *f = sub_format; *f; f++) {
+            if (Py_ISALNUM(*f) && strchr("OSUY", *f) == NULL) {
+                objects_only = 0;
+                break;
+            }
+        }
+        if (objects_only) {
+            return_value = PyTuple_New(size);
+            if (return_value == NULL) {
+                goto exit;
+            }
+            for (Py_ssize_t i = 0; i < size; i++) {
+                PyObject *arg = *(PyObject **)(buffers + i);
+                if (arg == NULL) {
+                    arg = Py_None;
+                }
+                PyTuple_SET_ITEM(return_value, i, Py_NewRef(arg));
+            }
+        }
+        else {
+            return_value = Py_NewRef(Py_None);
+        }
     }
 
 exit:
-    size = sizeof(converted) / sizeof(converted[0]);
-    for (Py_ssize_t i = 0; i < size; i++) {
-        Py_XDECREF(converted[i]);
-    }
     return return_value;
 }
 

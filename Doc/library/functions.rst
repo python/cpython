@@ -1158,8 +1158,8 @@ are always available.  They are listed here in alphabetical order.
 
   See also :func:`format` for more information.
 
-   .. index::
-      single: file object; open() built-in function
+.. index::
+   single: file object; open() built-in function
 
 .. function:: open(file, mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True, opener=None)
 
@@ -1360,28 +1360,28 @@ are always available.  They are listed here in alphabetical order.
 
    .. versionchanged:: 3.3
 
-         * The *opener* parameter was added.
-         * The ``'x'`` mode was added.
-         * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
-         * :exc:`FileExistsError` is now raised if the file opened in exclusive
-           creation mode (``'x'``) already exists.
+      * The *opener* parameter was added.
+      * The ``'x'`` mode was added.
+      * :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
+      * :exc:`FileExistsError` is now raised if the file opened in exclusive
+        creation mode (``'x'``) already exists.
 
    .. versionchanged:: 3.4
 
-         * The file is now non-inheritable.
+      * The file is now non-inheritable.
 
    .. versionchanged:: 3.5
 
-         * If the system call is interrupted and the signal handler does not raise an
-           exception, the function now retries the system call instead of raising an
-           :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
-         * The ``'namereplace'`` error handler was added.
+      * If the system call is interrupted and the signal handler does not raise an
+        exception, the function now retries the system call instead of raising an
+        :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+      * The ``'namereplace'`` error handler was added.
 
    .. versionchanged:: 3.6
 
-         * Support added to accept objects implementing :class:`os.PathLike`.
-         * On Windows, opening a console buffer may return a subclass of
-           :class:`io.RawIOBase` other than :class:`io.FileIO`.
+      * Support added to accept objects implementing :class:`os.PathLike`.
+      * On Windows, opening a console buffer may return a subclass of
+        :class:`io.RawIOBase` other than :class:`io.FileIO`.
 
    .. versionchanged:: 3.11
       The ``'U'`` mode has been removed.
