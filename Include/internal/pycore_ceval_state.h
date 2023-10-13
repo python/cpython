@@ -19,6 +19,7 @@ struct _pending_call {
     _Py_pending_call_func func;
     void *arg;
     int flags;
+    int from_array;
     struct _pending_call *next;
 };
 
