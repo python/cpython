@@ -395,7 +395,7 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
     - run: env
-    - run: ldd /usr/local/bin/python3
+    - run: ldd ${{ env.CPYTHON_BUILDDIR }}/python
     - name: Install CPython to the system
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: sudo make install
