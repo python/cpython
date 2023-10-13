@@ -936,7 +936,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.call_soon(callback)
 
         # Set up the custom event loop
-        self.loop.run_forever_setup()
+        self.loop._run_forever_setup()
 
         # Confirm the loop has been started
         self.assertEqual(asyncio.get_running_loop(), self.loop)
@@ -947,7 +947,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop._run_once()
 
         # Clean up the event loop
-        self.loop.run_forever_cleanup()
+        self.loop._run_forever_cleanup()
 
         # Confirm the loop has been cleaned up
         with self.assertRaises(RuntimeError):

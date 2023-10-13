@@ -314,13 +314,13 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
             proactor = IocpProactor()
         super().__init__(proactor)
 
-    def run_forever_setup(self):
+    def _run_forever_setup(self):
         assert self._self_reading_future is None
         self.call_soon(self._loop_self_reading)
-        super().run_forever_setup()
+        super()._run_forever_setup()
 
-    def run_forever_cleanup(self):
-        super().run_forever_cleanup()
+    def _run_forever_cleanup(self):
+        super()._run_forever_cleanup()
         if self._self_reading_future is not None:
             ov = self._self_reading_future._ov
             self._self_reading_future.cancel()

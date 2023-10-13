@@ -603,12 +603,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
 
-    def run_forever_setup(self):
+    def _run_forever_setup(self):
         """Prepare the run loop to process events.
 
-        This method should be used as part of the ``run_forever()``
-        implementation in a custom event loop subclass (e.g., integrating a GUI
-        event loop with Python's event loop).
+        This method exists so that custom custom event loop subclasses (e.g., event loops
+        that integrate a GUI event loop with Python's event loop) have access to all the
+        loop setup logic.
         """
         self._check_closed()
         self._check_running()
@@ -623,12 +623,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         events._set_running_loop(self)
 
-    def run_forever_cleanup(self):
+    def _run_forever_cleanup(self):
         """Clean up after an event loop finishes the looping over events.
 
-        This method should be used as part of the ``run_forever()``
-        implementation in a custom event loop subclass (e.g., integrating a GUI
-        event loop with Python's event loop).
+        This method exists so that custom custom event loop subclasses (e.g., event loops
+        that integrate a GUI event loop with Python's event loop) have access to all the
+        loop cleanup logic.
         """
         self._stopping = False
         self._thread_id = None
@@ -642,13 +642,13 @@ class BaseEventLoop(events.AbstractEventLoop):
     def run_forever(self):
         """Run until stop() is called."""
         try:
-            self.run_forever_setup()
+            self._run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
                     break
         finally:
-            self.run_forever_cleanup()
+            self._run_forever_cleanup()
 
     def run_until_complete(self, future):
         """Run until the Future is done.

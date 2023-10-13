@@ -210,56 +210,6 @@ Running and stopping the loop
    .. versionchanged:: 3.12
       Added the *timeout* parameter.
 
-.. method:: loop.run_forever_setup()
-
-   Set up an event loop so that it is ready to start actively looping and
-   processing events.
-
-   .. note::
-
-      End users should not use this method directly. This method is only needed
-      if you are writing your own ``EventLoop`` subclass, with a customized
-      event processing loop. For example, if you are integrating Python's
-      asyncio event loop with a GUI library's event loop, you may need to write
-      a customized :meth:`loop.run_forever` implementation that accommodates
-      both CPython's event loop and the GUI library's event loop. You can use
-      this method to ensure that Python's event loop is correctly configured and
-      ready to start processing events.
-
-      The specific details of a customized ``EventLoop`` subclass will depend
-      on the GUI library you are integrating with. However, the broad structure
-      of a custom ``EventLoop`` would look something like::
-
-         class CustomGUIEventLoop(EventLoop):
-            def run_forever(self):
-               try:
-                  self.run_forever_setup()
-                  gui_library.setup()
-                  while True:
-                     self._run_once()
-                     gui_library.process_events()
-                     if self._stopping:
-                        break
-               finally:
-                  self.run_forever_cleanup()
-                  gui_library.cleanup()
-
-   .. versionadded:: 3.13
-
-.. method:: loop.run_forever_cleanup()
-
-   Perform any cleanup necessary at the conclusion of event processing to ensure
-   that the event loop has been fully shut down.
-
-   .. note::
-
-      End users should not use this method directly. This method is only needed
-      if you are writing your own ``EventLoop`` subclass, with a customized
-      inner event processing loop. See :meth:`loop.run_forever_setup()` for
-      details on why and how to use this method.
-
-   .. versionadded:: 3.13
-
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
 
