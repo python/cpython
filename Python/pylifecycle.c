@@ -1076,6 +1076,7 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 }
 
 
+#ifdef Py_DEBUG
 static void
 run_presite(PyThreadState *tstate)
 {
@@ -1102,6 +1103,7 @@ run_presite(PyThreadState *tstate)
     }
 }
 }
+#endif
 
 
 static PyStatus
