@@ -495,12 +495,16 @@ class _FuncBuilder:
         # The locals they use.
         local_vars = ','.join(self.locals.keys())
 
-        # The names of all of the functions.
-        return_names = ','.join(self.names)
+        # The names of all of the functions, used for the return value of the
+        # outer function.  Need to handle the 0-tuple specially.
+        if len(self.names) == 0:
+            return_names = '()'
+        else:
+            return_names  =f'({",".join(self.names)},)'
 
-        # txt is the entire function we're going to execute, including the bodies
-        # of the functions we're defining.
-        # Here's a greatly simplified version:
+        # txt is the entire function we're going to execute, including the
+        # bodies of the functions we're defining.  Here's a greatly simplified
+        # version:
         # def create_fn():
         #  def __init__(self, x, y):
         #   self.x = x
@@ -508,18 +512,18 @@ class _FuncBuilder:
         #  def __repr__(self):
         #   return f"cls(x={self.x!r},y={self.y!r})"
         # return __init__,__repr__
-        txt = f"def create_fn({local_vars}):\n{fns_src}\n return {return_names}"
 
+        txt = f"def create_fn({local_vars}):\n{fns_src}\n return {return_names}"
         ns = {}
         exec(txt, self.globals, ns)
         fns = ns['create_fn'](**self.locals)
 
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
+            fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if self.unconditional_adds.get(name, False):
-                pass
+                setattr(cls, name, fn)
             else:
-                fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
                 already_exists = _set_new_attribute(cls, name, fn)
 
                 # See if it's an error to overwrite this particular function.
@@ -681,16 +685,6 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
                         return_type=None)
 
 
-def _repr_fn(fields, func_builder):
-    func_builder.add_fn('__repr__',
-                        ('self',),
-                        ['return f"{self.__class__.__qualname__}(' +
-                         ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                    for f in fields]) +
-                        ')"'])
-    # TODO return _recursive_repr(fn)
-
-
 def _frozen_get_del_attr(cls, fields, func_builder):
     locals = {'cls': cls,
               'FrozenInstanceError': FrozenInstanceError}
@@ -712,20 +706,6 @@ def _frozen_get_del_attr(cls, fields, func_builder):
                          f'super(cls, self).__delattr__(name)'),
                         locals=locals,
                         overwrite_error=True)
-
-
-def _cmp_fn(name, op, self_tuple, other_tuple, func_builder, overwrite_error):
-    # Create a comparison function.  If the fields in the object are
-    # named 'x' and 'y', then self_tuple is the string
-    # '(self.x,self.y)' and other_tuple is the string
-    # '(other.x,other.y)'.
-
-    func_builder.add_fn(name,
-                        ('self', 'other'),
-                        [ 'if other.__class__ is self.__class__:',
-                         f' return {self_tuple}{op}{other_tuple}',
-                         'return NotImplemented'],
-                         overwrite_error=overwrite_error)
 
 
 def _is_classvar(a_type, typing):
@@ -919,13 +899,13 @@ def _set_new_attribute(cls, name, value):
 def _hash_set_none(cls, fields, func_builder):
     # It's sort of a hack that I'm setting this here, instead of at
     # func_builder.add_fns_to_class time, but since this is an exceptional case
-    # (it's not setting an attribute to a function, but to a known value), just
-    # do it directly here.  I might come to regret this.
+    # (it's not setting an attribute to a function, but to a scalar value),
+    # just do it directly here.  I might come to regret this.
     cls.__hash__ = None
 
 def _hash_add(cls, fields, func_builder):
     flds = [f for f in fields if (f.compare if f.hash is None else f.hash)]
-    self_tuple = _tuple_str('self', fields)
+    self_tuple = _tuple_str('self', flds)
     func_builder.add_fn('__hash__',
                         ('self',),
                         [f'return hash({self_tuple})'],
@@ -1110,7 +1090,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
      kw_only_init_fields) = _fields_in_init_order(all_init_fields)
 
     func_builder = _FuncBuilder(globals)
-    
+
     if init:
         # Does this class have a post-init function?
         has_post_init = hasattr(cls, _POST_INIT_NAME)
@@ -1128,15 +1108,25 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                  func_builder,
                  slots,
                  )
+
     _set_new_attribute(cls, '__replace__', _replace)
-    
+
     # Get the fields as a list, and include only real fields.  This is
     # used in all of the following methods.
     field_list = [f for f in fields.values() if f._field_type is _FIELD]
 
     if repr:
         flds = [f for f in field_list if f.repr]
-        _repr_fn(flds, func_builder)
+        func_builder.add_fn('__repr__',
+                            ('self',),
+                            [' def repr(self):',
+                             '  return f"{self.__class__.__qualname__}(' +
+                                 ', '.join([f"{f.name}={{self.{f.name}!r}}"
+                                       for f in flds]) + ')"',
+                             ' return _recursive_repr(repr)(self)',
+                            ],
+                            locals={'_recursive_repr': _recursive_repr}
+                            )
 
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
@@ -1144,12 +1134,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         cmp_fields = (field for field in field_list if field.compare)
         terms = [f'self.{field.name}==other.{field.name}' for field in cmp_fields]
         field_comparisons = ' and '.join(terms) or 'True'
-        body =  (f'if other.__class__ is self.__class__:',
-                 f' return {field_comparisons}',
-                 f'return NotImplemented')
         func_builder.add_fn('__eq__',
                             ('self', 'other'),
-                            body)
+                            ( 'if other.__class__ is self.__class__:',
+                             f' return {field_comparisons}',
+                             f'return NotImplemented'))
 
     if order:
         # Create and set the ordering methods.
@@ -1161,8 +1150,16 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                          ('__gt__', '>'),
                          ('__ge__', '>='),
                          ]:
-            _cmp_fn(name, op, self_tuple, other_tuple, func_builder,
-                    overwrite_error='Consider using functools.total_ordering')
+            # Create a comparison function.  If the fields in the object are
+            # named 'x' and 'y', then self_tuple is the string
+            # '(self.x,self.y)' and other_tuple is the string
+            # '(other.x,other.y)'.
+            func_builder.add_fn(name,
+                            ('self', 'other'),
+                            [ 'if other.__class__ is self.__class__:',
+                             f' return {self_tuple}{op}{other_tuple}',
+                              'return NotImplemented'],
+                            overwrite_error='Consider using functools.total_ordering')
 
     if frozen:
         _frozen_get_del_attr(cls, field_list, func_builder)
