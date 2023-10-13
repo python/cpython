@@ -1381,8 +1381,8 @@ class ThreadedChildWatcher(AbstractChildWatcher):
             thread.join(timeout)
 
         # Clear references to terminated threads
-        self.threads[:] = [thread for thread in list(self._threads.values())
-                           if thread.is_alive() and not thread.daemon]
+        self._threads[:] = [thread for thread in list(self._threads.values())
+                            if thread.is_alive() and not thread.daemon]
 
     def __enter__(self):
         return self
