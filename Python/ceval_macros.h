@@ -70,7 +70,6 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
-if (0) fprintf(stderr, "-- %s frame=%p\n", _PyOpcode_OpName[op], frame); \
         frame->instr_ptr = next_instr++; \
         frame->next_instr_offset = 0; \
     } while(0)
@@ -159,8 +158,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
  * for advancing to the next instruction, taking into account cache entries
  * and skipped instructions.
  */
-#define JUMPBY(x)       next_instr += (x);
-#define SKIP_OVER(x)    next_instr += (x);
+#define JUMPBY(x)       (next_instr += (x));
+#define SKIP_OVER(x)    (next_instr += (x));
 
 
 

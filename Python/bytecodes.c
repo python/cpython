@@ -3849,13 +3849,13 @@ dummy_func(
 
         inst(INSTRUMENTED_JUMP_FORWARD, ( -- )) {
             _Py_CODEUNIT *here = frame->instr_ptr;
-            INSTRUMENTED_JUMP(here, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(here, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
             _Py_CODEUNIT *here = frame->instr_ptr;
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(here, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(here, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
