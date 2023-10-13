@@ -657,7 +657,6 @@ dummy_func(
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->yield_offset = 0;
             assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - frame->instr_ptr);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             DISPATCH_INLINED(new_frame);
@@ -795,7 +794,6 @@ dummy_func(
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
-            frame->yield_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -822,7 +820,6 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -847,7 +844,6 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -985,7 +981,6 @@ dummy_func(
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
-                frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
                 frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
@@ -1025,7 +1020,6 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
-            frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -1048,9 +1042,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            assert(frame->yield_offset == NEXT_INSTR_OFFSET_FOR_YIELD ||  frame->owner == FRAME_OWNED_BY_CSTACK);
             frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
-            frame->yield_offset = 0;
             goto resume_frame;
         }
 
@@ -1071,9 +1063,7 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            assert(frame->yield_offset == NEXT_INSTR_OFFSET_FOR_YIELD ||  frame->owner == FRAME_OWNED_BY_CSTACK);
             frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
-            frame->yield_offset = 0;
             goto resume_frame;
         }
 
@@ -2691,7 +2681,6 @@ dummy_func(
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
-            frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -3091,7 +3080,6 @@ dummy_func(
         op(_PUSH_FRAME, (new_frame: _PyInterpreterFrame* -- unused)) {
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            frame->yield_offset = 0;
             frame->next_instr_offset = next_instr - frame->instr_ptr;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
@@ -3160,7 +3148,6 @@ dummy_func(
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->yield_offset = 0;
             assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             DISPATCH_INLINED(new_frame);
@@ -3239,7 +3226,6 @@ dummy_func(
                 init_frame->localsplus[i+1] = args[i];
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->yield_offset = 0;
             assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             STACK_SHRINK(oparg+2);
@@ -3610,7 +3596,6 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->yield_offset = 0;
                 frame->next_instr_offset = next_instr - frame->instr_ptr;
                 DISPATCH_INLINED(new_frame);
             }
@@ -3707,7 +3692,6 @@ dummy_func(
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->yield_offset = 0;
                     frame->next_instr_offset = next_instr - frame->instr_ptr;
                     DISPATCH_INLINED(new_frame);
                 }
@@ -3781,7 +3765,6 @@ dummy_func(
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            frame->yield_offset = 0;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }

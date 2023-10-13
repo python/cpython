@@ -701,7 +701,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
-    entry_frame.yield_offset = 0;
     entry_frame.next_instr_offset = 0;
     /* Push frame */
     entry_frame.previous = tstate->current_frame;
@@ -739,7 +738,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #define SET_LOCALS_FROM_FRAME() \
     /* Jump back to the last instruction executed... */ \
     next_instr = frame->instr_ptr + frame->next_instr_offset; \
-    frame->next_instr_offset = frame->yield_offset = 0; \
+    frame->next_instr_offset = 0; \
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
@@ -932,7 +931,7 @@ exit_unwind:
     _PyInterpreterFrame *dying = frame;
     frame = tstate->current_frame = dying->previous;
     _PyEval_FrameClearAndPop(tstate, dying);
-    frame->yield_offset = frame->next_instr_offset = 0;
+    frame->next_instr_offset = 0;
     if (frame == &entry_frame) {
         /* Restore previous frame and exit */
         tstate->current_frame = frame->previous;

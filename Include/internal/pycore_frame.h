@@ -61,11 +61,6 @@ typedef struct _PyInterpreterFrame {
     /* The instruction that is currently executing (possibly not started yet). */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    /* The yield_offset determines where a `YIELD_VALUE` should go in the caller,
-     * relative to `instr_ptr`.
-     * It must be set by SEND, SEND_GEN, FOR_ITER_GEN and used by YIELD_VALUE.
-     */
-    uint16_t yield_offset;
     /* The next_instr_offset determines where the next instruction is relative
      * to instr_ptr. It enables us to keep instr_ptr pointing to the current
      * instruction until it is time to begin executing the next one. This is
@@ -136,7 +131,6 @@ _PyFrame_Initialize(
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->next_instr_offset = 0;
-    frame->yield_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
@@ -301,7 +295,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->instr_ptr = _PyCode_CODE(code) + 1;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->next_instr_offset = 0;
-    frame->yield_offset = 0;
     return frame;
 }
 
