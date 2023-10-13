@@ -1,5 +1,6 @@
 
 #include "Python.h"
+#include "pycore_atomic.h"        // _Py_ANNOTATE_RWLOCK_XXXX
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
