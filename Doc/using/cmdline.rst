@@ -1098,7 +1098,7 @@ Debug-mode variables
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
 
-   Need Python configured with the :option:`--with-trace-refs` build option.
+   Needs Python configured with the :option:`--with-trace-refs` build option.
 
 .. envvar:: PYTHONDUMPREFSFILE
 
@@ -1106,7 +1106,7 @@ Debug-mode variables
    after shutting down the interpreter into a file under the path given
    as the value to this environment variable.
 
-   Need Python configured with the :option:`--with-trace-refs` build option.
+   Needs Python configured with the :option:`--with-trace-refs` build option.
 
    .. versionadded:: 3.11
 
@@ -1119,5 +1119,7 @@ Debug-mode variables
 
    See also the :option:`-X presite <-X>` command-line option,
    which takes precedence over this variable.
+
+   Needs Python configured with the :option:`--with-pydebug` build option.
 
    .. versionadded:: 3.13
