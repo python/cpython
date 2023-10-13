@@ -1162,6 +1162,27 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
                           (), {}, '', [42])
 
+    def test_basic(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        self.assertEqual(parse((), {'a': 1}, 'O', ['a']), (1,))
+        self.assertEqual(parse((), {}, '|O', ['a']), (NULL,))
+        self.assertEqual(parse((1, 2), {}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((1,), {'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'a': 1, 'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'b': 2}, '|OO', ['a', 'b']), (NULL, 2))
+
+        with self.assertRaisesRegex(TypeError,
+                "function missing required argument 'a'"):
+            parse((), {}, 'O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "'b' is an invalid keyword argument"):
+            parse((), {'b': 1}, '|O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                fr"argument for function given by name \('a'\) "
+                fr"and position \(1\)"):
+            parse((1,), {'a': 2}, 'O|O', ['a', 'b'])
+
     def test_bad_use(self):
         # Test handling invalid format and keywords in
         # PyArg_ParseTupleAndKeywords()

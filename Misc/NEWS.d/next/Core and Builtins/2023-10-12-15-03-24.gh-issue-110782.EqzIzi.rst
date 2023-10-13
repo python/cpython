@@ -1,2 +1,0 @@
-Fix crash when :class:`typing.TypeVar` is constructed with a keyword
-argument. Patch by Jelle Zijlstra.
