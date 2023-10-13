@@ -55,6 +55,8 @@ LLONG_MAX = 2**63-1
 LLONG_MIN = -2**63
 ULLONG_MAX = 2**64-1
 
+NULL = None
+
 class Index:
     def __index__(self):
         return 99
@@ -1241,6 +1243,27 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
                           (), {}, '', [42])
 
+    def test_basic(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        self.assertEqual(parse((), {'a': 1}, 'O', ['a']), (1,))
+        self.assertEqual(parse((), {}, '|O', ['a']), (NULL,))
+        self.assertEqual(parse((1, 2), {}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((1,), {'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'a': 1, 'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'b': 2}, '|OO', ['a', 'b']), (NULL, 2))
+
+        with self.assertRaisesRegex(TypeError,
+                "function missing required argument 'a'"):
+            parse((), {}, 'O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "'b' is an invalid keyword argument"):
+            parse((), {'b': 1}, '|O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                fr"argument for function given by name \('a'\) "
+                fr"and position \(1\)"):
+            parse((1,), {'a': 2}, 'O|O', ['a', 'b'])
+
     def test_bad_use(self):
         # Test handling invalid format and keywords in
         # PyArg_ParseTupleAndKeywords()
@@ -1268,20 +1291,23 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
     def test_positional_only(self):
         parse = _testcapi.parse_tuple_and_keywords
 
-        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
+        self.assertEqual(parse((1, 2, 3), {}, 'OOO', ['', '', 'a']), (1, 2, 3))
+        self.assertEqual(parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a']), (1, 2, 3))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
-        parse((1,), {}, 'O|OO', ['', '', 'a'])
+        self.assertEqual(parse((1,), {}, 'O|OO', ['', '', 'a']),
+                         (1, NULL, NULL))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
+        self.assertEqual(parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a']),
+                         (1, 2, 3))
         with self.assertRaisesRegex(TypeError,
                r'function takes exactly 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
-        parse((1,), {}, 'O|O$O', ['', '', 'a'])
+        self.assertEqual(parse((1,), {}, 'O|O$O', ['', '', 'a']),
+                         (1, NULL, NULL))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|O$O', ['', '', 'a'])
