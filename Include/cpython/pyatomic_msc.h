@@ -920,7 +920,7 @@ _Py_atomic_store_int_release(int *obj, int value)
 #elif defined(_M_ARM64)
     __stlr32((unsigned __int32 volatile *)obj, (unsigned __int32)value);
 #else
-#  error "no implementation of _Py_atomic_store_ptr_release"
+#  error "no implementation of _Py_atomic_store_int_release"
 #endif
 }
 
@@ -932,7 +932,7 @@ _Py_atomic_load_int_acquire(const int *obj)
 #elif defined(_M_ARM64)
     return (int)__ldar32((unsigned __int32 volatile *)obj);
 #else
-#  error "no implementation of _Py_atomic_load_ptr_acquire"
+#  error "no implementation of _Py_atomic_load_int_acquire"
 #endif
 }
 
