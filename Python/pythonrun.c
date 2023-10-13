@@ -1267,33 +1267,50 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
             PyCompilerFlags *flags, PyArena *arena, PyObject* interactive_src)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject* interactive_filename = NULL;
+    PyObject* interactive_filename = filename;
     if (interactive_src) {
         PyInterpreterState *interp = tstate->interp;
-        interactive_filename = PyUnicode_FromFormat("<python-input-%d>", interp->_interactive_src_count++);
-        // TODO: Maybe we are leaking
-        filename = interactive_filename;
+        interactive_filename = PyUnicode_FromFormat(
+            "<python-input-%d>", interp->_interactive_src_count++
+        );
+        if (interactive_filename == NULL) {
+            return NULL;
+        }
     }
 
-    PyCodeObject *co = _PyAST_Compile(mod, filename, flags, -1, arena);
-    if (co == NULL)
+    PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1, arena);
+    if (co == NULL) {
+        Py_DECREF(interactive_filename);
         return NULL;
+    }
 
     if (interactive_src) {
         PyObject *linecache_module = PyImport_ImportModule("linecache");
 
         if (linecache_module == NULL) {
+            Py_DECREF(co);
+            Py_DECREF(interactive_filename);
             return NULL;
         }
 
         PyObject *print_tb_func = PyObject_GetAttrString(linecache_module, "_register_code");
 
         if (print_tb_func == NULL || !PyCallable_Check(print_tb_func)) {
+            Py_DECREF(co);
+            Py_DECREF(interactive_filename);
             Py_DECREF(linecache_module);
             return NULL;
         }
 
-        PyObject* result = PyObject_CallFunction(print_tb_func, "OOO", interactive_filename, interactive_src, filename);
+        PyObject* result = PyObject_CallFunction(
+            print_tb_func, "OOO",
+            interactive_filename, 
+            interactive_src, 
+            filename
+        );
+
+        Py_DECREF(interactive_filename);
+
         if (!result) {
             Py_DECREF(linecache_module);
             Py_XDECREF(print_tb_func);

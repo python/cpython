@@ -189,7 +189,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input2)
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
-        expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<python-input-1>\')"
+        expected = "(30, None, [\'def foo(x):\\n\', \'    return x + 1\\n\', \'\\n\'], \'<stdin>\')"
         self.assertIn(expected, output, expected)
 
 

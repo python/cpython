@@ -331,8 +331,7 @@ class FrameSummary:
         if self._line is None:
             if self.lineno is None:
                 return None
-            if self._line is None:
-                self._line = linecache.getline(self.filename, self.lineno)
+            self._line = linecache.getline(self.filename, self.lineno)
         return self._line.strip()
 
 
