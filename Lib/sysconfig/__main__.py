@@ -242,4 +242,7 @@ def _main():
 
 
 if __name__ == '__main__':
-    _main()
+    try:
+        _main()
+    except BrokenPipeError:
+        pass
