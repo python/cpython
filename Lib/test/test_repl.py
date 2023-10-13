@@ -130,7 +130,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = process.communicate(user_input)[0]
         self.assertEqual(process.returncode, 0)
         self.assertIn('before close', output)
-    
+
     def test_interactive_traceback_reporting(self):
         user_input = "1 / 0 / 3 / 4"
         p = spawn_repl()
@@ -176,7 +176,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         user_input = dedent("""
         def foo(x):
             return x + 1
-        
+
         def bar(x):
             return foo(x) + 2
         """)
