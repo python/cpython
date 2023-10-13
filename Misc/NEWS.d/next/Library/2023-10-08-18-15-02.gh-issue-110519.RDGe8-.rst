@@ -1,3 +1,0 @@
-Deprecation warning about non-integer number in :mod:`gettext` now alwais
-refers to the line in the user code where gettext function or method is
-used. Previously it could refer to a line in ``gettext`` code.
