@@ -160,6 +160,105 @@ class ThreadRunningTests(BasicThreadTest):
                              f"Exception ignored in thread started by {task!r}")
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
+    def test_join_thread(self):
+        finished = []
+
+        def task():
+            time.sleep(0.05)
+            finished.append(None)
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            thread.join_thread(ident)
+            self.assertEqual(len(finished), 1)
+
+    def test_join_thread_already_exited(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            time.sleep(0.05)
+            thread.join_thread(ident)
+
+    def test_join_non_joinable(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            ident = thread.start_new_thread(task, ())
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                thread.join_thread(ident)
+
+    def test_join_several_times(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            thread.join_thread(ident)
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                thread.join_thread(ident)
+
+    def test_join_from_self(self):
+        errors = []
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def task():
+            ident = thread.get_ident()
+            # Wait for start_new_thread() to return so that the joinable threads
+            # are populated with the ident, otherwise ValueError would be raised
+            # instead.
+            lock.acquire()
+            try:
+                thread.join_thread(ident)
+            except Exception as e:
+                errors.append(e)
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            lock.release()
+            time.sleep(0.05)
+            # Can still join after join_thread() failed in other thread
+            thread.join_thread(ident)
+
+        assert len(errors) == 1
+        with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
+            raise errors[0]
+
+    def test_detach_then_join(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def task():
+            lock.acquire()
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            # detach_thread() returns even though the thread is blocked on lock
+            thread.detach_thread(ident)
+            # join_thread() then cannot be called anymore
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                thread.join_thread(ident)
+            lock.release()
+
+    def test_join_then_detach(self):
+        def task():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            thread.join_thread(ident)
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                thread.detach_thread(ident)
+
 
 class Barrier:
     def __init__(self, num_threads):

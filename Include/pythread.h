@@ -20,6 +20,14 @@ PyAPI_FUNC(unsigned long) PyThread_start_new_thread(void (*)(void *), void *);
 PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
+#if !defined(Py_LIMITED_API)
+PyAPI_FUNC(unsigned long) PyThread_start_joinable_thread(void (*func)(void *),
+                                                         void *arg,
+                                                         Py_uintptr_t* handle);
+PyAPI_FUNC(int) PyThread_join_thread(Py_uintptr_t);
+PyAPI_FUNC(int) PyThread_detach_thread(Py_uintptr_t);
+#endif
+
 #if (defined(__APPLE__) || defined(__linux__) || defined(_WIN32) \
      || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
      || defined(__DragonFly__) || defined(_AIX))

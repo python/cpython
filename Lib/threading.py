@@ -5,6 +5,7 @@ import sys as _sys
 import _thread
 import functools
 import warnings
+import _weakref
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -34,6 +35,8 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
+_join_thread = _thread.join_thread
+_detach_thread = _thread.detach_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
@@ -924,6 +927,7 @@ class Thread:
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
         self._tstate_lock = None
+        self._join_lock = None
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
@@ -944,11 +948,14 @@ class Thread:
             if self._tstate_lock is not None:
                 self._tstate_lock._at_fork_reinit()
                 self._tstate_lock.acquire()
+            if self._join_lock is not None:
+                self._join_lock._at_fork_reinit()
         else:
             # The thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
             self._tstate_lock = None
+            self._join_lock = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -980,15 +987,24 @@ class Thread:
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
 
+        self._join_lock = _allocate_lock()
+
         with _active_limbo_lock:
             _limbo[self] = self
         try:
-            _start_new_thread(self._bootstrap, ())
+            # Start joinable thread
+            _start_new_thread(self._bootstrap, (), {}, True)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
-        self._started.wait()
+        self._started.wait()  # Will set ident and native_id
+
+        # We need to make sure the OS thread is either explicitly joined or
+        # detached at some point, otherwise system resources can be leaked.
+        def _finalizer(wr, _detach_thread=_detach_thread, ident=self._ident):
+            _detach_thread(ident)
+        self._non_joined_finalizer = _weakref.ref(self, _finalizer)
 
     def run(self):
         """Method representing the thread's activity.
@@ -1144,6 +1160,19 @@ class Thread:
             # historically .join(timeout=x) for x<0 has acted as if timeout=0
             self._wait_for_tstate_lock(timeout=max(timeout, 0))
 
+        if self._is_stopped:
+            self._join_os_thread()
+
+    def _join_os_thread(self):
+        join_lock = self._join_lock
+        if join_lock is not None:
+            # Calling join() multiple times simultaneously would result in early
+            # return for one of the callers.
+            with join_lock:
+                _join_thread(self._ident)
+            self._join_lock = None
+            self._non_joined_finalizer = None
+
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
         # At the end of the thread's life, after all knowledge of the thread
@@ -1223,6 +1252,8 @@ class Thread:
         if self._is_stopped or not self._started.is_set():
             return False
         self._wait_for_tstate_lock(False)
+        if self._is_stopped:
+            self._join_os_thread()
         return not self._is_stopped
 
     @property

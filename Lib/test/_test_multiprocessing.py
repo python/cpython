@@ -2581,18 +2581,10 @@ class _TestPool(BaseTestCase):
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
 
     def test_async_timeout(self):
-        p = self.Pool(3)
-        try:
-            event = threading.Event() if self.TYPE == 'threads' else None
-            res = p.apply_async(sqr, (6, TIMEOUT2 + support.SHORT_TIMEOUT, event))
-            get = TimingWrapper(res.get)
-            self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
-            self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
-        finally:
-            if event is not None:
-                event.set()
-            p.terminate()
-            p.join()
+        res = self.pool.apply_async(sqr, (6, 5 * TIMEOUT2))
+        get = TimingWrapper(res.get)
+        self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
+        self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
 
     def test_imap(self):
         it = self.pool.imap(sqr, list(range(10)))
@@ -2693,6 +2685,9 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
+        if self.TYPE == 'threads':
+            self.skipTest("Threads cannot be terminated")
+
         # Simulate slow tasks which take "forever" to complete
         p = self.Pool(3)
         args = [support.LONG_TIMEOUT for i in range(10_000)]

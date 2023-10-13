@@ -183,8 +183,7 @@ bootstrap(void *call)
 }
 
 unsigned long
-PyThread_start_new_thread(void (*func)(void *), void *arg)
-{
+PyThread_start_joinable_thread(void (*func)(void *), void *arg, Py_uintptr_t* handle) {
     HANDLE hThread;
     unsigned threadID;
     callobj *obj;
@@ -207,14 +206,33 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         /* I've seen errno == EAGAIN here, which means "there are
          * too many threads".
          */
-        int e = errno;
-        threadID = (unsigned)-1;
         HeapFree(GetProcessHeap(), 0, obj);
+        return PYTHREAD_INVALID_THREAD_ID;
     }
-    else {
-        CloseHandle(hThread);
-    }
+    *handle = (Py_uintptr_t) hThread;
     return threadID;
+}
+
+unsigned long
+PyThread_start_new_thread(void (*func)(void *), void *arg) {
+    Py_uintptr_t handle;
+    unsigned long threadID = PyThread_start_joinable_thread(func, arg, &handle);
+    CloseHandle((HANDLE) handle);
+    return threadID;
+}
+
+int
+PyThread_join_thread(Py_uintptr_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    int errored = (WaitForSingleObject(hThread, INFINITE) != WAIT_OBJECT_0);
+    CloseHandle(hThread);
+    return errored;
+}
+
+int
+PyThread_detach_thread(Py_uintptr_t handle) {
+    HANDLE hThread = (HANDLE) handle;
+    return (CloseHandle(hThread) == 0);
 }
 
 /*
