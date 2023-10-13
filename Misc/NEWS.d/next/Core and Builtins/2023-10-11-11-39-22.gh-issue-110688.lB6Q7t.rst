@@ -1,3 +1,0 @@
-Remove undocumented ``test_c_api`` method from :class:`set`, which was only
-defined for testing purposes under ``Py_DEBUG``. Now we have proper CAPI
-tests.
