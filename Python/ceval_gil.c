@@ -200,7 +200,6 @@ static void destroy_gil(struct _gil_runtime_state *gil)
     COND_FINI(gil->switch_cond);
     MUTEX_FINI(gil->switch_mutex);
 #endif
-    _Py_atomic_store_int_relaxed(&gil->locked, -1);
     _Py_atomic_store_int_release(&gil->locked, -1);
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
