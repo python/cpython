@@ -1907,7 +1907,7 @@ config_read_complex_options(PyConfig *config)
     }
 
 #ifdef Py_DEBUG
-    if (config->run_presite== NULL) {
+    if (config->run_presite == NULL) {
         status = config_init_run_presite(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
