@@ -980,7 +980,7 @@ dummy_func(
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-                assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
                 frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
@@ -1019,7 +1019,7 @@ dummy_func(
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-            assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -2680,7 +2680,7 @@ dummy_func(
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - frame->instr_ptr);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
