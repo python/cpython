@@ -1329,7 +1329,7 @@ class TestPendingCalls(unittest.TestCase):
             self.assertEqual(added, maxpending)
 
         with self.subTest('not main-only'):
-            maxpending = 32
+            maxpending = 1000
 
             l = []
             added = self.pendingcalls_submit(l, 1, main=False)

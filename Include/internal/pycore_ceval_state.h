@@ -23,10 +23,16 @@ struct _pending_call {
     struct _pending_call *next;
 };
 
+// Using an array for the first pending calls gives us some
+// extra stability in the case of signals.
+// We also use the value as the max and loop max for the main thread.
+#define NPENDINGCALLSARRAY 32
 // We technically do not need this limit around any longer since we
 // moved from a circular queue to a linked list.  However, having a
-// size limit is still a good idea so we keep the one we already had.
-#define NPENDINGCALLSARRAY 32
+// size limit is still a good idea for now to reduce
+// the possible impact of bugs.
+#define MAXPENDINGCALLS 1000
+#define MAXPENDINGCALLSLOOP 100
 
 struct _pending_calls {
     int busy;

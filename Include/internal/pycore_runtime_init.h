@@ -154,8 +154,8 @@ extern PyTypeObject _PyExc_MemoryError;
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
             .pending = { \
-                .max = NPENDINGCALLSARRAY, \
-                .maxloop = NPENDINGCALLSARRAY, \
+                .max = MAXPENDINGCALLS, \
+                .maxloop = MAXPENDINGCALLSLOOP, \
             }, \
         }, \
         .gc = { \
