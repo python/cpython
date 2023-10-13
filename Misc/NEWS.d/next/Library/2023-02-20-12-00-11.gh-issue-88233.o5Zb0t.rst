@@ -1,2 +1,0 @@
-Refactored ``zipfile._strip_extra`` to use higher level abstactions for
-extras instead of a heavy-state loop.

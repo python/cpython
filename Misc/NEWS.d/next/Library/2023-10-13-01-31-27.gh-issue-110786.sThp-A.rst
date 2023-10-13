@@ -1,2 +1,0 @@
-:mod:`sysconfig`'s CLI now ignores :exc:`BrokenPipeError`, making it exit
-normally if its output is being piped and the pipe closes.
