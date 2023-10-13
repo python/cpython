@@ -400,6 +400,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._clock_resolution = time.get_clock_info('monotonic').resolution
         self._exception_handler = None
         self.set_debug(coroutines._is_debug_mode())
+        # The preserved state of async generator hooks.
+        self._old_agen_hooks = None
         # In debug mode, if the execution of a callback or a step of a task
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
@@ -602,21 +604,17 @@ class BaseEventLoop(events.AbstractEventLoop):
                 'Cannot run the event loop while another loop is running')
 
     def run_forever_setup(self):
-        """Set up an event loop so that it is ready to start actively looping
-        to process events.
+        """Prepare the run loop to process events.
 
-        Returns the state that must be restored when the loop concludes. This state
-        should be passed in as arguments to ``run_forever_cleanup()``.
-
-        This method is only needed if you are writing your own event loop, with
-        customized ``run_forever`` semantics (e.g., integrating a GUI event loop
-        with Python's event loop).
+        This method should be used as part of the ``run_forever()``
+        implementation in a custom event loop subclass (e.g., integrating a GUI
+        event loop with Python's event loop).
         """
         self._check_closed()
         self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
 
-        old_agen_hooks = sys.get_asyncgen_hooks()
+        self._old_agen_hooks = sys.get_asyncgen_hooks()
         self._thread_id = threading.get_ident()
         sys.set_asyncgen_hooks(
             firstiter=self._asyncgen_firstiter_hook,
@@ -625,38 +623,32 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         events._set_running_loop(self)
 
-        return (old_agen_hooks,)
+    def run_forever_cleanup(self):
+        """Clean up after an event loop finishes the looping over events.
 
-    def run_forever_cleanup(self, original_state):
-        """Clean up an event loop after the event loop finishes the looping over
-        events.
-
-        Restores any state preserved by ``run_forever_setup()``.
-
-        This method is only needed if you are writing your own event loop, with
-        customized ``run_forever`` semantics (e.g., integrating a GUI event loop
-        with Python's event loop).
+        This method should be used as part of the ``run_forever()``
+        implementation in a custom event loop subclass (e.g., integrating a GUI
+        event loop with Python's event loop).
         """
         self._stopping = False
         self._thread_id = None
         events._set_running_loop(None)
         self._set_coroutine_origin_tracking(False)
-        if original_state is not None:
-            old_agen_hooks, = original_state
-            sys.set_asyncgen_hooks(*old_agen_hooks)
+        # Restore any pre-existing async generator hooks.
+        if self._old_agen_hooks is not None:
+            sys.set_asyncgen_hooks(*self._old_agen_hooks)
+            self._old_agen_hooks = None
 
     def run_forever(self):
         """Run until stop() is called."""
-        # Ensure original_state has a value in case setup fails.
-        original_state = None
         try:
-            original_state = self.run_forever_setup()
+            self.run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
                     break
         finally:
-            self.run_forever_cleanup(original_state)
+            self.run_forever_cleanup()
 
     def run_until_complete(self, future):
         """Run until the Future is done.
