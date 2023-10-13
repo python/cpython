@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
-#include "pycore_atomic.h"          // _Py_atomic_address
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -170,7 +169,7 @@ typedef struct pyruntimestate {
 
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
-    _Py_atomic_address _finalizing;
+    PyThreadState *_finalizing;
     /* The ID of the OS thread in which we are finalizing. */
     unsigned long _finalizing_id;
 
@@ -299,7 +298,7 @@ extern void _PyRuntime_Finalize(void);
 
 static inline PyThreadState*
 _PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&runtime->_finalizing);
 }
 
 static inline unsigned long
@@ -309,7 +308,7 @@ _PyRuntimeState_GetFinalizingID(_PyRuntimeState *runtime) {
 
 static inline void
 _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
-    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_ptr_relaxed(&runtime->_finalizing, tstate);
     if (tstate == NULL) {
         _Py_atomic_store_ulong_relaxed(&runtime->_finalizing_id, 0);
     }
