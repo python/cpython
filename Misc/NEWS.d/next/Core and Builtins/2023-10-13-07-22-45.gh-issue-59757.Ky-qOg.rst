@@ -1,0 +1,1 @@
+Look in locale-bundle location for .mo. Patch by Joannah Nanjekye.
