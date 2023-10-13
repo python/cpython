@@ -1827,145 +1827,17 @@ Invalid bytes literals:
         ^^^^^^^^^^^
    SyntaxError: bytes can only contain ASCII literal characters
 
-<<<<<<< HEAD
-||||||| parent of 3d180347ae7 (gh-110696: Fix incorrect syntax error message for incorrect argument unpacking (#110706))
-Invalid expressions in type scopes:
-
-   >>> type A[T: (x:=3)] = int
+   >>> f(**x, *y)
    Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within a TypeVar bound
+   SyntaxError: iterable argument unpacking follows keyword argument unpacking
 
-   >>> type A[T: (yield 3)] = int
+   >>> f(**x, *)
    Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a TypeVar bound
+   SyntaxError: iterable argument unpacking follows keyword argument unpacking
 
-   >>> type A[T: (await 3)] = int
+   >>> f(x, *:)
    Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within a TypeVar bound
-
-   >>> type A[T: (yield from [])] = int
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a TypeVar bound
-
-   >>> type A = (x := 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within a type alias
-
-   >>> type A = (yield 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a type alias
-
-   >>> type A = (await 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within a type alias
-
-   >>> type A = (yield from [])
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a type alias
-
-   >>> class A[T]((x := 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within the definition of a generic
-
-   >>> class A[T]((yield 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within the definition of a generic
-
-   >>> class A[T]((await 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within the definition of a generic
-
-   >>> class A[T]((yield from [])): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within the definition of a generic
-
-=======
-Invalid expressions in type scopes:
-
-   >>> type A[T: (x:=3)] = int
-   Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within a TypeVar bound
-
-   >>> type A[T: (yield 3)] = int
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a TypeVar bound
-
-   >>> type A[T: (await 3)] = int
-   Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within a TypeVar bound
-
-   >>> type A[T: (yield from [])] = int
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a TypeVar bound
-
-   >>> type A = (x := 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within a type alias
-
-   >>> type A = (yield 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a type alias
-
-   >>> type A = (await 3)
-   Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within a type alias
-
-   >>> type A = (yield from [])
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within a type alias
-
-   >>> class A[T]((x := 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: named expression cannot be used within the definition of a generic
-
-   >>> class A[T]((yield 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within the definition of a generic
-
-   >>> class A[T]((await 3)): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: await expression cannot be used within the definition of a generic
-
-   >>> class A[T]((yield from [])): ...
-   Traceback (most recent call last):
-      ...
-   SyntaxError: yield expression cannot be used within the definition of a generic
-
-    >>> f(**x, *y)
-    Traceback (most recent call last):
-    SyntaxError: iterable argument unpacking follows keyword argument unpacking
-
-    >>> f(**x, *)
-    Traceback (most recent call last):
-    SyntaxError: iterable argument unpacking follows keyword argument unpacking
-
-    >>> f(x, *:)
-    Traceback (most recent call last):
-    SyntaxError: invalid syntax
->>>>>>> 3d180347ae7 (gh-110696: Fix incorrect syntax error message for incorrect argument unpacking (#110706))
+   SyntaxError: invalid syntax
 """
 
 import re
