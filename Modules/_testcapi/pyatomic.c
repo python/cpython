@@ -140,6 +140,22 @@ test_atomic_release_acquire(PyObject *self, PyObject *obj) {
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_atomic_load_store_int_release_acquire(PyObject *self, PyObject *obj) { \
+    int x = 0;
+    int y = 1;
+    int z = 2;
+    assert(_Py_atomic_load_int_acquire(&x) == 0);
+    assert(x == 0);
+    _Py_atomic_store_int_release(&x, y);
+    assert(_Py_atomic_load_int_acquire(&x) == 1);
+    assert(x == 1);
+    _Py_atomic_store_int_release(&x, z);
+    assert(_Py_atomic_load_int_relaxed(&x) == 2);
+    assert(x == 2);
+    Py_RETURN_NONE;
+}
+
 // NOTE: all tests should start with "test_atomic_" to be included
 // in test_pyatomic.py
 
@@ -162,6 +178,7 @@ static PyMethodDef test_methods[] = {
     FOR_BITWISE_TYPES(BIND_TEST_AND_OR)
     {"test_atomic_fences", test_atomic_fences, METH_NOARGS},
     {"test_atomic_release_acquire", test_atomic_release_acquire, METH_NOARGS},
+    {"test_atomic_load_store_int_release_acquire", test_atomic_load_store_int_release_acquire, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
