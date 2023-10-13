@@ -59,6 +59,10 @@ tok_nextc(struct tok_state *tok)
     int rc;
     for (;;) {
         if (tok->cur != tok->inp) {
+            if (INT_MAX - tok->col_offset - 1 < 0) {
+                tok->done = E_COLUMNOVERFLOW;
+                return EOF;
+            }
             tok->col_offset++;
             return Py_CHARMASK(*tok->cur++); /* Fast path */
         }
