@@ -26,7 +26,7 @@
 // statically allocating a huge empty array in our executable, and mapping
 // executable pages inside of it. However, this has a big benefit: we can
 // compile our stencils to use the "small" or "medium" code models, since we
-// know that all calls (for example, to C-API functions like PyNumber_Add) will
+// know that all calls (for example, to C-API functions like _PyLong_Add) will
 // be less than a relative 32-bit jump away (28 bits on aarch64). If that
 // condition didn't hold (for example, if we mmap some memory far away from the
 // executable), we would need to use trampolines and/or 64-bit indirect branches
@@ -44,6 +44,7 @@ alloc(size_t size)
 {
     assert((size & 7) == 0);
     if (JIT_POOL_SIZE - page_size < pool_head + size) {
+        PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
         return NULL;
     }
     unsigned char *memory = pool + pool_head;
@@ -53,7 +54,47 @@ alloc(size_t size)
     return memory;
 }
 
-static int initialized = 0;
+static int
+mark_writeable(unsigned char *memory, size_t nbytes)
+{
+    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
+    size_t page_nbytes = memory + nbytes - page;
+#ifdef MS_WINDOWS
+    DWORD old;
+    if (!VirtualProtect(page, page_nbytes, PAGE_READWRITE, &old)) {
+        int code = GetLastError();
+#else
+    if (mprotect(page, page_nbytes, PROT_READ | PROT_WRITE)) {
+        int code = errno;
+#endif
+        const char *w = "JIT unable to map writable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+        return -1;
+    }
+    return 0;
+}
+
+static int
+mark_executable(unsigned char *memory, size_t nbytes)
+{
+    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
+    size_t page_nbytes = memory + nbytes - page;
+#ifdef MS_WINDOWS
+    if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
+        !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))
+    {
+        int code = GetLastError();
+#else
+    __builtin___clear_cache((char *)memory, (char *)memory + nbytes);
+    if (mprotect(page, page_nbytes, PROT_EXEC | PROT_READ)) {
+        int code = errno;
+#endif
+        const char *w = "JIT unable to map executable memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+        return -1;
+    }
+    return 0;
+}
 
 static void
 patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
@@ -154,40 +195,88 @@ copy_and_patch(unsigned char *memory, const Stencil *stencil, uint64_t patches[]
     }
 }
 
+static int needs_initializing = 1;
+unsigned char *deoptimize_stub;
+unsigned char *error_stub;
+
+static int
+initialize_jit(void)
+{
+    if (needs_initializing <= 0) {
+        return needs_initializing;
+    }
+    // Keep us from re-entering:
+    needs_initializing = -1;
+    // Find the page_size:
+#ifdef MS_WINDOWS
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    page_size = si.dwPageSize;
+#else
+    page_size = sysconf(_SC_PAGESIZE);
+#endif
+    assert(page_size);
+    assert((page_size & (page_size - 1)) == 0);
+    // Adjust the pool_head to the next page boundary:
+    pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
+    assert(((uintptr_t)(pool + pool_head) & (page_size - 1)) == 0);
+    // macOS requires mapping memory before mprotecting it, so map memory fixed
+    // at our pool's valid address range:
+#ifdef __APPLE__
+    void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
+                        PROT_READ | PROT_WRITE,
+                        MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
+    if (mapped == MAP_FAILED) {
+        const char *w = "JIT unable to map fixed memory (%d)";
+        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
+        return needs_initializing;
+    }
+    assert(mapped == pool + pool_head);
+#endif
+    // Write our deopt stub:
+    {
+        const Stencil *stencil = &deoptimize_stencil;
+        deoptimize_stub = alloc(stencil->nbytes);
+        if (deoptimize_stub == NULL ||
+            mark_writeable(deoptimize_stub, stencil->nbytes))
+        {
+            return needs_initializing;
+        }
+        uint64_t patches[] = GET_PATCHES();
+        patches[_JIT_BASE] = (uintptr_t)deoptimize_stub;
+        patches[_JIT_ZERO] = 0;
+        copy_and_patch(deoptimize_stub, stencil, patches);
+        if (mark_executable(deoptimize_stub, stencil->nbytes)) {
+            return needs_initializing;
+        }
+    }
+    // Write our error stub:
+    {
+        const Stencil *stencil = &error_stencil;
+        error_stub = alloc(stencil->nbytes);
+        if (error_stub == NULL || mark_writeable(error_stub, stencil->nbytes)) {
+            return needs_initializing;
+        }
+        uint64_t patches[] = GET_PATCHES();
+        patches[_JIT_BASE] = (uintptr_t)error_stub;
+        patches[_JIT_ZERO] = 0;
+        copy_and_patch(error_stub, stencil, patches);
+        if (mark_executable(error_stub, stencil->nbytes)) {
+            return needs_initializing;
+        }
+    }
+    // Done:
+    needs_initializing = 0;
+    return needs_initializing;
+}
+
 // The world's smallest compiler?
 _PyJITFunction
 _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
 {
-    if (initialized < 0) {
+    if (initialize_jit()) {
         return NULL;
     }
-    if (initialized == 0) {
-        initialized = -1;
-#ifdef MS_WINDOWS
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        page_size = si.dwPageSize;
-#else
-        page_size = sysconf(_SC_PAGESIZE);
-#endif
-        assert(page_size);
-        assert((page_size & (page_size - 1)) == 0);
-        pool_head = (page_size - ((uintptr_t)pool & (page_size - 1))) & (page_size - 1);
-        assert(((uintptr_t)(pool + pool_head) & (page_size - 1)) == 0);
-#ifdef __APPLE__
-        void *mapped = mmap(pool + pool_head, JIT_POOL_SIZE - pool_head - page_size,
-                            PROT_READ | PROT_WRITE,
-                            MAP_ANONYMOUS | MAP_FIXED | MAP_PRIVATE, -1, 0);
-        if (mapped == MAP_FAILED) {
-            const char *w = "JIT unable to map fixed memory (%d)";
-            PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, errno);
-            return NULL;
-        }
-        assert(mapped == pool + pool_head);
-#endif
-        initialized = 1;
-    }
-    assert(initialized > 0);
     size_t *offsets = PyMem_Malloc(size * sizeof(size_t));
     if (offsets == NULL) {
         PyErr_NoMemory();
@@ -209,23 +298,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         assert(stencil->nbytes);
     };
     unsigned char *memory = alloc(nbytes);
-    if (memory == NULL) {
-        PyErr_WarnEx(PyExc_RuntimeWarning, "JIT out of memory", 0);
-        PyMem_Free(offsets);
-        return NULL;
-    }
-    unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
-    size_t page_nbytes = memory + nbytes - page;
-#ifdef MS_WINDOWS
-    DWORD old;
-    if (!VirtualProtect(page, page_nbytes, PAGE_READWRITE, &old)) {
-        int code = GetLastError();
-#else
-    if (mprotect(page, page_nbytes, PROT_READ | PROT_WRITE)) {
-        int code = errno;
-#endif
-        const char *w = "JIT unable to map writable memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+    if (memory == NULL || mark_writeable(memory, nbytes)) {
         PyMem_Free(offsets);
         return NULL;
     }
@@ -275,24 +348,15 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BASE] = (uintptr_t)head;
         patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
+        patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
+        patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
         patches[_JIT_ZERO] = 0;
         copy_and_patch(head, stencil, patches);
         head += stencil->nbytes;
     };
     PyMem_Free(offsets);
-#ifdef MS_WINDOWS
-    if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
-        !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))
-    {
-        int code = GetLastError();
-#else
-    __builtin___clear_cache((char *)memory, (char *)memory + nbytes);
-    if (mprotect(page, page_nbytes, PROT_EXEC | PROT_READ)) {
-        int code = errno;
-#endif
-        const char *w = "JIT unable to map executable memory (%d)";
-        PyErr_WarnFormat(PyExc_RuntimeWarning, 0, w, code);
+    if (mark_executable(memory, nbytes)) {
         return NULL;
     }
     // Wow, done already?

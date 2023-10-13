@@ -14,6 +14,9 @@ import sys
 import tempfile
 import typing
 
+if sys.version_info < (3, 11):
+    raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
+
 TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
@@ -26,6 +29,8 @@ PYCONFIG_H = ROOT / "pyconfig.h"
 PYTHON = ROOT / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
+TOOLS_JIT_DEOPTIMIZE_C = TOOLS_JIT / "deoptimize.c"
+TOOLS_JIT_ERROR_C = TOOLS_JIT / "error.c"
 TOOLS_JIT_OPARG_C = TOOLS_JIT / "oparg.c"
 TOOLS_JIT_OPERAND_C = TOOLS_JIT / "operand.c"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
@@ -142,6 +147,8 @@ ObjectType = list[dict[str, FileType] | FileType]
 class HoleValue(enum.Enum):
     _JIT_BASE = enum.auto()
     _JIT_CONTINUE = enum.auto()
+    _JIT_DEOPTIMIZE = enum.auto()
+    _JIT_ERROR = enum.auto()
     _JIT_JUMP = enum.auto()
     _JIT_OPARG = enum.auto()
     _JIT_OPERAND = enum.auto()
@@ -570,11 +577,11 @@ class Compiler:
 
     def _use_ghccc(self, ll: pathlib.Path) -> None:
         """LLVM's GHCC calling convention is perfect for our needs"""
-        # TODO: Explore 
+        # TODO: Explore
         if self._ghccc:
             before = ll.read_text()
             after = re.sub(
-                r"((?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|ENTRY|JUMP)\b)",
+                r"((?:noalias )?(?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|DEOPTIMIZE|ENTRY|JUMP)\b)",
                 r"ghccc \1",
                 before,
             )
@@ -626,6 +633,10 @@ class Compiler:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
+                task = self._compile("deoptimize", TOOLS_JIT_DEOPTIMIZE_C, work)
+                group.create_task(task)
+                task = self._compile("error", TOOLS_JIT_ERROR_C, work)
+                group.create_task(task)
                 task = self._compile("oparg", TOOLS_JIT_OPARG_C, work)
                 group.create_task(task)
                 task = self._compile("operand", TOOLS_JIT_OPERAND_C, work)
@@ -687,7 +698,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             yield f"static const Hole {opname}_stencil_holes[{len(stencil.holes) + 1}] = {{"
             for hole in sorted(stencil.holes, key=lambda hole: hole.offset):
                 parts = [
-                    str(hole.offset),
+                    hex(hole.offset),
                     hole.kind,
                     hole.value.name,
                     format_addend(hole.symbol, hole.addend),
@@ -704,13 +715,13 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    .holes = OP##_stencil_holes,                       \\"
     yield f"}}"
     yield f""
-    yield f"static const Stencil oparg_stencil = INIT_STENCIL(oparg);"
-    yield f"static const Stencil operand_stencil = INIT_STENCIL(operand);"
-    yield f"static const Stencil trampoline_stencil = INIT_STENCIL(trampoline);"
+    stubs = ["deoptimize", "error", "oparg", "operand", "trampoline"]
+    assert opnames[-len(stubs) :] == stubs
+    for stub in opnames[-5:]:
+        yield f"static const Stencil {stub}_stencil = INIT_STENCIL({stub});"
     yield f""
     yield f"static const Stencil stencils[512] = {{"
-    assert opnames[-3:] == ["oparg", "operand", "trampoline"]
-    for opname in opnames[:-3]:
+    for opname in opnames[: -len(stubs)]:
         yield f"    [{opname}] = INIT_STENCIL({opname}),"
     yield f"}};"
     yield f""
@@ -718,7 +729,6 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     for value in HoleValue:
         yield f"    [{value.name}] = (uint64_t)0xBADBADBADBADBADB, \\"
     yield f"}}"
-    yield f""
 
 
 def main(host: str) -> None:
