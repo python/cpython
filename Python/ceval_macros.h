@@ -70,6 +70,7 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
+if (0) fprintf(stderr, "-- %s frame=%p\n", _PyOpcode_OpName[op], frame); \
         frame->instr_ptr = next_instr++; \
         frame->next_instr_offset = 0; \
         assert(frame->yield_offset == 0); \
@@ -290,6 +291,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define LOCALS() frame->f_locals
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
+
+/* 1 + the cache size of SEND/FOR_ITER_GEN (they must be same) */
+#define NEXT_INSTR_OFFSET_FOR_YIELD 2
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \

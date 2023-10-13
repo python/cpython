@@ -984,8 +984,8 @@ dummy_func(
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
-                frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+                assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+                frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
                 frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
                 DISPATCH_INLINED(gen_frame);
             }
@@ -1024,8 +1024,8 @@ dummy_func(
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
-            frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+            assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+            frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -1048,7 +1048,8 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = frame->yield_offset;
+            assert(frame->yield_offset == NEXT_INSTR_OFFSET_FOR_YIELD ||  frame->owner == FRAME_OWNED_BY_CSTACK);
+            frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->yield_offset = 0;
             goto resume_frame;
         }
@@ -1070,7 +1071,8 @@ dummy_func(
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = frame->yield_offset;
+            assert(frame->yield_offset == NEXT_INSTR_OFFSET_FOR_YIELD ||  frame->owner == FRAME_OWNED_BY_CSTACK);
+            frame->next_instr_offset = frame->owner == FRAME_OWNED_BY_CSTACK ? 0 : NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->yield_offset = 0;
             goto resume_frame;
         }
@@ -2688,8 +2690,8 @@ dummy_func(
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - frame->instr_ptr);
-            frame->yield_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER;
+            assert(NEXT_INSTR_OFFSET_FOR_YIELD == next_instr - frame->instr_ptr);
+            frame->yield_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
