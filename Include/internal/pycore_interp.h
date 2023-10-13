@@ -233,6 +233,7 @@ struct _is {
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
+    Py_ssize_t _interactive_src_count;
 };
 
 
