@@ -1172,6 +1172,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if hash_action:
         cls.__hash__ = hash_action(cls, field_list, func_builder)
 
+    # Generate the methods and add them to the class.  This needs to be done
+    # before the __doc__ logic below, since inspect will look at the __init__
+    # signature.
+    func_builder.add_fns_to_class(cls)
+
     if not getattr(cls, '__doc__'):
         # Create a class doc-string.
         try:
@@ -1192,9 +1197,6 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         raise TypeError('weakref_slot is True but slots is False')
     if slots:
         cls = _add_slots(cls, frozen, weakref_slot)
-
-    # And finally, generate the methods and add them to the class.
-    func_builder.add_fns_to_class(cls)
 
     abc.update_abstractmethods(cls)
 
