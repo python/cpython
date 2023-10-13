@@ -2623,10 +2623,8 @@ you can use the following technique, borrowed from the :ref:`unicode-howto`:
 
 .. note::
 
-   Strings containing surrogate escapes must be treated with care.
-   For example, you cannot pass them back to SQLite,
-   since the :mod:`!sqlite3` module API does not support strings
-   containing surrogate escape codes.
+   The :mod:`!sqlite3` module API does not support strings
+   containing surrogates.
 
 .. seealso::
 
