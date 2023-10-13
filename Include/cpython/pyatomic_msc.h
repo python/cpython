@@ -912,6 +912,30 @@ _Py_atomic_store_ptr_release(void *obj, void *value)
 #endif
 }
 
+static inline void
+_Py_atomic_store_int_release(int *obj, int value)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    *(void * int *)obj = value;
+#elif defined(_M_ARM64)
+    __stlr64((unsigned __int64 volatile *)obj, (int)value);
+#else
+#  error "no implementation of _Py_atomic_store_ptr_release"
+#endif
+}
+
+static inline int
+_Py_atomic_load_int_acquire(const int *obj)
+{
+#if defined(_M_X64) || defined(_M_IX86)
+    return *(int * volatile *)obj;
+#elif defined(_M_ARM64)
+    return (int *)__ldar64((unsigned __int64 volatile *)obj);
+#else
+#  error "no implementation of _Py_atomic_load_ptr_acquire"
+#endif
+}
+
 
 // --- _Py_atomic_fence ------------------------------------------------------
 

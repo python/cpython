@@ -166,8 +166,7 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 static void _gil_initialize(struct _gil_runtime_state *gil)
 {
-    _Py_atomic_int uninitialized = {-1};
-    gil->locked = uninitialized;
+    gil->locked = -1;
     gil->interval = DEFAULT_INTERVAL;
 }
 
@@ -176,7 +175,7 @@ static int gil_created(struct _gil_runtime_state *gil)
     if (gil == NULL) {
         return 0;
     }
-    return (_Py_atomic_load_explicit(&gil->locked, _Py_memory_order_acquire) >= 0);
+    return (_Py_atomic_load_int_acquire(&gil->locked) >= 0);
 }
 
 static void create_gil(struct _gil_runtime_state *gil)
@@ -191,7 +190,7 @@ static void create_gil(struct _gil_runtime_state *gil)
 #endif
     _Py_atomic_store_ptr_relaxed(&gil->last_holder, 0);
     _Py_ANNOTATE_RWLOCK_CREATE(&gil->locked);
-    _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
+    _Py_atomic_store_int_release(&gil->locked, 0);
 }
 
 static void destroy_gil(struct _gil_runtime_state *gil)
@@ -205,8 +204,8 @@ static void destroy_gil(struct _gil_runtime_state *gil)
     COND_FINI(gil->switch_cond);
     MUTEX_FINI(gil->switch_mutex);
 #endif
-    _Py_atomic_store_explicit(&gil->locked, -1,
-                              _Py_memory_order_release);
+    _Py_atomic_store_int_relaxed(&gil->locked, -1);
+    _Py_atomic_store_int_release(&gil->locked, -1);
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
 
@@ -247,7 +246,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_relaxed(&gil->locked, 0);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
 
@@ -313,12 +312,12 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
         goto _ready;
     }
 
     int drop_requested = 0;
-    while (_Py_atomic_load_relaxed(&gil->locked)) {
+    while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
@@ -328,7 +327,7 @@ take_gil(PyThreadState *tstate)
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
-            _Py_atomic_load_relaxed(&gil->locked) &&
+            _Py_atomic_load_int_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
             if (_PyThreadState_MustExit(tstate)) {
@@ -358,7 +357,7 @@ _ready:
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-    _Py_atomic_store_relaxed(&gil->locked, 1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
     if (tstate != (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) {
@@ -437,7 +436,7 @@ current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
     if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
         return 0;
     }
-    return _Py_atomic_load_relaxed(&gil->locked);
+    return _Py_atomic_load_int_relaxed(&gil->locked);
 }
 
 static void
