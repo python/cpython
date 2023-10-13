@@ -48,27 +48,6 @@ def get_files(test):
         test.assertFalse(f.closed)
 
 
-def create_zipfile_with_extra_data(filename, extra_data_name):
-    with zipfile.ZipFile(TESTFN, mode='w') as zf:
-        filename_encoded = filename.encode("utf-8")
-        # create a ZipInfo object with Unicode path extra field
-        zip_info = zipfile.ZipInfo(filename)
-
-        tag_for_unicode_path = b'\x75\x70'
-        version_of_unicode_path = b'\x01'
-
-        import zlib
-        filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
-
-        extra_data = version_of_unicode_path + filename_crc + extra_data_name
-        tsize = len(extra_data).to_bytes(2, 'little')
-
-        zip_info.extra = tag_for_unicode_path + tsize + extra_data
-
-        # add the file to the ZIP archive
-        zf.writestr(zip_info, b'Hello World!')
-
-
 class AbstractTestsWithSourceFile:
     @classmethod
     def setUpClass(cls):
@@ -1791,21 +1770,41 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
+    def create_zipfile_with_extra_data(self, filename, extra_data_name):
+        with zipfile.ZipFile(TESTFN, mode='w') as zf:
+            filename_encoded = filename.encode("utf-8")
+            # create a ZipInfo object with Unicode path extra field
+            zip_info = zipfile.ZipInfo(filename)
+
+            tag_for_unicode_path = b'\x75\x70'
+            version_of_unicode_path = b'\x01'
+
+            import zlib
+            filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
+
+            extra_data = version_of_unicode_path + filename_crc + extra_data_name
+            tsize = len(extra_data).to_bytes(2, 'little')
+
+            zip_info.extra = tag_for_unicode_path + tsize + extra_data
+
+            # add the file to the ZIP archive
+            zf.writestr(zip_info, b'Hello World!')
+
     @requires_zlib()
     def test_read_zipfile_containing_unicode_path_extra_field(self):
-        create_zipfile_with_extra_data("이름.txt", "이름.txt".encode("utf-8"))
+        self.create_zipfile_with_extra_data("이름.txt", "이름.txt".encode("utf-8"))
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "이름.txt")
 
     @requires_zlib()
     def test_read_zipfile_warning(self):
-        create_zipfile_with_extra_data("이름.txt", b"")
+        self.create_zipfile_with_extra_data("이름.txt", b"")
         with self.assertWarns(UserWarning):
             zipfile.ZipFile(TESTFN, "r").close()
 
     @requires_zlib()
     def test_read_zipfile_error(self):
-        create_zipfile_with_extra_data("이름.txt", b"\xff")
+        self.create_zipfile_with_extra_data("이름.txt", b"\xff")
         with self.assertRaises(zipfile.BadZipfile):
             zipfile.ZipFile(TESTFN, "r").close()
 
