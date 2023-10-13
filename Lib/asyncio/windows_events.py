@@ -317,10 +317,9 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     def run_forever_setup(self):
         assert self._self_reading_future is None
         self.call_soon(self._loop_self_reading)
+        super().run_forever_setup()
 
-        return super().run_forever_setup()
-
-    def run_forever_cleanup(self, orig_state):
+    def run_forever_cleanup(self):
         super().run_forever_cleanup()
         if self._self_reading_future is not None:
             ov = self._self_reading_future._ov
