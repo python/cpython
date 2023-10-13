@@ -169,7 +169,7 @@ typedef struct pyruntimestate {
 
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
-    PyThreadState* _finalizing;
+    PyThreadState *_finalizing;
     /* The ID of the OS thread in which we are finalizing. */
     unsigned long _finalizing_id;
 
