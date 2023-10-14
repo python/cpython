@@ -716,7 +716,7 @@ PyConfig
 
       Set to ``1`` by the :envvar:`PYTHONDUMPREFS` environment variable.
 
-      Need a special build of Python with the ``Py_TRACE_REFS`` macro defined:
+      Needs a special build of Python with the ``Py_TRACE_REFS`` macro defined:
       see the :option:`configure --with-trace-refs option <--with-trace-refs>`.
 
       Default: ``0``.
@@ -1048,7 +1048,7 @@ PyConfig
       Incremented by the :option:`-d` command line option. Set to the
       :envvar:`PYTHONDEBUG` environment variable value.
 
-      Need a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
       must be defined).
 
       Default: ``0``.
@@ -1100,6 +1100,7 @@ PyConfig
 
       Set by the :option:`-X pycache_prefix=PATH <-X>` command line option and
       the :envvar:`PYTHONPYCACHEPREFIX` environment variable.
+      The command-line option takes precedence.
 
       If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
@@ -1143,13 +1144,27 @@ PyConfig
 
       Default: ``NULL``.
 
+   .. c:member:: wchar_t* run_presite
+
+      ``package.module`` path to module that should be imported before
+      ``site.py`` is run.
+
+      Set by the :option:`-X presite=package.module <-X>` command-line
+      option and the :envvar:`PYTHON_PRESITE` environment variable.
+      The command-line option takes precedence.
+
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_DEBUG`` macro
+      must be defined).
+
+      Default: ``NULL``.
+
    .. c:member:: int show_ref_count
 
       Show total reference count at exit (excluding immortal objects)?
 
       Set to ``1`` by :option:`-X showrefcount <-X>` command line option.
 
-      Need a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
+      Needs a :ref:`debug build of Python <debug-build>` (the ``Py_REF_DEBUG``
       macro must be defined).
 
       Default: ``0``.

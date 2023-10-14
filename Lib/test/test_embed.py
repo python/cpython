@@ -515,6 +515,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     }
     if Py_STATS:
         CONFIG_COMPAT['_pystats'] = 0
+    if support.Py_DEBUG:
+        CONFIG_COMPAT['run_presite'] = None
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -1817,6 +1819,22 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(frozen_modules=flag, stmt=stmt):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.strip()
+        self.assertIn("10 times sub", out)
+        self.assertIn("CPU seconds", out)
+        self.assertIn("cmd", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
