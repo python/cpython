@@ -538,8 +538,7 @@ def get_function_source(func):
 
 
 class TestCase(unittest.TestCase):
-    @staticmethod
-    def close_loop(loop):
+    def close_loop(self, loop):
         if loop._default_executor is not None:
             if not loop.is_closed():
                 loop.run_until_complete(loop.shutdown_default_executor())
