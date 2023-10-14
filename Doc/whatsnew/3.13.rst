@@ -363,6 +363,10 @@ Deprecated
   It was not documented and only supported in the C implementation.
   (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
+  and methods that consider plural forms even if the translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
