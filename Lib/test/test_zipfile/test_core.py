@@ -1769,13 +1769,9 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zf.filelist[0].filename, "foo.txt")
             self.assertEqual(zf.filelist[1].filename, "\xf6.txt")
 
-    @requires_zlib()
-    def test_read_zipfile_containing_unicode_path_extra_field(self):
+    def create_zipfile_with_extra_data(self, filename, extra_data_name):
         with zipfile.ZipFile(TESTFN, mode='w') as zf:
-            # create a file with a non-ASCII name
-            filename = '이름.txt'
-            filename_encoded = filename.encode('utf-8')
-
+            filename_encoded = filename.encode("utf-8")
             # create a ZipInfo object with Unicode path extra field
             zip_info = zipfile.ZipInfo(filename)
 
@@ -1785,7 +1781,7 @@ class OtherTests(unittest.TestCase):
             import zlib
             filename_crc = struct.pack('<L', zlib.crc32(filename_encoded))
 
-            extra_data = version_of_unicode_path + filename_crc + filename_encoded
+            extra_data = version_of_unicode_path + filename_crc + extra_data_name
             tsize = len(extra_data).to_bytes(2, 'little')
 
             zip_info.extra = tag_for_unicode_path + tsize + extra_data
@@ -1793,8 +1789,23 @@ class OtherTests(unittest.TestCase):
             # add the file to the ZIP archive
             zf.writestr(zip_info, b'Hello World!')
 
+    @requires_zlib()
+    def test_read_zipfile_containing_unicode_path_extra_field(self):
+        self.create_zipfile_with_extra_data("이름.txt", "이름.txt".encode("utf-8"))
         with zipfile.ZipFile(TESTFN, "r") as zf:
             self.assertEqual(zf.filelist[0].filename, "이름.txt")
+
+    @requires_zlib()
+    def test_read_zipfile_warning(self):
+        self.create_zipfile_with_extra_data("이름.txt", b"")
+        with self.assertWarns(UserWarning):
+            zipfile.ZipFile(TESTFN, "r").close()
+
+    @requires_zlib()
+    def test_read_zipfile_error(self):
+        self.create_zipfile_with_extra_data("이름.txt", b"\xff")
+        with self.assertRaises(zipfile.BadZipfile):
+            zipfile.ZipFile(TESTFN, "r").close()
 
     def test_read_after_write_unicode_filenames(self):
         with zipfile.ZipFile(TESTFN2, 'w') as zipfp:
