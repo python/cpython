@@ -1,4 +1,6 @@
+#define PY_SSIZE_T_CLEAN
 #include "parts.h"
+#include "util.h"
 
 
 static PyObject *
@@ -546,6 +548,208 @@ check_long_compact_api(PyObject *self, PyObject *arg)
     return Py_BuildValue("in", is_compact, value);
 }
 
+static PyObject *
+pylong_check(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyLong_Check(obj));
+}
+
+static PyObject *
+pylong_checkexact(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyLong_CheckExact(obj));
+}
+
+static PyObject *
+pylong_fromdouble(PyObject *module, PyObject *arg)
+{
+    double value;
+    if (!PyArg_Parse(arg, "d", &value)) {
+        return NULL;
+    }
+    return PyLong_FromDouble(value);
+}
+
+static PyObject *
+pylong_fromstring(PyObject *module, PyObject *args)
+{
+    const char *str;
+    Py_ssize_t len;
+    int base;
+    char *end = UNINITIALIZED_PTR;
+    if (!PyArg_ParseTuple(args, "z#i", &str, &len, &base)) {
+        return NULL;
+    }
+
+    PyObject *result = PyLong_FromString(str, &end, base);
+    if (result == NULL) {
+        // XXX 'end' is not always set.
+        return NULL;
+    }
+    return Py_BuildValue("Nn", result, (Py_ssize_t)(end - str));
+}
+
+static PyObject *
+pylong_fromunicodeobject(PyObject *module, PyObject *args)
+{
+    PyObject *unicode;
+    int base;
+    if (!PyArg_ParseTuple(args, "Oi", &unicode, &base)) {
+        return NULL;
+    }
+
+    NULLABLE(unicode);
+    return PyLong_FromUnicodeObject(unicode, base);
+}
+
+static PyObject *
+pylong_fromvoidptr(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyLong_FromVoidPtr((void *)arg);
+}
+
+static PyObject *
+pylong_aslong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    long value = PyLong_AsLong(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(value);
+}
+
+static PyObject *
+pylong_aslongandoverflow(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int overflow = UNINITIALIZED_INT;
+    long value = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (value == -1 && PyErr_Occurred()) {
+        assert(overflow == -1);
+        return NULL;
+    }
+    return Py_BuildValue("li", value, overflow);
+}
+
+static PyObject *
+pylong_asunsignedlong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long value = PyLong_AsUnsignedLong(arg);
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(value);
+}
+
+static PyObject *
+pylong_asunsignedlongmask(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long value = PyLong_AsUnsignedLongMask(arg);
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(value);
+}
+
+static PyObject *
+pylong_aslonglong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    long long value = PyLong_AsLongLong(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(value);
+}
+
+static PyObject *
+pylong_aslonglongandoverflow(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int overflow = UNINITIALIZED_INT;
+    long long value = PyLong_AsLongLongAndOverflow(arg, &overflow);
+    if (value == -1 && PyErr_Occurred()) {
+        assert(overflow == -1);
+        return NULL;
+    }
+    return Py_BuildValue("Li", value, overflow);
+}
+
+static PyObject *
+pylong_asunsignedlonglong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long long value = PyLong_AsUnsignedLongLong(arg);
+    if (value == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+static PyObject *
+pylong_asunsignedlonglongmask(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long long value = PyLong_AsUnsignedLongLongMask(arg);
+    if (value == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+static PyObject *
+pylong_as_ssize_t(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    Py_ssize_t value = PyLong_AsSsize_t(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(value);
+}
+
+static PyObject *
+pylong_as_size_t(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    size_t value = PyLong_AsSize_t(arg);
+    if (value == (size_t)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromSize_t(value);
+}
+
+static PyObject *
+pylong_asdouble(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    double value = PyLong_AsDouble(arg);
+    if (value == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(value);
+}
+
+static PyObject *
+pylong_asvoidptr(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    void *value = PyLong_AsVoidPtr(arg);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef((PyObject *)value);
+}
+
 static PyMethodDef test_methods[] = {
     {"test_long_and_overflow",  test_long_and_overflow,          METH_NOARGS},
     {"test_long_api",           test_long_api,                   METH_NOARGS},
@@ -556,6 +760,24 @@ static PyMethodDef test_methods[] = {
     {"test_long_numbits",       test_long_numbits,               METH_NOARGS},
     {"test_longlong_api",       test_longlong_api,               METH_NOARGS},
     {"call_long_compact_api",   check_long_compact_api,          METH_O},
+    {"pylong_check",                pylong_check,               METH_O},
+    {"pylong_checkexact",           pylong_checkexact,          METH_O},
+    {"pylong_fromdouble",           pylong_fromdouble,          METH_O},
+    {"pylong_fromstring",           pylong_fromstring,          METH_VARARGS},
+    {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
+    {"pylong_fromvoidptr",          pylong_fromvoidptr,         METH_O},
+    {"pylong_aslong",               pylong_aslong,              METH_O},
+    {"pylong_aslongandoverflow",    pylong_aslongandoverflow,   METH_O},
+    {"pylong_asunsignedlong",       pylong_asunsignedlong,      METH_O},
+    {"pylong_asunsignedlongmask",   pylong_asunsignedlongmask,  METH_O},
+    {"pylong_aslonglong",           pylong_aslonglong,          METH_O},
+    {"pylong_aslonglongandoverflow", pylong_aslonglongandoverflow, METH_O},
+    {"pylong_asunsignedlonglong",   pylong_asunsignedlonglong,  METH_O},
+    {"pylong_asunsignedlonglongmask", pylong_asunsignedlonglongmask, METH_O},
+    {"pylong_as_ssize_t",           pylong_as_ssize_t,          METH_O},
+    {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
+    {"pylong_asdouble",             pylong_asdouble,            METH_O},
+    {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {NULL},
 };
 
