@@ -1,0 +1,2 @@
+urllib.parse_qsl in strict mode allows keys without values in query string:
+"a&b"
