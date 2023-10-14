@@ -1226,16 +1226,15 @@ class DefaultCookiePolicy(CookiePolicy):
 
 def deepvalues(mapping):
     """Iterates over nested mapping, depth-first"""
-    for obj in list(mapping.values()):
-        mapping = False
+    for obj in tuple(mapping.values()):
+        mapping = True
         try:
             obj.items
         except AttributeError:
-            pass
-        else:
-            mapping = True
+            mapping = False
+        if mapping:
             yield from deepvalues(obj)
-        if not mapping:
+        else:
             yield obj
 
 
