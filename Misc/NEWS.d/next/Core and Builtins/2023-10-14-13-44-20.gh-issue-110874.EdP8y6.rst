@@ -1,0 +1,1 @@
+Rewrite :func:`http.cookiejar.deepvalues`  improve performance. Rewrite by Tunglies.
