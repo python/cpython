@@ -363,6 +363,10 @@ Deprecated
   It was not documented and only supported in the C implementation.
   (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
+  and methods that consider plural forms even if the translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -1044,6 +1048,10 @@ New Features
 * Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
   but pass event arguments as a Python :class:`tuple` object.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
+  parameter names.
+  (Contributed by Serhiy Storchaka in :gh:`110815`.)
 
 Porting to Python 3.13
 ----------------------
