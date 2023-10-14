@@ -456,7 +456,7 @@ class _FuncBuilder:
         self.unconditional_adds = {}
 
     def add_fn(self, name, args, body, *, locals=None, return_type=MISSING,
-               overwrite_error=False, unconditional_add=False):
+               overwrite_error=False, unconditional_add=False, decorator=None):
         if locals is not None:
             self.locals.update(locals)
 
@@ -486,7 +486,7 @@ class _FuncBuilder:
         body = '\n'.join(f'  {b}' for b in body)
 
         # Compute the text of the entire function, add it to the text we're generating.
-        self.src.append(f' def {name}({args}){return_annotation}:\n{body}')
+        self.src.append(f'{' '+decorator+'\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
 
     def add_fns_to_class(self, cls):
         # The source to all of the functions we're generating.
@@ -520,11 +520,6 @@ class _FuncBuilder:
 
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
-            if name == '__repr__':
-                # It's kind of a hack to hard code this here, but it works.  It
-                # would require some surgery to get this into the generated
-                # code.
-                fn = _recursive_repr(fn)
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
@@ -1126,7 +1121,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             ('self',),
                             ['return f"{self.__class__.__qualname__}(' +
                              ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                        for f in flds]) + ')"'])
+                                        for f in flds]) + ')"'],
+                            locals={'__dataclasses_recursive_repr': _recursive_repr},
+                            decorator="@__dataclasses_recursive_repr")
 
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
