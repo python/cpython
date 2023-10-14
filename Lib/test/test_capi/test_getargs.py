@@ -1235,6 +1235,57 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         with self.assertRaisesRegex(SystemError, 'Empty keyword'):
             parse((1,), {}, 'O|OO', ['', 'a', ''])
 
+    def test_nonascii_keywords(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        for name in ('a', 'ä', 'ŷ', '㷷', '𐀀'):
+            with self.subTest(name=name):
+                self.assertEqual(parse((), {name: 1}, 'O', [name]), (1,))
+                self.assertEqual(parse((), {}, '|O', [name]), (NULL,))
+                with self.assertRaisesRegex(TypeError,
+                        f"function missing required argument '{name}'"):
+                    parse((), {}, 'O', [name])
+                with self.assertRaisesRegex(TypeError,
+                        fr"argument for function given by name \('{name}'\) "
+                        fr"and position \(1\)"):
+                    parse((1,), {name: 2}, 'O|O', [name, 'b'])
+                with self.assertRaisesRegex(TypeError,
+                        f"'{name}' is an invalid keyword argument"):
+                    parse((), {name: 1}, '|O', ['b'])
+                with self.assertRaisesRegex(TypeError,
+                        "'b' is an invalid keyword argument"):
+                    parse((), {'b': 1}, '|O', [name])
+
+                invalid = name.encode() + (name.encode()[:-1] or b'\x80')
+                self.assertEqual(parse((), {}, '|O', [invalid]), (NULL,))
+                self.assertEqual(parse((1,), {'b': 2}, 'O|O', [invalid, 'b']),
+                                    (1, 2))
+                with self.assertRaisesRegex(TypeError,
+                        f"function missing required argument '{name}\ufffd'"):
+                    parse((), {}, 'O', [invalid])
+                with self.assertRaisesRegex(UnicodeDecodeError,
+                        f"'utf-8' codec can't decode bytes? "):
+                    parse((), {'b': 1}, '|OO', [invalid, 'b'])
+                with self.assertRaisesRegex(UnicodeDecodeError,
+                        f"'utf-8' codec can't decode bytes? "):
+                    parse((), {'b': 1}, '|O', [invalid])
+
+                for name2 in ('b', 'ë', 'ĉ', 'Ɐ', '𐀁'):
+                    with self.subTest(name2=name2):
+                        with self.assertRaisesRegex(TypeError,
+                                f"'{name2}' is an invalid keyword argument"):
+                            parse((), {name2: 1}, '|O', [name])
+
+                name2 = name.encode().decode('latin1')
+                if name2 != name:
+                    with self.assertRaisesRegex(TypeError,
+                            f"'{name2}' is an invalid keyword argument"):
+                        parse((), {name2: 1}, '|O', [name])
+                    name3 = name + '3'
+                    with self.assertRaisesRegex(TypeError,
+                            f"'{name2}' is an invalid keyword argument"):
+                        parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
+
 
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
