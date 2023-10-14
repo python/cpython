@@ -1443,8 +1443,6 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
                 self._watcher = ThreadedChildWatcher()
-                if threading.current_thread() is threading.main_thread():
-                    self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
         """Set the event loop.
