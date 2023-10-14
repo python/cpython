@@ -29,12 +29,9 @@ PYCONFIG_H = ROOT / "pyconfig.h"
 PYTHON = ROOT / "Python"
 PYTHON_EXECUTOR_CASES_C_H = PYTHON / "executor_cases.c.h"
 PYTHON_JIT_STENCILS_H = PYTHON / "jit_stencils.h"
-TOOLS_JIT_DEOPTIMIZE_C = TOOLS_JIT / "deoptimize.c"
-TOOLS_JIT_ERROR_C = TOOLS_JIT / "error.c"
-TOOLS_JIT_OPARG_C = TOOLS_JIT / "oparg.c"
-TOOLS_JIT_OPERAND_C = TOOLS_JIT / "operand.c"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
-TOOLS_JIT_TRAMPOLINE_C = TOOLS_JIT / "trampoline.c"
+
+STUBS = ["deoptimize", "error", "oparg", "operand", "trampoline"]
 
 
 HoleKind: typing.TypeAlias = typing.Literal[
@@ -145,8 +142,9 @@ ObjectType = list[dict[str, FileType] | FileType]
 
 @enum.unique
 class HoleValue(enum.Enum):
-    _JIT_BASE = enum.auto()
+    _JIT_BODY = enum.auto()
     _JIT_CONTINUE = enum.auto()
+    _JIT_DATA = enum.auto()
     _JIT_DEOPTIMIZE = enum.auto()
     _JIT_ERROR = enum.auto()
     _JIT_JUMP = enum.auto()
@@ -166,19 +164,16 @@ class Hole:
 
 @dataclasses.dataclass(frozen=True)
 class Stencil:
-    body: bytes
-    holes: tuple[Hole, ...]
-    disassembly: tuple[str, ...]
-    # entry: int
+    body: bytearray
+    holes: list[Hole]
+    disassembly: list[str]
+    data: bytearray
+    holes_data: list[Hole]
+    disassembly_data: list[str]
 
 
 S = typing.TypeVar("S", bound=typing.Literal["Section", "Relocation", "Symbol"])
 T = typing.TypeVar("T")
-
-
-def remove_prefix(s: str, prefix: str) -> str:
-    assert s.startswith(prefix), (s, prefix)
-    return s.removeprefix(prefix)
 
 
 def unwrap(source: list[dict[S, T]], wrapper: S) -> list[T]:
@@ -231,8 +226,6 @@ def require_llvm_tool(tool: str) -> str:
     raise RuntimeError(f"Can't find {tool}!")
 
 
-# TODO: Divide into read-only data and writable/executable text.
-
 _SEMAPHORE = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
@@ -263,13 +256,16 @@ class Parser:
     def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None) -> None:
         self.path = path
         self.body = bytearray()
+        self.data = bytearray()
         self.body_symbols: dict[str, int] = {}
+        self.data_symbols: dict[str, int] = {}
         self.body_offsets: dict[int, int] = {}
+        self.data_offsets: dict[int, int] = {}
         self.got: dict[str, int] = {}
-        self.relocations: list[tuple[int, RelocationType]] = []
+        self.body_relocations: list[tuple[int, RelocationType]] = []
+        self.data_relocations: list[tuple[int, RelocationType]] = []
         self.readobj = readobj
         self.objdump = objdump
-        self.data_size = 0
 
     async def parse(self) -> Stencil:
         if self.objdump is not None:
@@ -297,41 +293,63 @@ class Parser:
             entry = self.body_symbols["_JIT_TRAMPOLINE"]
         assert entry == 0, entry
         holes = []
+        holes_data = []
         padding = 0
-        while len(self.body) % 8:
+        while len(self.body) % 8:  # XXX
             self.body.append(0)
             padding += 1
-        got = len(self.body)
-        for base, relocation in self.relocations:
+        offset_data = 0
+        disassembly_data = []
+        padding_data = 0
+        if self.data:
+            disassembly_data.append(f"{offset_data:x}: {str(bytes(self.data)).removeprefix('b')}")
+            offset_data += len(self.data)
+        while len(self.data) % 8:
+            self.data.append(0)
+            padding_data += 1
+        if padding_data:
+            disassembly_data.append(f"{offset_data:x}: {' '.join(padding_data * ['00'])}")
+            offset_data += padding_data
+        got = len(self.data)
+        for base, relocation in self.body_relocations:
             newhole = self._handle_relocation(base, relocation)
             if newhole is None:
                 continue
-            if newhole.symbol in self.body_symbols:
-                addend = newhole.addend + self.body_symbols[newhole.symbol] - entry
-                newhole = Hole(
-                    newhole.offset, newhole.kind, HoleValue._JIT_BASE, None, addend
-                )
+            if newhole.symbol in self.data_symbols:
+                addend = newhole.addend + self.data_symbols[newhole.symbol]
+                newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_DATA, None, addend)
+            elif newhole.symbol in self.body_symbols:
+                addend = newhole.addend + self.body_symbols[newhole.symbol]
+                newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend)
             holes.append(newhole)
-        offset = got - self.data_size - padding
-        if self.data_size:
-            if disassembly:
-                disassembly.append(
-                    f"{offset:x}: {str(bytes(self.body[offset:offset + self.data_size])).removeprefix('b')}"
-                )
-            offset += self.data_size
+        for base, relocation in self.data_relocations:
+            newhole = self._handle_relocation(base, relocation)
+            if newhole is None:
+                continue
+            if newhole.symbol in self.data_symbols:
+                addend = newhole.addend + self.data_symbols[newhole.symbol]
+                newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_DATA, None, addend)
+            elif newhole.symbol in self.body_symbols:
+                addend = newhole.addend + self.body_symbols[newhole.symbol]
+                newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend)
+            holes_data.append(newhole)
+        offset = len(self.body) - padding
         if padding:
-            if disassembly:
-                disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
+            disassembly.append(f"{offset:x}: {' '.join(padding * ['00'])}")
             offset += padding
+        assert offset == len(self.body), (offset, len(self.body))
         for s, got_offset in self.got.items():
             if s in self.body_symbols:
                 addend = self.body_symbols[s]
-                value, symbol = HoleValue._JIT_BASE, None
+                value, symbol = HoleValue._JIT_BODY, None
+            elif s in self.data_symbols:
+                addend = self.data_symbols[s]
+                value, symbol = HoleValue._JIT_DATA, None
             else:
                 value, symbol = self._symbol_to_value(s)
                 addend = 0
             # XXX: R_386_32 on 32-bit platforms?
-            holes.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
+            holes_data.append(Hole(got + got_offset, "R_X86_64_64", value, symbol, addend))
             value_part = value.name if value is not HoleValue._JIT_ZERO else ""
             if value_part and not symbol and not addend:
                 addend_part = ""
@@ -339,43 +357,50 @@ class Parser:
                 addend_part = format_addend(symbol, addend)
                 if value_part:
                     value_part += "+"
-            if disassembly:
-                disassembly.append(f"{offset:x}: {value_part}{addend_part}")
-            offset += 8
-        self.body.extend([0] * 8 * len(self.got))
+            disassembly_data.append(f"{offset_data:x}: {value_part}{addend_part}")
+            offset_data += 8
+        self.data.extend([0] * 8 * len(self.got))
         holes.sort(key=lambda hole: hole.offset)
-        assert offset == len(self.body), (self.path, offset, len(self.body))
-        return Stencil(
-            bytes(self.body)[entry:], tuple(holes), tuple(disassembly)
-        )  # XXX
+        holes_data = [Hole(hole.offset, hole.kind, hole.value, hole.symbol, hole.addend) for hole in holes_data]
+        holes_data.sort(key=lambda hole: hole.offset)
+        assert offset_data == len(self.data), (offset_data, len(self.data), self.data, disassembly_data)
+        return Stencil(self.body, holes, disassembly, self.data, holes_data, disassembly_data)
 
     def _handle_section(self, section: SectionType) -> None:
         type = section["Type"]["Value"]
         flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
         if type in {"SHT_REL", "SHT_RELA"}:
             assert "SHF_INFO_LINK" in flags, flags
-            base = self.body_offsets[section["Info"]]
             assert not section["Symbols"]
-            for relocation in unwrap(section["Relocations"], "Relocation"):
-                self.relocations.append((base, relocation))
+            if section["Info"] in self.body_offsets:
+                base = self.body_offsets[section["Info"]]
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    self.body_relocations.append((base, relocation))
+            else:
+                base = self.data_offsets[section["Info"]]
+                for relocation in unwrap(section["Relocations"], "Relocation"):
+                    self.data_relocations.append((base, relocation))
         elif type == "SHT_PROGBITS":
-            self.body_offsets[section["Index"]] = len(self.body)
-            for symbol in unwrap(section["Symbols"], "Symbol"):
-                offset = len(self.body) + symbol["Value"]
-                name = symbol["Name"]["Value"]
-                assert name not in self.body_symbols
-                self.body_symbols[name] = offset
             if "SHF_ALLOC" not in flags:
                 return
             elif flags & {"SHF_EXECINSTR"}:
-                # XXX: Merge these
-                assert not self.data_size
+                self.body_offsets[section["Index"]] = len(self.body)
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = len(self.body) + symbol["Value"]
+                    name = symbol["Name"]["Value"]
+                    assert name not in self.body_symbols
+                    self.body_symbols[name] = offset
                 section_data = section["SectionData"]
                 self.body.extend(section_data["Bytes"])
             else:
+                self.data_offsets[section["Index"]] = len(self.data)
+                for symbol in unwrap(section["Symbols"], "Symbol"):
+                    offset = len(self.data) + symbol["Value"]
+                    name = symbol["Name"]["Value"]
+                    assert name not in self.data_symbols
+                    self.data_symbols[name] = offset
                 section_data = section["SectionData"]
-                self.data_size += len(section_data["Bytes"])
-                self.body.extend(section_data["Bytes"])
+                self.data.extend(section_data["Bytes"])
             assert not section["Relocations"]
         else:
             assert type in {
@@ -389,15 +414,12 @@ class Parser:
     def read_u32(self, offset: int) -> int:
         return int.from_bytes(self.body[offset : offset + 4], "little")
 
-    def write_u32(self, offset: int, value: int) -> None:
-        length = len(self.body)
-        self.body[offset : offset + 4] = (value % (1 << 32)).to_bytes(4, "little")
-        assert length == len(self.body), (length, len(self.body))
-
-    def _got_lookup(self, symbol: str) -> int:
-        while len(self.body) % 8:
-            self.body.append(0)
-        return len(self.body) + self.got.setdefault(symbol, 8 * len(self.got))
+    def _got_lookup(self, symbol: str | None) -> int:
+        while len(self.data) % 8:
+            self.data.append(0)
+        if symbol is None:
+            return len(self.data)
+        return len(self.data) + self.got.setdefault(symbol, 8 * len(self.got))
 
     @staticmethod
     def _symbol_to_value(symbol: str) -> tuple[HoleValue, str | None]:
@@ -418,7 +440,7 @@ class Parser:
                 "Addend": addend,
             }:
                 offset += base
-                value, symbol = HoleValue._JIT_BASE, None
+                value, symbol = HoleValue._JIT_DATA, None
                 addend += self._got_lookup(s)
             case {
                 "Type": {"Value": "R_X86_64_GOTOFF64" as kind},
@@ -427,28 +449,26 @@ class Parser:
                 "Addend": addend,
             }:
                 offset += base
-                value, symbol = self._symbol_to_value(s)
-                addend += offset - len(self.body)
+                value, symbol = self._symbol_to_value(s)  # XXX
+                addend -= len(self.body) - offset  # XXX
             case {
-                "Type": {"Value": "R_X86_64_GOTPC32"},
+                "Type": {"Value": "R_X86_64_GOTPC32" as kind},
                 "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
-                patch = len(self.body) - offset
-                self.write_u32(offset, patch + addend)
-                return None
+                value, symbol = HoleValue._JIT_DATA, None
+                addend += self._got_lookup(None)
             case {
-                "Type": {"Value": "R_X86_64_GOTPCRELX" | "R_X86_64_REX_GOTPCRELX"},
+                "Type": {"Value": "R_X86_64_GOTPCRELX" | "R_X86_64_REX_GOTPCRELX" as kind},
                 "Symbol": {"Value": s},
                 "Offset": offset,
                 "Addend": addend,
             }:
                 offset += base
-                patch = self._got_lookup(s) - offset
-                self.write_u32(offset, patch + addend)
-                return None
+                value, symbol = HoleValue._JIT_DATA, None
+                addend += self._got_lookup(s)
             case {
                 "Type": {"Value": kind},
                 "Symbol": {"Value": s},
@@ -464,7 +484,7 @@ class Parser:
             }:
                 offset += base
                 value, symbol = self._symbol_to_value(s)
-                addend = self.read_u32(offset)
+                addend = self.read_u32(offset)  # XXX
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
@@ -633,16 +653,9 @@ class Compiler:
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                task = self._compile("deoptimize", TOOLS_JIT_DEOPTIMIZE_C, work)
-                group.create_task(task)
-                task = self._compile("error", TOOLS_JIT_ERROR_C, work)
-                group.create_task(task)
-                task = self._compile("oparg", TOOLS_JIT_OPARG_C, work)
-                group.create_task(task)
-                task = self._compile("operand", TOOLS_JIT_OPERAND_C, work)
-                group.create_task(task)
-                task = self._compile("trampoline", TOOLS_JIT_TRAMPOLINE_C, work)
-                group.create_task(task)
+                for stub in STUBS:
+                    task = self._compile(stub, TOOLS_JIT / f"{stub}.c", work)
+                    group.create_task(task)
                 for opname in opnames:
                     task = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
                     group.create_task(task)
@@ -683,6 +696,10 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    const unsigned char * const bytes;"
     yield f"    const size_t nholes;"
     yield f"    const Hole * const holes;"
+    yield f"    const size_t nbytes_data;"
+    yield f"    const unsigned char * const bytes_data;"
+    yield f"    const size_t nholes_data;"
+    yield f"    const Hole * const holes_data;"
     yield f"}} Stencil;"
     yield f""
     opnames = []
@@ -692,7 +709,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         assert stencil.body
         for line in stencil.disassembly:
             yield f"// {line}"
-        body = ",".join(f"0x{byte:02x}" for byte in stencil.body)
+        body = ", ".join(f"0x{byte:02x}" for byte in stencil.body)
         yield f"static const unsigned char {opname}_stencil_bytes[{len(stencil.body)}] = {{{body}}};"
         if stencil.holes:
             yield f"static const Hole {opname}_stencil_holes[{len(stencil.holes) + 1}] = {{"
@@ -707,21 +724,41 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
             yield f"}};"
         else:
             yield f"static const Hole {opname}_stencil_holes[1];"
+        for line in stencil.disassembly_data:
+            yield f"// {line}"
+        body = ", ".join(f"0x{byte:02x}" for byte in stencil.data)
+        yield f"static const unsigned char {opname}_stencil_bytes_data[{len(stencil.data)}] = {{{body}}};"
+        if stencil.holes:
+            yield f"static const Hole {opname}_stencil_holes_data[{len(stencil.holes_data) + 1}] = {{"
+            for hole in sorted(stencil.holes_data, key=lambda hole: hole.offset):
+                parts = [
+                    hex(hole.offset),
+                    hole.kind,
+                    hole.value.name,
+                    format_addend(hole.symbol, hole.addend),
+                ]
+                yield f"    {{{', '.join(parts)}}},"
+            yield f"}};"
+        else:
+            yield f"static const Hole {opname}_stencil_holes_data[1];"
         yield f""
     yield f"#define INIT_STENCIL(OP) {{                             \\"
     yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\"
     yield f"    .bytes = OP##_stencil_bytes,                       \\"
     yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1, \\"
     yield f"    .holes = OP##_stencil_holes,                       \\"
+    yield f"    .nbytes_data = Py_ARRAY_LENGTH(OP##_stencil_bytes_data),     \\"
+    yield f"    .bytes_data = OP##_stencil_bytes_data,                       \\"
+    yield f"    .nholes_data = Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1, \\"
+    yield f"    .holes_data = OP##_stencil_holes_data,                       \\"
     yield f"}}"
     yield f""
-    stubs = ["deoptimize", "error", "oparg", "operand", "trampoline"]
-    assert opnames[-len(stubs) :] == stubs
-    for stub in opnames[-5:]:
+    assert opnames[-len(STUBS):] == STUBS
+    for stub in opnames[-len(STUBS):]:
         yield f"static const Stencil {stub}_stencil = INIT_STENCIL({stub});"
     yield f""
     yield f"static const Stencil stencils[512] = {{"
-    for opname in opnames[: -len(stubs)]:
+    for opname in opnames[:-len(STUBS)]:
         yield f"    [{opname}] = INIT_STENCIL({opname}),"
     yield f"}};"
     yield f""
