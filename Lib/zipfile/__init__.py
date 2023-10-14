@@ -531,6 +531,7 @@ class ZipInfo (object):
                         if up_unicode_name:
                             self.filename = _sanitize_filename(up_unicode_name)
                         else:
+                            import warnings
                             warnings.warn("Empty unicode path extra field (0x7075)", stacklevel=2)
                 except struct.error as e:
                     raise BadZipFile("Corrupt unicode path extra field (0x7075)") from e
