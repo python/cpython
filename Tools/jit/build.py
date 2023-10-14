@@ -727,8 +727,11 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         for line in stencil.disassembly_data:
             yield f"// {line}"
         body = ", ".join(f"0x{byte:02x}" for byte in stencil.data)
-        yield f"static const unsigned char {opname}_stencil_bytes_data[{len(stencil.data)}] = {{{body}}};"
-        if stencil.holes:
+        if stencil.data:
+            yield f"static const unsigned char {opname}_stencil_bytes_data[{len(stencil.data) + 1}] = {{{body}}};"
+        else:
+            yield f"static const unsigned char {opname}_stencil_bytes_data[1];"
+        if stencil.holes_data:
             yield f"static const Hole {opname}_stencil_holes_data[{len(stencil.holes_data) + 1}] = {{"
             for hole in sorted(stencil.holes_data, key=lambda hole: hole.offset):
                 parts = [
@@ -747,7 +750,7 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
     yield f"    .bytes = OP##_stencil_bytes,                       \\"
     yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1, \\"
     yield f"    .holes = OP##_stencil_holes,                       \\"
-    yield f"    .nbytes_data = Py_ARRAY_LENGTH(OP##_stencil_bytes_data),     \\"
+    yield f"    .nbytes_data = Py_ARRAY_LENGTH(OP##_stencil_bytes_data) - 1, \\"
     yield f"    .bytes_data = OP##_stencil_bytes_data,                       \\"
     yield f"    .nholes_data = Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1, \\"
     yield f"    .holes_data = OP##_stencil_holes_data,                       \\"
