@@ -957,7 +957,7 @@ class DefaultCookiePolicy(CookiePolicy):
 
         assert cookie.name is not None
 
-        for n in "version", "verifiability", "name", "path", "domain", "port":
+        for n in ("version", "verifiability", "name", "path", "domain", "port"):
             fn_name = "set_ok_"+n
             fn = getattr(self, fn_name)
             if not fn(cookie, request):
@@ -1104,7 +1104,7 @@ class DefaultCookiePolicy(CookiePolicy):
         # blocking done by .domain_return_ok().
         _debug(" - checking cookie %s=%s", cookie.name, cookie.value)
 
-        for n in "version", "verifiability", "secure", "expires", "port", "domain":
+        for n in ("version", "verifiability", "secure", "expires", "port", "domain"):
             fn_name = "return_ok_"+n
             fn = getattr(self, fn_name)
             if not fn(cookie, request):
@@ -1226,16 +1226,15 @@ class DefaultCookiePolicy(CookiePolicy):
 
 def deepvalues(mapping):
     """Iterates over nested mapping, depth-first"""
-    for obj in list(mapping.values()):
-        mapping = False
+    for obj in tuple(mapping.values()):
+        mapping = True
         try:
             obj.items
         except AttributeError:
-            pass
-        else:
-            mapping = True
+            mapping = False
+        if mapping:
             yield from deepvalues(obj)
-        if not mapping:
+        else:
             yield obj
 
 
@@ -1760,13 +1759,11 @@ class CookieJar:
         return i
 
     def __repr__(self):
-        r = []
-        for cookie in self: r.append(repr(cookie))
+        r = [repr(cookie) for cookie in self]
         return "<%s[%s]>" % (self.__class__.__name__, ", ".join(r))
 
     def __str__(self):
-        r = []
-        for cookie in self: r.append(str(cookie))
+        r = [str(cookie) for cookie in self]
         return "<%s[%s]>" % (self.__class__.__name__, ", ".join(r))
 
 
