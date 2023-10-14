@@ -319,10 +319,12 @@ class ExceptionTests(unittest.TestCase):
         check('def f(*):\n  pass', 1, 7)
 
     @support.requires_resource('cpu')
-    @support.bigmemtest(support._2G, memuse=1.5)
-    def testMemoryErrorBigSource(self, _size):
+    @support.bigmemtest(support._2G, memuse=2, dry_run=False)
+    def testMemoryErrorBigSource(self, size):
+        templ = f"if True:\n %{size}sprint('hello world')"
+        src = templ.encode() % b''  # bytes formatting is faster
         with self.assertRaises(OverflowError):
-            exec(f"if True:\n {' ' * 2**31}print('hello world')")
+            compile(src, '<fragment>', 'exec')
 
     @cpython_only
     def testSettingException(self):
