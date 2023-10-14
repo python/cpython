@@ -1,1 +1,0 @@
-Optimise :func:`math.ceil` when the input is exactly a float, resulting in about a 10% improvement.

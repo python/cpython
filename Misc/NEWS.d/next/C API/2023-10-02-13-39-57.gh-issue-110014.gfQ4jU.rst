@@ -1,2 +1,0 @@
-Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
-Patch by Victor Stinner.
