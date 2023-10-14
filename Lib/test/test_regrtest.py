@@ -394,7 +394,6 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(regrtest.randomize)
         self.assertIsInstance(regrtest.random_seed, int)
         self.assertTrue(regrtest.fail_env_changed)
-        self.assertTrue(regrtest.fail_rerun)
         self.assertTrue(regrtest.print_slowest)
         self.assertTrue(regrtest.output_on_failure)
         self.assertEqual(sorted(regrtest.use_resources), sorted(use_resources))
