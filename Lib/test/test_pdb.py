@@ -664,8 +664,10 @@ def test_pdb_alias_command():
     ...     o.method()
 
     >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi',
     ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
     ...     'alias ps pi self',
+    ...     'alias ps',
     ...     'pi o',
     ...     's',
     ...     'ps',
@@ -674,8 +676,12 @@ def test_pdb_alias_command():
     ...    test_function()
     > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
     -> o.method()
+    (Pdb) alias pi
+    *** Unknown alias 'pi'
     (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
     (Pdb) alias ps pi self
+    (Pdb) alias ps
+    ps = pi self
     (Pdb) pi o
     o.attr1 = 10
     o.attr2 = str
@@ -853,9 +859,11 @@ def test_post_mortem_chained():
     >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'exceptions',
     ...     'exceptions 0',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions 1',
+    ...     '$_exception',
     ...     'up',
     ...     'down',
     ...     'exceptions -1',
@@ -876,6 +884,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 0
     > <doctest test.test_pdb.test_post_mortem_chained[0]>(3)test_function_2()
     -> 1/0
+    (Pdb) $_exception
+    ZeroDivisionError('division by zero')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(3)test_function_reraise()
     -> test_function_2()
@@ -885,6 +895,8 @@ def test_post_mortem_chained():
     (Pdb) exceptions 1
     > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
     -> raise ZeroDivisionError('reraised') from e
+    (Pdb) $_exception
+    ZeroDivisionError('reraised')
     (Pdb) up
     > <doctest test.test_pdb.test_post_mortem_chained[2]>(5)test_function()
     -> test_function_reraise()
@@ -2297,6 +2309,24 @@ def test_pdb_issue_gh_101517():
     (Pdb) continue
     """
 
+def test_pdb_issue_gh_108976():
+    """See GH-108976
+    Make sure setting f_trace_opcodes = True won't crash pdb
+    >>> def test_function():
+    ...     import sys
+    ...     sys._getframe().f_trace_opcodes = True
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    bdb.Bdb.dispatch: unknown debugging event: 'opcode'
+    > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(5)test_function()
+    -> a = 1
+    (Pdb) continue
+    """
+
 def test_pdb_ambiguous_statements():
     """See GH-104301
 
@@ -2317,6 +2347,53 @@ def test_pdb_ambiguous_statements():
     The value of n is 42
     > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
     -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_65052():
+    """See GH-65052
+
+    args, retval and display should not crash if the object is not displayable
+    >>> class A:
+    ...     def __new__(cls):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         return object.__new__(cls)
+    ...     def __init__(self):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         self.a = 1
+    ...     def __repr__(self):
+    ...         return self.a
+
+    >>> def test_function():
+    ...     A()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     's',
+    ...     'retval',
+    ...     'continue',
+    ...     'args',
+    ...     'display self',
+    ...     'display',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()
+    -> return object.__new__(cls)
+    (Pdb) s
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()-><A instance at ...>
+    -> return object.__new__(cls)
+    (Pdb) retval
+    *** repr(retval) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(7)__init__()
+    -> self.a = 1
+    (Pdb) args
+    self = *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display self
+    display self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display
+    Currently displaying:
+    self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) continue
     """
 

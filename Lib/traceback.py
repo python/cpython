@@ -125,6 +125,14 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     te.print(file=file, chain=chain)
 
 
+BUILTIN_EXCEPTION_LIMIT = object()
+
+
+def _print_exception_bltin(exc, /):
+    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+    return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file)
+
+
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
                      chain=True):
     """Format a stack trace and the exception information.
@@ -406,12 +414,16 @@ class StackSummary(list):
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
         # information is not available.
-        if limit is None:
+        builtin_limit = limit is BUILTIN_EXCEPTION_LIMIT
+        if limit is None or builtin_limit:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
                 limit = 0
         if limit is not None:
-            if limit >= 0:
+            if builtin_limit:
+                frame_gen = tuple(frame_gen)
+                frame_gen = frame_gen[len(frame_gen) - limit:]
+            elif limit >= 0:
                 frame_gen = itertools.islice(frame_gen, limit)
             else:
                 frame_gen = collections.deque(frame_gen, maxlen=-limit)
@@ -422,7 +434,6 @@ class StackSummary(list):
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
-
             fnames.add(filename)
             linecache.lazycache(filename, f.f_globals)
             # Must defer line lookups until we have called checkcache.
@@ -435,6 +446,7 @@ class StackSummary(list):
                 end_lineno=end_lineno, colno=colno, end_colno=end_colno))
         for filename in fnames:
             linecache.checkcache(filename)
+
         # If immediate lookup was desired, trigger lookups now.
         if lookup_lines:
             for f in result:
@@ -467,8 +479,12 @@ class StackSummary(list):
         gets called for every frame to be printed in the stack summary.
         """
         row = []
-        row.append('  File "{}", line {}, in {}\n'.format(
-            frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        if frame_summary.filename.startswith("<python-input"):
+            row.append('  File "<stdin>", line {}, in {}\n'.format(
+                frame_summary.lineno, frame_summary.name))
+        else:
+            row.append('  File "{}", line {}, in {}\n'.format(
+                frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
             stripped_line = frame_summary.line.strip()
             row.append('    {}\n'.format(stripped_line))
@@ -608,11 +624,21 @@ def _extract_caret_anchors_from_line_segment(segment):
                         and not operator_str[operator_offset + 1].isspace()
                     ):
                         right_anchor += 1
+
+                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch in ")#"):
+                        left_anchor += 1
+                        right_anchor += 1
                     return _Anchors(normalize(left_anchor), normalize(right_anchor))
                 case ast.Subscript():
-                    subscript_start = normalize(expr.value.end_col_offset)
-                    subscript_end = normalize(expr.slice.end_col_offset + 1)
-                    return _Anchors(subscript_start, subscript_end)
+                    left_anchor = normalize(expr.value.end_col_offset)
+                    right_anchor = normalize(expr.slice.end_col_offset + 1)
+                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch != "["):
+                        left_anchor += 1
+                    while right_anchor < len(segment) and ((ch := segment[right_anchor]).isspace() or ch != "]"):
+                        right_anchor += 1
+                    if right_anchor < len(segment):
+                        right_anchor += 1
+                    return _Anchors(left_anchor, right_anchor)
 
     return None
 
@@ -731,9 +757,9 @@ class TracebackException:
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
                     if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'"
+                        self._str += f" Or did you forget to import '{wrong_name}'?"
                     else:
-                        self._str += f". Did you forget to import '{wrong_name}'"
+                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -894,7 +920,11 @@ class TracebackException:
             if self.offset is not None:
                 offset = self.offset
                 end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
-                if offset == end_offset or end_offset == -1:
+                if self.text and offset > len(self.text):
+                    offset = len(self.text) + 1
+                if self.text and end_offset > len(self.text):
+                    end_offset = len(self.text) + 1
+                if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 
                 # Convert 1-based column offset to 0-based index into stripped text

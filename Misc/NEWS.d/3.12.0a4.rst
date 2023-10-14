@@ -23,10 +23,10 @@ Remove :opcode:`UNARY_POSITIVE`, :opcode:`ASYNC_GEN_WRAP` and
 .. nonce: D7H6j4
 .. section: Core and Builtins
 
-Add new :opcode:`CALL_INSTRINSIC_1` instruction. Remove
+Add new :opcode:`CALL_INTRINSIC_1` instruction. Remove
 :opcode:`IMPORT_STAR`, :opcode:`PRINT_EXPR` and
 :opcode:`STOPITERATION_ERROR`, replacing them with the
-:opcode:`CALL_INSTRINSIC_1` instruction.
+:opcode:`CALL_INTRINSIC_1` instruction.
 
 ..
 
@@ -676,7 +676,7 @@ parameter names in the C implementation. Patch by Alex Waygood.
 .. section: Library
 
 Update :exc:`~urllib.error.HTTPError` to be initialized properly, even if
-the ``fp`` is ``None``. Patch by Dong-hee Na.
+the ``fp`` is ``None``. Patch by Donghee Na.
 
 ..
 

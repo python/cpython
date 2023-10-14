@@ -7,10 +7,6 @@
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
 PyAPI_FUNC(int) _PyArg_ParseTuple_SizeT(PyObject *, const char *, ...);
@@ -1733,7 +1729,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 return cleanreturn(0, &freelist);
             }
             for (i = pos; i < len; i++) {
-                if (_PyUnicode_EqualToASCIIString(key, kwlist[i])) {
+                if (PyUnicode_EqualToUTF8(key, kwlist[i])) {
                     match = 1;
                     break;
                 }
@@ -2867,7 +2863,3 @@ _PyArg_Fini(void)
     }
     _PyRuntime.getargs.static_parsers = NULL;
 }
-
-#ifdef __cplusplus
-};
-#endif

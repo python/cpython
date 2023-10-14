@@ -1505,7 +1505,7 @@ deopt_code(PyCodeObject *code, _Py_CODEUNIT *instructions)
         int opcode = _Py_GetBaseOpcode(code, i);
         if (opcode == ENTER_EXECUTOR) {
             _PyExecutorObject *exec = code->co_executors->executors[instructions[i].op.arg];
-            opcode = exec->vm_data.opcode;
+            opcode = _PyOpcode_Deopt[exec->vm_data.opcode];
             instructions[i].op.arg = exec->vm_data.oparg;
         }
         assert(opcode != ENTER_EXECUTOR);
@@ -1798,28 +1798,26 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     for (int i = 0; i < Py_SIZE(co); i++) {
         _Py_CODEUNIT co_instr = _PyCode_CODE(co)[i];
         _Py_CODEUNIT cp_instr = _PyCode_CODE(cp)[i];
-        uint8_t co_code = co_instr.op.code;
+        uint8_t co_code = _Py_GetBaseOpcode(co, i);
         uint8_t co_arg = co_instr.op.arg;
-        uint8_t cp_code = cp_instr.op.code;
+        uint8_t cp_code = _Py_GetBaseOpcode(cp, i);
         uint8_t cp_arg = cp_instr.op.arg;
 
         if (co_code == ENTER_EXECUTOR) {
             const int exec_index = co_arg;
             _PyExecutorObject *exec = co->co_executors->executors[exec_index];
-            co_code = exec->vm_data.opcode;
+            co_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             co_arg = exec->vm_data.oparg;
         }
         assert(co_code != ENTER_EXECUTOR);
-        co_code = _PyOpcode_Deopt[co_code];
 
         if (cp_code == ENTER_EXECUTOR) {
             const int exec_index = cp_arg;
             _PyExecutorObject *exec = cp->co_executors->executors[exec_index];
-            cp_code = exec->vm_data.opcode;
+            cp_code = _PyOpcode_Deopt[exec->vm_data.opcode];
             cp_arg = exec->vm_data.oparg;
         }
         assert(cp_code != ENTER_EXECUTOR);
-        cp_code = _PyOpcode_Deopt[cp_code];
 
         if (co_code != cp_code || co_arg != cp_arg) {
             goto unequal;

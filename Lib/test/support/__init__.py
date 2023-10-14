@@ -46,7 +46,7 @@ __all__ = [
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
     "requires_limited_api", "requires_specialization",
     # sys
-    "is_jython", "is_android", "is_emscripten", "is_wasi",
+    "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "check_impl_detail", "unix_shell", "setswitchinterval",
     # os
     "get_pagesize",
@@ -62,6 +62,7 @@ __all__ = [
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     "Py_DEBUG", "EXCEEDS_RECURSION_LIMIT", "Py_C_RECURSION_LIMIT",
     "skip_on_s390x",
+    "without_optimizer",
     ]
 
 
@@ -74,13 +75,7 @@ __all__ = [
 #
 # The timeout should be long enough for connect(), recv() and send() methods
 # of socket.socket.
-LOOPBACK_TIMEOUT = 5.0
-if sys.platform == 'win32' and ' 32 bit (ARM)' in sys.version:
-    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
-    # seconds on Windows ARM32 buildbot
-    LOOPBACK_TIMEOUT = 10
-elif sys.platform == 'vxworks':
-    LOOPBACK_TIMEOUT = 10
+LOOPBACK_TIMEOUT = 10.0
 
 # Timeout in seconds for network requests going to the internet. The timeout is
 # short enough to prevent a test to wait for too long if the internet request
@@ -434,6 +429,18 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     skip = check_sanitizer(address=address, memory=memory, ub=ub)
     return unittest.skipIf(skip, reason)
 
+# gh-89363: True if fork() can hang if Python is built with Address Sanitizer
+# (ASAN): libasan race condition, dead lock in pthread_create().
+HAVE_ASAN_FORK_BUG = check_sanitizer(address=True)
+
+
+def set_sanitizer_env_var(env, option):
+    for name in ('ASAN_OPTIONS', 'MSAN_OPTIONS', 'UBSAN_OPTIONS'):
+        if name in env:
+            env[name] += f':{option}'
+        else:
+            env[name] = option
+
 
 def system_must_validate_cert(f):
     """Skip the test on TLS certificate validation failures."""
@@ -506,14 +513,7 @@ def has_no_debug_ranges():
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
 
-def requires_legacy_unicode_capi():
-    try:
-        from _testcapi import unicode_legacy_string
-    except ImportError:
-        unicode_legacy_string = None
-
-    return unittest.skipUnless(unicode_legacy_string,
-                               'requires legacy Unicode C API')
+MS_WINDOWS = (sys.platform == 'win32')
 
 # Is not actually used in tests, but is kept for compatibility.
 is_jython = sys.platform.startswith('java')
@@ -781,6 +781,24 @@ def python_is_optimized():
     return final_opt not in ('', '-O0', '-Og')
 
 
+def check_cflags_pgo():
+    # Check if Python was built with ./configure --enable-optimizations:
+    # with Profile Guided Optimization (PGO).
+    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    pgo_options = [
+        # GCC
+        '-fprofile-use',
+        # clang: -fprofile-instr-use=code.profclangd
+        '-fprofile-instr-use',
+        # ICC
+        "-prof-use",
+    ]
+    PGO_PROF_USE_FLAG = sysconfig.get_config_var('PGO_PROF_USE_FLAG')
+    if PGO_PROF_USE_FLAG:
+        pgo_options.append(PGO_PROF_USE_FLAG)
+    return any(option in cflags_nodist for option in pgo_options)
+
+
 _header = 'nP'
 _align = '0n'
 _vheader = _header + 'n'
@@ -887,26 +905,30 @@ _4G = 4 * _1G
 
 MAX_Py_ssize_t = sys.maxsize
 
-def set_memlimit(limit):
-    global max_memuse
-    global real_max_memuse
+def _parse_memlimit(limit: str) -> int:
     sizes = {
         'k': 1024,
         'm': _1M,
         'g': _1G,
         't': 1024*_1G,
     }
-    m = re.match(r'(\d+(\.\d+)?) (K|M|G|T)b?$', limit,
+    m = re.match(r'(\d+(?:\.\d+)?) (K|M|G|T)b?$', limit,
                  re.IGNORECASE | re.VERBOSE)
     if m is None:
-        raise ValueError('Invalid memory limit %r' % (limit,))
-    memlimit = int(float(m.group(1)) * sizes[m.group(3).lower()])
-    real_max_memuse = memlimit
-    if memlimit > MAX_Py_ssize_t:
-        memlimit = MAX_Py_ssize_t
+        raise ValueError(f'Invalid memory limit: {limit!r}')
+    return int(float(m.group(1)) * sizes[m.group(2).lower()])
+
+def set_memlimit(limit: str) -> None:
+    global max_memuse
+    global real_max_memuse
+    memlimit = _parse_memlimit(limit)
     if memlimit < _2G - 1:
-        raise ValueError('Memory limit %r too low to be useful' % (limit,))
+        raise ValueError('Memory limit {limit!r} too low to be useful')
+
+    real_max_memuse = memlimit
+    memlimit = min(memlimit, MAX_Py_ssize_t)
     max_memuse = memlimit
+
 
 class _MemoryWatchdog:
     """An object which periodically watches the process' memory consumption
@@ -2538,3 +2560,46 @@ skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == '
                                 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
+
+# Decorator to disable optimizer while a function run
+def without_optimizer(func):
+    try:
+        import _testinternalcapi
+    except ImportError:
+        return func
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        save_opt = _testinternalcapi.get_optimizer()
+        try:
+            _testinternalcapi.set_optimizer(None)
+            return func(*args, **kwargs)
+        finally:
+            _testinternalcapi.set_optimizer(save_opt)
+    return wrapper
+
+
+_BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
+    # SRC_DIR/.git
+    '.git',
+    # ignore all __pycache__/ sub-directories
+    '__pycache__',
+})
+
+# Ignore function for shutil.copytree() to copy the Python source code.
+def copy_python_src_ignore(path, names):
+    ignored = _BASE_COPY_SRC_DIR_IGNORED_NAMES
+    if os.path.basename(path) == 'Doc':
+        ignored |= {
+            # SRC_DIR/Doc/build/
+            'build',
+            # SRC_DIR/Doc/venv/
+            'venv',
+        }
+
+    # check if we are at the root of the source code
+    elif 'Modules' in names:
+        ignored |= {
+            # SRC_DIR/build/
+            'build',
+        }
+    return ignored
