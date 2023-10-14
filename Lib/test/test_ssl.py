@@ -4232,6 +4232,36 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(str(e.exception),
                                  'Session refers to a different SSLContext.')
 
+    def test_session_handling_shared_ciphers(self):
+        """
+        Check the return of SSLSocket.get_shared_ciphers() after an SSL session is reused.
+        """
+        client_context, server_context, hostname = testing_context()
+
+        # SSLSocket.session and SSLSession are not compatible with TLS 1.3.
+        client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+
+        server = ThreadedEchoServer(context=server_context, chatty=False)
+        with server:
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.connect((HOST, server.port))
+                session = s.session
+                self.assertTrue(session)
+
+            with client_context.wrap_socket(socket.socket(),
+                                            server_hostname=hostname) as s:
+                s.session = session
+                s.connect((HOST, server.port))
+                self.assertEqual(s.session.id, session.id)
+                self.assertEqual(s.session, session)
+                self.assertEqual(s.session_reused, True)
+
+        # Server thread is joined.
+        self.assertEqual(len(server.shared_ciphers), 2,
+            "expected two sets of `shared_ciphers`, got: {}: {}".format(len(server.shared_ciphers), server.shared_ciphers))
+        self.assertEqual (server.shared_ciphers[0], server.shared_ciphers[1])
+
 
 @unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
 class TestPostHandshakeAuth(unittest.TestCase):
