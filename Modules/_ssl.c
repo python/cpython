@@ -2034,10 +2034,9 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
 /*[clinic end generated code: output=3d174ead2e42c4fd input=0bfe149da8fe6306]*/
 {
     STACK_OF(SSL_CIPHER) *server_ciphers;
-    STACK_OF(SSL_CIPHER) *client_ciphers;
-    int i, len;
     PyObject *res;
-    const SSL_CIPHER* cipher;
+    Py_ssize_t it, inlen, outlen;
+    PySSLContext *ctx = self->ctx;
 
     /* Rather than use SSL_get_shared_ciphers, we use an equivalent algorithm because:
 
@@ -2047,30 +2046,50 @@ _ssl__SSLSocket_shared_ciphers_impl(PySSLSocket *self)
           done so, if the buffer is too small.
      */
 
-    server_ciphers = SSL_get_ciphers(self->ssl);
-    if (!server_ciphers)
+    if (ctx->client_hello_ciphers_len == 0) {
         Py_RETURN_NONE;
-    client_ciphers = SSL_get_client_ciphers(self->ssl);
-    if (!client_ciphers)
-        Py_RETURN_NONE;
+    }
 
-    res = PyList_New(sk_SSL_CIPHER_num(server_ciphers));
-    if (!res)
+    if (ctx->client_hello_ciphers_len > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_RuntimeError, ERRSTR("cannot cast to Py_ssize_t"));
         return NULL;
-    len = 0;
-    for (i = 0; i < sk_SSL_CIPHER_num(server_ciphers); i++) {
-        cipher = sk_SSL_CIPHER_value(server_ciphers, i);
-        if (sk_SSL_CIPHER_find(client_ciphers, cipher) < 0)
+    }
+    inlen = (Py_ssize_t)ctx->client_hello_ciphers_len;
+
+    server_ciphers = SSL_get_ciphers(self->ssl);
+    if (!server_ciphers) {
+        Py_RETURN_NONE;
+    }
+
+    res = PyList_New(inlen);
+    if (!res) {
+        return NULL;
+    }
+
+    outlen = 0;
+    for (it = 0; it < inlen; it += 2) {
+        const SSL_CIPHER *cipher = SSL_CIPHER_find(self->ssl, ctx->client_hello_ciphers + it);
+        if (cipher == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, ERRSTR("SSL_CIPHER_find returned NULL"));
+            Py_DECREF(res);
+            return NULL;
+        }
+
+        if (sk_SSL_CIPHER_find(server_ciphers, cipher) == -1) {
+            // Omit ciphers not supported by server.
             continue;
+        }
 
         PyObject *tup = cipher_to_tuple(cipher);
         if (!tup) {
             Py_DECREF(res);
             return NULL;
         }
-        PyList_SET_ITEM(res, len++, tup);
+        PyList_SET_ITEM(res, outlen++, tup);
     }
-    Py_SET_SIZE(res, len);
+
+    Py_SET_SIZE(res, outlen);
+
     return res;
 }
 
