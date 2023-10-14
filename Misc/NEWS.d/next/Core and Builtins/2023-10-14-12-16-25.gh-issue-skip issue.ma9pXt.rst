@@ -1,0 +1,3 @@
+Change based on Lib.http.cookiejar. 
+Rewrite magic method CookieJar.__repr__, CookieJar.__str__, rewrite list.append to listcomp.
+Rewrite function deepvalues
