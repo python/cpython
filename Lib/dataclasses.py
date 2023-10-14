@@ -486,7 +486,7 @@ class _FuncBuilder:
         body = '\n'.join(f'  {b}' for b in body)
 
         # Compute the text of the entire function, add it to the text we're generating.
-        self.src.append(f'{' '+decorator+'\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
+        self.src.append(f'{f' {decorator}\n' if decorator else ''} def {name}({args}){return_annotation}:\n{body}')
 
     def add_fns_to_class(self, cls):
         # The source to all of the functions we're generating.
