@@ -2,6 +2,23 @@
 #  error "this header file must not be included directly"
 #endif
 
+/* Thread joining APIs.
+ *
+ * These APIs have a strict contract:
+ *  - Either PyThread_join_thread or PyThread_detach_thread must be called
+ *    exactly once with the given handle.
+ *  - Calling neither PyThread_join_thread nor PyThread_detach_thread results
+ *    in a resource leak until the end of the process.
+ *  - Any other usage, such as calling both PyThread_join_thread and
+ *    PyThread_detach_thread, or calling them more than once (including
+ *    simultaneously), results in undefined behavior.
+ */
+PyAPI_FUNC(unsigned long) PyThread_start_joinable_thread(void (*func)(void *),
+                                                         void *arg,
+                                                         Py_uintptr_t* handle);
+PyAPI_FUNC(int) PyThread_join_thread(Py_uintptr_t);
+PyAPI_FUNC(int) PyThread_detach_thread(Py_uintptr_t);
+
 // PY_TIMEOUT_MAX is the highest usable value (in microseconds) of PY_TIMEOUT_T
 // type, and depends on the system threading API.
 //
