@@ -302,8 +302,9 @@ Miscellaneous options
    Run Python in isolated mode. This also implies :option:`-E`, :option:`-P`
    and :option:`-s` options.
 
-   In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All :envvar:`PYTHON*` environment
+   In isolated mode, :data:`sys.path` does not contain the current working
+   directory, the script's directory, or the user's site-packages directory.
+   All :envvar:`PYTHON*` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
    the user from injecting malicious code.
 
