@@ -1461,8 +1461,6 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
                     self._watcher = PidfdChildWatcher()
                 else:
                     self._watcher = ThreadedChildWatcher()
-                if threading.current_thread() is threading.main_thread():
-                    self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
         """Set the event loop.
