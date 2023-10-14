@@ -1232,12 +1232,18 @@ PyDoc_STRVAR(start_new_doc,
 "start_new_thread(function, args[, kwargs[, joinable]])\n\
 (start_new() is an obsolete synonym)\n\
 \n\
-Start a new thread and return its identifier.  The thread will call the\n\
-function with positional arguments from the tuple args and keyword arguments\n\
-taken from the optional dictionary kwargs.  The thread exits when the\n\
-function returns; the return value is ignored.  The thread will also exit\n\
-when the function raises an unhandled exception; a stack trace will be\n\
-printed unless the exception is SystemExit.\n");
+Start a new thread and return its identifier.\n\
+\n\
+The thread will call the function with positional arguments from the\n\
+tuple args and keyword arguments taken from the optional dictionary\n\
+kwargs.  The thread exits when the function returns; the return value\n\
+is ignored.  The thread will also exit when the function raises an\n\
+unhandled exception; a stack trace will be printed unless the exception\n\
+is SystemExit.\n\
+If the optional joinable argument is True, then the thread must later\n\
+be joined with join_thread() or detached with detach_thread().\n\
+Failure to do so results in a system resource leak until interpreter\n\
+shutdown.\n");
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))

@@ -21,6 +21,17 @@ PyAPI_FUNC(void) _Py_NO_RETURN PyThread_exit_thread(void);
 PyAPI_FUNC(unsigned long) PyThread_get_thread_ident(void);
 
 #if !defined(Py_LIMITED_API)
+/* Thread joining APIs.
+ *
+ * These APIs have a strict contract:
+ *  - Either PyThread_join_thread or PyThread_detach_thread must be called
+ *    exactly once with the given handle.
+ *  - Calling neither PyThread_join_thread nor PyThread_detach_thread results
+ *    in a resource leak until the end of the process.
+ *  - Any other usage, such as calling both PyThread_join_thread and
+ *    PyThread_detach_thread, or calling them more than once (including
+ *    simultaneously), results in undefined behavior.
+ */
 PyAPI_FUNC(unsigned long) PyThread_start_joinable_thread(void (*func)(void *),
                                                          void *arg,
                                                          Py_uintptr_t* handle);
