@@ -20,7 +20,7 @@ will be used if graphical browsers are not available or an X11 display isn't
 available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
-If the environment variable :envvar:`!BROWSER` exists, it is interpreted as the
+If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
 :data:`os.pathsep`-separated list of browsers to try ahead of the platform
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
@@ -97,7 +97,7 @@ The following functions are defined:
 
    Setting *preferred* to ``True`` makes this browser a preferred result for
    a :func:`get` call with no argument.  Otherwise, this entry point is only
-   useful if you plan to either set the :envvar:`!BROWSER` variable or call
+   useful if you plan to either set the :envvar:`BROWSER` variable or call
    :func:`get` with a nonempty argument matching the name of a handler you
    declare.
 
@@ -224,4 +224,4 @@ module-level convenience functions:
 .. rubric:: Footnotes
 
 .. [1] Executables named here without a full path will be searched in the
-       directories given in the :envvar:`!PATH` environment variable.
+       directories given in the :envvar:`PATH` environment variable.

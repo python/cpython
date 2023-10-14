@@ -1,1 +1,0 @@
-Fix flag inversion when alias/mask members exist.

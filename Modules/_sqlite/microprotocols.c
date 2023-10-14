@@ -98,7 +98,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* try to have the protocol adapt this object */
-    if (_PyObject_LookupAttr(proto, state->str___adapt__, &adapter) < 0) {
+    if (PyObject_GetOptionalAttr(proto, state->str___adapt__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {
@@ -117,7 +117,7 @@ pysqlite_microprotocols_adapt(pysqlite_state *state, PyObject *obj,
     }
 
     /* and finally try to have the object adapt itself */
-    if (_PyObject_LookupAttr(obj, state->str___conform__, &adapter) < 0) {
+    if (PyObject_GetOptionalAttr(obj, state->str___conform__, &adapter) < 0) {
         return NULL;
     }
     if (adapter) {

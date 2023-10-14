@@ -45,7 +45,7 @@ struct _inittab _PyImport_Inittab[] = {
     /* This lives in Python/Python-ast.c */
     {"_ast", PyInit__ast},
 
-    /* This lives in Python/Python-tokenizer.c */
+    /* This lives in Python/Python-tokenize.c */
     {"_tokenize", PyInit__tokenize},
 
     /* These entries are here for sys.builtin_module_names */

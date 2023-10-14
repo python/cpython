@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pymem.h"
-
 
 /********************************/
 /* the allocators' initializers */

@@ -17,7 +17,7 @@ this type and there is exactly one in existence.
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "structmember.h"         // PyMemberDef
+
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
@@ -98,7 +98,6 @@ PyTypeObject PyEllipsis_Type = {
 };
 
 PyObject _Py_EllipsisObject = {
-    _PyObject_EXTRA_INIT
     { _Py_IMMORTAL_REFCNT },
     &PyEllipsis_Type
 };
@@ -377,9 +376,9 @@ slice_repr(PySliceObject *r)
 }
 
 static PyMemberDef slice_members[] = {
-    {"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
-    {"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
-    {"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+    {"start", _Py_T_OBJECT, offsetof(PySliceObject, start), Py_READONLY},
+    {"stop", _Py_T_OBJECT, offsetof(PySliceObject, stop), Py_READONLY},
+    {"step", _Py_T_OBJECT, offsetof(PySliceObject, step), Py_READONLY},
     {0}
 };
 
@@ -415,7 +414,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = Py_NewRef(_PyLong_GetOne());
+        step = _PyLong_GetOne();
         step_is_negative = 0;
     }
     else {
@@ -443,7 +442,7 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = Py_NewRef(_PyLong_GetZero());
+        lower = _PyLong_GetZero();
         upper = Py_NewRef(length);
     }
 

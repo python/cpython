@@ -175,8 +175,8 @@ slightly different way:
 
 .. function:: pm()
 
-   Enter post-mortem debugging of the traceback found in
-   :data:`sys.last_traceback`.
+   Enter post-mortem debugging of the exception found in
+   :data:`sys.last_exc`.
 
 
 The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
@@ -251,6 +251,10 @@ powerful way to inspect the program being debugged; it is even possible to
 change a variable or call a function.  When an exception occurs in such a
 statement, the exception name is printed but the debugger's state is not
 changed.
+
+.. versionchanged:: 3.13
+   Expressions/Statements whose prefix is a pdb command are now correctly
+   identified and executed.
 
 The debugger supports :ref:`aliases <debugger-aliases>`.  Aliases can have
 parameters which allows one a certain level of adaptability to the context under
@@ -638,6 +642,55 @@ can be overridden by the local file.
 .. pdbcommand:: retval
 
    Print the return value for the last return of the current function.
+
+.. pdbcommand:: exceptions [excnumber]
+
+   List or jump between chained exceptions.
+
+   When using ``pdb.pm()``  or ``Pdb.post_mortem(...)`` with a chained exception
+   instead of a traceback, it allows the user to move between the
+   chained exceptions using ``exceptions`` command to list exceptions, and
+   ``exception <number>`` to switch to that exception.
+
+
+   Example::
+
+        def out():
+            try:
+                middle()
+            except Exception as e:
+                raise ValueError("reraise middle() error") from e
+
+        def middle():
+            try:
+                return inner(0)
+            except Exception as e:
+                raise ValueError("Middle fail")
+
+        def inner(x):
+            1 / x
+
+         out()
+
+   calling ``pdb.pm()`` will allow to move between exceptions::
+
+    > example.py(5)out()
+    -> raise ValueError("reraise middle() error") from e
+
+    (Pdb) exceptions
+      0 ZeroDivisionError('division by zero')
+      1 ValueError('Middle fail')
+    > 2 ValueError('reraise middle() error')
+
+    (Pdb) exceptions 0
+    > example.py(16)inner()
+    -> 1 / x
+
+    (Pdb) up
+    > example.py(10)middle()
+    -> return inner(0)
+
+   .. versionadded:: 3.13
 
 .. rubric:: Footnotes
 

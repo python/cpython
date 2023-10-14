@@ -9,21 +9,24 @@ extern "C" {
 #endif
 
 // Returns a str() containing the hex representation of argbuf.
+// Export for '_hashlib' shared extension.
 PyAPI_FUNC(PyObject*) _Py_strhex(const
     char* argbuf,
     const Py_ssize_t arglen);
 
 // Returns a bytes() containing the ASCII hex representation of argbuf.
-PyAPI_FUNC(PyObject*) _Py_strhex_bytes(
+extern PyObject* _Py_strhex_bytes(
     const char* argbuf,
     const Py_ssize_t arglen);
 
 // These variants include support for a separator between every N bytes:
-PyAPI_FUNC(PyObject*) _Py_strhex_with_sep(
+extern PyObject* _Py_strhex_with_sep(
     const char* argbuf,
     const Py_ssize_t arglen,
     PyObject* sep,
     const int bytes_per_group);
+
+// Export for 'binascii' shared extension
 PyAPI_FUNC(PyObject*) _Py_strhex_bytes_with_sep(
     const char* argbuf,
     const Py_ssize_t arglen,

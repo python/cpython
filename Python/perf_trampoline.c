@@ -130,9 +130,10 @@ any DWARF information available for them).
 */
 
 #include "Python.h"
-#include "pycore_ceval.h"
+#include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -140,9 +141,9 @@ any DWARF information available for them).
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
+#include <sys/mman.h>             // mmap()
 #include <sys/types.h>
-#include <unistd.h>
+#include <unistd.h>               // sysconf()
 
 #if defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
 #define PY_HAVE_INVALIDATE_ICACHE

@@ -59,9 +59,9 @@ truth tests, identity tests, and boolean operations:
               __not__(obj)
 
    Return the outcome of :keyword:`not` *obj*.  (Note that there is no
-   :meth:`__not__` method for object instances; only the interpreter core defines
-   this operation.  The result is affected by the :meth:`__bool__` and
-   :meth:`__len__` methods.)
+   :meth:`!__not__` method for object instances; only the interpreter core defines
+   this operation.  The result is affected by the :meth:`~object.__bool__` and
+   :meth:`~object.__len__` methods.)
 
 
 .. function:: truth(obj)

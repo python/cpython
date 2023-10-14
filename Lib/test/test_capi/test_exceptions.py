@@ -1,9 +1,12 @@
+import errno
+import os
 import re
 import sys
 import unittest
 
 from test import support
 from test.support import import_helper
+from test.support.os_helper import TESTFN, TESTFN_UNDECODABLE
 from test.support.script_helper import assert_python_failure
 from test.support.testcase import ExceptionIsLikeMixin
 
@@ -11,6 +14,8 @@ from .test_misc import decode_stderr
 
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
+
+NULL = None
 
 class Test_Exceptions(unittest.TestCase):
 
@@ -188,6 +193,82 @@ class Test_ErrSetAndRestore(unittest.TestCase):
         self.assertIsInstance(exc, ValueError)
         self.assertEqual(exc.__notes__[0],
                          'Normalization failed: type=Broken args=<unknown>')
+
+    def test_set_string(self):
+        """Test PyErr_SetString()"""
+        setstring = _testcapi.err_setstring
+        with self.assertRaises(ZeroDivisionError) as e:
+            setstring(ZeroDivisionError, b'error')
+        self.assertEqual(e.exception.args, ('error',))
+        with self.assertRaises(ZeroDivisionError) as e:
+            setstring(ZeroDivisionError, 'помилка'.encode())
+        self.assertEqual(e.exception.args, ('помилка',))
+
+        with self.assertRaises(UnicodeDecodeError):
+            setstring(ZeroDivisionError, b'\xff')
+        self.assertRaises(SystemError, setstring, list, b'error')
+        # CRASHES setstring(ZeroDivisionError, NULL)
+        # CRASHES setstring(NULL, b'error')
+
+    def test_format(self):
+        """Test PyErr_Format()"""
+        import_helper.import_module('ctypes')
+        from ctypes import pythonapi, py_object, c_char_p, c_int
+        name = "PyErr_Format"
+        PyErr_Format = getattr(pythonapi, name)
+        PyErr_Format.argtypes = (py_object, c_char_p,)
+        PyErr_Format.restype = py_object
+        with self.assertRaises(ZeroDivisionError) as e:
+            PyErr_Format(ZeroDivisionError, b'%s %d', b'error', c_int(42))
+        self.assertEqual(e.exception.args, ('error 42',))
+        with self.assertRaises(ZeroDivisionError) as e:
+            PyErr_Format(ZeroDivisionError, b'%s', 'помилка'.encode())
+        self.assertEqual(e.exception.args, ('помилка',))
+
+        with self.assertRaisesRegex(OverflowError, 'not in range'):
+            PyErr_Format(ZeroDivisionError, b'%c', c_int(-1))
+        with self.assertRaisesRegex(ValueError, 'format string'):
+            PyErr_Format(ZeroDivisionError, b'\xff')
+        self.assertRaises(SystemError, PyErr_Format, list, b'error')
+        # CRASHES PyErr_Format(ZeroDivisionError, NULL)
+        # CRASHES PyErr_Format(py_object(), b'error')
+
+    def test_setfromerrnowithfilename(self):
+        """Test PyErr_SetFromErrnoWithFilename()"""
+        setfromerrnowithfilename = _testcapi.err_setfromerrnowithfilename
+        ENOENT = errno.ENOENT
+        with self.assertRaises(FileNotFoundError) as e:
+            setfromerrnowithfilename(ENOENT, OSError, b'file')
+        self.assertEqual(e.exception.args,
+                         (ENOENT, 'No such file or directory'))
+        self.assertEqual(e.exception.errno, ENOENT)
+        self.assertEqual(e.exception.filename, 'file')
+
+        with self.assertRaises(FileNotFoundError) as e:
+            setfromerrnowithfilename(ENOENT, OSError, os.fsencode(TESTFN))
+        self.assertEqual(e.exception.filename, TESTFN)
+
+        if TESTFN_UNDECODABLE:
+            with self.assertRaises(FileNotFoundError) as e:
+                setfromerrnowithfilename(ENOENT, OSError, TESTFN_UNDECODABLE)
+            self.assertEqual(e.exception.filename,
+                             os.fsdecode(TESTFN_UNDECODABLE))
+
+        with self.assertRaises(FileNotFoundError) as e:
+            setfromerrnowithfilename(ENOENT, OSError, NULL)
+        self.assertIsNone(e.exception.filename)
+
+        with self.assertRaises(OSError) as e:
+            setfromerrnowithfilename(0, OSError, b'file')
+        self.assertEqual(e.exception.args, (0, 'Error'))
+        self.assertEqual(e.exception.errno, 0)
+        self.assertEqual(e.exception.filename, 'file')
+
+        with self.assertRaises(ZeroDivisionError) as e:
+            setfromerrnowithfilename(ENOENT, ZeroDivisionError, b'file')
+        self.assertEqual(e.exception.args,
+                         (ENOENT, 'No such file or directory', 'file'))
+        # CRASHES setfromerrnowithfilename(ENOENT, NULL, b'error')
 
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):

@@ -58,4 +58,4 @@ class TypeCacheTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    support.run_unittest(TypeCacheTests)
+    unittest.main()

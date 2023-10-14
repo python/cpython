@@ -1,1 +1,0 @@
-:mod:`array`: Add ``'w'`` typecode that represents ``Py_UCS4``.

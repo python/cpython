@@ -125,6 +125,7 @@ byte-code cache files in the directory containing the source code.
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
 
+.. _py_compile-cli:
 
 Command-Line Interface
 ----------------------
@@ -138,13 +139,13 @@ not be compiled.
 
 .. program:: python -m py_compile
 
-.. cmdoption:: <file> ... <fileN>
-               -
+.. option:: <file> ... <fileN>
+            -
 
    Positional arguments are files to compile.  If ``-`` is the only
    parameter, the list of files is taken from standard input.
 
-.. cmdoption:: -q, --quiet
+.. option:: -q, --quiet
 
    Suppress errors output.
 

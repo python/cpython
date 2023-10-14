@@ -28,9 +28,9 @@ Currently, the HOWTOs are:
    urllib2.rst
    argparse.rst
    ipaddress.rst
-   clinic.rst
    instrumentation.rst
    perf_profiling.rst
    annotations.rst
    isolating-extensions.rst
+   timerfd.rst
 

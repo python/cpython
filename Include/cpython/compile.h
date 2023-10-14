@@ -19,9 +19,10 @@
 #define PyCF_TYPE_COMMENTS 0x1000
 #define PyCF_ALLOW_TOP_LEVEL_AWAIT 0x2000
 #define PyCF_ALLOW_INCOMPLETE_INPUT 0x4000
+#define PyCF_OPTIMIZED_AST (0x8000 | PyCF_ONLY_AST)
 #define PyCF_COMPILE_MASK (PyCF_ONLY_AST | PyCF_ALLOW_TOP_LEVEL_AWAIT | \
                            PyCF_TYPE_COMMENTS | PyCF_DONT_IMPLY_DEDENT | \
-                           PyCF_ALLOW_INCOMPLETE_INPUT)
+                           PyCF_ALLOW_INCOMPLETE_INPUT | PyCF_OPTIMIZED_AST)
 
 typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
@@ -67,3 +68,15 @@ typedef struct {
 #define PY_INVALID_STACK_EFFECT INT_MAX
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffect(int opcode, int oparg);
 PyAPI_FUNC(int) PyCompile_OpcodeStackEffectWithJump(int opcode, int oparg, int jump);
+
+PyAPI_FUNC(int) PyUnstable_OpcodeIsValid(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasArg(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasConst(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasName(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasJump(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasFree(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasLocal(int opcode);
+PyAPI_FUNC(int) PyUnstable_OpcodeHasExc(int opcode);
+
+PyAPI_FUNC(PyObject*) PyUnstable_GetUnaryIntrinsicName(int index);
+PyAPI_FUNC(PyObject*) PyUnstable_GetBinaryIntrinsicName(int index);

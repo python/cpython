@@ -11,6 +11,11 @@ ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
 
+# "Legacy": some old symbols are prefixed by "PY_".
+EXCEPTIONS = frozenset({
+    'PY_TIMEOUT_MAX',
+})
+
 IGNORED_EXTENSION = "_ctypes_test"
 # Ignore constructor and destructor functions
 IGNORED_SYMBOLS = {'_init', '_fini'}
@@ -72,7 +77,7 @@ def get_smelly_symbols(stdout):
         symbol = parts[-1]
         result = '%s (type: %s)' % (symbol, symtype)
 
-        if symbol.startswith(ALLOWED_PREFIXES):
+        if symbol.startswith(ALLOWED_PREFIXES) or symbol in EXCEPTIONS:
             python_symbols.append(result)
             continue
 

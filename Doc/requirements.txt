@@ -7,7 +7,7 @@
 # won't suddenly cause build failures. Updating the version is fine as long
 # as no warnings are raised by doing so.
 # PR #104777: Sphinx 6.2 no longer uses imghdr, removed in Python 3.13.
-sphinx==6.2.0
+sphinx==6.2.1
 
 blurb
 
@@ -15,6 +15,6 @@ sphinxext-opengraph==0.7.5
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme>=2022.1
+python-docs-theme>=2023.3.1,!=2023.7
 
 -c constraints.txt

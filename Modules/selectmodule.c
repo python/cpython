@@ -15,7 +15,11 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
 #include "pycore_time.h"          // _PyTime_t
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -1293,8 +1297,8 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
         self->epfd = fd;
     }
     if (self->epfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -1758,18 +1762,18 @@ typedef struct {
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
-#   define T_UINTPTRT         T_ULONGLONG
-#   define T_INTPTRT          T_LONGLONG
+#   define T_UINTPTRT         Py_T_ULONGLONG
+#   define T_INTPTRT          Py_T_LONGLONG
 #   define UINTPTRT_FMT_UNIT  "K"
 #   define INTPTRT_FMT_UNIT   "L"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG)
-#   define T_UINTPTRT         T_ULONG
-#   define T_INTPTRT          T_LONG
+#   define T_UINTPTRT         Py_T_ULONG
+#   define T_INTPTRT          Py_T_LONG
 #   define UINTPTRT_FMT_UNIT  "k"
 #   define INTPTRT_FMT_UNIT   "l"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_INT)
-#   define T_UINTPTRT         T_UINT
-#   define T_INTPTRT          T_INT
+#   define T_UINTPTRT         Py_T_UINT
+#   define T_INTPTRT          Py_T_INT
 #   define UINTPTRT_FMT_UNIT  "I"
 #   define INTPTRT_FMT_UNIT   "i"
 #else
@@ -1777,26 +1781,26 @@ typedef struct {
 #endif
 
 #if SIZEOF_LONG_LONG == 8
-#   define T_INT64          T_LONGLONG
+#   define T_INT64          Py_T_LONGLONG
 #   define INT64_FMT_UNIT   "L"
 #elif SIZEOF_LONG == 8
-#   define T_INT64          T_LONG
+#   define T_INT64          Py_T_LONG
 #   define INT64_FMT_UNIT   "l"
 #elif SIZEOF_INT == 8
-#   define T_INT64          T_INT
+#   define T_INT64          Py_T_INT
 #   define INT64_FMT_UNIT   "i"
 #else
 #   define INT64_FMT_UNIT   "_"
 #endif
 
 #if SIZEOF_LONG_LONG == 4
-#   define T_UINT32         T_ULONGLONG
+#   define T_UINT32         Py_T_ULONGLONG
 #   define UINT32_FMT_UNIT  "K"
 #elif SIZEOF_LONG == 4
-#   define T_UINT32         T_ULONG
+#   define T_UINT32         Py_T_ULONG
 #   define UINT32_FMT_UNIT  "k"
 #elif SIZEOF_INT == 4
-#   define T_UINT32         T_UINT
+#   define T_UINT32         Py_T_UINT
 #   define UINT32_FMT_UNIT  "I"
 #else
 #   define UINT32_FMT_UNIT  "_"
@@ -1813,11 +1817,11 @@ typedef struct {
 #   define FFLAGS_TYPE      T_UINT32
 #   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
-#   define FILTER_TYPE      T_SHORT
+#   define FILTER_TYPE      Py_T_SHORT
 #   define FILTER_FMT_UNIT  "h"
-#   define FLAGS_TYPE       T_USHORT
+#   define FLAGS_TYPE       Py_T_USHORT
 #   define FLAGS_FMT_UNIT   "H"
-#   define FFLAGS_TYPE      T_UINT
+#   define FFLAGS_TYPE      Py_T_UINT
 #   define FFLAGS_FMT_UNIT  "I"
 #endif
 
@@ -1839,7 +1843,7 @@ static struct PyMemberDef kqueue_event_members[] = {
     {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
     {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
     {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
-    {"fflags",          T_UINT,         KQ_OFF(e.fflags)},
+    {"fflags",          Py_T_UINT,         KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
     {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
@@ -1972,8 +1976,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         self->kqfd = fd;
     }
     if (self->kqfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 

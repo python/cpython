@@ -21,13 +21,29 @@
 #ifdef __wasi__
 // WASI's bits/alltypes.h provides type definitions when __NEED_ is set.
 // The header file can be included multiple times.
-#  define __NEED_pthread_cond_t 1
-#  define __NEED_pthread_condattr_t 1
-#  define __NEED_pthread_mutex_t 1
-#  define __NEED_pthread_mutexattr_t 1
-#  define __NEED_pthread_key_t 1
-#  define __NEED_pthread_t 1
-#  define __NEED_pthread_attr_t 1
+//
+// <sys/types.h> may also define these macros.
+#  ifndef __NEED_pthread_cond_t
+#    define __NEED_pthread_cond_t 1
+#  endif
+#  ifndef __NEED_pthread_condattr_t
+#    define __NEED_pthread_condattr_t 1
+#  endif
+#  ifndef __NEED_pthread_mutex_t
+#    define __NEED_pthread_mutex_t 1
+#  endif
+#  ifndef __NEED_pthread_mutexattr_t
+#    define __NEED_pthread_mutexattr_t 1
+#  endif
+#  ifndef __NEED_pthread_key_t
+#    define __NEED_pthread_key_t 1
+#  endif
+#  ifndef __NEED_pthread_t
+#    define __NEED_pthread_t 1
+#  endif
+#  ifndef __NEED_pthread_attr_t
+#    define __NEED_pthread_attr_t 1
+#  endif
 #  include <bits/alltypes.h>
 #else
 typedef struct { void *__x; } pthread_cond_t;

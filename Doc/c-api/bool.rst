@@ -11,6 +11,12 @@ creation and deletion functions don't apply to booleans.  The following macros
 are available, however.
 
 
+.. c:var:: PyTypeObject PyBool_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python boolean type; it
+   is the same object as :class:`bool` in the Python layer.
+
+
 .. c:function:: int PyBool_Check(PyObject *o)
 
    Return true if *o* is of type :c:data:`PyBool_Type`.  This function always

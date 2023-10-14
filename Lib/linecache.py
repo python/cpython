@@ -180,3 +180,10 @@ def lazycache(filename, module_globals):
             cache[filename] = (get_lines,)
             return True
     return False
+
+def _register_code(code, string, name):
+    cache[code] = (
+            len(string),
+            None,
+            [line + '\n' for line in string.splitlines()],
+            name)

@@ -17,7 +17,6 @@ import inspect
 import itertools
 import math
 import types
-import warnings
 import weakref
 from types import GenericAlias
 
@@ -74,15 +73,25 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
     """A coroutine wrapped in a Future."""
 
     # An important invariant maintained while a Task not done:
+    # _fut_waiter is either None or a Future.  The Future
+    # can be either done() or not done().
+    # The task can be in any of 3 states:
     #
-    # - Either _fut_waiter is None, and _step() is scheduled;
-    # - or _fut_waiter is some Future, and _step() is *not* scheduled.
+    # - 1: _fut_waiter is not None and not _fut_waiter.done():
+    #      __step() is *not* scheduled and the Task is waiting for _fut_waiter.
+    # - 2: (_fut_waiter is None or _fut_waiter.done()) and __step() is scheduled:
+    #       the Task is waiting for __step() to be executed.
+    # - 3:  _fut_waiter is None and __step() is *not* scheduled:
+    #       the Task is currently executing (in __step()).
     #
-    # The only transition from the latter to the former is through
-    # _wakeup().  When _fut_waiter is not None, one of its callbacks
-    # must be _wakeup().
+    # * In state 1, one of the callbacks of __fut_waiter must be __wakeup().
+    # * The transition from 1 to 2 happens when _fut_waiter becomes done(),
+    #   as it schedules __wakeup() to be called (which calls __step() so
+    #   we way that __step() is scheduled).
+    # * It transitions from 2 to 3 when __step() is executed, and it clears
+    #   _fut_waiter to None.
 
-    # If False, don't log a message if the task is destroyed whereas its
+    # If False, don't log a message if the task is destroyed while its
     # status is still pending
     _log_destroy_pending = True
 
@@ -935,21 +944,21 @@ def run_coroutine_threadsafe(coro, loop):
 def create_eager_task_factory(custom_task_constructor):
     """Create a function suitable for use as a task factory on an event-loop.
 
-	    Example usage:
+        Example usage:
 
-	        loop.set_task_factory(
-	            asyncio.create_eager_task_factory(my_task_constructor))
+            loop.set_task_factory(
+                asyncio.create_eager_task_factory(my_task_constructor))
 
-	    Now, tasks created will be started immediately (rather than being first
-	    scheduled to an event loop). The constructor argument can be any callable
-	    that returns a Task-compatible object and has a signature compatible
-	    with `Task.__init__`; it must have the `eager_start` keyword argument.
+        Now, tasks created will be started immediately (rather than being first
+        scheduled to an event loop). The constructor argument can be any callable
+        that returns a Task-compatible object and has a signature compatible
+        with `Task.__init__`; it must have the `eager_start` keyword argument.
 
-	    Most applications will use `Task` for `custom_task_constructor` and in
+        Most applications will use `Task` for `custom_task_constructor` and in
         this case there's no need to call `create_eager_task_factory()`
         directly. Instead the  global `eager_task_factory` instance can be
         used. E.g. `loop.set_task_factory(asyncio.eager_task_factory)`.
-	    """
+        """
 
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(

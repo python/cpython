@@ -1,2 +1,0 @@
-Fix bugs in the :mod:`builtins` module where exceptions could end up being
-overwritten.

@@ -149,7 +149,7 @@ argument - by Anthony Sottile.
 .. section: Core and Builtins
 
 Correct the error message when calling the :func:`min` or :func:`max` with
-no arguments. Patch by Dong-hee Na.
+no arguments. Patch by Donghee Na.
 
 ..
 
@@ -392,7 +392,7 @@ Remove ``fractions.gcd()`` function, deprecated since Python 3.5
 .. section: Library
 
 :class:`~smtplib.LMTP` constructor now has an optional *timeout* parameter.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -414,7 +414,7 @@ Taskaya.
 
 :class:`~ftplib.FTP_TLS` and :class:`~ftplib.FTP_TLS` now raise a
 :class:`ValueError` if the given timeout for their constructor is zero to
-prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
+prevent the creation of a non-blocking socket. Patch by Donghee Na.
 
 ..
 
@@ -425,7 +425,7 @@ prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
 
 :class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a
 :class:`ValueError` if the given timeout for their constructor is zero to
-prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
+prevent the creation of a non-blocking socket. Patch by Donghee Na.
 
 ..
 
@@ -456,7 +456,7 @@ resilients to inaccessible sys.path entries (importlib_metadata v1.4.0).
 
 :class:`~!nntplib.NNTP` and :class:`~!nntplib.NNTP_SSL` now raise a
 :class:`ValueError` if the given timeout for their constructor is zero to
-prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
+prevent the creation of a non-blocking socket. Patch by Donghee Na.
 
 ..
 
@@ -488,7 +488,7 @@ towards *y*.
 
 :class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a
 :class:`ValueError` if the given timeout for their constructor is zero to
-prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
+prevent the creation of a non-blocking socket. Patch by Donghee Na.
 
 ..
 
@@ -571,7 +571,7 @@ new task spawning before exception raising.
 .. section: Library
 
 Correctly parenthesize filter-based statements that contain lambda
-expressions in mod:`!lib2to3`. Patch by Dong-hee Na.
+expressions in mod:`!lib2to3`. Patch by Donghee Na.
 
 ..
 
@@ -699,7 +699,7 @@ upon inheritance. Patch by Bar Harel.
 :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
 with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 

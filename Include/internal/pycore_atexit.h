@@ -51,6 +51,7 @@ struct atexit_state {
     int callback_len;
 };
 
+// Export for '_xxinterpchannels' shared extension
 PyAPI_FUNC(int) _Py_AtExit(
     PyInterpreterState *interp,
     atexit_datacallbackfunc func,

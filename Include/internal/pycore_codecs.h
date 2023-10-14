@@ -4,6 +4,10 @@
 extern "C" {
 #endif
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 extern PyObject* _PyCodec_Lookup(const char *encoding);
 
 /* Text codec specific encoding and decoding API.

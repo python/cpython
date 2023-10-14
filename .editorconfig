@@ -8,5 +8,8 @@ indent_style = space
 [*.{py,c,cpp,h}]
 indent_size = 4
 
+[*.rst]
+indent_size = 3
+
 [*.yml]
 indent_size = 2

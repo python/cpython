@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
-#include "../Parser/tokenizer.h"
+#include "../Parser/lexer/state.h"
+#include "../Parser/lexer/lexer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
@@ -236,9 +238,6 @@ tokenizeriter_next(tokenizeriterobject *it)
         // implementation
         if (type > DEDENT && type < OP) {
             type = OP;
-        }
-        else if (type == ASYNC || type == AWAIT) {
-            type = NAME;
         }
         else if (type == NEWLINE) {
             Py_DECREF(str);

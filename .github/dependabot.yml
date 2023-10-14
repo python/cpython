@@ -13,7 +13,7 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
   - package-ecosystem: "pip"
-    directory: "/Tools/clinic/"
+    directory: "/Tools/"
     schedule:
       interval: "monthly"
     labels:

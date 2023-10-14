@@ -19,6 +19,10 @@ The :mod:`datetime` module supplies classes for manipulating dates and times.
 While date and time arithmetic is supported, the focus of the implementation is
 on efficient attribute extraction for output formatting and manipulation.
 
+.. tip::
+
+    Skip to :ref:`the format codes <format-codes>`.
+
 .. seealso::
 
    Module :mod:`calendar`
@@ -32,6 +36,10 @@ on efficient attribute extraction for output formatting and manipulation.
 
    Package `dateutil <https://dateutil.readthedocs.io/en/stable/>`_
       Third-party library with expanded time zone and parsing support.
+
+   Package `DateType <https://pypi.org/project/datetype/>`_
+      Third-party library that introduces distinct static types to e.g. allow static type checkers
+      to differentiate between naive and aware datetimes.
 
 .. _datetime-naive-aware:
 
@@ -644,6 +652,9 @@ Instance methods:
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
 
+   :class:`date` objects are also supported by generic function
+   :func:`copy.replace`.
+
 
 .. method:: date.timetuple()
 
@@ -1243,6 +1254,9 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive datetime from an aware
    datetime with no conversion of date and time data.
 
+   :class:`datetime` objects are also supported by generic function
+   :func:`copy.replace`.
+
    .. versionadded:: 3.6
       Added the ``fold`` argument.
 
@@ -1819,6 +1833,9 @@ Instance methods:
    ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
    aware :class:`.time`, without conversion of the time data.
 
+   :class:`time` objects are also supported by generic function
+   :func:`copy.replace`.
+
    .. versionadded:: 3.6
       Added the ``fold`` argument.
 
@@ -2321,6 +2338,8 @@ versus :meth:`strptime`:
 | Signature      | ``strftime(format)``                                   | ``strptime(date_string, format)``                                            |
 +----------------+--------------------------------------------------------+------------------------------------------------------------------------------+
 
+
+   .. _format-codes:
 
 :meth:`strftime` and :meth:`strptime` Format Codes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

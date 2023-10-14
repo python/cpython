@@ -1002,8 +1002,8 @@ static PyGetSetDef stringio_getset[] = {
 };
 
 static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(stringio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(stringio, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
     {NULL},
 };
 

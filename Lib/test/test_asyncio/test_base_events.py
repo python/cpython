@@ -273,7 +273,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.stop()
 
         self.loop._process_events = mock.Mock()
-        delay = 0.1
+        delay = 0.100
 
         when = self.loop.time() + delay
         self.loop.call_at(when, cb)
@@ -282,10 +282,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         dt = self.loop.time() - t0
 
         # 50 ms: maximum granularity of the event loop
-        self.assertGreaterEqual(dt, delay - 0.050, dt)
-        # tolerate a difference of +800 ms because some Python buildbots
-        # are really slow
-        self.assertLessEqual(dt, 0.9, dt)
+        self.assertGreaterEqual(dt, delay - test_utils.CLOCK_RES)
         with self.assertRaises(TypeError, msg="when cannot be None"):
             self.loop.call_at(None, cb)
 
@@ -924,6 +921,43 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.stop()
         self.loop.run_forever()
         self.loop._selector.select.assert_called_once_with(0)
+
+    def test_custom_run_forever_integration(self):
+        # Test that the run_forever_setup() and run_forever_cleanup() primitives
+        # can be used to implement a custom run_forever loop.
+        self.loop._process_events = mock.Mock()
+
+        count = 0
+
+        def callback():
+            nonlocal count
+            count += 1
+
+        self.loop.call_soon(callback)
+
+        # Set up the custom event loop
+        self.loop._run_forever_setup()
+
+        # Confirm the loop has been started
+        self.assertEqual(asyncio.get_running_loop(), self.loop)
+        self.assertTrue(self.loop.is_running())
+
+        # Our custom "event loop" just iterates 10 times before exiting.
+        for i in range(10):
+            self.loop._run_once()
+
+        # Clean up the event loop
+        self.loop._run_forever_cleanup()
+
+        # Confirm the loop has been cleaned up
+        with self.assertRaises(RuntimeError):
+            asyncio.get_running_loop()
+        self.assertFalse(self.loop.is_running())
+
+        # Confirm the loop actually did run, processing events 10 times,
+        # and invoking the callback once.
+        self.assertEqual(self.loop._process_events.call_count, 10)
+        self.assertEqual(count, 1)
 
     async def leave_unfinalized_asyncgen(self):
         # Create an async generator, iterate it partially, and leave it

@@ -2,7 +2,7 @@
 
 #include "parts.h"
 
-#include "structmember.h"           // PyMemberDef
+
 #include <stddef.h>                 // offsetof
 
 typedef struct {
@@ -72,7 +72,7 @@ static PyBufferProcs testbuf_as_buffer = {
 };
 
 static struct PyMemberDef testbuf_members[] = {
-    {"references", T_PYSSIZET, offsetof(testBufObject, references), READONLY},
+    {"references", Py_T_PYSSIZET, offsetof(testBufObject, references), Py_READONLY},
     {NULL},
 };
 

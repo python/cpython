@@ -1,5 +1,5 @@
 
-/* Readline interface for tokenizer.c and [raw_]input() in bltinmodule.c.
+/* Readline interface for the tokenizer and [raw_]input() in bltinmodule.c.
    By default, or when stdin is not a tty device, we have a super
    simple my_readline function using fgets.
    Optionally, we can use the GNU readline library.
@@ -14,13 +14,19 @@
 #include "pycore_pystate.h"   // _PyThreadState_GET()
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
-#  define WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include "windows.h"
 #endif /* MS_WINDOWS */
 
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
-PyThreadState* _PyOS_ReadlineTState = NULL;
+
+// Export the symbol since it's used by the readline shared extension
+PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
+PyThreadState *_PyOS_ReadlineTState = NULL;
 
 static PyThread_type_lock _PyOS_ReadlineLock = NULL;
 
@@ -358,7 +364,7 @@ PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, const char *) = NULL;
 
 
-/* Interface used by tokenizer.c and bltinmodule.c */
+/* Interface used by file_tokenizer.c and bltinmodule.c */
 
 char *
 PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)

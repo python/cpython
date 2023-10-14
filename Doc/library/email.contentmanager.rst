@@ -32,9 +32,9 @@
       To find the handler, look for the following keys in the registry,
       stopping with the first one found:
 
-            * the string representing the full MIME type (``maintype/subtype``)
-            * the string representing the ``maintype``
-            * the empty string
+      * the string representing the full MIME type (``maintype/subtype``)
+      * the string representing the ``maintype``
+      * the empty string
 
       If none of these keys produce a handler, raise a :exc:`KeyError` for the
       full MIME type.
@@ -55,11 +55,11 @@
       look for the following keys in the registry, stopping with the first one
       found:
 
-           * the type itself (``typ``)
-           * the type's fully qualified name (``typ.__module__ + '.' +
-             typ.__qualname__``).
-           * the type's qualname (``typ.__qualname__``)
-           * the type's name (``typ.__name__``).
+      * the type itself (``typ``)
+      * the type's fully qualified name (``typ.__module__ + '.' +
+        typ.__qualname__``).
+      * the type's qualname (``typ.__qualname__``)
+      * the type's name (``typ.__name__``).
 
       If none of the above match, repeat all of the checks above for each of
       the types in the :term:`MRO` (``typ.__mro__``).  Finally, if no other key
@@ -132,15 +132,15 @@ Currently the email package provides only one concrete content manager,
        Add a :mailheader:`Content-Type` header with a ``maintype/subtype``
        value.
 
-           * For ``str``, set the MIME ``maintype`` to ``text``, and set the
-             subtype to *subtype* if it is specified, or ``plain`` if it is not.
-           * For ``bytes``, use the specified *maintype* and *subtype*, or
-             raise a :exc:`TypeError` if they are not specified.
-           * For :class:`~email.message.EmailMessage` objects, set the maintype
-             to ``message``, and set the subtype to *subtype* if it is
-             specified or ``rfc822`` if it is not.  If *subtype* is
-             ``partial``, raise an error (``bytes`` objects must be used to
-             construct ``message/partial`` parts).
+       * For ``str``, set the MIME ``maintype`` to ``text``, and set the
+         subtype to *subtype* if it is specified, or ``plain`` if it is not.
+       * For ``bytes``, use the specified *maintype* and *subtype*, or
+         raise a :exc:`TypeError` if they are not specified.
+       * For :class:`~email.message.EmailMessage` objects, set the maintype
+         to ``message``, and set the subtype to *subtype* if it is
+         specified or ``rfc822`` if it is not.  If *subtype* is
+         ``partial``, raise an error (``bytes`` objects must be used to
+         construct ``message/partial`` parts).
 
        If *charset* is provided (which is valid only for ``str``), encode the
        string to bytes using the specified character set.  The default is
@@ -155,14 +155,14 @@ Currently the email package provides only one concrete content manager,
        ``7bit`` for an input that contains non-ASCII values), raise a
        :exc:`ValueError`.
 
-            * For ``str`` objects, if *cte* is not set use heuristics to
-              determine the most compact encoding.
-            * For :class:`~email.message.EmailMessage`, per :rfc:`2046`, raise
-              an error if a *cte* of ``quoted-printable`` or ``base64`` is
-              requested for *subtype* ``rfc822``, and for any *cte* other than
-              ``7bit`` for *subtype* ``external-body``.  For
-              ``message/rfc822``, use ``8bit`` if *cte* is not specified.  For
-              all other values of *subtype*, use ``7bit``.
+       * For ``str`` objects, if *cte* is not set use heuristics to
+         determine the most compact encoding.
+       * For :class:`~email.message.EmailMessage`, per :rfc:`2046`, raise
+         an error if a *cte* of ``quoted-printable`` or ``base64`` is
+         requested for *subtype* ``rfc822``, and for any *cte* other than
+         ``7bit`` for *subtype* ``external-body``.  For
+         ``message/rfc822``, use ``8bit`` if *cte* is not specified.  For
+         all other values of *subtype*, use ``7bit``.
 
        .. note:: A *cte* of ``binary`` does not actually work correctly yet.
           The ``EmailMessage`` object as modified by ``set_content`` is

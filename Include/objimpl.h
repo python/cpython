@@ -1,12 +1,8 @@
-/* The PyObject_ memory family:  high-level object memory interfaces.
-   See pymem.h for the low-level PyMem_ family.
-*/
+// The PyObject_ memory family:  high-level object memory interfaces.
+// See pymem.h for the low-level PyMem_ family.
 
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
-
-#include "pymem.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -231,4 +227,4 @@ PyAPI_FUNC(int) PyObject_GC_IsFinalized(PyObject *);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !Py_OBJIMPL_H */
+#endif   // !Py_OBJIMPL_H

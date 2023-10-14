@@ -99,7 +99,10 @@
     <ClCompile Include="..\Modules\_testcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype.c" />
     <ClCompile Include="..\Modules\_testcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testcapi\abstract.c" />
     <ClCompile Include="..\Modules\_testcapi\unicode.c" />
+    <ClCompile Include="..\Modules\_testcapi\dict.c" />
+    <ClCompile Include="..\Modules\_testcapi\set.c" />
     <ClCompile Include="..\Modules\_testcapi\datetime.c" />
     <ClCompile Include="..\Modules\_testcapi\docstring.c" />
     <ClCompile Include="..\Modules\_testcapi\mem.c" />
@@ -110,6 +113,7 @@
     <ClCompile Include="..\Modules\_testcapi\exceptions.c" />
     <ClCompile Include="..\Modules\_testcapi\code.c" />
     <ClCompile Include="..\Modules\_testcapi\buffer.c" />
+    <ClCompile Include="..\Modules\_testcapi\pyatomic.c" />
     <ClCompile Include="..\Modules\_testcapi\pyos.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />

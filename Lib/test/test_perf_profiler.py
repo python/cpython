@@ -17,6 +17,11 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
+if support.check_sanitizer(address=True, memory=True, ub=True):
+    # gh-109580: Skip the test because it does crash randomly if Python is
+    # built with ASAN.
+    raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
+
 
 def supports_trampoline_profiling():
     perf_trampoline = sysconfig.get_config_var("PY_HAVE_PERF_TRAMPOLINE")
@@ -287,7 +292,6 @@ def run_perf(cwd, *args, **env_vars):
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
 @unittest.skipUnless(is_unwinding_reliable(), "Unwinding is unreliable")
-@support.skip_if_sanitizer(address=True, memory=True, ub=True)
 class TestPerfProfiler(unittest.TestCase):
     def setUp(self):
         super().setUp()

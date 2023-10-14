@@ -1,12 +1,8 @@
-/* The PyMem_ family:  low-level memory allocation interfaces.
-   See objimpl.h for the PyObject_ memory family.
-*/
+// The PyMem_ family:  low-level memory allocation interfaces.
+// See objimpl.h for the PyObject_ memory family.
 
 #ifndef Py_PYMEM_H
 #define Py_PYMEM_H
-
-#include "pyport.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -100,5 +96,4 @@ PyAPI_FUNC(void) PyMem_Free(void *ptr);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* !Py_PYMEM_H */
+#endif   // !Py_PYMEM_H

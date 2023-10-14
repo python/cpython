@@ -506,7 +506,7 @@ Fix handling of long oids in ssl.  Based on patch by Christian Heimes.
 .. section: Library
 
 ftplib.FTP.putline() now throws ValueError on commands that contains CR or
-LF. Patch by Dong-hee Na.
+LF. Patch by Donghee Na.
 
 ..
 

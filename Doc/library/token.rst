@@ -80,17 +80,21 @@ the :mod:`tokenize` module.
 
 
 .. versionchanged:: 3.5
-   Added :data:`AWAIT` and :data:`ASYNC` tokens.
+   Added :data:`!AWAIT` and :data:`!ASYNC` tokens.
 
 .. versionchanged:: 3.7
    Added :data:`COMMENT`, :data:`NL` and :data:`ENCODING` tokens.
 
 .. versionchanged:: 3.7
-   Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
+   Removed :data:`!AWAIT` and :data:`!ASYNC` tokens. "async" and "await" are
    now tokenized as :data:`NAME` tokens.
 
 .. versionchanged:: 3.8
    Added :data:`TYPE_COMMENT`, :data:`TYPE_IGNORE`, :data:`COLONEQUAL`.
-   Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
+   Added :data:`!AWAIT` and :data:`!ASYNC` tokens back (they're needed
    to support parsing older Python versions for :func:`ast.parse` with
    ``feature_version`` set to 6 or lower).
+
+.. versionchanged:: 3.13
+   Removed :data:`!AWAIT` and :data:`!ASYNC` tokens again.
+

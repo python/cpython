@@ -467,15 +467,14 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
-def regen_frozen(modules, frozen_modules: bool):
+def regen_frozen(modules):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
-    if frozen_modules:
-        for src in _iter_sources(modules):
-            # Adding a comment to separate sections here doesn't add much,
-            # so we don't.
-            header = relpath_for_posix_display(src.frozenfile, parentdir)
-            headerlines.append(f'#include "{header}"')
+    for src in _iter_sources(modules):
+        # Adding a comment to separate sections here doesn't add much,
+        # so we don't.
+        header = relpath_for_posix_display(src.frozenfile, parentdir)
+        headerlines.append(f'#include "{header}"')
 
     externlines = []
     bootstraplines = []
@@ -504,14 +503,9 @@ def regen_frozen(modules, frozen_modules: bool):
         get_code_name = "_Py_get_%s_toplevel" % code_name
         externlines.append("extern PyObject *%s(void);" % get_code_name)
 
-        symbol = mod.symbol
         pkg = 'true' if mod.ispkg else 'false'
-        if not frozen_modules:
-            line = ('{"%s", NULL, 0, %s, GET_CODE(%s)},'
-                ) % (mod.name, pkg, code_name)
-        else:
-            line = ('{"%s", %s, (int)sizeof(%s), %s, GET_CODE(%s)},'
-                ) % (mod.name, symbol, symbol, pkg, code_name)
+        size = f"(int)sizeof({mod.symbol})"
+        line = f'{{"{mod.name}", {mod.symbol}, {size}, {pkg}}},'
         lines.append(line)
 
         if mod.isalias:
@@ -585,7 +579,7 @@ def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
     rules = ['']
-    deepfreezerules = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
+    deepfreezerules = ["$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)",
                        "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \\"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)
@@ -718,20 +712,14 @@ def regen_pcbuild(modules):
 #######################################
 # the script
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--frozen-modules", action="store_true",
-        help="Use both frozen and deepfrozen modules. (default: uses only deepfrozen modules)")
-
 def main():
-    args = parser.parse_args()
-    frozen_modules: bool = args.frozen_modules
     # Expand the raw specs, preserving order.
     modules = list(parse_frozen_specs())
 
     # Regen build-related files.
     regen_makefile(modules)
     regen_pcbuild(modules)
-    regen_frozen(modules, frozen_modules)
+    regen_frozen(modules)
 
 
 if __name__ == '__main__':

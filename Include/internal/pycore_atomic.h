@@ -1,5 +1,5 @@
-#ifndef Py_ATOMIC_H
-#define Py_ATOMIC_H
+#ifndef Py_INTERNAL_ATOMIC_H
+#define Py_INTERNAL_ATOMIC_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -8,19 +8,19 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h"   /* _Py_ANNOTATE_MEMORY_ORDER */
-#include "pyconfig.h"
+#include "pyconfig.h"             // HAVE_STD_ATOMIC
+#include "dynamic_annotations.h"  // _Py_ANNOTATE_MEMORY_ORDER
 
 #ifdef HAVE_STD_ATOMIC
-#  include <stdatomic.h>
+#  include <stdatomic.h>          // atomic_store_explicit()
 #endif
 
 
 #if defined(_MSC_VER)
-#include <intrin.h>
-#if defined(_M_IX86) || defined(_M_X64)
-#  include <immintrin.h>
-#endif
+#  include <intrin.h>             // _InterlockedExchange64()
+#  if defined(_M_IX86) || defined(_M_X64)
+#    include <immintrin.h>        // _InterlockedExchange_HLEAcquire()
+#  endif
 #endif
 
 /* This is modeled after the atomics interface from C1x, according to
@@ -554,4 +554,4 @@ typedef struct _Py_atomic_int {
 #ifdef __cplusplus
 }
 #endif
-#endif  /* Py_ATOMIC_H */
+#endif  /* Py_INTERNAL_ATOMIC_H */

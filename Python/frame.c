@@ -124,7 +124,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
-    assert(_PyThreadState_GET()->cframe->current_frame != frame);
+    assert(_PyThreadState_GET()->current_frame != frame);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -167,10 +167,10 @@ PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
     return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
 
-const PyTypeObject *const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1] = {
-    [PY_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
-    [PY_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
-    [PY_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
-    [PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
-    [PY_EXECUTABLE_KINDS] = NULL,
+const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
+    [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
+    [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
+    [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
+    [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
+    [PyUnstable_EXECUTABLE_KINDS] = NULL,
 };

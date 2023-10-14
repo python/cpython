@@ -137,7 +137,7 @@ the :func:`math.isclose` function can be useful for comparing inexact values:
    True
 
 Alternatively, the :func:`round` function can be used to compare rough
-approximations::
+approximations:
 
 .. doctest::
 

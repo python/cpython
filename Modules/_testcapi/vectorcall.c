@@ -1,7 +1,7 @@
 #include "parts.h"
 #include "clinic/vectorcall.c.h"
 
-#include "structmember.h"           // PyMemberDef
+
 #include <stddef.h>                 // offsetof
 
 /*[clinic input]
@@ -155,10 +155,9 @@ VectorCallClass_vectorcall(PyObject *callable,
 }
 
 /*[clinic input]
-module _testcapi
 class _testcapi.VectorCallClass "PyObject *" "&PyType_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8423a8e919f2f0df]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=95c63c1a47f9a995]*/
 
 /*[clinic input]
 _testcapi.VectorCallClass.set_vectorcall
@@ -197,7 +196,7 @@ PyMethodDef VectorCallClass_methods[] = {
 };
 
 PyMemberDef VectorCallClass_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, 0/* set later */, READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, 0/* set later */, Py_READONLY},
     {NULL}
 };
 

@@ -4,6 +4,7 @@ machinery = test_util.import_importlib('importlib.machinery')
 import os
 import re
 import sys
+import sysconfig
 import unittest
 from test.support import import_helper
 from contextlib import contextmanager
@@ -111,8 +112,10 @@ class WindowsRegistryFinderTests:
 class WindowsExtensionSuffixTests:
     def test_tagged_suffix(self):
         suffixes = self.machinery.EXTENSION_SUFFIXES
-        expected_tag = ".cp{0.major}{0.minor}-{1}.pyd".format(sys.version_info,
-            re.sub('[^a-zA-Z0-9]', '_', get_platform()))
+        abi_flags = "t" if sysconfig.get_config_var("Py_NOGIL") else ""
+        ver = sys.version_info
+        platform = re.sub('[^a-zA-Z0-9]', '_', get_platform())
+        expected_tag = f".cp{ver.major}{ver.minor}{abi_flags}-{platform}.pyd"
         try:
             untagged_i = suffixes.index(".pyd")
         except ValueError:

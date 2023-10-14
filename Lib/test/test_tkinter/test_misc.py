@@ -1,9 +1,10 @@
 import functools
 import unittest
 import tkinter
+from tkinter import TclError
 import enum
 from test import support
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
@@ -35,6 +36,59 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         b = tkinter.Button(f2)
         for name in str(b).split('.'):
             self.assertFalse(name.isidentifier(), msg=repr(name))
+
+    @requires_tk(8, 6, 6)
+    def test_tk_busy(self):
+        root = self.root
+        f = tkinter.Frame(root, name='myframe')
+        f2 = tkinter.Frame(root)
+        f.pack()
+        f2.pack()
+        b = tkinter.Button(f)
+        b.pack()
+        f.tk_busy_hold()
+        with self.assertRaisesRegex(TclError, 'unknown option "-spam"'):
+            f.tk_busy_configure(spam='eggs')
+        with self.assertRaisesRegex(TclError, 'unknown option "-spam"'):
+            f.tk_busy_cget('spam')
+        with self.assertRaisesRegex(TclError, 'unknown option "-spam"'):
+            f.tk_busy_configure('spam')
+        self.assertIsInstance(f.tk_busy_configure(), dict)
+
+        self.assertTrue(f.tk_busy_status())
+        self.assertFalse(root.tk_busy_status())
+        self.assertFalse(f2.tk_busy_status())
+        self.assertFalse(b.tk_busy_status())
+        self.assertIn(f, f.tk_busy_current())
+        self.assertIn(f, f.tk_busy_current('*.m?f*me'))
+        self.assertNotIn(f, f.tk_busy_current('*spam'))
+
+        f.tk_busy_forget()
+        self.assertFalse(f.tk_busy_status())
+        self.assertFalse(f.tk_busy_current())
+        with self.assertRaisesRegex(TclError, "can't find busy window"):
+            f.tk_busy_configure()
+        with self.assertRaisesRegex(TclError, "can't find busy window"):
+            f.tk_busy_forget()
+
+    @requires_tk(8, 6, 6)
+    def test_tk_busy_with_cursor(self):
+        root = self.root
+        if root._windowingsystem == 'aqua':
+            self.skipTest('the cursor option is not supported on OSX/Aqua')
+        f = tkinter.Frame(root, name='myframe')
+        f.pack()
+        f.tk_busy_hold(cursor='gumby')
+
+        self.assertEqual(f.tk_busy_cget('cursor'), 'gumby')
+        f.tk_busy_configure(cursor='heart')
+        self.assertEqual(f.tk_busy_cget('cursor'), 'heart')
+        self.assertEqual(f.tk_busy_configure()['cursor'][4], 'heart')
+        self.assertEqual(f.tk_busy_configure('cursor')[4], 'heart')
+
+        f.tk_busy_forget()
+        with self.assertRaisesRegex(TclError, "can't find busy window"):
+            f.tk_busy_cget('cursor')
 
     def test_tk_setPalette(self):
         root = self.root

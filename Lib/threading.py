@@ -4,6 +4,7 @@ import os as _os
 import sys as _sys
 import _thread
 import functools
+import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -37,6 +38,7 @@ _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -116,6 +118,12 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
+    if args or kwargs:
+        warnings.warn(
+            'Passing arguments to RLock is deprecated and will be removed in 3.15',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if _CRLock is None:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
@@ -237,6 +245,13 @@ class _RLock:
 
     def _is_owned(self):
         return self._owner == get_ident()
+
+    # Internal method used for reentrancy checks
+
+    def _recursion_count(self):
+        if self._owner != get_ident():
+            return 0
+        return self._count
 
 _PyRLock = _RLock
 
@@ -1451,11 +1466,12 @@ class _DummyThread(Thread):
         pass
 
     def is_alive(self):
-        assert not self._is_stopped and self._started.is_set()
-        return True
+        if not self._is_stopped and self._started.is_set():
+            return True
+        raise RuntimeError("thread is not alive")
 
     def join(self, timeout=None):
-        assert False, "cannot join a dummy thread"
+        raise RuntimeError("cannot join a dummy thread")
 
 
 # Global API functions
@@ -1559,7 +1575,7 @@ def _shutdown():
     # the main thread's tstate_lock - that won't happen until the interpreter
     # is nearly dead.  So we release it here.  Note that just calling _stop()
     # isn't enough:  other threads may already be waiting on _tstate_lock.
-    if _main_thread._is_stopped:
+    if _main_thread._is_stopped and _is_main_interpreter():
         # _shutdown() was already called
         return
 
@@ -1577,8 +1593,11 @@ def _shutdown():
         # The main thread isn't finished yet, so its thread state lock can't
         # have been released.
         assert tlock is not None
-        assert tlock.locked()
-        tlock.release()
+        if tlock.locked():
+            # It should have been released already by
+            # _PyInterpreterState_SetNotRunningMain(), but there may be
+            # embedders that aren't calling that yet.
+            tlock.release()
         _main_thread._stop()
     else:
         # bpo-1596321: _shutdown() must be called in the main thread.
@@ -1612,6 +1631,7 @@ def main_thread():
     In normal conditions, the main thread is the thread from which the
     Python interpreter was started.
     """
+    # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
 
 # get thread-local implementation, either from the thread

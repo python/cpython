@@ -44,7 +44,7 @@ VERSION = "3.3"
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
-UNIDATA_VERSION = "15.0.0"
+UNIDATA_VERSION = "15.1.0"
 UNICODE_DATA = "UnicodeData%s.txt"
 COMPOSITION_EXCLUSIONS = "CompositionExclusions%s.txt"
 EASTASIAN_WIDTH = "EastAsianWidth%s.txt"
@@ -101,15 +101,16 @@ EXTENDED_CASE_MASK = 0x4000
 
 # these ranges need to match unicodedata.c:is_unified_ideograph
 cjk_ranges = [
-    ('3400', '4DBF'),
-    ('4E00', '9FFF'),
-    ('20000', '2A6DF'),
-    ('2A700', '2B739'),
-    ('2B740', '2B81D'),
-    ('2B820', '2CEA1'),
-    ('2CEB0', '2EBE0'),
-    ('30000', '3134A'),
-    ('31350', '323AF'),
+    ('3400', '4DBF'),    # CJK Ideograph Extension A CJK
+    ('4E00', '9FFF'),    # CJK Ideograph
+    ('20000', '2A6DF'),  # CJK Ideograph Extension B
+    ('2A700', '2B739'),  # CJK Ideograph Extension C
+    ('2B740', '2B81D'),  # CJK Ideograph Extension D
+    ('2B820', '2CEA1'),  # CJK Ideograph Extension E
+    ('2CEB0', '2EBE0'),  # CJK Ideograph Extension F
+    ('2EBF0', '2EE5D'),  # CJK Ideograph Extension I
+    ('30000', '3134A'),  # CJK Ideograph Extension G
+    ('31350', '323AF'),  # CJK Ideograph Extension H
 ]
 
 
@@ -1105,11 +1106,15 @@ class UnicodeData:
                 table[i].east_asian_width = widths[i]
         self.widths = widths
 
-        for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+        for char, (propname, *propinfo) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
+            if propinfo:
+                # this is not a binary property, ignore it
+                continue
+
             if table[char]:
                 # Some properties (e.g. Default_Ignorable_Code_Point)
                 # apply to unassigned code points; ignore them
-                table[char].binary_properties.add(p)
+                table[char].binary_properties.add(propname)
 
         for char_range, value in UcdFile(LINE_BREAK, version):
             if value not in MANDATORY_LINE_BREAKS:

@@ -1,0 +1,4 @@
+Fix :func:`tty.setraw` and :func:`tty.setcbreak`: previously they returned
+partially modified list of the original tty attributes.
+:func:`tty.cfmakeraw` and :func:`tty.cfmakecbreak` now make a copy of the
+list of special characters before modifying it.
