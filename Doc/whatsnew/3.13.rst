@@ -1045,6 +1045,10 @@ New Features
   but pass event arguments as a Python :class:`tuple` object.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
+  parameter names.
+  (Contributed by Serhiy Storchaka in :gh:`110815`.)
+
 Porting to Python 3.13
 ----------------------
 
