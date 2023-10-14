@@ -75,6 +75,11 @@ New Features
 Other Language Changes
 ======================
 
+* Added class methods :meth:`float.from_number` and :meth:`complex.from_number`
+  to convert a number to :class:`float` or :class:`complex` type correspondingly.
+  They raise error if the argument is a string.
+  (Contributed by Serhiy Storchaka in :gh:`84978`.)
+
 * Allow the *count* argument of :meth:`str.replace` to be a keyword.
   (Contributed by Hugo van Kemenade in :gh:`106487`.)
 

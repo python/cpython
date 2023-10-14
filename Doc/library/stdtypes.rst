@@ -624,6 +624,23 @@ Additional Methods on Float
 The float type implements the :class:`numbers.Real` :term:`abstract base
 class`. float also has the following additional methods.
 
+.. classmethod:: float.from_number(x)
+
+   Class method to return a floating point number constructed from a number *x*.
+
+   If the argument is an integer or a floating point number, a
+   floating point number with the same value (within Python's floating point
+   precision) is returned.  If the argument is outside the range of a Python
+   float, an :exc:`OverflowError` will be raised.
+
+   For a general Python object ``x``, ``float.from_number(x)`` delegates to
+   ``x.__float__()``.
+   If :meth:`~object.__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   .. versionadded:: 3.13
+
+
 .. method:: float.as_integer_ratio()
 
    Return a pair of integers whose ratio is exactly equal to the
@@ -700,6 +717,25 @@ hexadecimal string representing the same number::
 
    >>> float.hex(3740.0)
    '0x1.d380000000000p+11'
+
+
+Additional Methods on Complex
+-----------------------------
+
+The :class:`!complex` type implements the :class:`numbers.Complex`
+:term:`abstract base class`.
+:class:`!complex` also has the following additional methods.
+
+.. classmethod:: complex.from_number(x)
+
+   Class method to convert a number to a complex number.
+
+   For a general Python object ``x``, ``complex.from_number(x)`` delegates to
+   ``x.__complex__()``.  If :meth:`~object.__complex__` is not defined then it falls back
+   to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
+   to :meth:`~object.__index__`.
+
+   .. versionadded:: 3.13
 
 
 .. _numeric-hash:

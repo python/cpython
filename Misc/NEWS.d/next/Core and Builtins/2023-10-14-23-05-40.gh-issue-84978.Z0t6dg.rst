@@ -1,0 +1,1 @@
+Add class methods :meth:`float.from_number` and :meth:`complex.from_number`.

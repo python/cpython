@@ -387,6 +387,8 @@ are always available.  They are listed here in alphabetical order.
    to :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
 
+   See also :meth:`complex.from_number` which only accept single numeric argument.
+
    .. note::
 
       When converting from a string, the string must not contain whitespace
@@ -683,6 +685,8 @@ are always available.  They are listed here in alphabetical order.
    For a general Python object ``x``, ``float(x)`` delegates to
    ``x.__float__()``.  If :meth:`~object.__float__` is not defined then it falls back
    to :meth:`~object.__index__`.
+
+   See also :meth:`float.from_number` which only accept numeric argument.
 
    If no argument is given, ``0.0`` is returned.
 
