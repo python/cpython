@@ -131,7 +131,6 @@ Doc/library/telnetlib.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/time.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.tix.rst
