@@ -351,7 +351,6 @@ w_object(PyObject *v, WFILE *p)
 
     if (p->depth > MAX_MARSHAL_STACK_DEPTH) {
         p->error = WFERR_NESTEDTOODEEP;
-        return 0;
     }
     else if (v == NULL) {
         w_byte(TYPE_NULL, p);
