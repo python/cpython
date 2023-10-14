@@ -47,7 +47,6 @@ def get_files(test):
         yield f
         test.assertFalse(f.closed)
 
-
 class AbstractTestsWithSourceFile:
     @classmethod
     def setUpClass(cls):
