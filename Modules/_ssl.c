@@ -301,6 +301,8 @@ typedef struct {
     BIO *keylog_bio;
     /* Cached module state, also used in SSLSocket and SSLSession code. */
     _sslmodulestate *state;
+    unsigned char *client_hello_ciphers;
+    size_t client_hello_ciphers_len;
 } PySSLContext;
 
 typedef struct {
@@ -3020,6 +3022,36 @@ _set_verify_mode(PySSLContext *self, enum py_ssl_cert_requirements n)
     return 0;
 }
 
+int
+hello_cb(SSL *s, int *al, void *arg)
+{
+    PySSLContext *self = (PySSLContext *)arg;
+    const unsigned char *out;
+    size_t outlen;
+    PyGILState_STATE gstate;
+
+    (void)al;  // Unused.
+
+    outlen = SSL_client_hello_get0_ciphers(s, &out);
+    if (outlen == 0) {
+        return 1;  // Proceed with hello.
+    }
+
+    gstate = PyGILState_Ensure();
+    PyMem_Free(self->client_hello_ciphers);
+    self->client_hello_ciphers = PyMem_Malloc(outlen);
+    if (!self->client_hello_ciphers) {
+        // No memory.
+        PyGILState_Release(gstate);
+        return 1;  // Proceed with hello.
+    }
+
+    memcpy(self->client_hello_ciphers, out, outlen);
+    self->client_hello_ciphers_len = outlen;
+    PyGILState_Release(gstate);
+    return 1;  // Proceed with hello.
+}
+
 /*[clinic input]
 @classmethod
 _ssl._SSLContext.__new__
@@ -3123,6 +3155,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     self->alpn_protocols = NULL;
     self->set_sni_cb = NULL;
     self->state = get_ssl_state(module);
+    self->client_hello_ciphers = NULL;
+    self->client_hello_ciphers_len = 0;
 
     /* Don't check host name by default */
     if (proto_version == PY_SSL_VERSION_TLS_CLIENT) {
@@ -3213,6 +3247,8 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     SSL_CTX_set_post_handshake_auth(self->ctx, self->post_handshake_auth);
 #endif
 
+    SSL_CTX_set_client_hello_cb (ctx, hello_cb, self /* arg */);
+
     return (PyObject *)self;
   error:
     Py_XDECREF(self);
@@ -3253,6 +3289,7 @@ context_dealloc(PySSLContext *self)
     context_clear(self);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
+    PyMem_FREE(self->client_hello_ciphers);
     Py_TYPE(self)->tp_free(self);
     Py_DECREF(tp);
 }
