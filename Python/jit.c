@@ -98,7 +98,7 @@ mark_executable(unsigned char *memory, size_t nbytes)
 }
 
 static void
-patch_one(unsigned char *location, Hole *hole, uint64_t *patches)
+patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
 {
     uint64_t patch = patches[hole->value] + hole->addend;
     uint32_t *addr = (uint32_t *)location;
