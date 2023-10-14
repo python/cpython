@@ -1,2 +1,0 @@
-Add support of struct sequence objects in :func:`copy.replace`.
-Patched by Xuehai Pan.

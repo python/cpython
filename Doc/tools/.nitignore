@@ -108,7 +108,6 @@ Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
 Doc/library/socket.rst
-Doc/library/socketserver.rst
 Doc/library/ssl.rst
 Doc/library/stdtypes.rst
 Doc/library/string.rst
@@ -118,7 +117,6 @@ Doc/library/tarfile.rst
 Doc/library/tempfile.rst
 Doc/library/termios.rst
 Doc/library/test.rst
-Doc/library/time.rst
 Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
@@ -146,7 +144,6 @@ Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
 Doc/tutorial/datastructures.rst
 Doc/tutorial/introduction.rst
-Doc/using/cmdline.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst

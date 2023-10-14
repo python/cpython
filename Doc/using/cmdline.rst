@@ -103,7 +103,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the current directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    Many standard library modules contain code that is invoked on their execution
@@ -161,7 +161,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the script's directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    .. audit-event:: cpython.run_file filename
@@ -280,7 +280,7 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all ``PYTHON*`` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
@@ -303,7 +303,7 @@ Miscellaneous options
    and :option:`-s` options.
 
    In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All :envvar:`PYTHON*` environment
+   the user's site-packages directory. All ``PYTHON*`` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
    the user from injecting malicious code.
 
@@ -362,7 +362,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str and bytes objects
+   so that the :meth:`~object.__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -546,6 +546,12 @@ Miscellaneous options
      report Python calls. This option is only available on some platforms and
      will do nothing if is not supported on the current system. The default value
      is "off". See also :envvar:`PYTHONPERFSUPPORT` and :ref:`perf_profiling`.
+   * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
+     :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
+     *n* must be greater than or equal to 1.
+     This option may be useful for users who need to limit CPU resources of a
+     container system. See also :envvar:`PYTHON_CPU_COUNT`.
+     If *n* is ``default``, nothing is overridden.
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -592,6 +598,9 @@ Miscellaneous options
 
    .. versionadded:: 3.12
       The ``-X perf`` option.
+
+   .. versionadded:: 3.13
+      The ``-X cpu_count`` option.
 
 
 Options you shouldn't use
@@ -851,9 +860,10 @@ conflict.
 
    If this environment variable is set to a non-empty string,
    :func:`faulthandler.enable` is called at startup: install a handler for
-   :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
-   :const:`SIGILL` signals to dump the Python traceback.  This is equivalent to
-   :option:`-X` ``faulthandler`` option.
+   :const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`,
+   :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS` and
+   :const:`~signal.SIGILL` signals to dump the Python traceback.
+   This is equivalent to :option:`-X` ``faulthandler`` option.
 
    .. versionadded:: 3.3
 
@@ -1062,6 +1072,15 @@ conflict.
    and :ref:`perf_profiling`.
 
    .. versionadded:: 3.12
+
+.. envvar:: PYTHON_CPU_COUNT
+
+   If this variable is set to a positive integer, it overrides the return
+   values of :func:`os.cpu_count` and :func:`os.process_cpu_count`.
+
+   See also the :option:`-X cpu_count <-X>` command-line option.
+
+   .. versionadded:: 3.13
 
 
 Debug-mode variables

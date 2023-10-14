@@ -347,20 +347,36 @@ PEGEN_OBJS=		\
 		Parser/string_parser.o \
 		Parser/peg_api.o
 
+TOKENIZER_OBJS=		\
+		Parser/lexer/buffer.o \
+		Parser/lexer/lexer.o \
+		Parser/lexer/state.o \
+		Parser/tokenizer/file_tokenizer.o \
+		Parser/tokenizer/readline_tokenizer.o \
+		Parser/tokenizer/string_tokenizer.o \
+		Parser/tokenizer/utf8_tokenizer.o \
+		Parser/tokenizer/helpers.o
 
 PEGEN_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parser.h \
 		$(srcdir)/Parser/pegen.h \
 		$(srcdir)/Parser/string_parser.h
 
+TOKENIZER_HEADERS= \
+		Parser/lexer/buffer.h \
+		Parser/lexer/lexer.h \
+		Parser/lexer/state.h \
+		Parser/tokenizer/tokenizer.h \
+		Parser/tokenizer/helpers.h
+
 POBJS=		\
 		Parser/token.o \
 
-PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) Parser/myreadline.o Parser/tokenizer.o
+PARSER_OBJS=	$(POBJS) $(PEGEN_OBJS) $(TOKENIZER_OBJS) Parser/myreadline.o
 
 PARSER_HEADERS= \
 		$(PEGEN_HEADERS) \
-		$(srcdir)/Parser/tokenizer.h
+		$(TOKENIZER_HEADERS)
 
 ##########################################################################
 # Python
@@ -1060,7 +1076,7 @@ regen-re: $(BUILDPYTHON)
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/generate_re_casefix.py $(srcdir)/Lib/re/_casefix.py
 
 Programs/_testembed: Programs/_testembed.o $(LINK_PYTHON_DEPS)
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/_testembed.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 ############################################################################
 # "Bootstrap Python" used to run deepfreeze.py
@@ -1161,7 +1177,7 @@ Programs/_freeze_module.o: Programs/_freeze_module.c Makefile
 Modules/getpath_noop.o: $(srcdir)/Modules/getpath_noop.c Makefile
 
 Programs/_freeze_module: Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN)
-	$(LINKCC) $(PY_LDFLAGS_NOLTO) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
+	$(LINKCC) $(PY_CORE_LDFLAGS) -o $@ Programs/_freeze_module.o Modules/getpath_noop.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
 # We manually freeze getpath.py rather than through freeze_modules
 Python/frozen_modules/getpath.h: Modules/getpath.py $(FREEZE_MODULE_BOOTSTRAP_DEPS)
@@ -1397,6 +1413,8 @@ regen-pegen-metaparser:
 .PHONY: regen-pegen
 regen-pegen:
 	@$(MKDIR_P) $(srcdir)/Parser
+	@$(MKDIR_P) $(srcdir)/Parser/tokenizer
+	@$(MKDIR_P) $(srcdir)/Parser/lexer
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
@@ -1791,6 +1809,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_parking_lot.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyarena.h \
+		$(srcdir)/Include/internal/pycore_pybuffer.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \
 		$(srcdir)/Include/internal/pycore_pylifecycle.h \
@@ -2108,6 +2127,7 @@ LIBSUBDIRS=	asyncio \
 		re \
 		site-packages \
 		sqlite3 \
+		sysconfig \
 		tkinter \
 		tomllib \
 		turtledemo \
@@ -2146,6 +2166,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_email/data \
 		test/test_future_stmt \
 		test/test_gdb \
+		test/test_inspect \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \

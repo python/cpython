@@ -1,5 +1,0 @@
-Fix a deadlock in test_socket when server fails with a timeout but the
-client is still running in its thread. Don't hold a lock to call cleanup
-functions in doCleanups(). One of the cleanup function waits until the
-client completes, whereas the client could deadlock if it called
-addCleanup() in such situation. Patch by Victor Stinner.
