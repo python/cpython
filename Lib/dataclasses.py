@@ -520,6 +520,11 @@ class _FuncBuilder:
 
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
+            if name == '__repr__':
+                # It's kind of a hack to hard code this here, but it works.  It
+                # would require some surgery to get this into the generated
+                # code.
+                fn = _recursive_repr(fn)
             fn.__qualname__ = f"{cls.__qualname__}.{fn.__name__}"
             if self.unconditional_adds.get(name, False):
                 setattr(cls, name, fn)
@@ -1119,14 +1124,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         flds = [f for f in field_list if f.repr]
         func_builder.add_fn('__repr__',
                             ('self',),
-                            [' def repr(self):',
-                             '  return f"{self.__class__.__qualname__}(' +
-                                 ', '.join([f"{f.name}={{self.{f.name}!r}}"
-                                       for f in flds]) + ')"',
-                             ' return _recursive_repr(repr)(self)',
-                            ],
-                            locals={'_recursive_repr': _recursive_repr}
-                            )
+                            ['return f"{self.__class__.__qualname__}(' +
+                             ', '.join([f"{f.name}={{self.{f.name}!r}}"
+                                        for f in flds]) + ')"'])
 
     if eq:
         # Create __eq__ method.  There's no need for a __ne__ method,
@@ -1136,9 +1136,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         field_comparisons = ' and '.join(terms) or 'True'
         func_builder.add_fn('__eq__',
                             ('self', 'other'),
-                            ( 'if other.__class__ is self.__class__:',
+                            [ 'if other.__class__ is self.__class__:',
                              f' return {field_comparisons}',
-                             f'return NotImplemented'))
+                             f'return NotImplemented'])
 
     if order:
         # Create and set the ordering methods.
