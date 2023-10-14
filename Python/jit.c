@@ -106,7 +106,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
             *addr = (uint32_t)patch;
             return;
         }
-        case R_386_PC32: 
+        case R_386_PC32:
         case R_X86_64_GOTPC32:
         case R_X86_64_GOTPCRELX:
         case R_X86_64_PC32:
@@ -255,10 +255,13 @@ initialize_jit(void)
         }
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)deoptimize_stub;
-        patches[_JIT_DATA] = (uintptr_t)deoptimize_stub + stencil->nbytes;
+        patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
         copy_and_patch(deoptimize_stub, data, stencil, patches);
         if (mark_executable(deoptimize_stub, stencil->nbytes)) {
+            return needs_initializing;
+        }
+        if (mark_executable(data, stencil->nbytes_data)) {
             return needs_initializing;
         }
     }
@@ -275,10 +278,13 @@ initialize_jit(void)
         }
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)error_stub;
-        patches[_JIT_DATA] = (uintptr_t)error_stub + stencil->nbytes;
+        patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
         copy_and_patch(error_stub, data, stencil, patches);
         if (mark_executable(error_stub, stencil->nbytes)) {
+            return needs_initializing;
+        }
+        if (mark_executable(data, stencil->nbytes_data)) {
             return needs_initializing;
         }
     }
@@ -329,16 +335,17 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         return NULL;
     }
     unsigned char *head = memory;
+    unsigned char *head_data = data;
     // First, the trampoline:
     const Stencil *stencil = &trampoline_stencil;
     uint64_t patches[] = GET_PATCHES();
     patches[_JIT_BODY] = (uintptr_t)head;
-    patches[_JIT_DATA] = (uintptr_t)data;
+    patches[_JIT_DATA] = (uintptr_t)head_data;
     patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
     patches[_JIT_ZERO] = 0;
-    copy_and_patch(head, data, stencil, patches);
+    copy_and_patch(head, head_data, stencil, patches);
     head += stencil->nbytes;
-    data += stencil->nbytes_data;
+    head_data += stencil->nbytes_data;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
@@ -355,44 +362,48 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
             const Stencil *stencil = &oparg_stencil;
             uint64_t patches[] = GET_PATCHES();
             patches[_JIT_BODY] = (uintptr_t)head;
-            patches[_JIT_DATA] = (uintptr_t)data;
+            patches[_JIT_DATA] = (uintptr_t)head_data;
             patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
             patches[_JIT_OPARG] = instruction->oparg;
             patches[_JIT_ZERO] = 0;
-            copy_and_patch(head, data, stencil, patches);
+            copy_and_patch(head, head_data, stencil, patches);
             head += stencil->nbytes;
-            data += stencil->nbytes_data;
+            head_data += stencil->nbytes_data;
         }
         if (OPCODE_HAS_OPERAND(instruction->opcode)) {
             const Stencil *stencil = &operand_stencil;
             uint64_t patches[] = GET_PATCHES();
             patches[_JIT_BODY] = (uintptr_t)head;
-            patches[_JIT_DATA] = (uintptr_t)data;
+            patches[_JIT_DATA] = (uintptr_t)head_data;
             patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
             patches[_JIT_OPERAND] = instruction->operand;
             patches[_JIT_ZERO] = 0;
-            copy_and_patch(head, data, stencil, patches);
+            copy_and_patch(head, head_data, stencil, patches);
             head += stencil->nbytes;
-            data += stencil->nbytes_data;
+            head_data += stencil->nbytes_data;
         }
         const Stencil *stencil = &stencils[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)head;
-        patches[_JIT_DATA] = (uintptr_t)data;
+        patches[_JIT_DATA] = (uintptr_t)head_data;
         patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(head, data, stencil, patches);
+        copy_and_patch(head, head_data, stencil, patches);
         head += stencil->nbytes;
-        data += stencil->nbytes_data;
+        head_data += stencil->nbytes_data;
     };
     PyMem_Free(offsets);
     if (mark_executable(memory, nbytes)) {
         return NULL;
     }
+    if (mark_executable(data, nbytes_data)) {
+        return needs_initializing;
+    }
     // Wow, done already?
     assert(memory + nbytes == head);
+    assert(data + nbytes_data == head_data);
     return (_PyJITFunction)memory;
 }
