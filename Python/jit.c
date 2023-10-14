@@ -98,10 +98,11 @@ mark_executable(unsigned char *memory, size_t nbytes)
 }
 
 static void
-patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
+patch_one(unsigned char *location, Hole *hole, uint64_t *patches)
 {
+    uint64_t patch = patches[hole->value] + hole->addend;
     uint32_t *addr = (uint32_t *)location;
-    switch (kind) {
+    switch (hole->kind) {
         case R_386_32: {
             *addr = (uint32_t)patch;
             return;
@@ -175,7 +176,7 @@ patch_one(unsigned char *location, HoleKind kind, uint64_t patch)
             return;
         }
         case R_X86_64_GOTOFF64: {
-            patch -= (uintptr_t)location;
+            patch -= (uintptr_t)patches[_JIT_DATA];
             *(uint64_t *)addr = patch;
             return;
         }
@@ -189,14 +190,12 @@ copy_and_patch(unsigned char *exec, unsigned char *read, const Stencil *stencil,
     memcpy(exec, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
-        uint64_t patch = patches[hole->value] + hole->addend;
-        patch_one(exec + hole->offset, hole->kind, patch);
+        patch_one(exec + hole->offset, hole, patches);
     }
     memcpy(read, stencil->bytes_data, stencil->nbytes_data);
     for (size_t i = 0; i < stencil->nholes_data; i++) {
         const Hole *hole = &stencil->holes_data[i];
-        uint64_t patch = patches[hole->value] + hole->addend;
-        patch_one(read + hole->offset, hole->kind, patch);
+        patch_one(read + hole->offset, hole, patches);
     }
 }
 
@@ -400,7 +399,7 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         return NULL;
     }
     if (mark_executable(data, nbytes_data)) {
-        return needs_initializing;
+        return NULL;
     }
     // Wow, done already?
     assert(memory + nbytes == head);

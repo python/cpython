@@ -450,7 +450,7 @@ class Parser:
             }:
                 offset += base
                 value, symbol = self._symbol_to_value(s)  # XXX
-                addend -= len(self.body) - offset  # XXX
+                addend += self._got_lookup(None)
             case {
                 "Type": {"Value": "R_X86_64_GOTPC32" as kind},
                 "Symbol": {"Value": "_GLOBAL_OFFSET_TABLE_"},
