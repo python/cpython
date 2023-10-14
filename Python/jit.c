@@ -80,6 +80,7 @@ mark_executable(unsigned char *memory, size_t nbytes)
     unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
     size_t page_nbytes = memory + nbytes - page;
 #ifdef MS_WINDOWS
+    DWORD old;
     if (!FlushInstructionCache(GetCurrentProcess(), memory, nbytes) ||
         !VirtualProtect(page, page_nbytes, PAGE_EXECUTE_READ, &old))
     {
