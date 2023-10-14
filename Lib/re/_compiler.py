@@ -149,6 +149,8 @@ def _compile(code, pattern, flags):
                 emit(0) # look ahead
             else:
                 lo, hi = av[1].getwidth()
+                if lo > MAXCODE:
+                    raise error("looks too much behind")
                 if lo != hi:
                     raise error("look-behind requires fixed-width pattern")
                 emit(lo) # look behind
@@ -549,7 +551,7 @@ def _compile_info(code, pattern, flags):
     else:
         emit(MAXCODE)
         prefix = prefix[:MAXCODE]
-    emit(min(hi, MAXCODE))
+    emit(hi)
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
