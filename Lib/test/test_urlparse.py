@@ -36,6 +36,7 @@ parse_qsl_test_cases = [
     ("a=a+b;b=b+c", [('a', 'a b;b=b c')]),
     (b";a=b", [(b';a', b'b')]),
     (b"a=a+b;b=b+c", [(b'a', b'a b;b=b c')]),
+    (b"a&b", [(b'a', b''), (b'b', b'')])
 ]
 
 # Each parse_qs testcase is a two-tuple that contains
@@ -66,6 +67,10 @@ parse_qs_test_cases = [
     ("a=a+b;b=b+c", {'a': ['a b;b=b c']}),
     (b";a=b", {b';a': [b'b']}),
     (b"a=a+b;b=b+c", {b'a':[ b'a b;b=b c']}),
+]
+
+parse_qsl_strict_test_cases = [
+    "&", "&&"
 ]
 
 class UrlParseTestCase(unittest.TestCase):
@@ -139,6 +144,11 @@ class UrlParseTestCase(unittest.TestCase):
             result = urllib.parse.parse_qs(orig, keep_blank_values=False)
             self.assertEqual(result, expect_without_blanks,
                             "Error parsing %r" % orig)
+
+    def test_qsl_strict_parsing(self):
+        for qs in parse_qsl_strict_test_cases:
+            with self.assertRaises(ValueError):
+                urllib.parse.parse_qsl(qs, strict_parsing=True)
 
     def test_roundtrips(self):
         str_cases = [
