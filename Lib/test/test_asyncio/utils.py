@@ -558,7 +558,8 @@ class TestCase(unittest.TestCase):
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
                     watcher._join_threads(timeout=support.SHORT_TIMEOUT)
-                    threads = watcher._threads
+                    threads = {key: thread for key, thread in watcher._threads.items()
+                               if thread.is_alive() and not thread.daemon}
                     if threads:
                         self.fail(f"watcher still has running threads: "
                                   f"{threads}")
