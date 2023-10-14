@@ -10,6 +10,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
 #include "pycore_interp.h"        // PyInterpreterState.gc
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 

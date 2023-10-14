@@ -357,6 +357,15 @@ extern "C" {
 
 #include "exports.h"
 
+#ifdef Py_LIMITED_API
+   // The internal C API must not be used with the limited C API: make sure
+   // that Py_BUILD_CORE macro is not defined in this case. These 3 macros are
+   // used by exports.h, so only undefine them afterwards.
+#  undef Py_BUILD_CORE
+#  undef Py_BUILD_CORE_BUILTIN
+#  undef Py_BUILD_CORE_MODULE
+#endif
+
 /* limits.h constants that may be missing */
 
 #ifndef INT_MAX

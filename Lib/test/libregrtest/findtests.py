@@ -18,13 +18,16 @@ from .utils import (
 SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
+    "test_future_stmt",
+    "test_gdb",
+    "test_inspect",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
 }
 
 
-def findtestdir(path=None):
+def findtestdir(path: StrPath | None = None) -> StrPath:
     return path or os.path.dirname(os.path.dirname(__file__)) or os.curdir
 
 
@@ -38,14 +41,19 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
         mod, ext = os.path.splitext(name)
         if (not mod.startswith("test_")) or (mod in exclude):
             continue
-        if mod in split_test_dirs:
+        if base_mod:
+            fullname = f"{base_mod}.{mod}"
+        else:
+            fullname = mod
+        if fullname in split_test_dirs:
             subdir = os.path.join(testdir, mod)
-            mod = f"{base_mod or 'test'}.{mod}"
+            if not base_mod:
+                fullname = f"test.{mod}"
             tests.extend(findtests(testdir=subdir, exclude=exclude,
                                    split_test_dirs=split_test_dirs,
-                                   base_mod=mod))
+                                   base_mod=fullname))
         elif ext in (".py", ""):
-            tests.append(f"{base_mod}.{mod}" if base_mod else mod)
+            tests.append(fullname)
     return sorted(tests)
 
 

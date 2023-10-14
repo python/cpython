@@ -1,2 +1,0 @@
-Ensure ``gettext(msg)`` retrieve translations even if a plural form exists. In
-other words: ``gettext(msg) == ngettext(msg, '', 1)``.
