@@ -32,6 +32,7 @@ class Bdb:
         self.skip = set(skip) if skip else None
         self.breaks = {}
         self.fncache = {}
+        self.frame_trace_lines = {}
         self.frame_returning = None
 
         self._load_breaks()
@@ -331,6 +332,10 @@ class Bdb:
         while frame:
             frame.f_trace = self.trace_dispatch
             self.botframe = frame
+            # Remember f_trace_lines of the frame, and set it to True
+            # We need f_trace_liens == True for the debugger to work
+            self.frame_trace_lines[frame] = frame.f_trace_lines
+            frame.f_trace_lines = True
             frame = frame.f_back
         self.set_step()
         sys.settrace(self.trace_dispatch)
@@ -349,6 +354,9 @@ class Bdb:
             while frame and frame is not self.botframe:
                 del frame.f_trace
                 frame = frame.f_back
+            for frame in self.frame_trace_lines:
+                frame.f_trace_lines = self.frame_trace_lines[frame]
+            self.frame_trace_lines = {}
 
     def set_quit(self):
         """Set quitting attribute to True.
