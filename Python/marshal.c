@@ -195,11 +195,12 @@ w_long(long x, WFILE *p)
 # define W_SIZE  w_long
 #endif
 
-static void
+static int
 w_pstring(const void *s, Py_ssize_t n, WFILE *p)
 {
         W_SIZE(n, p);
         w_string(s, n, p);
+        return 0;
 }
 
 static void
