@@ -205,26 +205,30 @@ class ThreadRunningTests(BasicThreadTest):
 
     def test_join_from_self(self):
         errors = []
-        lock = thread.allocate_lock()
-        lock.acquire()
+        start_new_thread_returned = thread.allocate_lock()
+        start_new_thread_returned.acquire()
+        task_tried_to_join = thread.allocate_lock()
+        task_tried_to_join.acquire()
 
         def task():
             ident = thread.get_ident()
             # Wait for start_new_thread() to return so that the joinable threads
             # are populated with the ident, otherwise ValueError would be raised
             # instead.
-            lock.acquire()
+            start_new_thread_returned.acquire()
             try:
                 thread.join_thread(ident)
             except Exception as e:
                 errors.append(e)
+            finally:
+                task_tried_to_join.release()
 
         with threading_helper.wait_threads_exit():
             joinable = True
             ident = thread.start_new_thread(task, (), {}, joinable)
-            lock.release()
-            time.sleep(0.05)
+            start_new_thread_returned.release()
             # Can still join after join_thread() failed in other thread
+            task_tried_to_join.acquire()
             thread.join_thread(ident)
 
         assert len(errors) == 1
