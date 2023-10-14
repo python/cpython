@@ -103,7 +103,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the current directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    Many standard library modules contain code that is invoked on their execution
@@ -161,7 +161,7 @@ source.
 
    :option:`-I` option can  be used to run the script in isolated mode where
    :data:`sys.path` contains neither the script's directory nor the user's
-   site-packages directory. All :envvar:`PYTHON*` environment variables are
+   site-packages directory. All ``PYTHON*`` environment variables are
    ignored, too.
 
    .. audit-event:: cpython.run_file filename
@@ -280,7 +280,7 @@ Miscellaneous options
 
 .. option:: -E
 
-   Ignore all :envvar:`PYTHON*` environment variables, e.g.
+   Ignore all ``PYTHON*`` environment variables, e.g.
    :envvar:`PYTHONPATH` and :envvar:`PYTHONHOME`, that might be set.
 
    See also the :option:`-P` and :option:`-I` (isolated) options.
@@ -303,7 +303,7 @@ Miscellaneous options
    and :option:`-s` options.
 
    In isolated mode :data:`sys.path` contains neither the script's directory nor
-   the user's site-packages directory. All :envvar:`PYTHON*` environment
+   the user's site-packages directory. All ``PYTHON*`` environment
    variables are ignored, too. Further restrictions may be imposed to prevent
    the user from injecting malicious code.
 
@@ -362,7 +362,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str and bytes objects
+   so that the :meth:`~object.__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -851,9 +851,10 @@ conflict.
 
    If this environment variable is set to a non-empty string,
    :func:`faulthandler.enable` is called at startup: install a handler for
-   :const:`SIGSEGV`, :const:`SIGFPE`, :const:`SIGABRT`, :const:`SIGBUS` and
-   :const:`SIGILL` signals to dump the Python traceback.  This is equivalent to
-   :option:`-X` ``faulthandler`` option.
+   :const:`~signal.SIGSEGV`, :const:`~signal.SIGFPE`,
+   :const:`~signal.SIGABRT`, :const:`~signal.SIGBUS` and
+   :const:`~signal.SIGILL` signals to dump the Python traceback.
+   This is equivalent to :option:`-X` ``faulthandler`` option.
 
    .. versionadded:: 3.3
 
