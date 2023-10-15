@@ -1373,10 +1373,6 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def close(self):
         pass
 
-        # Clear references to terminated threads
-        self._threads = {key: thread for key, thread in self._threads.items()
-                         if thread.daemon or thread.is_alive()}
-
     def __enter__(self):
         return self
 
