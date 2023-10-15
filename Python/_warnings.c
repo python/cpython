@@ -1,10 +1,13 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
+#include "pycore_dict.h"          // _PyDict_GetItemWithError()
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_frame.h"
+#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+
 #include "clinic/_warnings.c.h"
 
 #define MODULE_NAME "_warnings"
@@ -198,7 +201,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     PyObject *warnings_module, *obj;
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && !_Py_IsFinalizing()) {
+    if (try_import && !_Py_IsInterpreterFinalizing(interp)) {
         warnings_module = PyImport_Import(&_Py_ID(warnings));
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
@@ -222,7 +225,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
             return NULL;
     }
 
-    (void)_PyObject_LookupAttr(warnings_module, attr, &obj);
+    (void)PyObject_GetOptionalAttr(warnings_module, attr, &obj);
     Py_DECREF(warnings_module);
     return obj;
 }
@@ -532,9 +535,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         Py_ssize_t i, len;
         Py_UCS4 ch;
         PyObject *truncated;
-
-        if (PyUnicode_READY(sourceline) < 1)
-            goto error;
 
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
@@ -901,7 +901,7 @@ setup_context(Py_ssize_t stack_level,
     }
     else {
         globals = f->f_frame->f_globals;
-        *filename = Py_NewRef(f->f_frame->f_code->co_filename);
+        *filename = Py_NewRef(_PyFrame_GetCode(f->f_frame)->co_filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);
     }
@@ -1071,7 +1071,7 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    (void)_PyObject_LookupAttr(loader, &_Py_ID(get_source), &get_source);
+    (void)PyObject_GetOptionalAttr(loader, &_Py_ID(get_source), &get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);
@@ -1301,25 +1301,29 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *module_str, PyObject *registry)
 {
     PyObject *message = PyUnicode_FromString(text);
+    if (message == NULL) {
+        return -1;
+    }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        Py_DECREF(message);
+        return -1;
+    }
     PyObject *module = NULL;
-    int ret = -1;
-
-    if (message == NULL || filename == NULL)
-        goto exit;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
-        if (module == NULL)
-            goto exit;
+        if (module == NULL) {
+            Py_DECREF(filename);
+            Py_DECREF(message);
+            return -1;
+        }
     }
 
-    ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                   module, registry);
-
- exit:
-    Py_XDECREF(message);
+    int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                       module, registry);
     Py_XDECREF(module);
-    Py_XDECREF(filename);
+    Py_DECREF(filename);
+    Py_DECREF(message);
     return ret;
 }
 
@@ -1364,6 +1368,20 @@ exit:
     Py_XDECREF(filename);
     return ret;
 }
+
+void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_WriteUnraisable((PyObject *)agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
 
 void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
@@ -1449,6 +1467,7 @@ warnings_module_exec(PyObject *module)
 
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
 
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
@@ -273,7 +273,7 @@ PyDoc_STRVAR(_overlapped_CreateEvent__doc__,
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name);
+                             const wchar_t *Name);
 
 static PyObject *
 _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -282,17 +282,17 @@ _overlapped_CreateEvent(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *EventAttributes;
     BOOL ManualReset;
     BOOL InitialState;
-    const Py_UNICODE *Name = NULL;
+    const wchar_t *Name = NULL;
 
     if (!_PyArg_CheckPositional("CreateEvent", nargs, 4, 4)) {
         goto exit;
     }
     EventAttributes = args[0];
-    ManualReset = _PyLong_AsInt(args[1]);
+    ManualReset = PyLong_AsInt(args[1]);
     if (ManualReset == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    InitialState = _PyLong_AsInt(args[2]);
+    InitialState = PyLong_AsInt(args[2]);
     if (InitialState == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -402,7 +402,7 @@ _overlapped_BindLocal(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!Socket && PyErr_Occurred()) {
         goto exit;
     }
-    Family = _PyLong_AsInt(args[1]);
+    Family = PyLong_AsInt(args[1]);
     if (Family == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -546,7 +546,7 @@ _overlapped_Overlapped_getresult(OverlappedObject *self, PyObject *const *args, 
     if (nargs < 1) {
         goto skip_optional;
     }
-    wait = _PyLong_AsInt(args[0]);
+    wait = PyLong_AsInt(args[0]);
     if (wait == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1041,13 +1041,13 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectPipe__doc__,
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address);
+                                        const wchar_t *Address);
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe(OverlappedObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    const Py_UNICODE *Address = NULL;
+    const wchar_t *Address = NULL;
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("ConnectPipe", "argument", "str", arg);
@@ -1262,4 +1262,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b2e89694b8de3d00 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31bcc780209593a2 input=a9049054013a1b77]*/

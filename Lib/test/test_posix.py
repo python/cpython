@@ -231,6 +231,9 @@ class PosixTester(unittest.TestCase):
         with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
             # Ensure a combination of valid and invalid is an error.
             os.register_at_fork(before=None, after_in_parent=lambda: 3)
+        with self.assertRaises(TypeError, msg="At least one argument is required"):
+            # when no arg is passed
+            os.register_at_fork()
         with self.assertRaises(TypeError, msg="Invalid arg was allowed"):
             # Ensure a combination of valid and invalid is an error.
             os.register_at_fork(before=lambda: None, after_in_child='')
@@ -1202,6 +1205,7 @@ class PosixTester(unittest.TestCase):
     @requires_sched_affinity
     def test_sched_setaffinity(self):
         mask = posix.sched_getaffinity(0)
+        self.addCleanup(posix.sched_setaffinity, 0, list(mask))
         if len(mask) > 1:
             # Empty masks are forbidden
             mask.pop()

@@ -12,7 +12,6 @@ import warnings
 import functools
 import itertools
 import posixpath
-import contextlib
 import collections
 import inspect
 

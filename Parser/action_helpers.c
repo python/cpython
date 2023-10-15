@@ -1,7 +1,6 @@
 #include <Python.h>
 
 #include "pegen.h"
-#include "tokenizer.h"
 #include "string_parser.h"
 #include "pycore_runtime.h"         // _PyRuntime
 
@@ -122,12 +121,6 @@ _PyPegen_join_names_with_dot(Parser *p, expr_ty first_name, expr_ty second_name)
     PyObject *first_identifier = first_name->v.Name.id;
     PyObject *second_identifier = second_name->v.Name.id;
 
-    if (PyUnicode_READY(first_identifier) == -1) {
-        return NULL;
-    }
-    if (PyUnicode_READY(second_identifier) == -1) {
-        return NULL;
-    }
     const char *first_str = PyUnicode_AsUTF8(first_identifier);
     if (!first_str) {
         return NULL;
@@ -752,20 +745,25 @@ _PyPegen_function_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty f
     assert(function_def != NULL);
     if (function_def->kind == AsyncFunctionDef_kind) {
         return _PyAST_AsyncFunctionDef(
-            function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
-            function_def->v.FunctionDef.body, decorators, function_def->v.FunctionDef.returns,
-            function_def->v.FunctionDef.type_comment, function_def->lineno,
-            function_def->col_offset, function_def->end_lineno, function_def->end_col_offset,
-            p->arena);
+            function_def->v.AsyncFunctionDef.name,
+            function_def->v.AsyncFunctionDef.args,
+            function_def->v.AsyncFunctionDef.body, decorators,
+            function_def->v.AsyncFunctionDef.returns,
+            function_def->v.AsyncFunctionDef.type_comment,
+            function_def->v.AsyncFunctionDef.type_params,
+            function_def->lineno, function_def->col_offset,
+            function_def->end_lineno, function_def->end_col_offset, p->arena);
     }
 
     return _PyAST_FunctionDef(
-        function_def->v.FunctionDef.name, function_def->v.FunctionDef.args,
+        function_def->v.FunctionDef.name,
+        function_def->v.FunctionDef.args,
         function_def->v.FunctionDef.body, decorators,
         function_def->v.FunctionDef.returns,
-        function_def->v.FunctionDef.type_comment, function_def->lineno,
-        function_def->col_offset, function_def->end_lineno,
-        function_def->end_col_offset, p->arena);
+        function_def->v.FunctionDef.type_comment,
+        function_def->v.FunctionDef.type_params,
+        function_def->lineno, function_def->col_offset,
+        function_def->end_lineno, function_def->end_col_offset, p->arena);
 }
 
 /* Construct a ClassDef equivalent to class_def, but with decorators */
@@ -774,8 +772,10 @@ _PyPegen_class_def_decorators(Parser *p, asdl_expr_seq *decorators, stmt_ty clas
 {
     assert(class_def != NULL);
     return _PyAST_ClassDef(
-        class_def->v.ClassDef.name, class_def->v.ClassDef.bases,
-        class_def->v.ClassDef.keywords, class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.name,
+        class_def->v.ClassDef.bases, class_def->v.ClassDef.keywords,
+        class_def->v.ClassDef.body, decorators,
+        class_def->v.ClassDef.type_params,
         class_def->lineno, class_def->col_offset, class_def->end_lineno,
         class_def->end_col_offset, p->arena);
 }
@@ -965,17 +965,75 @@ _PyPegen_check_legacy_stmt(Parser *p, expr_ty name) {
     return 0;
 }
 
-expr_ty
-_PyPegen_check_fstring_conversion(Parser *p, Token* symbol, expr_ty conv) {
-    if (symbol->lineno != conv->lineno || symbol->end_col_offset != conv->col_offset) {
+static ResultTokenWithMetadata *
+result_token_with_metadata(Parser *p, void *result, PyObject *metadata)
+{
+    ResultTokenWithMetadata *res = _PyArena_Malloc(p->arena, sizeof(ResultTokenWithMetadata));
+    if (res == NULL) {
+        return NULL;
+    }
+    res->metadata = metadata;
+    res->result = result;
+    return res;
+}
+
+ResultTokenWithMetadata *
+_PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
+{
+    if (conv_token->lineno != conv->lineno || conv_token->end_col_offset != conv->col_offset) {
         return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
-            symbol, conv,
+            conv_token, conv,
             "f-string: conversion type must come right after the exclamanation mark"
         );
     }
-    return conv;
+    return result_token_with_metadata(p, conv, conv_token->metadata);
 }
 
+ResultTokenWithMetadata *
+_PyPegen_setup_full_format_spec(Parser *p, Token *colon, asdl_expr_seq *spec, int lineno, int col_offset,
+                                int end_lineno, int end_col_offset, PyArena *arena)
+{
+    if (!spec) {
+        return NULL;
+    }
+
+    // This is needed to keep compatibility with 3.11, where an empty format
+    // spec is parsed as an *empty* JoinedStr node, instead of having an empty
+    // constant in it.
+    Py_ssize_t n_items = asdl_seq_LEN(spec);
+    Py_ssize_t non_empty_count = 0;
+    for (Py_ssize_t i = 0; i < n_items; i++) {
+        expr_ty item = asdl_seq_GET(spec, i);
+        non_empty_count += !(item->kind == Constant_kind &&
+                             PyUnicode_CheckExact(item->v.Constant.value) &&
+                             PyUnicode_GET_LENGTH(item->v.Constant.value) == 0);
+    }
+    if (non_empty_count != n_items) {
+        asdl_expr_seq *resized_spec =
+            _Py_asdl_expr_seq_new(non_empty_count, p->arena);
+        if (resized_spec == NULL) {
+            return NULL;
+        }
+        Py_ssize_t j = 0;
+        for (Py_ssize_t i = 0; i < n_items; i++) {
+            expr_ty item = asdl_seq_GET(spec, i);
+            if (item->kind == Constant_kind &&
+                PyUnicode_CheckExact(item->v.Constant.value) &&
+                PyUnicode_GET_LENGTH(item->v.Constant.value) == 0) {
+                continue;
+            }
+            asdl_seq_SET(resized_spec, j++, item);
+        }
+        assert(j == non_empty_count);
+        spec = resized_spec;
+    }
+    expr_ty res = _PyAST_JoinedStr(spec, lineno, col_offset, end_lineno,
+                                   end_col_offset, p->arena);
+    if (!res) {
+        return NULL;
+    }
+    return result_token_with_metadata(p, res, colon->metadata);
+}
 
 const char *
 _PyPegen_get_expr_name(expr_ty e)
@@ -1198,28 +1256,7 @@ _PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq
 // Fstring stuff
 
 static expr_ty
-decode_fstring_buffer(Parser *p, int lineno, int col_offset, int end_lineno,
-                      int end_col_offset)
-{
-    tokenizer_mode *tok_mode = &(p->tok->tok_mode_stack[p->tok->tok_mode_stack_index]);
-    assert(tok_mode->last_expr_buffer != NULL);
-    assert(tok_mode->last_expr_size >= 0 && tok_mode->last_expr_end >= 0);
-
-    PyObject *res = PyUnicode_DecodeUTF8(
-        tok_mode->last_expr_buffer,
-        tok_mode->last_expr_size - tok_mode->last_expr_end,
-        NULL
-    );
-    if (!res || _PyArena_AddPyObject(p->arena, res) < 0) {
-        Py_XDECREF(res);
-        return NULL;
-    }
-
-    return _PyAST_Constant(res, NULL, lineno, col_offset, end_lineno, end_col_offset, p->arena);
-}
-
-static expr_ty
-_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
+_PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* token) {
     assert(PyUnicode_CheckExact(constant->v.Constant.value));
 
     const char* bstr = PyUnicode_AsUTF8(constant->v.Constant.value);
@@ -1235,7 +1272,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant) {
     }
 
     is_raw = is_raw || strchr(bstr, '\\') == NULL;
-    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, NULL);
+    PyObject *str = _PyPegen_decode_string(p, is_raw, bstr, len, token);
     if (str == NULL) {
         _Pypegen_raise_decode_error(p);
         return NULL;
@@ -1309,7 +1346,7 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     for (Py_ssize_t i = 0; i < n_items; i++) {
         expr_ty item = asdl_seq_GET(expr, i);
         if (item->kind == Constant_kind) {
-            item = _PyPegen_decode_fstring_part(p, is_raw, item);
+            item = _PyPegen_decode_fstring_part(p, is_raw, item, b);
             if (item == NULL) {
                 return NULL;
             }
@@ -1342,6 +1379,25 @@ _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
+}
+
+expr_ty _PyPegen_decoded_constant_from_token(Parser* p, Token* tok) {
+    Py_ssize_t bsize;
+    char* bstr;
+    if (PyBytes_AsStringAndSize(tok->bytes, &bstr, &bsize) == -1) {
+        return NULL;
+    }
+    PyObject* str = _PyPegen_decode_string(p, 0, bstr, bsize, tok);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (_PyArena_AddPyObject(p->arena, str) < 0) {
+        Py_DECREF(str);
+        return NULL;
+    }
+    return _PyAST_Constant(str, NULL, tok->lineno, tok->col_offset,
+                           tok->end_lineno, tok->end_col_offset,
+                           p->arena);
 }
 
 expr_ty _PyPegen_constant_from_token(Parser* p, Token* tok) {
@@ -1386,19 +1442,20 @@ expr_ty _PyPegen_constant_from_string(Parser* p, Token* tok) {
     return _PyAST_Constant(s, kind, tok->lineno, tok->col_offset, tok->end_lineno, tok->end_col_offset, p->arena);
 }
 
-expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, expr_ty conversion,
-                                 expr_ty format, int lineno, int col_offset, int end_lineno, int end_col_offset,
-                                 PyArena *arena) {
+expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
+                                 ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
+                                 int end_lineno, int end_col_offset, PyArena *arena) {
     int conversion_val = -1;
     if (conversion != NULL) {
-        assert(conversion->kind == Name_kind);
-        Py_UCS4 first = PyUnicode_READ_CHAR(conversion->v.Name.id, 0);
+        expr_ty conversion_expr = (expr_ty) conversion->result;
+        assert(conversion_expr->kind == Name_kind);
+        Py_UCS4 first = PyUnicode_READ_CHAR(conversion_expr->v.Name.id, 0);
 
-        if (PyUnicode_GET_LENGTH(conversion->v.Name.id) > 1 ||
+        if (PyUnicode_GET_LENGTH(conversion_expr->v.Name.id) > 1 ||
             !(first == 's' || first == 'r' || first == 'a')) {
-            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conversion,
+            RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conversion_expr,
                                               "f-string: invalid conversion character %R: expected 's', 'r', or 'a'",
-                                              conversion->v.Name.id);
+                                              conversion_expr->v.Name.id);
             return NULL;
         }
 
@@ -1410,7 +1467,7 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ex
     }
 
     expr_ty formatted_value = _PyAST_FormattedValue(
-        expression, conversion_val, format,
+        expression, conversion_val, format ? (expr_ty) format->result : NULL,
         lineno, col_offset, end_lineno,
         end_col_offset, arena
     );
@@ -1418,22 +1475,26 @@ expr_ty _PyPegen_formatted_value(Parser *p, expr_ty expression, Token *debug, ex
     if (debug) {
         /* Find the non whitespace token after the "=" */
         int debug_end_line, debug_end_offset;
+        PyObject *debug_metadata;
 
         if (conversion) {
-            debug_end_line = conversion->lineno;
-            debug_end_offset = conversion->col_offset;
+            debug_end_line = ((expr_ty) conversion->result)->lineno;
+            debug_end_offset = ((expr_ty) conversion->result)->col_offset;
+            debug_metadata = conversion->metadata;
         }
         else if (format) {
-            debug_end_line = format->lineno;
-            debug_end_offset = format->col_offset + 1; // HACK: ??
+            debug_end_line = ((expr_ty) format->result)->lineno;
+            debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
+            debug_metadata = format->metadata;
         }
         else {
             debug_end_line = end_lineno;
             debug_end_offset = end_col_offset;
+            debug_metadata = closing_brace->metadata;
         }
 
-        expr_ty debug_text = decode_fstring_buffer(p, lineno, col_offset + 1,
-                                                   debug_end_line, debug_end_offset - 1);
+        expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
+                                             debug_end_offset - 1, p->arena);
         if (!debug_text) {
             return NULL;
         }

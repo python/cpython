@@ -1,8 +1,6 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_specialization
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
@@ -21,11 +19,11 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
 PYMEM_ALLOCATOR_MALLOC = 3
+Py_STATS = hasattr(sys, '_stats_on')
 
 # _PyCoreConfig_InitCompatConfig()
 API_COMPAT = 1
@@ -110,7 +108,7 @@ class EmbeddingTestsMixin:
             print(f"--- {cmd} failed ---")
             print(f"stdout:\n{out}")
             print(f"stderr:\n{err}")
-            print(f"------")
+            print("------")
 
         self.assertEqual(p.returncode, returncode,
                          "bad returncode %d, stderr is %r" %
@@ -347,7 +345,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    @requires_specialization
+    @support.requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
@@ -361,7 +359,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 for instruction in dis.get_instructions(f, adaptive=True):
                     opname = instruction.opname
                     if (
-                        opname in opcode._specialized_instructions
+                        opname in opcode._specialized_opmap
                         # Exclude superinstructions:
                         and "__" not in opname
                     ):
@@ -447,6 +445,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'use_hash_seed': 0,
         'hash_seed': 0,
         'int_max_str_digits': sys.int_info.default_max_str_digits,
+        'cpu_count': -1,
         'faulthandler': 0,
         'tracemalloc': 0,
         'perf_profiling': 0,
@@ -454,6 +453,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'code_debug_ranges': 1,
         'show_ref_count': 0,
         'dump_refs': 0,
+        'dump_refs_file': None,
         'malloc_stats': 0,
 
         'filesystem_encoding': GET_DEFAULT_CONFIG,
@@ -503,6 +503,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'run_command': None,
         'run_module': None,
         'run_filename': None,
+        'sys_path_0': None,
 
         '_install_importlib': 1,
         'check_hash_pycs_mode': 'default',
@@ -512,6 +513,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'safe_path': 0,
         '_is_python_build': IGNORE_CONFIG,
     }
+    if Py_STATS:
+        CONFIG_COMPAT['_pystats'] = 0
+    if support.Py_DEBUG:
+        CONFIG_COMPAT['run_presite'] = None
     if MS_WINDOWS:
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
@@ -891,10 +896,13 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'module_search_paths': self.IGNORE_CONFIG,
             'safe_path': 1,
             'int_max_str_digits': 31337,
+            'cpu_count': 4321,
 
             'check_hash_pycs_mode': 'always',
             'pathconfig_warnings': 0,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_from_config", config, preconfig,
                                api=API_COMPAT)
 
@@ -927,6 +935,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_compat_env", config, preconfig,
                                api=API_COMPAT)
 
@@ -960,6 +970,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'safe_path': 1,
             'int_max_str_digits': 4567,
         }
+        if Py_STATS:
+            config['_pystats'] = 1
         self.check_all_configs("test_init_python_env", config, preconfig,
                                api=API_PYTHON)
 
@@ -1122,6 +1134,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'program_name': './python3',
             'run_command': code + '\n',
             'parse_argv': 2,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_run_main", config, api=API_PYTHON)
 
@@ -1137,6 +1150,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'run_command': code + '\n',
             'parse_argv': 2,
             '_init_main': 0,
+            'sys_path_0': '',
         }
         self.check_all_configs("test_init_main", config,
                                api=API_PYTHON,
@@ -1656,6 +1670,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                        api=API_PYTHON, env=env)
 
     def test_init_main_interpreter_settings(self):
+        OBMALLOC = 1<<5
         EXTENSIONS = 1<<8
         THREADS = 1<<10
         DAEMON_THREADS = 1<<11
@@ -1664,7 +1679,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         expected = {
             # All optional features should be enabled.
             'feature_flags':
-                FORK | EXEC | THREADS | DAEMON_THREADS,
+                OBMALLOC | FORK | EXEC | THREADS | DAEMON_THREADS,
+            'own_gil': True,
         }
         out, err = self.run_embedded_interpreter(
             'test_init_main_interpreter_settings',
@@ -1700,6 +1716,9 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def test_audit(self):
         self.run_embedded_interpreter("test_audit")
+
+    def test_audit_tuple(self):
+        self.run_embedded_interpreter("test_audit_tuple")
 
     def test_audit_subinterpreter(self):
         self.run_embedded_interpreter("test_audit_subinterpreter")
@@ -1800,6 +1819,22 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(frozen_modules=flag, stmt=stmt):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
+
+    @unittest.skipUnless(support.Py_DEBUG,
+                         '-X presite requires a Python debug build')
+    def test_presite(self):
+        cmd = [sys.executable, "-I", "-X", "presite=test.reperf", "-c", "print('cmd')"]
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0)
+        out = proc.stdout.strip()
+        self.assertIn("10 times sub", out)
+        self.assertIn("CPU seconds", out)
+        self.assertIn("cmd", out)
 
 
 class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):

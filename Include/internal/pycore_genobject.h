@@ -9,8 +9,20 @@ extern "C" {
 #endif
 
 extern PyObject *_PyGen_yf(PyGenObject *);
+extern void _PyGen_Finalize(PyObject *self);
+
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
+
+// Export for '_asyncio' shared extension
+PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
+
 extern PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
 extern PyObject *_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
+
+extern PyTypeObject _PyCoroWrapper_Type;
+extern PyTypeObject _PyAsyncGenWrappedValue_Type;
+extern PyTypeObject _PyAsyncGenAThrow_Type;
 
 /* runtime lifecycle */
 

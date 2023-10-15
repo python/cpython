@@ -1621,6 +1621,22 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
 
+>>> import a, b,c from b
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a,b,c from b as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
 
@@ -1877,6 +1893,79 @@ Invalid bytes literals:
         ^^^^^^^^^^^
    SyntaxError: bytes can only contain ASCII literal characters
 
+Invalid expressions in type scopes:
+
+   >>> type A[T: (x:=3)] = int
+   Traceback (most recent call last):
+      ...
+   SyntaxError: named expression cannot be used within a TypeVar bound
+
+   >>> type A[T: (yield 3)] = int
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within a TypeVar bound
+
+   >>> type A[T: (await 3)] = int
+   Traceback (most recent call last):
+      ...
+   SyntaxError: await expression cannot be used within a TypeVar bound
+
+   >>> type A[T: (yield from [])] = int
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within a TypeVar bound
+
+   >>> type A = (x := 3)
+   Traceback (most recent call last):
+      ...
+   SyntaxError: named expression cannot be used within a type alias
+
+   >>> type A = (yield 3)
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within a type alias
+
+   >>> type A = (await 3)
+   Traceback (most recent call last):
+      ...
+   SyntaxError: await expression cannot be used within a type alias
+
+   >>> type A = (yield from [])
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within a type alias
+
+   >>> class A[T]((x := 3)): ...
+   Traceback (most recent call last):
+      ...
+   SyntaxError: named expression cannot be used within the definition of a generic
+
+   >>> class A[T]((yield 3)): ...
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within the definition of a generic
+
+   >>> class A[T]((await 3)): ...
+   Traceback (most recent call last):
+      ...
+   SyntaxError: await expression cannot be used within the definition of a generic
+
+   >>> class A[T]((yield from [])): ...
+   Traceback (most recent call last):
+      ...
+   SyntaxError: yield expression cannot be used within the definition of a generic
+
+    >>> f(**x, *y)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(**x, *)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(x, *:)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
 """
 
 import re
@@ -2257,7 +2346,7 @@ while 1:
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
             with self.subTest(mode=mode):
-                with self.assertRaises(MemoryError):
+                with self.assertRaisesRegex(MemoryError, r"too complex"):
                     compile(source, "<string>", mode)
 
     @support.cpython_only

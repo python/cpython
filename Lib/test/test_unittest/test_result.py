@@ -6,7 +6,6 @@ from test.support import warnings_helper, captured_stdout
 
 import traceback
 import unittest
-from unittest import mock
 from unittest.util import strclass
 from test.test_unittest.support import BufferedWriter
 
@@ -451,6 +450,7 @@ class Test_TestResult(unittest.TestCase):
         stream = BufferedWriter()
         runner = unittest.TextTestRunner(stream=stream, failfast=True)
         def test(result):
+            result.testsRun += 1
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()

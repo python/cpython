@@ -49,8 +49,6 @@ EXCLUDE_FROM_CATALOG = FileSuffixSet(".exe", ".pyd", ".dll")
 
 REQUIRED_DLLS = FileStemSet("libcrypto*", "libssl*", "libffi*")
 
-LIB2TO3_GRAMMAR_FILES = FileNameSet("Grammar.txt", "PatternGrammar.txt")
-
 PY_FILES = FileSuffixSet(".py")
 PYC_FILES = FileSuffixSet(".pyc")
 CAT_FILES = FileSuffixSet(".cat")
@@ -297,27 +295,6 @@ def _write_to_zip(zf, dest, src, ns, checked=True):
             except:
                 log_exception("Failed to delete {}", pyc)
         return
-
-    if src in LIB2TO3_GRAMMAR_FILES:
-        from lib2to3.pgen2.driver import load_grammar
-
-        tmp = ns.temp / src.name
-        try:
-            shutil.copy(src, tmp)
-            load_grammar(str(tmp))
-            for f in ns.temp.glob(src.stem + "*.pickle"):
-                zf.write(str(f), str(dest.parent / f.name))
-                try:
-                    f.unlink()
-                except:
-                    log_exception("Failed to delete {}", f)
-        except:
-            log_exception("Failed to compile {}", src)
-        finally:
-            try:
-                tmp.unlink()
-            except:
-                log_exception("Failed to delete {}", tmp)
 
     zf.write(str(src), str(dest))
 

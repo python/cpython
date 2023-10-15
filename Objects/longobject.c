@@ -7,14 +7,11 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
-#include "pycore_structseq.h"     // _PyStructSequence_FiniType()
+#include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
-#include <ctype.h>
-#include <float.h>
-#include <stddef.h>
-#include <stdlib.h>               // abs()
+#include <float.h>                // DBL_MANT_DIG
+#include <stddef.h>               // offsetof
 
 #include "clinic/longobject.c.h"
 /*[clinic input]
@@ -164,6 +161,9 @@ _PyLong_New(Py_ssize_t size)
     }
     _PyLong_SetSignAndDigitCount(result, size != 0, size);
     _PyObject_Init((PyObject*)result, &PyLong_Type);
+    /* The digit has to be initialized explicitly to avoid
+     * use-of-uninitialized-value. */
+    result->long_value.ob_digit[0] = 0;
     return result;
 }
 
@@ -172,7 +172,7 @@ _PyLong_FromDigits(int negative, Py_ssize_t digit_count, digit *digits)
 {
     assert(digit_count >= 0);
     if (digit_count == 0) {
-        return (PyLongObject *)Py_NewRef(_PyLong_GetZero());
+        return (PyLongObject *)_PyLong_GetZero();
     }
     PyLongObject *result = _PyLong_New(digit_count);
     if (result == NULL) {
@@ -547,7 +547,7 @@ PyLong_AsLong(PyObject *obj)
    method.  Return -1 and set an error if overflow occurs. */
 
 int
-_PyLong_AsInt(PyObject *obj)
+PyLong_AsInt(PyObject *obj)
 {
     int overflow;
     long result = PyLong_AsLongAndOverflow(obj, &overflow);
@@ -2855,8 +2855,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
         if (*prem == NULL) {
             return -1;
         }
-        PyObject *zero = _PyLong_GetZero();
-        *pdiv = (PyLongObject*)Py_NewRef(zero);
+        *pdiv = (PyLongObject*)_PyLong_GetZero();
         return 0;
     }
     if (size_b == 1) {
@@ -6351,19 +6350,11 @@ PyLong_GetInfo(void)
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return _PyStatus_OK();
-    }
-
-    if (PyType_Ready(&PyLong_Type) < 0) {
-        return _PyStatus_ERR("Can't initialize int type");
-    }
-
     /* initialize int_info */
-    if (Int_InfoType.tp_name == NULL) {
-        if (_PyStructSequence_InitBuiltin(&Int_InfoType, &int_info_desc) < 0) {
-            return _PyStatus_ERR("can't init int info type");
-        }
+    if (_PyStructSequence_InitBuiltin(interp, &Int_InfoType,
+                                      &int_info_desc) < 0)
+    {
+        return _PyStatus_ERR("can't init int info type");
     }
 
     return _PyStatus_OK();
@@ -6373,9 +6364,19 @@ _PyLong_InitTypes(PyInterpreterState *interp)
 void
 _PyLong_FiniTypes(PyInterpreterState *interp)
 {
-    if (!_Py_IsMainInterpreter(interp)) {
-        return;
-    }
+    _PyStructSequence_FiniBuiltin(interp, &Int_InfoType);
+}
 
-    _PyStructSequence_FiniType(&Int_InfoType);
+#undef PyUnstable_Long_IsCompact
+
+int
+PyUnstable_Long_IsCompact(const PyLongObject* op) {
+    return _PyLong_IsCompact(op);
+}
+
+#undef PyUnstable_Long_CompactValue
+
+Py_ssize_t
+PyUnstable_Long_CompactValue(const PyLongObject* op) {
+    return _PyLong_CompactValue(op);
 }

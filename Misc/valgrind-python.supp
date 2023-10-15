@@ -47,14 +47,6 @@
 #
 
 {
-   Suppress leaking the GIL.  Happens once per process, see comment in ceval.c.
-   Memcheck:Leak
-   fun:malloc
-   fun:PyThread_allocate_lock
-   fun:PyEval_InitThreads
-}
-
-{
    Suppress leaking the GIL after a fork.
    Memcheck:Leak
    fun:malloc

@@ -2,15 +2,15 @@ FROM docker.io/library/fedora:37
 
 ENV CC=clang
 
-ENV WASI_SDK_VERSION=19
+ENV WASI_SDK_VERSION=20
 ENV WASI_SDK_PATH=/opt/wasi-sdk
 
 ENV WASMTIME_HOME=/opt/wasmtime
-ENV WASMTIME_VERSION=7.0.0
+ENV WASMTIME_VERSION=9.0.1
 ENV WASMTIME_CPU_ARCH=x86_64
 
-RUN dnf -y --nodocs install git clang xz python3-blurb dnf-plugins-core && \
-    dnf -y --nodocs builddep python3 && \
+RUN dnf -y --nodocs --setopt=install_weak_deps=False install /usr/bin/{blurb,clang,curl,git,ln,tar,xz} 'dnf-command(builddep)' && \
+    dnf -y --nodocs --setopt=install_weak_deps=False builddep python3 && \
     dnf -y clean all
 
 RUN mkdir ${WASI_SDK_PATH} && \

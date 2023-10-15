@@ -197,6 +197,24 @@ def splitdoc(doc):
         return lines[0], '\n'.join(lines[2:])
     return '', '\n'.join(lines)
 
+def _getargspec(object):
+    try:
+        signature = inspect.signature(object)
+        if signature:
+            return str(signature)
+    except (ValueError, TypeError):
+        argspec = getattr(object, '__text_signature__', None)
+        if argspec:
+            if argspec[:2] == '($':
+                argspec = '(' + argspec[2:]
+            if getattr(object, '__self__', None) is not None:
+                # Strip the bound argument.
+                m = re.match(r'\(\w+(?:(?=\))|,\s*(?:/(?:(?=\))|,\s*))?)', argspec)
+                if m:
+                    argspec = '(' + argspec[m.end():]
+        return argspec
+    return None
+
 def classname(object, modname):
     """Get a class name and qualify it with a module name if necessary."""
     name = object.__name__
@@ -448,7 +466,7 @@ def safeimport(path, forceload=0, cache={}):
                     # Prevent garbage collection.
                     cache[key] = sys.modules[key]
                     del sys.modules[key]
-        module = __import__(path)
+        module = importlib.import_module(path)
     except BaseException as err:
         # Did the error occur before or after the module was found?
         if path in sys.modules:
@@ -463,9 +481,6 @@ def safeimport(path, forceload=0, cache={}):
         else:
             # Some other error occurred during the importing process.
             raise ErrorDuringImport(path, err)
-    for part in path.split('.')[1:]:
-        try: module = getattr(module, part)
-        except AttributeError: return None
     return module
 
 # ---------------------------------------------------- formatter base class
@@ -512,7 +527,7 @@ class Doc:
 
         basedir = os.path.normcase(basedir)
         if (isinstance(object, type(os)) and
-            (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
+            (object.__name__ in ('errno', 'exceptions', 'gc',
                                  'marshal', 'posix', 'signal', 'sys',
                                  '_thread', 'zipimport') or
              (file.startswith(basedir) and
@@ -1006,14 +1021,9 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % ', '.join(parents)
 
         decl = ''
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                decl = name + self.escape(argspec) + '\n\n'
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            decl = name + self.escape(argspec) + '\n\n'
 
         doc = getdoc(object)
         if decl:
@@ -1066,18 +1076,13 @@ class HTMLDoc(Doc):
                 anchor, name, reallink)
         argspec = None
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = '<strong>%s</strong> <em>lambda</em> ' % name
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = '<strong>%s</strong> <em>lambda</em> ' % name
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
 
@@ -1324,14 +1329,9 @@ location listed above.
         contents = []
         push = contents.append
 
-        try:
-            signature = inspect.signature(object)
-        except (ValueError, TypeError):
-            signature = None
-        if signature:
-            argspec = str(signature)
-            if argspec and argspec != '()':
-                push(name + argspec + '\n')
+        argspec = _getargspec(object)
+        if argspec and argspec != '()':
+            push(name + argspec + '\n')
 
         doc = getdoc(object)
         if doc:
@@ -1495,18 +1495,13 @@ location listed above.
         argspec = None
 
         if inspect.isroutine(object):
-            try:
-                signature = inspect.signature(object)
-            except (ValueError, TypeError):
-                signature = None
-            if signature:
-                argspec = str(signature)
-                if realname == '<lambda>':
-                    title = self.bold(name) + ' lambda '
-                    # XXX lambda's won't usually have func_annotations['return']
-                    # since the syntax doesn't support but it is possible.
-                    # So removing parentheses isn't truly safe.
-                    argspec = argspec[1:-1] # remove parentheses
+            argspec = _getargspec(object)
+            if argspec and realname == '<lambda>':
+                title = self.bold(name) + ' lambda '
+                # XXX lambda's won't usually have func_annotations['return']
+                # since the syntax doesn't support but it is possible.
+                # So removing parentheses isn't truly safe.
+                argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
         decl = asyncqualifier + title + argspec + note
@@ -1783,12 +1778,21 @@ def render_doc(thing, title='Python Library Documentation: %s', forceload=0,
     return title % desc + '\n\n' + renderer.document(object, name)
 
 def doc(thing, title='Python Library Documentation: %s', forceload=0,
-        output=None):
+        output=None, is_cli=False):
     """Display text documentation, given an object or a path to an object."""
     if output is None:
-        pager(render_doc(thing, title, forceload))
+        try:
+            pager(render_doc(thing, title, forceload))
+        except ImportError as exc:
+            if is_cli:
+                raise
+            print(exc)
     else:
-        output.write(render_doc(thing, title, forceload, plaintext))
+        try:
+            s = render_doc(thing, title, forceload, plaintext)
+        except ImportError as exc:
+            s = str(exc)
+        output.write(s)
 
 def writedoc(thing, forceload=0):
     """Write HTML documentation to a file in the current directory."""
@@ -2047,7 +2051,7 @@ has the same effect as typing a particular string at the help> prompt.
             self.output.flush()
             return self.input.readline()
 
-    def help(self, request):
+    def help(self, request, is_cli=False):
         if isinstance(request, str):
             request = request.strip()
             if request == 'keywords': self.listkeywords()
@@ -2059,13 +2063,13 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:')
+                doc(eval(request), 'Help on %s:', is_cli=is_cli)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output)
-            else: doc(str, 'Help on %s:', output=self._output)
+            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
+            else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
         elif isinstance(request, Helper): self()
-        else: doc(request, 'Help on %s:', output=self._output)
+        else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
         self.output.write('\n')
 
     def intro(self):
@@ -2242,7 +2246,7 @@ class ModuleScanner:
                 callback(None, modname, '')
             else:
                 try:
-                    spec = pkgutil._get_spec(importer, modname)
+                    spec = importer.find_spec(modname)
                 except SyntaxError:
                     # raised by tests for bad coding cookies or BOM
                     continue
@@ -2803,7 +2807,7 @@ def cli():
                     else:
                         writedoc(arg)
                 else:
-                    help.help(arg)
+                    help.help(arg, is_cli=True)
             except (ImportError, ErrorDuringImport) as value:
                 print(value)
                 sys.exit(1)
