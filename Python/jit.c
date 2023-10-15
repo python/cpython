@@ -187,17 +187,22 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
 static void
 copy_and_patch(const Stencil *stencil, uint64_t patches[])
 {
+    if (stencil->nholes_data) {
+        unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
+        memcpy(data, stencil->bytes_data, stencil->nbytes_data);
+        for (size_t i = 0; i < stencil->nholes_data; i++) {
+            const Hole *hole = &stencil->holes_data[i];
+            patch_one(data + hole->offset, hole, patches);
+        }
+    }
+    else {
+        patches[_JIT_DATA] = (uintptr_t)stencil->bytes_data;
+    }
     unsigned char *body = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
     memcpy(body, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
         patch_one(body + hole->offset, hole, patches);
-    }
-    unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
-    memcpy(data, stencil->bytes_data, stencil->nbytes_data);
-    for (size_t i = 0; i < stencil->nholes_data; i++) {
-        const Hole *hole = &stencil->holes_data[i];
-        patch_one(data + hole->offset, hole, patches);
     }
 }
 
