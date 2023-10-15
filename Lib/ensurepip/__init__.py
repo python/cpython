@@ -24,15 +24,16 @@ else:
 
 def _find_wheel_pkg_dir_pip():
     if _WHEEL_PKG_DIR is None:
+        # NOTE: The compile-time `WHEEL_PKG_DIR` is unset so there is no place
+        # NOTE: for looking up the wheels.
         return None
 
     dist_matching_wheels = _WHEEL_PKG_DIR.glob('pip-*.whl')
     try:
         last_matching_dist_wheel = sorted(dist_matching_wheels)[-1]
-    except IndexError as index_err:
-        raise LookupError(
-            '`WHEEL_PKG_DIR` does not contain any wheel files for `pip`.',
-        ) from index_err
+    except IndexError:
+        # NOTE: `WHEEL_PKG_DIR` does not contain any wheel files for `pip`.
+        return None
 
     return nullcontext(last_matching_dist_wheel)
 
