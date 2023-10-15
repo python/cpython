@@ -16,9 +16,10 @@ _PIP_VERSION = "23.3.2"
 # policies recommend against bundling dependencies. For example, Fedora
 # installs wheel packages in the /usr/share/python-wheels/ directory and don't
 # install the ensurepip._bundled package.
-_WHEEL_PKG_DIR = (
-    whl_pkg_dir_str := sysconfig.get_config_var('WHEEL_PKG_DIR')
-) is not None and Path(whl_pkg_dir_str).resolve() or None
+if (_pkg_dir := sysconfig.get_config_var('WHEEL_PKG_DIR')) is not None:
+    _WHEEL_PKG_DIR = Path(_pkg_dir).resolve()
+else:
+    _WHEEL_PKG_DIR = None
 
 
 def _find_wheel_pkg_dir_pip():
