@@ -1107,7 +1107,7 @@ subject value:
    If only keyword patterns are present, they are processed as follows,
    one by one:
 
-   I. The keyword is looked up as an attribute on the subject.
+   1. The keyword is looked up as an attribute on the subject.
 
       * If this raises an exception other than :exc:`AttributeError`, the
         exception bubbles up.
@@ -1119,13 +1119,13 @@ subject value:
         pattern fails; if this succeeds, the match proceeds to the next keyword.
 
 
-   II. If all keyword patterns succeed, the class pattern succeeds.
+   2. If all keyword patterns succeed, the class pattern succeeds.
 
    If any positional patterns are present, they are converted to keyword
    patterns using the :data:`~object.__match_args__` attribute on the class
    ``name_or_attr`` before matching:
 
-   I. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
+   1. The equivalent of ``getattr(cls, "__match_args__", ())`` is called.
 
       * If this raises an exception, the exception bubbles up.
 
@@ -1143,8 +1143,8 @@ subject value:
 
       .. seealso:: :ref:`class-pattern-matching`
 
-   II. Once all positional patterns have been converted to keyword patterns,
-       the match proceeds as if there were only keyword patterns.
+   2. Once all positional patterns have been converted to keyword patterns,
+      the match proceeds as if there were only keyword patterns.
 
    For the following built-in types the handling of positional subpatterns is
    different:
