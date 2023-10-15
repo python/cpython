@@ -26,7 +26,7 @@ def _find_wheel_pkg_dir_pip():
     if _WHEEL_PKG_DIR is None:
         return None
 
-    dist_matching_wheels = _WHEEL_PKG_DIR.glob(f'pip-*.whl')
+    dist_matching_wheels = _WHEEL_PKG_DIR.glob('pip-*.whl')
     try:
         last_matching_dist_wheel = sorted(dist_matching_wheels)[-1]
     except IndexError as index_err:
