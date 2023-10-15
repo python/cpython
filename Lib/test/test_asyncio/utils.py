@@ -558,6 +558,7 @@ class TestCase(unittest.TestCase):
                 pass
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
+                    # Wait for subprocess to finish, but not forever
                     for thread in list(watcher._threads.values()):
                         thread.join(timeout=support.SHORT_TIMEOUT)
 
