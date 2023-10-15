@@ -5,10 +5,11 @@ import time
 
 import asyncio
 
+from test.test_asyncio.utils import await_without_task
+
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
-
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
@@ -256,6 +257,37 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(1)
         cause = exc.exception.__cause__
         assert isinstance(cause, asyncio.CancelledError)
+
+    async def test_timeout_already_entered(self):
+        async with asyncio.timeout(0.01) as cm:
+            with self.assertRaisesRegex(RuntimeError, "already active"):
+                async with cm:
+                    pass
+
+    async def test_timeout_double_enter(self):
+        async with asyncio.timeout(0.01) as cm:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "already finished"):
+            async with cm:
+                pass
+
+    async def test_timeout_finished(self):
+        async with asyncio.timeout(0.01) as cm:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "finished"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_not_entered(self):
+        cm = asyncio.timeout(0.01)
+        with self.assertRaisesRegex(RuntimeError, "Cannot change state"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_without_task(self):
+        cm = asyncio.timeout(0.01)
+        with self.assertRaisesRegex(RuntimeError, "task"):
+            await await_without_task(cm.__aenter__())
+        with self.assertRaisesRegex(RuntimeError, "Cannot change state"):
+            cm.reschedule(0.02)
 
 
 if __name__ == '__main__':
