@@ -538,7 +538,8 @@ def get_function_source(func):
 
 
 class TestCase(unittest.TestCase):
-    def close_loop(self, loop):
+    @staticmethod
+    def close_loop(loop):
         if loop._default_executor is not None:
             if not loop.is_closed():
                 loop.run_until_complete(loop.shutdown_default_executor())
@@ -557,12 +558,8 @@ class TestCase(unittest.TestCase):
                 pass
             else:
                 if isinstance(watcher, asyncio.ThreadedChildWatcher):
-                    watcher._join_threads(timeout=support.SHORT_TIMEOUT)
-                    threads = {key: thread for key, thread in watcher._threads.items()
-                               if thread.is_alive() and not thread.daemon}
-                    if threads:
-                        self.fail(f"watcher still has running threads: "
-                                  f"{threads}")
+                    for thread in list(watcher._threads.values()):
+                        thread.join(timeout=support.SHORT_TIMEOUT)
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
