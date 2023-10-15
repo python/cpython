@@ -293,8 +293,10 @@ Other objects
 
 ``O`` (object) [PyObject \*]
    Store a Python object (without any conversion) in a C object pointer.  The C
-   program thus receives the actual object that was passed.  The object's reference
-   count is not increased.  The pointer stored is not ``NULL``.
+   program thus receives the actual object that was passed.  A new
+   :term:`strong reference` to the object is not created
+   (i.e. its reference count is not increased).
+   The pointer stored is not ``NULL``.
 
 ``O!`` (object) [*typeobject*, PyObject \*]
    Store a Python object in a C object pointer.  This is similar to ``O``, but
@@ -378,7 +380,8 @@ inside nested parentheses.  They are:
    mutually exclude each other.
 
 Note that any Python object references which are provided to the caller are
-*borrowed* references; do not decrement their reference count!
+*borrowed* references; do not release them
+(i.e. do not decrement their reference count)!
 
 Additional arguments passed to these functions must be addresses of variables
 whose type is determined by the format string; these are used to store values
@@ -413,8 +416,10 @@ API Functions
 .. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], ...)
 
    Parse the parameters of a function that takes both positional and keyword
-   parameters into local variables.  The *keywords* argument is a
-   ``NULL``-terminated array of keyword parameter names.  Empty names denote
+   parameters into local variables.
+   The *keywords* argument is a ``NULL``-terminated array of keyword parameter
+   names specified as null-terminated ASCII or UTF-8 encoded C strings.
+   Empty names denote
    :ref:`positional-only parameters <positional-only_parameter>`.
    Returns true on success; on failure, it returns false and raises the
    appropriate exception.
@@ -422,6 +427,9 @@ API Functions
    .. versionchanged:: 3.6
       Added support for :ref:`positional-only parameters
       <positional-only_parameter>`.
+
+   .. versionchanged:: 3.13
+      Added support for non-ASCII keyword parameter names.
 
 
 .. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], va_list vargs)
@@ -477,7 +485,7 @@ API Functions
    will be set if there was a failure.
 
    This is an example of the use of this function, taken from the sources for the
-   :mod:`_weakref` helper module for weak references::
+   :mod:`!_weakref` helper module for weak references::
 
       static PyObject *
       weakref_ref(PyObject *self, PyObject *args)
@@ -621,8 +629,10 @@ Building values
       Convert a C :c:type:`Py_complex` structure to a Python complex number.
 
    ``O`` (object) [PyObject \*]
-      Pass a Python object untouched (except for its reference count, which is
-      incremented by one).  If the object passed in is a ``NULL`` pointer, it is assumed
+      Pass a Python object untouched but create a new
+      :term:`strong reference` to it
+      (i.e. its reference count is incremented by one).
+      If the object passed in is a ``NULL`` pointer, it is assumed
       that this was caused because the call producing the argument found an error and
       set an exception. Therefore, :c:func:`Py_BuildValue` will return ``NULL`` but won't
       raise an exception.  If no exception has been raised yet, :exc:`SystemError` is
@@ -632,7 +642,7 @@ Building values
       Same as ``O``.
 
    ``N`` (object) [PyObject \*]
-      Same as ``O``, except it doesn't increment the reference count on the object.
+      Same as ``O``, except it doesn't create a new :term:`strong reference`.
       Useful when the object is created by a call to an object constructor in the
       argument list.
 

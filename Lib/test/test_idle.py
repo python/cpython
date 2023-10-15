@@ -3,6 +3,7 @@ from test.support.import_helper import import_module
 from test.support import check_sanitizer
 
 if check_sanitizer(address=True, memory=True):
+    # See gh-90791 for details
     raise unittest.SkipTest("Tests involving libX11 can SEGFAULT on ASAN/MSAN builds")
 
 # Skip test_idle if _tkinter, tkinter, or idlelib are missing.

@@ -319,13 +319,11 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`Field` object directly.  Its documented attributes are:
 
-     - ``name``: The name of the field.
-
-     - ``type``: The type of the field.
-
-     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` function.
+   - ``name``: The name of the field.
+   - ``type``: The type of the field.
+   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+     ``compare``, ``metadata``, and ``kw_only`` have the identical
+     meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
@@ -455,6 +453,8 @@ Module contents
    to have alternate class constructors, or perhaps a custom
    ``replace()`` (or similarly named) method which handles instance
    copying.
+
+   Dataclass instances are also supported by generic function :func:`copy.replace`.
 
 .. function:: is_dataclass(obj)
 
@@ -609,7 +609,7 @@ methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
 :meth:`~object.__init__` cannot use simple assignment to initialize fields, and
-must use :meth:`~object.__setattr__`.
+must use :meth:`!object.__setattr__`.
 
 Inheritance
 -----------

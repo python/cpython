@@ -129,6 +129,13 @@ _Py_hashtable_size(const _Py_hashtable_t *ht)
 }
 
 
+size_t
+_Py_hashtable_len(const _Py_hashtable_t *ht)
+{
+    return ht->nentries;
+}
+
+
 _Py_hashtable_entry_t *
 _Py_hashtable_get_entry_generic(_Py_hashtable_t *ht, const void *key)
 {
@@ -218,7 +225,6 @@ _Py_hashtable_set(_Py_hashtable_t *ht, const void *key, void *value)
     entry = ht->get_entry_func(ht, key);
     assert(entry == NULL);
 #endif
-
 
     entry = ht->alloc.malloc(sizeof(_Py_hashtable_entry_t));
     if (entry == NULL) {

@@ -1,13 +1,8 @@
-
 #include "Python.h"
-#include <sys/resource.h>
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#include <time.h>
+#include <errno.h>                // errno
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <sys/resource.h>         // getrusage()
+#include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -28,15 +23,16 @@ class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsPid({argname});
             if ({paramname} == -1 && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=5af1c116d56cbb5a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
 
 #include "clinic/resource.c.h"
 
@@ -372,9 +368,7 @@ resource_exec(PyObject *module)
     } while (0)
 
     /* Add some symbolic constants to the module */
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
 
@@ -502,12 +496,7 @@ resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (!v) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-        Py_DECREF(v);
+    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
         return -1;
     }
     return 0;

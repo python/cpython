@@ -253,7 +253,7 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
-        # Errors thrown by tokenizer.c
+        # Errors thrown by the tokenizer
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
         check('0010 + 2', 1, 1)
@@ -317,6 +317,12 @@ class ExceptionTests(unittest.TestCase):
         check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
+
+    @support.requires_resource('cpu')
+    @support.bigmemtest(support._2G, memuse=1.5)
+    def testMemoryErrorBigSource(self, _size):
+        with self.assertRaises(OverflowError):
+            exec(f"if True:\n {' ' * 2**31}print('hello world')")
 
     @cpython_only
     def testSettingException(self):
@@ -1350,6 +1356,7 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
         # See bpo-33930
 
@@ -1484,6 +1491,9 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1652,6 +1662,9 @@ class ExceptionTests(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1930,6 +1943,123 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+
+class AssertionErrorTests(unittest.TestCase):
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def write_source(self, source):
+        with open(TESTFN, 'w') as testfile:
+            testfile.write(dedent(source))
+        _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+        return err.decode('utf-8').splitlines()
+
+    def test_assertion_error_location(self):
+        cases = [
+            ('assert None',
+                [
+                    '    assert None',
+                    '           ^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 0',
+                [
+                    '    assert 0',
+                    '           ^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2',
+                [
+                    '    assert 1 > 2',
+                    '           ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2 and 3 > 2',
+                [
+                    '    assert 1 > 2 and 3 > 2',
+                    '           ^^^^^^^^^^^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2, "message"',
+                [
+                    '    assert 1 > 2, "message"',
+                    '           ^^^^^',
+                    'AssertionError: message',
+                ],
+            ),
+
+            # Multiline:
+            ("""
+             assert (
+                 1 > 2)
+             """,
+                [
+                    '    1 > 2)',
+                    '    ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), "Message"
+             """,
+                [
+                    '    1 > 2), "Message"',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), \\
+                 "Message"
+             """,
+                [
+                    '    1 > 2), \\',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-3:], expected)
+
+    def test_multiline_not_highlighted(self):
+        cases = [
+            ("""
+             assert (
+                 1 > 2
+             )
+             """,
+                [
+                    '    1 > 2',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 < 2 and
+                 3 > 4
+             )
+             """,
+                [
+                    '    1 < 2 and',
+                    'AssertionError',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-2:], expected)
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def test_range_of_offsets(self):

@@ -1112,7 +1112,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 /* See comments in symtable.c. */
-#define COMPILER_STACK_FRAME_SCALE 3
+#define COMPILER_STACK_FRAME_SCALE 2
 
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
@@ -1130,10 +1130,10 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
         return 0;
     }
     /* Be careful here to prevent overflow. */
-    int recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
+    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
     starting_recursion_depth = recursion_depth * COMPILER_STACK_FRAME_SCALE;
     state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
+    state.recursion_limit = Py_C_RECURSION_LIMIT * COMPILER_STACK_FRAME_SCALE;
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());

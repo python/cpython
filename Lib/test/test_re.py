@@ -127,8 +127,10 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.sub("(?i)b+", "x", "bbbb BBBB"), 'x x')
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y'),
                          '9.3 -3 24x100y')
-        self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', 3),
-                         '9.3 -3 23x99y')
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', 3),
+                             '9.3 -3 23x99y')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(re.sub(r'\d+', self.bump_num, '08.2 -2 23x99y', count=3),
                          '9.3 -3 23x99y')
 
@@ -235,8 +237,41 @@ class ReTests(unittest.TestCase):
 
     def test_qualified_re_sub(self):
         self.assertEqual(re.sub('a', 'b', 'aaaaa'), 'bbbbb')
-        self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(re.sub('a', 'b', 'aaaaa', 1), 'baaaa')
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(re.sub('a', 'b', 'aaaaa', count=1), 'baaaa')
+
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) got multiple values for argument 'count'"):
+            re.sub('a', 'b', 'aaaaa', 1, count=1)
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) got multiple values for argument 'flags'"):
+            re.sub('a', 'b', 'aaaaa', 1, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"sub\(\) takes from 3 to 5 positional arguments but 6 "
+                r"were given"):
+            re.sub('a', 'b', 'aaaaa', 1, 0, 0)
+
+    def test_misuse_flags(self):
+        with self.assertWarns(DeprecationWarning) as w:
+            result = re.sub('a', 'b', 'aaaaa', re.I)
+        self.assertEqual(result, re.sub('a', 'b', 'aaaaa', count=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'count' is passed as positional argument")
+        self.assertEqual(w.filename, __file__)
+        with self.assertWarns(DeprecationWarning) as w:
+            result = re.subn("b*", "x", "xyz", re.I)
+        self.assertEqual(result, re.subn("b*", "x", "xyz", count=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'count' is passed as positional argument")
+        self.assertEqual(w.filename, __file__)
+        with self.assertWarns(DeprecationWarning) as w:
+            result = re.split(":", ":a:b::c", re.I)
+        self.assertEqual(result, re.split(":", ":a:b::c", maxsplit=int(re.I)))
+        self.assertEqual(str(w.warning),
+                         "'maxsplit' is passed as positional argument")
+        self.assertEqual(w.filename, __file__)
 
     def test_bug_114660(self):
         self.assertEqual(re.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there'),
@@ -344,8 +379,21 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.subn("b+", "x", "bbbb BBBB"), ('x BBBB', 1))
         self.assertEqual(re.subn("b+", "x", "xyz"), ('xyz', 0))
         self.assertEqual(re.subn("b*", "x", "xyz"), ('xxxyxzx', 4))
-        self.assertEqual(re.subn("b*", "x", "xyz", 2), ('xxxyz', 2))
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(re.subn("b*", "x", "xyz", 2), ('xxxyz', 2))
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(re.subn("b*", "x", "xyz", count=2), ('xxxyz', 2))
+
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) got multiple values for argument 'count'"):
+            re.subn('a', 'b', 'aaaaa', 1, count=1)
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) got multiple values for argument 'flags'"):
+            re.subn('a', 'b', 'aaaaa', 1, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"subn\(\) takes from 3 to 5 positional arguments but 6 "
+                r"were given"):
+            re.subn('a', 'b', 'aaaaa', 1, 0, 0)
 
     def test_re_split(self):
         for string in ":a:b::c", S(":a:b::c"):
@@ -401,7 +449,9 @@ class ReTests(unittest.TestCase):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
     def test_qualified_re_split(self):
-        self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
+        with self.assertWarns(DeprecationWarning) as w:
+            self.assertEqual(re.split(":", ":a:b::c", 2), ['', 'a', 'b::c'])
+        self.assertEqual(w.filename, __file__)
         self.assertEqual(re.split(":", ":a:b::c", maxsplit=2), ['', 'a', 'b::c'])
         self.assertEqual(re.split(':', 'a:b:c:d', maxsplit=2), ['a', 'b', 'c:d'])
         self.assertEqual(re.split("(:)", ":a:b::c", maxsplit=2),
@@ -410,6 +460,17 @@ class ReTests(unittest.TestCase):
                          ['', ':', 'a', ':', 'b::c'])
         self.assertEqual(re.split("(:*)", ":a:b::c", maxsplit=2),
                          ['', ':', '', '', 'a:b::c'])
+
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) got multiple values for argument 'maxsplit'"):
+            re.split(":", ":a:b::c", 2, maxsplit=2)
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) got multiple values for argument 'flags'"):
+            re.split(":", ":a:b::c", 2, 0, flags=0)
+        with self.assertRaisesRegex(TypeError,
+                r"split\(\) takes from 2 to 4 positional arguments but 5 "
+                r"were given"):
+            re.split(":", ":a:b::c", 2, 0, 0)
 
     def test_re_findall(self):
         self.assertEqual(re.findall(":+", "abc"), [])
@@ -1859,6 +1920,29 @@ class ReTests(unittest.TestCase):
         self.assertRaises(OverflowError, re.compile, r".{%d,}?" % 2**128)
         self.assertRaises(OverflowError, re.compile, r".{%d,%d}" % (2**129, 2**128))
 
+    def test_look_behind_overflow(self):
+        string = "x" * 2_500_000
+        p1 = r"(?<=((.{%d}){%d}){%d})"
+        p2 = r"(?<!((.{%d}){%d}){%d})"
+        # Test that the templates are valid and look-behind with width 2**21
+        # (larger than sys.maxunicode) are supported.
+        self.assertEqual(re.search(p1 % (2**7, 2**7, 2**7), string).span(),
+                         (2**21, 2**21))
+        self.assertEqual(re.search(p2 % (2**7, 2**7, 2**7), string).span(),
+                         (0, 0))
+        # Test that 2**22 is accepted as a repetition number and look-behind
+        # width.
+        re.compile(p1 % (2**22, 1, 1))
+        re.compile(p1 % (1, 2**22, 1))
+        re.compile(p1 % (1, 1, 2**22))
+        re.compile(p2 % (2**22, 1, 1))
+        re.compile(p2 % (1, 2**22, 1))
+        re.compile(p2 % (1, 1, 2**22))
+        # But 2**66 is too large for look-behind width.
+        errmsg = "looks too much behind"
+        self.assertRaisesRegex(re.error, errmsg, re.compile, p1 % (2**22, 2**22, 2**22))
+        self.assertRaisesRegex(re.error, errmsg, re.compile, p2 % (2**22, 2**22, 2**22))
+
     def test_backref_group_name_in_exception(self):
         # Issue 17341: Poor error message when compiling invalid regex
         self.checkPatternError('(?P=<foo>)',
@@ -2401,6 +2485,26 @@ class ReTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(r'(?s:(?>.*?\.).*)\Z', "a.txt")) # reproducer
         self.assertTrue(re.fullmatch(r'(?s:(?=(?P<g0>.*?\.))(?P=g0).*)\Z', "a.txt"))
 
+    def test_bug_gh100061(self):
+        # gh-100061
+        self.assertEqual(re.match('(?>(?:.(?!D))+)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))++', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))*)', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D))*+', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?>(?:.(?!D))?)', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?:.(?!D))?+', 'CDE').span(), (0, 0))
+        self.assertEqual(re.match('(?>(?:.(?!D)){1,3})', 'ABCDE').span(), (0, 2))
+        self.assertEqual(re.match('(?:.(?!D)){1,3}+', 'ABCDE').span(), (0, 2))
+        # gh-106052
+        self.assertEqual(re.match("(?>(?:ab?c)+)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)++", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)*)", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c)*+", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?>(?:ab?c)?)", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?:ab?c)?+", "a").span(), (0, 0))
+        self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
+        self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'
@@ -2420,6 +2524,9 @@ class ReTests(unittest.TestCase):
             if p.is_alive():
                 p.terminate()
                 p.join()
+
+    def test_fail(self):
+        self.assertEqual(re.search(r'12(?!)|3', '123')[0], '3')
 
 
 def get_debug_out(pat):
@@ -2710,6 +2817,9 @@ class ImplementationTest(unittest.TestCase):
             _sre.compile("abc", 0, [long_overflow], 0, {}, ())
         with self.assertRaises(TypeError):
             _sre.compile({}, 0, [], 0, [], [])
+        # gh-110590: `TypeError` was overwritten with `OverflowError`:
+        with self.assertRaises(TypeError):
+            _sre.compile('', 0, ['abc'], 0, {}, ())
 
     @cpython_only
     def test_repeat_minmax_overflow_maxrepeat(self):

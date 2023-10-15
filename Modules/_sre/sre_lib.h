@@ -564,7 +564,7 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t ret = 0;
     int jump;
-    unsigned int sigcount=0;
+    unsigned int sigcount = state->sigcount;
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
@@ -591,8 +591,8 @@ entrance:
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
         if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
-            TRACE(("reject (got %zd chars, need %zd)\n",
-                   end - ptr, (Py_ssize_t) pattern[3]));
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             RETURN_FAILURE;
         }
         pattern += pattern[1] + 1;
@@ -1336,6 +1336,10 @@ dispatch:
                     MARK_POP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
+                    /* Restore the global Input Stream pointer
+                       since it can change after jumps. */
+                    state->ptr = ptr;
+
                     /* We have sufficient matches, so exit loop. */
                     break;
                 }
@@ -1505,7 +1509,7 @@ dispatch:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)pattern[1])
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) < pattern[1])
                 RETURN_FAILURE;
             state->ptr = ptr - pattern[1];
             DO_JUMP0(JUMP_ASSERT, jump_assert, pattern+2);
@@ -1518,7 +1522,7 @@ dispatch:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)pattern[1]) {
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) >= pattern[1]) {
                 state->ptr = ptr - pattern[1];
                 LASTMARK_SAVE();
                 if (state->repeat)
@@ -1563,8 +1567,10 @@ exit:
     ctx_pos = ctx->last_ctx_pos;
     jump = ctx->jump;
     DATA_POP_DISCARD(ctx);
-    if (ctx_pos == -1)
+    if (ctx_pos == -1) {
+        state->sigcount = sigcount;
         return ret;
+    }
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1652,9 +1658,9 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
         flags = pattern[2];
 
-        if (pattern[3] && end - ptr < (Py_ssize_t)pattern[3]) {
-            TRACE(("reject (got %u chars, need %u)\n",
-                   (unsigned int)(end - ptr), pattern[3]));
+        if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             return 0;
         }
         if (pattern[3] > 1) {

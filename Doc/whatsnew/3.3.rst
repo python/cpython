@@ -249,7 +249,7 @@ Changes introduced by :pep:`393` are the following:
     non-BMP code points.
 
 * The value of :data:`sys.maxunicode` is now always ``1114111`` (``0x10FFFF``
-  in hexadecimal).  The :c:func:`PyUnicode_GetMax` function still returns
+  in hexadecimal).  The :c:func:`!PyUnicode_GetMax` function still returns
   either ``0xFFFF`` or ``0x10FFFF`` for backward compatibility, and it should
   not be used with the new Unicode API (see :issue:`13054`).
 
@@ -917,12 +917,12 @@ abstract methods. The recommended approach to declaring abstract descriptors is
 now to provide :attr:`__isabstractmethod__` as a dynamically updated
 property. The built-in descriptors have been updated accordingly.
 
-  * :class:`abc.abstractproperty` has been deprecated, use :class:`property`
-    with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractclassmethod` has been deprecated, use
-    :class:`classmethod` with :func:`abc.abstractmethod` instead.
-  * :class:`abc.abstractstaticmethod` has been deprecated, use
-    :class:`staticmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractproperty` has been deprecated, use :class:`property`
+  with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractclassmethod` has been deprecated, use
+  :class:`classmethod` with :func:`abc.abstractmethod` instead.
+* :class:`abc.abstractstaticmethod` has been deprecated, use
+  :class:`staticmethod` with :func:`abc.abstractmethod` instead.
 
 (Contributed by Darren Dale in :issue:`11610`.)
 
@@ -1060,32 +1060,32 @@ function to the :mod:`!crypt` module.
 curses
 ------
 
- * If the :mod:`curses` module is linked to the ncursesw library, use Unicode
-   functions when Unicode strings or characters are passed (e.g.
-   :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
- * Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
- * :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
- * The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
-   method to get a wide character
- * The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
-   push a wide character so the next :meth:`~curses.window.get_wch` will return
-   it
+* If the :mod:`curses` module is linked to the ncursesw library, use Unicode
+  functions when Unicode strings or characters are passed (e.g.
+  :c:func:`waddwstr`), and bytes functions otherwise (e.g. :c:func:`waddstr`).
+* Use the locale encoding instead of ``utf-8`` to encode Unicode strings.
+* :class:`curses.window` has a new :attr:`curses.window.encoding` attribute.
+* The :class:`curses.window` class has a new :meth:`~curses.window.get_wch`
+  method to get a wide character
+* The :mod:`curses` module has a new :meth:`~curses.unget_wch` function to
+  push a wide character so the next :meth:`~curses.window.get_wch` will return
+  it
 
 (Contributed by Iñigo Serna in :issue:`6755`.)
 
 datetime
 --------
 
- * Equality comparisons between naive and aware :class:`~datetime.datetime`
-   instances now return :const:`False` instead of raising :exc:`TypeError`
-   (:issue:`15006`).
- * New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
-   corresponding to the :class:`~datetime.datetime` instance.
- * The :meth:`datetime.datetime.strftime` method supports formatting years
-   older than 1000.
- * The :meth:`datetime.datetime.astimezone` method can now be
-   called without arguments to convert datetime instance to the system
-   timezone.
+* Equality comparisons between naive and aware :class:`~datetime.datetime`
+  instances now return :const:`False` instead of raising :exc:`TypeError`
+  (:issue:`15006`).
+* New :meth:`datetime.datetime.timestamp` method: Return POSIX timestamp
+  corresponding to the :class:`~datetime.datetime` instance.
+* The :meth:`datetime.datetime.strftime` method supports formatting years
+  older than 1000.
+* The :meth:`datetime.datetime.astimezone` method can now be
+  called without arguments to convert datetime instance to the system
+  timezone.
 
 
 .. _new-decimal:
@@ -1135,20 +1135,20 @@ API changes
 * The C module has the following context limits, depending on the machine
   architecture:
 
-   +-------------------+---------------------+------------------------------+
-   |                   |       32-bit        |            64-bit            |
-   +===================+=====================+==============================+
-   | :const:`MAX_PREC` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MAX_EMAX` | :const:`425000000`  | :const:`999999999999999999`  |
-   +-------------------+---------------------+------------------------------+
-   | :const:`MIN_EMIN` | :const:`-425000000` | :const:`-999999999999999999` |
-   +-------------------+---------------------+------------------------------+
+   +-------------------+----------------+-------------------------+
+   |                   |       32-bit   |            64-bit       |
+   +===================+================+=========================+
+   | :const:`MAX_PREC` | ``425000000``  | ``999999999999999999``  |
+   +-------------------+----------------+-------------------------+
+   | :const:`MAX_EMAX` | ``425000000``  | ``999999999999999999``  |
+   +-------------------+----------------+-------------------------+
+   | :const:`MIN_EMIN` | ``-425000000`` | ``-999999999999999999`` |
+   +-------------------+----------------+-------------------------+
 
 * In the context templates (:class:`~decimal.DefaultContext`,
   :class:`~decimal.BasicContext` and :class:`~decimal.ExtendedContext`)
   the magnitude of :attr:`~decimal.Context.Emax` and
-  :attr:`~decimal.Context.Emin` has changed to :const:`999999`.
+  :attr:`~decimal.Context.Emin` has changed to ``999999``.
 
 * The :class:`~decimal.Decimal` constructor in decimal.py does not observe
   the context limits and converts values with arbitrary exponents or precision
@@ -1210,25 +1210,25 @@ the ``Message`` object it is serializing.  The default policy is
 
 The minimum set of controls implemented by all ``policy`` objects are:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    max_line_length     The maximum length, excluding the linesep character(s),
-                        individual lines may have when a ``Message`` is
-                        serialized.  Defaults to 78.
+===============     =======================================================
+max_line_length     The maximum length, excluding the linesep character(s),
+                    individual lines may have when a ``Message`` is
+                    serialized.  Defaults to 78.
 
-    linesep             The character used to separate individual lines when a
-                        ``Message`` is serialized.  Defaults to ``\n``.
+linesep             The character used to separate individual lines when a
+                    ``Message`` is serialized.  Defaults to ``\n``.
 
-    cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
-                        ``Bytes`` ``generator``, and means that non-ASCII may
-                        be used where allowed by the protocol (or where it
-                        exists in the original input).
+cte_type            ``7bit`` or ``8bit``.  ``8bit`` applies only to a
+                    ``Bytes`` ``generator``, and means that non-ASCII may
+                    be used where allowed by the protocol (or where it
+                    exists in the original input).
 
-    raise_on_defect     Causes a ``parser`` to raise error when defects are
-                        encountered instead of adding them to the ``Message``
-                        object's ``defects`` list.
-    ===============     =======================================================
+raise_on_defect     Causes a ``parser`` to raise error when defects are
+                    encountered instead of adding them to the ``Message``
+                    object's ``defects`` list.
+===============     =======================================================
 
 A new policy instance, with new settings, is created using the
 :meth:`~email.policy.Policy.clone` method of policy objects.  ``clone`` takes
@@ -1263,21 +1263,21 @@ removal of the code) may occur if deemed necessary by the core developers.
 The new policies are instances of :class:`~email.policy.EmailPolicy`,
 and add the following additional controls:
 
-    .. tabularcolumns:: |l|L|
+.. tabularcolumns:: |l|L|
 
-    ===============     =======================================================
-    refold_source       Controls whether or not headers parsed by a
-                        :mod:`~email.parser` are refolded by the
-                        :mod:`~email.generator`.  It can be ``none``, ``long``,
-                        or ``all``.  The default is ``long``, which means that
-                        source headers with a line longer than
-                        ``max_line_length`` get refolded.  ``none`` means no
-                        line get refolded, and ``all`` means that all lines
-                        get refolded.
+===============     =======================================================
+refold_source       Controls whether or not headers parsed by a
+                    :mod:`~email.parser` are refolded by the
+                    :mod:`~email.generator`.  It can be ``none``, ``long``,
+                    or ``all``.  The default is ``long``, which means that
+                    source headers with a line longer than
+                    ``max_line_length`` get refolded.  ``none`` means no
+                    line get refolded, and ``all`` means that all lines
+                    get refolded.
 
-    header_factory      A callable that take a ``name`` and ``value`` and
-                        produces a custom header object.
-    ===============     =======================================================
+header_factory      A callable that take a ``name`` and ``value`` and
+                    produces a custom header object.
+===============     =======================================================
 
 The ``header_factory`` is the key to the new features provided by the new
 policies.  When one of the new policies is used, any header retrieved from
@@ -1352,18 +1352,18 @@ API.
 
 New utility functions:
 
-   * :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
-     produce a string formatted for use in an email header.
+* :func:`~email.utils.format_datetime`: given a :class:`~datetime.datetime`,
+  produce a string formatted for use in an email header.
 
-   * :func:`~email.utils.parsedate_to_datetime`: given a date string from
-     an email header, convert it into an aware :class:`~datetime.datetime`,
-     or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
+* :func:`~email.utils.parsedate_to_datetime`: given a date string from
+  an email header, convert it into an aware :class:`~datetime.datetime`,
+  or a naive :class:`~datetime.datetime` if the offset is ``-0000``.
 
-   * :func:`~email.utils.localtime`: With no argument, returns the
-     current local time as an aware :class:`~datetime.datetime` using the local
-     :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
-     converts it into an aware :class:`~datetime.datetime` using the
-     local :class:`~datetime.timezone`.
+* :func:`~email.utils.localtime`: With no argument, returns the
+  current local time as an aware :class:`~datetime.datetime` using the local
+  :class:`~datetime.timezone`.  Given an aware :class:`~datetime.datetime`,
+  converts it into an aware :class:`~datetime.datetime` using the
+  local :class:`~datetime.timezone`.
 
 
 ftplib
@@ -2067,7 +2067,7 @@ The :pep:`418` added new functions to the :mod:`time` module:
 Other new functions:
 
 * :func:`~time.clock_getres`, :func:`~time.clock_gettime` and
-  :func:`~time.clock_settime` functions with ``CLOCK_xxx`` constants.
+  :func:`~time.clock_settime` functions with :samp:`CLOCK_{xxx}` constants.
   (Contributed by Victor Stinner in :issue:`10278`.)
 
 To improve cross platform consistency, :func:`~time.sleep` now raises a
@@ -2195,8 +2195,8 @@ Changes to Python's build process and to the C API include:
     * :c:func:`PyUnicode_AsUCS4`, :c:func:`PyUnicode_AsUCS4Copy`
     * :c:macro:`PyUnicode_DATA`, :c:macro:`PyUnicode_1BYTE_DATA`,
       :c:macro:`PyUnicode_2BYTE_DATA`, :c:macro:`PyUnicode_4BYTE_DATA`
-    * :c:macro:`PyUnicode_KIND` with :c:type:`PyUnicode_Kind` enum:
-      :c:data:`PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
+    * :c:macro:`PyUnicode_KIND` with :c:enum:`PyUnicode_Kind` enum:
+      :c:data:`!PyUnicode_WCHAR_KIND`, :c:data:`PyUnicode_1BYTE_KIND`,
       :c:data:`PyUnicode_2BYTE_KIND`, :c:data:`PyUnicode_4BYTE_KIND`
     * :c:macro:`PyUnicode_READ`, :c:macro:`PyUnicode_READ_CHAR`, :c:macro:`PyUnicode_WRITE`
     * :c:macro:`PyUnicode_MAX_CHAR_VALUE`
@@ -2270,58 +2270,58 @@ removed in Python 4. All functions using this type are deprecated:
 Unicode functions and methods using :c:type:`Py_UNICODE` and
 :c:expr:`Py_UNICODE*` types:
 
-* :c:macro:`PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
+* :c:macro:`!PyUnicode_FromUnicode`: use :c:func:`PyUnicode_FromWideChar` or
   :c:func:`PyUnicode_FromKindAndData`
-* :c:macro:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_AsUnicode`,
-  :c:func:`PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
-* :c:macro:`PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
+* :c:macro:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_AsUnicode`,
+  :c:func:`!PyUnicode_AsUnicodeAndSize`: use :c:func:`PyUnicode_AsWideCharString`
+* :c:macro:`!PyUnicode_AS_DATA`: use :c:macro:`PyUnicode_DATA` with
   :c:macro:`PyUnicode_READ` and :c:macro:`PyUnicode_WRITE`
-* :c:macro:`PyUnicode_GET_SIZE`, :c:func:`PyUnicode_GetSize`: use
+* :c:macro:`!PyUnicode_GET_SIZE`, :c:func:`!PyUnicode_GetSize`: use
   :c:macro:`PyUnicode_GET_LENGTH` or :c:func:`PyUnicode_GetLength`
-* :c:macro:`PyUnicode_GET_DATA_SIZE`: use
+* :c:macro:`!PyUnicode_GET_DATA_SIZE`: use
   ``PyUnicode_GET_LENGTH(str) * PyUnicode_KIND(str)`` (only work on ready
   strings)
-* :c:func:`PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
+* :c:func:`!PyUnicode_AsUnicodeCopy`: use :c:func:`PyUnicode_AsUCS4Copy` or
   :c:func:`PyUnicode_AsWideCharString`
-* :c:func:`PyUnicode_GetMax`
+* :c:func:`!PyUnicode_GetMax`
 
 
 Functions and macros manipulating Py_UNICODE* strings:
 
-* :c:macro:`Py_UNICODE_strlen`: use :c:func:`PyUnicode_GetLength` or
+* :c:macro:`!Py_UNICODE_strlen()`: use :c:func:`PyUnicode_GetLength` or
   :c:macro:`PyUnicode_GET_LENGTH`
-* :c:macro:`Py_UNICODE_strcat`: use :c:func:`PyUnicode_CopyCharacters` or
+* :c:macro:`!Py_UNICODE_strcat()`: use :c:func:`PyUnicode_CopyCharacters` or
   :c:func:`PyUnicode_FromFormat`
-* :c:macro:`Py_UNICODE_strcpy`, :c:macro:`Py_UNICODE_strncpy`,
-  :c:macro:`Py_UNICODE_COPY`: use :c:func:`PyUnicode_CopyCharacters` or
+* :c:macro:`!Py_UNICODE_strcpy()`, :c:macro:`!Py_UNICODE_strncpy()`,
+  :c:macro:`!Py_UNICODE_COPY()`: use :c:func:`PyUnicode_CopyCharacters` or
   :c:func:`PyUnicode_Substring`
-* :c:macro:`Py_UNICODE_strcmp`: use :c:func:`PyUnicode_Compare`
-* :c:macro:`Py_UNICODE_strncmp`: use :c:func:`PyUnicode_Tailmatch`
-* :c:macro:`Py_UNICODE_strchr`, :c:macro:`Py_UNICODE_strrchr`: use
+* :c:macro:`!Py_UNICODE_strcmp()`: use :c:func:`PyUnicode_Compare`
+* :c:macro:`!Py_UNICODE_strncmp()`: use :c:func:`PyUnicode_Tailmatch`
+* :c:macro:`!Py_UNICODE_strchr()`, :c:macro:`!Py_UNICODE_strrchr()`: use
   :c:func:`PyUnicode_FindChar`
-* :c:macro:`Py_UNICODE_FILL`: use :c:func:`PyUnicode_Fill`
-* :c:macro:`Py_UNICODE_MATCH`
+* :c:macro:`!Py_UNICODE_FILL()`: use :c:func:`PyUnicode_Fill`
+* :c:macro:`!Py_UNICODE_MATCH`
 
 Encoders:
 
-* :c:func:`PyUnicode_Encode`: use :c:func:`PyUnicode_AsEncodedObject`
-* :c:func:`PyUnicode_EncodeUTF7`
-* :c:func:`PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
+* :c:func:`!PyUnicode_Encode`: use :c:func:`!PyUnicode_AsEncodedObject`
+* :c:func:`!PyUnicode_EncodeUTF7`
+* :c:func:`!PyUnicode_EncodeUTF8`: use :c:func:`PyUnicode_AsUTF8` or
   :c:func:`PyUnicode_AsUTF8String`
-* :c:func:`PyUnicode_EncodeUTF32`
-* :c:func:`PyUnicode_EncodeUTF16`
-* :c:func:`PyUnicode_EncodeUnicodeEscape` use
+* :c:func:`!PyUnicode_EncodeUTF32`
+* :c:func:`!PyUnicode_EncodeUTF16`
+* :c:func:`!PyUnicode_EncodeUnicodeEscape` use
   :c:func:`PyUnicode_AsUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeRawUnicodeEscape` use
+* :c:func:`!PyUnicode_EncodeRawUnicodeEscape` use
   :c:func:`PyUnicode_AsRawUnicodeEscapeString`
-* :c:func:`PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
-* :c:func:`PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
-* :c:func:`PyUnicode_EncodeCharmap`
-* :c:func:`PyUnicode_TranslateCharmap`
-* :c:func:`PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
+* :c:func:`!PyUnicode_EncodeLatin1`: use :c:func:`PyUnicode_AsLatin1String`
+* :c:func:`!PyUnicode_EncodeASCII`: use :c:func:`PyUnicode_AsASCIIString`
+* :c:func:`!PyUnicode_EncodeCharmap`
+* :c:func:`!PyUnicode_TranslateCharmap`
+* :c:func:`!PyUnicode_EncodeMBCS`: use :c:func:`PyUnicode_AsMBCSString` or
   :c:func:`PyUnicode_EncodeCodePage` (with ``CP_ACP`` code_page)
-* :c:func:`PyUnicode_EncodeDecimal`,
-  :c:func:`PyUnicode_TransformDecimalToASCII`
+* :c:func:`!PyUnicode_EncodeDecimal`,
+  :c:func:`!PyUnicode_TransformDecimalToASCII`
 
 
 Deprecated features
@@ -2462,7 +2462,7 @@ Porting C code
 --------------
 
 * In the course of changes to the buffer API the undocumented
-  :c:member:`~Py_buffer.smalltable` member of the
+  :c:member:`!smalltable` member of the
   :c:type:`Py_buffer` structure has been removed and the
   layout of the :c:type:`PyMemoryViewObject` has changed.
 

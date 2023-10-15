@@ -1,5 +1,8 @@
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
+
+#include <stddef.h>               // offsetof()
+#include <time.h>                 // clock()
+
 
 PyDoc_STRVAR(xxsubtype__doc__,
 "xxsubtype is an example module showing how to subtype builtin types from C.\n"
@@ -181,7 +184,7 @@ spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 }
 
 static PyMemberDef spamdict_members[] = {
-    {"state", T_INT, offsetof(spamdictobject, state), READONLY,
+    {"state", Py_T_INT, offsetof(spamdictobject, state), Py_READONLY,
      PyDoc_STR("an int variable for demonstration purposes")},
     {0}
 };

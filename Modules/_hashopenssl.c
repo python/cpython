@@ -1889,12 +1889,7 @@ hashlib_md_meth_names(PyObject *module)
         return -1;
     }
 
-    if (PyModule_AddObject(module, "openssl_md_meth_names", state.set) < 0) {
-        Py_DECREF(state.set);
-        return -1;
-    }
-
-    return 0;
+    return PyModule_Add(module, "openssl_md_meth_names", state.set);
 }
 
 /*[clinic input]
