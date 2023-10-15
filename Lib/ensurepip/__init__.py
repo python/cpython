@@ -3,7 +3,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
-from contextlib import nullcontext, suppress
+from contextlib import nullcontext
 from importlib import resources
 from pathlib import Path
 from shutil import copy2
@@ -24,11 +24,7 @@ else:
 
 def _find_wheel_pkg_dir_pip():
     if _WHEEL_PKG_DIR is None:
-        raise LookupError(
-            'The compile-time `WHEEL_PKG_DIR` is unset so there is '
-            'no place for looking up the wheels.',
-        ) from None
-
+        return None
 
     dist_matching_wheels = _WHEEL_PKG_DIR.glob(f'pip-*.whl')
     try:
@@ -43,8 +39,8 @@ def _find_wheel_pkg_dir_pip():
 
 def _get_pip_whl_path_ctx():
     # Prefer pip from the wheel package directory, if present.
-    with suppress(LookupError):
-        return _find_wheel_pkg_dir_pip()
+    if (alternative_pip_wheel_path := _find_wheel_pkg_dir_pip()) is not None:
+        return alternative_pip_wheel_path
 
     return resources.as_file(
         resources.files('ensurepip')
