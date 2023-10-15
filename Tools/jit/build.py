@@ -601,7 +601,7 @@ class Compiler:
         if self._ghccc:
             before = ll.read_text()
             after = re.sub(
-                r"((?:noalias )?(?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|DEOPTIMIZE|ENTRY|JUMP)\b)",
+                r"((?:noalias )?(?:ptr|%struct._PyInterpreterFrame\*) @_JIT_(?:CONTINUE|DEOPTIMIZE|ENTRY|ERROR|JUMP)\b)",
                 r"ghccc \1",
                 before,
             )
