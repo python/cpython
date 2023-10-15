@@ -36,6 +36,4 @@ extend-exclude = [
     "test_tokenize.py",
     "test_yield_from.py",
     "time_hashlib.py",
-    # Pending https://github.com/python/cpython/pull/109139
-    "test_monitoring.py",
 ]
