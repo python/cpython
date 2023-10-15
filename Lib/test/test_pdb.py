@@ -2638,12 +2638,27 @@ def bœr():
         commands = ''
         expected = "SyntaxError:"
         stdout, stderr = self.run_pdb_script(
-            script, commands, expected_returncode=1
+            script, commands
         )
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
+
+    def test_issue84583(self):
+        # A syntax error from ast.literal_eval should not make pdb exit.
+        script = "import ast; ast.literal_eval('')\n"
+        commands = """
+            continue
+            where
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        # The code should appear 3 times in the stdout:
+        # 1. when pdb starts
+        # 2. when the exception is raised, in trackback
+        # 3. in where command
+        self.assertEqual(stdout.count("ast.literal_eval('')"), 3)
 
     def test_issue26053(self):
         # run command of pdb prompt echoes the correct args
