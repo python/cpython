@@ -433,7 +433,9 @@ class Parser:
             case {
                 "Type": {
                     "Value": "R_AARCH64_ADR_GOT_PAGE"
-                    | "R_AARCH64_LD64_GOT_LO12_NC" as kind
+                    | "R_AARCH64_LD64_GOT_LO12_NC"
+                    | "R_X86_64_GOTPCRELX"
+                    | "R_X86_64_REX_GOTPCRELX" as kind
                 },
                 "Symbol": {"Value": s},
                 "Offset": offset,
@@ -461,15 +463,6 @@ class Parser:
                 value, symbol = HoleValue._JIT_DATA, None
                 addend += self._got_lookup(None)
             case {
-                "Type": {"Value": "R_X86_64_GOTPCRELX" | "R_X86_64_REX_GOTPCRELX" as kind},
-                "Symbol": {"Value": s},
-                "Offset": offset,
-                "Addend": addend,
-            }:
-                offset += base
-                value, symbol = HoleValue._JIT_DATA, None
-                addend += self._got_lookup(s)
-            case {
                 "Type": {"Value": kind},
                 "Symbol": {"Value": s},
                 "Offset": offset,
@@ -484,7 +477,7 @@ class Parser:
             }:
                 offset += base
                 value, symbol = self._symbol_to_value(s)
-                addend = self.read_u32(offset)  # XXX
+                addend = self.read_u32(offset)
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
