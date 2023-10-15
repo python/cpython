@@ -1,1 +1,1 @@
-Add ``track`` parameter that allows using shared memory blocks without having to register with the resource tracker.
+Add ``track`` parameter to :class:`multiprocessing.shared_memory.SharedMemory` that allows using shared memory blocks without having to register with the resource tracker.
