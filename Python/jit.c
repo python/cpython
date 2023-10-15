@@ -185,17 +185,19 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
 }
 
 static void
-copy_and_patch(unsigned char *exec, unsigned char *read, const Stencil *stencil, uint64_t patches[])
+copy_and_patch(const Stencil *stencil, uint64_t patches[])
 {
-    memcpy(exec, stencil->bytes, stencil->nbytes);
+    unsigned char *body = (unsigned char *)(uintptr_t)patches[_JIT_BODY];
+    memcpy(body, stencil->bytes, stencil->nbytes);
     for (size_t i = 0; i < stencil->nholes; i++) {
         const Hole *hole = &stencil->holes[i];
-        patch_one(exec + hole->offset, hole, patches);
+        patch_one(body + hole->offset, hole, patches);
     }
-    memcpy(read, stencil->bytes_data, stencil->nbytes_data);
+    unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
+    memcpy(data, stencil->bytes_data, stencil->nbytes_data);
     for (size_t i = 0; i < stencil->nholes_data; i++) {
         const Hole *hole = &stencil->holes_data[i];
-        patch_one(read + hole->offset, hole, patches);
+        patch_one(data + hole->offset, hole, patches);
     }
 }
 
@@ -256,7 +258,7 @@ initialize_jit(void)
         patches[_JIT_BODY] = (uintptr_t)deoptimize_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(deoptimize_stub, data, stencil, patches);
+        copy_and_patch(stencil, patches);
         if (mark_executable(deoptimize_stub, stencil->nbytes)) {
             return needs_initializing;
         }
@@ -279,7 +281,7 @@ initialize_jit(void)
         patches[_JIT_BODY] = (uintptr_t)error_stub;
         patches[_JIT_DATA] = (uintptr_t)data;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(error_stub, data, stencil, patches);
+        copy_and_patch(stencil, patches);
         if (mark_executable(error_stub, stencil->nbytes)) {
             return needs_initializing;
         }
@@ -311,14 +313,6 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         offsets[i] = nbytes;
         _PyUOpInstruction *instruction = &trace[i];
         const Stencil *stencil = &stencils[instruction->opcode];
-        if (OPCODE_HAS_ARG(instruction->opcode)) {
-            nbytes += oparg_stencil.nbytes;
-            nbytes_data += oparg_stencil.nbytes_data;
-        }
-        if (OPCODE_HAS_OPERAND(instruction->opcode)) {
-            nbytes += operand_stencil.nbytes;
-            nbytes_data += operand_stencil.nbytes_data;
-        }
         nbytes += stencil->nbytes;
         nbytes_data += stencil->nbytes_data;
         assert(stencil->nbytes);
@@ -342,45 +336,12 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
     patches[_JIT_DATA] = (uintptr_t)head_data;
     patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
     patches[_JIT_ZERO] = 0;
-    copy_and_patch(head, head_data, stencil, patches);
+    copy_and_patch(stencil, patches);
     head += stencil->nbytes;
     head_data += stencil->nbytes_data;
     // Then, all of the stencils:
     for (int i = 0; i < size; i++) {
         _PyUOpInstruction *instruction = &trace[i];
-        // You may be wondering why we pass the next oparg and operand through
-        // the call (instead of just looking them up in the next instruction if
-        // needed). This is because these values are being encoded in the
-        // *addresses* of externs. Unfortunately, clang is incredibly clever:
-        // the ELF ABI actually has some limits on the valid address range of an
-        // extern (it must be in range(1, 2**31 - 2**24)). So, if we load them
-        // in the same compilation unit as they are being used, clang *will*
-        // optimize the function as if the oparg can never be zero and the
-        // operand always fits in 32 bits, for example. That's obviously bad.
-        if (OPCODE_HAS_ARG(instruction->opcode)) {
-            const Stencil *stencil = &oparg_stencil;
-            uint64_t patches[] = GET_PATCHES();
-            patches[_JIT_BODY] = (uintptr_t)head;
-            patches[_JIT_DATA] = (uintptr_t)head_data;
-            patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
-            patches[_JIT_OPARG] = instruction->oparg;
-            patches[_JIT_ZERO] = 0;
-            copy_and_patch(head, head_data, stencil, patches);
-            head += stencil->nbytes;
-            head_data += stencil->nbytes_data;
-        }
-        if (OPCODE_HAS_OPERAND(instruction->opcode)) {
-            const Stencil *stencil = &operand_stencil;
-            uint64_t patches[] = GET_PATCHES();
-            patches[_JIT_BODY] = (uintptr_t)head;
-            patches[_JIT_DATA] = (uintptr_t)head_data;
-            patches[_JIT_CONTINUE] = (uintptr_t)head + stencil->nbytes;
-            patches[_JIT_OPERAND] = instruction->operand;
-            patches[_JIT_ZERO] = 0;
-            copy_and_patch(head, head_data, stencil, patches);
-            head += stencil->nbytes;
-            head_data += stencil->nbytes_data;
-        }
         const Stencil *stencil = &stencils[instruction->opcode];
         uint64_t patches[] = GET_PATCHES();
         patches[_JIT_BODY] = (uintptr_t)head;
@@ -389,8 +350,10 @@ _PyJIT_CompileTrace(_PyUOpInstruction *trace, int size)
         patches[_JIT_DEOPTIMIZE] = (uintptr_t)deoptimize_stub;
         patches[_JIT_ERROR] = (uintptr_t)error_stub;
         patches[_JIT_JUMP] = (uintptr_t)memory + offsets[instruction->oparg % size];
+        patches[_JIT_OPARG] = instruction->oparg;
+        patches[_JIT_OPERAND] = instruction->operand;
         patches[_JIT_ZERO] = 0;
-        copy_and_patch(head, head_data, stencil, patches);
+        copy_and_patch(stencil, patches);
         head += stencil->nbytes;
         head_data += stencil->nbytes_data;
     };

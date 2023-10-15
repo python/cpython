@@ -20,6 +20,9 @@
 
 #include "opcode.h"
 
+extern void _JIT_OPARG;
+extern void _JIT_OPERAND;
+
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
@@ -28,25 +31,29 @@
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION 0
 
-#define TAIL_CALL(WHERE)                                                      \
-    do {                                                                      \
-        extern _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame,       \
-                                            PyObject **stack_pointer,         \
-                                            PyThreadState *tstate,            \
-                                            int32_t oparg, uint64_t operand); \
-        /* Free up these registers (since we don't care what's passed in): */ \
-        asm inline ("" : "=r"(oparg), "=r"(operand));                         \
-        __attribute__((musttail))                                             \
-        return (WHERE)(frame, stack_pointer, tstate, oparg, operand);         \
+#define TAIL_CALL(WHERE)                                                \
+    do {                                                                \
+        extern _PyInterpreterFrame *(WHERE)(_PyInterpreterFrame *frame, \
+                                            PyObject **stack_pointer,   \
+                                            PyThreadState *tstate);     \
+        __attribute__((musttail))                                       \
+        return (WHERE)(frame, stack_pointer, tstate);                   \
     } while (0)
 
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer,
-           PyThreadState *tstate, int32_t oparg, uint64_t operand)
+           PyThreadState *tstate)
 {
     // Locals that the instruction implementations expect to exist:
     _Py_CODEUNIT *ip_offset = _PyCode_CODE(_PyFrame_GetCode(frame));
     uint32_t opcode = _JIT_OPCODE;
+    int32_t oparg = (uintptr_t)&_JIT_OPARG;
+    uint64_t operand = (uintptr_t)&_JIT_OPERAND;
+    // Pretend to modify the values to keep clang from being clever and
+    // optimizing them based on valid extern addresses, which must be in
+    // range(1, 2**31 - 2**24)):
+    asm("" : "+r" (oparg));
+    asm("" : "+r" (operand));
     int pc = -1;  // XXX
     switch (opcode) {
         // Now, the actual instruction definitions (only one will be used):
