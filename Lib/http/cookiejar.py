@@ -1229,7 +1229,7 @@ def deepvalues(mapping):
     for obj in tuple(mapping.values()):
         if hasattr(obj, 'items'):
             yield from deepvalues(obj)
-    else:
+        else:
             yield obj
 
 
