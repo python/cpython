@@ -87,7 +87,7 @@ copying of data.
       Deletes the underlying shared memory block.  This should be called only
       once per shared memory block regardless of the number of handles to it.
       After requesting its deletion, a shared memory block may or may not be
-      immediately destroyed and this behavior may differ across platforms.
+      immediately destroyed, and this behavior may differ across platforms.
       Attempts to access data inside the shared memory block after
       ``unlink()`` has been called may result in memory access errors.
       To ensure proper bookkeeping, ``unlink()`` may only be called by
