@@ -2151,9 +2151,6 @@ def main():
     while True:
         try:
             pdb._run(target)
-            if pdb._user_requested_quit:
-                break
-            print("The program finished and will be restarted")
         except Restart:
             print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
@@ -2161,9 +2158,6 @@ def main():
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')
             print(e)
-        except SyntaxError:
-            traceback.print_exc()
-            sys.exit(1)
         except BaseException as e:
             traceback.print_exc()
             print("Uncaught exception. Entering post mortem debugging")
@@ -2171,6 +2165,9 @@ def main():
             pdb.interaction(None, e)
             print("Post mortem debugger finished. The " + target +
                   " will be restarted")
+        if pdb._user_requested_quit:
+            break
+        print("The program finished and will be restarted")
 
 
 # When invoked as main program, invoke the debugger on a script
