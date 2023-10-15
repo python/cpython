@@ -298,8 +298,13 @@ Sequences
 
 These represent finite ordered sets indexed by integer numbers. The
 built-in function :func:`len` returns the number of items of a sequence. When
-the length of a sequence is *n*, the index set contains the numbers 0, 1,
-..., *n*-1.  Item *i* of sequence *a* is selected by ``a[i]``.
+the length of a sequence is *n*, the index set contains the numbers -*n*,
+-*n*+1, -*n*+2, ..., 0, 1, ..., *n*-1.
+
+For non-negative numbers, the item *i* of sequence *a* is selected by ``a[i]``.
+
+For negative numbers, -1 is the last item and -2 is the penultimate (next to
+last) item and so forth. Think of ``seq[-n]`` as the same as ``seq[len(seq)-n]``.
 
 .. index:: single: slicing
 
