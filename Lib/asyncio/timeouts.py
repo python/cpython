@@ -84,9 +84,9 @@ class Timeout:
     async def __aenter__(self) -> "Timeout":
         self._state = _State.ENTERED
         self._task = tasks.current_task()
-        self._cancelling = self._task.cancelling()
         if self._task is None:
             raise RuntimeError("Timeout should be used inside a task")
+        self._cancelling = self._task.cancelling()
         self.reschedule(self._when)
         return self
 
