@@ -235,6 +235,33 @@ class ThreadRunningTests(BasicThreadTest):
         with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
             raise errors[0]
 
+    def test_detach_from_self(self):
+        errors = []
+        start_new_thread_returned = thread.allocate_lock()
+        start_new_thread_returned.acquire()
+        thread_detached = thread.allocate_lock()
+        thread_detached.acquire()
+
+        def task():
+            ident = thread.get_ident()
+            start_new_thread_returned.acquire()
+            try:
+                thread.detach_thread(ident)
+            except Exception as e:
+                errors.append(e)
+            finally:
+                thread_detached.release()
+
+        with threading_helper.wait_threads_exit():
+            joinable = True
+            ident = thread.start_new_thread(task, (), {}, joinable)
+            start_new_thread_returned.release()
+            thread_detached.acquire()
+            with self.assertRaisesRegex(ValueError, "not joinable"):
+                thread.join_thread(ident)
+
+        assert len(errors) == 0
+
     def test_detach_then_join(self):
         lock = thread.allocate_lock()
         lock.acquire()
