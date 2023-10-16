@@ -9,7 +9,6 @@ import weakref
 import errno
 from textwrap import dedent
 
-from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
@@ -18,6 +17,12 @@ from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
 from test import support
+
+try:
+    from _testcapi import INT_MAX
+except ImportError:
+    INT_MAX = 2**31 - 1
+
 
 
 class NaiveException(Exception):
@@ -319,14 +324,11 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
-    @unittest.skipIf(INT_MAX >= PY_SSIZE_T_MAX, "Downcasting to int is safe for col_offset")
+    @unittest.skipIf(INT_MAX >= sys.maxsize, "Downcasting to int is safe for col_offset")
     @support.requires_resource('cpu')
     @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
     def testMemoryErrorBigSource(self, size):
         padding_needed = INT_MAX - len("pass")
-        if size < padding_needed:
-            self.skipTest('Not enough memory for overflow to occur')
-
         src = f"if True:\n{' ' * padding_needed}pass"
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
             compile(src, '<fragment>', 'exec')
