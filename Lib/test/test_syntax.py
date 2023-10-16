@@ -1955,6 +1955,17 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within the definition of a generic
 
+    >>> f(**x, *y)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(**x, *)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(x, *:)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
 """
 
 import re

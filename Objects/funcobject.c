@@ -288,7 +288,7 @@ _PyFunction_LookupByVersion(uint32_t version)
     PyFunctionObject *func = interp->func_state.func_version_cache[
         version % FUNC_VERSION_CACHE_SIZE];
     if (func != NULL && func->func_version == version) {
-        return (PyFunctionObject *)Py_NewRef(func);
+        return func;
     }
     return NULL;
 }
