@@ -589,6 +589,7 @@ struct _channelitem;
 typedef struct _channelitem {
     _PyCrossInterpreterData *data;
     PyThread_type_lock recv_mutex;
+    int received;
     struct _channelitem *next;
 } _channelitem;
 
@@ -601,6 +602,7 @@ _channelitem_new(void)
         return NULL;
     }
     item->data = NULL;
+    item->received = 0;
     item->next = NULL;
     return item;
 }
@@ -636,6 +638,7 @@ _channelitem_free_all(_channelitem *item)
 static _PyCrossInterpreterData *
 _channelitem_popped(_channelitem *item, PyThread_type_lock *recv_mutex)
 {
+    item->received = 1;
     _PyCrossInterpreterData *data = item->data;
     item->data = NULL;
     *recv_mutex = item->recv_mutex;
