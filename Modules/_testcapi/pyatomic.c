@@ -145,8 +145,7 @@ test_atomic_load_store_int_release_acquire(PyObject *self, PyObject *obj) { \
     int x = 0;
     int y = 1;
     int z = 2;
-    _Py_atomic_load_int_acquire(&x);
-    assert(x == 0);
+    assert(_Py_atomic_load_int_acquire(&x) == 0);
     _Py_atomic_store_int_release(&x, y);
     assert(x == y);
     assert(_Py_atomic_load_int_acquire(&x) == y);
