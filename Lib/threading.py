@@ -1165,13 +1165,15 @@ class Thread:
 
     def _join_os_thread(self):
         join_lock = self._join_lock
-        if join_lock is not None:
-            # Calling join() multiple times simultaneously would result in early
-            # return for one of the callers.
-            with join_lock:
+        if join_lock is None:
+            return
+        with join_lock:
+            # Calling join() multiple times simultaneously would raise
+            # an exception in one of the callers.
+            if self._join_lock is not None:
                 _join_thread(self._ident)
-            self._join_lock = None
-            self._non_joined_finalizer = None
+                self._join_lock = None
+                self._non_joined_finalizer = None
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.

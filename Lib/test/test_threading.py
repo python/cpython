@@ -482,6 +482,32 @@ class ThreadTests(BaseTestCase):
         finally:
             sys.setswitchinterval(old_interval)
 
+    def test_join_from_multiple_threads(self):
+        # Thread.join() should be thread-safe
+        errors = []
+
+        def worker():
+            time.sleep(0.005)
+
+        def joiner(thread):
+            try:
+                thread.join()
+            except Exception as e:
+                errors.append(e)
+
+        for N in range(2, 20):
+            threads = [threading.Thread(target=worker)]
+            for i in range(N):
+                threads.append(threading.Thread(target=joiner,
+                                                args=(threads[0],)))
+            for t in threads:
+                t.start()
+            time.sleep(0.01)
+            for t in threads:
+                t.join()
+            if errors:
+                raise errors[0]
+
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):
             def __init__(self, should_raise):
