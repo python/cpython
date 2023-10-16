@@ -101,6 +101,10 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "unexpected character after line continuation character";
             break;
         }
+        case E_COLUMNOVERFLOW:
+            PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+            return -1;
         default:
             msg = "unknown parsing error";
     }
@@ -224,12 +228,6 @@ _PyPegen_raise_error(Parser *p, PyObject *errtype, const char *errmsg, ...)
             col_offset = 0;
         } else {
             const char* start = p->tok->buf  ? p->tok->line_start : p->tok->buf;
-            if (p->tok->cur - start > INT_MAX) {
-                PyErr_SetString(PyExc_OverflowError,
-                    "Parser column offset overflow - source line is too big");
-                p->error_indicator = 1;
-                return NULL;
-            }
             col_offset = Py_SAFE_DOWNCAST(p->tok->cur - start, intptr_t, int);
         }
     } else {
