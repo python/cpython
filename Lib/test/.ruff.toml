@@ -11,7 +11,6 @@ extend-exclude = [
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
     # TODO Fix: F811 Redefinition of unused name
-    "test__opcode.py",
     "test_buffer.py",
     "test_ctypes/test_arrays.py",
     "test_ctypes/test_functions.py",
