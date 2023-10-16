@@ -918,6 +918,7 @@ _Py_atomic_store_int_release(int *obj, int value)
 #if defined(_M_X64) || defined(_M_IX86)
     *(int volatile *)obj = value;
 #elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int32);
     __stlr32((unsigned __int32 volatile *)obj, (unsigned __int32)value);
 #else
 #  error "no implementation of _Py_atomic_store_int_release"
@@ -930,6 +931,7 @@ _Py_atomic_load_int_acquire(const int *obj)
 #if defined(_M_X64) || defined(_M_IX86)
     return *(int volatile *)obj;
 #elif defined(_M_ARM64)
+    _Py_atomic_ASSERT_ARG_TYPE(unsigned __int32);
     return (int)__ldar32((unsigned __int32 volatile *)obj);
 #else
 #  error "no implementation of _Py_atomic_load_int_acquire"
