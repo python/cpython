@@ -8,7 +8,7 @@ preserve
 #endif
 
 PyDoc_STRVAR(typevar_new__doc__,
-"typevar(name, *constraints, *, bound=None, covariant=False,\n"
+"typevar(name, *constraints, bound=None, covariant=False,\n"
 "        contravariant=False, infer_variance=False)\n"
 "--\n"
 "\n"
@@ -590,4 +590,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db0b327ebbb1488f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=027fb8cbef6e5015 input=a9049054013a1b77]*/
