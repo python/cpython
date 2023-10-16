@@ -12402,4 +12402,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=1dc62a603f60b379 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bde7a779a22efb06 input=a9049054013a1b77]*/
