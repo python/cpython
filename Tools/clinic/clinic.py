@@ -924,7 +924,6 @@ class CLanguage(Language):
 
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
-        source = os.path.basename(self.cpp.filename)
         message = f"Update the clinic input of {func.full_name!r}."
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
@@ -1846,7 +1845,6 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind.new_or_init
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -2425,7 +2423,7 @@ extensions['py'] = PythonLanguage
 
 def write_file(filename: str, new_contents: str) -> None:
     try:
-        with open(filename, 'r', encoding="utf-8") as fp:
+        with open(filename, encoding="utf-8") as fp:
             old_contents = fp.read()
 
         if old_contents == new_contents:
@@ -5946,6 +5944,7 @@ class DSLParser:
         if version is None:
             if self.keyword_only:
                 fail(f"Function {function.name!r} uses '*' more than once.")
+            self.check_previous_star()
             self.check_remaining_star()
             self.keyword_only = True
         else:
@@ -6343,7 +6342,6 @@ class DSLParser:
         else:
             return
 
-        no_param_after_symbol = True
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
                 if p.kind == inspect.Parameter.KEYWORD_ONLY:
@@ -6355,6 +6353,14 @@ class DSLParser:
 
         fail(f"Function {self.function.name!r} specifies {symbol!r} "
              f"without following parameters.", line_number=lineno)
+
+    def check_previous_star(self, lineno: int | None = None) -> None:
+        assert isinstance(self.function, Function)
+
+        for p in self.function.parameters.values():
+            if p.kind == inspect.Parameter.VAR_POSITIONAL:
+                fail(f"Function {self.function.name!r} uses '*' more than once.")
+
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """

@@ -210,12 +210,14 @@ class Instruction:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
             elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
                 space, cond = m.groups()
+                space = extra + space
                 target = family.name if family else self.name
                 out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
             elif "DEOPT" in line:
                 filename = context.owner.filename
                 lineno = context.owner.tokens[context.begin].line
                 print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -291,11 +293,6 @@ class PseudoInstruction:
     targets: list[Instruction]
     instr_fmt: str
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction

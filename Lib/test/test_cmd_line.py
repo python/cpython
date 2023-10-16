@@ -878,11 +878,8 @@ class CmdLineTest(unittest.TestCase):
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
         assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
 
-        def res2int(res):
-            out = res.out.strip().decode("utf-8")
-            return tuple(int(i) for i in out.split())
-
         res = assert_python_ok('-c', code)
+        res2int = self.res2int
         current_max = sys.get_int_max_str_digits()
         self.assertEqual(res2int(res), (current_max, current_max))
         res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
@@ -901,6 +898,26 @@ class CmdLineTest(unittest.TestCase):
             PYTHONINTMAXSTRDIGITS='4000'
         )
         self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cpu_count(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
+
+    def test_cpu_count_default(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def res2int(self, res):
+        out = res.out.strip().decode("utf-8")
+        return tuple(int(i) for i in out.split())
 
 
 @unittest.skipIf(interpreter_requires_environment(),

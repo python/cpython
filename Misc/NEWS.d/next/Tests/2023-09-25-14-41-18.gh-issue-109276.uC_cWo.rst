@@ -1,3 +1,0 @@
-regrtest: When a test fails with "env changed" and the --rerun option is
-used, the test is now re-run in verbose mode in a fresh process. Patch by
-Victor Stinner.

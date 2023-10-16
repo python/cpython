@@ -3,6 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
+from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
 USAGE = """\
@@ -130,19 +131,6 @@ Pattern examples:
 - test class: FileTests
 - test identifier: test_os.FileTests.test_stat_attributes
 """
-
-
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
 
 
 class Namespace(argparse.Namespace):
@@ -418,7 +406,6 @@ def _parse_args(args, **kwargs):
             ns.use_mp = 0
         ns.randomize = True
         ns.fail_env_changed = True
-        ns.fail_rerun = True
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
@@ -430,14 +417,16 @@ def _parse_args(args, **kwargs):
     # --slow-ci has the priority
     if ns.slow_ci:
         # Similar to: -u "all" --timeout=1200
-        if not ns.use:
-            ns.use = [['all']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all'])
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
-        if not ns.use:
-            ns.use = [['all', '-cpu']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all', '-cpu'])
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
