@@ -68,6 +68,7 @@ _Pypegen_tokenizer_error(Parser *p)
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
     Py_ssize_t col_offset = -1;
+    p->error_indicator = 1;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -103,6 +104,10 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "unexpected character after line continuation character";
             break;
         }
+        case E_COLUMNOVERFLOW:
+            PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+            return -1;
         default:
             msg = "unknown parsing error";
     }
