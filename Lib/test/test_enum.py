@@ -171,7 +171,7 @@ class TestHelpers(unittest.TestCase):
 
     sunder_names = '_bad_', '_good_', '_what_ho_'
     dunder_names = '__mal__', '__bien__', '__que_que__'
-    private_names = '_MyEnum__private', '_MyEnum__still_private'
+    private_names = '_MyEnum__private', '_MyEnum__still_private', '_MyEnum___triple_private'
     private_and_sunder_names = '_MyEnum__private_', '_MyEnum__also_private_'
     random_names = 'okay', '_semi_private', '_weird__', '_MyEnum__'
 
