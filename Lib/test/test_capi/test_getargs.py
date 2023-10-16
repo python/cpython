@@ -840,6 +840,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_y_star, None)
         self.assertRaises(BufferError, getargs_y_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_READONLY)
+
 
     def test_y_hash(self):
         from _testcapi import getargs_y_hash
@@ -868,6 +870,7 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(buf, bytearray(b'[emoryvie]'))
         self.assertRaises(TypeError, getargs_w_star, None)
         self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
 
 
 class String_TestCase(unittest.TestCase):
@@ -901,6 +904,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_s_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_s_star, None)
         self.assertRaises(BufferError, getargs_s_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_READONLY)
+
 
     def test_s_hash(self):
         from _testcapi import getargs_s_hash
@@ -932,6 +937,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_z_star(memoryview(b'memoryview')), b'memoryview')
         self.assertIsNone(getargs_z_star(None))
         self.assertRaises(BufferError, getargs_z_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_READONLY)
+
 
     def test_z_hash(self):
         from _testcapi import getargs_z_hash
