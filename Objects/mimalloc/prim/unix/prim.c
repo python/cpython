@@ -104,7 +104,7 @@ static bool unix_detect_overcommit(void) {
 #if defined(__linux__)
   int fd = mi_prim_open("/proc/sys/vm/overcommit_memory", O_RDONLY);
         if (fd >= 0) {
-    char buf[32];
+    char buf[32] = {0};
     ssize_t nread = mi_prim_read(fd, &buf, sizeof(buf));
     mi_prim_close(fd);
     // <https://www.kernel.org/doc/Documentation/vm/overcommit-accounting>

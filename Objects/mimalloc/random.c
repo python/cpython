@@ -171,7 +171,7 @@ uintptr_t _mi_os_random_weak(uintptr_t extra_seed) {
 }
 
 static void mi_random_init_ex(mi_random_ctx_t* ctx, bool use_weak) {
-  uint8_t key[32];
+  uint8_t key[32] = {0};
   if (use_weak || !_mi_prim_random_buf(key, sizeof(key))) {
     // if we fail to get random data from the OS, we fall back to a
     // weak random source based on the current time
