@@ -173,7 +173,7 @@ class TestHelpers(unittest.TestCase):
     dunder_names = '__mal__', '__bien__', '__que_que__'
     private_names = '_MyEnum__private', '_MyEnum__still_private', '_MyEnum___triple_private'
     private_and_sunder_names = '_MyEnum__private_', '_MyEnum__also_private_'
-    random_names = 'okay', '_semi_private', '_weird__', '_MyEnum__',
+    random_names = 'okay', '_semi_private', '_weird__', '_MyEnum__'
 
     def test_is_descriptor(self):
         class foo:
