@@ -1791,7 +1791,7 @@ class ExceptionTests(unittest.TestCase):
         # should be initialized to empty tuple to avoid crash on attempt to print it.
         code = f"""if 1:
             import _testcapi
-            _testcapi.run_in_subinterp("[0]*10000000000")
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
             exit(0)
         """
         rc, _, err = script_helper.assert_python_ok("-c", code)
