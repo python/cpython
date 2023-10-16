@@ -1128,6 +1128,26 @@ gh_99240_double_free_impl(PyObject *module, char *a, char *b)
     Py_RETURN_NONE;
 }
 
+/*[clinic input]
+null_or_tuple_for_varargs
+
+    name: object
+    *constraints: object
+    covariant: bool = False
+
+See https://github.com/python/cpython/issues/110864
+[clinic start generated code]*/
+
+static PyObject *
+null_or_tuple_for_varargs_impl(PyObject *module, PyObject *name,
+                               PyObject *constraints, int covariant)
+/*[clinic end generated code: output=a785b35421358983 input=c9bce186637956b3]*/
+{
+    assert(name != NULL);
+    assert(constraints != NULL);
+    PyObject *c = covariant ? Py_True : Py_False;
+    return pack_arguments_newref(3, name, constraints, c);
+}
 
 /*[clinic input]
 _testclinic.clone_f1 as clone_f1
@@ -1843,6 +1863,7 @@ static PyMethodDef tester_methods[] = {
     GH_32092_KW_PASS_METHODDEF
     GH_99233_REFCOUNT_METHODDEF
     GH_99240_DOUBLE_FREE_METHODDEF
+    NULL_OR_TUPLE_FOR_VARARGS_METHODDEF
     CLONE_F1_METHODDEF
     CLONE_F2_METHODDEF
     CLONE_WITH_CONV_F1_METHODDEF
