@@ -328,8 +328,7 @@ class ExceptionTests(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
     def testMemoryErrorBigSource(self, size):
-        padding_needed = INT_MAX - len("pass")
-        src = f"if True:\n{' ' * padding_needed}pass"
+        src = b"if True:\n%*s" % (size, b"pass")
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
             compile(src, '<fragment>', 'exec')
 
