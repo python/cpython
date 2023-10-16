@@ -1128,7 +1128,8 @@ func_type_comment[Token*]:
 
 # From here on, there are rules for invalid syntax with specialised error messages
 invalid_arguments:
-    | a=args ',' '*' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "iterable argument unpacking follows keyword argument unpacking") }
+    | ((','.(starred_expression | ( assignment_expression | expression !':=') !'=')+ ',' kwargs) | kwargs) ',' b='*' {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(b, "iterable argument unpacking follows keyword argument unpacking") }
     | a=expression b=for_if_clauses ',' [args | expression for_if_clauses] {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=NAME b='=' expression for_if_clauses {

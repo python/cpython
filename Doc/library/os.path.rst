@@ -377,7 +377,8 @@ the :mod:`glob` module.)
 
    Return the canonical path of the specified filename, eliminating any symbolic
    links encountered in the path (if they are supported by the operating
-   system).
+   system). On Windows, this function will also resolve MS-DOS (also called 8.3)
+   style names such as ``C:\\PROGRA~1`` to ``C:\\Program Files``.
 
    If a path doesn't exist or a symlink loop is encountered, and *strict* is
    ``True``, :exc:`OSError` is raised. If *strict* is ``False``, the path is
