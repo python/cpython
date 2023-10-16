@@ -2813,7 +2813,6 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
-    
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
     def setUp(self):
