@@ -323,7 +323,7 @@ class ExceptionTests(unittest.TestCase):
     @support.requires_resource('cpu')
     @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
     def testMemoryErrorBigSource(self, size):
-        padding_needed = INT_MAX-len("pass")
+        padding_needed = INT_MAX - len("pass")
         if size < padding_needed:
             self.skipTest('Not enough memory for overflow to occur')
 
