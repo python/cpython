@@ -554,6 +554,12 @@ class TypeVarTests(BaseTestCase):
                     vals[x] = cls(str(x))
                 del vals
 
+    def test_constructor(self):
+        T = TypeVar(name="T")
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.

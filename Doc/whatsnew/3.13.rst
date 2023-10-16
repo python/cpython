@@ -363,6 +363,10 @@ Deprecated
   It was not documented and only supported in the C implementation.
   (Contributed by Serhiy Storchaka in :gh:`89902`.)
 
+* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
+  and methods that consider plural forms even if the translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
+
 
 Pending Removal in Python 3.14
 ------------------------------
@@ -1045,6 +1049,10 @@ New Features
   but pass event arguments as a Python :class:`tuple` object.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
+  parameter names.
+  (Contributed by Serhiy Storchaka in :gh:`110815`.)
+
 Porting to Python 3.13
 ----------------------
 
@@ -1348,3 +1356,13 @@ removed, although there is currently no date scheduled for their removal.
 
 * Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
   (Contributed by Victor Stinner in :gh:`110014`.)
+
+
+Regression Test Changes
+=======================
+
+* Python built with :file:`configure` :option:`--with-pydebug` now
+  supports a :option:`-X presite=package.module <-X>` command-line
+  option. If used, it specifies a module that should be imported early
+  in the lifecycle of the interpreter, before ``site.py`` is executed.
+  (Contributed by Łukasz Langa in :gh:`110769`.)

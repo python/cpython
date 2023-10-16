@@ -927,6 +927,17 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(actual, expected)
 
+    def test_memory_error(self):
+        def f():
+            raise MemoryError()
+
+        actual = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f'  File "{__file__}", line {self.callable_line}, in get_exception',
+            '    callable()',
+            f'  File "{__file__}", line {f.__code__.co_firstlineno + 1}, in f',
+            '    raise MemoryError()']
+        self.assertEqual(actual, expected)
 
 
 @requires_debug_ranges()
