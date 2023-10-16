@@ -1679,7 +1679,7 @@ _channel_send_wait(_channels *channels, int64_t cid, PyObject *obj)
     res = 0;
 
 finally:
-    // XXX Delete the lock.
+    PyThread_free_lock(mutex);
     return res;
 }
 
