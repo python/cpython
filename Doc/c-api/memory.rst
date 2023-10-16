@@ -626,7 +626,8 @@ The pymalloc allocator
 
 Python has a *pymalloc* allocator optimized for small objects (smaller or equal
 to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
-with a fixed size of 256 KiB. It falls back to :c:func:`PyMem_RawMalloc` and
+with a fixed size of either 256 KiB on 32-bit platforms or 1 MiB on 64-bit
+platforms. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
 *pymalloc* is the :ref:`default allocator <default-memory-allocators>` of the
