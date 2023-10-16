@@ -312,7 +312,7 @@ class Parser:
             offset_data += padding_data
         got = len(self.data)
         for base, relocation in self.body_relocations:
-            newhole = self._handle_relocation(base, relocation)
+            newhole = self._handle_relocation(base, relocation, self.body)
             if newhole is None:
                 continue
             if newhole.symbol in self.data_symbols:
@@ -323,7 +323,7 @@ class Parser:
                 newhole = Hole(newhole.offset, newhole.kind, HoleValue._JIT_BODY, None, addend)
             holes.append(newhole)
         for base, relocation in self.data_relocations:
-            newhole = self._handle_relocation(base, relocation)
+            newhole = self._handle_relocation(base, relocation, self.data)
             if newhole is None:
                 continue
             if newhole.symbol in self.data_symbols:
@@ -411,9 +411,6 @@ class Parser:
                 "SHT_SYMTAB",
             }, type
 
-    def read_u32(self, offset: int) -> int:
-        return int.from_bytes(self.body[offset : offset + 4], "little")
-
     def _got_lookup(self, symbol: str | None) -> int:
         while len(self.data) % 8:
             self.data.append(0)
@@ -428,7 +425,7 @@ class Parser:
         except KeyError:
             return HoleValue._JIT_ZERO, symbol
 
-    def _handle_relocation(self, base: int, relocation: RelocationType) -> Hole | None:
+    def _handle_relocation(self, base: int, relocation: RelocationType, raw: bytes) -> Hole | None:
         match relocation:
             case {
                 "Type": {
@@ -477,7 +474,7 @@ class Parser:
             }:
                 offset += base
                 value, symbol = self._symbol_to_value(s)
-                addend = self.read_u32(offset)
+                addend = int.from_bytes(raw[offset : offset + 4], "little")
             case _:
                 raise NotImplementedError(relocation)
         return Hole(offset, kind, value, symbol, addend)
@@ -665,7 +662,7 @@ def format_addend(symbol: str | None, addend: int) -> str:
 
 
 def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
-    yield f"// $ {sys.executable} {' '.join(map(shlex.quote, sys.argv))}"  # XXX
+    yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
     yield f""
     yield f"typedef enum {{"
     for kind in sorted(typing.get_args(HoleKind)):
