@@ -57,6 +57,9 @@ alloc(size_t size)
 static int
 mark_writeable(unsigned char *memory, size_t nbytes)
 {
+    if (nbytes == 0) {
+        return 0;
+    }
     unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
     size_t page_nbytes = memory + nbytes - page;
 #ifdef MS_WINDOWS
@@ -77,6 +80,9 @@ mark_writeable(unsigned char *memory, size_t nbytes)
 static int
 mark_executable(unsigned char *memory, size_t nbytes)
 {
+    if (nbytes == 0) {
+        return 0;
+    }
     unsigned char *page = (unsigned char *)((uintptr_t)memory & ~(page_size - 1));
     size_t page_nbytes = memory + nbytes - page;
 #ifdef MS_WINDOWS
@@ -248,15 +254,11 @@ initialize_jit(void)
     {
         const Stencil *stencil = &deoptimize_stencil;
         deoptimize_stub = alloc(stencil->nbytes);
-        if (deoptimize_stub == NULL ||
-            mark_writeable(deoptimize_stub, stencil->nbytes))
-        {
+        if (deoptimize_stub == NULL || mark_writeable(deoptimize_stub, stencil->nbytes)) {
             return needs_initializing;
         }
         unsigned char *data = alloc(stencil->nbytes_data);
-        if (data == NULL ||
-            mark_writeable(data, stencil->nbytes_data))
-        {
+        if (data == NULL || mark_writeable(data, stencil->nbytes_data)) {
             return needs_initializing;
         }
         uint64_t patches[] = GET_PATCHES();
