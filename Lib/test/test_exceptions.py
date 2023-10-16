@@ -10,6 +10,7 @@ import weakref
 import errno
 from textwrap import dedent
 
+from _testcapi import INT_MAX
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
@@ -322,19 +323,18 @@ class ExceptionTests(unittest.TestCase):
     @unittest.skipIf(ctypes.sizeof(ctypes.c_int) >= ctypes.sizeof(ctypes.c_ssize_t),
                      "Downcasting to int is safe for col_offset")
     @support.requires_resource('cpu')
-    @support.bigmemtest(2**(ctypes.sizeof(ctypes.c_int)*8-1)-1-len("pass"), memuse=1)
+    @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
     def testMemoryErrorBigSource(self, size):
-        if size < 2**(ctypes.sizeof(ctypes.c_int)*8-1)-1-len("pass"):
+        padding_needed = INT_MAX-len("pass")
+        if size < padding_needed:
             self.skipTest('Not enough memory for overflow to occur')
 
         # Construct buffer to hold just enough characters so that the tokenizer offset overflows.
         # This makes sure that we don't overflow in the string creation itself
-        distance_to_prev_divisible_by_8 = size & 7
-        padding = ' ' * distance_to_prev_divisible_by_8
-        padding += '        ' * ((size - distance_to_prev_divisible_by_8) // 8)
+        src = f"if True:\n{' ' * padding_needed}pass"
 
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
-            exec(f"if True:\n{padding}pass")
+            compile(src, '<fragment>', 'exec')
 
     @cpython_only
     def testSettingException(self):
