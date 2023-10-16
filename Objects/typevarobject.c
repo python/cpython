@@ -364,11 +364,7 @@ typevar_new_impl(PyTypeObject *type, PyObject *name, PyObject *constraints,
         }
     }
 
-    if (!PyTuple_CheckExact(constraints)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "Constraints must be a tuple");
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(constraints));
     Py_ssize_t n_constraints = PyTuple_GET_SIZE(constraints);
     if (n_constraints == 1) {
         PyErr_SetString(PyExc_TypeError,
