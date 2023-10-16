@@ -842,7 +842,6 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(BufferError, getargs_y_star, NONCONTIG_WRITABLE)
         self.assertRaises(BufferError, getargs_y_star, NONCONTIG_READONLY)
 
-
     def test_y_hash(self):
         from _testcapi import getargs_y_hash
         self.assertRaises(TypeError, getargs_y_hash, 'abc\xe9')
@@ -906,7 +905,6 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(BufferError, getargs_s_star, NONCONTIG_WRITABLE)
         self.assertRaises(BufferError, getargs_s_star, NONCONTIG_READONLY)
 
-
     def test_s_hash(self):
         from _testcapi import getargs_s_hash
         self.assertEqual(getargs_s_hash('abc\xe9'), b'abc\xc3\xa9')
@@ -938,7 +936,6 @@ class String_TestCase(unittest.TestCase):
         self.assertIsNone(getargs_z_star(None))
         self.assertRaises(BufferError, getargs_z_star, NONCONTIG_WRITABLE)
         self.assertRaises(BufferError, getargs_z_star, NONCONTIG_READONLY)
-
 
     def test_z_hash(self):
         from _testcapi import getargs_z_hash
