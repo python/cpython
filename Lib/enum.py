@@ -81,7 +81,6 @@ def _is_private(cls_name, name):
     if (
             len(name) > pat_len
             and name.startswith(pattern)
-            and name[pat_len] != '_'
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
