@@ -1,12 +1,24 @@
 fix = true
 select = [
-    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
+    "F"  # select all pyflakes rules by default
+]
+ignore = [
+    "F401",  # unused import
+    "F402",  # Import shadowed by loop variable
+    "F403",  # Don't use "from foo import *"
+    "F405",  # Variable is either undefined or defined from star imports
+    "F541",  # f-string without any placeholders
+    "F821",  # Undefined name
+    "F841",  # Local variable assigned to but never used
 ]
 extend-exclude = [
     # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
     "test_clinic.py",
     # Excluded (these aren't actually executed, they're just "data files")
+    "test_*/badsyntax*.py",
+    "test_inspect/inspect_fodder*.py",
     "tokenizedata/*.py",
+    "typinganndata/ann_module*.py",
     # Failed to lint
     "encoded_modules/module_iso_8859_1.py",
     "encoded_modules/module_koi8_r.py",
@@ -28,3 +40,8 @@ extend-exclude = [
     "test_yield_from.py",
     "time_hashlib.py",
 ]
+
+[per-file-ignores]
+"test_print.py" = ["F633"]  # Use of >> is invalid with print function
+"test_str.py" = ["F504", "F521", "F523"]  # Various formatting error codes
+"test_typing.py" = ["F722"]  # invalid syntax in forward annotation

@@ -992,7 +992,7 @@ class TestSpecifics(unittest.TestCase):
             "doc string"
 
         def no_code2():
-            a: int
+            a: int  # noqa: F842
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):

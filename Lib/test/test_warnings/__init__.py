@@ -565,7 +565,7 @@ class WarnTests(BaseTest):
         class BadStrWarning(Warning):
             """Warning with a bad format string for __str__."""
             def __str__(self):
-                return ("A bad formatted string %(err)" %
+                return ("A bad formatted string %(err)" %  # noqa: F501
                         {"err" : "there is no %(err)s"})
 
         with self.assertRaises(ValueError):
