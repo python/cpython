@@ -151,8 +151,8 @@ class TupleSubclass(tuple):
 class DictSubclass(dict):
     pass
 
-m = memoryview(bytearray(b'noncontig'))
-NONCONTIG_WRITABLE = m[::-2]
+NONCONTIG_WRITABLE = memoryview(bytearray(b'noncontig'))[::-2]
+NONCONTIG_READONLY = memoryview(b'noncontig')[::-2]
 
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
@@ -849,6 +849,7 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, None)
         # TypeError: must be read-only bytes-like object, not memoryview
         self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_READONLY)
 
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
@@ -909,6 +910,7 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, None)
         # TypeError: must be read-only bytes-like object, not memoryview
         self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_READONLY)
 
     def test_z(self):
         from _testcapi import getargs_z
@@ -939,6 +941,7 @@ class String_TestCase(unittest.TestCase):
         self.assertIsNone(getargs_z_hash(None))
         # TypeError: must be read-only bytes-like object, not memoryview
         self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_READONLY)
 
     def test_es(self):
         from _testcapi import getargs_es
