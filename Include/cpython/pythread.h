@@ -16,7 +16,18 @@
 PyAPI_FUNC(unsigned long) PyThread_start_joinable_thread(void (*func)(void *),
                                                          void *arg,
                                                          Py_uintptr_t* handle);
+/*
+ * Join a thread started with `PyThread_start_joinable_thread`.
+ * This function cannot be interrupted. It returns 0 on success,
+ * a non-zero value on failure.
+ */
 PyAPI_FUNC(int) PyThread_join_thread(Py_uintptr_t);
+/*
+ * Detach a thread started with `PyThread_start_joinable_thread`, such
+ * that its resources are relased as soon as it exits.
+ * This function cannot be interrupted. It returns 0 on success,
+ * a non-zero value on failure.
+ */
 PyAPI_FUNC(int) PyThread_detach_thread(Py_uintptr_t);
 
 // PY_TIMEOUT_MAX is the highest usable value (in microseconds) of PY_TIMEOUT_T
