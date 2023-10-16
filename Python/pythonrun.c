@@ -1047,7 +1047,7 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
 
-    if (!value || PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
+    if (!value) {
         goto fallback;
     }
 
