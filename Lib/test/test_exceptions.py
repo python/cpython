@@ -1,7 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
 import copy
-import ctypes
 import os
 import sys
 import unittest
@@ -10,7 +9,7 @@ import weakref
 import errno
 from textwrap import dedent
 
-from _testcapi import INT_MAX
+from _testcapi import INT_MAX, PY_SSIZE_T_MAX
 from test.support import (captured_stderr, check_impl_detail,
                           cpython_only, gc_collect,
                           no_tracing, script_helper,
@@ -320,8 +319,7 @@ class ExceptionTests(unittest.TestCase):
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
 
-    @unittest.skipIf(ctypes.sizeof(ctypes.c_int) >= ctypes.sizeof(ctypes.c_ssize_t),
-                     "Downcasting to int is safe for col_offset")
+    @unittest.skipIf(INT_MAX >= PY_SSIZE_T_MAX, "Downcasting to int is safe for col_offset")
     @support.requires_resource('cpu')
     @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
     def testMemoryErrorBigSource(self, size):
@@ -329,10 +327,7 @@ class ExceptionTests(unittest.TestCase):
         if size < padding_needed:
             self.skipTest('Not enough memory for overflow to occur')
 
-        # Construct buffer to hold just enough characters so that the tokenizer offset overflows.
-        # This makes sure that we don't overflow in the string creation itself
         src = f"if True:\n{' ' * padding_needed}pass"
-
         with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
             compile(src, '<fragment>', 'exec')
 
