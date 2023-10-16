@@ -416,9 +416,11 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
 
     def test_fast_ci_resource(self):
-        # it should be possible to override resources
-        args = ['--fast-ci', '-u', 'network']
-        use_resources = ['network']
+        # it should be possible to override resources individually
+        args = ['--fast-ci', '-u-network']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
 
     def test_slow_ci(self):
