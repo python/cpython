@@ -927,6 +927,17 @@ class TracebackErrorLocationCaretTestBase:
         ]
         self.assertEqual(actual, expected)
 
+    def test_memory_error(self):
+        def f():
+            raise MemoryError()
+
+        actual = self.get_exception(f)
+        expected = ['Traceback (most recent call last):',
+            f'  File "{__file__}", line {self.callable_line}, in get_exception',
+            '    callable()',
+            f'  File "{__file__}", line {f.__code__.co_firstlineno + 1}, in f',
+            '    raise MemoryError()']
+        self.assertEqual(actual, expected)
 
 
 @requires_debug_ranges()
@@ -963,7 +974,9 @@ class CPythonTracebackLegacyErrorCaretTests(
     Same set of tests as above but with Python's legacy internal traceback printing.
     """
 
-class TracebackFormatTests(unittest.TestCase):
+
+class TracebackFormatMixin:
+    DEBUG_RANGES = True
 
     def some_exception(self):
         raise KeyError('blah')
@@ -1137,6 +1150,8 @@ class TracebackFormatTests(unittest.TestCase):
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
+        if not self.DEBUG_RANGES:
+            expected = [line for line in expected if not set(line.strip()) == {"^"}]
         self.assertEqual(actual, expected)
 
         # Check 2 different repetitive sections
@@ -1173,6 +1188,8 @@ class TracebackFormatTests(unittest.TestCase):
         )
         expected = (result_h + result_g).splitlines()
         actual = stderr_h.getvalue().splitlines()
+        if not self.DEBUG_RANGES:
+            expected = [line for line in expected if not set(line.strip()) == {"^"}]
         self.assertEqual(actual, expected)
 
         # Check the boundary conditions. First, test just below the cutoff.
@@ -1199,11 +1216,13 @@ class TracebackFormatTests(unittest.TestCase):
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+77}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+81}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF)\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
+        if not self.DEBUG_RANGES:
+            expected = [line for line in expected if not set(line.strip()) == {"^"}]
         self.assertEqual(actual, expected)
 
         # Second, test just above the cutoff.
@@ -1231,24 +1250,24 @@ class TracebackFormatTests(unittest.TestCase):
         )
         tb_line = (
             'Traceback (most recent call last):\n'
-            f'  File "{__file__}", line {lineno_g+108}, in _check_recursive_traceback_display\n'
+            f'  File "{__file__}", line {lineno_g+114}, in _check_recursive_traceback_display\n'
             '    g(traceback._RECURSIVE_CUTOFF + 1)\n'
         )
         expected = (tb_line + result_g).splitlines()
         actual = stderr_g.getvalue().splitlines()
+        if not self.DEBUG_RANGES:
+            expected = [line for line in expected if not set(line.strip()) == {"^"}]
         self.assertEqual(actual, expected)
 
     @requires_debug_ranges()
-    def test_recursive_traceback_python(self):
-        self._check_recursive_traceback_display(traceback.print_exc)
-
-    @cpython_only
-    @requires_debug_ranges()
-    def test_recursive_traceback_cpython_internal(self):
-        from _testcapi import exception_print
-        def render_exc():
-            exception_print(sys.exception())
-        self._check_recursive_traceback_display(render_exc)
+    def test_recursive_traceback(self):
+        if self.DEBUG_RANGES:
+            self._check_recursive_traceback_display(traceback.print_exc)
+        else:
+            from _testcapi import exception_print
+            def render_exc():
+                exception_print(sys.exception())
+            self._check_recursive_traceback_display(render_exc)
 
     def test_format_stack(self):
         def fmt():
@@ -1321,7 +1340,8 @@ class TracebackFormatTests(unittest.TestCase):
     def test_print_exception_bad_type_capi(self):
         from _testcapi import exception_print
         with captured_output("stderr") as stderr:
-            exception_print(42)
+            with support.catch_unraisable_exception():
+                exception_print(42)
         self.assertEqual(
             stderr.getvalue(),
             ('TypeError: print_exception(): '
@@ -1344,6 +1364,24 @@ context_message = (
 
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
+
+class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
+    pass
+
+@cpython_only
+class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
+    DEBUG_RANGES = False
+    def setUp(self) -> None:
+        self.original_unraisable_hook = sys.unraisablehook
+        sys.unraisablehook = lambda *args: None
+        self.original_hook = traceback._print_exception_bltin
+        traceback._print_exception_bltin = lambda *args: 1/0
+        return super().setUp()
+
+    def tearDown(self) -> None:
+        traceback._print_exception_bltin = self.original_hook
+        sys.unraisablehook = self.original_unraisable_hook
+        return super().tearDown()
 
 class BaseExceptionReportingTests:
 

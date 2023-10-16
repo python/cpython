@@ -2306,6 +2306,20 @@ sys__getframemodulename_impl(PyObject *module, int depth)
     return Py_NewRef(r);
 }
 
+/*[clinic input]
+sys._get_cpu_count_config -> int
+
+Private function for getting PyConfig.cpu_count
+[clinic start generated code]*/
+
+static int
+sys__get_cpu_count_config_impl(PyObject *module)
+/*[clinic end generated code: output=36611bb5efad16dc input=523e1ade2204084e]*/
+{
+    const PyConfig *config = _Py_GetConfig();
+    return config->cpu_count;
+}
+
 static PerfMapState perf_map_state;
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
@@ -2440,6 +2454,7 @@ static PyMethodDef sys_methods[] = {
     SYS__STATS_CLEAR_METHODDEF
     SYS__STATS_DUMP_METHODDEF
 #endif
+    SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     {NULL, NULL}  // sentinel
 };
 

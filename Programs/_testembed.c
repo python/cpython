@@ -715,6 +715,7 @@ static int test_init_from_config(void)
 
     putenv("PYTHONINTMAXSTRDIGITS=6666");
     config.int_max_str_digits = 31337;
+    config.cpu_count = 4321;
 
     init_from_config_clear(&config);
 

@@ -32,7 +32,7 @@
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
 
-/* Function from Parser/tokenizer.c */
+/* Function from Parser/tokenizer/file_tokenizer.c */
 extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
 
 /*[clinic input]
@@ -397,27 +397,9 @@ _Py_WriteIndent(int indent, PyObject *f)
     return 0;
 }
 
-/* Writes indent spaces, followed by the margin if it is not `\0`.
-   Returns 0 on success and non-zero on failure.
- */
-int
-_Py_WriteIndentedMargin(int indent, const char *margin, PyObject *f)
-{
-    if (_Py_WriteIndent(indent, f) < 0) {
-        return -1;
-    }
-    if (margin) {
-        if (PyFile_WriteString(margin, f) < 0) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
 static int
-display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int indent,
-                                int margin_indent, const char *margin,
-                                int *truncation, PyObject **line)
+display_source_line(PyObject *f, PyObject *filename, int lineno, int indent,
+                    int *truncation, PyObject **line)
 {
     int fd;
     int i;
@@ -545,10 +527,6 @@ display_source_line_with_margin(PyObject *f, PyObject *filename, int lineno, int
         *truncation = i - indent;
     }
 
-    if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
-        goto error;
-    }
-
     /* Write some spaces before the line */
     if (_Py_WriteIndent(indent, f) < 0) {
         goto error;
@@ -574,161 +552,11 @@ int
 _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent,
                       int *truncation, PyObject **line)
 {
-    return display_source_line_with_margin(f, filename, lineno, indent, 0,
-                                           NULL, truncation, line);
+    return display_source_line(f, filename, lineno, indent, truncation, line);
 }
 
-/* AST based Traceback Specialization
- *
- * When displaying a new traceback line, for certain syntactical constructs
- * (e.g a subscript, an arithmetic operation) we try to create a representation
- * that separates the primary source of error from the rest.
- *
- * Example specialization of BinOp nodes:
- *  Traceback (most recent call last):
- *    File "/home/isidentical/cpython/cpython/t.py", line 10, in <module>
- *      add_values(1, 2, 'x', 3, 4)
- *    File "/home/isidentical/cpython/cpython/t.py", line 2, in add_values
- *      return a + b + c + d + e
- *             ~~~~~~^~~
- *  TypeError: 'NoneType' object is not subscriptable
- */
 
 #define IS_WHITESPACE(c) (((c) == ' ') || ((c) == '\t') || ((c) == '\f'))
-
-static int
-extract_anchors_from_expr(const char *segment_str, expr_ty expr, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    switch (expr->kind) {
-        case BinOp_kind: {
-            expr_ty left = expr->v.BinOp.left;
-            expr_ty right = expr->v.BinOp.right;
-            for (int i = left->end_col_offset; i < right->col_offset; i++) {
-                if (IS_WHITESPACE(segment_str[i])) {
-                    continue;
-                }
-
-                *left_anchor = i;
-                *right_anchor = i + 1;
-
-                // Check whether if this a two-character operator (e.g //)
-                if (i + 1 < right->col_offset && !IS_WHITESPACE(segment_str[i + 1])) {
-                    ++*right_anchor;
-                }
-
-                // Keep going if the current char is not ')'
-                if (i+1 < right->col_offset && (segment_str[i] == ')')) {
-                    continue;
-                }
-
-                // Set the error characters
-                *primary_error_char = "~";
-                *secondary_error_char = "^";
-                break;
-            }
-            return 1;
-        }
-        case Subscript_kind: {
-            *left_anchor = expr->v.Subscript.value->end_col_offset;
-            *right_anchor = expr->v.Subscript.slice->end_col_offset + 1;
-            Py_ssize_t str_len = strlen(segment_str);
-
-            // Move right_anchor and left_anchor forward to the first non-whitespace character that is not ']' and '['
-            while (*left_anchor < str_len && (IS_WHITESPACE(segment_str[*left_anchor]) || segment_str[*left_anchor] != '[')) {
-                ++*left_anchor;
-            }
-            while (*right_anchor < str_len && (IS_WHITESPACE(segment_str[*right_anchor]) || segment_str[*right_anchor] != ']')) {
-                ++*right_anchor;
-            }
-            if (*right_anchor < str_len){
-                *right_anchor += 1;
-            }
-
-            // Set the error characters
-            *primary_error_char = "~";
-            *secondary_error_char = "^";
-            return 1;
-        }
-        default:
-            return 0;
-    }
-}
-
-static int
-extract_anchors_from_stmt(const char *segment_str, stmt_ty statement, Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    switch (statement->kind) {
-        case Expr_kind: {
-            return extract_anchors_from_expr(segment_str, statement->v.Expr.value, left_anchor, right_anchor,
-                                             primary_error_char, secondary_error_char);
-        }
-        default:
-            return 0;
-    }
-}
-
-static int
-extract_anchors_from_line(PyObject *filename, PyObject *line,
-                          Py_ssize_t start_offset, Py_ssize_t end_offset,
-                          Py_ssize_t *left_anchor, Py_ssize_t *right_anchor,
-                          char** primary_error_char, char** secondary_error_char)
-{
-    int res = -1;
-    PyArena *arena = NULL;
-    PyObject *segment = PyUnicode_Substring(line, start_offset, end_offset);
-    if (!segment) {
-        goto done;
-    }
-
-    const char *segment_str = PyUnicode_AsUTF8(segment);
-    if (!segment_str) {
-        goto done;
-    }
-
-    arena = _PyArena_New();
-    if (!arena) {
-        goto done;
-    }
-
-    PyCompilerFlags flags = _PyCompilerFlags_INIT;
-
-    mod_ty module = _PyParser_ASTFromString(segment_str, filename, Py_file_input,
-                                            &flags, arena);
-    if (!module) {
-        goto done;
-    }
-    if (!_PyAST_Optimize(module, arena, _Py_GetConfig()->optimization_level, 0)) {
-        goto done;
-    }
-
-    assert(module->kind == Module_kind);
-    if (asdl_seq_LEN(module->v.Module.body) == 1) {
-        stmt_ty statement = asdl_seq_GET(module->v.Module.body, 0);
-        res = extract_anchors_from_stmt(segment_str, statement, left_anchor, right_anchor,
-                                        primary_error_char, secondary_error_char);
-    } else {
-        res = 0;
-    }
-
-done:
-    if (res > 0) {
-        // Normalize the AST offsets to byte offsets and adjust them with the
-        // start of the actual line (instead of the source code segment).
-        assert(segment != NULL);
-        assert(*left_anchor >= 0);
-        assert(*right_anchor >= 0);
-        *left_anchor = _PyPegen_byte_offset_to_character_offset(segment, *left_anchor) + start_offset;
-        *right_anchor = _PyPegen_byte_offset_to_character_offset(segment, *right_anchor) + start_offset;
-    }
-    Py_XDECREF(segment);
-    if (arena) {
-        _PyArena_Free(arena);
-    }
-    return res;
-}
-
 #define _TRACEBACK_SOURCE_LINE_INDENT 4
 
 static inline int
@@ -742,39 +570,11 @@ ignore_source_errors(void) {
     return 0;
 }
 
-static inline int
-print_error_location_carets(PyObject *f, int offset, Py_ssize_t start_offset, Py_ssize_t end_offset,
-                            Py_ssize_t right_start_offset, Py_ssize_t left_end_offset,
-                            const char *primary, const char *secondary) {
-    int special_chars = (left_end_offset != -1 || right_start_offset != -1);
-    const char *str;
-    while (++offset <= end_offset) {
-        if (offset <= start_offset) {
-            str = " ";
-        } else if (special_chars && left_end_offset < offset && offset <= right_start_offset) {
-            str = secondary;
-        } else {
-            str = primary;
-        }
-        if (PyFile_WriteString(str, f) < 0) {
-            return -1;
-        }
-    }
-    if (PyFile_WriteString("\n", f) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
 static int
 tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int lineno,
-               PyFrameObject *frame, PyObject *name, int margin_indent, const char *margin)
+               PyFrameObject *frame, PyObject *name)
 {
     if (filename == NULL || name == NULL) {
-        return -1;
-    }
-
-    if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
         return -1;
     }
 
@@ -794,9 +594,9 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
 
     int truncation = _TRACEBACK_SOURCE_LINE_INDENT;
     PyObject* source_line = NULL;
-    int rc = display_source_line_with_margin(
+    int rc = display_source_line(
             f, filename, lineno, _TRACEBACK_SOURCE_LINE_INDENT,
-            margin_indent, margin, &truncation, &source_line);
+            &truncation, &source_line);
     if (rc != 0 || !source_line) {
         /* ignore errors since we can't report them, can we? */
         err = ignore_source_errors();
@@ -823,86 +623,18 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         goto done;
     }
 
-    // When displaying errors, we will use the following generic structure:
-    //
-    //  ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE ERROR LINE
-    //        ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^~~~~~~~~~~~~~~~~~~~
-    //        |              |-> left_end_offset     |                  |-> end_offset
-    //        |-> start_offset                       |-> right_start_offset
-    //
-    // In general we will only have (start_offset, end_offset) but we can gather more information
-    // by analyzing the AST of the text between *start_offset* and *end_offset*. If this succeeds
-    // we could get *left_end_offset* and *right_start_offset* and some selection of characters for
-    // the different ranges (primary_error_char and secondary_error_char). If we cannot obtain the
-    // AST information or we cannot identify special ranges within it, then left_end_offset and
-    // right_end_offset will be set to -1.
-    //
-    // To keep the column indicators pertinent, they are not shown when the primary character
-    // spans the whole line.
-
-    // Convert the utf-8 byte offset to the actual character offset so we print the right number of carets.
-    assert(source_line);
-    Py_ssize_t start_offset = _PyPegen_byte_offset_to_character_offset(source_line, start_col_byte_offset);
-    if (start_offset < 0) {
-        err = ignore_source_errors() < 0;
+    // If this is a multi-line expression, then we will highlight until
+    // the last non-whitespace character.
+    const char *source_line_str = PyUnicode_AsUTF8(source_line);
+    if (!source_line_str) {
         goto done;
     }
 
-    Py_ssize_t end_offset = _PyPegen_byte_offset_to_character_offset(source_line, end_col_byte_offset);
-    if (end_offset < 0) {
-        err = ignore_source_errors() < 0;
-        goto done;
-    }
-
-    Py_ssize_t left_end_offset = -1;
-    Py_ssize_t right_start_offset = -1;
-
-    char *primary_error_char = "^";
-    char *secondary_error_char = primary_error_char;
-
-    if (start_line == end_line) {
-        int res = extract_anchors_from_line(filename, source_line, start_offset, end_offset,
-                                            &left_end_offset, &right_start_offset,
-                                            &primary_error_char, &secondary_error_char);
-        if (res < 0 && ignore_source_errors() < 0) {
-            goto done;
+    Py_ssize_t i = source_line_len;
+    while (--i >= 0) {
+        if (!IS_WHITESPACE(source_line_str[i])) {
+            break;
         }
-    }
-    else {
-        // If this is a multi-line expression, then we will highlight until
-        // the last non-whitespace character.
-        const char *source_line_str = PyUnicode_AsUTF8(source_line);
-        if (!source_line_str) {
-            goto done;
-        }
-
-        Py_ssize_t i = source_line_len;
-        while (--i >= 0) {
-            if (!IS_WHITESPACE(source_line_str[i])) {
-                break;
-            }
-        }
-
-        end_offset = i + 1;
-    }
-
-    // Elide indicators if primary char spans the frame line
-    Py_ssize_t stripped_line_len = source_line_len - truncation - _TRACEBACK_SOURCE_LINE_INDENT;
-    bool has_secondary_ranges = (left_end_offset != -1 || right_start_offset != -1);
-    if (end_offset - start_offset == stripped_line_len && !has_secondary_ranges) {
-        goto done;
-    }
-
-    if (_Py_WriteIndentedMargin(margin_indent, margin, f) < 0) {
-        err = -1;
-        goto done;
-    }
-
-    if (print_error_location_carets(f, truncation, start_offset, end_offset,
-                                    right_start_offset, left_end_offset,
-                                    primary_error_char, secondary_error_char) < 0) {
-        err = -1;
-        goto done;
     }
 
 done:
@@ -930,8 +662,7 @@ tb_print_line_repeated(PyObject *f, long cnt)
 }
 
 static int
-tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
-                 int indent, const char *margin)
+tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
 {
     PyCodeObject *code = NULL;
     Py_ssize_t depth = 0;
@@ -967,7 +698,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
         cnt++;
         if (cnt <= TB_RECURSIVE_CUTOFF) {
             if (tb_displayline(tb, f, code->co_filename, tb->tb_lineno,
-                               tb->tb_frame, code->co_name, indent, margin) < 0) {
+                               tb->tb_frame, code->co_name) < 0) {
                 goto error;
             }
 
@@ -992,8 +723,7 @@ error:
 #define PyTraceBack_LIMIT 1000
 
 int
-_PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
-                            const char *header_margin, const char *header, PyObject *f)
+_PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
 {
     PyObject *limitv;
     long limit = PyTraceBack_LIMIT;
@@ -1016,15 +746,12 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
             return 0;
         }
     }
-    if (_Py_WriteIndentedMargin(indent, header_margin, f) < 0) {
-        return -1;
-    }
 
     if (PyFile_WriteString(header, f) < 0) {
         return -1;
     }
 
-    if (tb_printinternal((PyTracebackObject *)v, f, limit, indent, margin) < 0) {
+    if (tb_printinternal((PyTracebackObject *)v, f, limit) < 0) {
         return -1;
     }
 
@@ -1034,12 +761,8 @@ _PyTraceBack_Print_Indented(PyObject *v, int indent, const char *margin,
 int
 PyTraceBack_Print(PyObject *v, PyObject *f)
 {
-    int indent = 0;
-    const char *margin = NULL;
-    const char *header_margin = NULL;
     const char *header = EXCEPTION_TB_HEADER;
-
-    return _PyTraceBack_Print_Indented(v, indent, margin, header_margin, header, f);
+    return _PyTraceBack_Print(v, header, f);
 }
 
 /* Format an integer in range [0; 0xffffffff] to decimal and write it

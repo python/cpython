@@ -188,6 +188,12 @@ os
   :const:`os.TFD_TIMER_ABSTIME`, and :const:`os.TFD_TIMER_CANCEL_ON_SET`
   (Contributed by Masaru Tsuchiyama in :gh:`108277`.)
 
+* :func:`os.cpu_count` and :func:`os.process_cpu_count` can be overridden through
+  the new environment variable :envvar:`PYTHON_CPU_COUNT` or the new command-line option
+  :option:`-X cpu_count <-X>`. This option is useful for users who need to limit
+  CPU resources of a container system without having to modify the container (application code).
+  (Contributed by Donghee Na in :gh:`109595`)
+
 pathlib
 -------
 
@@ -356,6 +362,10 @@ Deprecated
 * Deprecate non-standard format specifier "N" for :class:`decimal.Decimal`.
   It was not documented and only supported in the C implementation.
   (Contributed by Serhiy Storchaka in :gh:`89902`.)
+
+* Emit deprecation warning for non-integer numbers in :mod:`gettext` functions
+  and methods that consider plural forms even if the translation was not found.
+  (Contributed by Serhiy Storchaka in :gh:`88434`.)
 
 
 Pending Removal in Python 3.14
@@ -922,6 +932,10 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
+* The ``_stat`` C extension is now built with the :ref:`limited C API
+  <limited-c-api>`.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 
 C API Changes
 =============
@@ -1018,6 +1032,12 @@ New Features
   functions on Python 3.11 and 3.12.
   (Contributed by Victor Stinner in :gh:`107073`.)
 
+* Add :c:func:`PyUnicode_EqualToUTF8AndSize` and :c:func:`PyUnicode_EqualToUTF8`
+  functions: compare Unicode object with a :c:expr:`const char*` UTF-8 encoded
+  string and return true (``1``) if they are equal, or false (``0``) otherwise.
+  These functions do not raise exceptions.
+  (Contributed by Serhiy Storchaka in :gh:`110289`.)
+
 * Add :c:func:`PyThreadState_GetUnchecked()` function: similar to
   :c:func:`PyThreadState_Get()`, but don't kill the process with a fatal error
   if it is NULL. The caller is responsible to check if the result is NULL.
@@ -1028,6 +1048,10 @@ New Features
 * Add :c:func:`PySys_AuditTuple` function: similar to :c:func:`PySys_Audit`,
   but pass event arguments as a Python :class:`tuple` object.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
+  parameter names.
+  (Contributed by Serhiy Storchaka in :gh:`110815`.)
 
 Porting to Python 3.13
 ----------------------
@@ -1062,6 +1086,11 @@ Porting to Python 3.13
   provides locale independent functions, like :c:func:`!Py_ISALPHA` and
   :c:func:`!Py_TOLOWER`.
   (Contributed by Victor Stinner in :gh:`108765`.)
+
+* If the :c:macro:`Py_LIMITED_API` macro is defined, :c:macro:`!Py_BUILD_CORE`,
+  :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
+  are now undefined by ``<Python.h>``.
+  (Contributed by Victor Stinner in :gh:`85283`.)
 
 Deprecated
 ----------
@@ -1135,37 +1164,37 @@ Removed
 
 * Remove old buffer protocols deprecated in Python 3.0. Use :ref:`bufferobjects` instead.
 
-   * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
-     test if the object supports the buffer protocol.
-     Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
-     :c:func:`PyObject_GetBuffer` will succeed.
-     To test if the object is actually readable, see the next example
-     of :c:func:`PyObject_GetBuffer`.
+  * :c:func:`!PyObject_CheckReadBuffer`: Use :c:func:`PyObject_CheckBuffer` to
+    test if the object supports the buffer protocol.
+    Note that :c:func:`PyObject_CheckBuffer` doesn't guarantee that
+    :c:func:`PyObject_GetBuffer` will succeed.
+    To test if the object is actually readable, see the next example
+    of :c:func:`PyObject_GetBuffer`.
 
-   * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
-     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+  * :c:func:`!PyObject_AsCharBuffer`, :c:func:`!PyObject_AsReadBuffer`:
+    :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
 
-     .. code-block:: c
+    .. code-block:: c
 
-        Py_buffer view;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
-            return NULL;
-        }
-        // Use `view.buf` and `view.len` to read from the buffer.
-        // You may need to cast buf as `(const char*)view.buf`.
-        PyBuffer_Release(&view);
+       Py_buffer view;
+       if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) < 0) {
+           return NULL;
+       }
+       // Use `view.buf` and `view.len` to read from the buffer.
+       // You may need to cast buf as `(const char*)view.buf`.
+       PyBuffer_Release(&view);
 
-   * :c:func:`!PyObject_AsWriteBuffer`: Use
-     :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
+  * :c:func:`!PyObject_AsWriteBuffer`: Use
+    :c:func:`PyObject_GetBuffer` and :c:func:`PyBuffer_Release` instead:
 
-     .. code-block:: c
+    .. code-block:: c
 
-        Py_buffer view;
-        if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
-            return NULL;
-        }
-        // Use `view.buf` and `view.len` to write to the buffer.
-        PyBuffer_Release(&view);
+       Py_buffer view;
+       if (PyObject_GetBuffer(obj, &view, PyBUF_WRITABLE) < 0) {
+           return NULL;
+       }
+       // Use `view.buf` and `view.len` to write to the buffer.
+       PyBuffer_Release(&view);
 
   (Contributed by Inada Naoki in :gh:`85275`.)
 
@@ -1327,3 +1356,13 @@ removed, although there is currently no date scheduled for their removal.
 
 * Remove undocumented ``PY_TIMEOUT_MAX`` constant from the limited C API.
   (Contributed by Victor Stinner in :gh:`110014`.)
+
+
+Regression Test Changes
+=======================
+
+* Python built with :file:`configure` :option:`--with-pydebug` now
+  supports a :option:`-X presite=package.module <-X>` command-line
+  option. If used, it specifies a module that should be imported early
+  in the lifecycle of the interpreter, before ``site.py`` is executed.
+  (Contributed by Łukasz Langa in :gh:`110769`.)

@@ -1729,7 +1729,7 @@ vgetargskeywords(PyObject *args, PyObject *kwargs, const char *format,
                 return cleanreturn(0, &freelist);
             }
             for (i = pos; i < len; i++) {
-                if (_PyUnicode_EqualToASCIIString(key, kwlist[i])) {
+                if (PyUnicode_EqualToUTF8(key, kwlist[i])) {
                     match = 1;
                     break;
                 }
@@ -2522,7 +2522,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg) {
+        if (nargs < vararg && i != vararg) {
             buf[i] = current_arg;
         }
         else {

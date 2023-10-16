@@ -234,6 +234,17 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared,
     return cls;
 }
 
+static void
+wait_for_lock(PyThread_type_lock mutex)
+{
+    Py_BEGIN_ALLOW_THREADS
+    // XXX Handle eintr, etc.
+    PyThread_acquire_lock(mutex, WAIT_LOCK);
+    Py_END_ALLOW_THREADS
+
+    PyThread_release_lock(mutex);
+}
+
 
 /* Cross-interpreter Buffer Views *******************************************/
 
@@ -567,6 +578,7 @@ struct _channelitem;
 
 typedef struct _channelitem {
     _PyCrossInterpreterData *data;
+    PyThread_type_lock recv_mutex;
     struct _channelitem *next;
 } _channelitem;
 
@@ -612,10 +624,11 @@ _channelitem_free_all(_channelitem *item)
 }
 
 static _PyCrossInterpreterData *
-_channelitem_popped(_channelitem *item)
+_channelitem_popped(_channelitem *item, PyThread_type_lock *recv_mutex)
 {
     _PyCrossInterpreterData *data = item->data;
     item->data = NULL;
+    *recv_mutex = item->recv_mutex;
     _channelitem_free(item);
     return data;
 }
@@ -657,13 +670,15 @@ _channelqueue_free(_channelqueue *queue)
 }
 
 static int
-_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data)
+_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data,
+                  PyThread_type_lock recv_mutex)
 {
     _channelitem *item = _channelitem_new();
     if (item == NULL) {
         return -1;
     }
     item->data = data;
+    item->recv_mutex = recv_mutex;
 
     queue->count += 1;
     if (queue->first == NULL) {
@@ -677,7 +692,7 @@ _channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data)
 }
 
 static _PyCrossInterpreterData *
-_channelqueue_get(_channelqueue *queue)
+_channelqueue_get(_channelqueue *queue, PyThread_type_lock *recv_mutex)
 {
     _channelitem *item = queue->first;
     if (item == NULL) {
@@ -689,7 +704,7 @@ _channelqueue_get(_channelqueue *queue)
     }
     queue->count -= 1;
 
-    return _channelitem_popped(item);
+    return _channelitem_popped(item, recv_mutex);
 }
 
 static void
@@ -1006,7 +1021,7 @@ _channel_free(_PyChannelState *chan)
 
 static int
 _channel_add(_PyChannelState *chan, int64_t interp,
-             _PyCrossInterpreterData *data)
+             _PyCrossInterpreterData *data, PyThread_type_lock recv_mutex)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1020,7 +1035,7 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    if (_channelqueue_put(chan->queue, data) != 0) {
+    if (_channelqueue_put(chan->queue, data, recv_mutex) != 0) {
         goto done;
     }
 
@@ -1046,11 +1061,16 @@ _channel_next(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    _PyCrossInterpreterData *data = _channelqueue_get(chan->queue);
+    PyThread_type_lock recv_mutex = NULL;
+    _PyCrossInterpreterData *data = _channelqueue_get(chan->queue, &recv_mutex);
     if (data == NULL && !PyErr_Occurred() && chan->closing != NULL) {
         chan->open = 0;
     }
     *res = data;
+
+    if (recv_mutex != NULL) {
+        PyThread_release_lock(recv_mutex);
+    }
 
 done:
     PyThread_release_lock(chan->mutex);
@@ -1571,7 +1591,8 @@ _channel_destroy(_channels *channels, int64_t id)
 }
 
 static int
-_channel_send(_channels *channels, int64_t id, PyObject *obj)
+_channel_send(_channels *channels, int64_t id, PyObject *obj,
+              PyThread_type_lock recv_mutex)
 {
     PyInterpreterState *interp = _get_current_interp();
     if (interp == NULL) {
@@ -1606,7 +1627,8 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj)
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data);
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data,
+                           recv_mutex);
     PyThread_release_lock(mutex);
     if (res != 0) {
         // We may chain an exception here:
@@ -2489,42 +2511,70 @@ receive end.");
 static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "obj", NULL};
+    // XXX Add a timeout arg.
+    static char *kwlist[] = {"cid", "obj", "blocking", NULL};
     int64_t cid;
     struct channel_id_converter_data cid_data = {
         .module = self,
     };
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
-                                     channel_id_converter, &cid_data, &obj)) {
+    int blocking = 1;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O|$p:channel_send", kwlist,
+                                     channel_id_converter, &cid_data, &obj,
+                                     &blocking)) {
         return NULL;
     }
     cid = cid_data.cid;
 
-    int err = _channel_send(&_globals.channels, cid, obj);
-    if (handle_channel_error(err, self, cid)) {
-        return NULL;
+    if (blocking) {
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        PyThread_acquire_lock(mutex, WAIT_LOCK);
+
+        /* Queue up the object. */
+        int err = _channel_send(&_globals.channels, cid, obj, mutex);
+        if (handle_channel_error(err, self, cid)) {
+            PyThread_release_lock(mutex);
+            return NULL;
+        }
+
+        /* Wait until the object is received. */
+        wait_for_lock(mutex);
     }
+    else {
+        /* Queue up the object. */
+        int err = _channel_send(&_globals.channels, cid, obj, NULL);
+        if (handle_channel_error(err, self, cid)) {
+            return NULL;
+        }
+    }
+
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(channel_send_doc,
-"channel_send(cid, obj)\n\
+"channel_send(cid, obj, blocking=True)\n\
 \n\
-Add the object's data to the channel's queue.");
+Add the object's data to the channel's queue.\n\
+By default this waits for the object to be received.");
 
 static PyObject *
 channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "obj", NULL};
+    static char *kwlist[] = {"cid", "obj", "blocking", NULL};
     int64_t cid;
     struct channel_id_converter_data cid_data = {
         .module = self,
     };
     PyObject *obj;
+    int blocking = 1;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O&O:channel_send_buffer", kwlist,
-                                     channel_id_converter, &cid_data, &obj)) {
+                                     "O&O|$p:channel_send_buffer", kwlist,
+                                     channel_id_converter, &cid_data, &obj,
+                                     &blocking)) {
         return NULL;
     }
     cid = cid_data.cid;
@@ -2534,18 +2584,43 @@ channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int err = _channel_send(&_globals.channels, cid, tempobj);
-    Py_DECREF(tempobj);
-    if (handle_channel_error(err, self, cid)) {
-        return NULL;
+    if (blocking) {
+        PyThread_type_lock mutex = PyThread_allocate_lock();
+        if (mutex == NULL) {
+            Py_DECREF(tempobj);
+            PyErr_NoMemory();
+            return NULL;
+        }
+        PyThread_acquire_lock(mutex, WAIT_LOCK);
+
+        /* Queue up the buffer. */
+        int err = _channel_send(&_globals.channels, cid, tempobj, mutex);
+        Py_DECREF(tempobj);
+        if (handle_channel_error(err, self, cid)) {
+            PyThread_acquire_lock(mutex, WAIT_LOCK);
+            return NULL;
+        }
+
+        /* Wait until the buffer is received. */
+        wait_for_lock(mutex);
     }
+    else {
+        /* Queue up the buffer. */
+        int err = _channel_send(&_globals.channels, cid, tempobj, NULL);
+        Py_DECREF(tempobj);
+        if (handle_channel_error(err, self, cid)) {
+            return NULL;
+        }
+    }
+
     Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(channel_send_buffer_doc,
-"channel_send_buffer(cid, obj)\n\
+"channel_send_buffer(cid, obj, blocking=True)\n\
 \n\
-Add the object's buffer to the channel's queue.");
+Add the object's buffer to the channel's queue.\n\
+By default this waits for the object to be received.");
 
 static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)

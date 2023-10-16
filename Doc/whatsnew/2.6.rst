@@ -875,11 +875,11 @@ The signature of the new function is::
 
 The parameters are:
 
- * *args*: positional arguments whose values will be printed out.
- * *sep*: the separator, which will be printed between arguments.
- * *end*: the ending text, which will be printed after all of the
-   arguments have been output.
- * *file*: the file object to which the output will be sent.
+* *args*: positional arguments whose values will be printed out.
+* *sep*: the separator, which will be printed between arguments.
+* *end*: the ending text, which will be printed after all of the
+  arguments have been output.
+* *file*: the file object to which the output will be sent.
 
 .. seealso::
 
@@ -1138,13 +1138,13 @@ indicate that the external caller is done.
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
- * :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
+* :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
- * :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+* :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
- * :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
-   requests a C-contiguous (last dimension varies the fastest) or
-   Fortran-contiguous (first dimension varies the fastest) array layout.
+* :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
+  requests a C-contiguous (last dimension varies the fastest) or
+  Fortran-contiguous (first dimension varies the fastest) array layout.
 
 Two new argument codes for :c:func:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.

@@ -7,7 +7,7 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff on Tools/clinic/
+        name: Run Ruff on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
 
@@ -24,10 +24,10 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.6.8
+    rev: v0.7.0
     hooks:
       - id: sphinx-lint
-        args: [--enable=default-role]
+        args: [--enable=default-role, -j1]
         files: ^Doc/|^Misc/NEWS.d/next/
         types: [rst]
 
