@@ -1031,6 +1031,7 @@ error:
 void
 _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 {
+    assert(value != NULL);
     assert(file != NULL && file != Py_None);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
@@ -1046,10 +1047,6 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     }
 
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
-
-    if (!value) {
-        goto fallback;
-    }
 
     // Try first with the stdlib traceback module
     PyObject *traceback_module = PyImport_ImportModule("traceback");
