@@ -1553,6 +1553,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                 tar = tarfile.open(tmpname, self.mode, fileobj=f,
                                    format=tarfile.PAX_FORMAT,
                                    pax_headers={'non': 'empty'})
+                tar.add(__file__)
             self.assertFalse(f.closed)
 
 

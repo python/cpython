@@ -369,7 +369,6 @@ class _Stream:
                 except ImportError:
                     raise CompressionError("zlib module is not available") from None
                 self.zlib = zlib
-                self.crc = zlib.crc32(b"")
                 if mode == "r":
                     self.exception = zlib.error
                     self._init_read_gz()
@@ -416,25 +415,24 @@ class _Stream:
     def _init_write_gz(self, compresslevel):
         """Initialize for writing with gzip compression.
         """
-        self.cmp = self.zlib.compressobj(compresslevel,
-                                         self.zlib.DEFLATED,
-                                         -self.zlib.MAX_WBITS,
-                                         self.zlib.DEF_MEM_LEVEL,
-                                         0)
-        timestamp = struct.pack("<L", int(time.time()))
-        self.__write(b"\037\213\010\010" + timestamp + b"\002\377")
+        mtime = int(time.time())
         if self.name.endswith(".gz"):
             self.name = self.name[:-3]
         # Honor "directory components removed" from RFC1952
         self.name = os.path.basename(self.name)
         # RFC1952 says we must use ISO-8859-1 for the FNAME field.
-        self.__write(self.name.encode("iso-8859-1", "replace") + NUL)
+        fname = self.name.encode("iso-8859-1", "replace")
+        self.cmp = self.zlib.compressobj(compresslevel,
+                                         self.zlib.DEFLATED,
+                                         16 + self.zlib.MAX_WBITS,
+                                         self.zlib.DEF_MEM_LEVEL,
+                                         0,
+                                         mtime=mtime,
+                                         fname=fname)
 
     def write(self, s):
         """Write string s to the stream.
         """
-        if self.comptype == "gz":
-            self.crc = self.zlib.crc32(s, self.crc)
         self.pos += len(s)
         if self.comptype != "tar":
             s = self.cmp.compress(s)
@@ -464,9 +462,6 @@ class _Stream:
             if self.mode == "w" and self.buf:
                 self.fileobj.write(self.buf)
                 self.buf = b""
-                if self.comptype == "gz":
-                    self.fileobj.write(struct.pack("<L", self.crc))
-                    self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
         finally:
             if not self._extfileobj:
                 self.fileobj.close()
@@ -474,33 +469,8 @@ class _Stream:
     def _init_read_gz(self):
         """Initialize for reading a gzip compressed fileobj.
         """
-        self.cmp = self.zlib.decompressobj(-self.zlib.MAX_WBITS)
+        self.cmp = self.zlib.decompressobj(16 + self.zlib.MAX_WBITS)
         self.dbuf = b""
-
-        # taken from gzip.GzipFile with some alterations
-        if self.__read(2) != b"\037\213":
-            raise ReadError("not a gzip file")
-        if self.__read(1) != b"\010":
-            raise CompressionError("unsupported compression method")
-
-        flag = ord(self.__read(1))
-        self.__read(6)
-
-        if flag & 4:
-            xlen = ord(self.__read(1)) + 256 * ord(self.__read(1))
-            self.read(xlen)
-        if flag & 8:
-            while True:
-                s = self.__read(1)
-                if not s or s == NUL:
-                    break
-        if flag & 16:
-            while True:
-                s = self.__read(1)
-                if not s or s == NUL:
-                    break
-        if flag & 2:
-            self.__read(2)
 
     def tell(self):
         """Return the stream's file pointer position.
@@ -2628,6 +2598,8 @@ class TarFile(object):
                 if self.offset == 0:
                     raise ReadError(str(e)) from None
             except SubsequentHeaderError as e:
+                raise ReadError(str(e)) from None
+            except EOFError as e:
                 raise ReadError(str(e)) from None
             except Exception as e:
                 try:

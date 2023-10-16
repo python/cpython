@@ -622,6 +622,7 @@ class TestGzip(BaseTest):
         b = io.BytesIO()
         message = b"important message here."
         with gzip.GzipFile(fileobj=b, mode='w') as f:
+            f.flush(zlib.Z_FULL_FLUSH)
             f.write(message)
             f.flush()
             partial_data = b.getvalue()
@@ -633,8 +634,8 @@ class TestGzip(BaseTest):
         with self.assertRaises(EOFError):
             gzip.decompress(partial_data)
         d = zlib.decompressobj(wbits=-zlib.MAX_WBITS)
-        f = io.BytesIO(partial_data)
-        gzip._read_gzip_header(f)
+        sync_point = partial_data.index(b'\x00\x00\xff\xff') + 4
+        f = io.BytesIO(partial_data[sync_point:])
         read_message = d.decompress(f.read())
         self.assertEqual(read_message, message)
 
