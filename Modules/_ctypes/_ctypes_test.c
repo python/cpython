@@ -1,6 +1,13 @@
 // Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
 #define Py_LIMITED_API 0x030d0000
 
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
 #include <Python.h>
 
 #include <stdio.h>                // printf()
