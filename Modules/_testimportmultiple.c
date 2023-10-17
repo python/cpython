@@ -4,7 +4,7 @@
  * foo, bar), only the first one is called the same as the compiled file.
  */
 
-#define Py_LIMITED_API 0x030d0000
+#define Py_LIMITED_API 0x03020000
 
 #include <Python.h>
 
