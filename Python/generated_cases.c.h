@@ -3007,6 +3007,7 @@
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
+            frame->next_instr_offset = 0;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {

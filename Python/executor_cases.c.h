@@ -3251,7 +3251,6 @@
         }
 
         case _EXIT_TRACE: {
-            frame->instr_ptr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);

@@ -2313,6 +2313,7 @@ dummy_func(
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
+            frame->next_instr_offset = 0;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -3967,7 +3968,6 @@ dummy_func(
         }
 
         op(_EXIT_TRACE, (--)) {
-            frame->instr_ptr--;  // Back up to just before destination
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
