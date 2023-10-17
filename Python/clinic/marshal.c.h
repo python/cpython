@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(marshal_dump__doc__,
 "dump($module, value, file, version=version, /)\n"
 "--\n"
@@ -151,4 +153,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=c39be6077f0cc2cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=92d2d47aac9128ee input=a9049054013a1b77]*/

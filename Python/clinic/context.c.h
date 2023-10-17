@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_contextvars_Context_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -177,4 +179,4 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
-/*[clinic end generated code: output=2436b16a92452869 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b667826178444c3f input=a9049054013a1b77]*/

@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_overlapped_CreateIoCompletionPort__doc__,
 "CreateIoCompletionPort($module, handle, port, key, concurrency, /)\n"
@@ -1238,4 +1239,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=36239bfaee438f37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=958cbddbcc355f47 input=a9049054013a1b77]*/

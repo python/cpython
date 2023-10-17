@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_imp_lock_held__doc__,
 "lock_held($module, /)\n"
@@ -622,4 +623,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=345f8d8d4d6bc5de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dbd63707bd40b07c input=a9049054013a1b77]*/

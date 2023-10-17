@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_multibytecodec_MultibyteCodec_encode__doc__,
 "encode($self, /, input, errors=None)\n"
@@ -681,4 +682,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=772ba02bcbe7aee5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=219a363662d2fbff input=a9049054013a1b77]*/

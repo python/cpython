@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "readable($self, /)\n"
@@ -533,4 +534,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b0a021d8d6f697a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2be0e05a8871b7e2 input=a9049054013a1b77]*/

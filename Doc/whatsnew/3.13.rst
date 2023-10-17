@@ -932,8 +932,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``_stat`` C extension is now built with the :ref:`limited C API
-  <limited-c-api>`.
+* The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
+  ``_stat`` and ``_testimportmultiple`` C extensions are now built with the
+  :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 
@@ -1052,6 +1053,16 @@ New Features
 * :c:func:`PyArg_ParseTupleAndKeywords` now supports non-ASCII keyword
   parameter names.
   (Contributed by Serhiy Storchaka in :gh:`110815`.)
+
+* Add :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawCalloc`,
+  :c:func:`PyMem_RawRealloc` and :c:func:`PyMem_RawFree` to the limited C API
+  (version 3.13).
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PySys_Audit` and :c:func:`PySys_AuditTuple` functions to the
+  limited C API.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 
 Porting to Python 3.13
 ----------------------

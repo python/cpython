@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
 "compress($self, data, /)\n"
@@ -326,4 +327,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=693297876358dd2b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e79c05ace76dc96 input=a9049054013a1b77]*/

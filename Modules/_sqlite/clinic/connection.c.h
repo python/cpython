@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
 pysqlite_connection_init_impl(pysqlite_Connection *self, PyObject *database,
@@ -1817,4 +1818,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=00569ad1e930e8a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90b5b9c14261b8d7 input=a9049054013a1b77]*/

@@ -2466,3 +2466,15 @@
     added = '3.13'
 [function.PyUnicode_EqualToUTF8AndSize]
     added = '3.13'
+[function.PyMem_RawMalloc]
+    added = '3.13'
+[function.PyMem_RawCalloc]
+    added = '3.13'
+[function.PyMem_RawRealloc]
+    added = '3.13'
+[function.PyMem_RawFree]
+    added = '3.13'
+[function.PySys_Audit]
+    added = '3.13'
+[function.PySys_AuditTuple]
+    added = '3.13'
