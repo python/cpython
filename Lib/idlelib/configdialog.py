@@ -1479,12 +1479,13 @@ class KeysPage(Frame):
             reselect = True
             list_index = self.bindingslist.index(ANCHOR)
         keyset = idleConf.GetKeySet(keyset_name)
-        bind_names = list(keyset.keys())
+        # 'set' is dict mapping virtual event to list of key events.
+        bind_names = list(keyset)
         bind_names.sort()
         self.bindingslist.delete(0, END)
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])
-            bind_name = bind_name[2:-2]  # Trim off the angle brackets.
+            bind_name = bind_name[2:-2]  # Trim double angle brackets.
             if keyset_name in changes['keys']:
                 # Handle any unsaved changes to this key set.
                 if bind_name in changes['keys'][keyset_name]:

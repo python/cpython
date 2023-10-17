@@ -597,7 +597,9 @@ class IdleConf:
         problem getting any core binding there will be an 'ultimate last
         resort fallback' to the CUA-ish bindings defined here.
         """
+        # TODO: = dict(sorted([(v-event, keys), ...]))?
         keyBindings={
+            # vitual-event: list of key events.
             '<<copy>>': ['<Control-c>', '<Control-C>'],
             '<<cut>>': ['<Control-x>', '<Control-X>'],
             '<<paste>>': ['<Control-v>', '<Control-V>'],
