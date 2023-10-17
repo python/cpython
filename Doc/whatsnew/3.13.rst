@@ -1053,6 +1053,11 @@ New Features
   parameter names.
   (Contributed by Serhiy Storchaka in :gh:`110815`.)
 
+* Add :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawCalloc`,
+  :c:func:`PyMem_RawRealloc` and :c:func:`PyMem_RawFree` to the limited C API
+  (version 3.13).
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
 Porting to Python 3.13
 ----------------------
 
