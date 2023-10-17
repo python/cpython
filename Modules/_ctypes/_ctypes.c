@@ -110,6 +110,10 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#ifdef MS_WIN32
+#  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
+#endif
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
 
 
 #include <ffi.h>

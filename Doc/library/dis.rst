@@ -71,6 +71,32 @@ the following command can be used to display the disassembly of
 
 (The "2" is a line number).
 
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [-C] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+.. cmdoption:: -C, --show-caches
+
+   Show inline caches.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
+
 Bytecode analysis
 -----------------
 
@@ -613,7 +639,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR
@@ -1138,7 +1164,8 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method.
+   Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1412,31 +1439,47 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   Calls a callable object with the number of arguments specified by ``argc``.
+   On the stack are (in ascending order):
 
    * The callable
-   * ``self``
+   * ``self`` or ``NULL``
    * The remaining positional arguments
-   * The named arguments
 
-   ``argc`` is the total of the positional and named arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional arguments, excluding ``self``.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The callable now always appears at the same position on the stack.
+
+   .. versionchanged:: 3.13
+      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+
+.. opcode:: CALL_KW (argc)
+
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including one or more named arguments. On the stack are (in ascending order):
+
+   * The callable
+   * ``self`` or ``NULL``
+   * The remaining positional arguments
+   * The named arguments
+   * A :class:`tuple` of keyword argument names
+
+   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   The length of the tuple of keyword argument names is the number of named arguments.
+
+   ``CALL_KW`` pops all arguments, the keyword names, and the callable object
+   off the stack, calls the callable object with those arguments, and pushes the
+   return value returned by the callable object.
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1459,15 +1502,6 @@ iterations of the loop.
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
    :opcode:`LOAD_METHOD` for non-method calls.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
@@ -1633,8 +1667,8 @@ iterations of the loop.
    opcodes in the range [0,255] which don't use their argument and those
    that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
-   If your application uses pseudo instructions, use the :data:`hasarg`
-   collection instead.
+   If your application uses pseudo instructions or specialized instructions,
+   use the :data:`hasarg` collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
@@ -1645,6 +1679,8 @@ iterations of the loop.
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
+   .. deprecated:: 3.13
+      Use :data:`hasarg` instead.
 
 .. opcode:: CALL_INTRINSIC_1
 

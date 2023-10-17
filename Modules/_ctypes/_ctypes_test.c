@@ -1,10 +1,14 @@
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
+
 #include <Python.h>
 
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
-
+#include <stdio.h>                // printf()
 #include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 

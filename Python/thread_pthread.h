@@ -1,4 +1,6 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_pythread.h"      // _POSIX_SEMAPHORES
+#include "pycore_atomic.h"        // _Py_ANNOTATE_PURE_HAPPENS_BEFORE_MUTEX
 
 /* Posix threads interface */
 
@@ -84,10 +86,10 @@
 /* On FreeBSD 4.x, _POSIX_SEMAPHORES is defined empty, so
    we need to add 0 to make it work there as well. */
 #if (_POSIX_SEMAPHORES+0) == -1
-#define HAVE_BROKEN_POSIX_SEMAPHORES
+#  define HAVE_BROKEN_POSIX_SEMAPHORES
 #else
-#include <semaphore.h>
-#include <errno.h>
+#  include <semaphore.h>
+#  include <errno.h>
 #endif
 #endif
 

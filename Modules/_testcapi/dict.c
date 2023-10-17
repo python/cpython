@@ -1,5 +1,3 @@
-#include <stddef.h>               // ptrdiff_t
-
 #include "parts.h"
 #include "util.h"
 
@@ -139,7 +137,7 @@ dict_getitemwitherror(PyObject *self, PyObject *args)
 static PyObject *
 dict_getitemref(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *attr_name, *value;
+    PyObject *obj, *attr_name, *value = UNINITIALIZED_PTR;
     if (!PyArg_ParseTuple(args, "OO", &obj, &attr_name)) {
         return NULL;
     }
@@ -164,7 +162,7 @@ dict_getitemref(PyObject *self, PyObject *args)
 static PyObject *
 dict_getitemstringref(PyObject *self, PyObject *args)
 {
-    PyObject *obj, *value;
+    PyObject *obj, *value = UNINITIALIZED_PTR;
     const char *attr_name;
     Py_ssize_t size;
     if (!PyArg_ParseTuple(args, "Oz#", &obj, &attr_name, &size)) {
@@ -276,7 +274,7 @@ dict_items(PyObject *self, PyObject *obj)
 static PyObject *
 dict_next(PyObject *self, PyObject *args)
 {
-    PyObject *mapping, *key, *value;
+    PyObject *mapping, *key = UNINITIALIZED_PTR, *value = UNINITIALIZED_PTR;
     Py_ssize_t pos;
     if (!PyArg_ParseTuple(args, "On", &mapping, &pos)) {
         return NULL;
@@ -286,6 +284,8 @@ dict_next(PyObject *self, PyObject *args)
     if (rc != 0) {
         return Py_BuildValue("inOO", rc, pos, key, value);
     }
+    assert(key == UNINITIALIZED_PTR);
+    assert(value == UNINITIALIZED_PTR);
     if (PyErr_Occurred()) {
         return NULL;
     }

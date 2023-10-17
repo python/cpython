@@ -26,7 +26,6 @@ from instructions import (
     MacroInstruction,
     MacroParts,
     PseudoInstruction,
-    OverriddenInstructionPlaceHolder,
     TIER_ONE,
     TIER_TWO,
 )
@@ -68,7 +67,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SAVE_IP": 7,
+    "OPARG_SET_IP": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -91,6 +90,13 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+
+arg_parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Print list of non-viable uops and exit",
+    action="store_true",
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
@@ -160,20 +166,15 @@ class Generator(Analyzer):
         pushed: str | None = None
         match thing:
             case parsing.InstDef():
-                if thing.kind != "op" or self.instrs[thing.name].is_viable_uop():
-                    instr = self.instrs[thing.name]
-                    popped = effect_str(instr.input_effects)
-                    pushed = effect_str(instr.output_effects)
-                else:
-                    instr = None
-                    popped = ""
-                    pushed = ""
+                instr = self.instrs[thing.name]
+                popped = effect_str(instr.input_effects)
+                pushed = effect_str(instr.output_effects)
             case parsing.Macro():
                 instr = self.macro_instrs[thing.name]
                 popped, pushed = stacking.get_stack_effect_info_for_macro(instr)
             case parsing.Pseudo():
                 instr = self.pseudo_instrs[thing.name]
-                # Calculate stack effect, and check that it's the the same
+                # Calculate stack effect, and check that it's the same
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
@@ -206,7 +207,7 @@ class Generator(Analyzer):
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
-            if isinstance(thing, OverriddenInstructionPlaceHolder):
+            if isinstance(thing, parsing.Macro) and thing.name in self.instrs:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
             if instr is not None:
@@ -255,12 +256,14 @@ class Generator(Analyzer):
         ops: list[tuple[bool, str]] = []  # (has_arg, name) for each opcode
         instrumented_ops: list[str] = []
 
-        for instr in itertools.chain(
-            [instr for instr in self.instrs.values() if instr.kind != "op"],
-            self.macro_instrs.values(),
-        ):
-            assert isinstance(instr, (Instruction, MacroInstruction, PseudoInstruction))
+        specialized_ops: set[str] = set()
+        for name, family in self.families.items():
+            specialized_ops.update(family.members)
+
+        for instr in self.macro_instrs.values():
             name = instr.name
+            if name in specialized_ops:
+                continue
             if name.startswith("INSTRUMENTED_"):
                 instrumented_ops.append(name)
             else:
@@ -282,7 +285,7 @@ class Generator(Analyzer):
 
         def map_op(op: int, name: str) -> None:
             assert op < len(opname)
-            assert opname[op] is None
+            assert opname[op] is None, (op, name)
             assert name not in opmap
             opname[op] = name
             opmap[name] = op
@@ -294,25 +297,31 @@ class Generator(Analyzer):
         # This helps catch cases where we attempt to execute a cache.
         map_op(17, "RESERVED")
 
-        # 166 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-        map_op(166, "RESUME")
+        # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+        map_op(149, "RESUME")
+
+        # Specialized ops appear in their own section
+        # Instrumented opcodes are at the end of the valid range
+        min_internal = 150
+        min_instrumented = 254 - (len(instrumented_ops) - 1)
+        assert min_internal + len(specialized_ops) < min_instrumented
 
         next_opcode = 1
-
         for has_arg, name in sorted(ops):
             if name in opmap:
                 continue  # an anchored name, like CACHE
-            while opname[next_opcode] is not None:
-                next_opcode += 1
-            assert next_opcode < 255
             map_op(next_opcode, name)
-
             if has_arg and "HAVE_ARGUMENT" not in markers:
                 markers["HAVE_ARGUMENT"] = next_opcode
 
-        # Instrumented opcodes are at the end of the valid range
-        min_instrumented = 254 - (len(instrumented_ops) - 1)
-        assert next_opcode <= min_instrumented
+            while opname[next_opcode] is not None:
+                next_opcode += 1
+
+        assert next_opcode < min_internal, next_opcode
+
+        for i, op in enumerate(sorted(specialized_ops)):
+            map_op(min_internal + i, op)
+
         markers["MIN_INSTRUMENTED_OPCODE"] = min_instrumented
         for i, op in enumerate(instrumented_ops):
             map_op(min_instrumented + i, op)
@@ -381,8 +390,6 @@ class Generator(Analyzer):
         for thing in self.everything:
             format: str | None = None
             match thing:
-                case OverriddenInstructionPlaceHolder():
-                    continue
                 case parsing.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parsing.Macro():
@@ -409,13 +416,12 @@ class Generator(Analyzer):
 
             self.write_provenance_header()
 
-            self.out.emit("\n" + textwrap.dedent("""
-                #ifndef Py_BUILD_CORE
-                #  error "this header requires Py_BUILD_CORE define"
-                #endif
-            """).strip())
-
-            self.out.emit("\n#include <stdbool.h>              // bool")
+            self.out.emit("")
+            self.out.emit("#ifndef Py_BUILD_CORE")
+            self.out.emit('#  error "this header requires Py_BUILD_CORE define"')
+            self.out.emit("#endif")
+            self.out.emit("")
+            self.out.emit("#include <stdbool.h>              // bool")
 
             self.write_pseudo_instrs()
 
@@ -481,12 +487,13 @@ class Generator(Analyzer):
                 # Write metadata for each instruction
                 for thing in self.everything:
                     match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            continue
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
-                            self.write_metadata_for_macro(self.macro_instrs[thing.name])
+                            if thing.name not in self.instrs:
+                                self.write_metadata_for_macro(
+                                    self.macro_instrs[thing.name]
+                                )
                         case parsing.Pseudo():
                             self.write_metadata_for_pseudo(
                                 self.pseudo_instrs[thing.name]
@@ -501,35 +508,14 @@ class Generator(Analyzer):
                 ";",
             ):
                 # Write macro expansion for each non-pseudo instruction
-                for thing in self.everything:
-                    match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            pass
-                        case parsing.InstDef(name=name):
-                            instr = self.instrs[name]
-                            # Since an 'op' is not a bytecode, it has no expansion; but 'inst' is
-                            if instr.kind == "inst" and instr.is_viable_uop():
-                                # Construct a dummy Component -- input/output mappings are not used
-                                part = Component(instr, instr.active_caches)
-                                self.write_macro_expansions(
-                                    instr.name, [part], instr.cache_offset
-                                )
-                            elif instr.kind == "inst" and variable_used(
-                                instr.inst, "oparg1"
-                            ):
-                                assert variable_used(
-                                    instr.inst, "oparg2"
-                                ), "Half super-instr?"
-                                self.write_super_expansions(instr.name)
-                        case parsing.Macro():
-                            mac = self.macro_instrs[thing.name]
-                            self.write_macro_expansions(
-                                mac.name, mac.parts, mac.cache_offset
-                            )
-                        case parsing.Pseudo():
-                            pass
-                        case _:
-                            assert_never(thing)
+                for mac in self.macro_instrs.values():
+                    if is_super_instruction(mac):
+                        # Special-case the heck out of super-instructions
+                        self.write_super_expansions(mac.name)
+                    else:
+                        self.write_macro_expansions(
+                            mac.name, mac.parts, mac.cache_offset
+                        )
 
             with self.metadata_item(
                 "const char * const _PyOpcode_uop_name[OPCODE_UOP_NAME_SIZE]", "=", ";"
@@ -549,12 +535,18 @@ class Generator(Analyzer):
                 "=",
                 ";",
             ):
-                for name, _ in self.families.items():
-                    instr = self.instrs[name]
-                    if instr.cache_offset > 0:
-                        self.out.emit(f'[{name}] = {instr.cache_offset},')
+                family_member_names: set[str] = set()
+                for family in self.families.values():
+                    family_member_names.update(family.members)
+                for mac in self.macro_instrs.values():
+                    if (
+                        mac.cache_offset > 0
+                        and mac.name not in family_member_names
+                        and not mac.name.startswith("INSTRUMENTED_")
+                    ):
+                        self.out.emit(f"[{mac.name}] = {mac.cache_offset},")
                 # Irregular case:
-                self.out.emit('[JUMP_BACKWARD] = 1,')
+                self.out.emit("[JUMP_BACKWARD] = 1,")
 
             deoptcodes = {}
             for name, op in self.opmap.items():
@@ -648,11 +640,12 @@ class Generator(Analyzer):
             seen.add(name)
 
         # These two are first by convention
-        add("EXIT_TRACE")
-        add("SAVE_IP")
+        add("_EXIT_TRACE")
+        add("_SET_IP")
 
         for instr in self.instrs.values():
-            if instr.kind == "op":
+            # Skip ops that are also macros -- those are desugared inst()s
+            if instr.name not in self.macros:
                 add(instr.name)
 
     def write_macro_expansions(
@@ -665,20 +658,21 @@ class Generator(Analyzer):
         for part in parts:
             if isinstance(part, Component):
                 # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                if not part.instr.is_viable_uop() and part.instr.name != "_SAVE_CURRENT_IP":
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
                     # It is sometimes emitted for macros that have a
                     # manual translation in translate_bytecode_to_trace()
                     # in Python/optimizer.c.
-                    self.note(
-                        f"Part {part.instr.name} of {name} is not a viable uop",
-                        part.instr.inst,
-                    )
+                    if len(parts) > 1 or part.instr.name != name:
+                        self.note(
+                            f"Part {part.instr.name} of {name} is not a viable uop",
+                            part.instr.inst,
+                        )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "SAVE_IP":
-                        size, offset = OPARG_SIZES["OPARG_SAVE_IP"], cache_offset
+                    if part.instr.name == "_SAVE_CURRENT_IP":
+                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset - 1
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
@@ -770,31 +764,22 @@ class Generator(Analyzer):
             self.write_provenance_header()
 
             # Write and count instructions of all kinds
-            n_instrs = 0
             n_macros = 0
             for thing in self.everything:
                 match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
-                        if thing.kind != "op":
-                            n_instrs += 1
-                            self.write_instr(self.instrs[thing.name])
+                        pass
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(
-                            mac, self.out, self.families.get(mac.name)
-                        )
-                        # self.write_macro(self.macro_instrs[thing.name])
+                        stacking.write_macro_instr(mac, self.out)
                     case parsing.Pseudo():
                         pass
                     case _:
                         assert_never(thing)
 
         print(
-            f"Wrote {n_instrs} instructions and {n_macros} macros "
-            f"to {output_filename}",
+            f"Wrote {n_macros} cases to {output_filename}",
             file=sys.stderr,
         )
 
@@ -802,41 +787,21 @@ class Generator(Analyzer):
         self, executor_filename: str, emit_line_directives: bool
     ) -> None:
         """Generate cases for the Tier 2 interpreter."""
-        n_instrs = 0
         n_uops = 0
         with open(executor_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
-            for thing in self.everything:
-                match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        # TODO: Is this helpful?
-                        self.write_overridden_instr_place_holder(thing)
-                    case parsing.InstDef():
-                        instr = self.instrs[thing.name]
-                        if instr.is_viable_uop():
-                            if instr.kind == "op":
-                                n_uops += 1
-                            else:
-                                n_instrs += 1
-                            self.out.emit("")
-                            with self.out.block(f"case {thing.name}:"):
-                                stacking.write_single_instr(
-                                    instr, self.out, tier=TIER_TWO
-                                )
-                                if instr.check_eval_breaker:
-                                    self.out.emit("CHECK_EVAL_BREAKER();")
-                                self.out.emit("break;")
-                        # elif instr.kind != "op":
-                        #     print(f"NOTE: {thing.name} is not a viable uop")
-                    case parsing.Macro():
-                        pass
-                    case parsing.Pseudo():
-                        pass
-                    case _:
-                        assert_never(thing)
+            for instr in self.instrs.values():
+                if instr.is_viable_uop():
+                    n_uops += 1
+                    self.out.emit("")
+                    with self.out.block(f"case {instr.name}:"):
+                        stacking.write_single_instr(instr, self.out, tier=TIER_TWO)
+                        if instr.check_eval_breaker:
+                            self.out.emit("CHECK_EVAL_BREAKER();")
+                        self.out.emit("break;")
         print(
-            f"Wrote {n_instrs} instructions and {n_uops} ops to {executor_filename}",
+            f"Wrote {n_uops} cases to {executor_filename}",
             file=sys.stderr,
         )
 
@@ -847,57 +812,32 @@ class Generator(Analyzer):
         with open(abstract_interpreter_filename, "w") as f:
             self.out = Formatter(f, 8, emit_line_directives)
             self.write_provenance_header()
-            for thing in self.everything:
-                match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        pass
-                    case parsing.InstDef():
-                        instr = AbstractInstruction(self.instrs[thing.name].inst)
-                        if (
-                            instr.is_viable_uop()
-                            and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
-                        ):
-                            self.out.emit("")
-                            with self.out.block(f"case {thing.name}:"):
-                                instr.write(self.out, tier=TIER_TWO)
-                                self.out.emit("break;")
-                    case parsing.Macro():
-                        pass
-                    case parsing.Pseudo():
-                        pass
-                    case _:
-                        assert_never(thing)
+            for instr in self.instrs.values():
+                instr = AbstractInstruction(instr.inst)
+                if (
+                    instr.is_viable_uop()
+                    and instr.name not in SPECIALLY_HANDLED_ABSTRACT_INSTR
+                ):
+                    self.out.emit("")
+                    with self.out.block(f"case {instr.name}:"):
+                        instr.write(self.out, tier=TIER_TWO)
+                        self.out.emit("break;")
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
         )
 
-    def write_overridden_instr_place_holder(
-        self, place_holder: OverriddenInstructionPlaceHolder
-    ) -> None:
-        self.out.emit("")
-        self.out.emit(
-            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
-        )
 
-    def write_instr(self, instr: Instruction) -> None:
-        name = instr.name
-        self.out.emit("")
-        if instr.inst.override:
-            self.out.emit("{self.out.comment} Override")
-        with self.out.block(f"TARGET({name})"):
-            if instr.predicted:
-                self.out.emit(f"PREDICTED({name});")
-            self.out.static_assert_family_size(
-                instr.name, instr.family, instr.cache_offset
-            )
-            stacking.write_single_instr(instr, self.out, tier=TIER_ONE)
-            if not instr.always_exits:
-                if instr.cache_offset:
-                    self.out.emit(f"next_instr += {instr.cache_offset};")
-                if instr.check_eval_breaker:
-                    self.out.emit("CHECK_EVAL_BREAKER();")
-                self.out.emit(f"DISPATCH();")
+def is_super_instruction(mac: MacroInstruction) -> bool:
+    if (
+        len(mac.parts) == 1
+        and isinstance(mac.parts[0], Component)
+        and variable_used(mac.parts[0].instr.inst, "oparg1")
+    ):
+        assert variable_used(mac.parts[0].instr.inst, "oparg2")
+        return True
+    else:
+        return False
 
 
 def main() -> None:
@@ -913,6 +853,10 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
+    if args.verbose:
+        # Load execution counts from bmraw.json, if it exists
+        a.report_non_viable_uops("bmraw.json")
+        return
 
     # These raise OSError if output can't be written
     a.write_instructions(args.output, args.emit_line_directives)
