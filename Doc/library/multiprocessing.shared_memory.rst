@@ -64,34 +64,38 @@ copying of data.
    memory block may be larger or equal to the size requested.  When attaching
    to an existing shared memory block, the ``size`` parameter is ignored.
 
-   *track*, when enabled, registers the shared memory block with the resource
+   *track*, when enabled, registers the shared memory block with a resource
    tracker process.  This process ensures proper cleanup of shared memory
    blocks even when all other processes with access to the memory have failed
-   to do so (mainly due to being killed by signals).  The resource tracker is
-   overzealous in certain situations and might delete a shared memory block
-   when any process with access to the shared memory has terminated.  *track*
-   should be set to ``False`` if there is already another process in place
-   that does the bookkeeping.  In most situations, this means that *track*
-   should be set to ``False`` when *create* is set to ``False``.
+   to do so (mainly due to being killed by signals).  Unless a Python process
+   was created using any of the :mod:`multiprocessing` facilities (such as
+   :class:`multiprocessing.Process`), it will receive its own resource tracker
+   process when accessing shared memory with *track* enabled.  This will cause
+   the shared memory to be deleted by the resource tracker of the first
+   process that terminates.  To avoid this issue, users of :mod:`subprocess` or
+   standalone Python processes should set *track* to ``False`` when there is
+   already another process in place that does the bookkeeping.  *track* has
+   an effect only on POSIX.  Windows has its own tracking and does not use the
+   resource tracker.
+
+   .. versionchanged:: 3.13 Added *track* parameter.
 
    .. method:: close()
 
       Closes the file descriptor/handle to the shared memory from this
-      instance.  All instances should call ``close()`` once the instance
-      is no longer needed.  Depending on operating system, the underlying
-      memory may or may not be freed even if all handles to it have been
-      closed.  To ensure proper cleanup, use the ``unlink()`` method.
+      instance.  :meth:`close()` should be called once access to the shared
+      memory block from this instance is no longer needed.  Depending
+      on operating system, the underlying memory may or may not be freed
+      even if all handles to it have been closed.  To ensure proper cleanup,
+      use the :meth:`unlink()` method.
 
    .. method:: unlink()
 
       Deletes the underlying shared memory block.  This should be called only
       once per shared memory block regardless of the number of handles to it.
-      After requesting its deletion, a shared memory block may or may not be
-      immediately destroyed, and this behavior may differ across platforms.
-      Therefore, attempts to access data inside the shared memory block after
-      ``unlink()`` has been called may result in memory access errors.
-      To ensure proper bookkeeping, ``unlink()`` may only be called by
-      an instance with *track* enabled.
+      :meth:`unlink()` and :meth:`close()` can be called in any order, but
+      trying to access data inside a shared memory block after :meth:`unlink()`
+      may result in memory access errors, depending on platform.
 
    .. attribute:: buf
 

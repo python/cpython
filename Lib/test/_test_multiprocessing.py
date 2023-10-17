@@ -4440,6 +4440,31 @@ class _TestSharedMemory(BaseTestCase):
                     "resource_tracker: There appear to be 1 leaked "
                     "shared_memory objects to clean up at shutdown", err)
 
+    @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
+    def test_shared_memory_untracking(self):
+        # gh-82300: When a separate Python process accesses shared memory
+        # with track=False, it must not register with the resource tracker.
+        cmd = '''if 1:
+            import sys
+            from unittest.mock import Mock
+            from multiprocessing import resource_tracker
+            from multiprocessing.shared_memory import SharedMemory
+            resource_tracker.register = Mock(side_effect=AssertionError)
+            mem = SharedMemory(create=False, name=sys.argv[1], track=False)
+            mem.close()
+        '''
+        mem = shared_memory.SharedMemory(create=True, size=10)
+        try:
+            *_, err = test.support.script_helper.assert_python_ok("-c", cmd,
+                                                                  mem.name)
+            self.assertEqual(err, b'')
+        finally:
+            mem.close()
+            try:
+                mem.unlink()
+            except OSError:
+                pass
+
 #
 # Test to verify that `Finalize` works.
 #
