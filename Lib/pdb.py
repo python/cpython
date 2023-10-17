@@ -1652,6 +1652,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         self.run(target.code)
 
+    def _format_exc(self, exc: BaseException):
+        return traceback.format_exception_only(exc)[-1].strip()
 
     def _getsourcelines(self, obj):
         # GH-103319
