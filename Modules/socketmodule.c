@@ -902,6 +902,16 @@ sock_call_ex(PySocketSockObject *s,
     _PyTime_t deadline = 0;
     int deadline_initialized = 0;
     int res;
+    bool use_native_timeout = false;
+
+    // On Windows / macOS / FreeBSD, connect and accept is not affected by the
+    // SO_SNDTIMEO and SO_RCVTIMEO, yet other operations with non INET / INET6
+    // sock. So always use select to trigger the timeout.
+    if (!(connect || accept) &&
+        (s->sock_family == AF_INET || s->sock_family == AF_INET6))
+    {
+        use_native_timeout = true;
+    }
 
     /* sock_call() must be called with the GIL held. */
     assert(PyGILState_Check());
@@ -909,12 +919,9 @@ sock_call_ex(PySocketSockObject *s,
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */
     while (1) {
-        // puts("outer loop ...");
         /* For connect(), poll even for blocking socket. The connection
            runs asynchronously. */
-        // if (has_timeout || connect) {
-        if (connect || (accept && has_timeout)) {
-            // puts("  select ...");
+        if (connect || (has_timeout && !use_native_timeout)) {
             if (has_timeout) {
                 _PyTime_t interval;
 
@@ -974,12 +981,9 @@ sock_call_ex(PySocketSockObject *s,
         /* inner loop to retry sock_func() when sock_func() is interrupted
            by a signal */
         while (1) {
-            // puts("  inner loop ...");
             Py_BEGIN_ALLOW_THREADS
             res = sock_func(s, data);
             Py_END_ALLOW_THREADS
-
-            // printf("    res: %d, errno: %d\n", res, errno);
 
             if (res) {
                 /* sock_func() succeeded */
@@ -1005,9 +1009,12 @@ sock_call_ex(PySocketSockObject *s,
         }
 
         if (s->sock_timeout > 0
-            && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN))) {
-            PyErr_SetString(PyExc_TimeoutError, "timed out");
-            return -1;
+            && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN)))
+        {
+            if (use_native_timeout) {
+                PyErr_SetString(PyExc_TimeoutError, "timed out");
+                return -1;
+            }
             /* False positive: sock_func() failed with EWOULDBLOCK or EAGAIN.
 
                For example, select() could indicate a socket is ready for
@@ -3067,6 +3074,76 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
     return 0;
 }
 
+static int
+internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
+    int block;
+
+    s->sock_timeout = timeout;
+
+    if (s->sock_family == AF_INET || s->sock_family == AF_INET6) {
+        if (timeout == 0) {
+            block = 0;
+        } else if (timeout < 0) {
+            block = 1;
+
+            struct timeval zero = {
+                .tv_sec = 0,
+                .tv_usec = 0
+            };
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &zero,
+                           sizeof(struct timeval)) != 0) {
+                set_error();
+                return -1;
+            }
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &zero,
+                       sizeof(struct timeval)) != 0) {
+                set_error();
+                return -1;
+            }
+        } else {
+            block = 1;
+
+            struct timeval timeout_tv;
+            _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout_tv,
+                           sizeof(struct timeval)) != 0) {
+                set_error();
+                return -1;
+            }
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_tv,
+                       sizeof(struct timeval)) != 0) {
+                set_error();
+                return -1;
+            }
+        }
+    } else {
+        block = timeout < 0;
+        /* Blocking mode for a Python socket object means that operations
+           like :meth:`recv` or :meth:`sendall` will block the execution of
+           the current thread until they are complete or aborted with a
+           `TimeoutError` or `socket.error` errors.  When timeout is `None`,
+           the underlying FD is in a blocking mode.  When timeout is a positive
+           number, the FD is in a non-blocking mode, and socket ops are
+           implemented with a `select()` call.
+
+           When timeout is 0.0, the FD is in a non-blocking mode.
+
+           This table summarizes all states in which the socket object and
+           its underlying FD can be:
+
+           ==================== ===================== ==============
+            `gettimeout()`       `getblocking()`       FD
+           ==================== ===================== ==============
+            ``None``             ``True``              blocking
+            ``0.0``              ``False``             non-blocking
+            ``> 0``              ``True``              non-blocking
+        */
+    }
+
+
+    return internal_setblocking(s, block);
+}
+
 /* s.settimeout(timeout) method.  Argument:
    None -- no timeout, blocking mode; same as setblocking(True)
    0.0  -- non-blocking mode; same as setblocking(False)
@@ -3077,74 +3154,14 @@ static PyObject *
 sock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
     _PyTime_t timeout;
-    int block;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
-
-    s->sock_timeout = timeout;
-
-    if (timeout == 0) {
-        block = 0;
-    } else if (timeout < 0) {
-        block = 1;
-
-        struct timeval zero = {
-            .tv_sec = 0,
-            .tv_usec = 0
-        };
-        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &zero,
-                       sizeof(struct timeval)) != 0) {
-            set_error();
-            return NULL;
-        }
-        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &zero,
-                   sizeof(struct timeval)) != 0) {
-            set_error();
-            return NULL;
-        }
-    } else {
-        block = 1;
-
-        struct timeval timeout_tv;
-        _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
-        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout_tv,
-                       sizeof(struct timeval)) != 0) {
-            set_error();
-            return NULL;
-        }
-        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_tv,
-                   sizeof(struct timeval)) != 0) {
-            set_error();
-            return NULL;
-        }
-    }
-
-    // int block = timeout < 0;
-    /* Blocking mode for a Python socket object means that operations
-       like :meth:`recv` or :meth:`sendall` will block the execution of
-       the current thread until they are complete or aborted with a
-       `TimeoutError` or `socket.error` errors.  When timeout is `None`,
-       the underlying FD is in a blocking mode.  When timeout is a positive
-       number, the FD is in a non-blocking mode, and socket ops are
-       implemented with a `select()` call.
-
-       When timeout is 0.0, the FD is in a non-blocking mode.
-
-       This table summarizes all states in which the socket object and
-       its underlying FD can be:
-
-       ==================== ===================== ==============
-        `gettimeout()`       `getblocking()`       FD
-       ==================== ===================== ==============
-        ``None``             ``True``              blocking
-        ``0.0``              ``False``             non-blocking
-        ``> 0``              ``True``              non-blocking
-    */
-
-    if (internal_setblocking(s, block) == -1) {
+    
+    if (internal_settimeout(s, timeout) < 0) {
         return NULL;
     }
+
     Py_RETURN_NONE;
 }
 

@@ -1,0 +1,2 @@
+Use the ``SO_SNDTIMEO`` / ``SO_RCVTIMEO`` socket option to implement the
+timeout for ``INET`` / ``INET6`` sockets instead of ``select``.

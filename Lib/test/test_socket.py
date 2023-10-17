@@ -4780,17 +4780,6 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         blocking = (timeout != 0.0)
         self.assertEqual(sock.getblocking(), blocking)
 
-        # if fcntl is not None:
-        #     # When a Python socket has a non-zero timeout, it's switched
-        #     # internally to a non-blocking mode. Later, sock.sendall(),
-        #     # sock.recv(), and other socket operations use a select() call and
-        #     # handle EWOULDBLOCK/EGAIN on all socket operations. That's how
-        #     # timeouts are enforced.
-        #     fd_blocking = (timeout is None)
-
-        #     flag = fcntl.fcntl(sock, fcntl.F_GETFL, os.O_NONBLOCK)
-        #     self.assertEqual(not bool(flag & os.O_NONBLOCK), fd_blocking)
-
     def testSetBlocking(self):
         # Test setblocking() and settimeout() methods
         self.serv.setblocking(True)
