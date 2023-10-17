@@ -1,9 +1,10 @@
 /* Errno module */
 
-// Need PyModuleDef_Slot added to limited C API version 3.5
-#define Py_LIMITED_API 0x03050000
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
+#include <errno.h>                // EPIPE
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
