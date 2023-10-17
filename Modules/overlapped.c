@@ -38,7 +38,7 @@
 class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-    def parse_arg(self, argname, displayname, *, limited_capi):
+    def parse_arg(self, argname, displayname, *, clinic, limited_capi):
         return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
@@ -56,7 +56,7 @@ class HANDLE_converter(pointer_converter):
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
-    def parse_arg(self, argname, displayname, *, limited_capi):
+    def parse_arg(self, argname, displayname, *, clinic, limited_capi):
         return self.format_code("""
             {paramname} = (uintptr_t)PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
@@ -71,7 +71,7 @@ class DWORD_converter(unsigned_long_converter):
 class BOOL_converter(int_converter):
     type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=422287c842b7eba8]*/
 
 /*[clinic input]
 module _overlapped

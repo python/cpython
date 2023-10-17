@@ -222,7 +222,7 @@ class HKEY_converter(CConverter):
     converter = 'clinic_HKEY_converter'
     broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname, *, limited_capi):
+    def parse_arg(self, argname, displayname, *, clinic, limited_capi):
         assert not limited_capi
         return self.format_code("""
             if (!{converter}(_PyModule_GetState(module), {argname}, &{paramname})) {{{{
@@ -252,7 +252,7 @@ class self_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = (PyObject *)_return_value;\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=4979f33998ffb6f8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=5d9a391867dbe35a]*/
 
 #include "clinic/winreg.c.h"
 
