@@ -253,7 +253,7 @@ class Parser:
         "--sections",
     ]
 
-    def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None) -> None:
+    def __init__(self, path: pathlib.Path, readobj: str, objdump: str | None, alignment: int) -> None:
         self.path = path
         self.body = bytearray()
         self.data = bytearray()
@@ -266,6 +266,7 @@ class Parser:
         self.data_relocations: list[tuple[int, RelocationType]] = []
         self.readobj = readobj
         self.objdump = objdump
+        self.alignment = alignment
 
     async def parse(self) -> Stencil:
         if self.objdump is not None:
@@ -295,7 +296,7 @@ class Parser:
         holes = []
         holes_data = []
         padding = 0
-        while len(self.body) % 8:  # XXX
+        while self.alignment and len(self.body) % self.alignment:
             self.body.append(0)
             padding += 1
         offset_data = 0
@@ -634,7 +635,7 @@ class Compiler:
         self._use_ghccc(ll)
         await run(self._clang, *backend_flags, "-o", o, ll)
         self._stencils_built[opname] = await Parser(
-            o, self._readobj, self._objdump
+            o, self._readobj, self._objdump, self._target.alignment
         ).parse()
 
     async def build(self) -> None:
@@ -735,15 +736,17 @@ def dump(stencils: dict[str, Stencil]) -> typing.Generator[str, None, None]:
         else:
             yield f"static const Hole {opname}_stencil_holes_data[1];"
         yield f""
-    yield f"#define INIT_STENCIL(OP) {{                             \\"
-    yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),     \\"
-    yield f"    .bytes = OP##_stencil_bytes,                       \\"
-    yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1, \\"
-    yield f"    .holes = OP##_stencil_holes,                       \\"
-    yield f"    .nbytes_data = Py_ARRAY_LENGTH(OP##_stencil_bytes_data) - 1, \\"
-    yield f"    .bytes_data = OP##_stencil_bytes_data,                       \\"
-    yield f"    .nholes_data = Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1, \\"
-    yield f"    .holes_data = OP##_stencil_holes_data,                       \\"
+    yield f"#define INIT_STENCIL(OP) {{                                        \\"
+    yield f"    .nbytes = Py_ARRAY_LENGTH(OP##_stencil_bytes),                \\"
+    yield f"    .bytes = OP##_stencil_bytes,                                  \\"
+    yield f"    .nholes = Py_ARRAY_LENGTH(OP##_stencil_holes) - 1,            \\"
+    yield f"    .holes = OP##_stencil_holes,                                  \\"
+    yield f"    .nbytes_data = (Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1) \\"
+    yield f"                 ? (Py_ARRAY_LENGTH(OP##_stencil_bytes_data) - 1) \\"
+    yield f"                 : 0,                                             \\"
+    yield f"    .bytes_data = OP##_stencil_bytes_data,                        \\"
+    yield f"    .nholes_data = Py_ARRAY_LENGTH(OP##_stencil_holes_data) - 1,  \\"
+    yield f"    .holes_data = OP##_stencil_holes_data,                        \\"
     yield f"}}"
     yield f""
     assert opnames[-len(STUBS):] == STUBS

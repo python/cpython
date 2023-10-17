@@ -193,7 +193,7 @@ patch_one(unsigned char *location, const Hole *hole, uint64_t *patches)
 static void
 copy_and_patch(const Stencil *stencil, uint64_t patches[])
 {
-    if (stencil->nholes_data) {
+    if (stencil->nbytes_data) {
         unsigned char *data = (unsigned char *)(uintptr_t)patches[_JIT_DATA];
         memcpy(data, stencil->bytes_data, stencil->nbytes_data);
         for (size_t i = 0; i < stencil->nholes_data; i++) {
@@ -276,7 +276,7 @@ initialize_jit(void)
     // Write our error stub:
     {
         const Stencil *stencil = &error_stencil;
-        error_stub = alloc(stencil->nbytes +  stencil->nbytes_data);
+        error_stub = alloc(stencil->nbytes);
         if (error_stub == NULL || mark_writeable(error_stub, stencil->nbytes)) {
             return needs_initializing;
         }
