@@ -3158,7 +3158,7 @@ sock_settimeout(PySocketSockObject *s, PyObject *arg)
     if (socket_parse_timeout(&timeout, arg) < 0) {
         return NULL;
     }
-    
+
     if (internal_settimeout(s, timeout) < 0) {
         return NULL;
     }
