@@ -42,12 +42,15 @@ listings of documented functions, miscellaneous topics, and undocumented
 functions respectively.
 """
 
-import string, sys
+import inspect
+import string
+import sys
 
 __all__ = ["Cmd"]
 
 PROMPT = '(Cmd) '
 IDENTCHARS = string.ascii_letters + string.digits + '_'
+
 
 class Cmd:
     """A simple framework for writing line-oriented command interpreters.
@@ -297,7 +300,8 @@ class Cmd:
                 func = getattr(self, 'help_' + arg)
             except AttributeError:
                 try:
-                    doc=getattr(self, 'do_' + arg).__doc__
+                    doc = getattr(self, 'do_' + arg).__doc__
+                    doc = inspect.cleandoc(doc)
                     if doc:
                         self.stdout.write("%s\n"%str(doc))
                         return
