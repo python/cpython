@@ -1432,12 +1432,12 @@ class CLanguage(Language):
                     deprecated_keywords[i] = p
 
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
-            if limited_capi:
-                args_declaration = None
-                nargs = None
-            elif vararg == NO_VARARG:
-                clinic.add_include('pycore_modsupport.h',
-                                   '_PyArg_UnpackKeywords()')
+            if vararg == NO_VARARG:
+                # FIXME: refactor the code to not declare args_declaration
+                # if limited_capi is true
+                if not limited_capi:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywords()')
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
@@ -1445,8 +1445,9 @@ class CLanguage(Language):
                 )
                 nargs = "nargs"
             else:
-                clinic.add_include('pycore_modsupport.h',
-                                   '_PyArg_UnpackKeywordsWithVararg()')
+                if not limited_capi:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywordsWithVararg()')
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
                     max_pos,
