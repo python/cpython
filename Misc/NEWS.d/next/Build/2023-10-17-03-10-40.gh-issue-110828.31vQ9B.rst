@@ -1,0 +1,1 @@
+AIX 32bit build needs -latomic for _testcapi module build
