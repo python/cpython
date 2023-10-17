@@ -43,14 +43,12 @@ interpreter.
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
    .. versionchanged:: 3.12
-      For instruction leading to a jump, a jump by 0 instruction should always
-      lead to jumping to the instruction directly following the origin instruction.
-      Starting with 3.12, some instructions leading to a jump can be followed
-      by a :opcode:`CACHE` instruction in which case a jump with an argument of
-      0 will jump to the first non-``CACHE`` instruction following the origin
-      instruction.
+      The argument of a jump is the offset of the target instruction relative
+      to the instruction that appears immediately after the jump instruction's
+      :opcode:`CACHE` entries.
+
       As a consequence, the presence of the :opcode:`CACHE` instructions is
-      transparent for forward jumps but need to be taken into account when
+      transparent for forward jumps but needs to be taken into account when
       reasoning about backward jumps.
 
 Example: Given the function :func:`!myfunc`::
@@ -1652,7 +1650,7 @@ iterations of the loop.
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
    argument and sets ``STACK[-1]`` to the result. Used to implement
-   functionality that is necessary but not performance critical.
+   functionality that is not performance critical.
 
    The operand determines which intrinsic function is called:
 
@@ -1701,7 +1699,7 @@ iterations of the loop.
 .. opcode:: CALL_INTRINSIC_2
 
    Calls an intrinsic function with two arguments. Used to implement functionality
-   that is necessary but not performance critical::
+   that is not performance critical::
 
       arg2 = STACK.pop()
       arg1 = STACK.pop()
