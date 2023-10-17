@@ -62,7 +62,7 @@
           pass
    */
 
-#define Py_LIMITED_API 0x030b0000
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
 #include <string.h>
