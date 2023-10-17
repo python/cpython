@@ -589,49 +589,136 @@ handle_channel_error(int err, PyObject *mod, int64_t cid)
 
 /* the channel queue */
 
+typedef uintptr_t _channelitem_id_t;
+
+typedef struct wait_info {
+    PyThread_type_lock mutex;
+    enum {
+        WAITING_NO_STATUS = 0,
+        WAITING_ACQUIRED = 1,
+        WAITING_RELEASED = 2,
+    } status;
+    int received;
+    _channelitem_id_t itemid;
+} _waiting_t;
+
+static int
+_waiting_init(_waiting_t *waiting)
+{
+    PyThread_type_lock mutex = PyThread_allocate_lock();
+    if (mutex == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+
+    *waiting = (_waiting_t){
+        .mutex = mutex,
+        .status = WAITING_NO_STATUS,
+    };
+    return 0;
+}
+
+static void
+_waiting_clear(_waiting_t *waiting)
+{
+    assert(waiting->status != WAITING_ACQUIRED);
+    if (waiting->mutex != NULL) {
+        PyThread_free_lock(waiting->mutex);
+        waiting->mutex = NULL;
+    }
+}
+
+static _channelitem_id_t
+_waiting_get_itemid(_waiting_t *waiting)
+{
+    return waiting->itemid;
+}
+
+static void
+_waiting_acquire(_waiting_t *waiting)
+{
+    assert(waiting->status == WAITING_NO_STATUS);
+    PyThread_acquire_lock(waiting->mutex, NOWAIT_LOCK);
+    waiting->status = WAITING_ACQUIRED;
+}
+
+static void
+_waiting_release(_waiting_t *waiting, int received)
+{
+    assert(waiting->mutex != NULL);
+    assert(waiting->status == WAITING_ACQUIRED);
+    assert(!waiting->received);
+
+    PyThread_release_lock(waiting->mutex);
+    waiting->status = WAITING_RELEASED;
+    if (waiting->received != received) {
+        assert(received == 1);
+        waiting->received = received;
+    }
+}
+
 struct _channelitem;
 
 typedef struct _channelitem {
     _PyCrossInterpreterData *data;
-    PyThread_type_lock recv_mutex;
-    int *received;
+    _waiting_t *waiting;
     struct _channelitem *next;
 } _channelitem;
 
+static inline _channelitem_id_t
+_channelitem_ID(_channelitem *item)
+{
+    return (_channelitem_id_t)item;
+}
+
+static void
+_channelitem_init(_channelitem *item,
+                  _PyCrossInterpreterData *data, _waiting_t *waiting)
+{
+    *item = (_channelitem){
+        .data = data,
+        .waiting = waiting,
+    };
+    if (waiting != NULL) {
+        waiting->itemid = _channelitem_ID(item);
+    }
+}
+
+static void
+_channelitem_clear(_channelitem *item)
+{
+    item->next = NULL;
+
+    if (item->data != NULL) {
+        // It was allocated in _channel_send().
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
+        item->data = NULL;
+    }
+
+    if (item->waiting != NULL) {
+        if (item->waiting->status == WAITING_ACQUIRED) {
+            _waiting_release(item->waiting, 0);
+        }
+        item->waiting = NULL;
+    }
+}
+
 static _channelitem *
-_channelitem_new(void)
+_channelitem_new(_PyCrossInterpreterData *data, _waiting_t *waiting)
 {
     _channelitem *item = GLOBAL_MALLOC(_channelitem);
     if (item == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    item->data = NULL;
-    item->recv_mutex = NULL;
-    item->received = NULL;
-    item->next = NULL;
+    _channelitem_init(item, data, waiting);
     return item;
-}
-
-static void
-_channelitem_clear(_channelitem *item)
-{
-    if (item->data != NULL) {
-        // It was allocated in _channel_send().
-        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
-        item->data = NULL;
-    }
-    item->next = NULL;
 }
 
 static void
 _channelitem_free(_channelitem *item)
 {
     _channelitem_clear(item);
-    if (item->recv_mutex != NULL) {
-        // The code that sent the object must free the item.
-        return;
-    }
     GLOBAL_FREE(item);
 }
 
@@ -641,25 +728,21 @@ _channelitem_free_all(_channelitem *item)
     while (item != NULL) {
         _channelitem *last = item;
         item = item->next;
-        if (last->recv_mutex != NULL) {
-            PyThread_release_lock(last->recv_mutex);
-        }
         _channelitem_free(last);
     }
 }
 
-static _PyCrossInterpreterData *
-_channelitem_popped(_channelitem *item, PyThread_type_lock *recv_mutex)
+static void
+_channelitem_popped(_channelitem *item,
+                    _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
 {
-    _PyCrossInterpreterData *data = item->data;
+    assert(item->waiting == NULL || item->waiting->status == WAITING_ACQUIRED);
+    *p_data = item->data;
+    *p_waiting = item->waiting;
+    // We clear them here, so they won't be released in _channelitem_clear().
     item->data = NULL;
-    *recv_mutex = item->recv_mutex;
-    if (item->received != NULL) {
-        assert(*item->received == 0);
-        *item->received = 1;
-    }
+    item->waiting = NULL;
     _channelitem_free(item);
-    return data;
 }
 
 typedef struct _channelqueue {
@@ -698,26 +781,13 @@ _channelqueue_free(_channelqueue *queue)
     GLOBAL_FREE(queue);
 }
 
-struct wait_info {
-    PyThread_type_lock mutex;
-    int received;
-};
-
 static int
-_channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data,
-                  struct wait_info *wait)
+_channelqueue_put(_channelqueue *queue,
+                  _PyCrossInterpreterData *data, _waiting_t *waiting)
 {
-    _channelitem *item = _channelitem_new();
+    _channelitem *item = _channelitem_new(data, waiting);
     if (item == NULL) {
         return -1;
-    }
-    *item = (_channelitem){
-        .data = data,
-    };
-    if (wait != NULL) {
-        item->recv_mutex = wait->mutex;
-        wait->received = 0;
-        item->received = &wait->received;
     }
 
     queue->count += 1;
@@ -729,15 +799,20 @@ _channelqueue_put(_channelqueue *queue, _PyCrossInterpreterData *data,
     }
     queue->last = item;
 
+    if (waiting != NULL) {
+        _waiting_acquire(waiting);
+    }
+
     return 0;
 }
 
-static _PyCrossInterpreterData *
-_channelqueue_get(_channelqueue *queue, PyThread_type_lock *recv_mutex)
+static int
+_channelqueue_get(_channelqueue *queue,
+                  _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
 {
     _channelitem *item = queue->first;
     if (item == NULL) {
-        return NULL;
+        return ERR_CHANNEL_EMPTY;
     }
     queue->first = item->next;
     if (queue->last == item) {
@@ -745,7 +820,73 @@ _channelqueue_get(_channelqueue *queue, PyThread_type_lock *recv_mutex)
     }
     queue->count -= 1;
 
-    return _channelitem_popped(item, recv_mutex);
+    _channelitem_popped(item, p_data, p_waiting);
+    return 0;
+}
+
+static int
+_channelqueue_find(_channelqueue *queue, _channelitem_id_t itemid,
+                   _channelitem **p_item, _channelitem **p_prev)
+{
+    _channelitem *prev = NULL;
+    _channelitem *item = NULL;
+    if (queue->first != NULL) {
+        if (_channelitem_ID(queue->first) == itemid) {
+            item = queue->first;
+        }
+        else {
+            prev = queue->first;
+            while (prev->next != NULL) {
+                if (_channelitem_ID(prev->next) == itemid) {
+                    item = prev->next;
+                    break;
+                }
+                prev = prev->next;
+            }
+            if (item == NULL) {
+                prev = NULL;
+            }
+        }
+    }
+    if (p_item != NULL) {
+        *p_item = item;
+    }
+    if (p_prev != NULL) {
+        *p_prev = prev;
+    }
+    return (item != NULL);
+}
+
+static void
+_channelqueue_remove(_channelqueue *queue, _channelitem_id_t itemid,
+                     _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
+{
+    _channelitem *prev = NULL;
+    _channelitem *item = NULL;
+    int found = _channelqueue_find(queue, itemid, &item, &prev);
+    if (!found) {
+        return;
+    }
+
+    assert(item->waiting != NULL);
+    assert(!item->waiting->received);
+    if (prev == NULL) {
+        assert(queue->first == item);
+        queue->first = item->next;
+    }
+    else {
+        assert(queue->first != item);
+        assert(prev->next == item);
+        prev->next = item->next;
+    }
+    item->next = NULL;
+
+    if (queue->last == item) {
+        queue->last = prev;
+    }
+    queue->count -= 1;
+
+    _channelitem_popped(item, p_data, p_waiting);
 }
 
 static void
@@ -762,9 +903,6 @@ _channelqueue_drop_interpreter(_channelqueue *queue, int64_t interp)
             }
             else {
                 prev->next = item->next;
-            }
-            if (item->recv_mutex != NULL) {
-                PyThread_release_lock(item->recv_mutex);
             }
             _channelitem_free(item);
             queue->count -= 1;
@@ -1065,7 +1203,7 @@ _channel_free(_PyChannelState *chan)
 
 static int
 _channel_add(_PyChannelState *chan, int64_t interp,
-             _PyCrossInterpreterData *data, struct wait_info *wait)
+             _PyCrossInterpreterData *data, _waiting_t *waiting)
 {
     int res = -1;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1079,9 +1217,10 @@ _channel_add(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    if (_channelqueue_put(chan->queue, data, wait) != 0) {
+    if (_channelqueue_put(chan->queue, data, waiting) != 0) {
         goto done;
     }
+    // Any errors past this point must cause a _waiting_release() call.
 
     res = 0;
 done:
@@ -1091,7 +1230,7 @@ done:
 
 static int
 _channel_next(_PyChannelState *chan, int64_t interp,
-              _PyCrossInterpreterData **res)
+              _PyCrossInterpreterData **p_data, _waiting_t **p_waiting)
 {
     int err = 0;
     PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
@@ -1105,15 +1244,11 @@ _channel_next(_PyChannelState *chan, int64_t interp,
         goto done;
     }
 
-    PyThread_type_lock recv_mutex = NULL;
-    _PyCrossInterpreterData *data = _channelqueue_get(chan->queue, &recv_mutex);
-    if (data == NULL && !PyErr_Occurred() && chan->closing != NULL) {
+    int empty = _channelqueue_get(chan->queue, p_data, p_waiting);
+    assert(empty == 0 || empty == ERR_CHANNEL_EMPTY);
+    assert(!PyErr_Occurred());
+    if (empty && chan->closing != NULL) {
         chan->open = 0;
-    }
-    *res = data;
-
-    if (recv_mutex != NULL) {
-        PyThread_release_lock(recv_mutex);
     }
 
 done:
@@ -1122,6 +1257,26 @@ done:
         _channel_finish_closing(chan);
     }
     return err;
+}
+
+static void
+_channel_remove(_PyChannelState *chan, _channelitem_id_t itemid)
+{
+    _PyCrossInterpreterData *data = NULL;
+    _waiting_t *waiting = NULL;
+
+    PyThread_acquire_lock(chan->mutex, WAIT_LOCK);
+    _channelqueue_remove(chan->queue, itemid, &data, &waiting);
+    PyThread_release_lock(chan->mutex);
+
+    (void)_release_xid_data(data, XID_IGNORE_EXC | XID_FREE);
+    if (waiting != NULL) {
+        _waiting_release(waiting, 0);
+    }
+
+    if (chan->queue->count == 0) {
+        _channel_finish_closing(chan);
+    }
 }
 
 static int
@@ -1636,7 +1791,7 @@ _channel_destroy(_channels *channels, int64_t id)
 
 static int
 _channel_send(_channels *channels, int64_t id, PyObject *obj,
-              struct wait_info *wait)
+              _waiting_t *waiting)
 {
     PyInterpreterState *interp = _get_current_interp();
     if (interp == NULL) {
@@ -1671,7 +1826,8 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj,
     }
 
     // Add the data to the channel.
-    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data, wait);
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp),
+                           data, waiting);
     PyThread_release_lock(mutex);
     if (res != 0) {
         // We may chain an exception here:
@@ -1683,43 +1839,71 @@ _channel_send(_channels *channels, int64_t id, PyObject *obj,
     return 0;
 }
 
+static void
+_channel_clear_sent(_channels *channels, int64_t cid, _waiting_t *waiting)
+{
+    // Look up the channel.
+    PyThread_type_lock mutex = NULL;
+    _PyChannelState *chan = NULL;
+    int err = _channels_lookup(channels, cid, &mutex, &chan);
+    if (err != 0) {
+        // The channel was already closed, etc.
+        assert(waiting->status == WAITING_RELEASED);
+        return;  // Ignore the error.
+    }
+    assert(chan != NULL);
+    // Past this point we are responsible for releasing the mutex.
+
+    _channelitem_id_t itemid = _waiting_get_itemid(waiting);
+    _channel_remove(chan, itemid);
+
+    PyThread_release_lock(mutex);
+}
+
 static int
 _channel_send_wait(_channels *channels, int64_t cid, PyObject *obj)
 {
-    PyThread_type_lock mutex = PyThread_allocate_lock();
-    if (mutex == NULL) {
-        PyErr_NoMemory();
+    // We use a stack variable here, so we must ensure that &waiting
+    // is not held by any channel item at the point this function exits.
+    _waiting_t waiting;
+    if (_waiting_init(&waiting) < 0) {
+        assert(PyErr_Occurred());
         return -1;
     }
-    PyThread_acquire_lock(mutex, NOWAIT_LOCK);
 
     /* Queue up the object. */
-    struct wait_info wait = (struct wait_info){
-        .mutex = mutex,
-    };
-    int res = _channel_send(channels, cid, obj, &wait);
+    int res = _channel_send(channels, cid, obj, &waiting);
     if (res < 0) {
-        PyThread_release_lock(mutex);
+        assert(waiting.status == WAITING_NO_STATUS);
         goto finally;
     }
 
     /* Wait until the object is received. */
-    if (wait_for_lock(mutex) < 0) {
-        // XXX Remove the item from the queue.
+    if (wait_for_lock(waiting.mutex) < 0) {
         assert(PyErr_Occurred());
-        res = -1;
-        goto finally;
+        /* The send() call is failing now, so make sure the item
+           won't be received. */
+        _channel_clear_sent(channels, cid, &waiting);
+        assert(waiting.status == WAITING_RELEASED);
+        if (!waiting.received) {
+            res = -1;
+            goto finally;
+        }
+        // XXX Emit a warning if not a TimeoutError?
+        PyErr_Clear();
     }
-    if (!wait.received) {
+    else if (!waiting.received) {
+        assert(waiting.status == WAITING_RELEASED);
         res = ERR_CHANNEL_CLOSED_WAITING;
         goto finally;
     }
 
     /* success! */
+    assert(waiting.status == WAITING_RELEASED);
     res = 0;
 
 finally:
-    PyThread_free_lock(mutex);
+    _waiting_clear(&waiting);
     return res;
 }
 
@@ -1750,7 +1934,9 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
 
     // Pop off the next item from the channel.
     _PyCrossInterpreterData *data = NULL;
-    err = _channel_next(chan, PyInterpreterState_GetID(interp), &data);
+    _waiting_t *waiting = NULL;
+    err = _channel_next(chan, PyInterpreterState_GetID(interp), &data,
+                        &waiting);
     PyThread_release_lock(mutex);
     if (err != 0) {
         return err;
@@ -1766,6 +1952,9 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
         assert(PyErr_Occurred());
         // It was allocated in _channel_send(), so we free it.
         (void)_release_xid_data(data, XID_IGNORE_EXC | XID_FREE);
+        if (waiting != NULL) {
+            _waiting_release(waiting, 0);
+        }
         return -1;
     }
     // It was allocated in _channel_send(), so we free it.
@@ -1774,7 +1963,15 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
         // The source interpreter has been destroyed already.
         assert(PyErr_Occurred());
         Py_DECREF(obj);
+        if (waiting != NULL) {
+            _waiting_release(waiting, 0);
+        }
         return -1;
+    }
+
+    // Notify the sender.
+    if (waiting != NULL) {
+        _waiting_release(waiting, 1);
     }
 
     *res = obj;
