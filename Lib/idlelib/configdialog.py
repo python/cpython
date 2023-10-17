@@ -211,14 +211,8 @@ class ConfigDialog(Toplevel):
                   contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
-        """Remove current key bindings.
-        Iterate over window instances defined in parent and remove
-        the keybindings.
-        """
-        # Before a config is saved, some cleanup of current
-        # config must be done - remove the previous keybindings.
-        win_instances = self.parent.instance_dict.keys()
-        for instance in win_instances:
+        """Remove current key bindings in current windows."""
+        for instance in self.parent.instance_dict:
             instance.RemoveKeybindings()
 
     def activate_config_changes(self):
@@ -227,8 +221,7 @@ class ConfigDialog(Toplevel):
         Dynamically update the current parent window instances
         with some of the configuration changes.
         """
-        win_instances = self.parent.instance_dict.keys()
-        for instance in win_instances:
+        for instance in self.parent.instance_dict:
             instance.ResetColorizer()
             instance.ResetFont()
             instance.set_notabs_indentwidth()
