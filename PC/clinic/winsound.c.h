@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(winsound_PlaySound__doc__,
 "PlaySound($module, /, sound, flags)\n"
@@ -205,4 +206,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21584101f656198f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=191d4fb1542c7abf input=a9049054013a1b77]*/
