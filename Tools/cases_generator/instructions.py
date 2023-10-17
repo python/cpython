@@ -107,8 +107,7 @@ class Instruction:
             if effect.name != UNUSED:
                 self.active_caches.append(ActiveCacheEffect(effect, offset))
             offset += effect.size
-        if self.active_caches:
-            self.instr_flags.HAS_OPERAND_FLAG = True
+
         if self.instr_flags.HAS_ARG_FLAG:
             fmt = "IB"
         else:
