@@ -84,12 +84,17 @@ def compile_host_python(context):
             call(["make", "--jobs", str(cpu_count()), "all"],
                  quiet=context.quiet)
 
-    # XXX `python.exe` on Mac
     binary = build_dir / "python"
+    if not binary.is_file():
+        binary = binary.with_suffix(".exe")
+        if not binary.is_file():
+            raise FileNotFoundError(f"Unable to find `python(.exe)` in {build_dir}")
     cmd = [binary, "-c",
             "import sys; "
             "print(f'{sys.version_info.major}.{sys.version_info.minor}')"]
     version = subprocess.check_output(cmd, encoding="utf-8").strip()
+
+    print(f"Python {version} @ {binary}")
 
     return binary, version
 
