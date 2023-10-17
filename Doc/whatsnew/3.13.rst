@@ -1059,6 +1059,11 @@ New Features
   (version 3.13).
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* Add :c:func:`PySys_Audit` and :c:func:`PySys_AuditTuple` functions to the
+  limited C API.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+
 Porting to Python 3.13
 ----------------------
 

@@ -2474,3 +2474,7 @@
     added = '3.13'
 [function.PyMem_RawFree]
     added = '3.13'
+[function.PySys_Audit]
+    added = '3.13'
+[function.PySys_AuditTuple]
+    added = '3.13'
