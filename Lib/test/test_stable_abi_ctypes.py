@@ -626,6 +626,8 @@ SYMBOL_NAMES = (
     "PySys_AddWarnOption",
     "PySys_AddWarnOptionUnicode",
     "PySys_AddXOption",
+    "PySys_Audit",
+    "PySys_AuditTuple",
     "PySys_FormatStderr",
     "PySys_FormatStdout",
     "PySys_GetObject",
