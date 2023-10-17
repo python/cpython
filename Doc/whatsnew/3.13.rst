@@ -691,12 +691,16 @@ Removed
 PEP 594: dead batteries
 -----------------------
 
-* :pep:`594`: Removed 19 modules from the standard library,
+* :pep:`594` removed 19 modules from the standard library,
   deprecated in Python 3.11:
 
-  * :mod:`!telnetlib`, :use the projects
-    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
-    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+  * :mod:`!aifc`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!audioop`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!chunk`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
   * :mod:`!cgi` and :mod:`!cgitb`.
@@ -711,11 +715,6 @@ PEP 594: dead batteries
       directly on the desired query string, except for ``multipart/form-data``
       input, which can be handled as described for ``cgi.parse_multipart()``.
 
-    * ``cgi.parse_multipart()`` can be replaced with the functionality in the
-      :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
-      :class:`email.message.Message`) which implements the same MIME RFCs, or
-      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
-
     * ``cgi.parse_header()`` can be replaced with the functionality in the
       :mod:`email` package, which implements the same MIME RFCs. For example,
       with :class:`email.message.EmailMessage`::
@@ -725,46 +724,12 @@ PEP 594: dead batteries
           msg['content-type'] = 'application/json; charset="utf8"'
           main, params = msg.get_content_type(), msg['content-type'].params
 
+    * ``cgi.parse_multipart()`` can be replaced with the functionality in the
+      :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
+      :class:`email.message.Message`) which implements the same MIME RFCs, or
+      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+
     (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!sndhdr`: use the projects
-    `filetype <https://pypi.org/project/filetype/>`_,
-    `puremagic <https://pypi.org/project/puremagic/>`_, or
-    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!pipes`: use the :mod:`subprocess` module instead.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!ossaudiodev`: use the
-    `pygame project <https://www.pygame.org/>`_ for audio playback.
-    (Contributed by Victor Stinner in :gh:`104780`.)
-
-  * :mod:`!sunau`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!mailcap`.
-    The :mod:`mimetypes` module provides an alternative.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!spwd`:
-    the `python-pam project <https://pypi.org/project/python-pam/>`_
-    can be used instead.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!nntplib`:
-    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
-    can be used instead.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!nis`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!xdrlib`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!msilib`.
-    (Contributed by Zachary Ware in :gh:`104773`.)
 
   * :mod:`!crypt` module and its private :mod:`!_crypt` extension.
     The :mod:`hashlib` module is a potential replacement for certain use cases.
@@ -781,23 +746,57 @@ PEP 594: dead batteries
 
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-  * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!aifc`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!audioop`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!chunk`.
-    (Contributed by Victor Stinner in :gh:`104773`.)
-
-  * :mod:`!imghdr`:
-    use the projects
+  * :mod:`!imghdr`: use the projects
     `filetype <https://pypi.org/project/filetype/>`_,
     `puremagic <https://pypi.org/project/puremagic/>`_,
     or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!mailcap`.
+    The :mod:`mimetypes` module provides an alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!msilib`.
+    (Contributed by Zachary Ware in :gh:`104773`.)
+
+  * :mod:`!nis`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!nntplib`:
+    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!ossaudiodev`: use the
+    `pygame project <https://www.pygame.org/>`_ for audio playback.
+    (Contributed by Victor Stinner in :gh:`104780`.)
+
+  * :mod:`!pipes`: use the :mod:`subprocess` module instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sndhdr`: use the projects
+    `filetype <https://pypi.org/project/filetype/>`_,
+    `puremagic <https://pypi.org/project/puremagic/>`_, or
+    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!spwd`:
+    the `python-pam project <https://pypi.org/project/python-pam/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sunau`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!telnetlib`, use the projects
+    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
+    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!xdrlib`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
 * Remove support for the keyword-argument method of creating
