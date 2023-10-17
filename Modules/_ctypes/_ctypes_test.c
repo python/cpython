@@ -1,10 +1,11 @@
+#define Py_LIMITED_API 0x03060000
+
 #include <Python.h>
 
-#ifdef MS_WIN32
-#include <windows.h>
-#endif
-
 #include <stdlib.h>               // qsort()
+#ifdef MS_WIN32
+#  include <windows.h>
+#endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
 
