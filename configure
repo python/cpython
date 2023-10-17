@@ -27926,6 +27926,7 @@ printf "%s\n" "$ac_cv_libatomic_needed" >&6; }
 if test "x$ac_cv_libatomic_needed" = xyes
 then :
   LIBS="${LIBS} -latomic"
+  LIBATOMIC=${LIBATOMIC-"-latomic"}
 fi
 CPPFLAGS=$save_CPPFLAGS
 
@@ -30080,6 +30081,7 @@ then :
 
 
 
+as_fn_append MODULE_BLOCK "MODULE__TESTCAPI_LDFLAGS=$LIBATOMIC$as_nl"
 
 fi
    if test "$py_cv_module__testcapi" = yes; then
