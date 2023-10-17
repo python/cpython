@@ -2023,10 +2023,10 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
        return repr(self)
 */
 static PyObject*
-bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+bad_get(PyObject *module, PyObject *args)
 {
     PyObject *self, *obj, *cls;
-    if (!_PyArg_UnpackStack(args, nargs, "bad_get", 3, 3, &self, &obj, &cls)) {
+    if (!PyArg_ParseTuple(args, "OOO", &self, &obj, &cls)) {
         return NULL;
     }
 
@@ -3340,7 +3340,7 @@ static PyMethodDef TestMethods[] = {
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
+    {"bad_get", bad_get, METH_VARARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
     {"decref_freed_object", decref_freed_object, METH_NOARGS},
