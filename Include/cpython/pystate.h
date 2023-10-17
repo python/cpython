@@ -291,7 +291,7 @@ struct _xid {
     // with deleted interpreters.  Note that IDs are never re-used, so
     // each one will always correspond to a specific interpreter
     // (whether still alive or not).
-    int64_t interp;
+    int64_t interpid;
     // new_object is a function that returns a new object in the current
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field
