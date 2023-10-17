@@ -1432,67 +1432,64 @@ class CLanguage(Language):
                     deprecated_keywords[i] = p
 
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
-            if vararg == NO_VARARG:
-                # FIXME: refactor the code to not declare args_declaration
-                # if limited_capi is true
-                if not limited_capi:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_UnpackKeywords()')
-                args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
-                    min_pos,
-                    max_pos,
-                    min_kw_only
-                )
-                nargs = "nargs"
-            else:
-                if not limited_capi:
-                    clinic.add_include('pycore_modsupport.h',
-                                       '_PyArg_UnpackKeywordsWithVararg()')
-                args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
-                    min_pos,
-                    max_pos,
-                    min_kw_only,
-                    vararg
-                )
-                nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
 
             if limited_capi:
                 parser_code = None
                 fastcall = False
-
-            elif fastcall:
-                flags = "METH_FASTCALL|METH_KEYWORDS"
-                parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
-                argname_fmt = 'args[%d]'
-                declarations = declare_parser(f, clinic=clinic,
-                                              limited_capi=clinic.limited_capi)
-                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
-                if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
-                parser_code = [normalize_snippet("""
-                    args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
-                    if (!args) {{
-                        goto exit;
-                    }}
-                    """ % args_declaration, indent=4)]
             else:
-                # positional-or-keyword arguments
-                flags = "METH_VARARGS|METH_KEYWORDS"
-                parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
-                argname_fmt = 'fastargs[%d]'
-                declarations = declare_parser(f, clinic=clinic,
-                                              limited_capi=clinic.limited_capi)
-                declarations += "\nPyObject *argsbuf[%s];" % len(converters)
-                declarations += "\nPyObject * const *fastargs;"
-                declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
-                if has_optional_kw:
-                    declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
-                parser_code = [normalize_snippet("""
-                    fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
-                    if (!fastargs) {{
-                        goto exit;
-                    }}
-                    """ % args_declaration, indent=4)]
+                if vararg == NO_VARARG:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywords()')
+                    args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
+                        min_pos,
+                        max_pos,
+                        min_kw_only
+                    )
+                    nargs = "nargs"
+                else:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywordsWithVararg()')
+                    args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
+                        min_pos,
+                        max_pos,
+                        min_kw_only,
+                        vararg
+                    )
+                    nargs = f"Py_MIN(nargs, {max_pos})" if max_pos else "0"
+
+                if fastcall:
+                    flags = "METH_FASTCALL|METH_KEYWORDS"
+                    parser_prototype = self.PARSER_PROTOTYPE_FASTCALL_KEYWORDS
+                    argname_fmt = 'args[%d]'
+                    declarations = declare_parser(f, clinic=clinic,
+                                                  limited_capi=clinic.limited_capi)
+                    declarations += "\nPyObject *argsbuf[%s];" % len(converters)
+                    if has_optional_kw:
+                        declarations += "\nPy_ssize_t noptargs = %s + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - %d;" % (nargs, min_pos + min_kw_only)
+                    parser_code = [normalize_snippet("""
+                        args = %s(args, nargs, NULL, kwnames, &_parser, %s, argsbuf);
+                        if (!args) {{
+                            goto exit;
+                        }}
+                        """ % args_declaration, indent=4)]
+                else:
+                    # positional-or-keyword arguments
+                    flags = "METH_VARARGS|METH_KEYWORDS"
+                    parser_prototype = self.PARSER_PROTOTYPE_KEYWORD
+                    argname_fmt = 'fastargs[%d]'
+                    declarations = declare_parser(f, clinic=clinic,
+                                                  limited_capi=clinic.limited_capi)
+                    declarations += "\nPyObject *argsbuf[%s];" % len(converters)
+                    declarations += "\nPyObject * const *fastargs;"
+                    declarations += "\nPy_ssize_t nargs = PyTuple_GET_SIZE(args);"
+                    if has_optional_kw:
+                        declarations += "\nPy_ssize_t noptargs = %s + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - %d;" % (nargs, min_pos + min_kw_only)
+                    parser_code = [normalize_snippet("""
+                        fastargs = %s(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, %s, argsbuf);
+                        if (!fastargs) {{
+                            goto exit;
+                        }}
+                        """ % args_declaration, indent=4)]
 
             if requires_defining_class:
                 flags = 'METH_METHOD|' + flags
