@@ -844,8 +844,8 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             break;
         }
         else {
-            // If opcode has ERROR or DEOPT, set need_up to true
-            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG)) {
+            // If opcode has ERROR or DEOPT, set need_ip to true
+            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG) || opcode == _PUSH_FRAME) {
                 need_ip = true;
             }
         }
