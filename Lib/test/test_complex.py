@@ -45,6 +45,13 @@ class ComplexLike:
     def __complex__(self):
         return self.value
 
+class ComplexLikeSubclass(complex):
+    def __init__(self, value):
+        self.value = value
+
+    def __complex__(self):
+        return self.value
+
 
 # These tests ensure that complex math does the right thing
 
@@ -487,38 +494,17 @@ class ComplexTest(unittest.TestCase):
         self.assertRaises(TypeError, complex, MyInt(42))
         self.assertRaises(TypeError, complex, 123, MyInt(42))
 
-        class complex0(complex):
-            """Test usage of __complex__() when inheriting from 'complex'"""
-            def __complex__(self):
-                return 42j
-
-        class complex1(complex):
-            """Test usage of __complex__() with a __new__() method"""
-            def __new__(self, value=0j):
-                return complex.__new__(self, 2*value)
-            def __complex__(self):
-                return self
-
-        class complex2(complex):
-            """Make sure that __complex__() calls fail if anything other than a
-            complex is returned"""
-            def __complex__(self):
-                return None
-
-        self.assertEqual(complex(complex0(1j)), 42j)
+        self.assertEqual(complex(ComplexLikeSubclass(42j)), 42j)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(complex(complex1(1j)), 2j)
-        self.assertRaises(TypeError, complex, complex2(1j))
+            self.assertEqual(complex(ComplexLikeSubclass(ComplexSubclass(2j))), 2j)
+        self.assertRaises(TypeError, complex, ComplexLikeSubclass(42))
 
     def test___complex__(self):
         z = 3 + 4j
         self.assertEqual(z.__complex__(), z)
         self.assertEqual(type(z.__complex__()), complex)
 
-        class complex_subclass(complex):
-            pass
-
-        z = complex_subclass(3 + 4j)
+        z = ComplexSubclass(3 + 4j)
         self.assertEqual(z.__complex__(), 3 + 4j)
         self.assertEqual(type(z.__complex__()), complex)
 

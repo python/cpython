@@ -54,6 +54,13 @@ class FloatLike:
     def __float__(self):
         return self.value
 
+class FloatLikeSubclass(float):
+    def __init__(self, value):
+        self.value = value
+
+    def __float__(self):
+        return self.value
+
 
 class GeneralFloatCases(unittest.TestCase):
 
@@ -204,20 +211,6 @@ class GeneralFloatCases(unittest.TestCase):
 
     def test_floatconversion(self):
         # Make sure that calls to __float__() work properly
-        class Foo2(float):
-            def __float__(self):
-                return 42.
-
-        class Foo3(float):
-            def __new__(cls, value=0.):
-                return float.__new__(cls, 2*value)
-
-            def __float__(self):
-                return self
-
-        class Foo4(float):
-            def __float__(self):
-                return 42
 
         # Issue 5759: __float__ not called on str subclasses (though it is on
         # unicode subclasses).
@@ -226,10 +219,10 @@ class GeneralFloatCases(unittest.TestCase):
                 return float(str(self)) + 1
 
         self.assertEqual(float(FloatLike(42.)), 42.)
-        self.assertEqual(float(Foo2()), 42.)
+        self.assertEqual(float(FloatLikeSubclass(42.)), 42.)
         with self.assertWarns(DeprecationWarning):
-            self.assertEqual(float(Foo3(21)), 42.)
-        self.assertRaises(TypeError, float, Foo4(42))
+            self.assertEqual(float(FloatLikeSubclass(FloatSubclass(42))), 42.)
+        self.assertRaises(TypeError, float, FloatLikeSubclass(42))
         self.assertEqual(float(FooStr('8')), 9.)
 
         self.assertRaises(TypeError, time.sleep, FloatLike(""))
@@ -254,13 +247,11 @@ class GeneralFloatCases(unittest.TestCase):
             float(x='3.14')
 
     def test_keywords_in_subclass(self):
-        class subclass(float):
-            pass
-        u = subclass(2.5)
-        self.assertIs(type(u), subclass)
+        u = FloatSubclass(2.5)
+        self.assertIs(type(u), FloatSubclass)
         self.assertEqual(float(u), 2.5)
         with self.assertRaises(TypeError):
-            subclass(x=0)
+            FloatSubclass(x=0)
 
         class subclass_with_init(float):
             def __init__(self, arg, newarg=None):
