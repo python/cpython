@@ -932,12 +932,7 @@ webbrowser
 Others
 ------
 
-* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
-  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
-  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
-  added in Python 3.8 and the old macros were deprecated in Python 3.11.
-  (Contributed by Irit Katriel in :gh:`105111`.)
-
+* None yet
 
 Porting to Python 3.13
 ======================
@@ -945,34 +940,7 @@ Porting to Python 3.13
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
-  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
-  and ``Py_TRASHCAN_END``.
-
-  A tp_dealloc function that has the old macros, such as::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_SAFE_BEGIN(p);
-        ...
-        Py_TRASHCAN_SAFE_END
-    }
-
-  should migrate to the new macros as follows::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-        ...
-        Py_TRASHCAN_END
-    }
-
-  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
-  should be the deallocation function it is in.
+* None yet
 
 
 Build Changes
@@ -1168,6 +1136,35 @@ Porting to Python 3.13
   are now undefined by ``<Python.h>``.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
+  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
+  and ``Py_TRASHCAN_END``.
+
+  A tp_dealloc function that has the old macros, such as::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_SAFE_BEGIN(p);
+        ...
+        Py_TRASHCAN_SAFE_END
+    }
+
+  should migrate to the new macros as follows::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
+        ...
+        Py_TRASHCAN_END
+    }
+
+  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
+  should be the deallocation function it is in.
+
 * The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
   contains embedded null characters. To accept embedded null characters and
   truncate on purpose at the first null byte,
@@ -1301,6 +1298,12 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
   Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
+  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
+  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
+  added in Python 3.8 and the old macros were deprecated in Python 3.11.
+  (Contributed by Irit Katriel in :gh:`105111`.)
 
 * Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
   functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
