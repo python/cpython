@@ -296,7 +296,7 @@ class Parser:
         holes = []
         holes_data = []
         padding = 0
-        while self.alignment and len(self.body) % self.alignment:
+        while len(self.body) % self.alignment:
             self.body.append(0)
             padding += 1
         offset_data = 0
@@ -489,6 +489,7 @@ class Target:
     model: str
     ghccc: bool
     pyconfig: pathlib.Path
+    alignment: int
 
 
 TARGETS = [
@@ -499,6 +500,7 @@ TARGETS = [
         model="large",
         ghccc=False,
         pyconfig=PYCONFIG_H,
+        alignment=8,
     ),
     Target(
         pattern=r"aarch64-.*-linux-gnu",
@@ -507,6 +509,7 @@ TARGETS = [
         model="large",
         ghccc=False,
         pyconfig=PYCONFIG_H,
+        alignment=8,
     ),
     Target(
         pattern=r"i686-pc-windows-msvc",
@@ -515,6 +518,7 @@ TARGETS = [
         model="small",
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
+        alignment=1,
     ),
     Target(
         pattern=r"x86_64-apple-darwin.*",
@@ -523,6 +527,7 @@ TARGETS = [
         model="medium",
         ghccc=True,
         pyconfig=PYCONFIG_H,
+        alignment=1,
     ),
     Target(
         pattern=r"x86_64-pc-windows-msvc",
@@ -531,6 +536,7 @@ TARGETS = [
         model="medium",
         ghccc=True,
         pyconfig=PC_PYCONFIG_H,
+        alignment=1,
     ),
     Target(
         pattern=r"x86_64-.*-linux-gnu",
@@ -539,6 +545,7 @@ TARGETS = [
         model="medium",
         ghccc=True,
         pyconfig=PYCONFIG_H,
+        alignment=1,
     ),
 ]
 
