@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(SHA1Type_copy__doc__,
 "copy($self, /)\n"
@@ -147,4 +148,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7efbe42154a7a7f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=41fc7579213b57b4 input=a9049054013a1b77]*/

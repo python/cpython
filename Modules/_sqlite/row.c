@@ -21,6 +21,10 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "row.h"
 #include "cursor.h"
 

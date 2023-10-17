@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_testinternalcapi_compiler_cleandoc__doc__,
 "compiler_cleandoc($module, /, doc)\n"
@@ -313,4 +314,4 @@ _testinternalcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignore
 {
     return _testinternalcapi_test_long_numbits_impl(module);
 }
-/*[clinic end generated code: output=59144f59957627bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3425f97821fc7462 input=a9049054013a1b77]*/

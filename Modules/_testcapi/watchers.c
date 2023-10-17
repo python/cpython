@@ -1,3 +1,6 @@
+// clinic/watchers.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 
 #include "clinic/watchers.c.h"

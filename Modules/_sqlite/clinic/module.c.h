@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(pysqlite_complete_statement__doc__,
 "complete_statement($module, /, statement)\n"
@@ -207,4 +208,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a14893a7c2eead5e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=457ab0fdbb9e1880 input=a9049054013a1b77]*/

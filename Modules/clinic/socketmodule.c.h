@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
@@ -90,4 +91,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1b68ae94d6cbeeb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c85517815c2d69cf input=a9049054013a1b77]*/

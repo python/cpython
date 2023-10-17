@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_blake2s_new__doc__,
 "blake2s(data=b\'\', /, *, digest_size=_blake2.blake2s.MAX_DIGEST_SIZE,\n"
@@ -276,4 +277,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=90ca2b52b8c40785 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=79b3479e90f4d077 input=a9049054013a1b77]*/

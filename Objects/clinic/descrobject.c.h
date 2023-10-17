@@ -6,6 +6,7 @@ preserve
 #  include "pycore_gc.h"          // PyGC_Head
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 mappingproxy_new_impl(PyTypeObject *type, PyObject *mapping);
@@ -166,4 +167,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a97dc44d12f9f9b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a4664ccf3da10f5a input=a9049054013a1b77]*/

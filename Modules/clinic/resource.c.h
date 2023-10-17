@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 #if defined(HAVE_GETRUSAGE)
 
 PyDoc_STRVAR(resource_getrusage__doc__,
@@ -172,4 +174,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=2376b9a3f03777aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e905b2f5c35170e input=a9049054013a1b77]*/

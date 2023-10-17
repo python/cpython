@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_testcapi_pyobject_fastcalldict__doc__,
 "pyobject_fastcalldict($module, func, func_args, kwargs, /)\n"
 "--\n"
@@ -204,4 +206,4 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0667266b825ec9ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=210ae67caab177ba input=a9049054013a1b77]*/

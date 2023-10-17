@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(bytes___bytes____doc__,
 "__bytes__($self, /)\n"
@@ -1060,4 +1061,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a9f5c28cbfe7592 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da013a7e257f5c6e input=a9049054013a1b77]*/

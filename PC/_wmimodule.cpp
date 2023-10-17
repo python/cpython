@@ -8,6 +8,11 @@
 // Version history
 //  2022-08: Initial contribution (Steve Dower)
 
+// clinic/_wmimodule.cpp.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #define _WIN32_DCOM
 #include <Windows.h>
 #include <comdef.h>

@@ -6,6 +6,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 
 /* State for testing module state access from methods */

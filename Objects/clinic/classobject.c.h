@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(method___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
@@ -80,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a0d17bad3b0734d9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a5e3f2d0726f189 input=a9049054013a1b77]*/

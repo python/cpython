@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 
