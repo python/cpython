@@ -755,6 +755,11 @@
             break;
         }
 
+        case _PUSH_FRAME: {
+            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
+            break;
+        }
+
         case CALL_TYPE_1: {
             STACK_SHRINK(oparg);
             STACK_SHRINK(1);

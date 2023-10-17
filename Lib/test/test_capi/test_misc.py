@@ -2754,7 +2754,6 @@ class TestUops(unittest.TestCase):
             with self.assertRaises(StopIteration):
                 next(it)
 
-    @unittest.skip("fails because _PUSH_FRAME is not a valid uop (uses next_instr)")
     def test_call_py_exact_args(self):
         def testfunc(n):
             def dummy(x):
