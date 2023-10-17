@@ -24,12 +24,11 @@ repos:
         types_or: [c, inc, python, rst]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.7.0
+    rev: v0.8.1
     hooks:
       - id: sphinx-lint
-        args: [--enable=default-role, -j1]
+        args: [--enable=default-role]
         files: ^Doc/|^Misc/NEWS.d/next/
-        types: [rst]
 
   - repo: meta
     hooks:
