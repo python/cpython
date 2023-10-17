@@ -894,6 +894,7 @@ sock_call_ex(PySocketSockObject *s,
              int (*sock_func) (PySocketSockObject *s, void *data),
              void *data,
              int connect,
+             int accept,
              int *err,
              _PyTime_t timeout)
 {
@@ -908,9 +909,12 @@ sock_call_ex(PySocketSockObject *s,
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */
     while (1) {
+        // puts("outer loop ...");
         /* For connect(), poll even for blocking socket. The connection
            runs asynchronously. */
-        if (has_timeout || connect) {
+        // if (has_timeout || connect) {
+        if (connect || (accept && has_timeout)) {
+            // puts("  select ...");
             if (has_timeout) {
                 _PyTime_t interval;
 
@@ -970,9 +974,12 @@ sock_call_ex(PySocketSockObject *s,
         /* inner loop to retry sock_func() when sock_func() is interrupted
            by a signal */
         while (1) {
+            // puts("  inner loop ...");
             Py_BEGIN_ALLOW_THREADS
             res = sock_func(s, data);
             Py_END_ALLOW_THREADS
+
+            // printf("    res: %d, errno: %d\n", res, errno);
 
             if (res) {
                 /* sock_func() succeeded */
@@ -999,6 +1006,8 @@ sock_call_ex(PySocketSockObject *s,
 
         if (s->sock_timeout > 0
             && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN))) {
+            PyErr_SetString(PyExc_TimeoutError, "timed out");
+            return -1;
             /* False positive: sock_func() failed with EWOULDBLOCK or EAGAIN.
 
                For example, select() could indicate a socket is ready for
@@ -1023,7 +1032,7 @@ sock_call(PySocketSockObject *s,
           int (*func) (PySocketSockObject *s, void *data),
           void *data)
 {
-    return sock_call_ex(s, writing, func, data, 0, NULL, s->sock_timeout);
+    return sock_call_ex(s, writing, func, data, 0, 0, NULL, s->sock_timeout);
 }
 
 
@@ -2911,7 +2920,7 @@ sock_accept(PySocketSockObject *s, PyObject *Py_UNUSED(ignored))
 
     ctx.addrlen = &addrlen;
     ctx.addrbuf = &addrbuf;
-    if (sock_call(s, 0, sock_accept_impl, &ctx) < 0)
+    if (sock_call_ex(s, 0, sock_accept_impl, &ctx, 0, 1, NULL, s->sock_timeout) < 0)
         return NULL;
     newfd = ctx.result;
 
@@ -3068,13 +3077,50 @@ static PyObject *
 sock_settimeout(PySocketSockObject *s, PyObject *arg)
 {
     _PyTime_t timeout;
+    int block;
 
     if (socket_parse_timeout(&timeout, arg) < 0)
         return NULL;
 
     s->sock_timeout = timeout;
 
-    int block = timeout < 0;
+    if (timeout == 0) {
+        block = 0;
+    } else if (timeout < 0) {
+        block = 1;
+
+        struct timeval zero = {
+            .tv_sec = 0,
+            .tv_usec = 0
+        };
+        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &zero,
+                       sizeof(struct timeval)) != 0) {
+            set_error();
+            return NULL;
+        }
+        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &zero,
+                   sizeof(struct timeval)) != 0) {
+            set_error();
+            return NULL;
+        }
+    } else {
+        block = 1;
+
+        struct timeval timeout_tv;
+        _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
+        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout_tv,
+                       sizeof(struct timeval)) != 0) {
+            set_error();
+            return NULL;
+        }
+        if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_tv,
+                   sizeof(struct timeval)) != 0) {
+            set_error();
+            return NULL;
+        }
+    }
+
+    // int block = timeout < 0;
     /* Blocking mode for a Python socket object means that operations
        like :meth:`recv` or :meth:`sendall` will block the execution of
        the current thread until they are complete or aborted with a
@@ -3456,13 +3502,13 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     if (raise) {
         /* socket.connect() raises an exception on error */
         if (sock_call_ex(s, 1, sock_connect_impl, NULL,
-                         1, NULL, s->sock_timeout) < 0)
+                         1, 0, NULL, s->sock_timeout) < 0)
             return -1;
     }
     else {
         /* socket.connect_ex() returns the error code on error */
         if (sock_call_ex(s, 1, sock_connect_impl, NULL,
-                         1, &err, s->sock_timeout) < 0)
+                         1, 0, &err, s->sock_timeout) < 0)
             return err;
     }
     return 0;
@@ -4424,7 +4470,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         ctx.buf = buf;
         ctx.len = len;
         ctx.flags = flags;
-        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, timeout) < 0)
+        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, 0, NULL, timeout) < 0)
             goto done;
         n = ctx.result;
         assert(n >= 0);
