@@ -583,6 +583,8 @@ class HighPage(Frame):
                 (*)theme_message: Label
         """
         self.theme_elements = {
+            # Display_name: ('internal_name, sort_number').
+            # TODO: remove sort_number unneeded with dict ordering.
             'Normal Code or Text': ('normal', '00'),
             'Code Context': ('context', '01'),
             'Python Keywords': ('keyword', '02'),
@@ -765,7 +767,7 @@ class HighPage(Frame):
             self.builtinlist.SetMenu(item_list, item_list[0])
         self.set_theme_type()
         # Load theme element option menu.
-        theme_names = list(self.theme_elements.keys())
+        theme_names = list(self.theme_elements)
         theme_names.sort(key=lambda x: self.theme_elements[x][1])
         self.targetlist.SetMenu(theme_names, theme_names[0])
         self.paint_theme_sample()
