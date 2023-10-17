@@ -932,8 +932,9 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``errno``, ``_ctypes_test``, ``_stat`` and ``_testimportmultiple`` C
-  extensions are now built with the :ref:`limited C API <limited-c-api>`.
+* The ``errno``, ``md5``, ``_ctypes_test``, ``_stat`` and
+  ``_testimportmultiple`` C extensions are now built with the :ref:`limited C
+  API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 

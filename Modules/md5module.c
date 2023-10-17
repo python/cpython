@@ -15,14 +15,12 @@
 */
 
 /* MD5 objects */
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
+
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
 #include "hashlib.h"
-#include "pycore_strhex.h"        // _Py_strhex()
-#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 /*[clinic input]
 module _md5
@@ -94,7 +92,7 @@ MD5_dealloc(MD5object *ptr)
     if (ptr->lock != NULL) {
         PyThread_free_lock(ptr->lock);
     }
-    PyTypeObject *tp = Py_TYPE(ptr);
+    PyTypeObject *tp = Py_TYPE((PyObject*)ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
     Py_DECREF(tp);
@@ -115,7 +113,7 @@ static PyObject *
 MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=bf055e08244bf5ee input=d89087dcfb2a8620]*/
 {
-    MD5State *st = _PyType_GetModuleState(cls);
+    MD5State *st = PyType_GetModuleState(cls);
 
     MD5object *newobj;
     if ((newobj = newMD5object(st))==NULL)
@@ -158,7 +156,16 @@ MD5Type_hexdigest_impl(MD5object *self)
     ENTER_HASHLIB(self);
     Hacl_Streaming_MD5_legacy_finish(self->hash_state, digest);
     LEAVE_HASHLIB(self);
-    return _Py_strhex((const char*)digest, MD5_DIGESTSIZE);
+
+    const char *hexdigits = "0123456789abcdef";
+    char digest_hex[MD5_DIGESTSIZE * 2];
+    char *str = digest_hex;
+    for (size_t i=0; i < MD5_DIGESTSIZE; i++) {
+        unsigned char byte = digest[i];
+        *str++ = hexdigits[byte >> 4];
+        *str++ = hexdigits[byte & 0x0f];
+    }
+    return PyUnicode_FromStringAndSize(digest_hex, sizeof(digest_hex));
 }
 
 static void update(Hacl_Streaming_MD5_state *state, uint8_t *buf, Py_ssize_t len) {
