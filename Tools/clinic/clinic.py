@@ -1344,6 +1344,8 @@ class CLanguage(Language):
                             """,
                         indent=4))
             else:
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_CheckPositional()')
                 parser_code = [normalize_snippet(f"""
                     if (!_PyArg_CheckPositional("{{name}}", {nargs}, {min_pos}, {max_args})) {{{{
                         goto exit;
@@ -1401,6 +1403,8 @@ class CLanguage(Language):
                 if limited_capi:
                     fastcall = False
                 if fastcall:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseStack()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
                             {parse_arguments})) {{
@@ -1428,7 +1432,12 @@ class CLanguage(Language):
                     deprecated_keywords[i] = p
 
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
-            if vararg == NO_VARARG:
+            if limited_capi:
+                args_declaration = None
+                nargs = None
+            elif vararg == NO_VARARG:
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_UnpackKeywords()')
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
@@ -1436,6 +1445,8 @@ class CLanguage(Language):
                 )
                 nargs = "nargs"
             else:
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_UnpackKeywordsWithVararg()')
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
                     max_pos,
@@ -1574,6 +1585,8 @@ class CLanguage(Language):
                         declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
 
                 elif fastcall:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseStackAndKeywords()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
                             {parse_arguments})) {{
@@ -1581,6 +1594,8 @@ class CLanguage(Language):
                         }}
                         """, indent=4)]
                 else:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseTupleAndKeywordsFast()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                             {parse_arguments})) {{
@@ -1626,12 +1641,16 @@ class CLanguage(Language):
 
             if not parses_keywords:
                 declarations = '{base_type_ptr}'
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_NoKeywords()')
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
                     }}
                     """, indent=4))
                 if not parses_positional:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_NoPositional()')
                     fields.insert(0, normalize_snippet("""
                         if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
                             goto exit;
@@ -3500,6 +3519,8 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             if expected_literal:
                 expected = f'"{expected}"'
+            if clinic is not None:
+                clinic.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
             return f'_PyArg_BadArgument("{{{{name}}}}", "{displayname}", {expected}, {{argname}});'
 
     def format_code(self, fmt: str, *,
