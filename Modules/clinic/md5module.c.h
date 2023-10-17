@@ -9,7 +9,7 @@ PyDoc_STRVAR(MD5Type_copy__doc__,
 "Return a copy of the hash object.");
 
 #define MD5TYPE_COPY_METHODDEF    \
-    {"copy", _PyCFunction_CAST(MD5Type_copy), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, MD5Type_copy__doc__},
+    {"copy", (PyCFunction)(void(*)(void))MD5Type_copy, METH_METHOD|METH_FASTCALL|METH_KEYWORDS, MD5Type_copy__doc__},
 
 static PyObject *
 MD5Type_copy_impl(MD5object *self, PyTypeObject *cls);
@@ -97,4 +97,4 @@ _md5_md5(PyObject *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=015f7613e3a9bb93 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81702ec915f36236 input=a9049054013a1b77]*/
