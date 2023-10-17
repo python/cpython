@@ -850,6 +850,19 @@ class TestChannels(TestBase):
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
 
+    def test_is_closed(self):
+        rch, sch = interpreters.create_channel()
+        rbefore = rch.is_closed
+        sbefore = sch.is_closed
+        rch.close()
+        rafter = rch.is_closed
+        safter = sch.is_closed
+
+        self.assertFalse(rbefore)
+        self.assertFalse(sbefore)
+        self.assertTrue(rafter)
+        self.assertTrue(safter)
+
 
 class TestRecvChannelAttrs(TestBase):
 
