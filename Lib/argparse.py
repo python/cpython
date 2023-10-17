@@ -2536,6 +2536,9 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         elif action.nargs == SUPPRESS:
             value = SUPPRESS
 
+        elif len(arg_strings) == 0:
+            value = '--'
+
         # all other types of nargs produce a list
         else:
             value = [self._get_value(action, v) for v in arg_strings]
