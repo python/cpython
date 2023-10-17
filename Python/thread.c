@@ -93,6 +93,40 @@ PyThread_set_stacksize(size_t size)
 }
 
 
+int
+PyThread_ParseTimeoutArg(PyObject *arg, int blocking, PY_TIMEOUT_T *timeout_p)
+{
+    assert(_PyTime_FromSeconds(-1) == PyThread_UNSET_TIMEOUT);
+    if (arg == NULL || arg == Py_None) {
+        *timeout_p = blocking ? PyThread_UNSET_TIMEOUT : 0;
+        return 0;
+    }
+    if (!blocking) {
+        PyErr_SetString(PyExc_ValueError,
+                        "can't specify a timeout for a non-blocking call");
+        return -1;
+    }
+
+    _PyTime_t timeout;
+    if (_PyTime_FromSecondsObject(&timeout, arg, _PyTime_ROUND_TIMEOUT) < 0) {
+        return -1;
+    }
+    if (timeout < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "timeout value must be a non-negative number");
+        return -1;
+    }
+
+    if (_PyTime_AsMicroseconds(timeout,
+                               _PyTime_ROUND_TIMEOUT) > PY_TIMEOUT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timeout value is too large");
+        return -1;
+    }
+    *timeout_p = timeout;
+    return 0;
+}
+
 PyLockStatus
 PyThread_acquire_lock_timed_with_retries(PyThread_type_lock lock,
                                          PY_TIMEOUT_T timeout)

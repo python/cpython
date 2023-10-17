@@ -864,22 +864,34 @@ class ChannelTests(TestBase):
 
         self.assertEqual(received, obj)
 
-    def test_send_closed_while_waiting(self):
+    def test_send_timeout(self):
         obj = b'spam'
-        wait = self.build_send_waiter(obj)
-        cid = channels.create()
-        def f():
-            wait()
-            channels.close(cid, force=True)
-        t = threading.Thread(target=f)
-        t.start()
-        with self.assertRaises(channels.ChannelClosedError):
-            channels.send(cid, obj, blocking=True)
-        t.join()
 
-    def test_send_buffer_closed_while_waiting(self):
+        with self.subTest('non-blocking with timeout'):
+            cid = channels.create()
+            with self.assertRaises(ValueError):
+                channels.send(cid, obj, blocking=False, timeout=0.1)
+
+        with self.subTest('timeout hit'):
+            cid = channels.create()
+            with self.assertRaises(TimeoutError):
+                channels.send(cid, obj, blocking=True, timeout=0.1)
+            with self.assertRaises(channels.ChannelEmptyError):
+                received = channels.recv(cid)
+                print(repr(received))
+
+        with self.subTest('timeout not hit'):
+            cid = channels.create()
+            def f():
+                recv_wait(cid)
+            t = threading.Thread(target=f)
+            t.start()
+            channels.send(cid, obj, blocking=True, timeout=10)
+            t.join()
+
+    def test_send_buffer_timeout(self):
         try:
-            self._has_run_once
+            self._has_run_once_timeout
         except AttributeError:
             # At the moment, this test leaks a few references.
             # It looks like the leak originates with the addition
@@ -888,19 +900,95 @@ class ChannelTests(TestBase):
             # if the refleak isn't fixed yet, so we skip here.
             raise unittest.SkipTest('temporarily skipped due to refleaks')
         else:
-            self._has_run_once = True
+            self._has_run_once_timeout = True
+
+        obj = bytearray(b'spam')
+
+        with self.subTest('non-blocking with timeout'):
+            cid = channels.create()
+            with self.assertRaises(ValueError):
+                channels.send_buffer(cid, obj, blocking=False, timeout=0.1)
+
+        with self.subTest('timeout hit'):
+            cid = channels.create()
+            with self.assertRaises(TimeoutError):
+                channels.send_buffer(cid, obj, blocking=True, timeout=0.1)
+            with self.assertRaises(channels.ChannelEmptyError):
+                received = channels.recv(cid)
+                print(repr(received))
+
+        with self.subTest('timeout not hit'):
+            cid = channels.create()
+            def f():
+                recv_wait(cid)
+            t = threading.Thread(target=f)
+            t.start()
+            channels.send_buffer(cid, obj, blocking=True, timeout=10)
+            t.join()
+
+    def test_send_closed_while_waiting(self):
+        obj = b'spam'
+        wait = self.build_send_waiter(obj)
+
+        with self.subTest('without timeout'):
+            cid = channels.create()
+            def f():
+                wait()
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send(cid, obj, blocking=True)
+            t.join()
+
+        with self.subTest('with timeout'):
+            cid = channels.create()
+            def f():
+                wait()
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send(cid, obj, blocking=True, timeout=30)
+            t.join()
+
+    def test_send_buffer_closed_while_waiting(self):
+        try:
+            self._has_run_once_closed
+        except AttributeError:
+            # At the moment, this test leaks a few references.
+            # It looks like the leak originates with the addition
+            # of _channels.send_buffer() (gh-110246), whereas the
+            # tests were added afterward.  We want this test even
+            # if the refleak isn't fixed yet, so we skip here.
+            raise unittest.SkipTest('temporarily skipped due to refleaks')
+        else:
+            self._has_run_once_closed = True
 
         obj = bytearray(b'spam')
         wait = self.build_send_waiter(obj, buffer=True)
-        cid = channels.create()
-        def f():
-            wait()
-            channels.close(cid, force=True)
-        t = threading.Thread(target=f)
-        t.start()
-        with self.assertRaises(channels.ChannelClosedError):
-            channels.send_buffer(cid, obj, blocking=True)
-        t.join()
+
+        with self.subTest('without timeout'):
+            cid = channels.create()
+            def f():
+                wait()
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send_buffer(cid, obj, blocking=True)
+            t.join()
+
+        with self.subTest('with timeout'):
+            cid = channels.create()
+            def f():
+                wait()
+                channels.close(cid, force=True)
+            t = threading.Thread(target=f)
+            t.start()
+            with self.assertRaises(channels.ChannelClosedError):
+                channels.send_buffer(cid, obj, blocking=True, timeout=30)
+            t.join()
 
     #-------------------
     # close

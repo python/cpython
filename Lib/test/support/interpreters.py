@@ -170,15 +170,25 @@ class RecvChannel(_ChannelEnd):
 
     _end = 'recv'
 
-    def recv(self, *, _sentinel=object(), _delay=10 / 1000):  # 10 milliseconds
+    def recv(self, timeout=None, *,
+             _sentinel=object(),
+             _delay=10 / 1000,  # 10 milliseconds
+             ):
         """Return the next object from the channel.
 
         This blocks until an object has been sent, if none have been
         sent already.
         """
+        if timeout is not None:
+            timeout = int(timeout)
+            if timeout < 0:
+                raise ValueError(f'timeout value must be non-negative')
+            end = time.time() + timeout
         obj = _channels.recv(self._id, _sentinel)
         while obj is _sentinel:
             time.sleep(_delay)
+            if timeout is not None and time.time() >= end:
+                raise TimeoutError
             obj = _channels.recv(self._id, _sentinel)
         return obj
 
@@ -203,12 +213,12 @@ class SendChannel(_ChannelEnd):
 
     _end = 'send'
 
-    def send(self, obj):
+    def send(self, obj, timeout=None):
         """Send the object (i.e. its data) to the channel's receiving end.
 
         This blocks until the object is received.
         """
-        _channels.send(self._id, obj, blocking=True)
+        _channels.send(self._id, obj, timeout=timeout, blocking=True)
 
     def send_nowait(self, obj):
         """Send the object to the channel's receiving end.
@@ -221,12 +231,12 @@ class SendChannel(_ChannelEnd):
         # See bpo-32604 and gh-19829.
         return _channels.send(self._id, obj, blocking=False)
 
-    def send_buffer(self, obj):
+    def send_buffer(self, obj, timeout=None):
         """Send the object's buffer to the channel's receiving end.
 
         This blocks until the object is received.
         """
-        _channels.send_buffer(self._id, obj, blocking=True)
+        _channels.send_buffer(self._id, obj, timeout=timeout, blocking=True)
 
     def send_buffer_nowait(self, obj):
         """Send the object's buffer to the channel's receiving end.
