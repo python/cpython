@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 #if defined(MS_WINDOWS)
 
@@ -66,7 +62,7 @@ _multiprocessing_recv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!handle && PyErr_Occurred()) {
         goto exit;
     }
-    size = _PyLong_AsInt(args[1]);
+    size = PyLong_AsInt(args[1]);
     if (size == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -172,4 +168,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=4a6afc67c1f5ec85 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48504f7a2d37958c input=a9049054013a1b77]*/

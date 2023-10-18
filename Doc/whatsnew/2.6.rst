@@ -121,11 +121,11 @@ about features that will be removed in Python 3.0.  You can run code
 with this switch to see how much work will be necessary to port
 code to 3.0.  The value of this switch is available
 to Python code as the boolean variable :data:`sys.py3kwarning`,
-and to C extension code as :c:data:`Py_Py3kWarningFlag`.
+and to C extension code as :c:data:`!Py_Py3kWarningFlag`.
 
 .. seealso::
 
-   The 3xxx series of PEPs, which contains proposals for Python 3.0.
+   The 3\ *xxx* series of PEPs, which contains proposals for Python 3.0.
    :pep:`3000` describes the development process for Python 3.0.
    Start with :pep:`3100` that describes the general goals for Python
    3.0, and then explore the higher-numbered PEPS that propose
@@ -875,11 +875,11 @@ The signature of the new function is::
 
 The parameters are:
 
- * *args*: positional arguments whose values will be printed out.
- * *sep*: the separator, which will be printed between arguments.
- * *end*: the ending text, which will be printed after all of the
-   arguments have been output.
- * *file*: the file object to which the output will be sent.
+* *args*: positional arguments whose values will be printed out.
+* *sep*: the separator, which will be printed between arguments.
+* *end*: the ending text, which will be printed after all of the
+  arguments have been output.
+* *file*: the file object to which the output will be sent.
 
 .. seealso::
 
@@ -977,7 +977,7 @@ can be used to include Unicode characters::
     print len(s)               # 12 Unicode characters
 
 At the C level, Python 3.0 will rename the existing 8-bit
-string type, called :c:type:`PyStringObject` in Python 2.x,
+string type, called :c:type:`!PyStringObject` in Python 2.x,
 to :c:type:`PyBytesObject`.  Python 2.6 uses ``#define``
 to support using the names :c:func:`PyBytesObject`,
 :c:func:`PyBytes_Check`, :c:func:`PyBytes_FromStringAndSize`,
@@ -1138,13 +1138,13 @@ indicate that the external caller is done.
 The *flags* argument to :c:func:`PyObject_GetBuffer` specifies
 constraints upon the memory returned.  Some examples are:
 
- * :const:`PyBUF_WRITABLE` indicates that the memory must be writable.
+* :c:macro:`PyBUF_WRITABLE` indicates that the memory must be writable.
 
- * :const:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
+* :c:macro:`PyBUF_LOCK` requests a read-only or exclusive lock on the memory.
 
- * :const:`PyBUF_C_CONTIGUOUS` and :const:`PyBUF_F_CONTIGUOUS`
-   requests a C-contiguous (last dimension varies the fastest) or
-   Fortran-contiguous (first dimension varies the fastest) array layout.
+* :c:macro:`PyBUF_C_CONTIGUOUS` and :c:macro:`PyBUF_F_CONTIGUOUS`
+  requests a C-contiguous (last dimension varies the fastest) or
+  Fortran-contiguous (first dimension varies the fastest) array layout.
 
 Two new argument codes for :c:func:`PyArg_ParseTuple`,
 ``s*`` and ``z*``, return locked buffer objects for a parameter.
@@ -1805,15 +1805,15 @@ changes, or look through the Subversion logs for all the details.
   available, instead of restricting itself to protocol 1.
   (Contributed by W. Barnes.)
 
-* The :mod:`cgi` module will now read variables from the query string
+* The :mod:`!cgi` module will now read variables from the query string
   of an HTTP POST request.  This makes it possible to use form actions
   with URLs that include query strings such as
   "/cgi-bin/add.py?category=1".  (Contributed by Alexandre Fiori and
   Nubis; :issue:`1817`.)
 
   The :func:`parse_qs` and :func:`parse_qsl` functions have been
-  relocated from the :mod:`cgi` module to the :mod:`urlparse` module.
-  The versions still available in the :mod:`cgi` module will
+  relocated from the :mod:`!cgi` module to the :mod:`urlparse` module.
+  The versions still available in the :mod:`!cgi` module will
   trigger :exc:`PendingDeprecationWarning` messages in 2.6
   (:issue:`600362`).
 
@@ -1850,8 +1850,8 @@ changes, or look through the Subversion logs for all the details.
   special values and floating-point exceptions in a manner consistent
   with Annex 'G' of the C99 standard.
 
-* A new data type in the :mod:`collections` module: :class:`namedtuple(typename,
-  fieldnames)` is a factory function that creates subclasses of the standard tuple
+* A new data type in the :mod:`collections` module: ``namedtuple(typename, fieldnames)``
+  is a factory function that creates subclasses of the standard tuple
   whose fields are accessible by name as well as index.  For example::
 
      >>> var_type = collections.namedtuple('variable',
@@ -1873,7 +1873,7 @@ changes, or look through the Subversion logs for all the details.
      variable(id=1, name='amplitude', type='int', size=4)
 
   Several places in the standard library that returned tuples have
-  been modified to return :class:`namedtuple` instances.  For example,
+  been modified to return :func:`namedtuple` instances.  For example,
   the :meth:`Decimal.as_tuple` method now returns a named tuple with
   :attr:`sign`, :attr:`digits`, and :attr:`exponent` fields.
 
@@ -2289,7 +2289,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Raymond Hettinger; :issue:`1861`.)
 
 * The :mod:`select` module now has wrapper functions
-  for the Linux :c:func:`epoll` and BSD :c:func:`kqueue` system calls.
+  for the Linux :c:func:`!epoll` and BSD :c:func:`!kqueue` system calls.
   :meth:`modify` method was added to the existing :class:`poll`
   objects; ``pollobj.modify(fd, eventmask)`` takes a file descriptor
   or file object and an event mask, modifying the recorded event mask
@@ -2328,7 +2328,7 @@ changes, or look through the Subversion logs for all the details.
   one for reading and one for writing.  The writable descriptor
   will be passed to :func:`set_wakeup_fd`, and the readable descriptor
   will be added to the list of descriptors monitored by the event loop via
-  :c:func:`select` or :c:func:`poll`.
+  :c:func:`!select` or :c:func:`!poll`.
   On receiving a signal, a byte will be written and the main event loop
   will be woken up, avoiding the need to poll.
 
@@ -2465,7 +2465,7 @@ changes, or look through the Subversion logs for all the details.
   (All changes contributed by Lars Gustäbel).
 
 * An optional ``timeout`` parameter was added to the
-  :class:`telnetlib.Telnet` class constructor, specifying a timeout
+  :class:`!telnetlib.Telnet` class constructor, specifying a timeout
   measured in seconds.  (Added by Facundo Batista.)
 
 * The :class:`tempfile.NamedTemporaryFile` class usually deletes
@@ -2982,7 +2982,7 @@ Changes to Python's build process and to the C API include:
 
 * Python now must be compiled with C89 compilers (after 19
   years!).  This means that the Python source tree has dropped its
-  own implementations of :c:func:`memmove` and :c:func:`strerror`, which
+  own implementations of :c:func:`!memmove` and :c:func:`!strerror`, which
   are in the C89 standard library.
 
 * Python 2.6 can be built with Microsoft Visual Studio 2008 (version
@@ -3012,11 +3012,11 @@ Changes to Python's build process and to the C API include:
   bug occurred if one thread closed a file object while another thread
   was reading from or writing to the object.  In 2.6 file objects
   have a reference count, manipulated by the
-  :c:func:`PyFile_IncUseCount` and :c:func:`PyFile_DecUseCount`
+  :c:func:`!PyFile_IncUseCount` and :c:func:`!PyFile_DecUseCount`
   functions.  File objects can't be closed unless the reference count
-  is zero.  :c:func:`PyFile_IncUseCount` should be called while the GIL
+  is zero.  :c:func:`!PyFile_IncUseCount` should be called while the GIL
   is still held, before carrying out an I/O operation using the
-  ``FILE *`` pointer, and :c:func:`PyFile_DecUseCount` should be called
+  ``FILE *`` pointer, and :c:func:`!PyFile_DecUseCount` should be called
   immediately after the GIL is re-acquired.
   (Contributed by Antoine Pitrou and Gregory P. Smith.)
 
@@ -3060,9 +3060,9 @@ Changes to Python's build process and to the C API include:
 
 * Some macros were renamed in both 3.0 and 2.6 to make it clearer that
   they are macros,
-  not functions.  :c:macro:`Py_Size()` became :c:macro:`Py_SIZE()`,
-  :c:macro:`Py_Type()` became :c:macro:`Py_TYPE()`, and
-  :c:macro:`Py_Refcnt()` became :c:macro:`Py_REFCNT()`.
+  not functions.  :c:macro:`!Py_Size()` became :c:macro:`Py_SIZE()`,
+  :c:macro:`!Py_Type()` became :c:macro:`Py_TYPE()`, and
+  :c:macro:`!Py_Refcnt()` became :c:macro:`Py_REFCNT()`.
   The mixed-case macros are still available
   in Python 2.6 for backward compatibility.
   (:issue:`1629`)
@@ -3135,7 +3135,7 @@ Port-Specific Changes: Windows
   registry reflection for 32-bit processes running on 64-bit systems.
   (:issue:`1753245`)
 
-* The :mod:`msilib` module's :class:`Record` object
+* The :mod:`!msilib` module's :class:`Record` object
   gained :meth:`GetInteger` and :meth:`GetString` methods that
   return field values as an integer or a string.
   (Contributed by Floris Bruynooghe; :issue:`2125`.)

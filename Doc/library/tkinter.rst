@@ -163,7 +163,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 
@@ -251,10 +251,6 @@ Additional modules:
 :mod:`tkinter.dnd`
    (experimental) Drag-and-drop support for :mod:`tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
-
-:mod:`tkinter.tix`
-   (deprecated) An older third-party Tcl/Tk package that adds several new
-   widgets. Better alternatives for most can be found in :mod:`tkinter.ttk`.
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -352,7 +348,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find
@@ -533,24 +529,24 @@ interpreter will fail.
 
 A number of special cases exist:
 
-  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-    :mod:`tkinter` calls the library from the originating Python thread, even
-    if this is different than the thread that created the Tcl interpreter. A global
-    lock ensures only one call occurs at a time.
+* Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+  :mod:`tkinter` calls the library from the originating Python thread, even
+  if this is different than the thread that created the Tcl interpreter. A global
+  lock ensures only one call occurs at a time.
 
-  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with its own interpreter), all interpreters that are part of the same
-    thread share a common event queue, which gets ugly fast. In practice, don't create
-    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+  object (with its own interpreter), all interpreters that are part of the same
+  thread share a common event queue, which gets ugly fast. In practice, don't create
+  more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
 
-  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
-    reentering the event loop. It is even possible to run multiple nested event loops
-    or abandon the event loop entirely. If you're doing anything tricky when it comes
-    to events or threads, be aware of these possibilities.
+* Blocking event handlers are not the only way to prevent the Tcl interpreter from
+  reentering the event loop. It is even possible to run multiple nested event loops
+  or abandon the event loop entirely. If you're doing anything tricky when it comes
+  to events or threads, be aware of these possibilities.
 
-  * There are a few select :mod:`tkinter` functions that presently work only when
-    called from the thread that created the Tcl interpreter.
+* There are a few select :mod:`tkinter` functions that presently work only when
+  called from the thread that created the Tcl interpreter.
 
 
 Handy Reference

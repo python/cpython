@@ -9,7 +9,7 @@ Internet Protocols and Support
    single: Internet
    single: World Wide Web
 
-.. index:: module: socket
+.. index:: pair: module; socket
 
 The modules described in this chapter implement internet protocols and  support
 for related technology.  They are all implemented in Python. Most of these

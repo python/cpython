@@ -1,1 +1,0 @@
-Fix :func:`!pause_reading` to work when called from :func:`!connection_made` in :mod:`asyncio`.

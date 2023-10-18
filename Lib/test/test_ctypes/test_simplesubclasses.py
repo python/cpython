@@ -1,11 +1,13 @@
 import unittest
-from ctypes import *
+from ctypes import Structure, CFUNCTYPE, c_int
+
 
 class MyInt(c_int):
     def __eq__(self, other):
         if type(other) != MyInt:
             return NotImplementedError
         return self.value == other.value
+
 
 class Test(unittest.TestCase):
 
@@ -50,6 +52,7 @@ class Test(unittest.TestCase):
         s.x = MyInt(42)
 
         self.assertEqual(s.x, MyInt(42))
+
 
 if __name__ == "__main__":
     unittest.main()

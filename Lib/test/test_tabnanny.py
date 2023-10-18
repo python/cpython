@@ -222,8 +222,8 @@ class TestCheck(TestCase):
         """
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as file_path:
             out = f"{file_path!r}: *** Line 3: trouble in tab city! ***\n"
-            out += "offending line: '\\tprint(\"world\")\\n'\n"
-            out += "indent not equal e.g. at tab size 1\n"
+            out += "offending line: '\\tprint(\"world\")'\n"
+            out += "inconsistent use of tabs and spaces in indentation\n"
 
             tabnanny.verbose = 1
             self.verify_tabnanny_check(file_path, out=out)
@@ -231,7 +231,7 @@ class TestCheck(TestCase):
     def test_when_nannynag_error(self):
         """A python source code file eligible for raising `tabnanny.NannyNag`."""
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as file_path:
-            out = f"{file_path} 3 '\\tprint(\"world\")\\n'\n"
+            out = f"{file_path} 3 '\\tprint(\"world\")'\n"
             self.verify_tabnanny_check(file_path, out=out)
 
     def test_when_no_file(self):
@@ -315,9 +315,9 @@ class TestCommandLine(TestCase):
     def test_with_errored_file(self):
         """Should displays error when errored python file is given."""
         with TemporaryPyFile(SOURCE_CODES["wrong_indented"]) as file_path:
-            stderr  = f"{file_path!r}: Indentation Error: "
+            stderr  = f"{file_path!r}: Token Error: "
             stderr += ('unindent does not match any outer indentation level'
-                    ' (<tokenize>, line 3)')
+                       ' (<string>, line 3)')
             self.validate_cmd(file_path, stderr=stderr, expect_failure=True)
 
     def test_with_error_free_file(self):
@@ -341,7 +341,7 @@ class TestCommandLine(TestCase):
         """Should display more error information if verbose mode is on."""
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as path:
             stdout = textwrap.dedent(
-                "offending line: '\\tprint(\"world\")\\n'"
+                "offending line: '\\tprint(\"world\")'"
             ).strip()
             self.validate_cmd("-v", path, stdout=stdout, partial=True)
 
@@ -349,6 +349,6 @@ class TestCommandLine(TestCase):
         """Should display detailed error information if double verbose is on."""
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as path:
             stdout = textwrap.dedent(
-                "offending line: '\\tprint(\"world\")\\n'"
+                "offending line: '\\tprint(\"world\")'"
             ).strip()
             self.validate_cmd("-vv", path, stdout=stdout, partial=True)

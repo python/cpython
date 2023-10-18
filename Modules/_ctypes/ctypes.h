@@ -37,6 +37,9 @@ typedef struct {
     PyTypeObject *PyCArg_Type;
     PyTypeObject *PyCField_Type;
     PyTypeObject *PyCThunk_Type;
+#ifdef MS_WIN32
+    PyTypeObject *PyComError_Type;
+#endif
     PyTypeObject *StructParam_Type;
 } ctypes_state;
 
@@ -391,10 +394,6 @@ extern int _ctypes_simple_instance(PyObject *obj);
 
 extern PyObject *_ctypes_ptrtype_cache;
 PyObject *_ctypes_get_errobj(int **pspace);
-
-#ifdef MS_WIN32
-extern PyObject *ComError;
-#endif
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);

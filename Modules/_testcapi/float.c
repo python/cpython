@@ -1,18 +1,30 @@
-#define PY_SSIZE_T_CLEAN
+// clinic/float.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
 
 #include "parts.h"
+#include "clinic/float.c.h"
 
 
-// Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
+
+/*[clinic input]
+_testcapi.float_pack
+
+    size: int
+    d: double
+    le: int
+    /
+
+Test PyFloat_Pack2(), PyFloat_Pack4() and PyFloat_Pack8()
+[clinic start generated code]*/
+
 static PyObject *
-test_float_pack(PyObject *self, PyObject *args)
+_testcapi_float_pack_impl(PyObject *module, int size, double d, int le)
+/*[clinic end generated code: output=7899bd98f8b6cb04 input=52c9115121999c98]*/
 {
-    int size;
-    double d;
-    int le;
-    if (!PyArg_ParseTuple(args, "idi", &size, &d, &le)) {
-        return NULL;
-    }
     switch (size)
     {
     case 2:
@@ -47,19 +59,24 @@ test_float_pack(PyObject *self, PyObject *args)
 }
 
 
-// Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+/*[clinic input]
+_testcapi.float_unpack
+
+    data: str(accept={robuffer}, zeroes=True)
+    le: int
+    /
+
+Test PyFloat_Unpack2(), PyFloat_Unpack4() and PyFloat_Unpack8()
+[clinic start generated code]*/
+
 static PyObject *
-test_float_unpack(PyObject *self, PyObject *args)
+_testcapi_float_unpack_impl(PyObject *module, const char *data,
+                            Py_ssize_t data_length, int le)
+/*[clinic end generated code: output=617059f889ddbfe4 input=c095e4bb75a696cd]*/
 {
     assert(!PyErr_Occurred());
-    const char *data;
-    Py_ssize_t size;
-    int le;
-    if (!PyArg_ParseTuple(args, "y#i", &data, &size, &le)) {
-        return NULL;
-    }
     double d;
-    switch (size)
+    switch (data_length)
     {
     case 2:
         d = PyFloat_Unpack2(data, le);
@@ -82,8 +99,8 @@ test_float_unpack(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef test_methods[] = {
-    {"float_pack", test_float_pack, METH_VARARGS, NULL},
-    {"float_unpack", test_float_unpack, METH_VARARGS, NULL},
+    _TESTCAPI_FLOAT_PACK_METHODDEF
+    _TESTCAPI_FLOAT_UNPACK_METHODDEF
     {NULL},
 };
 

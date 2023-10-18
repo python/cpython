@@ -10,7 +10,7 @@ import csv
 import gc
 import pickle
 from test import support
-from test.support import warnings_helper
+from test.support import import_helper, check_disallow_instantiation
 from itertools import permutations
 from textwrap import dedent
 from collections import OrderedDict
@@ -280,18 +280,6 @@ class Test_Csv(unittest.TestCase):
             writer = csv.writer(fileobj)
             self.assertRaises(TypeError, writer.writerows, None)
             self.assertRaises(OSError, writer.writerows, BadIterable())
-
-    @support.cpython_only
-    @support.requires_legacy_unicode_capi
-    @warnings_helper.ignore_warnings(category=DeprecationWarning)
-    def test_writerows_legacy_strings(self):
-        import _testcapi
-        c = _testcapi.unicode_legacy_string('a')
-        with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
-            writer = csv.writer(fileobj)
-            writer.writerows([[c]])
-            fileobj.seek(0)
-            self.assertEqual(fileobj.read(), "a\r\n")
 
     def _read_test(self, input, expect, **kwargs):
         reader = csv.reader(input, **kwargs)
@@ -955,7 +943,7 @@ class TestArrayWrites(unittest.TestCase):
 
     def test_char_write(self):
         import array, string
-        a = array.array('u', string.ascii_letters)
+        a = array.array('w', string.ascii_letters)
 
         with TemporaryFile("w+", encoding="utf-8", newline='') as fileobj:
             writer = csv.writer(fileobj, dialect="excel")
@@ -1429,6 +1417,13 @@ class MiscTestCase(unittest.TestCase):
     def test_subclassable(self):
         # issue 44089
         class Foo(csv.Error): ...
+
+    @support.cpython_only
+    def test_disallow_instantiation(self):
+        _csv = import_helper.import_module("_csv")
+        for tp in _csv.Reader, _csv.Writer:
+            with self.subTest(tp=tp):
+                check_disallow_instantiation(self, tp)
 
 if __name__ == '__main__':
     unittest.main()

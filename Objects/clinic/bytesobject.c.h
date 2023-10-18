@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(bytes___bytes____doc__,
 "__bytes__($self, /)\n"
@@ -476,7 +477,7 @@ PyDoc_STRVAR(bytes_maketrans__doc__,
 "maketrans(frm, to, /)\n"
 "--\n"
 "\n"
-"Return a translation table useable for the bytes or bytearray translate method.\n"
+"Return a translation table usable for the bytes or bytearray translate method.\n"
 "\n"
 "The returned table will be one where each byte in frm is mapped to the byte at\n"
 "the same position in to.\n"
@@ -875,9 +876,6 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
         _PyArg_BadArgument("fromhex", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     string = arg;
     return_value = bytes_fromhex_impl(type, string);
 
@@ -961,7 +959,7 @@ bytes_hex(PyBytesObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
             goto skip_optional_pos;
         }
     }
-    bytes_per_sep = _PyLong_AsInt(args[1]);
+    bytes_per_sep = PyLong_AsInt(args[1]);
     if (bytes_per_sep == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -1063,4 +1061,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=31a9e4af85562612 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=da013a7e257f5c6e input=a9049054013a1b77]*/

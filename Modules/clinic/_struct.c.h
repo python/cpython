@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(Struct__doc__,
 "Struct(format)\n"
@@ -451,4 +452,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=f3d6e06f80368998 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1749aaf639d5c11c input=a9049054013a1b77]*/

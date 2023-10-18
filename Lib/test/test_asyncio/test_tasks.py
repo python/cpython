@@ -1609,6 +1609,21 @@ class BaseTaskTests:
         self.assertEqual(t.result(), 'yeah')
         self.assertAlmostEqual(0.1, loop.time())
 
+    def test_sleep_when_delay_is_nan(self):
+
+        def gen():
+            yield
+
+        loop = self.new_test_loop(gen)
+
+        async def sleeper():
+            await asyncio.sleep(float("nan"))
+
+        t = self.new_task(loop, sleeper())
+
+        with self.assertRaises(ValueError):
+            loop.run_until_complete(t)
+
     def test_sleep_cancel(self):
 
         def gen():

@@ -1,7 +1,6 @@
 This directory contains a collection of executable Python scripts that are
 useful while building, extending or managing Python.
 
-2to3                      Main script for running the 2to3 conversion tool
 checkpip.py               Checks the version of the projects bundled in ensurepip
                           are the latest available
 combinerefs.py            A helper for analyzing PYTHONDUMPREFS output

@@ -518,6 +518,8 @@ cache.
 Compilation Flags
 -----------------
 
+.. currentmodule:: re
+
 Compilation flags let you modify some aspects of how regular expressions work.
 Flags are available in the :mod:`re` module under two names, a long name such as
 :const:`IGNORECASE` and a short, one-letter form such as :const:`I`.  (If you're
