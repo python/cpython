@@ -1,8 +1,6 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_
-from functools import reduce
 
 
 __all__ = [
@@ -63,8 +61,8 @@ def _is_sunder(name):
     return (
             len(name) > 2 and
             name[0] == name[-1] == '_' and
-            name[1:2] != '_' and
-            name[-2:-1] != '_'
+            name[1] != '_' and
+            name[-2] != '_'
             )
 
 def _is_internal_class(cls_name, obj):
@@ -83,7 +81,6 @@ def _is_private(cls_name, name):
     if (
             len(name) > pat_len
             and name.startswith(pattern)
-            and name[pat_len:pat_len+1] != ['_']
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
@@ -158,7 +155,6 @@ def _dedent(text):
     Like textwrap.dedent.  Rewritten because we cannot import textwrap.
     """
     lines = text.split('\n')
-    blanks = 0
     for i, ch in enumerate(lines[0]):
         if ch != ' ':
             break
@@ -730,6 +726,11 @@ class EnumType(type):
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
+        if names is None and type is None:
+            # no body? no data-type? possibly wrong usage
+            raise TypeError(
+                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    )
         return cls._create_(
                 class_name=value,
                 names=names,
@@ -1636,7 +1637,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
     Class decorator that converts a normal class into an :class:`Enum`.  No
     safety checks are done, and some advanced behavior (such as
     :func:`__init_subclass__`) is not available.  Enum creation can be faster
-    using :func:`simple_enum`.
+    using :func:`_simple_enum`.
 
         >>> from enum import Enum, _simple_enum
         >>> @_simple_enum(Enum)
@@ -1879,7 +1880,8 @@ class verify:
                     missed = [v for v in values if v not in member_values]
                     if missed:
                         missing_names.append(name)
-                        missing_value |= reduce(_or_, missed)
+                        for val in missed:
+                            missing_value |= val
                 if missing_names:
                     if len(missing_names) == 1:
                         alias = 'alias %s is missing' % missing_names[0]

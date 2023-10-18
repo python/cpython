@@ -37,6 +37,7 @@ FORBIDDEN_NAMES_IN_UOPS = (
     "import_from",
     "import_name",
     "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
+    "TIER_ONE_ONLY",
 )
 
 
@@ -52,7 +53,6 @@ class Instruction:
 
     # Parts of the underlying instruction definition
     inst: parsing.InstDef
-    kind: typing.Literal["inst", "op"]
     name: str
     block: parsing.Block
     block_text: list[str]  # Block.text, less curlies, less PREDICT() calls
@@ -76,7 +76,6 @@ class Instruction:
 
     def __init__(self, inst: parsing.InstDef):
         self.inst = inst
-        self.kind = inst.kind
         self.name = inst.name
         self.block = inst.block
         self.block_text, self.check_eval_breaker, self.block_line = extract_block_text(
@@ -123,7 +122,7 @@ class Instruction:
         if "FRAME" in self.name:
             dprint = print
 
-        if self.name == "EXIT_TRACE":
+        if self.name == "_EXIT_TRACE":
             return True  # This has 'return frame' but it's okay
         if self.always_exits:
             dprint(f"Skipping {self.name} because it always exits: {self.always_exits}")
@@ -145,7 +144,8 @@ class Instruction:
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         """Write the instruction body."""
         # Write cache effect variable declarations and initializations
@@ -208,6 +208,16 @@ class Instruction:
                     )
                 else:
                     out.write_raw(f"{space}if ({cond}) goto {label};\n")
+            elif m := re.match(r"(\s*)DEOPT_IF\((.+)\);\s*(?://.*)?$", line):
+                space, cond = m.groups()
+                space = extra + space
+                target = family.name if family else self.name
+                out.write_raw(f"{space}DEOPT_IF({cond}, {target});\n")
+            elif "DEOPT" in line:
+                filename = context.owner.filename
+                lineno = context.owner.tokens[context.begin].line
+                print(f"{filename}:{lineno}: ERROR: DEOPT_IF() must be all on one line")
+                out.write_raw(extra + line)
             elif m := re.match(r"(\s*)DECREF_INPUTS\(\);\s*(?://.*)?$", line):
                 out.reset_lineno()
                 space = extra + m.group(1)
@@ -245,7 +255,8 @@ class AbstractInstruction(Instruction):
         out: Formatter,
         dedent: int,
         active_caches: list[ActiveCacheEffect],
-        tier: Tiers = TIER_ONE,
+        tier: Tiers,
+        family: parsing.Family | None,
     ) -> None:
         pass
 
@@ -269,7 +280,9 @@ class MacroInstruction:
     macro: parsing.Macro
     parts: MacroParts
     cache_offset: int
+    # Set later
     predicted: bool = False
+    family: parsing.Family | None = None
 
 
 @dataclasses.dataclass
@@ -280,11 +293,6 @@ class PseudoInstruction:
     targets: list[Instruction]
     instr_fmt: str
     instr_flags: InstructionFlags
-
-
-@dataclasses.dataclass
-class OverriddenInstructionPlaceHolder:
-    name: str
 
 
 AnyInstruction = Instruction | MacroInstruction | PseudoInstruction

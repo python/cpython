@@ -9,20 +9,26 @@ body:
 
         For help or advice on using Python, try one of the following options instead of opening a GitHub issue:
 
-          - Posting on [Discourse](https://discuss.python.org/c/users/7)
+          - Asking on [Discourse](https://discuss.python.org/c/users/7) or [Stack Overflow](https://stackoverflow.com)
           - Reading the [Python tutorial](https://docs.python.org/3/tutorial/)
           - Emailing [python-list](https://mail.python.org/mailman/listinfo/python-list)
-  - type: checkboxes
+
+        Make sure to also search the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc) to check that the bug has not already been reported.
+  - type: textarea
     attributes:
-      label: Checklist
-      description: A bug in a third-party project (for example, `pip` or `requests`) should be reported to that project's issue tracker, not CPython
-      options:
-        - label: I am confident this is a bug in CPython, not a bug in a third-party project
-          required: false
-        - label: |
-            I have searched the [CPython issue tracker](https://github.com/python/cpython/issues?q=is%3Aissue+sort%3Acreated-desc),
-            and am confident this bug has not been reported before
-          required: false
+      label: "Bug description:"
+      description: >
+        Give a clear and concise description of what happened.
+        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
+        [Copy and paste code where possible rather than using screenshots](https://meta.stackoverflow.com/a/285557/13990016),
+        and put any code blocks inside triple backticks.
+
+      value: |
+        ```python
+        # Add a code block here, if required
+        ```
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: "CPython versions tested on:"
@@ -47,23 +53,3 @@ body:
         - Other
     validations:
       required: false
-  - type: input
-    attributes:
-      label: "Output from running 'python -VV' on the command line:"
-      description: If you tested with multiple operating systems or architectures, feel free to provide details in the main bug description.
-    validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: "A clear and concise description of the bug:"
-      description: >
-        Tell us what happened.
-        Include a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example) if possible.
-        Put any code blocks inside triple backticks.
-
-      value: |
-        ```python
-        # Add a code block here, if required
-        ```
-    validations:
-      required: true

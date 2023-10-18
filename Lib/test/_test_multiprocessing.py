@@ -78,10 +78,15 @@ except ImportError:
     msvcrt = None
 
 
-if support.check_sanitizer(address=True):
-    # bpo-45200: Skip multiprocessing tests if Python is built with ASAN to
+if support.HAVE_ASAN_FORK_BUG:
+    # gh-89363: Skip multiprocessing tests if Python is built with ASAN to
     # work around a libasan race condition: dead lock in pthread_create().
-    raise unittest.SkipTest("libasan has a pthread_create() dead lock")
+    raise unittest.SkipTest("libasan has a pthread_create() dead lock related to thread+fork")
+
+
+# gh-110666: Tolerate a difference of 100 ms when comparing timings
+# (clock resolution)
+CLOCK_RES = 0.100
 
 
 def latin(s):
@@ -557,13 +562,14 @@ class _TestProcess(BaseTestCase):
 
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
-        if os.name != 'nt':
-            self.assertEqual(exitcode, -signal.SIGTERM)
+        self.assertEqual(exitcode, -signal.SIGTERM)
 
     def test_kill(self):
         exitcode = self._kill_process(multiprocessing.Process.kill)
         if os.name != 'nt':
             self.assertEqual(exitcode, -signal.SIGKILL)
+        else:
+            self.assertEqual(exitcode, -signal.SIGTERM)
 
     def test_cpu_count(self):
         try:
@@ -675,6 +681,7 @@ class _TestProcess(BaseTestCase):
 
         close_queue(q)
 
+    @support.requires_resource('walltime')
     def test_many_processes(self):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
@@ -1649,12 +1656,11 @@ class _TestCondition(BaseTestCase):
     def _test_waitfor_timeout_f(cls, cond, state, success, sem):
         sem.release()
         with cond:
-            expected = 0.1
+            expected = 0.100
             dt = time.monotonic()
             result = cond.wait_for(lambda : state.value==4, timeout=expected)
             dt = time.monotonic() - dt
-            # borrow logic in assertTimeout() from test/lock_tests.py
-            if not result and expected * 0.6 < dt < expected * 10.0:
+            if not result and (expected - CLOCK_RES) <= dt:
                 success.value = True
 
     @unittest.skipUnless(HAS_SHAREDCTYPES, 'needs sharedctypes')
@@ -1673,7 +1679,7 @@ class _TestCondition(BaseTestCase):
 
         # Only increment 3 times, so state == 4 is never reached.
         for i in range(3):
-            time.sleep(0.01)
+            time.sleep(0.010)
             with cond:
                 state.value += 1
                 cond.notify()
@@ -2572,7 +2578,7 @@ class _TestPool(BaseTestCase):
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT1)
 
     def test_async_timeout(self):
-        res = self.pool.apply_async(sqr, (6, TIMEOUT2 + 1.0))
+        res = self.pool.apply_async(sqr, (6, TIMEOUT2 + support.SHORT_TIMEOUT))
         get = TimingWrapper(res.get)
         self.assertRaises(multiprocessing.TimeoutError, get, timeout=TIMEOUT2)
         self.assertTimingAlmostEqual(get.elapsed, TIMEOUT2)
@@ -2676,14 +2682,11 @@ class _TestPool(BaseTestCase):
                 p.join()
 
     def test_terminate(self):
-        result = self.pool.map_async(
-            time.sleep, [0.1 for i in range(10000)], chunksize=1
-            )
+        # Simulate slow tasks which take "forever" to complete
+        args = [support.LONG_TIMEOUT for i in range(10_000)]
+        result = self.pool.map_async(time.sleep, args, chunksize=1)
         self.pool.terminate()
-        join = TimingWrapper(self.pool.join)
-        join()
-        # Sanity check the pool didn't wait for all tasks to finish
-        self.assertLess(join.elapsed, 2.0)
+        self.pool.join()
 
     def test_empty_iterable(self):
         # See Issue 12157
@@ -4906,7 +4909,7 @@ class TestWait(unittest.TestCase):
     def _child_test_wait(cls, w, slow):
         for i in range(10):
             if slow:
-                time.sleep(random.random()*0.1)
+                time.sleep(random.random() * 0.100)
             w.send((i, os.getpid()))
         w.close()
 
@@ -4946,7 +4949,7 @@ class TestWait(unittest.TestCase):
         s.connect(address)
         for i in range(10):
             if slow:
-                time.sleep(random.random()*0.1)
+                time.sleep(random.random() * 0.100)
             s.sendall(('%s\n' % i).encode('ascii'))
         s.close()
 
@@ -4991,34 +4994,30 @@ class TestWait(unittest.TestCase):
     def test_wait_socket_slow(self):
         self.test_wait_socket(True)
 
+    @support.requires_resource('walltime')
     def test_wait_timeout(self):
         from multiprocessing.connection import wait
 
-        expected = 5
+        timeout = 5.0  # seconds
         a, b = multiprocessing.Pipe()
 
         start = time.monotonic()
-        res = wait([a, b], expected)
+        res = wait([a, b], timeout)
         delta = time.monotonic() - start
 
         self.assertEqual(res, [])
-        self.assertLess(delta, expected * 2)
-        self.assertGreater(delta, expected * 0.5)
+        self.assertGreater(delta, timeout - CLOCK_RES)
 
         b.send(None)
-
-        start = time.monotonic()
         res = wait([a, b], 20)
-        delta = time.monotonic() - start
-
         self.assertEqual(res, [a])
-        self.assertLess(delta, 0.4)
 
     @classmethod
     def signal_and_sleep(cls, sem, period):
         sem.release()
         time.sleep(period)
 
+    @support.requires_resource('walltime')
     def test_wait_integer(self):
         from multiprocessing.connection import wait
 
@@ -5469,7 +5468,9 @@ class TestStartMethod(unittest.TestCase):
         while not queue.empty():
             results.append(queue.get())
 
-        self.assertEqual(results, [2, 1])
+        # gh-109706: queue.put(1) can write into the queue before queue.put(2),
+        # there is no synchronization in the test.
+        self.assertSetEqual(set(results), set([2, 1]))
 
 
 @unittest.skipIf(sys.platform == "win32",

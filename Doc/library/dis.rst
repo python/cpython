@@ -42,6 +42,14 @@ interpreter.
       bytecode to specialize it for different runtime conditions. The
       adaptive bytecode can be shown by passing ``adaptive=True``.
 
+   .. versionchanged:: 3.12
+      The argument of a jump is the offset of the target instruction relative
+      to the instruction that appears immediately after the jump instruction's
+      :opcode:`CACHE` entries.
+
+      As a consequence, the presence of the :opcode:`CACHE` instructions is
+      transparent for forward jumps but needs to be taken into account when
+      reasoning about backward jumps.
 
 Example: Given the function :func:`!myfunc`::
 
@@ -62,6 +70,32 @@ the following command can be used to display the disassembly of
                 22 RETURN_VALUE
 
 (The "2" is a line number).
+
+.. _dis-cli:
+
+Command-line interface
+----------------------
+
+The :mod:`dis` module can be invoked as a script from the command line:
+
+.. code-block:: sh
+
+   python -m dis [-h] [-C] [infile]
+
+The following options are accepted:
+
+.. program:: dis
+
+.. cmdoption:: -h, --help
+
+   Display usage and exit.
+
+.. cmdoption:: -C, --show-caches
+
+   Show inline caches.
+
+If :file:`infile` is specified, its disassembled code will be written to stdout.
+Otherwise, disassembly is performed on compiled source code recieved from stdin.
 
 Bytecode analysis
 -----------------
@@ -487,6 +521,14 @@ operations on it as if it was a Python list. The top of the stack corresponds to
    .. versionadded:: 3.12
 
 
+.. opcode:: END_SEND
+
+   Implements ``del STACK[-2]``.
+   Used to clean up when a generator exits.
+
+   .. versionadded:: 3.12
+
+
 .. opcode:: COPY (i)
 
    Push the i-th item to the top of the stack without removing it from its original
@@ -597,7 +639,7 @@ not have to be) the original ``STACK[-2]``.
 
       key = STACK.pop()
       container = STACK.pop()
-      STACK.append(container[index])
+      STACK.append(container[key])
 
 
 .. opcode:: STORE_SUBSCR
@@ -1122,7 +1164,8 @@ iterations of the loop.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
-   when calling the unbound method. Otherwise, ``NULL`` and the object returned by
+   or :opcode:`CALL_KW` when calling the unbound method.
+   Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
    .. versionchanged:: 3.12
@@ -1132,15 +1175,21 @@ iterations of the loop.
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
 
-   This opcode implements :func:`super` (e.g. ``super().method()`` and
-   ``super().attr``). It works the same as :opcode:`LOAD_ATTR`, except that
-   ``namei`` is shifted left by 2 bits instead of 1, and instead of expecting a
-   single receiver on the stack, it expects three objects (from top of stack
-   down): ``self`` (the first argument to the current method), ``cls`` (the
-   class within which the current method was defined), and the global ``super``.
+   This opcode implements :func:`super`, both in its zero-argument and
+   two-argument forms (e.g. ``super().method()``, ``super().attr`` and
+   ``super(cls, self).method()``, ``super(cls, self).attr``).
+
+   It pops three values from the stack (from top of stack down):
+   - ``self``: the first argument to the current method
+   -  ``cls``: the class within which the current method was defined
+   -  the global ``super``
+
+   With respect to its argument, it works similarly to :opcode:`LOAD_ATTR`,
+   except that ``namei`` is shifted left by 2 bits instead of 1.
 
    The low bit of ``namei`` signals to attempt a method load, as with
-   :opcode:`LOAD_ATTR`.
+   :opcode:`LOAD_ATTR`, which results in pushing ``None`` and the loaded method.
+   When it is unset a single value is pushed to the stack.
 
    The second-low bit of ``namei``, if set, means that this was a two-argument
    call to :func:`super` (unset means zero-argument).
@@ -1390,31 +1439,47 @@ iterations of the loop.
 
 .. opcode:: CALL (argc)
 
-   Calls a callable object with the number of arguments specified by ``argc``,
-   including the named arguments specified by the preceding
-   :opcode:`KW_NAMES`, if any.
-   On the stack are (in ascending order), either:
-
-   * NULL
-   * The callable
-   * The positional arguments
-   * The named arguments
-
-   or:
+   Calls a callable object with the number of arguments specified by ``argc``.
+   On the stack are (in ascending order):
 
    * The callable
-   * ``self``
+   * ``self`` or ``NULL``
    * The remaining positional arguments
-   * The named arguments
 
-   ``argc`` is the total of the positional and named arguments, excluding
-   ``self`` when a ``NULL`` is not present.
+   ``argc`` is the total of the positional arguments, excluding ``self``.
 
    ``CALL`` pops all arguments and the callable object off the stack,
    calls the callable object with those arguments, and pushes the return value
    returned by the callable object.
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      The callable now always appears at the same position on the stack.
+
+   .. versionchanged:: 3.13
+      Calls with keyword arguments are now handled by :opcode:`CALL_KW`.
+
+
+.. opcode:: CALL_KW (argc)
+
+   Calls a callable object with the number of arguments specified by ``argc``,
+   including one or more named arguments. On the stack are (in ascending order):
+
+   * The callable
+   * ``self`` or ``NULL``
+   * The remaining positional arguments
+   * The named arguments
+   * A :class:`tuple` of keyword argument names
+
+   ``argc`` is the total of the positional and named arguments, excluding ``self``.
+   The length of the tuple of keyword argument names is the number of named arguments.
+
+   ``CALL_KW`` pops all arguments, the keyword names, and the callable object
+   off the stack, calls the callable object with those arguments, and pushes the
+   return value returned by the callable object.
+
+   .. versionadded:: 3.13
 
 
 .. opcode:: CALL_FUNCTION_EX (flags)
@@ -1437,15 +1502,6 @@ iterations of the loop.
    Pushes a ``NULL`` to the stack.
    Used in the call sequence to match the ``NULL`` pushed by
    :opcode:`LOAD_METHOD` for non-method calls.
-
-   .. versionadded:: 3.11
-
-
-.. opcode:: KW_NAMES (consti)
-
-   Prefixes :opcode:`CALL`.
-   Stores a reference to ``co_consts[consti]`` into an internal variable
-   for use by :opcode:`CALL`. ``co_consts[consti]`` must be a tuple of strings.
 
    .. versionadded:: 3.11
 
@@ -1598,9 +1654,9 @@ iterations of the loop.
    Equivalent to ``STACK[-1] = STACK[-2].send(STACK[-1])``. Used in ``yield from``
    and ``await`` statements.
 
-   If the call raises :exc:`StopIteration`, pop both items, push the
-   exception's ``value`` attribute, and increment the bytecode counter by
-   *delta*.
+   If the call raises :exc:`StopIteration`, pop the top value from the stack,
+   push the exception's ``value`` attribute, and increment the bytecode counter
+   by *delta*.
 
    .. versionadded:: 3.11
 
@@ -1611,8 +1667,8 @@ iterations of the loop.
    opcodes in the range [0,255] which don't use their argument and those
    that do (``< HAVE_ARGUMENT`` and ``>= HAVE_ARGUMENT``, respectively).
 
-   If your application uses pseudo instructions, use the :data:`hasarg`
-   collection instead.
+   If your application uses pseudo instructions or specialized instructions,
+   use the :data:`hasarg` collection instead.
 
    .. versionchanged:: 3.6
       Now every instruction has an argument, but opcodes ``< HAVE_ARGUMENT``
@@ -1623,12 +1679,14 @@ iterations of the loop.
       it is not true that comparison with ``HAVE_ARGUMENT`` indicates whether
       they use their arg.
 
+   .. deprecated:: 3.13
+      Use :data:`hasarg` instead.
 
 .. opcode:: CALL_INTRINSIC_1
 
    Calls an intrinsic function with one argument. Passes ``STACK[-1]`` as the
    argument and sets ``STACK[-1]`` to the result. Used to implement
-   functionality that is necessary but not performance critical.
+   functionality that is not performance critical.
 
    The operand determines which intrinsic function is called:
 
@@ -1676,9 +1734,13 @@ iterations of the loop.
 
 .. opcode:: CALL_INTRINSIC_2
 
-   Calls an intrinsic function with two arguments. Passes ``STACK[-2]``, ``STACK[-1]`` as the
-   arguments and sets ``STACK[-1]`` to the result. Used to implement functionality that is
-   necessary but not performance critical.
+   Calls an intrinsic function with two arguments. Used to implement functionality
+   that is not performance critical::
+
+      arg2 = STACK.pop()
+      arg1 = STACK.pop()
+      result = intrinsic2(arg1, arg2)
+      STACK.push(result)
 
    The operand determines which intrinsic function is called:
 
@@ -1774,8 +1836,9 @@ These collections are provided for automatic introspection of bytecode
 instructions:
 
 .. versionchanged:: 3.12
-   The collections now contain pseudo instructions as well. These are
-   opcodes with values ``>= MIN_PSEUDO_OPCODE``.
+   The collections now contain pseudo instructions and instrumented
+   instructions as well. These are opcodes with values ``>= MIN_PSEUDO_OPCODE``
+   and ``>= MIN_INSTRUMENTED_OPCODE``.
 
 .. data:: opname
 

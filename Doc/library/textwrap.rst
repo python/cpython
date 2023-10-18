@@ -238,7 +238,7 @@ hyphenated words; only then will long words be broken if necessary, unless
       However, the sentence detection algorithm is imperfect: it assumes that a
       sentence ending consists of a lowercase letter followed by one of ``'.'``,
       ``'!'``, or ``'?'``, possibly followed by one of ``'"'`` or ``"'"``,
-      followed by a space.  One problem with this is algorithm is that it is
+      followed by a space.  One problem with this algorithm is that it is
       unable to detect the difference between "Dr." in ::
 
          [...] Dr. Frankenstein's monster [...]

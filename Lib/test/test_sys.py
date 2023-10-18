@@ -1,9 +1,11 @@
 import builtins
 import codecs
+import _datetime
 import gc
 import locale
 import operator
 import os
+import random
 import struct
 import subprocess
 import sys
@@ -28,10 +30,6 @@ def requires_subinterpreters(meth):
     return unittest.skipIf(interpreters is None,
                            'subinterpreters required')(meth)
 
-
-# count the number of test runs, used to create unique
-# strings to intern in test_intern()
-INTERN_NUMRUNS = 0
 
 DICT_KEY_STRUCT_FORMAT = 'n2BI2n'
 
@@ -177,7 +175,8 @@ class ExceptHookTest(unittest.TestCase):
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
-            sys.excepthook(1, '1', 1)
+            with test.support.catch_unraisable_exception():
+                sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
                          "value, str found" in stderr.getvalue())
 
@@ -279,20 +278,29 @@ class SysModuleTest(unittest.TestCase):
         finally:
             sys.setswitchinterval(orig)
 
-    def test_recursionlimit(self):
+    def test_getrecursionlimit(self):
+        limit = sys.getrecursionlimit()
+        self.assertIsInstance(limit, int)
+        self.assertGreater(limit, 1)
+
         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
-        oldlimit = sys.getrecursionlimit()
-        self.assertRaises(TypeError, sys.setrecursionlimit)
-        self.assertRaises(ValueError, sys.setrecursionlimit, -42)
-        sys.setrecursionlimit(10000)
-        self.assertEqual(sys.getrecursionlimit(), 10000)
-        sys.setrecursionlimit(oldlimit)
+
+    def test_setrecursionlimit(self):
+        old_limit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(10_005)
+            self.assertEqual(sys.getrecursionlimit(), 10_005)
+
+            self.assertRaises(TypeError, sys.setrecursionlimit)
+            self.assertRaises(ValueError, sys.setrecursionlimit, -42)
+        finally:
+            sys.setrecursionlimit(old_limit)
 
     def test_recursionlimit_recovery(self):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')
 
-        oldlimit = sys.getrecursionlimit()
+        old_limit = sys.getrecursionlimit()
         def f():
             f()
         try:
@@ -311,35 +319,31 @@ class SysModuleTest(unittest.TestCase):
                 with self.assertRaises(RecursionError):
                     f()
         finally:
-            sys.setrecursionlimit(oldlimit)
+            sys.setrecursionlimit(old_limit)
 
     @test.support.cpython_only
-    def test_setrecursionlimit_recursion_depth(self):
+    def test_setrecursionlimit_to_depth(self):
         # Issue #25274: Setting a low recursion limit must be blocked if the
         # current recursion depth is already higher than limit.
 
-        from _testinternalcapi import get_recursion_depth
-
-        def set_recursion_limit_at_depth(depth, limit):
-            recursion_depth = get_recursion_depth()
-            if recursion_depth >= depth:
-                with self.assertRaises(RecursionError) as cm:
-                    sys.setrecursionlimit(limit)
-                self.assertRegex(str(cm.exception),
-                                 "cannot set the recursion limit to [0-9]+ "
-                                 "at the recursion depth [0-9]+: "
-                                 "the limit is too low")
-            else:
-                set_recursion_limit_at_depth(depth, limit)
-
-        oldlimit = sys.getrecursionlimit()
+        old_limit = sys.getrecursionlimit()
         try:
-            sys.setrecursionlimit(1000)
+            depth = support.get_recursion_depth()
+            with self.subTest(limit=sys.getrecursionlimit(), depth=depth):
+                # depth + 1 is OK
+                sys.setrecursionlimit(depth + 1)
 
-            for limit in (10, 25, 50, 75, 100, 150, 200):
-                set_recursion_limit_at_depth(limit, limit)
+                # reset the limit to be able to call self.assertRaises()
+                # context manager
+                sys.setrecursionlimit(old_limit)
+                with self.assertRaises(RecursionError) as cm:
+                    sys.setrecursionlimit(depth)
+            self.assertRegex(str(cm.exception),
+                             "cannot set the recursion limit to [0-9]+ "
+                             "at the recursion depth [0-9]+: "
+                             "the limit is too low")
         finally:
-            sys.setrecursionlimit(oldlimit)
+            sys.setrecursionlimit(old_limit)
 
     def test_getwindowsversion(self):
         # Raise SkipTest if sys doesn't have getwindowsversion attribute
@@ -507,7 +511,7 @@ class SysModuleTest(unittest.TestCase):
         # Spawn a thread that blocks at a known place.  Then the main
         # thread does sys._current_frames(), and verifies that the frames
         # returned make sense.
-        entered_g = threading.Event()
+        g_raised = threading.Event()
         leave_g = threading.Event()
         thread_info = []  # the thread's id
 
@@ -516,22 +520,19 @@ class SysModuleTest(unittest.TestCase):
 
         def g456():
             thread_info.append(threading.get_ident())
-            entered_g.set()
             while True:
                 try:
                     raise ValueError("oops")
                 except ValueError:
+                    g_raised.set()
                     if leave_g.wait(timeout=support.LONG_TIMEOUT):
                         break
 
         t = threading.Thread(target=f123)
         t.start()
-        entered_g.wait()
+        g_raised.wait(timeout=support.LONG_TIMEOUT)
 
         try:
-            # At this point, t has finished its entered_g.set(), although it's
-            # impossible to guess whether it's still on that line or has moved on
-            # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
 
@@ -690,10 +691,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -711,9 +710,7 @@ class SysModuleTest(unittest.TestCase):
 
     @requires_subinterpreters
     def test_subinterp_intern_dynamically_allocated(self):
-        global INTERN_NUMRUNS
-        INTERN_NUMRUNS += 1
-        s = "never interned before" + str(INTERN_NUMRUNS)
+        s = "never interned before" + str(random.randrange(0, 10**9))
         t = sys.intern(s)
         self.assertIs(t, s)
 
@@ -1195,15 +1192,31 @@ class SysModuleTest(unittest.TestCase):
         get_objects = sys.getobjects(3, MyType)
         self.assertEqual(len(get_objects), 3)
 
+    @unittest.skipUnless(hasattr(sys, '_stats_on'), 'need Py_STATS build')
+    def test_pystats(self):
+        # Call the functions, just check that they don't crash
+        # Cannot save/restore state.
+        sys._stats_on()
+        sys._stats_off()
+        sys._stats_clear()
+        sys._stats_dump()
+
+    @test.support.cpython_only
+    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    def test_disable_gil_abi(self):
+        abi_threaded = 't' in sys.abiflags
+        py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
+        self.assertEqual(py_nogil, abi_threaded)
+
 
 @test.support.cpython_only
 class UnraisableHookTest(unittest.TestCase):
     def write_unraisable_exc(self, exc, err_msg, obj):
-        import _testcapi
+        import _testinternalcapi
         import types
         err_msg2 = f"Exception ignored {err_msg}"
         try:
-            _testcapi.write_unraisable_exc(exc, err_msg, obj)
+            _testinternalcapi.write_unraisable_exc(exc, err_msg, obj)
             return types.SimpleNamespace(exc_type=type(exc),
                                          exc_value=exc,
                                          exc_traceback=exc.__traceback__,
@@ -1567,7 +1580,7 @@ class SizeofTest(unittest.TestCase):
             x = property(getx, setx, delx, "")
             check(x, size('5Pi'))
         # PyCapsule
-        # XXX
+        check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
         check(iter(range(1)), size('3l'))
         check(iter(range(2**65)), size('3P'))
