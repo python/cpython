@@ -542,6 +542,9 @@ remove_unusable_flags(PyObject *m)
 #define INADDR_NONE (-1)
 #endif
 
+static int
+internal_settimeout(PySocketSockObject *s, _PyTime_t timeout);
+
 typedef struct _socket_state {
     /* The sock_type variable contains pointers to various functions,
        some of which call new_sockobject(), which uses sock_type, so
@@ -1077,10 +1080,8 @@ init_sockobject(socket_state *state, PySocketSockObject *s,
 #endif
     {
         s->sock_timeout = state->defaulttimeout;
-        if (state->defaulttimeout >= 0) {
-            if (internal_setblocking(s, 0) == -1) {
-                return -1;
-            }
+        if (internal_settimeout(s, s->sock_timeout) < 0) {
+            return -1;
         }
     }
     s->state = state;
@@ -3074,6 +3075,28 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
     return 0;
 }
 
+/* s.settimeout(timeout) method.  Argument:
+   None -- no timeout, blocking mode; same as setblocking(True)
+   0.0  -- non-blocking mode; same as setblocking(False)
+   > 0  -- timeout mode; operations time out after timeout seconds
+   < 0  -- illegal; raises an exception
+*/
+static PyObject *
+sock_settimeout(PySocketSockObject *s, PyObject *arg)
+{
+    _PyTime_t timeout;
+
+    if (socket_parse_timeout(&timeout, arg) < 0) {
+        return NULL;
+    }
+
+    if (internal_settimeout(s, timeout) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
 static int
 internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
     int block;
@@ -3142,28 +3165,6 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
 
 
     return internal_setblocking(s, block);
-}
-
-/* s.settimeout(timeout) method.  Argument:
-   None -- no timeout, blocking mode; same as setblocking(True)
-   0.0  -- non-blocking mode; same as setblocking(False)
-   > 0  -- timeout mode; operations time out after timeout seconds
-   < 0  -- illegal; raises an exception
-*/
-static PyObject *
-sock_settimeout(PySocketSockObject *s, PyObject *arg)
-{
-    _PyTime_t timeout;
-
-    if (socket_parse_timeout(&timeout, arg) < 0) {
-        return NULL;
-    }
-
-    if (internal_settimeout(s, timeout) < 0) {
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(settimeout_doc,
