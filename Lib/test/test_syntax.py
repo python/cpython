@@ -1827,6 +1827,17 @@ Invalid bytes literals:
         ^^^^^^^^^^^
    SyntaxError: bytes can only contain ASCII literal characters
 
+   >>> f(**x, *y)
+   Traceback (most recent call last):
+   SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+   >>> f(**x, *)
+   Traceback (most recent call last):
+   SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+   >>> f(x, *:)
+   Traceback (most recent call last):
+   SyntaxError: invalid syntax
 """
 
 import re
