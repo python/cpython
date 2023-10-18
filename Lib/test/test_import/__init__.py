@@ -1,5 +1,4 @@
 import builtins
-import contextlib
 import errno
 import glob
 import json
@@ -22,7 +21,6 @@ import time
 import types
 import unittest
 from unittest import mock
-import _testinternalcapi
 import _imp
 
 from test.support import os_helper
@@ -50,6 +48,10 @@ try:
     import _xxsubinterpreters as _interpreters
 except ModuleNotFoundError:
     _interpreters = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(

@@ -22,6 +22,7 @@
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_interp.h"        // _PyInterpreterState_GetConfigCopy()
+#include "pycore_long.h"          // _PyLong_Sign()
 #include "pycore_object.h"        // _PyObject_IsFreed()
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -674,7 +675,11 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        PyList_Append(state->record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list,
+                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        if (res < 0) {
+            return NULL;
+        }
     }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
@@ -1466,6 +1471,66 @@ _testinternalcapi_write_unraisable_exc_impl(PyObject *module, PyObject *exc,
 }
 
 
+static PyObject *
+raiseTestError(const char* test_name, const char* msg)
+{
+    PyErr_Format(PyExc_AssertionError, "%s: %s", test_name, msg);
+    return NULL;
+}
+
+
+/*[clinic input]
+_testinternalcapi.test_long_numbits
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_test_long_numbits_impl(PyObject *module)
+/*[clinic end generated code: output=745d62d120359434 input=f14ca6f638e44dad]*/
+{
+    struct triple {
+        long input;
+        size_t nbits;
+        int sign;
+    } testcases[] = {{0, 0, 0},
+                     {1L, 1, 1},
+                     {-1L, 1, -1},
+                     {2L, 2, 1},
+                     {-2L, 2, -1},
+                     {3L, 2, 1},
+                     {-3L, 2, -1},
+                     {4L, 3, 1},
+                     {-4L, 3, -1},
+                     {0x7fffL, 15, 1},          /* one Python int digit */
+             {-0x7fffL, 15, -1},
+             {0xffffL, 16, 1},
+             {-0xffffL, 16, -1},
+             {0xfffffffL, 28, 1},
+             {-0xfffffffL, 28, -1}};
+    size_t i;
+
+    for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
+        size_t nbits;
+        int sign;
+        PyObject *plong;
+
+        plong = PyLong_FromLong(testcases[i].input);
+        if (plong == NULL)
+            return NULL;
+        nbits = _PyLong_NumBits(plong);
+        sign = _PyLong_Sign(plong);
+
+        Py_DECREF(plong);
+        if (nbits != testcases[i].nbits)
+            return raiseTestError("test_long_numbits",
+                            "wrong result for _PyLong_NumBits");
+        if (sign != testcases[i].sign)
+            return raiseTestError("test_long_numbits",
+                            "wrong result for _PyLong_Sign");
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -1521,6 +1586,7 @@ static PyMethodDef module_functions[] = {
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
     _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
+    _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
@@ -1534,6 +1600,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }
 

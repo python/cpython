@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(blob_close__doc__,
 "close($self, /)\n"
 "--\n"
@@ -213,4 +215,4 @@ blob_exit(pysqlite_Blob *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8bfd79ab12ac5385 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=27c24afc687bd772 input=a9049054013a1b77]*/

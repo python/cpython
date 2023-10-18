@@ -642,14 +642,14 @@ Here's an overview of the logical flow of a match statement:
    specified below.  **Name bindings made during a successful pattern match
    outlive the executed block and can be used after the match statement**.
 
-      .. note::
+   .. note::
 
-         During failed pattern matches, some subpatterns may succeed.  Do not
-         rely on bindings being made for a failed match.  Conversely, do not
-         rely on variables remaining unchanged after a failed match.  The exact
-         behavior is dependent on implementation and may vary.  This is an
-         intentional decision made to allow different implementations to add
-         optimizations.
+      During failed pattern matches, some subpatterns may succeed.  Do not
+      rely on bindings being made for a failed match.  Conversely, do not
+      rely on variables remaining unchanged after a failed match.  The exact
+      behavior is dependent on implementation and may vary.  This is an
+      intentional decision made to allow different implementations to add
+      optimizations.
 
 #. If the pattern succeeds, the corresponding guard (if present) is evaluated. In
    this case all name bindings are guaranteed to have happened.
@@ -1170,8 +1170,10 @@ In simple terms ``CLS(P1, attr=P2)`` matches only if the following happens:
 * ``isinstance(<subject>, CLS)``
 * convert ``P1`` to a keyword pattern using ``CLS.__match_args__``
 * For each keyword argument ``attr=P2``:
-   * ``hasattr(<subject>, "attr")``
-   * ``P2`` matches ``<subject>.attr``
+
+  * ``hasattr(<subject>, "attr")``
+  * ``P2`` matches ``<subject>.attr``
+
 * ... and so on for the corresponding keyword argument/pattern pair.
 
 .. seealso::
@@ -1838,29 +1840,29 @@ like ``TYPE_PARAMS_OF_ListOrSet`` are not actually bound at runtime.
 
 .. [#] In pattern matching, a sequence is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Sequence`
-      * a Python class that has been registered as :class:`collections.abc.Sequence`
-      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Sequence`
+   * a Python class that has been registered as :class:`collections.abc.Sequence`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_SEQUENCE` bit set
+   * a class that inherits from any of the above
 
    The following standard library classes are sequences:
 
-      * :class:`array.array`
-      * :class:`collections.deque`
-      * :class:`list`
-      * :class:`memoryview`
-      * :class:`range`
-      * :class:`tuple`
+   * :class:`array.array`
+   * :class:`collections.deque`
+   * :class:`list`
+   * :class:`memoryview`
+   * :class:`range`
+   * :class:`tuple`
 
    .. note:: Subject values of type ``str``, ``bytes``, and ``bytearray``
       do not match sequence patterns.
 
 .. [#] In pattern matching, a mapping is defined as one of the following:
 
-      * a class that inherits from :class:`collections.abc.Mapping`
-      * a Python class that has been registered as :class:`collections.abc.Mapping`
-      * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
-      * a class that inherits from any of the above
+   * a class that inherits from :class:`collections.abc.Mapping`
+   * a Python class that has been registered as :class:`collections.abc.Mapping`
+   * a builtin class that has its (CPython) :c:macro:`Py_TPFLAGS_MAPPING` bit set
+   * a class that inherits from any of the above
 
    The standard library classes :class:`dict` and :class:`types.MappingProxyType`
    are mappings.
