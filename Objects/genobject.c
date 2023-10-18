@@ -8,6 +8,7 @@
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -396,6 +397,8 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
+    assert(_PyOpcode_Caches[YIELD_VALUE] == 0);
+    assert(_PyOpcode_Caches[INSTRUMENTED_YIELD_VALUE] == 0);
     if (err == 0 && is_yield(frame->instr_ptr - 1)) {
         _Py_CODEUNIT *yield_instr = frame->instr_ptr - 1;
         assert(is_resume(frame->instr_ptr));
