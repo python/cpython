@@ -215,24 +215,6 @@ class SocketUDPLITETest(SocketUDPTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
         self.port = socket_helper.bind_port(self.serv)
 
-class ThreadSafeCleanupTestCase:
-    """Subclass of unittest.TestCase with thread-safe cleanup methods.
-
-    This subclass protects the addCleanup() and doCleanups() methods
-    with a recursive lock.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cleanup_lock = threading.RLock()
-
-    def addCleanup(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().addCleanup(*args, **kwargs)
-
-    def doCleanups(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().doCleanups(*args, **kwargs)
 
 class SocketCANTest(unittest.TestCase):
 
@@ -626,8 +608,7 @@ class SocketListeningTestMixin(SocketTestBase):
         self.serv.listen()
 
 
-class ThreadedSocketTestMixin(ThreadSafeCleanupTestCase, SocketTestBase,
-                              ThreadableTest):
+class ThreadedSocketTestMixin(SocketTestBase, ThreadableTest):
     """Mixin to add client socket and allow client/server tests.
 
     Client socket is self.cli and its address is self.cli_addr.  See
@@ -2813,7 +2794,7 @@ class BasicUDPLITETest(ThreadedUDPLITESocketTest):
 # here assumes that datagram delivery on the local machine will be
 # reliable.
 
-class SendrecvmsgBase(ThreadSafeCleanupTestCase):
+class SendrecvmsgBase:
     # Base class for sendmsg()/recvmsg() tests.
 
     # Time in seconds to wait before considering a test failed, or
@@ -4679,7 +4660,6 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
 @unittest.skipUnless(hasattr(signal, "alarm") or hasattr(signal, "setitimer"),
                      "Don't have signal.alarm or signal.setitimer")
 class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
-                                 ThreadSafeCleanupTestCase,
                                  SocketListeningTestMixin, TCPTestBase):
     # Test interrupting the interruptible send*() methods with signals
     # when a timeout is set.
@@ -5356,6 +5336,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
+    cli = None
 
     def __init__(self, methodName='runTest'):
         SocketTCPTest.__init__(self, methodName=methodName)
@@ -5365,7 +5346,8 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.source_port = socket_helper.find_unused_port()
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli is not None:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 

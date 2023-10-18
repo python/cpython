@@ -36,6 +36,12 @@ from test.support import socket_helper
 from test.support import threading_helper
 
 
+# Use the maximum known clock resolution (gh-75191, gh-110088): Windows
+# GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding
+# issues.
+CLOCK_RES = 0.050
+
+
 def data_file(*filename):
     fullname = os.path.join(support.TEST_HOME_DIR, *filename)
     if os.path.isfile(fullname):

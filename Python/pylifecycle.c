@@ -37,6 +37,9 @@
 
 #include <locale.h>               // setlocale()
 #include <stdlib.h>               // getenv()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(__APPLE__)
 #  include <mach-o/loader.h>
@@ -652,13 +655,12 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
     }
     _PyThreadState_Bind(tstate);
-    // XXX For now we do this before the GIL is created.
-    (void) _PyThreadState_SwapNoGIL(tstate);
 
     status = init_interp_create_gil(tstate, config.gil);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1074,6 +1076,38 @@ pyinit_main_reconfigure(PyThreadState *tstate)
 }
 
 
+#ifdef Py_DEBUG
+static void
+run_presite(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    const PyConfig *config = _PyInterpreterState_GetConfig(interp);
+
+    if (!config->run_presite) {
+        return;
+    }
+
+    PyObject *presite_modname = PyUnicode_FromWideChar(
+        config->run_presite,
+        wcslen(config->run_presite)
+    );
+    if (presite_modname == NULL) {
+        fprintf(stderr, "Could not convert pre-site module name to unicode\n");
+        Py_DECREF(presite_modname);
+    }
+    else {
+        PyObject *presite = PyImport_Import(presite_modname);
+        if (presite == NULL) {
+            fprintf(stderr, "pre-site import failed:\n");
+            _PyErr_Print(tstate);
+        }
+        Py_XDECREF(presite);
+        Py_DECREF(presite_modname);
+    }
+}
+#endif
+
+
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
@@ -1155,6 +1189,10 @@ init_interp_main(PyThreadState *tstate)
         return status;
     }
 
+#ifdef Py_DEBUG
+    run_presite(tstate);
+#endif
+
     status = add_main_module(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1203,6 +1241,31 @@ init_interp_main(PyThreadState *tstate)
             }
             PyUnstable_SetOptimizer((_PyOptimizerObject *)opt);
             Py_DECREF(opt);
+        }
+    }
+
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        if (config->sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(config->sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
         }
     }
 
@@ -2022,7 +2085,8 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         return _PyStatus_OK();
     }
 
-    PyThreadState *tstate = _PyThreadState_New(interp);
+    PyThreadState *tstate = _PyThreadState_New(interp,
+                                               _PyThreadState_WHENCE_INTERP);
     if (tstate == NULL) {
         PyInterpreterState_Delete(interp);
         *tstate_p = NULL;
@@ -2030,8 +2094,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     }
     _PyThreadState_Bind(tstate);
 
-    // XXX For now we do this before the GIL is created.
-    PyThreadState *save_tstate = _PyThreadState_SwapNoGIL(tstate);
+    PyThreadState *save_tstate = _PyThreadState_GET();
     int has_gil = 0;
 
     /* From this point until the init_interp_create_gil() call,
@@ -2043,7 +2106,7 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
     const PyConfig *src_config;
     if (save_tstate != NULL) {
         // XXX Might new_interpreter() have been called without the GIL held?
-        _PyEval_ReleaseLock(save_tstate->interp, save_tstate);
+        _PyThreadState_Detach(save_tstate);
         src_config = _PyInterpreterState_GetConfig(save_tstate->interp);
     }
     else
@@ -2090,12 +2153,11 @@ error:
     *tstate_p = NULL;
 
     /* Oops, it didn't work.  Undo it all. */
-    PyErr_PrintEx(0);
     if (has_gil) {
-        PyThreadState_Swap(save_tstate);
+        _PyThreadState_Detach(tstate);
     }
-    else {
-        _PyThreadState_SwapNoGIL(save_tstate);
+    if (save_tstate != NULL) {
+        _PyThreadState_Attach(save_tstate);
     }
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);

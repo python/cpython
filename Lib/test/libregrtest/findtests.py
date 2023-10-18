@@ -20,6 +20,7 @@ SPLITTESTDIRS: set[TestName] = {
     "test_concurrent_futures",
     "test_future_stmt",
     "test_gdb",
+    "test_inspect",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
