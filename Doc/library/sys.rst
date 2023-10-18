@@ -1552,9 +1552,8 @@ always available.
    function to be used for the new scope, or ``None`` if the scope shouldn't be
    traced.
 
-   The local trace function should return a reference to itself (or to another
-   function for further tracing in that scope), or ``None`` to turn off tracing
-   in that scope.
+   The local trace function should return a reference to itself, or to another
+   function which would then be used as the local trace function for the scope.
 
    If there is any error occurred in the trace function, it will be unset, just
    like ``settrace(None)`` is called.
