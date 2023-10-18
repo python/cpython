@@ -478,8 +478,8 @@ class _FuncBuilder:
         self.names.append(name)
 
         if return_type is not MISSING:
-            self.locals['__dataclass_return_type__'] = return_type
-            return_annotation = '->__dataclass_return_type__'
+            self.locals[f'__dataclass_{name}_return_type__'] = return_type
+            return_annotation = f'->__dataclass_{name}_return_type__'
         else:
             return_annotation = ''
         args = ','.join(args)
@@ -505,18 +505,19 @@ class _FuncBuilder:
         # txt is the entire function we're going to execute, including the
         # bodies of the functions we're defining.  Here's a greatly simplified
         # version:
-        # def create_fn():
+        # def __create_fn__():
         #  def __init__(self, x, y):
         #   self.x = x
         #   self.y = y
+        #  @_recursive_repr
         #  def __repr__(self):
         #   return f"cls(x={self.x!r},y={self.y!r})"
         # return __init__,__repr__
 
-        txt = f"def create_fn({local_vars}):\n{fns_src}\n return {return_names}"
+        txt = f"def __create_fn__({local_vars}):\n{fns_src}\n return {return_names}"
         ns = {}
         exec(txt, self.globals, ns)
-        fns = ns['create_fn'](**self.locals)
+        fns = ns['__create_fn__'](**self.locals)
 
         # Now that we've generated the functions, assign them into cls.
         for name, fn in zip(self.names, fns):
