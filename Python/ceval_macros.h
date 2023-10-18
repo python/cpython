@@ -305,9 +305,9 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0);
 
 #define UNBOUNDLOCAL_ERROR_MSG \
-    "cannot access local variable '%s' where it is not associated with a value"
+    "cannot access local name '%s' where it is not associated with a value"
 #define UNBOUNDFREE_ERROR_MSG \
-    "cannot access free variable '%s' where it is not associated with a value" \
+    "cannot access free name '%s' where it is not associated with a value" \
     " in enclosing scope"
 #define NAME_ERROR_MSG "name '%.200s' is not defined"
 
