@@ -21,10 +21,16 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "cursor.h"
 #include "microprotocols.h"
 #include "module.h"
 #include "util.h"
+
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 
 typedef enum {
     TYPE_LONG,
@@ -1319,13 +1325,13 @@ static PyMethodDef cursor_methods[] = {
 
 static struct PyMemberDef cursor_members[] =
 {
-    {"connection", T_OBJECT, offsetof(pysqlite_Cursor, connection), READONLY},
-    {"description", T_OBJECT, offsetof(pysqlite_Cursor, description), READONLY},
-    {"arraysize", T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
-    {"lastrowid", T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), READONLY},
-    {"rowcount", T_LONG, offsetof(pysqlite_Cursor, rowcount), READONLY},
-    {"row_factory", T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), READONLY},
+    {"connection", _Py_T_OBJECT, offsetof(pysqlite_Cursor, connection), Py_READONLY},
+    {"description", _Py_T_OBJECT, offsetof(pysqlite_Cursor, description), Py_READONLY},
+    {"arraysize", Py_T_INT, offsetof(pysqlite_Cursor, arraysize), 0},
+    {"lastrowid", _Py_T_OBJECT, offsetof(pysqlite_Cursor, lastrowid), Py_READONLY},
+    {"rowcount", Py_T_LONG, offsetof(pysqlite_Cursor, rowcount), Py_READONLY},
+    {"row_factory", _Py_T_OBJECT, offsetof(pysqlite_Cursor, row_factory), 0},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(pysqlite_Cursor, in_weakreflist), Py_READONLY},
     {NULL}
 };
 

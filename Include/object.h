@@ -51,28 +51,9 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-#include "pystats.h"
-
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #  define Py_REF_DEBUG
-#endif
-
-#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
-#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
-#endif
-
-#ifdef Py_TRACE_REFS
-/* Define pointers to support a doubly-linked list of all live heap objects. */
-#define _PyObject_HEAD_EXTRA            \
-    PyObject *_ob_next;           \
-    PyObject *_ob_prev;
-
-#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
-
-#else
-#  define _PyObject_HEAD_EXTRA
-#  define _PyObject_EXTRA_INIT
 #endif
 
 /* PyObject_HEAD defines the initial segment of every PyObject. */
@@ -130,14 +111,12 @@ check by comparing the reference count field to the immortality reference count.
 #ifdef Py_BUILD_CORE
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        _PyObject_EXTRA_INIT        \
         { _Py_IMMORTAL_REFCNT },    \
         (type)                      \
     },
 #else
 #define PyObject_HEAD_INIT(type) \
     {                            \
-        _PyObject_EXTRA_INIT     \
         { 1 },                   \
         (type)                   \
     },
@@ -164,13 +143,27 @@ check by comparing the reference count field to the immortality reference count.
  * in addition, be cast to PyVarObject*.
  */
 struct _object {
-    _PyObject_HEAD_EXTRA
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+    // On C99 and older, anonymous union is a GCC and clang extension
+    __extension__
+#endif
+#ifdef _MSC_VER
+    // Ignore MSC warning C4201: "nonstandard extension used:
+    // nameless struct/union"
+    __pragma(warning(push))
+    __pragma(warning(disable: 4201))
+#endif
     union {
        Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
        PY_UINT32_T ob_refcnt_split[2];
 #endif
     };
+#ifdef _MSC_VER
+    __pragma(warning(pop))
+#endif
+
     PyTypeObject *ob_type;
 };
 
@@ -391,10 +384,20 @@ PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
 PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
 PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttrString(PyObject *v, const char *name);
 PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_GetOptionalAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObject **);
+#endif
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
@@ -414,12 +417,6 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
    no current locals, NULL is returned, and PyErr_Occurred() is false.
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
-
-/* Pickle support. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
-#endif
-
 
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
@@ -585,20 +582,12 @@ decision that's up to the implementer of each new type so if you want,
 you can count such references to the type object.)
 */
 
-#ifdef Py_REF_DEBUG
-#  if defined(Py_LIMITED_API) && Py_LIMITED_API+0 < 0x030A0000
-extern Py_ssize_t _Py_RefTotal;
-#    define _Py_INC_REFTOTAL() _Py_RefTotal++
-#    define _Py_DEC_REFTOTAL() _Py_RefTotal--
-#  elif !defined(Py_LIMITED_API) || Py_LIMITED_API+0 > 0x030D0000
-PyAPI_FUNC(void) _Py_IncRefTotal_DO_NOT_USE_THIS(void);
-PyAPI_FUNC(void) _Py_DecRefTotal_DO_NOT_USE_THIS(void);
-#    define _Py_INC_REFTOTAL() _Py_IncRefTotal_DO_NOT_USE_THIS()
-#    define _Py_DEC_REFTOTAL() _Py_DecRefTotal_DO_NOT_USE_THIS()
-#  endif
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
-#endif /* Py_REF_DEBUG */
+PyAPI_FUNC(void) _Py_INCREF_IncRefTotal(void);
+PyAPI_FUNC(void) _Py_DECREF_DecRefTotal(void);
+#endif  // Py_REF_DEBUG && !Py_LIMITED_API
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
@@ -616,9 +605,16 @@ PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
+#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+    // Stable ABI implements Py_INCREF() as a function call on limited C API
+    // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
+    // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
+    // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
+#  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_IncRef(op);
+#  else
+    Py_IncRef(op);
+#  endif
 #else
     // Non-limited C API and limited C API for Python 3.9 and older access
     // directly PyObject.ob_refcnt.
@@ -639,7 +635,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_INC_REFTOTAL();
+    _Py_INCREF_IncRefTotal();
 #endif
 #endif
 }
@@ -647,27 +643,32 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
 #endif
 
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-// Stable ABI for limited C API version 3.10 of Python debug build
+#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+// Stable ABI implements Py_DECREF() as a function call on limited C API
+// version 3.12 and newer, and on Python built in debug mode. _Py_DecRef() was
+// added to Python 3.10.0a7, use Py_DecRef() on older Python versions.
+// Py_DecRef() accepts NULL whereas _Py_IncRef() doesn't.
 static inline void Py_DECREF(PyObject *op) {
+#  if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_DecRef(op);
+#  else
+    Py_DecRef(op);
+#  endif
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }
     _Py_DECREF_STAT_INC();
-    _Py_DEC_REFTOTAL();
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-    }
-    else {
+    _Py_DECREF_DecRefTotal();
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
@@ -688,9 +689,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 #endif
-
-#undef _Py_INC_REFTOTAL
-#undef _Py_DEC_REFTOTAL
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
@@ -820,8 +818,6 @@ static inline PyObject* _Py_XNewRef(PyObject *obj)
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
-
-Don't forget to apply Py_INCREF() when returning this value!!!
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)

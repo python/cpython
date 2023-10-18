@@ -89,8 +89,6 @@ import os as _os
 import re as _re
 import sys as _sys
 
-import warnings
-
 from gettext import gettext as _, ngettext
 
 SUPPRESS = '==SUPPRESS=='
@@ -910,6 +908,7 @@ class BooleanOptionalAction(Action):
         #   parser.add_argument('-f', action=BooleanOptionalAction, type=int)
         for field_name in ('type', 'choices', 'metavar'):
             if locals()[field_name] is not _deprecated_default:
+                import warnings
                 warnings._deprecated(
                     field_name,
                     "{name!r} is deprecated as of Python 3.12 and will be "
@@ -1528,6 +1527,8 @@ class _ActionsContainer(object):
         title_group_map = {}
         for group in self._action_groups:
             if group.title in title_group_map:
+                # This branch could happen if a derived class added
+                # groups with duplicated titles in __init__
                 msg = _('cannot merge actions - two groups are named %r')
                 raise ValueError(msg % (group.title))
             title_group_map[group.title] = group
@@ -1698,6 +1699,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
+        import warnings
         warnings.warn(
             "Nesting argument groups is deprecated.",
             category=DeprecationWarning,
@@ -1726,6 +1728,7 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._group_actions.remove(action)
 
     def add_mutually_exclusive_group(self, *args, **kwargs):
+        import warnings
         warnings.warn(
             "Nesting mutually exclusive groups is deprecated.",
             category=DeprecationWarning,
@@ -1811,13 +1814,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
 
         # add parent arguments and defaults
         for parent in parents:
+            if not isinstance(parent, ArgumentParser):
+                raise TypeError('parents must be a list of ArgumentParser')
             self._add_container_actions(parent)
-            try:
-                defaults = parent._defaults
-            except AttributeError:
-                pass
-            else:
-                self._defaults.update(defaults)
+            defaults = parent._defaults
+            self._defaults.update(defaults)
 
     # =======================
     # Pretty __repr__ methods

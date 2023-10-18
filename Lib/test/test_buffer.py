@@ -24,6 +24,7 @@ import warnings
 import sys, array, io, os
 from decimal import Decimal
 from fractions import Fraction
+from test.support import warnings_helper
 
 try:
     from _testbuffer import *
@@ -1028,6 +1029,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -2759,6 +2761,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.
@@ -3217,12 +3220,6 @@ class TestBufferProtocol(unittest.TestCase):
         nd[0] = (-1, float('nan'))
         self.assertNotEqual(memoryview(nd), nd)
 
-        # Depends on issue #15625: the struct module does not understand 'u'.
-        a = array.array('u', 'xyz')
-        v = memoryview(a)
-        self.assertNotEqual(a, v)
-        self.assertNotEqual(v, a)
-
         # Some ctypes format strings are unknown to the struct module.
         if ctypes:
             # format: "T{>l:x:>l:y:}"
@@ -3235,6 +3232,15 @@ class TestBufferProtocol(unittest.TestCase):
             self.assertNotEqual(a, point)
             self.assertNotEqual(point, a)
             self.assertRaises(NotImplementedError, a.tolist)
+
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)  # gh-80480 array('u')
+    def test_memoryview_compare_special_cases_deprecated_u_type_code(self):
+
+        # Depends on issue #15625: the struct module does not understand 'u'.
+        a = array.array('u', 'xyz')
+        v = memoryview(a)
+        self.assertNotEqual(a, v)
+        self.assertNotEqual(v, a)
 
     def test_memoryview_compare_ndim_zero(self):
 
@@ -4718,7 +4724,7 @@ class TestPythonBufferProtocol(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.buffer.tobytes()
 
-    def test_multiple_inheritance_buffer_last(self):
+    def test_multiple_inheritance_buffer_last_raising(self):
         class A:
             def __buffer__(self, flags):
                 raise RuntimeError("should not be called")

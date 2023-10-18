@@ -2,7 +2,10 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-#define PY_SSIZE_T_CLEAN
+// clinic/posixshmem.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include <Python.h>
 

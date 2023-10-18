@@ -426,6 +426,9 @@ Sleeping
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.13
+      Raises :exc:`ValueError` if *delay* is :data:`~math.nan`.
+
 
 Running Tasks Concurrently
 ==========================
@@ -589,7 +592,7 @@ Shielding From Cancellation
 
    is equivalent to::
 
-       res = await something()
+       res = await shield(something())
 
    *except* that if the coroutine containing it is cancelled, the
    Task running in ``something()`` is not cancelled.  From the point
@@ -628,9 +631,9 @@ Shielding From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: timeout(delay)
+.. function:: timeout(delay)
 
-    An :ref:`asynchronous context manager <async-context-managers>`
+    Return an :ref:`asynchronous context manager <async-context-managers>`
     that can be used to limit the amount of time spent waiting on
     something.
 
@@ -651,16 +654,16 @@ Timeouts
     If ``long_running_task`` takes more than 10 seconds to complete,
     the context manager will cancel the current task and handle
     the resulting :exc:`asyncio.CancelledError` internally, transforming it
-    into an :exc:`asyncio.TimeoutError` which can be caught and handled.
+    into a :exc:`TimeoutError` which can be caught and handled.
 
     .. note::
 
       The :func:`asyncio.timeout` context manager is what transforms
-      the :exc:`asyncio.CancelledError` into an :exc:`asyncio.TimeoutError`,
-      which means the :exc:`asyncio.TimeoutError` can only be caught
+      the :exc:`asyncio.CancelledError` into a :exc:`TimeoutError`,
+      which means the :exc:`TimeoutError` can only be caught
       *outside* of the context manager.
 
-    Example of catching :exc:`asyncio.TimeoutError`::
+    Example of catching :exc:`TimeoutError`::
 
         async def main():
             try:
@@ -721,7 +724,7 @@ Timeouts
 
     .. versionadded:: 3.11
 
-.. coroutinefunction:: timeout_at(when)
+.. function:: timeout_at(when)
 
    Similar to :func:`asyncio.timeout`, except *when* is the absolute time
    to stop waiting, or ``None``.
@@ -764,9 +767,6 @@ Timeouts
 
    If the wait is cancelled, the future *aw* is also cancelled.
 
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
-
    .. _asyncio_example_waitfor:
 
    Example::
@@ -796,6 +796,9 @@ Timeouts
 
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
+
+   .. versionchanged:: 3.11
+      Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
 
 
 Waiting Primitives

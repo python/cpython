@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <stddef.h>               // offsetof()
 #include "pycore_object.h"
@@ -200,10 +199,6 @@ write_str(stringio *self, PyObject *obj)
         return -1;
 
     assert(PyUnicode_Check(decoded));
-    if (PyUnicode_READY(decoded)) {
-        Py_DECREF(decoded);
-        return -1;
-    }
     len = PyUnicode_GET_LENGTH(decoded);
     assert(len >= 0);
 
@@ -542,8 +537,6 @@ _io_StringIO_write(stringio *self, PyObject *obj)
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
-    if (PyUnicode_READY(obj))
-        return NULL;
     CHECK_CLOSED(self);
     size = PyUnicode_GET_LENGTH(obj);
 
@@ -1009,8 +1002,8 @@ static PyGetSetDef stringio_getset[] = {
 };
 
 static struct PyMemberDef stringio_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(stringio, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET, offsetof(stringio, dict), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(stringio, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET, offsetof(stringio, dict), Py_READONLY},
     {NULL},
 };
 

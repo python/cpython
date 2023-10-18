@@ -1004,7 +1004,22 @@ Missing ':' before suites:
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> def f[T]()
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
    >>> class A
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> class A[T]
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: expected ':'
+
+   >>> class A[T]()
    ...     pass
    Traceback (most recent call last):
    SyntaxError: expected ':'
@@ -1446,7 +1461,17 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after function definition on line 1
 
+   >>> def foo[T](x, /, y, *, z=2):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after function definition on line 1
+
    >>> class Blech(A):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after class definition on line 1
+
+   >>> class Blech[T](A):
    ... pass
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
@@ -1618,6 +1643,22 @@ Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
 
 >>> import a.y.z from b.y.z as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a, b,c from b
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a,b,c from b as bar
+Traceback (most recent call last):
+SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import a.y.z, b.y.z, c.y.z from b.y.z as bar
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
 
@@ -1939,6 +1980,17 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within the definition of a generic
 
+    >>> f(**x, *y)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(**x, *)
+    Traceback (most recent call last):
+    SyntaxError: iterable argument unpacking follows keyword argument unpacking
+
+    >>> f(x, *:)
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax
 """
 
 import re
@@ -2319,7 +2371,7 @@ while 1:
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
             with self.subTest(mode=mode):
-                with self.assertRaises(MemoryError):
+                with self.assertRaisesRegex(MemoryError, r"too complex"):
                     compile(source, "<string>", mode)
 
     @support.cpython_only

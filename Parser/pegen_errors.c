@@ -1,7 +1,9 @@
 #include <Python.h>
 #include <errcode.h>
 
-#include "tokenizer.h"
+#include "pycore_pyerrors.h"      // _PyErr_ProgramDecodedTextObject()
+#include "lexer/state.h"
+#include "lexer/lexer.h"
 #include "pegen.h"
 
 // TOKENIZER ERRORS
@@ -66,6 +68,7 @@ _Pypegen_tokenizer_error(Parser *p)
     const char *msg = NULL;
     PyObject* errtype = PyExc_SyntaxError;
     Py_ssize_t col_offset = -1;
+    p->error_indicator = 1;
     switch (p->tok->done) {
         case E_TOKEN:
             msg = "invalid token";
@@ -101,6 +104,10 @@ _Pypegen_tokenizer_error(Parser *p)
             msg = "unexpected character after line continuation character";
             break;
         }
+        case E_COLUMNOVERFLOW:
+            PyErr_SetString(PyExc_OverflowError,
+                    "Parser column offset overflow - source line is too big");
+            return -1;
         default:
             msg = "unknown parsing error";
     }
@@ -309,21 +316,6 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         end_col_offset = p->tok->cur - p->tok->line_start;
     }
 
-    if (p->start_rule == Py_fstring_input) {
-        const char *fstring_msg = "f-string: ";
-        Py_ssize_t len = strlen(fstring_msg) + strlen(errmsg);
-
-        char *new_errmsg = PyMem_Malloc(len + 1); // Lengths of both strings plus NULL character
-        if (!new_errmsg) {
-            return (void *) PyErr_NoMemory();
-        }
-
-        // Copy both strings into new buffer
-        memcpy(new_errmsg, fstring_msg, strlen(fstring_msg));
-        memcpy(new_errmsg + strlen(fstring_msg), errmsg, strlen(errmsg));
-        new_errmsg[len] = 0;
-        errmsg = new_errmsg;
-    }
     errstr = PyUnicode_FromFormatV(errmsg, va);
     if (!errstr) {
         goto error;
@@ -362,11 +354,6 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
         }
     }
 
-    if (p->start_rule == Py_fstring_input) {
-        col_offset -= p->starting_col_offset;
-        end_col_offset -= p->starting_col_offset;
-    }
-
     Py_ssize_t col_number = col_offset;
     Py_ssize_t end_col_number = end_col_offset;
 
@@ -397,17 +384,11 @@ _PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 
     Py_DECREF(errstr);
     Py_DECREF(value);
-    if (p->start_rule == Py_fstring_input) {
-        PyMem_Free((void *)errmsg);
-    }
     return NULL;
 
 error:
     Py_XDECREF(errstr);
     Py_XDECREF(error_line);
-    if (p->start_rule == Py_fstring_input) {
-        PyMem_Free((void *)errmsg);
-    }
     return NULL;
 }
 
@@ -452,4 +433,12 @@ _Pypegen_set_syntax_error(Parser* p, Token* last_token) {
     // _PyPegen_tokenize_full_source_to_check_for_errors will override the existing
     // generic SyntaxError we just raised if errors are found.
     _PyPegen_tokenize_full_source_to_check_for_errors(p);
+}
+
+void
+_Pypegen_stack_overflow(Parser *p)
+{
+    p->error_indicator = 1;
+    PyErr_SetString(PyExc_MemoryError,
+        "Parser stack overflowed - Python source too complex to parse");
 }

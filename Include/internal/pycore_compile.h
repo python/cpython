@@ -11,8 +11,16 @@ extern "C" {
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
-// Export the symbol for test_peg_generator (built as a library)
+// Export for 'test_peg_generator' shared extension
 PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
+    struct _mod *mod,
+    PyObject *filename,
+    PyCompilerFlags *flags,
+    int optimize,
+    struct _arena *arena);
+
+/* AST optimizations */
+extern int _PyCompile_AstOptimize(
     struct _mod *mod,
     PyObject *filename,
     PyCompilerFlags *flags,
@@ -21,21 +29,14 @@ PyAPI_FUNC(PyCodeObject*) _PyAST_Compile(
 
 static const _PyCompilerSrcLocation NO_LOCATION = {-1, -1, -1, -1};
 
-typedef struct {
-    int optimize;
-    int ff_features;
-
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
-} _PyASTOptimizeState;
-
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
-    _PyASTOptimizeState *state);
+    int optimize,
+    int ff_features);
 
 typedef struct {
-    int h_offset;
+    int h_label;
     int h_startdepth;
     int h_preserve_lasti;
 } _PyCompile_ExceptHandlerInfo;
@@ -45,6 +46,10 @@ typedef struct {
     int i_oparg;
     _PyCompilerSrcLocation i_loc;
     _PyCompile_ExceptHandlerInfo i_except_handler_info;
+
+    /* Used by the assembler */
+    int i_target;
+    int i_offset;
 } _PyCompile_Instruction;
 
 typedef struct {
@@ -56,6 +61,11 @@ typedef struct {
     int s_labelmap_size;
     int s_next_free_label; /* next free label id */
 } _PyCompile_InstructionSequence;
+
+int _PyCompile_InstructionSequence_UseLabel(_PyCompile_InstructionSequence *seq, int lbl);
+int _PyCompile_InstructionSequence_Addop(_PyCompile_InstructionSequence *seq,
+                                         int opcode, int oparg,
+                                         _PyCompilerSrcLocation loc);
 
 typedef struct {
     PyObject *u_name;
@@ -92,10 +102,12 @@ int _PyCompile_EnsureArrayLargeEnough(
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
-int _PyCompile_InstrSize(int opcode, int oparg);
-
 /* Access compiler internals for unit testing */
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyCompile_CleanDoc(PyObject *doc);
+
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         PyObject *ast,
         PyObject *filename,
@@ -103,11 +115,13 @@ PyAPI_FUNC(PyObject*) _PyCompile_CodeGen(
         int optimize,
         int compile_mode);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *instructions,
         PyObject *consts,
         int nlocals);
 
+// Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(PyCodeObject*)
 _PyCompile_Assemble(_PyCompile_CodeUnitMetadata *umd, PyObject *filename,
                     PyObject *instructions);
