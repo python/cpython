@@ -8,6 +8,7 @@ except ImportError:
 import pathlib
 import shutil
 import subprocess
+import sys
 import sysconfig
 import tempfile
 
@@ -187,6 +188,9 @@ def compile_wasi_python(context, build_python, version):
     with exec_script.open("w", encoding="utf-8") as file:
         file.write(f'#!/bin/sh\nexec {host_runner} "$@"\n')
     exec_script.chmod(0o755)
+    print(f"Created {exec_script} ... ", end="")
+    sys.stdout.flush()
+    subprocess.check_call([exec_script, "--version"])
 
 
 def main():
