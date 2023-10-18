@@ -1,0 +1,1 @@
+Ensure that IDLE.app is installed with appropriate permissions.
