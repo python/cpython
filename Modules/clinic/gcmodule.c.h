@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _Py_convert_optional_to_ssize_t()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(gc_enable__doc__,
 "enable($module, /)\n"
@@ -424,4 +425,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=63093e7724b94a37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c345e7b4ce6085a input=a9049054013a1b77]*/

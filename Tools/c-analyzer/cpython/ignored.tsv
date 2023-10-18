@@ -729,3 +729,4 @@ Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 Python/optimizer_analysis.c	-	_Py_PartitionRootNode_Type	-
 Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
+Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
