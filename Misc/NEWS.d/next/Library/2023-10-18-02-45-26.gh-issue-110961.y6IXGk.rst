@@ -1,0 +1,2 @@
+Fixed :func:`asyncio.wait` docstring, removing the deprecated coroutine
+reference. Patch by Bar Harel.
