@@ -944,8 +944,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     # Find our base classes in reverse MRO order, and exclude
     # ourselves.  In reversed order so that more derived classes
     # override earlier field definitions in base classes.  As long as
-    # we're iterating over them, see if any are frozen.
+    # we're iterating over them, see if all or any of them are frozen.
     any_frozen_base = False
+    # By default `all_frozen_bases` is `None` to represent a case,
+    # where some dataclasses does not have any bases with `_FIELDS`
+    all_frozen_bases = None
     has_dataclass_bases = False
     for b in cls.__mro__[-1:0:-1]:
         # Only process classes that have been processed by our
@@ -955,8 +958,11 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
             has_dataclass_bases = True
             for f in base_fields.values():
                 fields[f.name] = f
-            if getattr(b, _PARAMS).frozen:
-                any_frozen_base = True
+            if all_frozen_bases is None:
+                all_frozen_bases = True
+            current_frozen = getattr(b, _PARAMS).frozen
+            all_frozen_bases = all_frozen_bases and current_frozen
+            any_frozen_base = any_frozen_base or current_frozen
 
     # Annotations defined specifically in this class (not in base classes).
     #
@@ -1025,7 +1031,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                             'frozen one')
 
         # Raise an exception if we're frozen, but none of our bases are.
-        if not any_frozen_base and frozen:
+        if all_frozen_bases is False and frozen:
             raise TypeError('cannot inherit frozen dataclass from a '
                             'non-frozen one')
 
@@ -1567,15 +1573,15 @@ def _replace(obj, /, **changes):
         if not f.init:
             # Error if this field is specified in changes.
             if f.name in changes:
-                raise ValueError(f'field {f.name} is declared with '
-                                 'init=False, it cannot be specified with '
-                                 'replace()')
+                raise TypeError(f'field {f.name} is declared with '
+                                f'init=False, it cannot be specified with '
+                                f'replace()')
             continue
 
         if f.name not in changes:
             if f._field_type is _FIELD_INITVAR and f.default is MISSING:
-                raise ValueError(f"InitVar {f.name!r} "
-                                 'must be specified with replace()')
+                raise TypeError(f"InitVar {f.name!r} "
+                                f'must be specified with replace()')
             changes[f.name] = getattr(obj, f.name)
 
     # Create the new object, which calls __init__() and

@@ -1,1 +1,0 @@
-Update the Python pickle module implementation to match the C implementation of the pickle module. For objects setting reduction methods like :meth:`~object.__reduce_ex__` or :meth:`~object.__reduce__` to ``None``, pickling will result in a :exc:`TypeError`.

@@ -786,7 +786,7 @@ Exception Objects
 
    Implement part of the interpreter's implementation of :keyword:`!except*`.
    *orig* is the original exception that was caught, and *excs* is the list of
-   the exceptions that need to be raised. This list contains the the unhandled
+   the exceptions that need to be raised. This list contains the unhandled
    part of *orig*, if any, as well as the exceptions that were raised from the
    :keyword:`!except*` clauses (so they have a different traceback from *orig*) and
    those that were reraised (and have the same traceback as *orig*).

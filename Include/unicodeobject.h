@@ -957,6 +957,15 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     const char *right           /* ASCII-encoded string */
     );
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+/* Compare a Unicode object with UTF-8 encoded C string.
+   Return 1 if they are equal, or 0 otherwise.
+   This function does not raise exceptions. */
+
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
+#endif
+
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised

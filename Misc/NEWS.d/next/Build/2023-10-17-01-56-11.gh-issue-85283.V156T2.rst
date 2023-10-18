@@ -1,0 +1,4 @@
+The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
+``_scproxy``, ``_stat``, ``_testimportmultiple`` and ``_uuid`` C extensions are
+now built with the :ref:`limited C API <limited-c-api>`.
+Patch by Victor Stinner.
