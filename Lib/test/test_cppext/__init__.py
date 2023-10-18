@@ -9,22 +9,27 @@ import sysconfig
 from test import support
 
 
-MS_WINDOWS = (sys.platform == 'win32')
 SOURCE = os.path.join(os.path.dirname(__file__), 'extension.cpp')
 SETUP = os.path.join(os.path.dirname(__file__), 'setup.py')
 
 
+# gh-110119: pip does not currently support 't' in the ABI flag use by
+# --disable-gil builds. Once it does, we can remove this skip.
+@unittest.skipIf(sysconfig.get_config_var('Py_NOGIL') == 1,
+                 'test does not work with --disable-gil')
 @support.requires_subprocess()
 class TestCPPExt(unittest.TestCase):
+    @support.requires_resource('cpu')
     def test_build_cpp11(self):
         self.check_build(False, '_testcpp11ext')
 
+    @support.requires_resource('cpu')
     def test_build_cpp03(self):
         self.check_build(True, '_testcpp03ext')
 
     # With MSVC, the linker fails with: cannot open file 'python311.lib'
     # https://github.com/python/cpython/pull/32175#issuecomment-1111175897
-    @unittest.skipIf(MS_WINDOWS, 'test fails on Windows')
+    @unittest.skipIf(support.MS_WINDOWS, 'test fails on Windows')
     # Building and running an extension in clang sanitizing mode is not
     # straightforward
     @unittest.skipIf(

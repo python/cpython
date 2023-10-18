@@ -123,7 +123,14 @@ def compile_c_extension(
     common_sources = [
         str(MOD_DIR.parent.parent.parent / "Python" / "Python-ast.c"),
         str(MOD_DIR.parent.parent.parent / "Python" / "asdl.c"),
-        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "lexer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "state.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer" / "buffer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "string_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "file_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "utf8_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "readline_tokenizer.c"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer" / "helpers.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "pegen_errors.c"),
         str(MOD_DIR.parent.parent.parent / "Parser" / "action_helpers.c"),
@@ -133,6 +140,8 @@ def compile_c_extension(
     include_dirs = [
         str(MOD_DIR.parent.parent.parent / "Include" / "internal"),
         str(MOD_DIR.parent.parent.parent / "Parser"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "lexer"),
+        str(MOD_DIR.parent.parent.parent / "Parser" / "tokenizer"),
     ]
     extension = Extension(
         extension_name,
@@ -148,8 +157,7 @@ def compile_c_extension(
     cmd.include_dirs = include_dirs
     if build_dir:
         cmd.build_temp = build_dir
-    # A deficiency in typeshed's stubs means we have to type: ignore:
-    cmd.ensure_finalized()  # type: ignore[attr-defined]
+    cmd.ensure_finalized()
 
     compiler = new_compiler()
     customize_compiler(compiler)
@@ -160,8 +168,8 @@ def compile_c_extension(
         library_filename = compiler.library_filename(extension_name, output_dir=library_dir)
         if newer_group(common_sources, library_filename, "newer"):
             if sys.platform == "win32":
-                # A deficiency in typeshed's stubs means we have to type: ignore:
-                pdb = compiler.static_lib_format % (extension_name, ".pdb")  # type: ignore[attr-defined]
+                assert compiler.static_lib_format
+                pdb = compiler.static_lib_format % (extension_name, ".pdb")
                 compile_opts = [f"/Fd{library_dir}\\{pdb}"]
                 compile_opts.extend(extra_compile_args)
             else:
@@ -213,7 +221,7 @@ def compile_c_extension(
         ext_path,
         libraries=cmd.get_libraries(extension),
         extra_postargs=extra_link_args,
-        export_symbols=cmd.get_export_symbols(extension),
+        export_symbols=cmd.get_export_symbols(extension),  # type: ignore[no-untyped-call]
         debug=cmd.debug,
         build_temp=cmd.build_temp,
     )

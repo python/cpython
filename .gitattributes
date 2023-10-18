@@ -24,7 +24,7 @@ PC/classicAppCompat.* binary
 [attr]noeol -text
 
 Lib/test/cjkencodings/*                    noeol
-Lib/test/coding20731.py                    noeol
+Lib/test/tokenizedata/coding20731.py       noeol
 Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
 Lib/test/test_importlib/resources/data01/*           noeol
@@ -66,6 +66,8 @@ PCbuild/readme.txt  dos
 [attr]generated linguist-generated=true diff=generated
 
 **/clinic/*.c.h                                     generated
+**/clinic/*.cpp.h                                   generated
+**/clinic/*.h.h                                     generated
 *_db.h                                              generated
 Doc/data/stable_abi.dat                             generated
 Doc/library/token-list.inc                          generated

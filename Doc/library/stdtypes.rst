@@ -48,9 +48,9 @@ By default, an object is considered true unless its class defines either a
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
 * constants defined to be false: ``None`` and ``False``
 
@@ -282,7 +282,7 @@ the operations, see :ref:`operator-summary`):
 +---------------------+---------------------------------+---------+--------------------+
 | ``x / y``           | quotient of *x* and *y*         |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
-| ``x // y``          | floored quotient of *x* and     | \(1)    |                    |
+| ``x // y``          | floored quotient of *x* and     | \(1)\(2)|                    |
 |                     | *y*                             |         |                    |
 +---------------------+---------------------------------+---------+--------------------+
 | ``x % y``           | remainder of ``x / y``          | \(2)    |                    |
@@ -319,8 +319,10 @@ the operations, see :ref:`operator-summary`):
 Notes:
 
 (1)
-   Also referred to as integer division.  The resultant value is a whole
-   integer, though the result's type is not necessarily int.  The result is
+   Also referred to as integer division.  For operands of type :class:`int`,
+   the result has type :class:`int`.  For operands of type :class:`float`,
+   the result has type :class:`float`.  In general, the result is a whole
+   integer, though the result's type is not necessarily :class:`int`.  The result is
    always rounded towards minus infinity: ``1//2`` is ``0``, ``(-1)//2`` is
    ``-1``, ``1//(-2)`` is ``-1``, and ``(-1)//(-2)`` is ``0``.
 
@@ -802,6 +804,7 @@ number, :class:`float`, or :class:`complex`::
            hash_value = -2
        return hash_value
 
+.. _bltin-boolean-values:
 .. _typebool:
 
 Boolean Type - :class:`bool`
@@ -1639,7 +1642,7 @@ expression support in the :mod:`re` module).
 
    The casefolding algorithm is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
    .. versionadded:: 3.3
 
@@ -1803,7 +1806,7 @@ expression support in the :mod:`re` module).
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the `Alphabetic property defined in the section 4.10 'Letters, Alphabetic, and
    Ideographic' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch04.pdf>`_.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch04.pdf>`_.
 
 
 .. method:: str.isascii()
@@ -1939,7 +1942,7 @@ expression support in the :mod:`re` module).
 
    The lowercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.lstrip([chars])
@@ -2288,7 +2291,7 @@ expression support in the :mod:`re` module).
 
    The uppercasing algorithm used is
    `described in section 3.13 'Default Case Folding' of the Unicode Standard
-   <https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf>`__.
+   <https://www.unicode.org/versions/Unicode15.1.0/ch03.pdf>`__.
 
 
 .. method:: str.zfill(width)

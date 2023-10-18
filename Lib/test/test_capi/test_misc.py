@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
@@ -298,26 +298,132 @@ class CAPITest(unittest.TestCase):
             # test _Py_CheckFunctionResult() instead.
             self.assertIn('returned a result with an exception set', err)
 
+    def test_buildvalue(self):
+        # Test Py_BuildValue() with object arguments
+        buildvalue = _testcapi.py_buildvalue
+        self.assertEqual(buildvalue(''), None)
+        self.assertEqual(buildvalue('()'), ())
+        self.assertEqual(buildvalue('[]'), [])
+        self.assertEqual(buildvalue('{}'), {})
+        self.assertEqual(buildvalue('()[]{}'), ((), [], {}))
+        self.assertEqual(buildvalue('O', 1), 1)
+        self.assertEqual(buildvalue('(O)', 1), (1,))
+        self.assertEqual(buildvalue('[O]', 1), [1])
+        self.assertRaises(SystemError, buildvalue, '{O}', 1)
+        self.assertEqual(buildvalue('OO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(OO)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[OO]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{OO}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{OOOO}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('((O))', 1), ((1,),))
+        self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
+
+        self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('O,', 1), 1)
+        self.assertEqual(buildvalue('   O   ', 1), 1)
+        self.assertEqual(buildvalue('\tO\t', 1), 1)
+        self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O, O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O,\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O,)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O ) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO\t)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O,]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O ] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [\tO\tO\t] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O,}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O } ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO\t}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+
+        self.assertRaises(SystemError, buildvalue, 'O', NULL)
+        self.assertRaises(SystemError, buildvalue, '(O)', NULL)
+        self.assertRaises(SystemError, buildvalue, '[O]', NULL)
+        self.assertRaises(SystemError, buildvalue, '{O}', NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '(OO)', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '(OO)', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '[OO]', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '[OO]', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '{OO}', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '{OO}', NULL, 2)
+
+    def test_buildvalue_ints(self):
+        # Test Py_BuildValue() with integer arguments
+        buildvalue = _testcapi.py_buildvalue_ints
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
+
+        self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
+        self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
+        self.assertEqual(buildvalue('H', USHRT_MAX), USHRT_MAX)
+
+        self.assertEqual(buildvalue('b', 127), 127)
+        self.assertEqual(buildvalue('b', -128), -128)
+        self.assertEqual(buildvalue('B', 255), 255)
+
+        self.assertEqual(buildvalue('c', ord('A')), b'A')
+        self.assertEqual(buildvalue('c', 255), b'\xff')
+        self.assertEqual(buildvalue('c', 256), b'\x00')
+        self.assertEqual(buildvalue('c', -1), b'\xff')
+
+        self.assertEqual(buildvalue('C', 255), chr(255))
+        self.assertEqual(buildvalue('C', 256), chr(256))
+        self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
+        self.assertRaises(ValueError, buildvalue, 'C', -1)
+        self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
+
+        # gh-84489
+        self.assertRaises(ValueError, buildvalue, '(C )i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '[C ]i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '{Ci }i', -1, 2, 3)
+
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
 
-    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
-                         'need _testcapi.negative_refcount')
-    def test_negative_refcount(self):
+    def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
         # when calling _Py_NegativeRefcount() to abort Python.
-        code = textwrap.dedent("""
-            import _testcapi
-            from test import support
-
-            with support.SuppressCrashReport():
-                _testcapi.negative_refcount()
-        """)
+        code = textwrap.dedent(code)
         rc, out, err = assert_python_failure('-c', code)
         self.assertRegex(err,
                          br'_testcapimodule\.c:[0-9]+: '
                          br'_Py_NegativeRefcount: Assertion failed: '
                          br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
 
     def test_trashcan_subclass(self):
         # bpo-35983: Check that the trashcan mechanism for "list" is NOT
@@ -2067,7 +2173,15 @@ class Test_testcapi(unittest.TestCase):
 class Test_testinternalcapi(unittest.TestCase):
     locals().update((name, getattr(_testinternalcapi, name))
                     for name in dir(_testinternalcapi)
-                    if name.startswith('test_'))
+                    if name.startswith('test_')
+                    and not name.startswith('test_lock_'))
+
+
+@threading_helper.requires_working_threading()
+class Test_PyLock(unittest.TestCase):
+    locals().update((name, getattr(_testinternalcapi, name))
+                    for name in dir(_testinternalcapi)
+                    if name.startswith('test_lock_'))
 
 
 @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
@@ -2284,6 +2398,13 @@ def clear_executors(func):
 
 class TestOptimizerAPI(unittest.TestCase):
 
+    def test_get_counter_optimizer_dealloc(self):
+        # See gh-108727
+        def f():
+            _testinternalcapi.get_counter_optimizer()
+
+        f()
+
     def test_get_set_optimizer(self):
         old = _testinternalcapi.get_optimizer()
         opt = _testinternalcapi.get_counter_optimizer()
@@ -2383,7 +2504,7 @@ class TestUops(unittest.TestCase):
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("SAVE_IP", uops)
+        self.assertIn("_SET_IP", uops)
         self.assertIn("LOAD_FAST", uops)
 
     def test_extended_arg(self):
@@ -2448,7 +2569,7 @@ class TestUops(unittest.TestCase):
         opt = _testinternalcapi.get_uop_optimizer()
 
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2463,7 +2584,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2478,7 +2599,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(10))
+            testfunc(range(20))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2488,12 +2609,13 @@ class TestUops(unittest.TestCase):
     def test_pop_jump_if_not_none(self):
         def testfunc(a):
             for x in a:
+                x = None
                 if x is not None:
                     x = 0
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(range(10))
+            testfunc(range(20))
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2508,7 +2630,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2523,12 +2645,12 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
         uops = {opname for opname, _, _ in ex}
-        self.assertIn("JUMP_TO_TOP", uops)
+        self.assertIn("_JUMP_TO_TOP", uops)
 
     def test_jump_forward(self):
         def testfunc(n):
@@ -2543,7 +2665,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2561,8 +2683,8 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            total = testfunc(10)
-            self.assertEqual(total, 45)
+            total = testfunc(20)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2582,9 +2704,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            a = list(range(10))
+            a = list(range(20))
             total = testfunc(a)
-            self.assertEqual(total, 45)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2604,9 +2726,9 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            a = tuple(range(10))
+            a = tuple(range(20))
             total = testfunc(a)
-            self.assertEqual(total, 45)
+            self.assertEqual(total, 190)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2640,7 +2762,7 @@ class TestUops(unittest.TestCase):
 
         opt = _testinternalcapi.get_uop_optimizer()
         with temporary_optimizer(opt):
-            testfunc(10)
+            testfunc(20)
 
         ex = get_first_executor(testfunc)
         self.assertIsNotNone(ex)
@@ -2648,6 +2770,22 @@ class TestUops(unittest.TestCase):
         self.assertIn("_PUSH_FRAME", uops)
         self.assertIn("_BINARY_OP_ADD_INT", uops)
 
+    def test_branch_taken(self):
+        def testfunc(n):
+            for i in range(n):
+                if i < 0:
+                    i = 0
+                else:
+                    i = 1
+
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            testfunc(20)
+
+        ex = get_first_executor(testfunc)
+        self.assertIsNotNone(ex)
+        uops = {opname for opname, _, _ in ex}
+        self.assertIn("_POP_JUMP_IF_TRUE", uops)
 
 
 if __name__ == "__main__":

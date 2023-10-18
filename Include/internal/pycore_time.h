@@ -143,6 +143,10 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 // Export for '_socket' shared extension.
 PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
 
+// Create a timestamp from a number of seconds in double.
+// Export for '_socket' shared extension.
+PyAPI_FUNC(_PyTime_t) _PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round);
+
 // Macro to create a timestamp from a number of seconds, no integer overflow.
 // Only use the macro for small values, prefer _PyTime_FromSeconds().
 #define _PYTIME_FROMSECONDS(seconds) \
@@ -241,7 +245,7 @@ PyAPI_FUNC(int) _PyTime_AsTimevalTime_t(
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 // Create a timestamp from a timespec structure.
 // Raise an exception and return -1 on overflow, return 0 on success.
-extern int _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts);
+extern int _PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts);
 
 // Convert a timestamp to a timespec structure (nanosecond resolution).
 // tv_nsec is always positive.

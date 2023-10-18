@@ -282,7 +282,7 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, PyFunctionObject *func, int null_l
 /* Pushes a trampoline frame without checking for space.
  * Must be guarded by _PyThreadState_HasStackSpace() */
 static inline _PyInterpreterFrame *
-_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth, int prev_instr)
+_PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int stackdepth)
 {
     CALL_STAT_INC(frames_pushed);
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)tstate->datastack_top;
@@ -297,7 +297,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->f_locals = NULL;
     frame->stacktop = code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
-    frame->prev_instr = _PyCode_CODE(code) + prev_instr;
+    frame->prev_instr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->return_offset = 0;
     return frame;
@@ -310,14 +310,6 @@ PyGenObject *_PyFrame_GetGenerator(_PyInterpreterFrame *frame)
     size_t offset_in_gen = offsetof(PyGenObject, gi_iframe);
     return (PyGenObject *)(((char *)frame) - offset_in_gen);
 }
-
-#define PY_EXECUTABLE_KIND_SKIP 0
-#define PY_EXECUTABLE_KIND_PY_FUNCTION 1
-#define PY_EXECUTABLE_KIND_BUILTIN_FUNCTION 3
-#define PY_EXECUTABLE_KIND_METHOD_DESCRIPTOR 4
-#define PY_EXECUTABLE_KINDS 5
-
-PyAPI_DATA(const PyTypeObject *) const PyUnstable_ExecutableKinds[PY_EXECUTABLE_KINDS+1];
 
 #ifdef __cplusplus
 }

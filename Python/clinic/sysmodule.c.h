@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
@@ -1121,7 +1121,7 @@ PyDoc_STRVAR(sys__stats_on__doc__,
 "_stats_on($module, /)\n"
 "--\n"
 "\n"
-"Turns on stats gathering (stats gathering is on by default).");
+"Turns on stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_ON_METHODDEF    \
     {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
@@ -1143,7 +1143,7 @@ PyDoc_STRVAR(sys__stats_off__doc__,
 "_stats_off($module, /)\n"
 "--\n"
 "\n"
-"Turns off stats gathering (stats gathering is on by default).");
+"Turns off stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_OFF_METHODDEF    \
     {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
@@ -1187,18 +1187,30 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "_stats_dump($module, /)\n"
 "--\n"
 "\n"
-"Dump stats to file, and clears the stats.");
+"Dump stats to file, and clears the stats.\n"
+"\n"
+"Return False if no statistics were not dumped because stats gathering was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
     {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
 
-static PyObject *
+static int
 sys__stats_dump_impl(PyObject *module);
 
 static PyObject *
 sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return sys__stats_dump_impl(module);
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__stats_dump_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
 }
 
 #endif /* defined(Py_STATS) */
@@ -1369,6 +1381,34 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
+"_get_cpu_count_config($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting PyConfig.cpu_count");
+
+#define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+
+static int
+sys__get_cpu_count_config_impl(PyObject *module);
+
+static PyObject *
+sys__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__get_cpu_count_config_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1412,4 +1452,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=6de02cd7d925d1de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f36d45c829250775 input=a9049054013a1b77]*/

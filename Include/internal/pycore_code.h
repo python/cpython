@@ -233,6 +233,9 @@ extern void _PyLineTable_InitAddressRange(
 extern int _PyLineTable_NextAddressRange(PyCodeAddressRange *range);
 extern int _PyLineTable_PreviousAddressRange(PyCodeAddressRange *range);
 
+/** API for executors */
+extern void _PyCode_Clear_Executors(PyCodeObject *code);
+
 #define ENABLE_SPECIALIZATION 1
 
 /* Specialization functions */
@@ -250,7 +253,7 @@ extern void _Py_Specialize_BinarySubscr(PyObject *sub, PyObject *container,
 extern void _Py_Specialize_StoreSubscr(PyObject *container, PyObject *sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(PyObject *callable, _Py_CODEUNIT *instr,
-                                int nargs, PyObject *kwnames);
+                                int nargs);
 extern void _Py_Specialize_BinaryOp(PyObject *lhs, PyObject *rhs, _Py_CODEUNIT *instr,
                                     int oparg, PyObject **locals);
 extern void _Py_Specialize_CompareOp(PyObject *lhs, PyObject *rhs,
@@ -268,17 +271,28 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 
 #ifdef Py_STATS
 
-#define STAT_INC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name++; } while (0)
-#define STAT_DEC(opname, name) do { if (_py_stats) _py_stats->opcode_stats[opname].specialization.name--; } while (0)
-#define OPCODE_EXE_INC(opname) do { if (_py_stats) _py_stats->opcode_stats[opname].execution_count++; } while (0)
-#define CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.name++; } while (0)
-#define OBJECT_STAT_INC(name) do { if (_py_stats) _py_stats->object_stats.name++; } while (0)
+#define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
+#define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
+#define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
+#define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
+#define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (_py_stats && cond) _py_stats->object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) do { if (_py_stats) _py_stats->call_stats.eval_calls[name]++; } while (0)
+    do { if (_Py_stats && cond) _Py_stats->object_stats.name++; } while (0)
+#define EVAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { if (_py_stats && PyFunction_Check(callable)) _py_stats->call_stats.eval_calls[name]++; } while (0)
-#define GC_STAT_ADD(gen, name, n) do { if (_py_stats) _py_stats->gc_stats[(gen)].name += (n); } while (0)
+    do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
+#define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
+#define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
+#define UOP_EXE_INC(opname) do { if (_Py_stats) _Py_stats->optimization_stats.opcode[opname].execution_count++; } while (0)
+#define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
+#define OPT_HIST(length, name) \
+    do { \
+        if (_Py_stats) { \
+            int bucket = _Py_bit_length(length >= 1 ? length - 1 : 0); \
+            bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
+            _Py_stats->optimization_stats.name[bucket]++; \
+        } \
+    } while (0)
 
 // Export for '_opcode' shared extension
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
@@ -293,6 +307,10 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC(name) ((void)0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
+#define OPT_STAT_INC(name) ((void)0)
+#define UOP_EXE_INC(opname) ((void)0)
+#define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
+#define OPT_HIST(length, name) ((void)0)
 #endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
@@ -461,8 +479,6 @@ adaptive_counter_backoff(uint16_t counter) {
     unsigned int value = (1 << backoff) - 1;
     return adaptive_counter_bits(value, backoff);
 }
-
-extern uint32_t _Py_next_func_version;
 
 
 /* Comparison bit masks. */

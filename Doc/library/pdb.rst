@@ -252,6 +252,10 @@ change a variable or call a function.  When an exception occurs in such a
 statement, the exception name is printed but the debugger's state is not
 changed.
 
+.. versionchanged:: 3.13
+   Expressions/Statements whose prefix is a pdb command are now correctly
+   identified and executed.
+
 The debugger supports :ref:`aliases <debugger-aliases>`.  Aliases can have
 parameters which allows one a certain level of adaptability to the context under
 examination.

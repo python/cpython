@@ -1396,6 +1396,28 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    :c:func:`PyErr_Occurred` to check for errors.
 
 
+.. c:function:: int PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *string, Py_ssize_t size)
+
+   Compare a Unicode object with a char buffer which is interpreted as
+   being UTF-8 or ASCII encoded and return true (``1``) if they are equal,
+   or false (``0``) otherwise.
+   If the Unicode object contains surrogate characters or
+   the C string is not valid UTF-8, false (``0``) is returned.
+
+   This function does not raise exceptions.
+
+   .. versionadded:: 3.13
+
+
+.. c:function:: int PyUnicode_EqualToUTF8(PyObject *unicode, const char *string)
+
+   Similar to :c:func:`PyUnicode_EqualToUTF8AndSize`, but compute *string*
+   length using :c:func:`!strlen`.
+   If the Unicode object contains null characters, false (``0``) is returned.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
    Compare a Unicode object, *uni*, with *string* and return ``-1``, ``0``, ``1`` for less

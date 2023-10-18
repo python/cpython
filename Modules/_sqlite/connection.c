@@ -33,7 +33,10 @@
 #include "blob.h"
 #include "prepare_protocol.h"
 #include "util.h"
+
 #include "pycore_import.h"        // _PyImport_GetModuleAttrString()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_weakref.h"       // _PyWeakref_IS_DEAD()
 

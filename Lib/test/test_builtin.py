@@ -952,6 +952,7 @@ class BuiltinTest(unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
         # thrashcan mechanism. See gh-102356 for more details.
@@ -2202,8 +2203,6 @@ class PtyTests(unittest.TestCase):
         if pid == 0:
             # Child
             try:
-                # Make sure we don't get stuck if there's a problem
-                signal.alarm(2)
                 os.close(r)
                 with open(w, "w") as wpipe:
                     child(wpipe)

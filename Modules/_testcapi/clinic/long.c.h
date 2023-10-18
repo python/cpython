@@ -2,12 +2,6 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
-
 PyDoc_STRVAR(_testcapi_test_long_api__doc__,
 "test_long_api($module, /)\n"
 "--\n"
@@ -139,23 +133,6 @@ _testcapi_test_long_as_double(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _testcapi_test_long_as_double_impl(module);
 }
 
-PyDoc_STRVAR(_testcapi_test_long_numbits__doc__,
-"test_long_numbits($module, /)\n"
-"--\n"
-"\n");
-
-#define _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF    \
-    {"test_long_numbits", (PyCFunction)_testcapi_test_long_numbits, METH_NOARGS, _testcapi_test_long_numbits__doc__},
-
-static PyObject *
-_testcapi_test_long_numbits_impl(PyObject *module);
-
-static PyObject *
-_testcapi_test_long_numbits(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    return _testcapi_test_long_numbits_impl(module);
-}
-
 PyDoc_STRVAR(_testcapi_call_long_compact_api__doc__,
 "call_long_compact_api($module, arg, /)\n"
 "--\n"
@@ -171,4 +148,4 @@ PyDoc_STRVAR(_testcapi_PyLong_AsInt__doc__,
 
 #define _TESTCAPI_PYLONG_ASINT_METHODDEF    \
     {"PyLong_AsInt", (PyCFunction)_testcapi_PyLong_AsInt, METH_O, _testcapi_PyLong_AsInt__doc__},
-/*[clinic end generated code: output=1631a18f1193486a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de762870526e241d input=a9049054013a1b77]*/
