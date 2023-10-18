@@ -1901,15 +1901,8 @@ class TestRoundtrip(TestCase):
         tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
 
-        # Tokenize is broken on test_pep3131.py because regular expressions are
-        # broken on the obscure unicode identifiers in it. *sigh*
-        # With roundtrip extended to test the 5-tuple mode of untokenize,
-        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
-
-        testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-
-        for f in ('buffer', 'builtin', 'fileio', 'os', 'platform', 'sys'):
-            testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
+        # TODO: Remove this once we can untokenize PEP 701 syntax
+        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)
