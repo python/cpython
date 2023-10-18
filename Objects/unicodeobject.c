@@ -100,11 +100,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 
 */
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 // The value must be the same in fileutils.c.
 #define MAX_UNICODE 0x10ffff
@@ -10679,6 +10674,82 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 }
 
 int
+PyUnicode_EqualToUTF8(PyObject *unicode, const char *str)
+{
+    return PyUnicode_EqualToUTF8AndSize(unicode, str, strlen(str));
+}
+
+int
+PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *str, Py_ssize_t size)
+{
+    assert(_PyUnicode_CHECK(unicode));
+    assert(str);
+
+    if (PyUnicode_IS_ASCII(unicode)) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
+        return size == len &&
+            memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
+    }
+    if (PyUnicode_UTF8(unicode) != NULL) {
+        Py_ssize_t len = PyUnicode_UTF8_LENGTH(unicode);
+        return size == len &&
+            memcmp(PyUnicode_UTF8(unicode), str, len) == 0;
+    }
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
+    if ((size_t)len >= (size_t)size || (size_t)len < (size_t)size / 4) {
+        return 0;
+    }
+    const unsigned char *s = (const unsigned char *)str;
+    const unsigned char *ends = s + (size_t)size;
+    int kind = PyUnicode_KIND(unicode);
+    const void *data = PyUnicode_DATA(unicode);
+    /* Compare Unicode string and UTF-8 string */
+    for (Py_ssize_t i = 0; i < len; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch < 0x80) {
+            if (ends == s || s[0] != ch) {
+                return 0;
+            }
+            s += 1;
+        }
+        else if (ch < 0x800) {
+            if ((ends - s) < 2 ||
+                s[0] != (0xc0 | (ch >> 6)) ||
+                s[1] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 2;
+        }
+        else if (ch < 0x10000) {
+            if (Py_UNICODE_IS_SURROGATE(ch) ||
+                (ends - s) < 3 ||
+                s[0] != (0xe0 | (ch >> 12)) ||
+                s[1] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[2] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 3;
+        }
+        else {
+            assert(ch <= MAX_UNICODE);
+            if ((ends - s) < 4 ||
+                s[0] != (0xf0 | (ch >> 18)) ||
+                s[1] != (0x80 | ((ch >> 12) & 0x3f)) ||
+                s[2] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[3] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 4;
+        }
+    }
+    return s == ends;
+}
+
+int
 _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
 {
     size_t len;
@@ -15397,8 +15468,3 @@ PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

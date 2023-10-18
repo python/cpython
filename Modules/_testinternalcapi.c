@@ -675,7 +675,11 @@ record_eval(PyThreadState *tstate, struct _PyInterpreterFrame *f, int exc)
         assert(module != NULL);
         module_state *state = get_module_state(module);
         Py_DECREF(module);
-        PyList_Append(state->record_list, ((PyFunctionObject *)f->f_funcobj)->func_name);
+        int res = PyList_Append(state->record_list,
+                                ((PyFunctionObject *)f->f_funcobj)->func_name);
+        if (res < 0) {
+            return NULL;
+        }
     }
     return _PyEval_EvalFrameDefault(tstate, f, exc);
 }
@@ -1596,6 +1600,9 @@ module_exec(PyObject *module)
         return 1;
     }
     if (_PyTestInternalCapi_Init_PyTime(module) < 0) {
+        return 1;
+    }
+    if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }
 

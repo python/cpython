@@ -476,6 +476,12 @@ Directory and files operations
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
 
+   .. versionchanged:: 3.12.1
+      On Windows, if *mode* includes ``os.X_OK``, executables with an
+      extension in ``PATHEXT`` will be preferred over executables without a
+      matching extension.
+      This brings behavior closer to that of Python 3.11.
+
 .. exception:: Error
 
    This exception collects exceptions that are raised during a multi-file

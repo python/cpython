@@ -4,21 +4,27 @@
 // Always enable assertions
 #undef NDEBUG
 
-// The _testcapi extension tests the public C API: header files in Include/ and
-// Include/cpython/ directories. The internal C API must not be tested by
-// _testcapi: use _testinternalcapi for that.
-//
-// _testcapi C files can built with the Py_BUILD_CORE_BUILTIN macro defined if
-// one of the Modules/Setup files asks to build _testcapi as "static"
-// (gh-109723).
-//
-// The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE.
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
+#ifdef PYTESTCAPI_NEED_INTERNAL_API
+#  ifndef Py_BUILD_CORE_BUILTIN
+#    define Py_BUILD_CORE_MODULE 1
+#  endif
+#else
+   // The _testcapi extension tests the public C API: header files in Include/
+   // and Include/cpython/ directories. The internal C API must not be tested
+   // by _testcapi: use _testinternalcapi for that.
+   //
+   // _testcapi C files can built with the Py_BUILD_CORE_BUILTIN macro defined
+   // if one of the Modules/Setup files asks to build _testcapi as "static"
+   // (gh-109723).
+   //
+   // The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE.
+#  undef Py_BUILD_CORE_MODULE
+#  undef Py_BUILD_CORE_BUILTIN
+#endif
 
 #include "Python.h"
 
-#ifdef Py_BUILD_CORE
+#if defined(Py_BUILD_CORE) && !defined(PYTESTCAPI_NEED_INTERNAL_API)
 #  error "_testcapi must test the public Python C API, not the internal C API"
 #endif
 
@@ -34,6 +40,7 @@ int _PyTestCapi_Init_Watchers(PyObject *module);
 int _PyTestCapi_Init_Long(PyObject *module);
 int _PyTestCapi_Init_Float(PyObject *module);
 int _PyTestCapi_Init_Dict(PyObject *module);
+int _PyTestCapi_Init_Set(PyObject *module);
 int _PyTestCapi_Init_Structmember(PyObject *module);
 int _PyTestCapi_Init_Exceptions(PyObject *module);
 int _PyTestCapi_Init_Code(PyObject *module);
