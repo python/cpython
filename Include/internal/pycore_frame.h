@@ -63,7 +63,7 @@ typedef struct _PyInterpreterFrame {
     int stacktop;  /* Offset of TOS from localsplus  */
     /* The next_instr_offset determines where the next instruction is relative
      * to instr_ptr. It enables us to keep instr_ptr pointing to the current
-     * instruction until it is time to begin executing the next one. This is
+     * instruction until it is time to begin executing the next one, which is
      * necessary for tracebacks and tracing. */
     uint16_t next_instr_offset;
     char owner;
@@ -72,7 +72,7 @@ typedef struct _PyInterpreterFrame {
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)(((IF)->instr_ptr) - _PyCode_CODE(_PyFrame_GetCode(IF))))
+    ((int)((IF)->instr_ptr) - _PyCode_CODE(_PyFrame_GetCode(IF)))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     assert(PyCode_Check(f->f_executable));
@@ -180,7 +180,7 @@ _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-    frame->instr_ptr < _PyCode_CODE(_PyFrame_GetCode(frame)) + _PyFrame_GetCode(frame)->_co_firsttraceable;
+        frame->instr_ptr < _PyCode_CODE(_PyFrame_GetCode(frame)) + _PyFrame_GetCode(frame)->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *
