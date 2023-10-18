@@ -211,14 +211,8 @@ class ConfigDialog(Toplevel):
                   contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
-        """Remove current key bindings.
-        Iterate over window instances defined in parent and remove
-        the keybindings.
-        """
-        # Before a config is saved, some cleanup of current
-        # config must be done - remove the previous keybindings.
-        win_instances = self.parent.instance_dict.keys()
-        for instance in win_instances:
+        """Remove current key bindings in current windows."""
+        for instance in self.parent.instance_dict:
             instance.RemoveKeybindings()
 
     def activate_config_changes(self):
@@ -227,8 +221,7 @@ class ConfigDialog(Toplevel):
         Dynamically update the current parent window instances
         with some of the configuration changes.
         """
-        win_instances = self.parent.instance_dict.keys()
-        for instance in win_instances:
+        for instance in self.parent.instance_dict:
             instance.ResetColorizer()
             instance.ResetFont()
             instance.set_notabs_indentwidth()
@@ -583,6 +576,8 @@ class HighPage(Frame):
                 (*)theme_message: Label
         """
         self.theme_elements = {
+            # Display_name: ('internal_name, sort_number').
+            # TODO: remove sort_number unneeded with dict ordering.
             'Normal Code or Text': ('normal', '00'),
             'Code Context': ('context', '01'),
             'Python Keywords': ('keyword', '02'),
@@ -765,7 +760,7 @@ class HighPage(Frame):
             self.builtinlist.SetMenu(item_list, item_list[0])
         self.set_theme_type()
         # Load theme element option menu.
-        theme_names = list(self.theme_elements.keys())
+        theme_names = list(self.theme_elements)
         theme_names.sort(key=lambda x: self.theme_elements[x][1])
         self.targetlist.SetMenu(theme_names, theme_names[0])
         self.paint_theme_sample()
@@ -1477,12 +1472,13 @@ class KeysPage(Frame):
             reselect = True
             list_index = self.bindingslist.index(ANCHOR)
         keyset = idleConf.GetKeySet(keyset_name)
-        bind_names = list(keyset.keys())
+        # 'set' is dict mapping virtual event to list of key events.
+        bind_names = list(keyset)
         bind_names.sort()
         self.bindingslist.delete(0, END)
         for bind_name in bind_names:
             key = ' '.join(keyset[bind_name])
-            bind_name = bind_name[2:-2]  # Trim off the angle brackets.
+            bind_name = bind_name[2:-2]  # Trim double angle brackets.
             if keyset_name in changes['keys']:
                 # Handle any unsaved changes to this key set.
                 if bind_name in changes['keys'][keyset_name]:
