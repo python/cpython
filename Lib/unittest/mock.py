@@ -827,7 +827,7 @@ class NonCallableMock(Base):
 
 
     def _format_mock_failure_message(self, args, kwargs, action='call'):
-        message = 'expected %s not found.\nExpected: %s\nActual: %s'
+        message = 'expected %s not found.\nExpected: %s\n  Actual: %s'
         expected_string = self._format_mock_call_signature(args, kwargs)
         call_args = self.call_args
         actual_string = self._format_mock_call_signature(*call_args)
@@ -930,7 +930,7 @@ class NonCallableMock(Base):
         if self.call_args is None:
             expected = self._format_mock_call_signature(args, kwargs)
             actual = 'not called.'
-            error_message = ('expected call not found.\nExpected: %s\nActual: %s'
+            error_message = ('expected call not found.\nExpected: %s\n  Actual: %s'
                     % (expected, actual))
             raise AssertionError(error_message)
 
@@ -981,7 +981,7 @@ class NonCallableMock(Base):
                 raise AssertionError(
                     f'{problem}\n'
                     f'Expected: {_CallList(calls)}'
-                    f'{self._calls_repr(prefix="Actual").rstrip(".")}'
+                    f'{self._calls_repr(prefix="  Actual").rstrip(".")}'
                 ) from cause
             return
 
