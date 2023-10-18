@@ -1741,7 +1741,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns)
+        code.interact("*interactive*", local=ns, local_exit=True)
 
     def do_alias(self, arg):
         """alias [name [command]]
