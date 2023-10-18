@@ -84,6 +84,7 @@ import tokenize
 import functools
 import traceback
 import linecache
+import dataclasses
 
 from contextlib import contextmanager
 from typing import Union
@@ -205,6 +206,51 @@ class _ModuleTarget(str):
         )
 
 
+class PdbConfigError(Exception):
+    pass
+
+
+@dataclasses.dataclass
+class _PdbConfig:
+    class IntDesc:
+        def __init__(self, default, min=None, max=None):
+            self._value = default
+            self._min = min
+            self._max = max
+
+        def __get__(self, obj, objtype=None):
+            return self._value
+
+        def __set__(self, obj, value):
+            try:
+                value = int(value)
+            except ValueError:
+                raise PdbConfigError("Value must be an integer")
+            if self._min is not None and value < self._min:
+                raise PdbConfigError(f"Value must be at least {self._min}")
+            if self._max is not None and value > self._max:
+                raise PdbConfigError(f"Value must be at most {self._max}")
+            self._value = value
+
+    general_current_source_lines: int = IntDesc(1, min=1)
+
+    def __setitem__(self, key, value):
+        key = key.replace('.', '_', 1)
+        if not hasattr(self, key):
+            raise PdbConfigError(f"Unknown config key: {key}")
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        key = key.replace('.', '_', 1)
+        if not hasattr(self, key):
+            raise PdbConfigError(f"Unknown config key: {key}")
+        return getattr(self, key)
+
+    def __repr__(self):
+        return '\n'.join(f"{field.name.replace('_', '.', 1)}: {getattr(self, field.name)}"
+                         for field in dataclasses.fields(self))
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -234,6 +280,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.config = _PdbConfig()
         # Try to load readline if it exists
         try:
             import readline
@@ -517,7 +564,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # a command like "continue")
                 self.forget()
                 return
-            self.print_stack_entry(self.stack[self.curindex])
+            self.print_stack_entry(self.stack[self.curindex],
+                                   line_count=self.config["general.current_source_lines"])
             self._cmdloop()
             self.forget()
 
@@ -726,6 +774,27 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    def do_config(self, arg):
+        if not arg:
+            self.message(self.config)
+            return
+
+        args = arg.split(maxsplit=1)
+
+        if len(args) == 1:
+            try:
+                self.message(f"{args[0]}: {self.config[args[0]]}")
+            except PdbConfigError as e:
+                self.error(str(e))
+            return
+        else:
+            try:
+                self.config[args[0]] = args[1]
+            except PdbConfigError as e:
+                self.error(str(e))
+            return
+
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -1816,14 +1885,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except KeyboardInterrupt:
             pass
 
-    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
+    def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix, line_count=1):
         frame, lineno = frame_lineno
         if frame is self.curframe:
             prefix = '> '
         else:
             prefix = '  '
         self.message(prefix +
-                     self.format_stack_entry(frame_lineno, prompt_prefix))
+                     self.format_stack_entry(frame_lineno, prompt_prefix, line_count=line_count))
 
     # Provide help
 

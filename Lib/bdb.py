@@ -2,6 +2,7 @@
 
 import fnmatch
 import sys
+import textwrap
 import os
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
@@ -548,7 +549,7 @@ class Bdb:
             i = max(0, len(stack) - 1)
         return stack, i
 
-    def format_stack_entry(self, frame_lineno, lprefix=': '):
+    def format_stack_entry(self, frame_lineno, lprefix=': ', line_count=1):
         """Return a string with information about a stack entry.
 
         The stack entry frame_lineno is a (frame, lineno) tuple.  The
@@ -571,9 +572,20 @@ class Bdb:
             s += '->'
             s += reprlib.repr(rv)
         if lineno is not None:
-            line = linecache.getline(filename, lineno, frame.f_globals)
-            if line:
-                s += lprefix + line.strip()
+            if line_count == 1:
+                line = linecache.getline(filename, lineno, frame.f_globals)
+                if line:
+                    s += lprefix + line.strip()
+            else:
+                lprefix = lprefix.replace("\n", "")
+                start = max(1, lineno - line_count // 2)
+                lines = "\n".join(linecache.getline(filename, start + offset, frame.f_globals).rstrip()
+                         for offset in range(line_count))
+                lines = textwrap.dedent(lines)
+                lines = lines.rstrip("\n ")
+                s += "\n"
+                s += "".join(lprefix + line if start + offset == lineno else " " * len(lprefix) + line
+                             for offset, line in enumerate(lines.splitlines(True)))
         else:
             s += f'{lprefix}Warning: lineno is None'
         return s
