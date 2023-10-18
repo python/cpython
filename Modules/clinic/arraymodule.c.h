@@ -3,6 +3,7 @@ preserve
 [clinic start generated code]*/
 
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(array_array___copy____doc__,
 "__copy__($self, /)\n"
@@ -670,4 +671,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=8595b1906b5a6552 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d58693e1157540ef input=a9049054013a1b77]*/

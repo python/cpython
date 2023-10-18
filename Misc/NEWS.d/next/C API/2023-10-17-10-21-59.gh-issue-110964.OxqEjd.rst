@@ -1,0 +1,2 @@
+Move the undocumented private _PyArg functions and _PyArg_Parser structure
+to internal C API (``pycore_modsupport.h``). Patch by Victor Stinner.

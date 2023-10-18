@@ -1022,6 +1022,11 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj2, b'eggs')
         self.assertNotEqual(id(obj2), int(out))
 
+    def test_recv_timeout(self):
+        r, _ = interpreters.create_channel()
+        with self.assertRaises(TimeoutError):
+            r.recv(timeout=1)
+
     def test_recv_channel_does_not_exist(self):
         ch = interpreters.RecvChannel(1_000_000)
         with self.assertRaises(interpreters.ChannelNotFoundError):
