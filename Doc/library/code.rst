@@ -23,20 +23,25 @@ build applications which provide an interactive interpreter prompt.
    ``'__doc__'`` set to ``None``.
 
 
-.. class:: InteractiveConsole(locals=None, filename="<console>")
+.. class:: InteractiveConsole(locals=None, filename="<console>", local_exit=False)
 
    Closely emulate the behavior of the interactive Python interpreter. This class
    builds on :class:`InteractiveInterpreter` and adds prompting using the familiar
-   ``sys.ps1`` and ``sys.ps2``, and input buffering.
+   ``sys.ps1`` and ``sys.ps2``, and input buffering. If *local_exit* is True,
+   ``exit()`` and ``quit()`` in the console will not raise :exc:`SystemExit`, but
+   instead return to the calling code.
 
+   .. versionchanged:: 3.13
+      Added *local_exit* parameter.
 
-.. function:: interact(banner=None, readfunc=None, local=None, exitmsg=None)
+.. function:: interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=False)
 
    Convenience function to run a read-eval-print loop.  This creates a new
    instance of :class:`InteractiveConsole` and sets *readfunc* to be used as
    the :meth:`InteractiveConsole.raw_input` method, if provided.  If *local* is
    provided, it is passed to the :class:`InteractiveConsole` constructor for
-   use as the default namespace for the interpreter loop.  The :meth:`interact`
+   use as the default namespace for the interpreter loop.  If *local_exit* is provided,
+   it is passed to the :class:`InteractiveConsole` constructor.  The :meth:`interact`
    method of the instance is then run with *banner* and *exitmsg* passed as the
    banner and exit message to use, if provided.  The console object is discarded
    after use.
@@ -44,6 +49,8 @@ build applications which provide an interactive interpreter prompt.
    .. versionchanged:: 3.6
       Added *exitmsg* parameter.
 
+   .. versionchanged:: 3.13
+      Added *local_exit* parameter.
 
 .. function:: compile_command(source, filename="<input>", symbol="single")
 
