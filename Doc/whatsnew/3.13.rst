@@ -65,7 +65,12 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`602` ("Annual Release Cycle for Python") has been updated:
 
+  * Python 3.9 - 3.12 have one and a half years of full support,
+    followed by three and a half years of security fixes.
+  * Python 3.13 and later have two years of full support,
+    followed by three years of security fixes.
 
 New Features
 ============
