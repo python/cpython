@@ -1908,9 +1908,6 @@ class TestRoundtrip(TestCase):
 
         testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
 
-        # TODO: Remove this once we can untokenize PEP 701 syntax
-        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
-
         for f in ('buffer', 'builtin', 'fileio', 'os', 'platform', 'sys'):
             testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
