@@ -1329,6 +1329,14 @@ regen-limited-abi: all
 	$(RUNSHARED) ./$(BUILDPYTHON) $(srcdir)/Tools/build/stable_abi.py --generate-all $(srcdir)/Misc/stable_abi.toml
 
 ############################################################################
+# Regenerate Unicode Data
+
+.PHONY: regen-unicodedata
+regen-unicodedata:
+	$(PYTHON_FOR_REGEN) Tools/unicode/makeunicodedata.py
+
+
+############################################################################
 # Regenerate all generated files
 
 # "clinic" is regenerated implicitly via "regen-global-objects".
@@ -1336,7 +1344,7 @@ regen-limited-abi: all
 regen-all: regen-cases regen-typeslots \
 	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
-	regen-test-levenshtein regen-global-objects
+	regen-test-levenshtein regen-global-objects regen-unicodedata
 	@echo
 	@echo "Note: make regen-stdlib-module-names, make regen-limited-abi"
 	@echo "and make regen-configure should be run manually"
