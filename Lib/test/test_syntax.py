@@ -2298,8 +2298,14 @@ func(
 
     def test_error_string_literal(self):
 
-        self._check_error("'blech", "unterminated string literal")
-        self._check_error('"blech', "unterminated string literal")
+        self._check_error("'blech", r"unterminated string literal \(.*\)$")
+        self._check_error('"blech', r"unterminated string literal \(.*\)$")
+        self._check_error(
+            r'"blech\"', r"unterminated string literal \(.*\); perhaps you escaped the end quote"
+        )
+        self._check_error(
+            r'r"blech\"', r"unterminated string literal \(.*\); perhaps you escaped the end quote"
+        )
         self._check_error("'''blech", "unterminated triple-quoted string literal")
         self._check_error('"""blech', "unterminated triple-quoted string literal")
 
