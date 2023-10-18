@@ -284,7 +284,7 @@ tests. If ``M.__test__`` exists and is ``True``, it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
-``M.__test__`` appears with name :samp:`{name of M}.__test__.K`.
+``M.__test__`` appears with name ``M.__test__.K``.
 
 For example, place this block of code at the top of :file:`example.py`:
 
