@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
@@ -166,4 +168,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=8b91c020d4353cc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48504f7a2d37958c input=a9049054013a1b77]*/
