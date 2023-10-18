@@ -1461,7 +1461,17 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after function definition on line 1
 
+   >>> def foo[T](x, /, y, *, z=2):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after function definition on line 1
+
    >>> class Blech(A):
+   ... pass
+   Traceback (most recent call last):
+   IndentationError: expected an indented block after class definition on line 1
+
+   >>> class Blech[T](A):
    ... pass
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
