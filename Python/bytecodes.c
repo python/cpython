@@ -3214,7 +3214,7 @@ dummy_func(
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
-            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
+            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
             shim->localsplus[0] = self;
@@ -3596,7 +3596,7 @@ dummy_func(
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->next_instr_offset = next_instr - frame->instr_ptr;
+                frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3692,7 +3692,7 @@ dummy_func(
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->next_instr_offset = next_instr - frame->instr_ptr;
+                    frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -3963,7 +3963,7 @@ dummy_func(
         op(_SAVE_CURRENT_IP, (--)) {
             TIER_ONE_ONLY
             assert(frame->next_instr_offset == 0);
-            frame->next_instr_offset = next_instr - frame->instr_ptr;
+            frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
         }
 
         op(_EXIT_TRACE, (--)) {
