@@ -238,7 +238,7 @@ counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->instr_ptr = ((_PyCounterExecutorObject *)self)->next_instr; // ???
+    frame->instr_ptr = ((_PyCounterExecutorObject *)self)->next_instr;
     Py_DECREF(self);
     return frame;
 }
