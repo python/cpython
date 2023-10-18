@@ -259,6 +259,8 @@ install_IDLE:
 		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
 	fi
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	chmod -R ugo+rX,go-w "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
+	chmod ugo+x "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app/Contents/MacOS/IDLE"
 
 $(INSTALLED_PYTHONAPP): install_Python
 
