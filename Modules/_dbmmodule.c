@@ -2,6 +2,11 @@
 /* DBM module using dictionary interface */
 
 
+// clinic/_dbmmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <sys/types.h>

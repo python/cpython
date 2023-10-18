@@ -1,7 +1,0 @@
-Skip ``test_gdb`` if gdb is unable to retrieve Python frame objects: if a
-frame is ``<optimized out>``. When Python is built with "clang -Og", gdb can
-fail to retrive the *frame* parameter of ``_PyEval_EvalFrameDefault()``. In
-this case, tests like ``py_bt()`` are likely to fail. Without getting access
-to Python frames, ``python-gdb.py`` is mostly clueless on retrieving the
-Python traceback. Moreover, ``test_gdb`` is no longer skipped on macOS if
-Python is built with Clang. Patch by Victor Stinner.

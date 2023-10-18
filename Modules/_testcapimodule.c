@@ -5,19 +5,13 @@
  * standard Python regression test, via Lib/test/test_capi.py.
  */
 
-/* This module tests the public (Include/ and Include/cpython/) C API.
-   The internal C API must not be used here: use _testinternalcapi for that.
+// Include parts.h first since it takes care of NDEBUG and Py_BUILD_CORE macros
+// and including Python.h.
+//
+// Several parts of this module are broken out into files in _testcapi/.
+// Include definitions from there.
+#include "_testcapi/parts.h"
 
-   The Visual Studio projects builds _testcapi with Py_BUILD_CORE_MODULE
-   macro defined, but only the public C API must be tested here. */
-
-#undef Py_BUILD_CORE_MODULE
-#undef Py_BUILD_CORE_BUILTIN
-
-/* Always enable assertions */
-#undef NDEBUG
-
-#include "Python.h"
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
 
@@ -29,17 +23,10 @@
 #  include <sys/wait.h>           // W_STOPCODE
 #endif
 
-#ifdef Py_BUILD_CORE
-#  error "_testcapi must test the public Python C API, not CPython internal C API"
-#endif
-
 #ifdef bool
 #  error "The public headers should not include <stdbool.h>, see gh-48924"
 #endif
 
-// Several parts of this module are broken out into files in _testcapi/.
-// Include definitions from there.
-#include "_testcapi/parts.h"
 #include "_testcapi/util.h"
 
 
@@ -397,6 +384,41 @@ raise_error(void *unused)
 {
     PyErr_SetNone(PyExc_ValueError);
     return NULL;
+}
+
+static PyObject *
+py_buildvalue(PyObject *self, PyObject *args)
+{
+    const char *fmt;
+    PyObject *objs[10] = {NULL};
+    if (!PyArg_ParseTuple(args, "s|OOOOOOOOOO", &fmt,
+            &objs[0], &objs[1], &objs[2], &objs[3], &objs[4],
+            &objs[5], &objs[6], &objs[7], &objs[8], &objs[9]))
+    {
+        return NULL;
+    }
+    for(int i = 0; i < 10; i++) {
+        NULLABLE(objs[i]);
+    }
+    return Py_BuildValue(fmt,
+            objs[0], objs[1], objs[2], objs[3], objs[4],
+            objs[5], objs[6], objs[7], objs[8], objs[9]);
+}
+
+static PyObject *
+py_buildvalue_ints(PyObject *self, PyObject *args)
+{
+    const char *fmt;
+    unsigned int values[10] = {0};
+    if (!PyArg_ParseTuple(args, "s|IIIIIIIIII", &fmt,
+            &values[0], &values[1], &values[2], &values[3], &values[4],
+            &values[5], &values[6], &values[7], &values[8], &values[9]))
+    {
+        return NULL;
+    }
+    return Py_BuildValue(fmt,
+            values[0], values[1], values[2], values[3], values[4],
+            values[5], values[6], values[7], values[8], values[9]);
 }
 
 static int
@@ -2001,10 +2023,10 @@ test_pythread_tss_key_state(PyObject *self, PyObject *args)
        return repr(self)
 */
 static PyObject*
-bad_get(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+bad_get(PyObject *module, PyObject *args)
 {
     PyObject *self, *obj, *cls;
-    if (!_PyArg_UnpackStack(args, nargs, "bad_get", 3, 3, &self, &obj, &cls)) {
+    if (!PyArg_ParseTuple(args, "OOO", &self, &obj, &cls)) {
         return NULL;
     }
 
@@ -2030,6 +2052,26 @@ negative_refcount(PyObject *self, PyObject *Py_UNUSED(args))
 
     Py_SET_REFCNT(obj,  0);
     /* Py_DECREF() must call _Py_NegativeRefcount() and abort Python */
+    Py_DECREF(obj);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+decref_freed_object(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *obj = PyUnicode_FromString("decref_freed_object");
+    if (obj == NULL) {
+        return NULL;
+    }
+    assert(Py_REFCNT(obj) == 1);
+
+    // Deallocate the memory
+    Py_DECREF(obj);
+    // obj is a now a dangling pointer
+
+    // gh-109496: If Python is built in debug mode, Py_DECREF() must call
+    // _Py_NegativeRefcount() and abort Python.
     Py_DECREF(obj);
 
     Py_RETURN_NONE;
@@ -2451,8 +2493,8 @@ test_tstate_capi(PyObject *self, PyObject *Py_UNUSED(args))
     PyThreadState *tstate2 = PyThreadState_Get();
     assert(tstate2 == tstate);
 
-    // private _PyThreadState_UncheckedGet()
-    PyThreadState *tstate3 = _PyThreadState_UncheckedGet();
+    // PyThreadState_GetUnchecked()
+    PyThreadState *tstate3 = PyThreadState_GetUnchecked();
     assert(tstate3 == tstate);
 
     // PyThreadState_EnterTracing(), PyThreadState_LeaveTracing()
@@ -2916,7 +2958,7 @@ settrace_to_error(PyObject *self, PyObject *list)
 static PyObject *
 clear_managed_dict(PyObject *self, PyObject *obj)
 {
-    _PyObject_ClearManagedDict(obj);
+    PyObject_ClearManagedDict(obj);
     Py_RETURN_NONE;
 }
 
@@ -3245,6 +3287,8 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
+    {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
+    {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
     {"test_get_statictype_slots", test_get_statictype_slots,     METH_NOARGS},
     {"test_get_type_name",        test_get_type_name,            METH_NOARGS},
@@ -3296,9 +3340,10 @@ static PyMethodDef TestMethods[] = {
     {"W_STOPCODE", py_w_stopcode, METH_VARARGS},
 #endif
     {"test_pythread_tss_key_state", test_pythread_tss_key_state, METH_VARARGS},
-    {"bad_get", _PyCFunction_CAST(bad_get), METH_FASTCALL},
+    {"bad_get", bad_get, METH_VARARGS},
 #ifdef Py_REF_DEBUG
     {"negative_refcount", negative_refcount, METH_NOARGS},
+    {"decref_freed_object", decref_freed_object, METH_NOARGS},
 #endif
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", _PyCFunction_CAST(meth_varargs_keywords), METH_VARARGS|METH_KEYWORDS},
@@ -3915,7 +3960,9 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
+    PyModule_AddObject(m, "SIZE_MAX", PyLong_FromSize_t(SIZE_MAX));
     PyModule_AddObject(m, "SIZEOF_WCHAR_T", PyLong_FromSsize_t(sizeof(wchar_t)));
+    PyModule_AddObject(m, "SIZEOF_VOID_P", PyLong_FromSsize_t(sizeof(void*)));
     PyModule_AddObject(m, "SIZEOF_TIME_T", PyLong_FromSsize_t(sizeof(time_t)));
     PyModule_AddObject(m, "Py_Version", PyLong_FromUnsignedLong(Py_Version));
     Py_INCREF(&PyInstanceMethod_Type);
@@ -3971,6 +4018,9 @@ PyInit__testcapi(void)
         return NULL;
     }
     if (_PyTestCapi_Init_Dict(m) < 0) {
+        return NULL;
+    }
+    if (_PyTestCapi_Init_Set(m) < 0) {
         return NULL;
     }
     if (_PyTestCapi_Init_Structmember(m) < 0) {

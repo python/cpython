@@ -924,7 +924,6 @@ class CLanguage(Language):
 
         # Format the preprocessor warning and error messages.
         assert isinstance(self.cpp.filename, str)
-        source = os.path.basename(self.cpp.filename)
         message = f"Update the clinic input of {func.full_name!r}."
         code = self.COMPILER_DEPRECATION_WARNING_PROTOTYPE.format(
             major=minversion[0],
@@ -1200,7 +1199,7 @@ class CLanguage(Language):
 
         fastcall = not new_or_init
         limited_capi = clinic.limited_capi
-        if limited_capi and (requires_defining_class or pseudo_args or
+        if limited_capi and (pseudo_args or
                 (any(p.is_optional() for p in parameters) and
                  any(p.is_keyword_only() and not p.is_optional() for p in parameters)) or
                 any(c.broken_limited_capi for c in converters)):
@@ -1345,6 +1344,8 @@ class CLanguage(Language):
                             """,
                         indent=4))
             else:
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_CheckPositional()')
                 parser_code = [normalize_snippet(f"""
                     if (!_PyArg_CheckPositional("{{name}}", {nargs}, {min_pos}, {max_args})) {{{{
                         goto exit;
@@ -1402,6 +1403,8 @@ class CLanguage(Language):
                 if limited_capi:
                     fastcall = False
                 if fastcall:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseStack()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
                             {parse_arguments})) {{
@@ -1430,6 +1433,11 @@ class CLanguage(Language):
 
             has_optional_kw = (max(pos_only, min_pos) + min_kw_only < len(converters) - int(vararg != NO_VARARG))
             if vararg == NO_VARARG:
+                # FIXME: refactor the code to not declare args_declaration
+                # if limited_capi is true
+                if not limited_capi:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywords()')
                 args_declaration = "_PyArg_UnpackKeywords", "%s, %s, %s" % (
                     min_pos,
                     max_pos,
@@ -1437,6 +1445,9 @@ class CLanguage(Language):
                 )
                 nargs = "nargs"
             else:
+                if not limited_capi:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_UnpackKeywordsWithVararg()')
                 args_declaration = "_PyArg_UnpackKeywordsWithVararg", "%s, %s, %s, %s" % (
                     min_pos,
                     max_pos,
@@ -1575,6 +1586,8 @@ class CLanguage(Language):
                         declarations += "\nPy_ssize_t nargs = PyTuple_Size(args);"
 
                 elif fastcall:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseStackAndKeywords()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser{parse_arguments_comma}
                             {parse_arguments})) {{
@@ -1582,6 +1595,8 @@ class CLanguage(Language):
                         }}
                         """, indent=4)]
                 else:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_ParseTupleAndKeywordsFast()')
                     parser_code = [normalize_snippet("""
                         if (!_PyArg_ParseTupleAndKeywordsFast(args, kwargs, &_parser,
                             {parse_arguments})) {{
@@ -1627,12 +1642,16 @@ class CLanguage(Language):
 
             if not parses_keywords:
                 declarations = '{base_type_ptr}'
+                clinic.add_include('pycore_modsupport.h',
+                                   '_PyArg_NoKeywords()')
                 fields.insert(0, normalize_snippet("""
                     if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
                     }}
                     """, indent=4))
                 if not parses_positional:
+                    clinic.add_include('pycore_modsupport.h',
+                                       '_PyArg_NoPositional()')
                     fields.insert(0, normalize_snippet("""
                         if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
                             goto exit;
@@ -1643,12 +1662,11 @@ class CLanguage(Language):
                                             declarations=declarations)
 
 
+        methoddef_cast_end = ""
         if flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
             methoddef_cast = "(PyCFunction)"
-            methoddef_cast_end = ""
         elif limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
-            methoddef_cast_end = ""
         else:
             methoddef_cast = "_PyCFunction_CAST("
             methoddef_cast_end = ")"
@@ -1846,7 +1864,6 @@ class CLanguage(Language):
         last_group = 0
         first_optional = len(selfless)
         positional = selfless and selfless[-1].is_positional_only()
-        new_or_init = f.kind.new_or_init
         has_option_groups = False
 
         # offset i by -1 because first_optional needs to ignore self
@@ -2425,7 +2442,7 @@ extensions['py'] = PythonLanguage
 
 def write_file(filename: str, new_contents: str) -> None:
     try:
-        with open(filename, 'r', encoding="utf-8") as fp:
+        with open(filename, encoding="utf-8") as fp:
             old_contents = fp.read()
 
         if old_contents == new_contents:
@@ -3503,6 +3520,8 @@ class CConverter(metaclass=CConverterAutoRegister):
         else:
             if expected_literal:
                 expected = f'"{expected}"'
+            if clinic is not None:
+                clinic.add_include('pycore_modsupport.h', '_PyArg_BadArgument()')
             return f'_PyArg_BadArgument("{{{{name}}}}", "{displayname}", {expected}, {{argname}});'
 
     def format_code(self, fmt: str, *,
@@ -5946,6 +5965,7 @@ class DSLParser:
         if version is None:
             if self.keyword_only:
                 fail(f"Function {function.name!r} uses '*' more than once.")
+            self.check_previous_star()
             self.check_remaining_star()
             self.keyword_only = True
         else:
@@ -6343,7 +6363,6 @@ class DSLParser:
         else:
             return
 
-        no_param_after_symbol = True
         for p in reversed(self.function.parameters.values()):
             if self.keyword_only:
                 if p.kind == inspect.Parameter.KEYWORD_ONLY:
@@ -6355,6 +6374,14 @@ class DSLParser:
 
         fail(f"Function {self.function.name!r} specifies {symbol!r} "
              f"without following parameters.", line_number=lineno)
+
+    def check_previous_star(self, lineno: int | None = None) -> None:
+        assert isinstance(self.function, Function)
+
+        for p in self.function.parameters.values():
+            if p.kind == inspect.Parameter.VAR_POSITIONAL:
+                fail(f"Function {self.function.name!r} uses '*' more than once.")
+
 
     def do_post_block_processing_cleanup(self, lineno: int) -> None:
         """

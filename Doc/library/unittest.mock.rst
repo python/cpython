@@ -818,8 +818,8 @@ This applies to :meth:`~Mock.assert_called_with`,
 :meth:`~Mock.assert_any_call`.  When :ref:`auto-speccing`, it will also
 apply to method calls on the mock object.
 
-   .. versionchanged:: 3.4
-      Added signature introspection on specced and autospecced mock objects.
+.. versionchanged:: 3.4
+   Added signature introspection on specced and autospecced mock objects.
 
 
 .. class:: PropertyMock(*args, **kwargs)
@@ -1130,7 +1130,7 @@ object::
 
   .. method:: wait_until_any_call_with(*args, **kwargs)
 
-      Waits until the the mock is called with the specified arguments.
+      Waits until the mock is called with the specified arguments.
 
       If a timeout was passed at the creation of the mock
       the function raises an :exc:`AssertionError` if the call is not performed in time.
@@ -1437,9 +1437,9 @@ patch
 
     .. note::
 
-        .. versionchanged:: 3.5
-           If you are patching builtins in a module then you don't
-           need to pass ``create=True``, it will be added by default.
+       .. versionchanged:: 3.5
+          If you are patching builtins in a module then you don't
+          need to pass ``create=True``, it will be added by default.
 
     Patch can be used as a :class:`TestCase` class decorator. It works by
     decorating each test method in the class. This reduces the boilerplate
