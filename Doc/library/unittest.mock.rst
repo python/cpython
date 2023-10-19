@@ -2480,8 +2480,8 @@ are closed properly and is becoming common::
         f.write('something')
 
 The issue is that even if you mock out the call to :func:`open` it is the
-*returned object* that is used as a context manager (and has :meth:`__enter__` and
-:meth:`__exit__` called).
+*returned object* that is used as a context manager (and has :meth:`~object.__enter__` and
+:meth:`~object.__exit__` called).
 
 Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful. ::
