@@ -5,20 +5,23 @@
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // lseek()
+#endif
 #ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
+#  include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
-#include <sys/stat.h>
+#  include <sys/stat.h>
 #endif
 #ifdef HAVE_IO_H
-#include <io.h>
+#  include <io.h>
 #endif
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
+#  include <fcntl.h>              // open()
 #endif
-#include <stddef.h> /* For offsetof */
+
 #include "_iomodule.h"
 
 /*
@@ -35,21 +38,22 @@
  */
 
 #ifdef MS_WINDOWS
-/* can simulate truncate with Win32 API functions; see file_truncate */
-#define HAVE_FTRUNCATE
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
+   // can simulate truncate with Win32 API functions; see file_truncate
+#  define HAVE_FTRUNCATE
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
 #endif
 
 #if BUFSIZ < (8*1024)
-#define SMALLCHUNK (8*1024)
+#  define SMALLCHUNK (8*1024)
 #elif (BUFSIZ >= (2 << 25))
-#error "unreasonable BUFSIZ > 64 MiB defined"
+#  error "unreasonable BUFSIZ > 64 MiB defined"
 #else
-#define SMALLCHUNK BUFSIZ
+#  define SMALLCHUNK BUFSIZ
 #endif
+
 
 /*[clinic input]
 module _io

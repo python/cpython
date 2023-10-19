@@ -501,6 +501,22 @@ class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
+    def test_with_instruction_event(self):
+        """Test that the second tool can set events with instruction events set by the first tool."""
+        def f():
+            pass
+        code = f.__code__
+
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.set_local_events(TEST_TOOL, code, E.INSTRUCTION | E.LINE)
+            sys.monitoring.set_local_events(TEST_TOOL2, code, E.LINE)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.set_events(TEST_TOOL2, 0)
+            self.assertEqual(sys.monitoring._all_events(), {})
+
+
 class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
     def test_lines_single(self):
@@ -1169,7 +1185,7 @@ class TestLineAndInstructionEvents(CheckEvents):
         sys.monitoring.set_events(TEST_TOOL, 0)
         self.assertGreater(len(events), 0)
 
-class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
+class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -1198,19 +1214,19 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     MUST_INCLUDE_LI = [
             ('instruction', 'func1', 2),
-            ('line', 'func1', 1),
+            ('line', 'func1', 2),
             ('instruction', 'func1', 4),
             ('instruction', 'func1', 6)]
 
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     def test_instruction_then_line(self):
-        recorders = [ InstructionRecorder, LineRecorderLowNoise ]
+        recorders = [ InstructionRecorder, LineRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     @staticmethod
     def func2():
@@ -1225,12 +1241,12 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
 
 
-    def test_line_then_instruction(self):
+    def test_call_then_instruction(self):
         recorders = [ CallRecorder, InstructionRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
 
-    def test_instruction_then_line(self):
+    def test_instruction_then_call(self):
         recorders = [ InstructionRecorder, CallRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)

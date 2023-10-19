@@ -1,3 +1,0 @@
-:data:`typing.Annotated` is now implemented as an instance of
-``typing._SpecialForm`` rather than a class. This should have no user-facing
-impact for users of the :mod:`typing` module public API.

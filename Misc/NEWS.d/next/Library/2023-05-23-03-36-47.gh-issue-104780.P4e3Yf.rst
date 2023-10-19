@@ -1,2 +1,0 @@
-Remove the ``2to3`` program and the :mod:`!lib2to3` module, deprecated in
-Python 3.11. Patch by Victor Stinner.
