@@ -92,7 +92,8 @@ copying of data.
    .. method:: unlink()
 
       Deletes the underlying shared memory block.  This should be called only
-      once per shared memory block regardless of the number of handles to it.
+      once per shared memory block regardless of the number of handles to it,
+      even in other processes.
       :meth:`unlink()` and :meth:`close()` can be called in any order, but
       trying to access data inside a shared memory block after :meth:`unlink()`
       may result in memory access errors, depending on platform.
