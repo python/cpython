@@ -833,7 +833,6 @@ class TestChannels(TestBase):
         after = set(interpreters.list_all_channels())
         self.assertEqual(after, created)
 
-    @unittest.expectedFailure  # See gh-110318:
     def test_shareable(self):
         rch, sch = interpreters.create_channel()
 
