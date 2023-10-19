@@ -185,6 +185,11 @@ struct _object {
     PyTypeObject *ob_type;
 };
 #else
+// Objects that are not owned by any thread use a thread id (tid) of zero.
+// This includes both immortal objects and objects whose reference count
+// fields have been merged.
+#define _Py_UNOWNED_TID             0
+
 // The shared reference count uses the two least-significant bits to store
 // flags. The remaining bits are used to store the reference count.
 #define _Py_REF_SHARED_SHIFT        2
@@ -258,7 +263,7 @@ _Py_ThreadId(void)
 
 #if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
 static inline Py_ALWAYS_INLINE int
-_Py_ThreadLocal(PyObject *ob)
+_Py_IsOnwedByCurrentThread(PyObject *ob)
 {
     return ob->ob_tid == _Py_ThreadId();
 }
@@ -335,7 +340,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 #if !defined(Py_NOGIL)
     ob->ob_refcnt = refcnt;
 #else
-    if (_Py_ThreadLocal(ob)) {
+    if (_Py_IsOnwedByCurrentThread(ob)) {
         // Set local refcount to desired refcount and shared refcount to zero,
         // but preserve the shared refcount flags.
         assert(refcnt < UINT32_MAX);
@@ -345,7 +350,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     else {
         // Set local refcount to zero and shared refcount to desired refcount.
         // Mark the object as merged.
-        ob->ob_tid = 0;
+        ob->ob_tid = _Py_UNOWNED_TID;
         ob->ob_ref_local = 0;
         ob->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
     }
@@ -733,7 +738,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     if (new_local == 0) {
         return;
     }
-    if (_Py_ThreadLocal(op)) {
+    if (_Py_IsOnwedByCurrentThread(op)) {
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
     }
     else {
@@ -774,7 +779,7 @@ PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
 // zero. The call will deallocate the object if the shared refcount is also
 // zero. Otherwise, the thread gives up ownership and merges the reference
 // count fields.
-PyAPI_FUNC(void) _Py_MergeZeroRefcount(PyObject *);
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
 #endif
 
 #if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
@@ -800,14 +805,14 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
     }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
-    if (_Py_ThreadLocal(op)) {
+    if (_Py_IsOnwedByCurrentThread(op)) {
         if (local == 0) {
             _Py_NegativeRefcount(filename, lineno, op);
         }
         local--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
         if (local == 0) {
-            _Py_MergeZeroRefcount(op);
+            _Py_MergeZeroLocalRefcount(op);
         }
     }
     else {
@@ -824,11 +829,11 @@ static inline void Py_DECREF(PyObject *op)
         return;
     }
     _Py_DECREF_STAT_INC();
-    if (_Py_ThreadLocal(op)) {
+    if (_Py_IsOnwedByCurrentThread(op)) {
         local--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
         if (local == 0) {
-            _Py_MergeZeroRefcount(op);
+            _Py_MergeZeroLocalRefcount(op);
         }
     }
     else {

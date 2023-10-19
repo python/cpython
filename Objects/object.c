@@ -362,7 +362,7 @@ _Py_DecRefShared(PyObject *o)
 }
 
 void
-_Py_MergeZeroRefcount(PyObject *op)
+_Py_MergeZeroLocalRefcount(PyObject *op)
 {
     assert(op->ob_ref_local == 0);
 
@@ -391,6 +391,7 @@ _Py_MergeZeroRefcount(PyObject *op)
 Py_ssize_t
 _Py_ExplicitMergeRefcount(PyObject *op, Py_ssize_t extra)
 {
+    assert(!_Py_IsImmortal(op));
     Py_ssize_t refcnt;
     Py_ssize_t new_shared;
     Py_ssize_t shared = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);

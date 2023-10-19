@@ -106,7 +106,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 #if !defined(Py_NOGIL)
     op->ob_refcnt += n;
 #else
-    if (_Py_ThreadLocal(op)) {
+    if (_Py_IsOnwedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
         Py_ssize_t refcnt = (Py_ssize_t)local + n;
 #  if PY_SSIZE_T_MAX > UINT32_MAX
@@ -129,7 +129,7 @@ static inline void _Py_SetImmortal(PyObject *op)
 {
     if (op) {
 #ifdef Py_NOGIL
-        op->ob_tid = 0;
+        op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
         op->ob_ref_shared = 0;
 #else
@@ -146,7 +146,7 @@ static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
     if (op) {
         assert(_Py_IsImmortal(op));
 #ifdef Py_NOGIL
-        op->ob_tid = 0;
+        op->ob_tid = _Py_UNOWNED_TID;
         op->ob_ref_local = 0;
         op->ob_ref_shared = _Py_REF_SHARED(refcnt, _Py_REF_MERGED);
 #else
