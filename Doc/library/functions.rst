@@ -983,7 +983,7 @@ are always available.  They are listed here in alphabetical order.
    differently depending on the presence of the second argument. Without a
    second argument, *object* must be a collection object which supports the
    :term:`iterable` protocol (the :meth:`__iter__` method), or it must support
-   the sequence protocol (the :meth:`__getitem__` method with integer arguments
+   the sequence protocol (the :meth:`~object.__getitem__` method with integer arguments
    starting at ``0``).  If it does not support either of those protocols,
    :exc:`TypeError` is raised. If the second argument, *sentinel*, is given,
    then *object* must be a callable object.  The iterator created in this case
@@ -1563,7 +1563,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return a reverse :term:`iterator`.  *seq* must be an object which has
    a :meth:`__reversed__` method or supports the sequence protocol (the
-   :meth:`__len__` method and the :meth:`__getitem__` method with integer
+   :meth:`__len__` method and the :meth:`~object.__getitem__` method with integer
    arguments starting at ``0``).
 
 
