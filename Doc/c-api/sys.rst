@@ -224,8 +224,8 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: PyObject *PySys_GetAttr(PyObject *name)
 
-   Return the object *name* from the :mod:`sys` module or ``NULL`` on failure.
-   Set :exc:`RuntimeError` and return ``NULL`` if it does not exist.
+   Get the attribute *name* of the :mod:`sys` module. Return a :term:`strong reference`.
+   Raise :exc:`RuntimeError` and return ``NULL`` if it does not exist.
 
    If the non-existing object should not be treated as a failure, you can use
    :c:func:`PySys_GetOptionalAttr` instead.
