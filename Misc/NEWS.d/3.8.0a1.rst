@@ -3592,7 +3592,7 @@ Python 3.5.
 .. nonce: V8Ou3K
 .. section: Library
 
-Deprecate :meth:`__getitem__` methods of
+Deprecate :meth:`~object.__getitem__` methods of
 :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
 and :class:`fileinput.FileInput`.
 
