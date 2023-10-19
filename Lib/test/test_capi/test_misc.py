@@ -1107,8 +1107,7 @@ class CAPITest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
             sys_getattr('nonexisting')
-        with self.assertRaisesRegex(RuntimeError, r'lost sys\.1'):
-            sys_getattr(1)
+        self.assertRaises(TypeError, sys_getattr, 1)
         self.assertRaises(TypeError, sys_getattr, [])
         # CRASHES sys_getattr(NULL)
 
@@ -1132,7 +1131,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(getoptionalattr('\U0001f40d'), 42)
 
         self.assertIs(getoptionalattr('nonexisting'), AttributeError)
-        self.assertIs(getoptionalattr(1), AttributeError)
+        self.assertRaises(TypeError, getoptionalattr, 1)
         self.assertRaises(TypeError, getoptionalattr, [])
         # CRASHES getoptionalattr(NULL)
 

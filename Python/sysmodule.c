@@ -74,6 +74,12 @@ module sys
 PyObject *
 PySys_GetAttr(PyObject *name)
 {
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        return NULL;
+    }
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *sysdict = tstate->interp->sysdict;
     if (sysdict == NULL) {
@@ -106,6 +112,13 @@ PySys_GetAttrString(const char *name)
 int
 PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 {
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     Py_TYPE(name)->tp_name);
+        *value = NULL;
+        return -1;
+    }
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *sysdict = tstate->interp->sysdict;
     if (sysdict == NULL) {
