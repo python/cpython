@@ -21,3 +21,4 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(
     unsigned int code_size,
     const char *entry_name);
 PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void);
+PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename);
