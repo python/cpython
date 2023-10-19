@@ -4460,10 +4460,7 @@ class _TestSharedMemory(BaseTestCase):
             self.assertEqual(err, b'')
         finally:
             mem.close()
-            try:
-                mem.unlink()
-            except OSError:
-                pass
+            mem.unlink()
 
 #
 # Test to verify that `Finalize` works.
