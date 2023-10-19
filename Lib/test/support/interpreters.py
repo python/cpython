@@ -161,6 +161,14 @@ class _ChannelEnd:
     def id(self):
         return self._id
 
+    @property
+    def _info(self):
+        return _channels.get_info(self._id)
+
+    @property
+    def is_closed(self):
+        return self._info.closed
+
 
 _NOT_SET = object()
 
@@ -212,6 +220,11 @@ class SendChannel(_ChannelEnd):
     """The sending end of a cross-interpreter channel."""
 
     _end = 'send'
+
+    @property
+    def is_closed(self):
+        info = self._info
+        return info.closed or info.closing
 
     def send(self, obj, timeout=None):
         """Send the object (i.e. its data) to the channel's receiving end.
