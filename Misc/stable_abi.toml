@@ -2478,11 +2478,3 @@
     added = '3.13'
 [function.PySys_AuditTuple]
     added = '3.13'
-[function.PySys_GetAttr]
-    added = '3.13'
-[function.PySys_GetAttrString]
-    added = '3.13'
-[function.PySys_GetOptionalAttr]
-    added = '3.13'
-[function.PySys_GetOptionalAttrString]
-    added = '3.13'
