@@ -3232,6 +3232,86 @@ test_weakref_capi(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 
 
 static PyObject *
+sys_getattr(PyObject *Py_UNUSED(module), PyObject *name)
+{
+    NULLABLE(name);
+    PyObject *result = PySys_GetAttr(name);
+    if (result == NULL && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (result == NULL) {
+        result = PyExc_AttributeError;
+        Py_INCREF(PyExc_AttributeError);
+    }
+    return result;
+}
+
+static PyObject *
+sys_getattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+    PyObject *result = PySys_GetAttrString(name);
+    if (result == NULL && PyErr_Occurred()) {
+        return NULL;
+    }
+    if (result == NULL) {
+        result = PyExc_AttributeError;
+        Py_INCREF(PyExc_AttributeError);
+    }
+    return result;
+}
+
+static PyObject *
+sys_getoptionalattr(PyObject *Py_UNUSED(module), PyObject *name)
+{
+    PyObject *value = UNINITIALIZED_PTR;
+    NULLABLE(name);
+
+    switch (PySys_GetOptionalAttr(name, &value)) {
+        case -1:
+            assert(value == NULL);
+            return NULL;
+        case 0:
+            assert(value == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return value;
+        default:
+            Py_FatalError("PySys_GetOptionalAttr() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
+static PyObject *
+sys_getoptionalattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
+{
+    PyObject *value = UNINITIALIZED_PTR;
+    const char *name;
+    Py_ssize_t size;
+    if (!PyArg_Parse(arg, "z#", &name, &size)) {
+        return NULL;
+    }
+
+    switch (PySys_GetOptionalAttrString(name, &value)) {
+        case -1:
+            assert(value == NULL);
+            return NULL;
+        case 0:
+            assert(value == NULL);
+            return Py_NewRef(PyExc_AttributeError);
+        case 1:
+            return value;
+        default:
+            Py_FatalError("PySys_GetOptionalAttrString() returned invalid code");
+            Py_UNREACHABLE();
+    }
+}
+
+static PyObject *
 sys_getobject(PyObject *Py_UNUSED(module), PyObject *arg)
 {
     const char *name;
@@ -3392,6 +3472,10 @@ static PyMethodDef TestMethods[] = {
     {"function_set_kw_defaults", function_set_kw_defaults, METH_VARARGS, NULL},
     {"check_pyimport_addmodule", check_pyimport_addmodule, METH_VARARGS},
     {"test_weakref_capi", test_weakref_capi, METH_NOARGS},
+    {"sys_getattr", sys_getattr, METH_O},
+    {"sys_getattrstring", sys_getattrstring, METH_O},
+    {"sys_getoptionalattr", sys_getoptionalattr, METH_O},
+    {"sys_getoptionalattrstring", sys_getoptionalattrstring, METH_O},
     {"sys_getobject", sys_getobject, METH_O},
     {"sys_setobject", sys_setobject, METH_VARARGS},
     {NULL, NULL} /* sentinel */
