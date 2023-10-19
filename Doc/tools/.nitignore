@@ -76,7 +76,6 @@ Doc/library/ftplib.rst
 Doc/library/functions.rst
 Doc/library/functools.rst
 Doc/library/getopt.rst
-Doc/library/getpass.rst
 Doc/library/gettext.rst
 Doc/library/gzip.rst
 Doc/library/http.client.rst
