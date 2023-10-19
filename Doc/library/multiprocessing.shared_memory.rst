@@ -67,16 +67,19 @@ copying of data.
    *track*, when enabled, registers the shared memory block with a resource
    tracker process.  This process ensures proper cleanup of shared memory
    blocks even when all other processes with access to the memory have failed
-   to do so (mainly due to being killed by signals).  Unless a Python process
-   was created using any of the :mod:`multiprocessing` facilities (such as
-   :class:`multiprocessing.Process`), it will receive its own resource tracker
-   process when accessing shared memory with *track* enabled.  This will cause
-   the shared memory to be deleted by the resource tracker of the first
-   process that terminates.  To avoid this issue, users of :mod:`subprocess` or
-   standalone Python processes should set *track* to ``False`` when there is
-   already another process in place that does the bookkeeping.  *track* has
-   an effect only on POSIX.  Windows has its own tracking and does not use the
-   resource tracker.
+   to do so (mainly due to being killed by signals).
+   Python processes created from a common ancestor using :mod:`multiprocessing`
+   facilities share a single resource tracker process, and the lifetime of
+   shared memory segments is handled automatically among these processes.
+   Python processes created in any other way will receive their own own
+   resource tracker when accessing shared memory with *track* enabled.
+   This will cause the shared memory to be deleted by the resource tracker
+   of the first process that terminates.
+   To avoid this issue, users of :mod:`subprocess` or standalone Python
+   processes should set *track* to ``False`` when there is already another
+   process in place that does the bookkeeping.
+   *track* is ignored on Windows, which has its own tracking and
+   automatically deletes shared memory when all handles to it have been closed.
 
    .. versionchanged:: 3.13 Added *track* parameter.
 
@@ -97,6 +100,9 @@ copying of data.
       :meth:`unlink()` and :meth:`close()` can be called in any order, but
       trying to access data inside a shared memory block after :meth:`unlink()`
       may result in memory access errors, depending on platform.
+
+      This method has no effect on Windows, where the only way to delete a
+      shared memory block is to close all handles.
 
    .. attribute:: buf
 
