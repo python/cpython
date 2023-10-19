@@ -441,6 +441,10 @@ _get_current_module_state(void)
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
+    /* external types */
+    Py_VISIT(state->send_channel_type);
+    Py_VISIT(state->recv_channel_type);
+
     /* heap types */
     Py_VISIT(state->ChannelInfoType);
     Py_VISIT(state->ChannelIDType);
