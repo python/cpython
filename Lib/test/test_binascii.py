@@ -428,6 +428,12 @@ class BinASCIITest(unittest.TestCase):
         self.assertEqual(binascii.b2a_base64(b, newline=False),
                          b'aGVsbG8=')
 
+    def test_c_contiguity(self):
+        m = memoryview(bytearray(b'noncontig'))
+        noncontig_writable = m[::-2]
+        with self.assertRaises(BufferError):
+            binascii.b2a_hex(noncontig_writable)
+
 
 class ArrayBinASCIITest(BinASCIITest):
     def type2test(self, s):
