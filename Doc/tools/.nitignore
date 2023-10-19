@@ -42,7 +42,6 @@ Doc/library/bisect.rst
 Doc/library/bz2.rst
 Doc/library/calendar.rst
 Doc/library/cmd.rst
-Doc/library/codecs.rst
 Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
