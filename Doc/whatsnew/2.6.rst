@@ -269,15 +269,15 @@ structure is::
        with-block
 
 The expression is evaluated, and it should result in an object that supports the
-context management protocol (that is, has :meth:`__enter__` and :meth:`__exit__`
+context management protocol (that is, has :meth:`~object.__enter__` and :meth:`~object.__exit__`
 methods).
 
-The object's :meth:`__enter__` is called before *with-block* is executed and
+The object's :meth:`~object.__enter__` is called before *with-block* is executed and
 therefore can run set-up code. It also may return a value that is bound to the
 name *variable*, if given.  (Note carefully that *variable* is *not* assigned
 the result of *expression*.)
 
-After execution of the *with-block* is finished, the object's :meth:`__exit__`
+After execution of the *with-block* is finished, the object's :meth:`~object.__exit__`
 method is called, even if the block raised an exception, and can therefore run
 clean-up code.
 
@@ -296,7 +296,7 @@ part-way through the block.
 .. note::
 
    In this case, *f* is the same object created by :func:`open`, because
-   :meth:`file.__enter__` returns *self*.
+   :meth:`~object.__enter__` returns *self*.
 
 The :mod:`threading` module's locks and condition variables  also support the
 ':keyword:`with`' statement::
@@ -339,16 +339,16 @@ underlying implementation and should keep reading.
 A high-level explanation of the context management protocol is:
 
 * The expression is evaluated and should result in an object called a "context
-  manager".  The context manager must have :meth:`__enter__` and :meth:`__exit__`
+  manager".  The context manager must have :meth:`~object.__enter__` and :meth:`~object.__exit__`
   methods.
 
-* The context manager's :meth:`__enter__` method is called.  The value returned
+* The context manager's :meth:`~object.__enter__` method is called.  The value returned
   is assigned to *VAR*.  If no ``as VAR`` clause is present, the value is simply
   discarded.
 
 * The code in *BLOCK* is executed.
 
-* If *BLOCK* raises an exception, the context manager's :meth:`__exit__` method
+* If *BLOCK* raises an exception, the context manager's :meth:`~object.__exit__` method
   is called with three arguments, the exception details (``type, value, traceback``,
   the same values returned by :func:`sys.exc_info`, which can also be ``None``
   if no exception occurred).  The method's return value controls whether an exception
@@ -357,7 +357,7 @@ A high-level explanation of the context management protocol is:
   if you do the author of the code containing the ':keyword:`with`' statement will
   never realize anything went wrong.
 
-* If *BLOCK* didn't raise an exception,  the :meth:`__exit__` method is still
+* If *BLOCK* didn't raise an exception,  the :meth:`~object.__exit__` method is still
   called, but *type*, *value*, and *traceback* are all ``None``.
 
 Let's think through an example.  I won't present detailed code but will only
@@ -391,7 +391,7 @@ rolled back if there's an exception. Here's the basic interface for
        def rollback(self):
            "Rolls back current transaction"
 
-The :meth:`__enter__` method is pretty easy, having only to start a new
+The :meth:`~object.__enter__` method is pretty easy, having only to start a new
 transaction.  For this application the resulting cursor object would be a useful
 result, so the method will return it.  The user can then add ``as cursor`` to
 their ':keyword:`with`' statement to bind the cursor to a variable name. ::
@@ -403,7 +403,7 @@ their ':keyword:`with`' statement to bind the cursor to a variable name. ::
            cursor = self.cursor()
            return cursor
 
-The :meth:`__exit__` method is the most complicated because it's where most of
+The :meth:`~object.__exit__` method is the most complicated because it's where most of
 the work has to be done.  The method has to check if an exception occurred.  If
 there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
@@ -436,10 +436,10 @@ are useful when writing objects for use with the ':keyword:`with`' statement.
 The decorator is called :func:`contextmanager`, and lets you write a single
 generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
-:meth:`__enter__` method, and the value yielded will be the method's return
+:meth:`~object.__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
 :keyword:`!as` clause, if any.  The code after the :keyword:`!yield` will be
-executed in the :meth:`__exit__` method.  Any exception raised in the block will
+executed in the :meth:`~object.__exit__` method.  Any exception raised in the block will
 be raised by the :keyword:`!yield` statement.
 
 Using this decorator, our database example from the previous section
@@ -1737,7 +1737,7 @@ Optimizations
   (Contributed by Antoine Pitrou.)  Memory usage is reduced
   by using pymalloc for the Unicode string's data.
 
-* The ``with`` statement now stores the :meth:`__exit__` method on the stack,
+* The ``with`` statement now stores the :meth:`~object.__exit__` method on the stack,
   producing a small speedup.  (Implemented by Jeffrey Yasskin.)
 
 * To reduce memory usage, the garbage collector will now clear internal

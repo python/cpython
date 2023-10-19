@@ -4854,7 +4854,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,
