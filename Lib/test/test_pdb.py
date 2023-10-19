@@ -2867,6 +2867,23 @@ def bœr():
         self.assertTrue(any("__main__.py(4)<module>()"
                             in l for l in stdout.splitlines()), stdout)
 
+    def test_file_modified_after_execution(self):
+        script = """
+            print("hello")
+        """
+
+        commands = """
+            filename = $_frame.f_code.co_filename
+            f = open(filename, "w")
+            f.write("print('goodbye')")
+            f.close()
+            ll
+        """
+
+        stdout, stderr = self.run_pdb_script(script, commands)
+        self.assertIn("WARNING:", stdout)
+        self.assertIn("changed after pdb started", stdout)
+
     def test_relative_imports(self):
         self.module_name = 't_main'
         os_helper.rmtree(self.module_name)

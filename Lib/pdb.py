@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import time
 import codeop
 import pprint
 import signal
@@ -274,6 +275,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
+        self._file_mtime_table = {}
+
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
             raise KeyboardInterrupt
@@ -424,6 +427,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 break
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
+
+    def _validate_file_mtime(self):
+        """Check if any of the files loaded in pdb have been modified since
+        the last time we saw it. If so, give a warning."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' changed after pdb started")
+        self._file_mtime_table[filename] = mtime
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
@@ -626,6 +642,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            self._validate_file_mtime()
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
