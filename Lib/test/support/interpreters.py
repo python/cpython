@@ -92,12 +92,18 @@ class Interpreter:
         return _interpreters.destroy(self._id)
 
     # XXX Rename "run" to "exec"?
-    def run(self, src_str, /, channels=None):
+    # XXX Do not allow init to overwrite (by default)?
+    def run(self, src_str, /, *, init=None):
         """Run the given source code in the interpreter.
 
         This is essentially the same as calling the builtin "exec"
         with this interpreter, using the __dict__ of its __main__
         module as both globals and locals.
+
+        If "init" is provided, it must be a dict mapping attribute names
+        to "shareable" objects, including channels.  These are set as
+        attributes on the __main__ module before the given code is
+        executed.  If a name is already bound then it is overwritten.
 
         There is no return value.
 
@@ -110,7 +116,7 @@ class Interpreter:
         that time, the previous interpreter is allowed to run
         in other threads.
         """
-        _interpreters.exec(self._id, src_str, channels)
+        _interpreters.exec(self._id, src_str, init)
 
 
 def create_channel():

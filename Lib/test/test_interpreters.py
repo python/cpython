@@ -39,10 +39,10 @@ def clean_up_interpreters():
             pass  # already destroyed
 
 
-def _run_output(interp, request, channels=None):
+def _run_output(interp, request, init=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.run(script, channels=channels)
+        interp.run(script, init=init)
         return rpipe.read()
 
 
@@ -953,7 +953,7 @@ class TestSendRecv(TestBase):
                 print(id(orig2))
                 s.send_nowait(orig2)
                 """),
-            channels=dict(r=r1, s=s2),
+            init=dict(r=r1, s=s2),
             )
         obj2 = r2.recv()
 
@@ -1027,7 +1027,7 @@ class TestSendRecv(TestBase):
                 print(id(orig2))
                 s.send_nowait(orig2)
                 """),
-            channels=dict(r=r1, s=s2),
+            init=dict(r=r1, s=s2),
             )
         obj2 = r2.recv_nowait()
 
