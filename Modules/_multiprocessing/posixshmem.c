@@ -2,17 +2,16 @@
 posixshmem - A Python extension that provides shm_open() and shm_unlink()
 */
 
-// clinic/posixshmem.c.h uses internal pycore_modsupport.h API
-#ifndef Py_BUILD_CORE_BUILTIN
-#  define Py_BUILD_CORE_MODULE 1
-#endif
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
 
 #include <Python.h>
 
-// for shm_open() and shm_unlink()
+#include <errno.h>                // EINTR
 #ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
+#  include <sys/mman.h>           // shm_open(), shm_unlink()
 #endif
+
 
 /*[clinic input]
 module _posixshmem
@@ -45,7 +44,7 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 {
     int fd;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return -1;
     }
@@ -84,7 +83,7 @@ _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path)
 {
     int rv;
     int async_err = 0;
-    const char *name = PyUnicode_AsUTF8(path);
+    const char *name = PyUnicode_AsUTF8AndSize(path, NULL);
     if (name == NULL) {
         return NULL;
     }
