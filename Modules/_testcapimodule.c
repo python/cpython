@@ -3235,15 +3235,7 @@ static PyObject *
 sys_getattr(PyObject *Py_UNUSED(module), PyObject *name)
 {
     NULLABLE(name);
-    PyObject *result = PySys_GetAttr(name);
-    if (result == NULL && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (result == NULL) {
-        result = PyExc_AttributeError;
-        Py_INCREF(PyExc_AttributeError);
-    }
-    return result;
+    return PySys_GetAttr(name);
 }
 
 static PyObject *
@@ -3254,15 +3246,7 @@ sys_getattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
     if (!PyArg_Parse(arg, "z#", &name, &size)) {
         return NULL;
     }
-    PyObject *result = PySys_GetAttrString(name);
-    if (result == NULL && PyErr_Occurred()) {
-        return NULL;
-    }
-    if (result == NULL) {
-        result = PyExc_AttributeError;
-        Py_INCREF(PyExc_AttributeError);
-    }
-    return result;
+    return PySys_GetAttrString(name);
 }
 
 static PyObject *
@@ -3274,6 +3258,7 @@ sys_getoptionalattr(PyObject *Py_UNUSED(module), PyObject *name)
     switch (PySys_GetOptionalAttr(name, &value)) {
         case -1:
             assert(value == NULL);
+            assert(PyErr_Occurred());
             return NULL;
         case 0:
             assert(value == NULL);
@@ -3282,7 +3267,6 @@ sys_getoptionalattr(PyObject *Py_UNUSED(module), PyObject *name)
             return value;
         default:
             Py_FatalError("PySys_GetOptionalAttr() returned invalid code");
-            Py_UNREACHABLE();
     }
 }
 
@@ -3299,6 +3283,7 @@ sys_getoptionalattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
     switch (PySys_GetOptionalAttrString(name, &value)) {
         case -1:
             assert(value == NULL);
+            assert(PyErr_Occurred());
             return NULL;
         case 0:
             assert(value == NULL);
@@ -3307,7 +3292,6 @@ sys_getoptionalattrstring(PyObject *Py_UNUSED(module), PyObject *arg)
             return value;
         default:
             Py_FatalError("PySys_GetOptionalAttrString() returned invalid code");
-            Py_UNREACHABLE();
     }
 }
 

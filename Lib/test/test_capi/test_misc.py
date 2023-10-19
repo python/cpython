@@ -1113,39 +1113,39 @@ class CAPITest(unittest.TestCase):
         # CRASHES sys_getattr(NULL)
 
     def test_sys_getattrstring(self):
-        sys_getattr = _testcapi.sys_getattrstring
+        getattrstring = _testcapi.sys_getattrstring
 
-        self.assertIs(sys_getattr(b'stdout'), sys.stdout)
+        self.assertIs(getattrstring(b'stdout'), sys.stdout)
         with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(sys_getattr('\U0001f40d'.encode()), 42)
+            self.assertEqual(getattrstring('\U0001f40d'.encode()), 42)
 
         with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
-            sys_getattr(b'nonexisting')
-        self.assertRaises(UnicodeDecodeError, sys_getattr, b'\xff')
-        # CRASHES sys_getattr(NULL)
+            getattrstring(b'nonexisting')
+        self.assertRaises(UnicodeDecodeError, getattrstring, b'\xff')
+        # CRASHES getattrstring(NULL)
 
     def test_sys_getoptionalattr(self):
-        sys_getattr = _testcapi.sys_getoptionalattr
+        getoptionalattr = _testcapi.sys_getoptionalattr
 
-        self.assertIs(sys_getattr('stdout'), sys.stdout)
+        self.assertIs(getoptionalattr('stdout'), sys.stdout)
         with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(sys_getattr('\U0001f40d'), 42)
+            self.assertEqual(getoptionalattr('\U0001f40d'), 42)
 
-        self.assertIs(sys_getattr('nonexisting'), AttributeError)
-        self.assertIs(sys_getattr(1), AttributeError)
-        self.assertRaises(TypeError, sys_getattr, [])
-        # CRASHES sys_getattr(NULL)
+        self.assertIs(getoptionalattr('nonexisting'), AttributeError)
+        self.assertIs(getoptionalattr(1), AttributeError)
+        self.assertRaises(TypeError, getoptionalattr, [])
+        # CRASHES getoptionalattr(NULL)
 
     def test_sys_getoptionalattrstring(self):
-        sys_getattr = _testcapi.sys_getoptionalattrstring
+        getoptionalattrstring = _testcapi.sys_getoptionalattrstring
 
-        self.assertIs(sys_getattr(b'stdout'), sys.stdout)
+        self.assertIs(getoptionalattrstring(b'stdout'), sys.stdout)
         with support.swap_attr(sys, '\U0001f40d', 42):
-            self.assertEqual(sys_getattr('\U0001f40d'.encode()), 42)
+            self.assertEqual(getoptionalattrstring('\U0001f40d'.encode()), 42)
 
-        self.assertIs(sys_getattr(b'nonexisting'), AttributeError)
-        self.assertRaises(UnicodeDecodeError, sys_getattr, b'\xff')
-        # CRASHES sys_getattr(NULL)
+        self.assertIs(getoptionalattrstring(b'nonexisting'), AttributeError)
+        self.assertRaises(UnicodeDecodeError, getoptionalattrstring, b'\xff')
+        # CRASHES getoptionalattrstring(NULL)
 
     def test_sys_getobject(self):
         getobject = _testcapi.sys_getobject
