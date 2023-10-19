@@ -390,7 +390,6 @@ gen_close(PyGenObject *gen, PyObject *args)
         assert(yf == NULL);
         Py_RETURN_NONE;
     }
-
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
