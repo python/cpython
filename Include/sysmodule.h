@@ -34,11 +34,10 @@ PyAPI_FUNC(int) PyUnstable_WritePerfMapEntry(const void *code_addr, unsigned int
 PyAPI_FUNC(void) PyUnstable_PerfMapState_Fini(void);
 
 PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename);
-
+#endif
 PyAPI_FUNC(int) PySys_AuditTuple(
     const char *event,
     PyObject *args);
-#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_SYSMODULE_H
