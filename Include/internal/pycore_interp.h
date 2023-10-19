@@ -12,7 +12,6 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_atexit.h"        // struct atexit_state
-#include "pycore_atomic.h"        // _Py_atomic_address
 #include "pycore_ceval_state.h"   // struct _ceval_state
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_context.h"       // struct _Py_context_state
@@ -119,7 +118,7 @@ struct _is {
        Use _PyInterpreterState_GetFinalizing()
        and _PyInterpreterState_SetFinalizing()
        to access it, don't access it directly. */
-    _Py_atomic_address _finalizing;
+    PyThreadState* _finalizing;
     /* The ID of the OS thread in which we are finalizing. */
     unsigned long _finalizing_id;
 
@@ -234,6 +233,7 @@ struct _is {
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
+    Py_ssize_t _interactive_src_count;
 };
 
 
@@ -244,7 +244,7 @@ extern void _PyInterpreterState_Clear(PyThreadState *tstate);
 
 static inline PyThreadState*
 _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&interp->_finalizing);
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&interp->_finalizing);
 }
 
 static inline unsigned long
@@ -254,7 +254,7 @@ _PyInterpreterState_GetFinalizingID(PyInterpreterState *interp) {
 
 static inline void
 _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tstate) {
-    _Py_atomic_store_relaxed(&interp->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_ptr_relaxed(&interp->_finalizing, tstate);
     if (tstate == NULL) {
         _Py_atomic_store_ulong_relaxed(&interp->_finalizing_id, 0);
     }
@@ -267,7 +267,8 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
 }
 
 
-extern PyInterpreterState* _PyInterpreterState_LookUpID(int64_t);
+// Export for the _xxinterpchannels module.
+PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_LookUpID(int64_t);
 
 extern int _PyInterpreterState_IDInitref(PyInterpreterState *);
 extern int _PyInterpreterState_IDIncref(PyInterpreterState *);

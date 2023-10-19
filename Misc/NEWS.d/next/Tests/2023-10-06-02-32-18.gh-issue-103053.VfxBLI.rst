@@ -1,3 +1,0 @@
-Fix test_tools.test_freeze on FreeBSD: run "make distclean" instead of "make
-clean" in the copied source directory to remove also the "python" program.
-Patch by Victor Stinner.

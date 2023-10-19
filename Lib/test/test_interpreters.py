@@ -833,7 +833,6 @@ class TestChannels(TestBase):
         after = set(interpreters.list_all_channels())
         self.assertEqual(after, created)
 
-    @unittest.expectedFailure  # See gh-110318:
     def test_shareable(self):
         rch, sch = interpreters.create_channel()
 
@@ -849,6 +848,19 @@ class TestChannels(TestBase):
 
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
+
+    def test_is_closed(self):
+        rch, sch = interpreters.create_channel()
+        rbefore = rch.is_closed
+        sbefore = sch.is_closed
+        rch.close()
+        rafter = rch.is_closed
+        safter = sch.is_closed
+
+        self.assertFalse(rbefore)
+        self.assertFalse(sbefore)
+        self.assertTrue(rafter)
+        self.assertTrue(safter)
 
 
 class TestRecvChannelAttrs(TestBase):
@@ -964,8 +976,8 @@ class TestSendRecv(TestBase):
 
         orig = b'spam'
         s.send(orig)
-        t.join()
         obj = r.recv()
+        t.join()
 
         self.assertEqual(obj, orig)
         self.assertIsNot(obj, orig)
@@ -1022,6 +1034,11 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj2, b'eggs')
         self.assertNotEqual(id(obj2), int(out))
 
+    def test_recv_timeout(self):
+        r, _ = interpreters.create_channel()
+        with self.assertRaises(TimeoutError):
+            r.recv(timeout=1)
+
     def test_recv_channel_does_not_exist(self):
         ch = interpreters.RecvChannel(1_000_000)
         with self.assertRaises(interpreters.ChannelNotFoundError):
@@ -1067,3 +1084,46 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+    def test_send_buffer(self):
+        buf = bytearray(b'spamspamspam')
+        obj = None
+        rch, sch = interpreters.create_channel()
+
+        def f():
+            nonlocal obj
+            while True:
+                try:
+                    obj = rch.recv()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+        t = threading.Thread(target=f)
+        t.start()
+
+        sch.send_buffer(buf)
+        t.join()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)
+
+    def test_send_buffer_nowait(self):
+        buf = bytearray(b'spamspamspam')
+        rch, sch = interpreters.create_channel()
+        sch.send_buffer_nowait(buf)
+        obj = rch.recv()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)

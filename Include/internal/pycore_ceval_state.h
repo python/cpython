@@ -22,6 +22,7 @@ struct _pending_calls {
     struct _pending_call {
         _Py_pending_call_func func;
         void *arg;
+        int flags;
     } calls[NPENDINGCALLS];
     int first;
     int last;

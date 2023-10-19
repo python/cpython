@@ -1686,13 +1686,13 @@ Event Loop Implementations
 asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
-By default asyncio is configured to use :class:`SelectorEventLoop`
-on Unix and :class:`ProactorEventLoop` on Windows.
+By default asyncio is configured to use :class:`EventLoop`.
 
 
 .. class:: SelectorEventLoop
 
-   An event loop based on the :mod:`selectors` module.
+   A subclass of :class:`AbstractEventLoop` based on the
+   :mod:`selectors` module.
 
    Uses the most efficient *selector* available for the given
    platform.  It is also possible to manually configure the
@@ -1714,7 +1714,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
 .. class:: ProactorEventLoop
 
-   An event loop for Windows that uses "I/O Completion Ports" (IOCP).
+   A subclass of :class:`AbstractEventLoop` for Windows that uses "I/O Completion Ports" (IOCP).
 
    .. availability:: Windows.
 
@@ -1723,6 +1723,14 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       `MSDN documentation on I/O Completion Ports
       <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
 
+.. class:: EventLoop
+
+    An alias to the most efficient available subclass of :class:`AbstractEventLoop` for the given
+    platform.
+
+    It is an alias to :class:`SelectorEventLoop` on Unix and :class:`ProactorEventLoop` on Windows.
+
+   .. versionadded:: 3.13
 
 .. class:: AbstractEventLoop
 

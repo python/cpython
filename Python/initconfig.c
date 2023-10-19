@@ -92,6 +92,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(use_frozen_modules, UINT),
     SPEC(safe_path, UINT),
     SPEC(int_max_str_digits, INT),
+    SPEC(cpu_count, INT),
     SPEC(pathconfig_warnings, UINT),
     SPEC(program_name, WSTR),
     SPEC(pythonpath_env, WSTR_OPT),
@@ -116,6 +117,9 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(_is_python_build, UINT),
 #ifdef Py_STATS
     SPEC(_pystats, UINT),
+#endif
+#ifdef Py_DEBUG
+    SPEC(run_presite, WSTR_OPT),
 #endif
     {NULL, 0, 0},
 };
@@ -229,12 +233,21 @@ The following implementation-specific options are available:\n\
 \n\
 -X int_max_str_digits=number: limit the size of int<->str conversions.\n\
     This helps avoid denial of service attacks when parsing untrusted data.\n\
-    The default is sys.int_info.default_max_str_digits.  0 disables."
+    The default is sys.int_info.default_max_str_digits.  0 disables.\n\
+\n\
+-X cpu_count=[n|default]: Override the return value of os.cpu_count(),\n\
+    os.process_cpu_count(), and multiprocessing.cpu_count(). This can help users who need\n\
+    to limit resources in a container."
 
 #ifdef Py_STATS
 "\n\
 \n\
 -X pystats: Enable pystats collection at startup."
+#endif
+#ifdef Py_DEBUG
+"\n\
+\n\
+-X presite=package.module: import this module before site.py is run."
 #endif
 ;
 
@@ -267,6 +280,8 @@ static const char usage_envvars[] =
 "   locale coercion and locale compatibility warnings on stderr.\n"
 "PYTHONBREAKPOINT: if this variable is set to 0, it disables the default\n"
 "   debugger. It can be set to the callable of your debugger of choice.\n"
+"PYTHON_CPU_COUNT: Overrides the return value of os.process_cpu_count(),\n"
+"   os.cpu_count(), and multiprocessing.cpu_count() if set to a positive integer.\n"
 "PYTHONDEVMODE: enable the development mode.\n"
 "PYTHONPYCACHEPREFIX: root directory for bytecode cache (pyc) files.\n"
 "PYTHONWARNDEFAULTENCODING: enable opt-in EncodingWarning for 'encoding=None'.\n"
@@ -289,6 +304,9 @@ static const char usage_envvars[] =
 "PYTHONWARNINGS=arg      : warning control (-W arg)\n"
 #ifdef Py_STATS
 "PYTHONSTATS             : turns on statistics gathering\n"
+#endif
+#ifdef Py_DEBUG
+"PYTHON_PRESITE=pkg.mod  : import this module before site.py is run\n"
 #endif
 ;
 
@@ -732,6 +750,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->_is_python_build >= 0);
     assert(config->safe_path >= 0);
     assert(config->int_max_str_digits >= 0);
+    // cpu_count can be -1 if the user doesn't override it.
+    assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
 #ifdef Py_STATS
@@ -781,6 +801,9 @@ PyConfig_Clear(PyConfig *config)
     CLEAR(config->run_module);
     CLEAR(config->run_filename);
     CLEAR(config->check_hash_pycs_mode);
+#ifdef Py_DEBUG
+    CLEAR(config->run_presite);
+#endif
 
     _PyWideStringList_Clear(&config->orig_argv);
 #undef CLEAR
@@ -832,6 +855,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->int_max_str_digits = -1;
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
+    config->cpu_count = -1;
 }
 
 
@@ -1618,6 +1642,45 @@ config_read_env_vars(PyConfig *config)
 }
 
 static PyStatus
+config_init_cpu_count(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_CPU_COUNT");
+    if (env) {
+        int cpu_count = -1;
+        if (strcmp(env, "default") == 0) {
+            cpu_count = -1;
+        }
+        else if (_Py_str_to_int(env, &cpu_count) < 0 || cpu_count < 1) {
+            goto error;
+        }
+        config->cpu_count = cpu_count;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"cpu_count");
+    if (xoption) {
+        int cpu_count = -1;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep) {
+            if (wcscmp(sep + 1, L"default") == 0) {
+                cpu_count = -1;
+            }
+            else if (config_wstr_to_int(sep + 1, &cpu_count) < 0 || cpu_count < 1) {
+                goto error;
+            }
+        }
+        else {
+            goto error;
+        }
+        config->cpu_count = cpu_count;
+    }
+    return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("-X cpu_count=n option: n is missing or an invalid number, "
+                         "n must be greater than 0");
+}
+
+static PyStatus
 config_init_perf_profiling(PyConfig *config)
 {
     int active = 0;
@@ -1757,6 +1820,36 @@ config_init_pycache_prefix(PyConfig *config)
 }
 
 
+#ifdef Py_DEBUG
+static PyStatus
+config_init_run_presite(PyConfig *config)
+{
+    assert(config->run_presite == NULL);
+
+    const wchar_t *xoption = config_get_xoption(config, L"presite");
+    if (xoption) {
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (sep && wcslen(sep) > 1) {
+            config->run_presite = _PyMem_RawWcsdup(sep + 1);
+            if (config->run_presite == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+        }
+        else {
+            // PYTHON_PRESITE env var ignored
+            // if "-X presite=" option is used
+            config->run_presite = NULL;
+        }
+        return _PyStatus_OK();
+    }
+
+    return CONFIG_GET_ENV_DUP(config, &config->run_presite,
+                              L"PYTHON_PRESITE",
+                              "PYTHON_PRESITE");
+}
+#endif
+
+
 static PyStatus
 config_read_complex_options(PyConfig *config)
 {
@@ -1799,12 +1892,29 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
+    if (config->cpu_count < 0) {
+        status = config_init_cpu_count(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->pycache_prefix == NULL) {
         status = config_init_pycache_prefix(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
+
+#ifdef Py_DEBUG
+    if (config->run_presite == NULL) {
+        status = config_init_run_presite(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+#endif
+
     return _PyStatus_OK();
 }
 

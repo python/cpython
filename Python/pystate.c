@@ -263,10 +263,10 @@ static void
 unbind_tstate(PyThreadState *tstate)
 {
     assert(tstate != NULL);
-    // XXX assert(tstate_is_alive(tstate));
     assert(tstate_is_bound(tstate));
-    // XXX assert(!tstate->_status.active);
+#ifndef HAVE_PTHREAD_STUBS
     assert(tstate->thread_id > 0);
+#endif
 #ifdef PY_HAVE_THREAD_NATIVE_ID
     assert(tstate->native_thread_id > 0);
 #endif
@@ -889,6 +889,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX Make sure we properly deal with problematic finalizers.
 
     Py_CLEAR(interp->audit_hooks);
+
+    // At this time, all the threads should be cleared so we don't need
+    // atomic operations for eval_breaker
+    interp->ceval.eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -2424,7 +2428,7 @@ _xidata_init(_PyCrossInterpreterData *data)
     assert(data->data == NULL);
     assert(data->obj == NULL);
     *data = (_PyCrossInterpreterData){0};
-    data->interp = -1;
+    data->interpid = -1;
 }
 
 static inline void
@@ -2461,7 +2465,7 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    data->interp = (interp != NULL) ? interp->id : -1;
+    data->interpid = (interp != NULL) ? interp->id : -1;
     data->new_object = new_object;
 }
 
@@ -2490,7 +2494,7 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
 {
     assert(data != NULL);
     // This must be called in the owning interpreter.
-    assert(interp == NULL || data->interp == interp->id);
+    assert(interp == NULL || data->interpid == interp->id);
     _xidata_clear(data);
 }
 
@@ -2501,7 +2505,7 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 
     // data->obj may be NULL, so we don't check it.
 
-    if (data->interp < 0) {
+    if (data->interpid < 0) {
         _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
         return -1;
     }
@@ -2553,7 +2557,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
-    data->interp = -1;
+    data->interpid = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
@@ -2569,7 +2573,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    data->interp = interp->id;
+    data->interpid = interp->id;
     if (_check_xidata(tstate, data) != 0) {
         (void)_PyCrossInterpreterData_Release(data);
         return -1;
@@ -2584,18 +2588,36 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
     return data->new_object(data);
 }
 
-static int
-_release_xidata_pending(void *data)
+int
+_Py_CallInInterpreter(PyInterpreterState *interp,
+                      _Py_simple_func func, void *arg)
 {
-    _xidata_clear((_PyCrossInterpreterData *)data);
+    if (interp == current_fast_get(interp->runtime)->interp) {
+        return func(arg);
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, (_Py_pending_call_func)func, arg, 0);
+    return 0;
+}
+
+int
+_Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
+                                _Py_simple_func func, void *arg)
+{
+    if (interp == current_fast_get(interp->runtime)->interp) {
+        int res = func(arg);
+        PyMem_RawFree(arg);
+        return res;
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_RAWFREE);
     return 0;
 }
 
 static int
-_xidata_release_and_rawfree_pending(void *data)
+_call_clear_xidata(void *data)
 {
     _xidata_clear((_PyCrossInterpreterData *)data);
-    PyMem_RawFree(data);
     return 0;
 }
 
@@ -2614,7 +2636,7 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // Switch to the original interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interpid);
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.
@@ -2627,21 +2649,12 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // "Release" the data and/or the object.
-    if (interp == current_fast_get(interp->runtime)->interp) {
-        _xidata_clear(data);
-        if (rawfree) {
-            PyMem_RawFree(data);
-        }
+    if (rawfree) {
+        return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, data);
     }
     else {
-        _Py_pending_call_func func = _release_xidata_pending;
-        if (rawfree) {
-            func = _xidata_release_and_rawfree_pending;
-        }
-        // XXX Emit a warning if this fails?
-        _PyEval_AddPendingCall(interp, func, data, 0);
+        return _Py_CallInInterpreter(interp, _call_clear_xidata, data);
     }
-    return 0;
 }
 
 int

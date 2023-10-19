@@ -1043,7 +1043,7 @@ The :mod:`test.support` module defines the following classes:
    :const:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
    creation.
 
-   On both platforms, the old value is restored by :meth:`__exit__`.
+   On both platforms, the old value is restored by :meth:`~object.__exit__`.
 
 
 .. class:: SaveSignals()

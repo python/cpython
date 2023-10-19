@@ -166,6 +166,9 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 # explicitly protected, internal-only
 Modules/_xxinterpchannelsmodule.c	-	_globals	-
 
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
+
 
 ##################################
 ## not significant
@@ -332,7 +335,7 @@ Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
 Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
-Parser/tokenizer.c	-	type_comment_prefix	-
+Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
 Python/ceval.c	-	_PyEval_BinaryOps	-
 Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
@@ -726,3 +729,4 @@ Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
 Python/optimizer_analysis.c	-	_Py_PartitionRootNode_Type	-
 Python/optimizer_analysis.c	-	_Py_UOpsAbstractInterpContext_Type	-
+Modules/clinic/md5module.c.h	_md5_md5	_keywords	-

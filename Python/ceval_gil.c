@@ -1,6 +1,5 @@
 
 #include "Python.h"
-#include "pycore_atomic.h"        // _Py_atomic_int
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // _Py_RunGC()
@@ -76,7 +75,7 @@ update_eval_breaker_from_thread(PyInterpreterState *interp, PyThreadState *tstat
             _Py_set_eval_breaker_bit(interp, _PY_CALLS_TO_DO_BIT, 1);
         }
         if (_Py_ThreadCanHandleSignals(interp)) {
-            if (_Py_atomic_load(&_PyRuntime.signals.is_tripped)) {
+            if (_Py_atomic_load_int(&_PyRuntime.signals.is_tripped)) {
                 _Py_set_eval_breaker_bit(interp, _PY_SIGNALS_PENDING_BIT, 1);
             }
         }
@@ -119,9 +118,6 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 #include <stdlib.h>
 #include <errno.h>
-
-#include "pycore_atomic.h"
-
 
 #include "condvar.h"
 
@@ -166,8 +162,7 @@ UNSIGNAL_PENDING_CALLS(PyInterpreterState *interp)
 
 static void _gil_initialize(struct _gil_runtime_state *gil)
 {
-    _Py_atomic_int uninitialized = {-1};
-    gil->locked = uninitialized;
+    gil->locked = -1;
     gil->interval = DEFAULT_INTERVAL;
 }
 
@@ -176,7 +171,7 @@ static int gil_created(struct _gil_runtime_state *gil)
     if (gil == NULL) {
         return 0;
     }
-    return (_Py_atomic_load_explicit(&gil->locked, _Py_memory_order_acquire) >= 0);
+    return (_Py_atomic_load_int_acquire(&gil->locked) >= 0);
 }
 
 static void create_gil(struct _gil_runtime_state *gil)
@@ -189,9 +184,9 @@ static void create_gil(struct _gil_runtime_state *gil)
 #ifdef FORCE_SWITCHING
     COND_INIT(gil->switch_cond);
 #endif
-    _Py_atomic_store_relaxed(&gil->last_holder, 0);
+    _Py_atomic_store_ptr_relaxed(&gil->last_holder, 0);
     _Py_ANNOTATE_RWLOCK_CREATE(&gil->locked);
-    _Py_atomic_store_explicit(&gil->locked, 0, _Py_memory_order_release);
+    _Py_atomic_store_int_release(&gil->locked, 0);
 }
 
 static void destroy_gil(struct _gil_runtime_state *gil)
@@ -205,8 +200,7 @@ static void destroy_gil(struct _gil_runtime_state *gil)
     COND_FINI(gil->switch_cond);
     MUTEX_FINI(gil->switch_mutex);
 #endif
-    _Py_atomic_store_explicit(&gil->locked, -1,
-                              _Py_memory_order_release);
+    _Py_atomic_store_int_release(&gil->locked, -1);
     _Py_ANNOTATE_RWLOCK_DESTROY(&gil->locked);
 }
 
@@ -233,7 +227,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX assert(tstate == NULL || !tstate->_status.cleared);
 
     struct _gil_runtime_state *gil = ceval->gil;
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_ptr_relaxed(&gil->locked)) {
         Py_FatalError("drop_gil: GIL is not locked");
     }
 
@@ -242,12 +236,12 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
     }
 
     MUTEX_LOCK(gil->mutex);
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
-    _Py_atomic_store_relaxed(&gil->locked, 0);
+    _Py_atomic_store_int_relaxed(&gil->locked, 0);
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
 
@@ -263,7 +257,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate)
     if (tstate != NULL && _Py_eval_breaker_bit_is_set(interp, _PY_GIL_DROP_REQUEST_BIT)) {
         MUTEX_LOCK(gil->switch_mutex);
         /* Not switched yet => wait */
-        if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) == tstate)
+        if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) == tstate)
         {
             assert(_PyThreadState_CheckConsistency(tstate));
             RESET_GIL_DROP_REQUEST(tstate->interp);
@@ -313,12 +307,12 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_LOCK(gil->mutex);
 
-    if (!_Py_atomic_load_relaxed(&gil->locked)) {
+    if (!_Py_atomic_load_int_relaxed(&gil->locked)) {
         goto _ready;
     }
 
     int drop_requested = 0;
-    while (_Py_atomic_load_relaxed(&gil->locked)) {
+    while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
         unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
@@ -328,7 +322,7 @@ take_gil(PyThreadState *tstate)
         /* If we timed out and no switch occurred in the meantime, it is time
            to ask the GIL-holding thread to drop it. */
         if (timed_out &&
-            _Py_atomic_load_relaxed(&gil->locked) &&
+            _Py_atomic_load_int_relaxed(&gil->locked) &&
             gil->switch_number == saved_switchnum)
         {
             if (_PyThreadState_MustExit(tstate)) {
@@ -358,11 +352,11 @@ _ready:
     MUTEX_LOCK(gil->switch_mutex);
 #endif
     /* We now hold the GIL */
-    _Py_atomic_store_relaxed(&gil->locked, 1);
+    _Py_atomic_store_int_relaxed(&gil->locked, 1);
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil->locked, /*is_write=*/1);
 
-    if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) {
-        _Py_atomic_store_relaxed(&gil->last_holder, (uintptr_t)tstate);
+    if (tstate != (PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) {
+        _Py_atomic_store_ptr_relaxed(&gil->last_holder, tstate);
         ++gil->switch_number;
     }
 
@@ -434,10 +428,10 @@ PyEval_ThreadsInitialized(void)
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
-    if (((PyThreadState*)_Py_atomic_load_relaxed(&gil->last_holder)) != tstate) {
+    if (((PyThreadState*)_Py_atomic_load_ptr_relaxed(&gil->last_holder)) != tstate) {
         return 0;
     }
-    return _Py_atomic_load_relaxed(&gil->locked);
+    return _Py_atomic_load_int_relaxed(&gil->locked);
 }
 
 static void
@@ -663,7 +657,7 @@ _PyEval_SignalReceived(PyInterpreterState *interp)
 /* Push one item onto the queue while holding the lock. */
 static int
 _push_pending_call(struct _pending_calls *pending,
-                   _Py_pending_call_func func, void *arg)
+                   _Py_pending_call_func func, void *arg, int flags)
 {
     int i = pending->last;
     int j = (i + 1) % NPENDINGCALLS;
@@ -672,6 +666,7 @@ _push_pending_call(struct _pending_calls *pending,
     }
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
+    pending->calls[i].flags = flags;
     pending->last = j;
     assert(pending->calls_to_do < NPENDINGCALLS);
     pending->calls_to_do++;
@@ -680,7 +675,7 @@ _push_pending_call(struct _pending_calls *pending,
 
 static int
 _next_pending_call(struct _pending_calls *pending,
-                   int (**func)(void *), void **arg)
+                   int (**func)(void *), void **arg, int *flags)
 {
     int i = pending->first;
     if (i == pending->last) {
@@ -690,15 +685,16 @@ _next_pending_call(struct _pending_calls *pending,
     }
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
+    *flags = pending->calls[i].flags;
     return i;
 }
 
 /* Pop one item off the queue while holding the lock. */
 static void
 _pop_pending_call(struct _pending_calls *pending,
-                  int (**func)(void *), void **arg)
+                  int (**func)(void *), void **arg, int *flags)
 {
-    int i = _next_pending_call(pending, func, arg);
+    int i = _next_pending_call(pending, func, arg, flags);
     if (i >= 0) {
         pending->calls[i] = (struct _pending_call){0};
         pending->first = (i + 1) % NPENDINGCALLS;
@@ -714,12 +710,12 @@ _pop_pending_call(struct _pending_calls *pending,
 
 int
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       _Py_pending_call_func func, void *arg,
-                       int mainthreadonly)
+                       _Py_pending_call_func func, void *arg, int flags)
 {
-    assert(!mainthreadonly || _Py_IsMainInterpreter(interp));
+    assert(!(flags & _Py_PENDING_MAINTHREADONLY)
+           || _Py_IsMainInterpreter(interp));
     struct _pending_calls *pending = &interp->ceval.pending;
-    if (mainthreadonly) {
+    if (flags & _Py_PENDING_MAINTHREADONLY) {
         /* The main thread only exists in the main interpreter. */
         assert(_Py_IsMainInterpreter(interp));
         pending = &_PyRuntime.ceval.pending_mainthread;
@@ -729,7 +725,7 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
     assert(pending->lock != NULL);
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-    int result = _push_pending_call(pending, func, arg);
+    int result = _push_pending_call(pending, func, arg, flags);
     PyThread_release_lock(pending->lock);
 
     /* signal main loop */
@@ -743,7 +739,7 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    return _PyEval_AddPendingCall(interp, func, arg, 1);
+    return _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
 }
 
 static int
@@ -769,17 +765,22 @@ _make_pending_calls(struct _pending_calls *pending)
     for (int i=0; i<NPENDINGCALLS; i++) {
         _Py_pending_call_func func = NULL;
         void *arg = NULL;
+        int flags = 0;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-        _pop_pending_call(pending, &func, &arg);
+        _pop_pending_call(pending, &func, &arg, &flags);
         PyThread_release_lock(pending->lock);
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
             break;
         }
-        if (func(arg) != 0) {
+        int res = func(arg);
+        if ((flags & _Py_PENDING_RAWFREE) && arg != NULL) {
+            PyMem_RawFree(arg);
+        }
+        if (res != 0) {
             return -1;
         }
     }

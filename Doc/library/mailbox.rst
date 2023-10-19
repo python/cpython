@@ -167,7 +167,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       Return a representation of the message corresponding to *key*. If no such
       message exists, *default* is returned if the method was called as
       :meth:`get` and a :exc:`KeyError` exception is raised if the method was
-      called as :meth:`__getitem__`. The message is represented as an instance
+      called as :meth:`~object.__getitem__`. The message is represented as an instance
       of the appropriate format-specific :class:`Message` subclass unless a
       custom message factory was specified when the :class:`Mailbox` instance
       was initialized.
