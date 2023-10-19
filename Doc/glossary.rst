@@ -248,7 +248,7 @@ Glossary
 
    context manager
       An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
+      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
       See :pep:`343`.
 
    context variable

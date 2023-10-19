@@ -930,8 +930,8 @@ Optimizations
 Several performance enhancements have been added:
 
 * A new opcode was added to perform the initial setup for
-  :keyword:`with` statements, looking up the :meth:`__enter__` and
-  :meth:`__exit__` methods.  (Contributed by Benjamin Peterson.)
+  :keyword:`with` statements, looking up the :meth:`~object.__enter__` and
+  :meth:`~object.__exit__` methods.  (Contributed by Benjamin Peterson.)
 
 * The garbage collector now performs better for one common usage
   pattern: when many objects are being allocated without deallocating
@@ -2449,13 +2449,13 @@ that may require changes to your code:
   (Changed by Eric Smith; :issue:`5920`.)
 
 * Because of an optimization for the :keyword:`with` statement, the special
-  methods :meth:`__enter__` and :meth:`__exit__` must belong to the object's
+  methods :meth:`~object.__enter__` and :meth:`~object.__exit__` must belong to the object's
   type, and cannot be directly attached to the object's instance.  This
   affects new-style classes (derived from :class:`object`) and C extension
   types.  (:issue:`6101`.)
 
 * Due to a bug in Python 2.6, the *exc_value* parameter to
-  :meth:`__exit__` methods was often the string representation of the
+  :meth:`~object.__exit__` methods was often the string representation of the
   exception, not an instance.  This was fixed in 2.7, so *exc_value*
   will be an instance as expected.  (Fixed by Florent Xicluna;
   :issue:`7853`.)
