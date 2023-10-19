@@ -378,7 +378,6 @@ static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
-    PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
     if (gen->gi_frame_state == FRAME_CREATED) {
@@ -388,6 +387,8 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
         Py_RETURN_NONE;
     }
+
+    PyObject *yf = _PyGen_yf(gen);
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
