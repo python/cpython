@@ -2188,10 +2188,10 @@ def bœr():
             self.assertIn(f"Error: {temp_dir} is a directory", stdout)
 
     def test_invalid_cmd_line_options(self):
-        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=2)
-        self.assertIn(f"pdb: error: argument -c/--command: expected one argument", stdout.split('\n')[1])
-        stdout, stderr = self._run_pdb(["--spam", "-m", "pdb"], "", expected_returncode=2)
-        self.assertIn(f"pdb: error: unrecognized arguments: --spam", stdout.split('\n')[1])
+        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=1)
+        self.assertIn(f"Error: option -c requires argument", stdout)
+        stdout, stderr = self._run_pdb(["--spam"], "", expected_returncode=1)
+        self.assertIn(f"Error: option --spam not recognized", stdout)
 
     def test_blocks_at_first_code_line(self):
         script = """
