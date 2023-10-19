@@ -1,0 +1,1 @@
+Fix :class:`asyncio.Timeout` raising an :exc:`AttributeError` over a :exc:`RuntimeError` due to logic bug. Patch by James Hilton-Balfe

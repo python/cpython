@@ -1,1 +1,0 @@
-Fix asyncio.Timeout raising an AttributeError over a RuntimeError due to logic bug. Patch by James Hilton-Balfe
