@@ -1,1 +1,0 @@
-:mod:`pdb`: Replace :mod:`getopt` with :mod:`argparse` for parsing command line arguments.

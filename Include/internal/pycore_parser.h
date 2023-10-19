@@ -58,7 +58,17 @@ extern struct _mod* _PyParser_ASTFromFile(
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
-
+extern struct _mod* _PyParser_InteractiveASTFromFile(
+    FILE *fp,
+    PyObject *filename_ob,
+    const char *enc,
+    int mode,
+    const char *ps1,
+    const char *ps2,
+    PyCompilerFlags *flags,
+    int *errcode,
+    PyObject **interactive_src,
+    PyArena *arena);
 
 #ifdef __cplusplus
 }

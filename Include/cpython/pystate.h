@@ -102,6 +102,10 @@ struct _ts {
 #endif
     int _whence;
 
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+       See Include/internal/pycore_pystate.h for more details. */
+    int state;
+
     int py_recursion_remaining;
     int py_recursion_limit;
 
@@ -287,7 +291,7 @@ struct _xid {
     // with deleted interpreters.  Note that IDs are never re-used, so
     // each one will always correspond to a specific interpreter
     // (whether still alive or not).
-    int64_t interp;
+    int64_t interpid;
     // new_object is a function that returns a new object in the current
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field

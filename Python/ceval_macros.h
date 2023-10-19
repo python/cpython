@@ -116,7 +116,7 @@
 
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
-    if (_Py_atomic_load_relaxed_int32(&tstate->interp->ceval.eval_breaker)) { \
+    if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
             goto error; \
         } \
@@ -371,6 +371,9 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* Marker to specify tier 1 only instructions */
 #define TIER_ONE_ONLY
+
+/* Marker to specify tier 2 only instructions */
+#define TIER_TWO_ONLY
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.

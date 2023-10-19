@@ -406,7 +406,6 @@ def _parse_args(args, **kwargs):
             ns.use_mp = 0
         ns.randomize = True
         ns.fail_env_changed = True
-        ns.fail_rerun = True
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
@@ -418,14 +417,16 @@ def _parse_args(args, **kwargs):
     # --slow-ci has the priority
     if ns.slow_ci:
         # Similar to: -u "all" --timeout=1200
-        if not ns.use:
-            ns.use = [['all']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all'])
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
-        if not ns.use:
-            ns.use = [['all', '-cpu']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all', '-cpu'])
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
