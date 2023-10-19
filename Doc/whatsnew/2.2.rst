@@ -424,22 +424,22 @@ Another significant addition to 2.2 is an iteration interface at both the C and
 Python levels.  Objects can define how they can be looped over by callers.
 
 In Python versions up to 2.1, the usual way to make ``for item in obj`` work is
-to define a :meth:`__getitem__` method that looks something like this::
+to define a :meth:`~object.__getitem__` method that looks something like this::
 
    def __getitem__(self, index):
        return <next item>
 
-:meth:`__getitem__` is more properly used to define an indexing operation on an
+:meth:`~object.__getitem__` is more properly used to define an indexing operation on an
 object so that you can write ``obj[5]`` to retrieve the sixth element.  It's a
 bit misleading when you're using this only to support :keyword:`for` loops.
 Consider some file-like object that wants to be looped over; the *index*
 parameter is essentially meaningless, as the class probably assumes that a
-series of :meth:`__getitem__` calls will be made with *index* incrementing by
-one each time.  In other words, the presence of the :meth:`__getitem__` method
+series of :meth:`~object.__getitem__` calls will be made with *index* incrementing by
+one each time.  In other words, the presence of the :meth:`~object.__getitem__` method
 doesn't mean that using ``file[5]``  to randomly access the sixth element will
 work, though it really should.
 
-In Python 2.2, iteration can be implemented separately, and :meth:`__getitem__`
+In Python 2.2, iteration can be implemented separately, and :meth:`~object.__getitem__`
 methods can be limited to classes that really do support random access.  The
 basic idea of iterators is  simple.  A new built-in function, ``iter(obj)``
 or ``iter(C, sentinel)``, is used to get an iterator. ``iter(obj)`` returns

@@ -1720,7 +1720,7 @@ Improve the speed and accuracy of statistics.pvariance().
 .. nonce: WI9zQY
 .. section: Library
 
-Remove :meth:`__getitem__` methods of
+Remove :meth:`~object.__getitem__` methods of
 :class:`xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
 and :class:`fileinput.FileInput`, deprecated since Python 3.9.
 

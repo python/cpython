@@ -154,7 +154,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
    even though it does not define an :meth:`~iterator.__iter__` method (it uses
    the old-style iterable protocol, defined in terms of :meth:`__len__` and
-   :meth:`__getitem__`).  Note that this will not make ``get_iterator``
+   :meth:`~object.__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
 
 
