@@ -3111,7 +3111,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
 
             struct timeval zero = {
                 .tv_sec = 0,
-                .tv_usec = 0
+                .tv_usec = 0,
             };
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &zero,
                            sizeof(struct timeval)) != 0) {
@@ -3473,7 +3473,9 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 {
     int res, err, wait_connect;
 
-    if (s->sock_timeout > 0) {
+    if (s->sock_timeout > 0 &&
+        (s->sock_family == AF_INET || s->sock_family == AF_INET6))
+    {
         if (internal_setblocking(s, 0) < 0) {
             return -1;
         }
