@@ -10,6 +10,11 @@ PyAPI_FUNC(int) PySys_Audit(
     ...);
 PyAPI_FUNC(int) PySys_AddAuditHook(Py_AuditHookFunction, void*);
 
+PyAPI_FUNC(PyObject *) PySys_GetAttr(PyObject *);
+PyAPI_FUNC(PyObject *) PySys_GetAttrString(const char *);
+PyAPI_FUNC(int) PySys_GetOptionalAttr(PyObject *, PyObject **);
+PyAPI_FUNC(int) PySys_GetOptionalAttrString(const char *, PyObject **);
+
 typedef struct {
     FILE* perf_map;
     PyThread_type_lock map_lock;
