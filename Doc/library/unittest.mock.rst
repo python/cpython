@@ -1707,7 +1707,7 @@ Keywords can be used in the :func:`patch.dict` call to set values in the diction
 :func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
+magic methods :meth:`~object.__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
 :meth:`__iter__` or :meth:`__contains__`.
 
     >>> class Container:
