@@ -140,7 +140,6 @@ deoptimize:
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    frame->instr_ptr--; // Back up to just before destination
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;
