@@ -106,7 +106,7 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 #if !defined(Py_NOGIL)
     op->ob_refcnt += n;
 #else
-    if (_Py_IsOnwedByCurrentThread(op)) {
+    if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
         Py_ssize_t refcnt = (Py_ssize_t)local + n;
 #  if PY_SSIZE_T_MAX > UINT32_MAX

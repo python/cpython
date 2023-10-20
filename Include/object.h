@@ -263,7 +263,7 @@ _Py_ThreadId(void)
 
 #if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
 static inline Py_ALWAYS_INLINE int
-_Py_IsOnwedByCurrentThread(PyObject *ob)
+_Py_IsOwnedByCurrentThread(PyObject *ob)
 {
     return ob->ob_tid == _Py_ThreadId();
 }
@@ -340,7 +340,7 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
 #if !defined(Py_NOGIL)
     ob->ob_refcnt = refcnt;
 #else
-    if (_Py_IsOnwedByCurrentThread(ob)) {
+    if (_Py_IsOwnedByCurrentThread(ob)) {
         // Set local refcount to desired refcount and shared refcount to zero,
         // but preserve the shared refcount flags.
         assert(refcnt < UINT32_MAX);
@@ -738,7 +738,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     if (new_local == 0) {
         return;
     }
-    if (_Py_IsOnwedByCurrentThread(op)) {
+    if (_Py_IsOwnedByCurrentThread(op)) {
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
     }
     else {
@@ -805,7 +805,7 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
     }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
-    if (_Py_IsOnwedByCurrentThread(op)) {
+    if (_Py_IsOwnedByCurrentThread(op)) {
         if (local == 0) {
             _Py_NegativeRefcount(filename, lineno, op);
         }
@@ -829,7 +829,7 @@ static inline void Py_DECREF(PyObject *op)
         return;
     }
     _Py_DECREF_STAT_INC();
-    if (_Py_IsOnwedByCurrentThread(op)) {
+    if (_Py_IsOwnedByCurrentThread(op)) {
         local--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
         if (local == 0) {
