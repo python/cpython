@@ -408,6 +408,7 @@ gen_close(PyGenObject *gen, PyObject *args)
          * as it automatically generated to handle
          * StopIteration. */
         if (exception_handler_depth == 1) {
+            gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
     }
