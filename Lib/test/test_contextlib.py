@@ -163,6 +163,15 @@ class ContextManagerTestCase(unittest.TestCase):
             # The "gen" attribute is an implementation detail.
             self.assertFalse(ctx.gen.gi_suspended)
 
+    def test_contextmanager_trap_no_yield(self):
+        @contextmanager
+        def whoo():
+            if False:
+                yield
+        ctx = whoo()
+        with self.assertRaises(RuntimeError):
+            ctx.__enter__()
+
     def test_contextmanager_trap_second_yield(self):
         @contextmanager
         def whoo():
@@ -175,6 +184,19 @@ class ContextManagerTestCase(unittest.TestCase):
         if support.check_impl_detail(cpython=True):
             # The "gen" attribute is an implementation detail.
             self.assertFalse(ctx.gen.gi_suspended)
+
+    def test_contextmanager_non_normalised(self):
+        @contextmanager
+        def whoo():
+            try:
+                yield
+            except RuntimeError:
+                raise SyntaxError
+
+        ctx = whoo()
+        ctx.__enter__()
+        with self.assertRaises(SyntaxError):
+            ctx.__exit__(RuntimeError, None, None)
 
     def test_contextmanager_except(self):
         state = []
@@ -255,6 +277,25 @@ def woohoo():
             self.assertEqual(ex.args[0], 'issue29692:Unchained')
             self.assertIsNone(ex.__cause__)
 
+    def test_contextmanager_wrap_runtimeerror(self):
+        @contextmanager
+        def woohoo():
+            try:
+                yield
+            except Exception as exc:
+                raise RuntimeError(f'caught {exc}') from exc
+
+        with self.assertRaises(RuntimeError):
+            with woohoo():
+                1 / 0
+
+        # If the context manager wrapped StopIteration in a RuntimeError,
+        # we also unwrap it, because we can't tell whether the wrapping was
+        # done by the generator machinery or by the generator itself.
+        with self.assertRaises(StopIteration):
+            with woohoo():
+                raise StopIteration
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):
@@ -266,6 +307,7 @@ def woohoo():
         @attribs(foo='bar')
         def baz(spam):
             """Whee!"""
+            yield
         return baz
 
     def test_contextmanager_attribs(self):
@@ -322,8 +364,11 @@ def woohoo():
 
     def test_recursive(self):
         depth = 0
+        ncols = 0
         @contextmanager
         def woohoo():
+            nonlocal ncols
+            ncols += 1
             nonlocal depth
             before = depth
             depth += 1
@@ -337,6 +382,7 @@ def woohoo():
                 recursive()
 
         recursive()
+        self.assertEqual(ncols, 10)
         self.assertEqual(depth, 0)
 
 
