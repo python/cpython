@@ -1069,6 +1069,9 @@ New Features
   limited C API.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
+  (Contributed by Victor Stinner in :gh:`111089`.)
+
 
 Porting to Python 3.13
 ----------------------
