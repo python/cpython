@@ -895,7 +895,7 @@ static PyObject *
 pyexpat_xmlparser_GetBase_impl(xmlparseobject *self)
 /*[clinic end generated code: output=2886cb21f9a8739a input=918d71c38009620e]*/
 {
-    return Py_BuildValue("z", XML_GetBase(self->itself));
+    return conv_string_to_unicode(XML_GetBase(self->itself));
 }
 
 /*[clinic input]
@@ -1585,7 +1585,7 @@ static PyObject *
 pyexpat_ErrorString_impl(PyObject *module, long code)
 /*[clinic end generated code: output=2feae50d166f2174 input=cc67de010d9e62b3]*/
 {
-    return Py_BuildValue("z", XML_ErrorString((int)code));
+    return conv_string_to_unicode(XML_ErrorString((int)code));
 }
 
 /* List of methods defined in the module */
