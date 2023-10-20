@@ -1109,6 +1109,12 @@ Porting to Python 3.13
   are now undefined by ``<Python.h>``.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
+  contains embedded null characters. To accept embedded null characters and
+  truncate on purpose at the first null byte,
+  ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
+  (Contributed by Victor Stinner in :gh:`111089`.)
+
 Deprecated
 ----------
 
