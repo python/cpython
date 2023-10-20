@@ -11,6 +11,33 @@ extern "C" {
 #include "pycore_runtime.h"       // _PyRuntime
 
 
+// Values for PyThreadState.state. A thread must be in the "attached" state
+// before calling most Python APIs. If the GIL is enabled, then "attached"
+// implies that the thread holds the GIL and "detached" implies that the
+// thread does not hold the GIL (or is in the process of releasing it). In
+// `--disable-gil` builds, multiple threads may be "attached" to the same
+// interpreter at the same time. Only the "bound" thread may perform the
+// transitions between "attached" and "detached" on its own PyThreadState.
+//
+// The "gc" state is used to implement stop-the-world pauses, such as for
+// cyclic garbage collection. It is only used in `--disable-gil` builds. It is
+// similar to the "detached" state, but only the thread performing a
+// stop-the-world pause may transition threads between the "detached" and "gc"
+// states. A thread trying to "attach" from the "gc" state will block until
+// it is transitioned back to "detached" when the stop-the-world pause is
+// complete.
+//
+// State transition diagram:
+//
+//            (bound thread)        (stop-the-world thread)
+// [attached]       <->       [detached]       <->       [gc]
+//
+// See `_PyThreadState_Attach()` and `_PyThreadState_Detach()`.
+#define _Py_THREAD_DETACHED     0
+#define _Py_THREAD_ATTACHED     1
+#define _Py_THREAD_GC           2
+
+
 /* Check if the current thread is the main thread.
    Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
 static inline int
@@ -43,6 +70,12 @@ _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
     return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
             interp == &_PyRuntime._main_interpreter);
 }
+
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
 
 
 static inline const PyConfig *
@@ -87,7 +120,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_GetCurrent(void);
 
    The caller must hold the GIL.
 
-   See also PyThreadState_Get() and _PyThreadState_UncheckedGet(). */
+   See also PyThreadState_Get() and PyThreadState_GetUnchecked(). */
 static inline PyThreadState*
 _PyThreadState_GET(void)
 {
@@ -97,6 +130,21 @@ _PyThreadState_GET(void)
     return _PyThreadState_GetCurrent();
 #endif
 }
+
+// Attaches the current thread to the interpreter.
+//
+// This may block while acquiring the GIL (if the GIL is enabled) or while
+// waiting for a stop-the-world pause (if the GIL is disabled).
+//
+// High-level code should generally call PyEval_RestoreThread() instead, which
+// calls this function.
+void _PyThreadState_Attach(PyThreadState *tstate);
+
+// Detaches the current thread from the interpreter.
+//
+// High-level code should generally call PyEval_SaveThread() instead, which
+// calls this function.
+void _PyThreadState_Detach(PyThreadState *tstate);
 
 
 static inline void
@@ -134,7 +182,9 @@ static inline PyInterpreterState* _PyInterpreterState_GET(void) {
 
 // PyThreadState functions
 
-extern PyThreadState * _PyThreadState_New(PyInterpreterState *interp);
+extern PyThreadState * _PyThreadState_New(
+    PyInterpreterState *interp,
+    int whence);
 extern void _PyThreadState_Bind(PyThreadState *tstate);
 extern void _PyThreadState_DeleteExcept(PyThreadState *tstate);
 

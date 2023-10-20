@@ -123,7 +123,7 @@ There is a new function parameter syntax ``/`` to indicate that some
 function parameters must be specified positionally and cannot be used as
 keyword arguments.  This is the same notation shown by ``help()`` for C
 functions annotated with Larry Hastings'
-:ref:`Argument Clinic <howto-clinic>` tool.
+`Argument Clinic <devguide.python.org/development-tools/clinic/>`__ tool.
 
 In the following example, parameters *a* and *b* are positional-only,
 while *c* or *d* can be positional or keyword, and *e* or *f* are
@@ -1653,7 +1653,7 @@ Deprecated
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+* The :meth:`~object.__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
   :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
   deprecated.
 

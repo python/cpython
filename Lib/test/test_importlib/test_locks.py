@@ -93,7 +93,8 @@ class DeadlockAvoidanceTests:
                 b.release()
             if ra:
                 a.release()
-        lock_tests.Bunch(f, NTHREADS).wait_for_finished()
+        with lock_tests.Bunch(f, NTHREADS):
+            pass
         self.assertEqual(len(results), NTHREADS)
         return results
 

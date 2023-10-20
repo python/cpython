@@ -60,6 +60,10 @@ PyAPI_FUNC(PyOS_sighandler_t) PyOS_setsig(int, PyOS_sighandler_t);
 PyAPI_DATA(const unsigned long) Py_Version;
 #endif
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(int) Py_IsFinalizing(void);
+#endif
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_PYLIFECYCLE_H
 #  include "cpython/pylifecycle.h"

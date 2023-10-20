@@ -41,14 +41,15 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         env['TEMP'] = tmp_dir
         env['TMP'] = tmp_dir
 
+    # Running the child from the same working directory as regrtest's original
+    # invocation ensures that TEMPDIR for the child is the same when
+    # sysconfig.is_python_build() is true. See issue 15300.
+    #
     # Emscripten and WASI Python must start in the Python source code directory
     # to get 'python.js' or 'python.wasm' file. Then worker_process() changes
     # to a temporary directory created to run tests.
     work_dir = os_helper.SAVEDCWD
 
-    # Running the child from the same working directory as regrtest's original
-    # invocation ensures that TEMPDIR for the child is the same when
-    # sysconfig.is_python_build() is true. See issue 15300.
     kwargs: dict[str, Any] = dict(
         env=env,
         stdout=output_fd,
@@ -58,6 +59,8 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         close_fds=True,
         cwd=work_dir,
     )
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
 
     # Pass json_file to the worker process
     json_file = runtests.json_file

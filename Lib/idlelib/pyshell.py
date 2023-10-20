@@ -747,10 +747,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.open_stack_viewer()
 
     def checklinecache(self):
-        c = linecache.cache
-        for key in list(c.keys()):
+        "Remove keys other than '<pyshell#n>'."
+        cache = linecache.cache
+        for key in list(cache):  # Iterate list because mutate cache.
             if key[:1] + key[-1:] != "<>":
-                del c[key]
+                del cache[key]
 
     def runcommand(self, code):
         "Run the code without invoking the debugger"
