@@ -1277,7 +1277,9 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
     PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1, arena);
     if (co == NULL) {
-        Py_DECREF(interactive_filename);
+        if (interactive_src) {
+            Py_DECREF(interactive_filename);
+        }
         return NULL;
     }
 
