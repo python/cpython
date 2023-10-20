@@ -76,10 +76,12 @@ import bdb
 import dis
 import code
 import glob
+import types
 import codeop
 import pprint
 import signal
 import inspect
+import textwrap
 import tokenize
 import functools
 import traceback
@@ -545,15 +547,68 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             yield
 
+    def _exec_in_closure(self, source, globals, locals):
+        """ Run source code in closure so code object created within source
+            can find variables in locals correctly
+        """
+
+        # If the source is an expression, we need to print its value
+        try:
+            compile(source, "<string>", "eval")
+            source = "__pdb_eval_result__ = " + source
+            locals["__pdb_eval_result__"] = None
+        except SyntaxError:
+            pass
+
+        # Add write-back to update the locals
+        locals["__pdb_write_back__"] = {}
+        source += """\nfor key, val in locals().items():\n  __pdb_write_back__[key] = val"""
+
+        try:
+            local_vars = list(locals.keys())
+
+            # Build a closure source code with freevars from locals like:
+            # def outer():
+            #   var = None
+            #   def __pdb_scope():  # This is the code object we want to execute
+            #     nonlocal var
+            #     <source>
+            source_with_closure = ("def outer():\n" +
+                                   "\n".join(f"  {var} = None" for var in local_vars) + "\n" +
+                                   "  def __pdb_scope():\n" +
+                                   "\n".join(f"    nonlocal {var}" for var in local_vars) + "\n" +
+                                   textwrap.indent(source, "    ")
+                                   )
+
+            # Compile the instrumented source code, and get the code object of __pdb_scope()
+            # This simulates executing the original source code with locals as cellvars
+            # co_consts[0] -> outer;
+            # outer.co_consts[1] -> __pdb_scope because outer.co_consts[0] is None
+            code = compile(source_with_closure, "<string>", "exec").co_consts[0].co_consts[1]
+            cells = tuple(types.CellType(locals.get(var)) for var in code.co_freevars)
+            exec(code, globals, locals, closure=cells)
+
+            # Write all local variables back to locals
+            for var, value in locals["__pdb_write_back__"].items():
+                locals[var] = value
+            locals.pop("__pdb_write_back__", None)
+
+            if (ret := locals.get("__pdb_eval_result__")) is not None:
+                locals.pop("__pdb_eval_result__", None)
+                print(repr(ret))
+        finally:
+            locals.pop("__pdb_eval_result__", None)
+            locals.pop("__pdb_write_back__", None)
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe_locals
         globals = self.curframe.f_globals
         try:
+            buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
                 with self._disable_tab_completion():
-                    buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
                         if self.use_rawinput:
@@ -582,7 +637,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                exec(code, globals, locals)
+                try:
+                    self._exec_in_closure(buffer, globals, locals)
+                except Exception:
+                    exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin

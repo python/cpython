@@ -2028,8 +2028,63 @@ def test_pdb_multiline_statement():
     (Pdb) c
     """
 
+def test_pdb_closure():
+    """Test for all expressions/statements that involve closure
+
+    >>> k = 0
+    >>> g = 1
+    >>> def test_function():
+    ...     x = 2
+    ...     g = 3
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'k',
+    ...     'g',
+    ...     'y = y',
+    ...     'global g; g',
+    ...     '(lambda: x)()',
+    ...     '(lambda: g)()',
+    ...     'lst = [n for n in range(10) if (n % x) == 0]',
+    ...     'lst',
+    ...     'sum(n for n in lst if n > x)',
+    ...     'def f():',
+    ...     '  return x',
+    ...     '',
+    ...     'f()',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_closure[2]>(5)test_function()
+    -> pass
+    (Pdb) k
+    0
+    (Pdb) g
+    3
+    (Pdb) y = y
+    *** NameError: name 'y' is not defined
+    (Pdb) global g; g
+    1
+    (Pdb) (lambda: x)()
+    2
+    (Pdb) (lambda: g)()
+    3
+    (Pdb) lst = [n for n in range(10) if (n % x) == 0]
+    (Pdb) lst
+    [0, 2, 4, 6, 8]
+    (Pdb) sum(n for n in lst if n > x)
+    18
+    (Pdb) def f():
+    ...     return x
+    ...
+    (Pdb) f()
+    2
+    (Pdb) c
+    """
+
 def test_pdb_show_attribute_and_item():
-    """Test for multiline statement
+    """Test for expressions with command prefix
 
     >>> def test_function():
     ...     n = lambda x: x
