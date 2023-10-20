@@ -1835,29 +1835,24 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         object.__init__(A(3))
         self.assertRaises(TypeError, object.__init__, A(3), 5)
 
-    @unittest.expectedFailure
     def test_restored_object_new(self):
         class A(object):
             def __new__(cls, *args, **kwargs):
-                raise AssertionError
-        self.assertRaises(AssertionError, A)
+                raise TypeError('A')
+        self.assertRaisesRegex(TypeError, 'A', A)
         class B(A):
             __new__ = object.__new__
-            def __init__(self, foo):
-                self.foo = foo
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', DeprecationWarning)
-            b = B(3)
-        self.assertEqual(b.foo, 3)
-        self.assertEqual(b.__class__, B)
+            def __init__(self):
+                self.foo = 'foo'
+        b = B()
+        self.assertEqual(b.foo, 'foo')
+        self.assertIs(b.__class__, B)
         del B.__new__
-        self.assertRaises(AssertionError, B)
+        self.assertRaisesRegex(TypeError, 'A', B)
         del A.__new__
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', DeprecationWarning)
-            b = B(3)
-        self.assertEqual(b.foo, 3)
-        self.assertEqual(b.__class__, B)
+        b = B()  # executing `object.__new__`
+        self.assertEqual(b.foo, 'foo')
+        self.assertIs(b.__class__, B)
 
     def test_altmro(self):
         # Testing mro() and overriding it...
