@@ -634,7 +634,7 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
     NULLABLE(unicode);
     s = PyUnicode_AsUTF8AndSize(unicode, &size);
     if (s == NULL) {
-        assert(size == UNINITIALIZED_SIZE);
+        assert(size == -1);
         return NULL;
     }
 
