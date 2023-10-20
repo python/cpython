@@ -1422,6 +1422,8 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 +----------------------+------------------+------------------------------+------------------------------+
 | uu_codec             | uu               | Convert the operand using    | :meth:`!uu.encode` /         |
 |                      |                  | uuencode.                    | :meth:`!uu.decode`           |
+|                      |                  |                              | (Note: :mod:`uu` is          |
+|                      |                  |                              | deprecated.)                 |
 +----------------------+------------------+------------------------------+------------------------------+
 | zlib_codec           | zip, zlib        | Compress the operand using   | :meth:`zlib.compress` /      |
 |                      |                  | gzip.                        | :meth:`zlib.decompress`      |
