@@ -9439,10 +9439,15 @@ then :
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       as_fn_append CFLAGS " -target wasm32-wasi-threads -pthread"
       as_fn_append CFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -Wl,--import-memory"
+      as_fn_append LDFLAGS_NODIST " -Wl,--export-memory"
       as_fn_append LDFLAGS_NODIST " -Wl,--max-memory=10485760"
 
 fi
