@@ -49,7 +49,6 @@ Doc/library/calendar.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
 Doc/library/cmd.rst
-Doc/library/codecs.rst
 Doc/library/collections.abc.rst
 Doc/library/collections.rst
 Doc/library/concurrent.futures.rst
