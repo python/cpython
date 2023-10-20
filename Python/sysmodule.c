@@ -2396,7 +2396,7 @@ PyAPI_FUNC(int) PyUnstable_CopyPerfMapFile(const char* parent_filename) {
     }
     if (perf_map_state.perf_map == NULL) {
         int ret = PyUnstable_PerfMapState_Init();
-        if (ret != 0){
+        if (ret != 0) {
             return ret;
         }
     }
