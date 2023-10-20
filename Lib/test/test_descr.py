@@ -1788,18 +1788,20 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(b.foo, 3)
         self.assertEqual(b.__class__, D)
 
-    @unittest.expectedFailure
     def test_bad_new(self):
         self.assertRaises(TypeError, object.__new__)
         self.assertRaises(TypeError, object.__new__, '')
         self.assertRaises(TypeError, list.__new__, object)
         self.assertRaises(TypeError, object.__new__, list)
+        class D:
+            def __new__(cls):
+                raise ValueError('D')
         class C(object):
-            __new__ = list.__new__
-        self.assertRaises(TypeError, C)
+            __new__ = D.__new__
+        self.assertRaisesRegex(ValueError, 'D', C)
         class C(list):
-            __new__ = object.__new__
-        self.assertRaises(TypeError, C)
+            __new__ = D.__new__
+        self.assertRaisesRegex(ValueError, 'D', C)
 
     def test_object_new(self):
         class A(object):
