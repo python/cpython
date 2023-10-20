@@ -1,2 +1,2 @@
-Fix bug where a :keyword:`global` decleration in an :keyword:`except` block
+Fix bug where a :keyword:`global` declaration in an :keyword:`except` block
 is rejected when the global is used in the :keyword:`else` block.
