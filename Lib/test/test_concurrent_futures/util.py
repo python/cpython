@@ -74,6 +74,10 @@ class ThreadPoolMixin(ExecutorMixin):
     executor_type = futures.ThreadPoolExecutor
 
 
+class InterpreterPoolMixin(ExecutorMixin):
+    executor_type = futures.InterpreterPoolExecutor
+
+
 class ProcessPoolForkMixin(ExecutorMixin):
     executor_type = futures.ProcessPoolExecutor
     ctx = "fork"
