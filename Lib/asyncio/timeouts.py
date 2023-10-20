@@ -82,7 +82,7 @@ class Timeout:
 
     async def __aenter__(self) -> "Timeout":
         if self._state is not _State.CREATED:
-            raise RuntimeError(f"Timeout has been already {self._state.value}")
+            raise RuntimeError("Timeout has been already entered")
         task = tasks.current_task()
         if task is None:
             raise RuntimeError("Timeout should be used inside a task")
