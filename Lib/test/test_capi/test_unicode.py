@@ -902,7 +902,11 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, b'abc', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, [], 0)
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize_null, '\ud8ff', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, b'abc', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, [], 0)
         # CRASHES unicode_asutf8andsize(NULL, 0)
+        # CRASHES unicode_asutf8andsize_null(NULL, 0)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
