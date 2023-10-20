@@ -2011,13 +2011,13 @@ class BaseCallableTests:
         def f():
             pass
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], None])
+            isinstance(f, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], Any])
+            isinstance(f, Callable[[], Any])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], None])
+            isinstance(None, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], Any])
+            isinstance(None, Callable[[], Any])
 
     def test_repr(self):
         Callable = self.Callable
