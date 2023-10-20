@@ -480,11 +480,11 @@ _PyPerfTrampoline_AfterFork_Child(void)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     PyUnstable_PerfMapState_Fini();
-    if (persist_after_fork){
+    if (persist_after_fork) {
         char filename[256];
         pid_t parent_pid = getppid();
         snprintf(filename, sizeof(filename), "/tmp/perf-%d.map", parent_pid);
-        if (PyUnstable_CopyPerfMapFile(filename) != 0){
+        if (PyUnstable_CopyPerfMapFile(filename) != 0) {
             return PyStatus_Error("Failed to copy perf map file.");
         }
     } else {
