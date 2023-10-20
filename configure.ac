@@ -7325,7 +7325,7 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
 
 dnl test modules
 PY_STDLIB_MOD([_testcapi],
-    [test "$TEST_MODULES" = yes],  []
+    [test "$TEST_MODULES" = yes],
     dnl Modules/_testcapi needs -latomic for 32bit AIX build
     [], [], [$LIBATOMIC])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
