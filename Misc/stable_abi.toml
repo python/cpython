@@ -2478,3 +2478,5 @@
     added = '3.13'
 [function.PySys_AuditTuple]
     added = '3.13'
+[function.PyUnicode_AsUTF8]
+    added = '3.13'

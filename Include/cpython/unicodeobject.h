@@ -440,19 +440,6 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromKindAndData(
     const void *buffer,
     Py_ssize_t size);
 
-/* --- Manage the default encoding ---------------------------------------- */
-
-// Returns a pointer to the default encoding (UTF-8) of the
-// Unicode object unicode.
-//
-// Raise an exception if the string contains embedded null characters.
-// Use PyUnicode_AsUTF8AndSize() to accept embedded null characters.
-//
-// This function caches the UTF-8 encoded string in the Unicode object
-// and subsequent calls will return the same string. The memory is released
-// when the Unicode object is deallocated.
-PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
-
 
 /* === Characters Type APIs =============================================== */
 
