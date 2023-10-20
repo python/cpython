@@ -3839,7 +3839,7 @@ PyUnicode_AsUTF8(PyObject *unicode)
 {
     Py_ssize_t size;
     const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
-    if (utf8 != NULL && strlen(utf8) != size) {
+    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         return NULL;
     }
