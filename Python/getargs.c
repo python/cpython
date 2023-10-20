@@ -1188,8 +1188,8 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         format++;
 
         /* Caller is interested in Py_buffer, and the object supports it
-        directly. The request implicitly asks for PyBUF_SIMPLE, so the
-        result is C-contiguous with format 'B'. */
+           directly. The request implicitly asks for PyBUF_SIMPLE, so the
+           result is C-contiguous with format 'B'. */
         if (PyObject_GetBuffer(arg, (Py_buffer*)p, PyBUF_WRITABLE) < 0) {
             PyErr_Clear();
             return converterr("read-write bytes-like object",
