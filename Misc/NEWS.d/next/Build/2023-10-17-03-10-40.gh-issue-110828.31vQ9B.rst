@@ -1,1 +1,1 @@
-AIX 32bit build needs -latomic for _testcapi module build
+AIX 32bit needs ``-latomic`` to build the :mod:`!_testcapi` extension module.
