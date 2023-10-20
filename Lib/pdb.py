@@ -562,7 +562,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         # Add write-back to update the locals
         locals["__pdb_write_back__"] = {}
-        source += """\nfor key, val in locals().items():\n  __pdb_write_back__[key] = val"""
+        source = ("try:\n" +
+                  textwrap.indent(source, "  ") + "\n" +
+                  "finally:\n" +
+                  "  for key, val in locals().items():\n    __pdb_write_back__[key] = val")
 
         try:
             local_vars = list(locals.keys())

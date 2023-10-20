@@ -2049,6 +2049,8 @@ def test_pdb_closure():
     ...     'lst = [n for n in range(10) if (n % x) == 0]',
     ...     'lst',
     ...     'sum(n for n in lst if n > x)',
+    ...     'x = 1; raise Exception()',
+    ...     'x',
     ...     'def f():',
     ...     '  return x',
     ...     '',
@@ -2075,11 +2077,15 @@ def test_pdb_closure():
     [0, 2, 4, 6, 8]
     (Pdb) sum(n for n in lst if n > x)
     18
+    (Pdb) x = 1; raise Exception()
+    *** Exception
+    (Pdb) x
+    1
     (Pdb) def f():
     ...     return x
     ...
     (Pdb) f()
-    2
+    1
     (Pdb) c
     """
 
