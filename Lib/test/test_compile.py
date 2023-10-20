@@ -1283,6 +1283,23 @@ class TestSpecifics(unittest.TestCase):
         def f():
             a if (1 if b else c) else d
 
+    def test_global_declaration_in_except_used_in_else(self):
+        # See gh-111123
+        code = textwrap.dedent("""\
+            def f():
+                try:
+                    pass
+                except:
+                    global a
+                else:
+                    print(a)
+        """)
+
+        g, l = {'a': 5}, {}
+        exec(code, g, l);
+        compile(code, "<test>", "exec")
+
+
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
     # Ensure that compiled code snippets have correct line and column numbers

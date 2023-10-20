@@ -1813,8 +1813,8 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Try_kind:
         VISIT_SEQ(st, stmt, s->v.Try.body);
-        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, excepthandler, s->v.Try.handlers);
+        VISIT_SEQ(st, stmt, s->v.Try.orelse);
         VISIT_SEQ(st, stmt, s->v.Try.finalbody);
         break;
     case TryStar_kind:
