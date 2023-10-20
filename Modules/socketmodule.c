@@ -1489,7 +1489,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #if defined(__NetBSD__) || defined(__DragonFly__)
             return makebdaddr(&_BT_HCI_MEMB(a, bdaddr));
 #else /* __NetBSD__ || __DragonFly__ */
-            return PyLong_FromLong(_BT_HCI_MEMB(a, dev));
+            PyObject *ret = NULL;
+            ret = Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
+            return ret;
 #endif /* !(__NetBSD__ || __DragonFly__) */
         }
 
