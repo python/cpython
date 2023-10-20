@@ -43,6 +43,7 @@ TICK = "'"
 specialsre = re.compile(r'[][\\()<>@,:;".]')
 escapesre = re.compile(r'[\\"]')
 
+
 def _has_surrogates(s):
     """Return True if s contains surrogate-escaped binary data."""
     # This check is based on the fact that unless there are surrogates, utf8
@@ -103,12 +104,97 @@ def formataddr(pair, charset='utf-8'):
     return address
 
 
+def _strip_quoted_realname(addr):
+    """Remove real name between quotes."""
+    pos = 0
+    start = None
+    remove = []
+    while pos < len(addr):
+        if addr[pos] == '"':
+            if start is None:
+                start = pos
+            else:
+                remove.append((start, pos))
+                start = None
+        pos += 1
 
-def getaddresses(fieldvalues):
-    """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
-    all = COMMASPACE.join(str(v) for v in fieldvalues)
-    a = _AddressList(all)
-    return a.addresslist
+    if not remove:
+        return addr
+
+    result = []
+    pos = 0
+    for start, stop in remove:
+        result.append(addr[pos:start])
+        pos = stop + 1
+    result.append(addr[pos:])
+
+    return ''.join(result)
+
+
+def getaddresses(fieldvalues, *, strict=True):
+    """Return a list of (REALNAME, EMAIL) or ('','') for each fieldvalue.
+
+    When parsing fails for a fieldvalue, a 2-tuple of ('', '') is returned in
+    its place.
+
+    If strict is True, use a strict parser which rejects malformed inputs.
+    In this case, if the resulting list of parsed addresses is greater than
+    the number of fieldvalues in the input list, a parsing error has occurred
+    and consequently a list containing a single empty 2-tuple [('', '')] is
+    returned in its place. This is done to avoid invalid output.
+
+    Malformed input: getaddresses(['alice@example.com <bob@example.com>'])
+    Invalid output: [('', 'alice@example.com'), ('', 'bob@example.com')]
+    Safe output: [('', '')]
+
+    """
+    if not strict:
+        all = COMMASPACE.join(str(v) for v in fieldvalues)
+        a = _AddressList(all)
+        return a.addresslist
+
+    fieldvalues = [str(v) for v in fieldvalues]
+    fieldvalues = _pre_parse_validation(fieldvalues)
+    addr = COMMASPACE.join(v for v in fieldvalues)
+    a = _AddressList(addr)
+    result = _post_parse_validation(a.addresslist)
+
+    # Treat output as invalid if the number of addresses is not equal to the
+    # expected number of addresses.
+    n = 0
+    for v in fieldvalues:
+        # When a comma is used in the Real Name part it is not a deliminator.
+        # So strip those out before counting the commas
+        v = _strip_quoted_realname(v)
+        # Expected number of addresses: 1 + number of commas
+        n += 1 + v.count(',')
+    if len(result) != n:
+        return [('', '')]
+
+    return result
+
+
+def _pre_parse_validation(email_header_fields):
+    accepted_values = []
+    for v in email_header_fields:
+        s = v.replace('\\(', '').replace('\\)', '')
+        if s.count('(') != s.count(')'):
+            v = "('', '')"
+        accepted_values.append(v)
+
+    return accepted_values
+
+
+def _post_parse_validation(parsed_email_header_tuples):
+    accepted_values = []
+    # The parser would have parsed a correctly formatted domain-literal
+    # The existence of an [ after parsing indicates a parsing failure
+    for v in parsed_email_header_tuples:
+        if '[' in v[1]:
+            v = ('', '')
+        accepted_values.append(v)
+
+    return accepted_values
 
 
 def _format_timetuple_and_zone(timetuple, zone):
@@ -207,16 +293,33 @@ def parsedate_to_datetime(data):
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 
-def parseaddr(addr):
+def parseaddr(addr, *, strict=True):
     """
     Parse addr into its constituent realname and email address parts.
 
     Return a tuple of realname and email address, unless the parse fails, in
     which case return a 2-tuple of ('', '').
+
+    If strict is True, use a strict parser which rejects malformed inputs.
     """
-    addrs = _AddressList(addr).addresslist
-    if not addrs:
-        return '', ''
+    if not strict:
+        addrs = _AddressList(addr).addresslist
+        if not addrs:
+            return ('', '')
+        return addrs[0]
+
+    if isinstance(addr, list):
+        addr = addr[0]
+
+    if not isinstance(addr, str):
+        return ('', '')
+
+    addr = _pre_parse_validation([addr])[0]
+    addrs = _post_parse_validation(_AddressList(addr).addresslist)
+
+    if not addrs or len(addrs) > 1:
+        return ('', '')
+
     return addrs[0]
 
 

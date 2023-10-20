@@ -3320,32 +3320,116 @@ Foo
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
-    def test_getaddresses_comma_in_name(self):
-        """GH-106669 regression test."""
-        self.assertEqual(
-            utils.getaddresses(
-                [
-                    '"Bud, Person" <bperson@dom.ain>',
-                    'aperson@dom.ain (Al Person)',
-                    '"Mariusz Felisiak" <to@example.com>',
-                ]
-            ),
-            [
-                ('Bud, Person', 'bperson@dom.ain'),
-                ('Al Person', 'aperson@dom.ain'),
-                ('Mariusz Felisiak', 'to@example.com'),
-            ],
-        )
+    def test_parsing_errors(self):
+        """Test for parsing errors from CVE-2023-27043 and CVE-2019-16056"""
+        alice = 'alice@example.org'
+        bob = 'bob@example.com'
+        empty = ('', '')
+
+        # Test utils.getaddresses() and utils.parseaddr() on malformed email
+        # addresses: default behavior (strict=True) rejects malformed address,
+        # and strict=True which tolerates malformed address.
+        for invalid_separator, expected_non_strict in (
+            ('(', [(f'<{bob}>', alice)]),
+            (')', [('', alice), empty, ('', bob)]),
+            ('<', [('', alice), empty, ('', bob), empty]),
+            ('>', [('', alice), empty, ('', bob)]),
+            ('[', [('', f'{alice}[<{bob}>]')]),
+            (']', [('', alice), empty, ('', bob)]),
+            ('@', [empty, empty, ('', bob)]),
+            (';', [('', alice), empty, ('', bob)]),
+            (':', [('', alice), ('', bob)]),
+            ('.', [('', alice + '.'), ('', bob)]),
+            ('"', [('', alice), ('', f'<{bob}>')]),
+        ):
+            address = f'{alice}{invalid_separator}<{bob}>'
+            with self.subTest(address=address):
+                self.assertEqual(utils.getaddresses([address]),
+                                 [empty])
+                self.assertEqual(utils.getaddresses([address], strict=False),
+                                 expected_non_strict)
+
+                self.assertEqual(utils.parseaddr([address]),
+                                 empty)
+                self.assertEqual(utils.parseaddr([address], strict=False),
+                                 ('', address))
+
+        # Comma (',') is treated differently depending on strict parameter.
+        # Comma without quotes.
+        address = f'{alice},<{bob}>'
+        self.assertEqual(utils.getaddresses([address]),
+                         [('', alice), ('', bob)])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('', alice), ('', bob)])
+        self.assertEqual(utils.parseaddr([address]),
+                         empty)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Comma with quotes.
+        address = '"Alice, alice@example.org" <bob@example.com>'
+        expected_strict = ('Alice, alice@example.org', 'bob@example.com')
+        self.assertEqual(utils.getaddresses([address]), [expected_strict])
+        self.assertEqual(utils.getaddresses([address], strict=False), [expected_strict])
+        self.assertEqual(utils.parseaddr([address]), expected_strict)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Two addresses with quotes separated by comma.
+        address = '"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>'
+        self.assertEqual(utils.getaddresses([address]),
+                         [('Jane Doe', 'jane@example.net'),
+                          ('John Doe', 'john@example.net')])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('Jane Doe', 'jane@example.net'),
+                          ('John Doe', 'john@example.net')])
+        self.assertEqual(utils.parseaddr([address]), empty)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
 
     def test_getaddresses_nasty(self):
-        eq = self.assertEqual
-        eq(utils.getaddresses(['foo: ;']), [('', '')])
-        eq(utils.getaddresses(
-           ['[]*-- =~$']),
-           [('', ''), ('', ''), ('', '*--')])
-        eq(utils.getaddresses(
-           ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
-           [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
+        for addresses, expected in (
+            (['"Sürname, Firstname" <to@example.com>'],
+             [('Sürname, Firstname', 'to@example.com')]),
+
+            (['foo: ;'],
+             [('', '')]),
+
+            (['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>'],
+             [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')]),
+
+            ([r'Pete(A nice \) chap) <pete(his account)@silly.test(his host)>'],
+             [('Pete (A nice ) chap his account his host)', 'pete@silly.test')]),
+
+            (['(Empty list)(start)Undisclosed recipients  :(nobody(I know))'],
+             [('', '')]),
+
+            (['Mary <@machine.tld:mary@example.net>, , jdoe@test   . example'],
+             [('Mary', 'mary@example.net'), ('', ''), ('', 'jdoe@test.example')]),
+
+            (['John Doe <jdoe@machine(comment).  example>'],
+             [('John Doe (comment)', 'jdoe@machine.example')]),
+
+            (['"Mary Smith: Personal Account" <smith@home.example>'],
+             [('Mary Smith: Personal Account', 'smith@home.example')]),
+
+            (['Undisclosed recipients:;'],
+             [('', '')]),
+
+            ([r'<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>'],
+             [('', 'boss@nil.test'), ('Giant; "Big" Box', 'bob@example.net')]),
+        ):
+            with self.subTest(addresses=addresses):
+                self.assertEqual(utils.getaddresses(addresses),
+                                 expected)
+                self.assertEqual(utils.getaddresses(addresses, strict=False),
+                                 expected)
+
+        addresses = ['[]*-- =~$']
+        self.assertEqual(utils.getaddresses(addresses),
+                         [('', '')])
+        self.assertEqual(utils.getaddresses(addresses, strict=False),
+                         [('', ''), ('', ''), ('', '*--')])
 
     def test_getaddresses_embedded_comment(self):
         """Test proper handling of a nested comment"""
