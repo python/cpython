@@ -45,13 +45,13 @@ def main():
         tolines = tf.readlines()
 
     if options.u:
-        diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
+        diff = difflib.unified_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=)
     elif options.n:
         diff = difflib.ndiff(fromlines, tolines)
     elif options.m:
         diff = difflib.HtmlDiff().make_file(fromlines,tolines,fromfile,tofile,context=options.c,numlines=n)
     else:
-        diff = difflib.context_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=n)
+        diff = difflib.context_diff(fromlines, tolines, fromfile, tofile, fromdate, todate, n=)
 
     sys.stdout.writelines(diff)
 

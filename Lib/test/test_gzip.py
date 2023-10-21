@@ -306,7 +306,7 @@ class TestGzip(BaseTest):
 
     def test_mtime(self):
         mtime = 123456789
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime=) as fWrite:
             fWrite.write(data1)
         with gzip.GzipFile(self.filename) as fRead:
             self.assertTrue(hasattr(fRead, 'mtime'))
@@ -318,7 +318,7 @@ class TestGzip(BaseTest):
     def test_metadata(self):
         mtime = 123456789
 
-        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+        with gzip.GzipFile(self.filename, 'w', mtime=) as fWrite:
             fWrite.write(data1)
 
         with open(self.filename, 'rb') as fRead:
@@ -546,8 +546,8 @@ class TestGzip(BaseTest):
         mtime = 123456789
         for data in [data1, data2]:
             for args in [(), (1,), (6,), (9,)]:
-                with self.subTest(data=data, args=args):
-                    datac = gzip.compress(data, *args, mtime=mtime)
+                with self.subTest(data=, args=):
+                    datac = gzip.compress(data, *args, mtime=)
                     self.assertEqual(type(datac), bytes)
                     with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
                         f.read(1) # to set mtime attribute
@@ -556,9 +556,9 @@ class TestGzip(BaseTest):
     def test_compress_correct_level(self):
         # gzip.compress calls with mtime == 0 take a different code path.
         for mtime in (0, 42):
-            with self.subTest(mtime=mtime):
-                nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
-                yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+            with self.subTest(mtime=):
+                nocompress = gzip.compress(data1, compresslevel=0, mtime=)
+                yescompress = gzip.compress(data1, compresslevel=1, mtime=)
                 self.assertIn(data1, nocompress)
                 self.assertNotIn(data1, yescompress)
 
@@ -894,7 +894,7 @@ class TestCommandLine(unittest.TestCase):
     @create_and_remove_directory(TEMPDIR)
     def test_compress_infile_outfile(self):
         for compress_level in ('--fast', '--best'):
-            with self.subTest(compress_level=compress_level):
+            with self.subTest(compress_level=):
                 local_testgzip = os.path.join(TEMPDIR, 'testgzip')
                 gzipname = local_testgzip + '.gz'
                 self.assertFalse(os.path.exists(gzipname))

@@ -216,8 +216,8 @@ def _has_deadlocked(target_id, *, seen_ids, candidate_ids, blocking_on):
 
         # Follow the edges out from this thread.
         edges = [lock.owner for lock in candidate_blocking_on]
-        if _has_deadlocked(target_id, seen_ids=seen_ids, candidate_ids=edges,
-                blocking_on=blocking_on):
+        if _has_deadlocked(target_id, seen_ids=, candidate_ids=edges,
+                blocking_on=):
             return True
 
     return False
@@ -670,9 +670,9 @@ def spec_from_loader(name, loader, *, origin=None, is_package=None):
         spec_from_file_location = _bootstrap_external.spec_from_file_location
 
         if is_package is None:
-            return spec_from_file_location(name, loader=loader)
+            return spec_from_file_location(name, loader=)
         search = [] if is_package else None
-        return spec_from_file_location(name, loader=loader,
+        return spec_from_file_location(name, loader=,
                                        submodule_search_locations=search)
 
     if is_package is None:
@@ -685,7 +685,7 @@ def spec_from_loader(name, loader, *, origin=None, is_package=None):
             # the default
             is_package = False
 
-    return ModuleSpec(name, loader, origin=origin, is_package=is_package)
+    return ModuleSpec(name, loader, origin=, is_package=)
 
 
 def _spec_from_module(module, loader=None, origin=None):
@@ -723,7 +723,7 @@ def _spec_from_module(module, loader=None, origin=None):
     except AttributeError:
         submodule_search_locations = None
 
-    spec = ModuleSpec(name, loader, origin=origin)
+    spec = ModuleSpec(name, loader, origin=)
     spec._set_fileattr = False if location is None else (origin == location)
     spec.cached = cached
     spec.submodule_search_locations = submodule_search_locations
@@ -842,7 +842,7 @@ def _exec(spec, module):
     with _ModuleLockManager(name):
         if sys.modules.get(name) is not module:
             msg = f'module {name!r} not in sys.modules'
-            raise ImportError(msg, name=name)
+            raise ImportError(msg, name=)
         try:
             if spec.loader is None:
                 if spec.submodule_search_locations is None:
@@ -1038,10 +1038,7 @@ class FrozenImporter:
             ispkg = hasattr(module, '__path__')
             assert _imp.is_frozen_package(module.__name__) == ispkg, ispkg
             filename, pkgdir = cls._resolve_filename(origname, spec.name, ispkg)
-            spec.loader_state = type(sys.implementation)(
-                filename=filename,
-                origname=origname,
-            )
+            spec.loader_state = type(sys.implementation)(filename=, origname=)
             __path__ = spec.submodule_search_locations
             if ispkg:
                 assert __path__ == [], __path__
@@ -1141,10 +1138,7 @@ class FrozenImporter:
                                 origin=cls._ORIGIN,
                                 is_package=ispkg)
         filename, pkgdir = cls._resolve_filename(origname, fullname, ispkg)
-        spec.loader_state = type(sys.implementation)(
-            filename=filename,
-            origname=origname,
-        )
+        spec.loader_state = type(sys.implementation)(filename=, origname=)
         if pkgdir:
             spec.submodule_search_locations.insert(0, pkgdir)
         return spec
@@ -1310,12 +1304,12 @@ def _find_and_load_unlocked(name, import_):
             path = parent_module.__path__
         except AttributeError:
             msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
-            raise ModuleNotFoundError(msg, name=name) from None
+            raise ModuleNotFoundError(msg, name=) from None
         parent_spec = parent_module.__spec__
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
-        raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=name)
+        raise ModuleNotFoundError(f'{_ERR_MSG_PREFIX}{name!r}', name=)
     else:
         if parent_spec:
             # Temporarily add child we are currently importing to parent's
@@ -1361,7 +1355,7 @@ def _find_and_load(name, import_):
 
     if module is None:
         message = f'import of {name} halted; None in sys.modules'
-        raise ModuleNotFoundError(message, name=name)
+        raise ModuleNotFoundError(message, name=)
 
     return module
 

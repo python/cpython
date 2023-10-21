@@ -20,7 +20,7 @@ def main():
     prog = 'python -m json.tool'
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser = argparse.ArgumentParser(prog=, description=)
     parser.add_argument('infile', nargs='?',
                         type=argparse.FileType(encoding="utf-8"),
                         help='a JSON file to be validated or pretty-printed',

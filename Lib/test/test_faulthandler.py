@@ -68,9 +68,7 @@ class FaultHandlerTests(unittest.TestCase):
         support.set_sanitizer_env_var(env, option)
 
         with support.SuppressCrashReport():
-            process = script_helper.spawn_python('-c', code,
-                                                 pass_fds=pass_fds,
-                                                 env=env)
+            process = script_helper.spawn_python('-c', code, pass_fds=, env=)
             with process:
                 output, stderr = process.communicate()
                 exitcode = process.wait()
@@ -122,7 +120,7 @@ class FaultHandlerTests(unittest.TestCase):
 
         # Enable MULTILINE flag
         regex = f'(?m){regex}'
-        output, exitcode = self.get_output(code, filename=filename, fd=fd)
+        output, exitcode = self.get_output(code, filename=, fd=)
         output = '\n'.join(output)
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
@@ -320,7 +318,7 @@ class FaultHandlerTests(unittest.TestCase):
                 """.format(filename=repr(filename)),
                 4,
                 'Segmentation fault',
-                filename=filename)
+                filename=)
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
@@ -336,7 +334,7 @@ class FaultHandlerTests(unittest.TestCase):
                 """ % fd,
                 4,
                 'Segmentation fault',
-                fd=fd)
+                fd=)
 
     @skip_segfault_on_android
     def test_enable_single_thread(self):
@@ -425,7 +423,7 @@ class FaultHandlerTests(unittest.TestCase):
         env = os.environ.copy()
         env.pop("PYTHONFAULTHANDLER", None)
         # don't use assert_python_ok() because it always enables faulthandler
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args, env=)
         self.assertEqual(output.rstrip(), b"True")
 
     @support.requires_subprocess()
@@ -437,14 +435,14 @@ class FaultHandlerTests(unittest.TestCase):
         env['PYTHONFAULTHANDLER'] = ''
         env['PYTHONDEVMODE'] = ''
         # don't use assert_python_ok() because it always enables faulthandler
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args, env=)
         self.assertEqual(output.rstrip(), b"False")
 
         # non-empty env var
         env = dict(os.environ)
         env['PYTHONFAULTHANDLER'] = '1'
         env['PYTHONDEVMODE'] = ''
-        output = subprocess.check_output(args, env=env)
+        output = subprocess.check_output(args, env=)
         self.assertEqual(output.rstrip(), b"True")
 
     def check_dump_traceback(self, *, filename=None, fd=None):
@@ -473,10 +471,7 @@ class FaultHandlerTests(unittest.TestCase):
 
             funcA()
             """
-        code = code.format(
-            filename=filename,
-            fd=fd,
-        )
+        code = code.format(filename=, fd=)
         if filename:
             lineno = 9
         elif fd is not None:
@@ -498,7 +493,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     def test_dump_traceback_file(self):
         with temporary_filename() as filename:
-            self.check_dump_traceback(filename=filename)
+            self.check_dump_traceback(filename=)
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
@@ -518,9 +513,7 @@ class FaultHandlerTests(unittest.TestCase):
 
             {func_name}()
             """
-        code = code.format(
-            func_name=func_name,
-        )
+        code = code.format(func_name=)
         expected = [
             'Stack (most recent call first):',
             '  File "<string>", line 4 in %s' % truncated,
@@ -585,7 +578,7 @@ class FaultHandlerTests(unittest.TestCase):
               File "<string>", line {lineno} in dump
               File "<string>", line 28 in <module>$
             """
-        regex = dedent(regex.format(lineno=lineno)).strip()
+        regex = dedent(regex.format(lineno=)).strip()
         self.assertRegex(output, regex)
         self.assertEqual(exitcode, 0)
 
@@ -638,11 +631,11 @@ class FaultHandlerTests(unittest.TestCase):
             """
         code = code.format(
             timeout=TIMEOUT,
-            repeat=repeat,
-            cancel=cancel,
-            loops=loops,
-            filename=filename,
-            fd=fd,
+            repeat=,
+            cancel=,
+            loops=,
+            filename=,
+            fd=,
         )
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
@@ -669,7 +662,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     def test_dump_traceback_later_file(self):
         with temporary_filename() as filename:
-            self.check_dump_traceback_later(filename=filename)
+            self.check_dump_traceback_later(filename=)
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")
@@ -741,12 +734,12 @@ class FaultHandlerTests(unittest.TestCase):
             sys.exit(exitcode)
             """
         code = code.format(
-            all_threads=all_threads,
-            signum=signum,
-            unregister=unregister,
-            chain=chain,
-            filename=filename,
-            fd=fd,
+            all_threads=,
+            signum=,
+            unregister=,
+            chain=,
+            filename=,
+            fd=,
         )
         trace, exitcode = self.get_output(code, filename)
         trace = '\n'.join(trace)
@@ -772,7 +765,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     def test_register_file(self):
         with temporary_filename() as filename:
-            self.check_register(filename=filename)
+            self.check_register(filename=)
 
     @unittest.skipIf(sys.platform == "win32",
                      "subprocess doesn't support pass_fds on Windows")

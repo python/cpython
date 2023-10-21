@@ -105,7 +105,7 @@ class HandlingFromlist:
         with util.mock_spec('pkg.__init__', 'pkg.module') as mock:
             with util.import_state(meta_path=[mock]):
                 mock['pkg'].__all__ = ['module']
-                module = self.__import__('pkg', fromlist=fromlist)
+                module = self.__import__('pkg', fromlist=)
                 self.assertEqual(module.__name__, 'pkg')
                 self.assertTrue(hasattr(module, 'module'))
                 self.assertEqual(module.module.__name__, 'pkg.module')

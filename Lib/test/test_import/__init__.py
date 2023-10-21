@@ -187,7 +187,7 @@ class ModuleSnapshot(types.SimpleNamespace):
             module=mod,
             ns=types.SimpleNamespace(**mod.__dict__),
             ns_id=id(mod.__dict__),
-            cached=cached,
+            cached=,
             cached_id=id(cached),
         )
 
@@ -262,10 +262,10 @@ class ModuleSnapshot(types.SimpleNamespace):
 
         return cls.SCRIPT.format(
             imports=cls.IMPORTS.strip(),
-            name=name,
+            name=,
             prescript=prescript.strip(),
             body=cls.SCRIPT_BODY.strip(),
-            postscript=postscript,
+            postscript=,
         )
 
     @classmethod
@@ -770,14 +770,14 @@ class ImportTests(unittest.TestCase):
                     "p.close"
                 ])],
                 stderr=subprocess.STDOUT,
-                env=env,
+                env=,
                 cwd=os.path.dirname(pyexe))
 
             # Test 2: import with DLL adjacent to PYD
             shutil.copy(depname, tmp2)
             subprocess.check_call([pyexe, "-Sc", "import _sqlite3"],
                                     stderr=subprocess.STDOUT,
-                                    env=env,
+                                    env=,
                                     cwd=os.path.dirname(pyexe))
 
     def test_issue105979(self):
@@ -1759,7 +1759,7 @@ class SubinterpImportTests(unittest.TestCase):
         # (See run_here() for more info.)
         out = self.run_here(name, filename,
                             check_singlephase_setting=strict,
-                            isolated=isolated,
+                            isolated=,
                             )
         self.assertEqual(out, b'okay')
 
@@ -1769,7 +1769,7 @@ class SubinterpImportTests(unittest.TestCase):
         #  * "strict" is always True
         out = self.run_here(name, filename,
                             check_singlephase_setting=True,
-                            isolated=isolated,
+                            isolated=,
                             )
         self.assertEqual(
             out.decode('utf-8'),
@@ -2067,8 +2067,7 @@ class SinglephaseInitTests(unittest.TestCase):
 
         # Issue bpo-24748: Skip the sys.modules check in _load_module_shim;
         # always load new extension.
-        spec = importlib.util.spec_from_file_location(name, path,
-                                                      loader=loader)
+        spec = importlib.util.spec_from_file_location(name, path, loader=)
         return _load(spec)
 
     def load(self, name):
@@ -2081,7 +2080,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.assertNotIn(mod, already_loaded.values())
         already_loaded[name] = mod
         return types.SimpleNamespace(
-            name=name,
+            name=,
             module=mod,
             snapshot=TestSinglePhaseSnapshot.from_module(mod),
         )
@@ -2091,7 +2090,7 @@ class SinglephaseInitTests(unittest.TestCase):
         assert mod.__dict__ == mod.__dict__
         reloaded = self._load_dynamic(name, self.FILE)
         return types.SimpleNamespace(
-            name=name,
+            name=,
             module=reloaded,
             snapshot=TestSinglePhaseSnapshot.from_module(reloaded),
         )
@@ -2139,17 +2138,13 @@ class SinglephaseInitTests(unittest.TestCase):
         snapshot = TestSinglePhaseSnapshot.from_subinterp(
             name,
             interpid,
-            pipe=pipe,
+            pipe=,
             import_first=True,
-            postscript=postscript,
-            postcleanup=postcleanup,
+            postscript=,
+            postcleanup=,
         )
 
-        return types.SimpleNamespace(
-            name=name,
-            module=None,
-            snapshot=snapshot,
-        )
+        return types.SimpleNamespace(name=, module=None, snapshot=)
 
     # checks
 
@@ -2424,7 +2419,7 @@ class SinglephaseInitTests(unittest.TestCase):
             (f'{self.NAME}_with_state', True),    # m_size > 0
         ]:
             self.add_module_cleanup(name)
-            with self.subTest(name=name, has_state=has_state):
+            with self.subTest(name=, has_state=):
                 loaded = self.load(name)
                 if has_state:
                     self.addCleanup(loaded.module._clear_module_state)

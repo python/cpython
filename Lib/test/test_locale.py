@@ -644,7 +644,7 @@ class TestfrFRDelocalizeTest(FrFRCookedTest, BaseDelocalizeTest):
 class BaseLocalizeTest(BaseLocalizedTest):
 
     def _test_localize(self, value, out, grouping=False):
-        self.assertEqual(locale.localize(value, grouping=grouping), out)
+        self.assertEqual(locale.localize(value, grouping=), out)
 
 
 class TestEnUSLocalize(EnUSCookedTest, BaseLocalizeTest):

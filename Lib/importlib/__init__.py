@@ -106,7 +106,7 @@ def reload(module):
             raise TypeError("reload() argument must be a module")
 
     if sys.modules.get(name) is not module:
-        raise ImportError(f"module {name} not in sys.modules", name=name)
+        raise ImportError(f"module {name} not in sys.modules", name=)
     if name in _RELOADING:
         return _RELOADING[name]
     _RELOADING[name] = module
@@ -125,7 +125,7 @@ def reload(module):
         target = module
         spec = module.__spec__ = _bootstrap._find_spec(name, pkgpath, target)
         if spec is None:
-            raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=name)
+            raise ModuleNotFoundError(f"spec not found for the module {name!r}", name=)
         _bootstrap._exec(spec, module)
         # The module may have replaced itself in sys.modules!
         return sys.modules[name]

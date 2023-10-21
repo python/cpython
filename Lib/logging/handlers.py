@@ -55,9 +55,9 @@ class BaseRotatingHandler(logging.FileHandler):
         """
         Use the specified filename for streamed logging
         """
-        logging.FileHandler.__init__(self, filename, mode=mode,
-                                     encoding=encoding, delay=delay,
-                                     errors=errors)
+        logging.FileHandler.__init__(self, filename, mode=,
+                                     encoding=, delay=,
+                                     errors=)
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
@@ -152,8 +152,8 @@ class RotatingFileHandler(BaseRotatingHandler):
             mode = 'a'
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
-        BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
-                                     delay=delay, errors=errors)
+        BaseRotatingHandler.__init__(self, filename, mode, encoding=,
+                                     delay=, errors=)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
 
@@ -211,8 +211,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                  encoding=None, delay=False, utc=False, atTime=None,
                  errors=None):
         encoding = io.text_encoding(encoding)
-        BaseRotatingHandler.__init__(self, filename, 'a', encoding=encoding,
-                                     delay=delay, errors=errors)
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding=,
+                                     delay=, errors=)
         self.when = when.upper()
         self.backupCount = backupCount
         self.utc = utc
@@ -476,9 +476,9 @@ class WatchedFileHandler(logging.FileHandler):
                  errors=None):
         if "b" not in mode:
             encoding = io.text_encoding(encoding)
-        logging.FileHandler.__init__(self, filename, mode=mode,
-                                     encoding=encoding, delay=delay,
-                                     errors=errors)
+        logging.FileHandler.__init__(self, filename, mode=,
+                                     encoding=, delay=,
+                                     errors=)
         self.dev, self.ino = -1, -1
         self._statstream()
 
@@ -570,7 +570,7 @@ class SocketHandler(logging.Handler):
         type of socket they want.
         """
         if self.port is not None:
-            result = socket.create_connection(self.address, timeout=timeout)
+            result = socket.create_connection(self.address, timeout=)
         else:
             result = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             result.settimeout(timeout)

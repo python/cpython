@@ -553,7 +553,7 @@ class ReprTests(unittest.TestCase):
         for test_case in test_cases:
             with self.subTest(test_object=test_case['object']):
                 for repr_settings, expected_repr in test_case['tests']:
-                    with self.subTest(repr_settings=repr_settings):
+                    with self.subTest(repr_settings=):
                         r = Repr()
                         for attribute, value in repr_settings.items():
                             setattr(r, attribute, value)
@@ -573,7 +573,7 @@ class ReprTests(unittest.TestCase):
             (object(), (TypeError, None)),
         ]
         for indent, (expected_error, expected_msg) in test_cases:
-            with self.subTest(indent=indent):
+            with self.subTest(indent=):
                 r = Repr()
                 r.indent = indent
                 expected_msg = expected_msg or f'{type(indent)}'

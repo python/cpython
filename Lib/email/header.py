@@ -162,8 +162,7 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
     instance.  Optional maxlinelen, header_name, and continuation_ws are as in
     the Header constructor.
     """
-    h = Header(maxlinelen=maxlinelen, header_name=header_name,
-               continuation_ws=continuation_ws)
+    h = Header(maxlinelen=, header_name=, continuation_ws=)
     for s, charset in decoded_seq:
         # None means us-ascii but we can simply pass it on to h.append()
         if charset is not None and not isinstance(charset, Charset):

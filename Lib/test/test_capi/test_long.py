@@ -39,7 +39,7 @@ class LongTests(unittest.TestCase):
             *(37**n for n in range(14)),
             *(-37**n for n in range(14)),
         }:
-            with self.subTest(n=n):
+            with self.subTest(n=):
                 is_compact, value = _testcapi.call_long_compact_api(n)
                 if is_compact:
                     self.assertEqual(n, value)
@@ -82,7 +82,7 @@ class LongTests(unittest.TestCase):
         fromdouble = _testcapi.pylong_fromdouble
         float_max = sys.float_info.max
         for value in (5.0, 5.1, 5.9, -5.1, -5.9, 0.0, -0.0, float_max, -float_max):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(fromdouble(value), int(value))
         self.assertRaises(OverflowError, fromdouble, float('inf'))
         self.assertRaises(OverflowError, fromdouble, float('-inf'))
@@ -167,7 +167,7 @@ class LongTests(unittest.TestCase):
 
         # round trip (object -> int -> object)
         for value in (INT_MIN, INT_MAX, -1, 0, 1, 123):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(PyLong_AsInt(value), value)
         self.assertEqual(PyLong_AsInt(IntSubclass(42)), 42)
         self.assertEqual(PyLong_AsInt(Index(42)), 42)
@@ -189,7 +189,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(aslong(value), value)
 
         self.assertEqual(aslong(IntSubclass(42)), 42)
@@ -209,7 +209,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import LONG_MIN, LONG_MAX
         # round trip (object -> long -> object)
         for value in (LONG_MIN, LONG_MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(aslongandoverflow(value), (value, 0))
 
         self.assertEqual(aslongandoverflow(IntSubclass(42)), (42, 0))
@@ -227,7 +227,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(asunsignedlong(value), value)
 
         self.assertEqual(asunsignedlong(IntSubclass(42)), 42)
@@ -247,7 +247,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import ULONG_MAX
         # round trip (object -> unsigned long -> object)
         for value in (ULONG_MAX, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(asunsignedlongmask(value), value)
 
         self.assertEqual(asunsignedlongmask(IntSubclass(42)), 42)
@@ -267,7 +267,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(aslonglong(value), value)
 
         self.assertEqual(aslonglong(IntSubclass(42)), 42)
@@ -287,7 +287,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import LLONG_MIN, LLONG_MAX
         # round trip (object -> long long -> object)
         for value in (LLONG_MIN, LLONG_MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(aslonglongandoverflow(value), (value, 0))
 
         self.assertEqual(aslonglongandoverflow(IntSubclass(42)), (42, 0))
@@ -305,7 +305,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(asunsignedlonglong(value), value)
 
         self.assertEqual(asunsignedlonglong(IntSubclass(42)), 42)
@@ -325,7 +325,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import ULLONG_MAX
         # round trip (object -> unsigned long long -> object)
         for value in (ULLONG_MAX, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(asunsignedlonglongmask(value), value)
 
         self.assertEqual(asunsignedlonglongmask(IntSubclass(42)), 42)
@@ -345,7 +345,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import PY_SSIZE_T_MIN, PY_SSIZE_T_MAX
         # round trip (object -> Py_ssize_t -> object)
         for value in (PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(as_ssize_t(value), value)
 
         self.assertEqual(as_ssize_t(IntSubclass(42)), 42)
@@ -365,7 +365,7 @@ class LongTests(unittest.TestCase):
         from _testcapi import SIZE_MAX
         # round trip (object -> size_t -> object)
         for value in (SIZE_MAX, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(as_size_t(value), value)
 
         self.assertEqual(as_size_t(IntSubclass(42)), 42)
@@ -384,7 +384,7 @@ class LongTests(unittest.TestCase):
         asdouble = _testcapi.pylong_asdouble
         MAX = int(sys.float_info.max)
         for value in (-MAX, MAX, -1, 0, 1, 1234):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 self.assertEqual(asdouble(value), float(value))
                 self.assertIsInstance(asdouble(value), float)
 

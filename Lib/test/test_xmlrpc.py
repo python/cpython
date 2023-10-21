@@ -203,8 +203,7 @@ class XMLRPCTestCase(unittest.TestCase):
         self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
 
         methodname = 'method\u20ac\xa4'
-        strg = xmlrpclib.dumps((value,), encoding='iso-8859-15',
-                               methodname=methodname)
+        strg = xmlrpclib.dumps((value,), encoding='iso-8859-15', methodname=)
         self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
         self.assertEqual(xmlrpclib.loads(strg)[1], methodname)
 
@@ -634,7 +633,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
     if not requestHandler:
         requestHandler = xmlrpc.server.SimpleXMLRPCRequestHandler
     serv = MyXMLRPCServer(("localhost", 0), requestHandler,
-                          encoding=encoding,
+                          encoding=,
                           logRequests=False, bind_and_activate=False)
     try:
         serv.server_bind()
@@ -1423,7 +1422,7 @@ def captured_stdout(encoding='utf-8'):
     having a `buffer` attribute.
     """
     orig_stdout = sys.stdout
-    sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding=encoding)
+    sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding=)
     try:
         yield sys.stdout
     finally:

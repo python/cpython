@@ -157,7 +157,7 @@ def _cli_parse(parser, excluded=None, **prepr_kwargs):
     process_output = add_output_cli(parser)
     process_kinds = add_kind_filtering_cli(parser)
     process_preprocessor = add_preprocessor_cli(parser, **prepr_kwargs)
-    process_files = add_files_cli(parser, excluded=excluded)
+    process_files = add_files_cli(parser, excluded=)
     return [
         process_output,
         process_kinds,
@@ -182,7 +182,7 @@ def cmd_parse(filenames, *,
     for filename, relfile in main_for_filenames(filenames, iter_filenames, relroot):
         for item in _iter_parsed(filename, **kwargs):
             item = item.fix_filename(relroot, fixroot=False, normalize=False)
-            for line in do_fmt(relfile, item, showfwd=showfwd):
+            for line in do_fmt(relfile, item, showfwd=):
                 print(line)
 
 
@@ -229,7 +229,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset='parse'):
             add_verbosity_cli,
             add_traceback_cli,
         ],
-        subset=subset,
+        subset=,
     )
 
     args = parser.parse_args(argv)

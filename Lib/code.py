@@ -346,7 +346,7 @@ def interact(banner=None, readfunc=None, local=None, exitmsg=None, local_exit=Fa
     local_exit -- passed to InteractiveConsole.__init__()
 
     """
-    console = InteractiveConsole(local, local_exit=local_exit)
+    console = InteractiveConsole(local, local_exit=)
     if readfunc is not None:
         console.raw_input = readfunc
     else:

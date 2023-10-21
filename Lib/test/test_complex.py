@@ -258,7 +258,7 @@ class ComplexTest(unittest.TestCase):
                   -sys.maxsize, -sys.maxsize+1, -sys.maxsize+1)
         for real in values:
             for imag in values:
-                with self.subTest(real=real, imag=imag):
+                with self.subTest(real=, imag=):
                     c = complex(real, imag)
                     try:
                         c ** real
@@ -281,7 +281,7 @@ class ComplexTest(unittest.TestCase):
         exponents = [-19, -5, -3, -2, -1, 0, 1, 2, 3, 5, 19]
         for value in values:
             for exponent in exponents:
-                with self.subTest(value=value, exponent=exponent):
+                with self.subTest(value=, exponent=):
                     try:
                         int_pow = value**exponent
                     except OverflowError:
@@ -512,7 +512,7 @@ class ComplexTest(unittest.TestCase):
             pass
         for x in 0.0, -0.0, INF, -INF, NAN:
             for y in 0.0, -0.0, INF, -INF, NAN:
-                with self.subTest(x=x, y=y):
+                with self.subTest(x=, y=):
                     z = complex(x, y)
                     self.assertFloatsAreIdentical(z.real, x)
                     self.assertFloatsAreIdentical(z.imag, y)

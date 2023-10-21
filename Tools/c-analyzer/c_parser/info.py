@@ -155,7 +155,7 @@ def _fix_filename(filename, relroot, *,
         fix = fsutil.format_filename
     else:
         fix = fsutil.fix_filename
-    return fix(filename, relroot=relroot, **kwargs)
+    return fix(filename, relroot=, **kwargs)
 
 
 class FileInfo(namedtuple('FileInfo', 'filename lno')):
@@ -179,7 +179,7 @@ class FileInfo(namedtuple('FileInfo', 'filename lno')):
         filename = _fix_filename(self.filename, relroot, **kwargs)
         if filename == self.filename:
             return self
-        return self._replace(filename=filename)
+        return self._replace(filename=)
 
 
 class SourceLine(namedtuple('Line', 'file kind data conditions')):
@@ -247,7 +247,7 @@ class DeclID(namedtuple('DeclID', 'filename funcname name')):
         filename = _fix_filename(self.filename, relroot, **kwargs)
         if filename == self.filename:
             return self
-        return self._replace(filename=filename)
+        return self._replace(filename=)
 
 
 class ParsedItem(namedtuple('ParsedItem', 'file kind parent name data')):
@@ -803,7 +803,7 @@ class Declaration(HighlevelParsedItem):
     def _resolve_parent(cls, parsed, *, _kind=None):
         if _kind is None:
             raise TypeError(f'{cls.kind.value} declarations do not have parents ({parsed})')
-        return super()._resolve_parent(parsed, _kind=_kind)
+        return super()._resolve_parent(parsed, _kind=)
 
     @classmethod
     def _render_data(cls, fmt, data, extra):
@@ -1090,7 +1090,7 @@ class TypeDeclaration(Declaration):
         if not _shortkey:
             _shortkey = f'{self.kind.value} {name}'
         super().__init__(file, name, data, parent,
-                         _shortkey=_shortkey,
+                         _shortkey=,
                          _key=(
                              str(file),
                              _shortkey,

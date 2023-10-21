@@ -159,12 +159,12 @@ def test_pickle_dump_load(assertion, source, target=None):
     if target is None:
         target = source
     for protocol in range(HIGHEST_PROTOCOL + 1):
-        assertion(loads(dumps(source, protocol=protocol)), target)
+        assertion(loads(dumps(source, protocol=)), target)
 
 def test_pickle_exception(assertion, exception, obj):
     for protocol in range(HIGHEST_PROTOCOL + 1):
         with assertion(exception):
-            dumps(obj, protocol=protocol)
+            dumps(obj, protocol=)
 
 class TestHelpers(unittest.TestCase):
     # _is_descriptor, _is_sunder, _is_dunder
@@ -360,7 +360,7 @@ class _EnumTests:
                 dupe = 3
             else:
                 dupe = third
-            self.MainEnum = MainEnum = BaseEnum('MainEnum', dict(first=first, second=second, third=third, dupe=dupe))
+            self.MainEnum = MainEnum = BaseEnum('MainEnum', dict(first=, second=, third=, dupe=))
             #
             def __str__(self):
                 return self.name.upper()
@@ -377,13 +377,13 @@ class _EnumTests:
             def __format__(self, spec):
                 return ''.join(reversed(self.name))
             first = auto()
-            self.NewStrFormatEnum = self.enum_type('NewStrFormatEnum', dict(first=first, __format__=__format__, __str__=__str__))
+            self.NewStrFormatEnum = self.enum_type('NewStrFormatEnum', dict(first=, __format__=, __str__=))
             #
             def __str__(self):
                 return self.name.title()
             def __format__(self, spec):
                 return ''.join(reversed(self.name))
-            self.NewBaseEnum = self.enum_type('NewBaseEnum', dict(__format__=__format__, __str__=__str__))
+            self.NewBaseEnum = self.enum_type('NewBaseEnum', dict(__format__=, __str__=))
             self.NewSubEnum = self.NewBaseEnum('NewSubEnum', 'first')
             #
             def _generate_next_value_(name, start, last, values):
@@ -4795,7 +4795,7 @@ class TestStdLib(unittest.TestCase):
         else:
             expected_text = expected_help_output_with_docs % __name__
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(self.Color)
         result = output.getvalue().strip()
         self.assertEqual(result, expected_text, result)

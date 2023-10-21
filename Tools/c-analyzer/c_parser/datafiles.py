@@ -55,7 +55,7 @@ def write_decls(decls, outfile, fmt=None, *, backup=False):
     if fmt is None:
         fmt = _get_format(infile)
     _, write_all = _get_format_handlers('decls', fmt)
-    write_all(decls, outfile, backup=backup)
+    write_all(decls, outfile, backup=)
 
 
 #############################

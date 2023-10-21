@@ -77,9 +77,7 @@ class REPLThread(threading.Thread):
                 f'{getattr(sys, "ps1", ">>> ")}import asyncio'
             )
 
-            console.interact(
-                banner=banner,
-                exitmsg='exiting asyncio REPL...')
+            console.interact(banner=, exitmsg='exiting asyncio REPL...')
         finally:
             warnings.filterwarnings(
                 'ignore',

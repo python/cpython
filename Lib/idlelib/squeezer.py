@@ -192,7 +192,7 @@ class ExpandingButton(tk.Button):
         self.text.mark_set("insert", "@%d,%d" % (event.x, event.y))
         rmenu = tk.Menu(self.text, tearoff=0)
         for label, method_name in self.rmenu_specs:
-            rmenu.add_command(label=label, command=getattr(self, method_name))
+            rmenu.add_command(label=, command=getattr(self, method_name))
         rmenu.tk_popup(event.x_root, event.y_root)
         return "break"
 

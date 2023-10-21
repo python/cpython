@@ -106,7 +106,7 @@ class WindowsRegistryFinderTests:
 
 (Frozen_WindowsRegistryFinderTests,
  Source_WindowsRegistryFinderTests
- ) = test_util.test_both(WindowsRegistryFinderTests, machinery=machinery)
+ ) = test_util.test_both(WindowsRegistryFinderTests, machinery=)
 
 @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')
 class WindowsExtensionSuffixTests:
@@ -130,7 +130,7 @@ class WindowsExtensionSuffixTests:
 
 (Frozen_WindowsExtensionSuffixTests,
  Source_WindowsExtensionSuffixTests
- ) = test_util.test_both(WindowsExtensionSuffixTests, machinery=machinery)
+ ) = test_util.test_both(WindowsExtensionSuffixTests, machinery=)
 
 
 @unittest.skipUnless(sys.platform.startswith('win'), 'requires Windows')

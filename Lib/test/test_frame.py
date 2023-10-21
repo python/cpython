@@ -45,7 +45,7 @@ class ClearTest(unittest.TestCase):
             pass
         c = C()
         wr = weakref.ref(c)
-        exc = self.outer(c=c)
+        exc = self.outer(c=)
         del c
         support.gc_collect()
         # A reference to c is held through the frames
@@ -59,7 +59,7 @@ class ClearTest(unittest.TestCase):
         class C:
             pass
         c = C()
-        exc = self.outer(c=c)
+        exc = self.outer(c=)
         del c
         f = exc.__traceback__.tb_frame
         f.clear()
@@ -146,7 +146,7 @@ class ClearTest(unittest.TestCase):
                 pass
             c = C()
             wr = weakref.ref(c)
-            exc = self.outer(c=c)
+            exc = self.outer(c=)
             del c
             self.assertIsNot(None, wr())
             self.clear_traceback_frames(exc.__traceback__)

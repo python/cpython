@@ -89,12 +89,12 @@ class Class(_Object):
 def _nest_function(ob, func_name, lineno, end_lineno, is_async=False):
     "Return a Function after nesting within ob."
     return Function(ob.module, func_name, ob.file, lineno,
-                    parent=ob, is_async=is_async, end_lineno=end_lineno)
+                    parent=ob, is_async=, end_lineno=)
 
 def _nest_class(ob, class_name, lineno, end_lineno, super=None):
     "Return a Class after nesting within ob."
     return Class(ob.module, class_name, super, ob.file, lineno,
-                 parent=ob, end_lineno=end_lineno)
+                 parent=ob, end_lineno=)
 
 
 def readmodule(module, path=None):
@@ -210,7 +210,7 @@ class _ModuleBrowser(ast.NodeVisitor):
 
         parent = self.stack[-1] if self.stack else None
         class_ = Class(self.module, node.name, bases, self.file, node.lineno,
-                       parent=parent, end_lineno=node.end_lineno)
+                       parent=, end_lineno=node.end_lineno)
         if parent is None:
             self.tree[node.name] = class_
         self.stack.append(class_)

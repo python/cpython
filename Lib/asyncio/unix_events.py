@@ -211,7 +211,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             waiter = self.create_future()
             transp = _UnixSubprocessTransport(self, protocol, args, shell,
                                             stdin, stdout, stderr, bufsize,
-                                            waiter=waiter, extra=extra,
+                                            waiter=, extra=,
                                             **kwargs)
             watcher.add_child_handler(transp.get_pid(),
                                     self._child_watcher_callback, transp)
@@ -275,8 +275,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=)
         return transport, protocol
 
     async def create_unix_server(
@@ -822,8 +822,8 @@ class _UnixSubprocessTransport(base_subprocess.BaseSubprocessTransport):
             stdin, stdin_w = socket.socketpair()
         try:
             self._proc = subprocess.Popen(
-                args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-                universal_newlines=False, bufsize=bufsize, **kwargs)
+                args, shell=, stdin=, stdout=, stderr=,
+                universal_newlines=False, bufsize=, **kwargs)
             if stdin_w is not None:
                 stdin.close()
                 self._proc.stdin = open(stdin_w.detach(), 'wb', buffering=bufsize)

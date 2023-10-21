@@ -814,7 +814,7 @@ class UtimeTests(unittest.TestCase):
     def test_utime(self):
         def set_time(filename, ns):
             # test the ns keyword parameter
-            os.utime(filename, ns=ns)
+            os.utime(filename, ns=)
         self._test_utime(set_time)
 
     @staticmethod
@@ -851,7 +851,7 @@ class UtimeTests(unittest.TestCase):
         def set_time(filename, ns):
             # use follow_symlinks=False to test utimensat(timespec)
             # or lutimes(timeval)
-            os.utime(filename, ns=ns, follow_symlinks=False)
+            os.utime(filename, ns=, follow_symlinks=False)
         self._test_utime(set_time)
 
     @unittest.skipUnless(os.utime in os.supports_fd,
@@ -861,7 +861,7 @@ class UtimeTests(unittest.TestCase):
             with open(filename, 'wb', 0) as fp:
                 # use a file descriptor to test futimens(timespec)
                 # or futimes(timeval)
-                os.utime(fp.fileno(), ns=ns)
+                os.utime(fp.fileno(), ns=)
         self._test_utime(set_time)
 
     @unittest.skipUnless(os.utime in os.supports_dir_fd,
@@ -871,13 +871,13 @@ class UtimeTests(unittest.TestCase):
             dirname, name = os.path.split(filename)
             with os_helper.open_dir_fd(dirname) as dirfd:
                 # pass dir_fd to test utimensat(timespec) or futimesat(timeval)
-                os.utime(name, dir_fd=dirfd, ns=ns)
+                os.utime(name, dir_fd=dirfd, ns=)
         self._test_utime(set_time)
 
     def test_utime_directory(self):
         def set_time(filename, ns):
             # test calling os.utime() on a directory
-            os.utime(filename, ns=ns)
+            os.utime(filename, ns=)
         self._test_utime(set_time, filename=self.dirname)
 
     def _test_utime_current(self, set_time):
@@ -899,8 +899,7 @@ class UtimeTests(unittest.TestCase):
         st = os.stat(self.fname)
         msg = ("st_time=%r, current=%r, dt=%r"
                % (st.st_mtime, current, st.st_mtime - current))
-        self.assertAlmostEqual(st.st_mtime, current,
-                               delta=delta, msg=msg)
+        self.assertAlmostEqual(st.st_mtime, current, delta=, msg=)
 
     def test_utime_current(self):
         def set_time(filename):
@@ -1549,8 +1548,8 @@ class FwalkTests(WalkTests):
         walk_kwargs = walk_kwargs.copy()
         fwalk_kwargs = fwalk_kwargs.copy()
         for topdown, follow_symlinks in itertools.product((True, False), repeat=2):
-            walk_kwargs.update(topdown=topdown, followlinks=follow_symlinks)
-            fwalk_kwargs.update(topdown=topdown, follow_symlinks=follow_symlinks)
+            walk_kwargs.update(topdown=, followlinks=follow_symlinks)
+            fwalk_kwargs.update(topdown=, follow_symlinks=)
 
             expected = {}
             for root, dirs, files in os.walk(**walk_kwargs):
@@ -1578,7 +1577,7 @@ class FwalkTests(WalkTests):
         # check returned file descriptors
         for topdown, follow_symlinks in itertools.product((True, False), repeat=2):
             args = os_helper.TESTFN, topdown, None
-            for root, dirs, files, rootfd in self.fwalk(*args, follow_symlinks=follow_symlinks):
+            for root, dirs, files, rootfd in self.fwalk(*args, follow_symlinks=):
                 # check that the FD is valid
                 os.fstat(rootfd)
                 # redundant check
@@ -1681,7 +1680,7 @@ class MakedirTests(unittest.TestCase):
         self.assertRaises(OSError, os.makedirs, path, mode)
         self.assertRaises(OSError, os.makedirs, path, mode, exist_ok=False)
         os.makedirs(path, 0o776, exist_ok=True)
-        os.makedirs(path, mode=mode, exist_ok=True)
+        os.makedirs(path, mode=, exist_ok=True)
         os.umask(old_mask)
 
         # Issue #25583: A drive root could raise PermissionError on Windows
@@ -2095,8 +2094,7 @@ class ExecTests(unittest.TestCase):
         # test os._execvpe() with a relative path:
         # os.get_exec_path() returns defpath
         with _execvpe_mockup(defpath=program_path) as calls:
-            self.assertRaises(OSError,
-                os._execvpe, program, arguments, env=env)
+            self.assertRaises(OSError, os._execvpe, program, arguments, env=)
             self.assertEqual(len(calls), 1)
             self.assertSequenceEqual(calls[0],
                 ('execve', native_fullpath, (arguments, env)))
@@ -2253,7 +2251,7 @@ class TestInvalidFD(unittest.TestCase):
         ]
         for fd, fd2 in itertools.product(fds, repeat=2):
             if fd != fd2:
-                with self.subTest(fd=fd, fd2=fd2):
+                with self.subTest(fd=, fd2=):
                     with self.assertRaises(OSError) as ctx:
                         os.dup2(fd, fd2)
                     self.assertEqual(ctx.exception.errno, errno.EBADF)
@@ -3186,7 +3184,7 @@ class PidTests(unittest.TestCase):
     def test_waitstatus_to_exitcode(self):
         exitcode = 23
         code = f'import sys; sys.exit({exitcode})'
-        self.check_waitpid(code, exitcode=exitcode)
+        self.check_waitpid(code, exitcode=)
 
         with self.assertRaises(TypeError):
             os.waitstatus_to_exitcode(0.0)
@@ -3953,12 +3951,12 @@ class TimerfdTests(unittest.TestCase):
         interval = 0.125
 
         # 1st call
-        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=)
         self.assertAlmostEqual(interval2, 0.0, places=3)
         self.assertAlmostEqual(next_expiration, 0.0, places=3)
 
         # 2nd call
-        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        next_expiration, interval2 = os.timerfd_settime(fd, initial=initial_expiration, interval=)
         self.assertAlmostEqual(interval2, interval, places=3)
         self.assertAlmostEqual(next_expiration, initial_expiration, places=3)
 
@@ -3996,15 +3994,15 @@ class TimerfdTests(unittest.TestCase):
         # Any of 'initial' and 'interval' is negative value.
         for initial, interval in ( (-1, 0), (1, -1), (-1, -1),  (-0.1, 0), (1, -0.1), (-0.1, -0.1)):
             for flags in test_flags:
-                with self.subTest(flags=flags, initial=initial, interval=interval):
+                with self.subTest(flags=, initial=, interval=):
                     with self.assertRaises(OSError) as context:
-                        os.timerfd_settime(fd, flags=flags, initial=initial, interval=interval)
+                        os.timerfd_settime(fd, flags=, initial=, interval=)
                     self.assertEqual(context.exception.errno, errno.EINVAL)
 
                     with self.assertRaises(OSError) as context:
                         initial_ns = int( one_sec_in_nsec * initial )
                         interval_ns = int( one_sec_in_nsec * interval )
-                        os.timerfd_settime_ns(fd, flags=flags, initial=initial_ns, interval=interval_ns)
+                        os.timerfd_settime_ns(fd, flags=, initial=initial_ns, interval=interval_ns)
                     self.assertEqual(context.exception.errno, errno.EINVAL)
 
     def test_timerfd_interval(self):
@@ -4015,7 +4013,7 @@ class TimerfdTests(unittest.TestCase):
         # 0.5 second
         interval = 0.5
 
-        os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        os.timerfd_settime(fd, initial=initial_expiration, interval=)
 
         # timerfd_gettime
         next_expiration, interval2 = os.timerfd_gettime(fd)
@@ -4046,7 +4044,7 @@ class TimerfdTests(unittest.TestCase):
         # not interval timer
         interval = 0
 
-        os.timerfd_settime(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration, interval=interval)
+        os.timerfd_settime(fd, flags=os.TFD_TIMER_ABSTIME, initial=initial_expiration, interval=)
 
         # timerfd_gettime
         # Note: timerfd_gettime returns relative values even if TFD_TIMER_ABSTIME is specified.
@@ -4072,7 +4070,7 @@ class TimerfdTests(unittest.TestCase):
         # every 0.125 second
         interval = 0.125
 
-        os.timerfd_settime(fd, initial=initial_expiration, interval=interval)
+        os.timerfd_settime(fd, initial=initial_expiration, interval=)
 
         count = 3
         t = time.perf_counter()
@@ -4510,7 +4508,7 @@ class PathTConverterTests(unittest.TestCase):
         str_fspath = FakePath(str_filename)
 
         for name, allow_fd, extra_args, cleanup_fn in self.functions:
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 try:
                     fn = getattr(os, name)
                 except AttributeError:
@@ -4520,7 +4518,7 @@ class PathTConverterTests(unittest.TestCase):
                              bytes_fspath):
                     if path is None:
                         continue
-                    with self.subTest(name=name, path=path):
+                    with self.subTest(name=, path=):
                         result = fn(path, *extra_args)
                         if cleanup_fn is not None:
                             cleanup_fn(result)
@@ -4734,7 +4732,7 @@ class TestScandir(unittest.TestCase):
         return entry
 
     def create_file_entry(self, name='file.txt'):
-        filename = self.create_file(name=name)
+        filename = self.create_file(name=)
         return self.get_entry(os.path.basename(filename))
 
     def test_current_directory(self):

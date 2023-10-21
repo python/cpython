@@ -2035,7 +2035,7 @@ class JumpTestCase(unittest.TestCase):
             @wraps(func)
             def test(self):
                 self.run_test(func, jumpFrom, jumpTo, expected,
-                              error=error, event=event, decorated=True, warning=warning)
+                              error=, event=, decorated=True, warning=)
             return test
         return decorator
 
@@ -2047,7 +2047,7 @@ class JumpTestCase(unittest.TestCase):
             @wraps(func)
             def test(self):
                 self.run_async_test(func, jumpFrom, jumpTo, expected,
-                              error=error, event=event, decorated=True, warning=warning)
+                              error=, event=, decorated=True, warning=)
             return test
         return decorator
 

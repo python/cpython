@@ -61,7 +61,7 @@ class MetaPathFinder(InheritanceTests):
 
 (Frozen_MetaPathFinderInheritanceTests,
  Source_MetaPathFinderInheritanceTests
- ) = test_util.test_both(MetaPathFinder, abc=abc)
+ ) = test_util.test_both(MetaPathFinder, abc=)
 
 
 class PathEntryFinder(InheritanceTests):
@@ -71,7 +71,7 @@ class PathEntryFinder(InheritanceTests):
 
 (Frozen_PathEntryFinderInheritanceTests,
  Source_PathEntryFinderInheritanceTests
- ) = test_util.test_both(PathEntryFinder, abc=abc)
+ ) = test_util.test_both(PathEntryFinder, abc=)
 
 
 class ResourceLoader(InheritanceTests):
@@ -80,7 +80,7 @@ class ResourceLoader(InheritanceTests):
 
 (Frozen_ResourceLoaderInheritanceTests,
  Source_ResourceLoaderInheritanceTests
- ) = test_util.test_both(ResourceLoader, abc=abc)
+ ) = test_util.test_both(ResourceLoader, abc=)
 
 
 class InspectLoader(InheritanceTests):
@@ -90,7 +90,7 @@ class InspectLoader(InheritanceTests):
 
 (Frozen_InspectLoaderInheritanceTests,
  Source_InspectLoaderInheritanceTests
- ) = test_util.test_both(InspectLoader, abc=abc)
+ ) = test_util.test_both(InspectLoader, abc=)
 
 
 class ExecutionLoader(InheritanceTests):
@@ -100,7 +100,7 @@ class ExecutionLoader(InheritanceTests):
 
 (Frozen_ExecutionLoaderInheritanceTests,
  Source_ExecutionLoaderInheritanceTests
- ) = test_util.test_both(ExecutionLoader, abc=abc)
+ ) = test_util.test_both(ExecutionLoader, abc=)
 
 
 class FileLoader(InheritanceTests):
@@ -110,7 +110,7 @@ class FileLoader(InheritanceTests):
 
 (Frozen_FileLoaderInheritanceTests,
  Source_FileLoaderInheritanceTests
- ) = test_util.test_both(FileLoader, abc=abc)
+ ) = test_util.test_both(FileLoader, abc=)
 
 
 class SourceLoader(InheritanceTests):
@@ -120,7 +120,7 @@ class SourceLoader(InheritanceTests):
 
 (Frozen_SourceLoaderInheritanceTests,
  Source_SourceLoaderInheritanceTests
- ) = test_util.test_both(SourceLoader, abc=abc)
+ ) = test_util.test_both(SourceLoader, abc=)
 
 
 ##### Default return values ####################################################
@@ -342,7 +342,7 @@ class MetaPathFinderFindModuleTests:
 
 (Frozen_MPFFindModuleTests,
  Source_MPFFindModuleTests
- ) = test_util.test_both(MetaPathFinderFindModuleTests, abc=abc, util=util)
+ ) = test_util.test_both(MetaPathFinderFindModuleTests, abc=, util=)
 
 
 ##### Loader concrete methods ##################################################
@@ -395,7 +395,7 @@ class LoaderLoadModuleTests:
 
 (Frozen_LoaderLoadModuleTests,
  Source_LoaderLoadModuleTests
- ) = test_util.test_both(LoaderLoadModuleTests, abc=abc, util=util)
+ ) = test_util.test_both(LoaderLoadModuleTests, abc=, util=)
 
 
 ##### InspectLoader concrete methods ###########################################
@@ -529,8 +529,8 @@ class InspectLoaderLoadModuleTests:
  Source_ILLoadModuleTests
  ) = test_util.test_both(InspectLoaderLoadModuleTests,
                          InspectLoaderSubclass=SPLIT_IL,
-                         init=init,
-                         util=util)
+                         init=,
+                         util=)
 
 
 ##### ExecutionLoader concrete methods #########################################
@@ -657,7 +657,7 @@ class SourceLoader(SourceOnlyLoader):
         return path == self.bytecode_path
 
 
-SPLIT_SL = make_abc_subclasses(SourceLoader, util=util, init=init)
+SPLIT_SL = make_abc_subclasses(SourceLoader, util=, init=)
 
 
 class SourceLoaderTestHarness:
@@ -774,8 +774,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
 
 (Frozen_SourceOnlyLoaderTests,
  Source_SourceOnlyLoaderTests
- ) = test_util.test_both(SourceOnlyLoaderTests, util=util,
-                         loader_mock=SPLIT_SOL)
+ ) = test_util.test_both(SourceOnlyLoaderTests, util=, loader_mock=SPLIT_SOL)
 
 
 @unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is true")
@@ -870,7 +869,7 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
 
 (Frozen_SLBytecodeTests,
  SourceSLBytecodeTests
- ) = test_util.test_both(SourceLoaderBytecodeTests, init=init, util=util,
+ ) = test_util.test_both(SourceLoaderBytecodeTests, init=, util=,
                          loader_mock=SPLIT_SL)
 
 

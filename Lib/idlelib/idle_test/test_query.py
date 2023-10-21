@@ -308,7 +308,7 @@ class CustomRunEntryokTest(unittest.TestCase):
             dialog.restartvar.set(restart)
             for cli_args, result in ((None, None),
                                      (['my arg'], (['my arg'], restart))):
-                with self.subTest(restart=restart, cli_args=cli_args):
+                with self.subTest(restart=, cli_args=):
                     dialog.cli_args = cli_args
                     self.assertEqual(dialog.entry_ok(), result)
 

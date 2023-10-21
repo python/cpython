@@ -30,12 +30,7 @@ def configure_logger(logger, verbosity=VERBOSITY, *,
 
     # In case the provided logger is in a sub-package...
     if logger is not _logger:
-        configure_logger(
-            _logger,
-            verbosity,
-            logfile=logfile,
-            maxlevel=maxlevel,
-        )
+        configure_logger(_logger, verbosity, logfile=, maxlevel=)
 
 
 def hide_emit_errors():

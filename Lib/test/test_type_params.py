@@ -494,7 +494,7 @@ class TypeParamsAccessTest(unittest.TestCase):
             "type Alias6 = [T for _ in (1,)]",
         ]
         for case in error_cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError,
                                             r"Cannot use [a-z]+ in annotation scope within class scope"):
                     run_code(code.format(case))
@@ -993,7 +993,7 @@ class TypeParamsPickleTest(unittest.TestCase):
         ]
         for thing in things_to_test:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(thing=thing, proto=proto):
+                with self.subTest(thing=, proto=):
                     pickled = pickle.dumps(thing, protocol=proto)
                     self.assertEqual(pickle.loads(pickled), thing)
 
@@ -1019,7 +1019,7 @@ class TypeParamsPickleTest(unittest.TestCase):
         ]
         for thing in things_to_test:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(thing=thing, proto=proto):
+                with self.subTest(thing=, proto=):
                     pickled = pickle.dumps(thing, protocol=proto)
                     self.assertEqual(pickle.loads(pickled), thing)
 
@@ -1027,7 +1027,7 @@ class TypeParamsPickleTest(unittest.TestCase):
             real_class = getattr(klass, '__origin__', klass)
             thing = klass()
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(thing=thing, proto=proto):
+                with self.subTest(thing=, proto=):
                     pickled = pickle.dumps(thing, protocol=proto)
                     # These instances are not equal,
                     # but class check is good enough:
@@ -1060,7 +1060,7 @@ class TypeParamsWeakRefTest(unittest.TestCase):
             Generic[T],
         ]
         for case in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 weakref.ref(case)
 
 

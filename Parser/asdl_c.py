@@ -249,7 +249,7 @@ class SequenceDefVisitor(EmitVisitor):
 typedef struct {
     _ASDL_SEQ_HEAD
     %(ctype)s typed_elements[1];
-} asdl_%(name)s_seq;""" % locals(), reflow=False, depth=depth)
+} asdl_%(name)s_seq;""" % locals(), reflow=False, depth=)
         self.emit("", depth)
         self.emit("asdl_%(name)s_seq *_Py_asdl_%(name)s_seq_new(Py_ssize_t size, PyArena *arena);" % locals(), depth)
         self.emit("", depth)
@@ -545,7 +545,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("PyObject *tmp = NULL;", 1)
         self.emit("PyObject *tp;", 1)
         for a in sum.attributes:
-            self.visitAttributeDeclaration(a, name, sum=sum)
+            self.visitAttributeDeclaration(a, name, sum=)
         self.emit("", 0)
         # XXX: should we only do this for 'expr'?
         self.emit("if (obj == Py_None) {", 1)
@@ -553,7 +553,7 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("return 0;", 2)
         self.emit("}", 1)
         for a in sum.attributes:
-            self.visitField(a, name, sum=sum, depth=1)
+            self.visitField(a, name, sum=, depth=1)
         for t in sum.types:
             self.emit("tp = state->%s_type;" % (t.name,), 1)
             self.emit("isinstance = PyObject_IsInstance(obj, tp);", 1)
@@ -562,10 +562,10 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("}", 1)
             self.emit("if (isinstance) {", 1)
             for f in t.fields:
-                self.visitFieldDeclaration(f, t.name, sum=sum, depth=2)
+                self.visitFieldDeclaration(f, t.name, sum=, depth=2)
             self.emit("", 0)
             for f in t.fields:
-                self.visitField(f, t.name, sum=sum, depth=2)
+                self.visitField(f, t.name, sum=, depth=2)
             args = [f.name for f in t.fields] + [a.name for a in sum.attributes]
             self.emit("*out = %s(%s);" % (ast_func_name(t.name), self.buildArgs(args)), 2)
             self.emit("if (*out == NULL) goto failed;", 2)
@@ -590,14 +590,14 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("{", 0)
         self.emit("PyObject* tmp = NULL;", 1)
         for f in prod.fields:
-            self.visitFieldDeclaration(f, name, prod=prod, depth=1)
+            self.visitFieldDeclaration(f, name, prod=, depth=1)
         for a in prod.attributes:
-            self.visitFieldDeclaration(a, name, prod=prod, depth=1)
+            self.visitFieldDeclaration(a, name, prod=, depth=1)
         self.emit("", 0)
         for f in prod.fields:
-            self.visitField(f, name, prod=prod, depth=1)
+            self.visitField(f, name, prod=, depth=1)
         for a in prod.attributes:
-            self.visitField(a, name, prod=prod, depth=1)
+            self.visitField(a, name, prod=, depth=1)
         args = [f.name for f in prod.fields]
         args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (ast_func_name(name), self.buildArgs(args)), 1)
@@ -1593,12 +1593,12 @@ def write_header(mod, metadata, f):
         TypeDefVisitor(f),
         SequenceDefVisitor(f),
         StructVisitor(f),
-        metadata=metadata
+        metadata=
     )
     c.visit(mod)
 
     f.write("// Note: these macros affect function definitions, not only call sites.\n")
-    prototype_visitor = PrototypeVisitor(f, metadata=metadata)
+    prototype_visitor = PrototypeVisitor(f, metadata=)
     prototype_visitor.visit(mod)
 
     f.write(textwrap.dedent("""
@@ -1660,7 +1660,7 @@ def write_source(mod, metadata, f, internal_h_file):
         Obj2ModVisitor(f),
         ASTModuleVisitor(f),
         PartingShots(f),
-        metadata=metadata
+        metadata=
     )
     v.visit(mod)
 

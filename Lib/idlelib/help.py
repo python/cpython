@@ -200,7 +200,7 @@ class HelpText(Text):
         "Return name of first font family derived from names."
         for name in names:
             if name.lower() in (x.lower() for x in tkfont.names(root=self)):
-                font = tkfont.Font(name=name, exists=True, root=self)
+                font = tkfont.Font(name=, exists=True, root=self)
                 return font.actual()['family']
             elif name.lower() in (x.lower()
                                   for x in tkfont.families(root=self)):

@@ -229,7 +229,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.Popen(
             [sys.executable, "-c", code],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            env=env)
+            env=)
         stdout, stderr = p.communicate()
         if p.returncode == 1:
             # _Py_char2wchar() decoded b'\xff' as '\udcff' (b'\xff' is not
@@ -268,8 +268,7 @@ class CmdLineTest(unittest.TestCase):
             cmd = [sys.executable, '-c', code, arg]
             env = dict(os.environ)
             env['LC_ALL'] = 'C'
-            return subprocess.run(cmd, stdout=subprocess.PIPE,
-                                  text=True, env=env)
+            return subprocess.run(cmd, stdout=subprocess.PIPE, text=True, env=)
 
         def run_utf8_mode(arg):
             cmd = [sys.executable, '-X', 'utf8', '-c', code, arg]
@@ -288,7 +287,7 @@ class CmdLineTest(unittest.TestCase):
         test_args = [valid_utf8, invalid_utf8]
 
         for run_cmd in (run_default, run_c_locale, run_utf8_mode):
-            with self.subTest(run_cmd=run_cmd):
+            with self.subTest(run_cmd=):
                 for arg in test_args:
                     proc = run_cmd(arg)
                     self.assertEqual(proc.stdout.rstrip(), ascii(arg))
@@ -310,7 +309,7 @@ class CmdLineTest(unittest.TestCase):
         p = subprocess.Popen(
             (sys.executable, "-c", code, text),
             stdout=subprocess.PIPE,
-            env=env)
+            env=)
         stdout, stderr = p.communicate()
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
@@ -399,7 +398,7 @@ class CmdLineTest(unittest.TestCase):
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                env=env)
+                env=)
             # non-ascii, surrogate, non-BMP printable, non-BMP unprintable
             text = "a=\xe9 b=\uDC80 c=\U00010000 d=\U0010FFFF"
             p.stdin.write(ascii(text).encode('ascii') + b"\n")
@@ -416,7 +415,7 @@ class CmdLineTest(unittest.TestCase):
             stdin.seek(0)
             with subprocess.Popen(
                 (sys.executable, "-c", code),
-                stdin=stdin, stdout=subprocess.PIPE) as proc:
+                stdin=, stdout=subprocess.PIPE) as proc:
                 stdout, stderr = proc.communicate()
         self.assertEqual(stdout.rstrip(), expected)
 
@@ -489,7 +488,7 @@ class CmdLineTest(unittest.TestCase):
             for i, s in enumerate({streams}):
                 if getattr(sys, s) is not None:
                     os._exit(i + 1)
-            os._exit(42)""".format(streams=streams)
+            os._exit(42)""".format(streams=)
         def preexec():
             if 'stdin' in streams:
                 os.close(0)
@@ -658,7 +657,7 @@ class CmdLineTest(unittest.TestCase):
                 args[:0] = ['-X', 'pycache_prefix']
             elif opt is not None:
                 args[:0] = ['-X', f'pycache_prefix={opt}']
-            with self.subTest(envval=envval, opt=opt):
+            with self.subTest(envval=, opt=):
                 with os_helper.temp_cwd():
                     assert_python_ok(*args, **env)
 
@@ -676,7 +675,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               universal_newlines=True,
-                              env=env)
+                              env=)
         if check_exitcode:
             self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
@@ -757,7 +756,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               universal_newlines=True,
-                              env=env)
+                              env=)
         self.assertEqual(proc.returncode, 0, proc)
         return proc.stdout.rstrip()
 
@@ -795,7 +794,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               universal_newlines=True,
-                              env=env)
+                              env=)
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
@@ -823,7 +822,7 @@ class CmdLineTest(unittest.TestCase):
             ))
 
         for env_var, name in tests:
-            with self.subTest(env_var=env_var, name=name):
+            with self.subTest(env_var=, name=):
                 self.check_pythonmalloc(env_var, name)
 
     def test_pythondevmode_env(self):
@@ -834,13 +833,13 @@ class CmdLineTest(unittest.TestCase):
         args = (sys.executable, '-c', code)
 
         proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              universal_newlines=True, env=env)
+                              universal_newlines=True, env=)
         self.assertEqual(proc.stdout.rstrip(), 'False')
         self.assertEqual(proc.returncode, 0, proc)
 
         env['PYTHONDEVMODE'] = '1'
         proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              universal_newlines=True, env=env)
+                              universal_newlines=True, env=)
         self.assertEqual(proc.stdout.rstrip(), 'True')
         self.assertEqual(proc.returncode, 0, proc)
 
@@ -851,8 +850,7 @@ class CmdLineTest(unittest.TestCase):
         prefix, exe = os.path.split(sys.executable)
         executable = prefix + '\\.\\.\\.\\' + exe
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE,
-                              executable=executable)
+        proc = subprocess.run(args, stdout=subprocess.PIPE, executable=)
         self.assertEqual(proc.returncode, 0, proc)
         self.assertEqual(proc.stdout.strip(), b'0')
 

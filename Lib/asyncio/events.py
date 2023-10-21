@@ -262,7 +262,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def call_soon(self, callback, *args, context=None):
-        return self.call_later(0, callback, *args, context=context)
+        return self.call_later(0, callback, *args, context=)
 
     def call_later(self, delay, callback, *args, context=None):
         raise NotImplementedError
@@ -691,7 +691,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
                     stacklevel += 1
             import warnings
             warnings.warn('There is no current event loop',
-                          DeprecationWarning, stacklevel=stacklevel)
+                          DeprecationWarning, stacklevel=)
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:

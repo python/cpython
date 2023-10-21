@@ -68,7 +68,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_help(self):
         for opt in '-h', '--help':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 with support.captured_stdout() as out, \
                      self.assertRaises(SystemExit):
                     self.parse_args([opt])
@@ -80,7 +80,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
         # negative, zero and empty string are treated as "no timeout"
         for value in ('-1', '0', ''):
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 ns = self.parse_args([f'--timeout={value}'])
                 self.assertEqual(ns.timeout, None)
 
@@ -93,7 +93,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_start(self):
         for opt in '-S', '--start':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'foo'])
                 self.assertEqual(ns.start, 'foo')
                 self.checkError([opt], 'expected one argument')
@@ -112,26 +112,26 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_rerun(self):
         for opt in '-w', '--rerun', '--verbose2':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.rerun)
 
     def test_verbose3(self):
         for opt in '-W', '--verbose3':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.verbose3)
 
     def test_quiet(self):
         for opt in '-q', '--quiet':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.quiet)
                 self.assertEqual(ns.verbose, 0)
 
     def test_slowest(self):
         for opt in '-o', '--slowest':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.print_slow)
 
@@ -144,7 +144,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_randomize(self):
         for opt in ('-r', '--randomize'):
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
@@ -173,7 +173,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_fromfile(self):
         for opt in '-f', '--fromfile':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'foo'])
                 self.assertEqual(ns.fromfile, 'foo')
                 self.checkError([opt], 'expected one argument')
@@ -181,26 +181,26 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_exclude(self):
         for opt in '-x', '--exclude':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.exclude)
 
     def test_single(self):
         for opt in '-s', '--single':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
     def test_match(self):
         for opt in '-m', '--match':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'pattern'])
                 self.assertEqual(ns.match_tests, [('pattern', True)])
                 self.checkError([opt], 'expected one argument')
 
         for opt in '-i', '--ignore':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'pattern'])
                 self.assertEqual(ns.match_tests, [('pattern', False)])
                 self.checkError([opt], 'expected one argument')
@@ -230,7 +230,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, '-v'])
                 self.assertTrue(ns.failfast)
                 ns = self.parse_args([opt, '-W'])
@@ -239,7 +239,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_use(self):
         for opt in '-u', '--use':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'gui,network'])
                 self.assertEqual(ns.use_resources, ['gui', 'network'])
 
@@ -264,7 +264,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_memlimit(self):
         for opt in '-M', '--memlimit':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, '4G'])
                 self.assertEqual(ns.memlimit, '4G')
                 self.checkError([opt], 'expected one argument')
@@ -276,13 +276,13 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_runleaks(self):
         for opt in '-L', '--runleaks':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.runleaks)
 
     def test_huntrleaks(self):
         for opt in '-R', '--huntrleaks':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, ':'])
                 self.assertEqual(ns.huntrleaks, (5, 4, 'reflog.txt'))
                 ns = self.parse_args([opt, '6:'])
@@ -299,7 +299,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_multiprocess(self):
         for opt in '-j', '--multiprocess':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, '2'])
                 self.assertEqual(ns.use_mp, 2)
                 self.checkError([opt], 'expected one argument')
@@ -309,13 +309,13 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_coverage(self):
         for opt in '-T', '--coverage':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.trace)
 
     def test_coverdir(self):
         for opt in '-D', '--coverdir':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, 'foo'])
                 self.assertEqual(ns.coverdir,
                                  os.path.join(os_helper.SAVEDCWD, 'foo'))
@@ -323,13 +323,13 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_nocoverdir(self):
         for opt in '-N', '--nocoverdir':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertIsNone(ns.coverdir)
 
     def test_threshold(self):
         for opt in '-t', '--threshold':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt, '1000'])
                 self.assertEqual(ns.threshold, 1000)
                 self.checkError([opt], 'expected one argument')
@@ -337,7 +337,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_nowindows(self):
         for opt in '-n', '--nowindows':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 with contextlib.redirect_stderr(io.StringIO()) as stderr:
                     ns = self.parse_args([opt])
                 self.assertTrue(ns.nowindows)
@@ -346,7 +346,7 @@ class ParseArgsTestCase(unittest.TestCase):
 
     def test_forever(self):
         for opt in '-F', '--forever':
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.forever)
 
@@ -688,9 +688,9 @@ class BaseTestCase(unittest.TestCase):
 
         proc = subprocess.run(args,
                               text=True,
-                              input=input,
+                              input=,
                               stdout=subprocess.PIPE,
-                              env=env,
+                              env=,
                               **kw)
         if proc.returncode != exitcode:
             msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
@@ -773,7 +773,7 @@ class ProgramsTestCase(BaseTestCase):
                                   randomize=True, stats=len(self.tests))
 
     def run_tests(self, args, env=None):
-        output = self.run_python(args, env=env)
+        output = self.run_python(args, env=)
         self.check_output(output)
 
     def test_script_regrtest(self):
@@ -876,7 +876,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_test3(self):
                     pass
         """)
-        tests = [self.create_test(f'ok{i}', code=code) for i in range(1, 6)]
+        tests = [self.create_test(f'ok{i}', code=) for i in range(1, 6)]
 
         output = self.run_tests(*tests)
         self.check_executed_tests(output, tests,
@@ -888,7 +888,7 @@ class ArgsTestCase(BaseTestCase):
             raise unittest.SkipTest("nope")
         """)
         test_ok = self.create_test('ok')
-        test_skip = self.create_test('skip', code=code)
+        test_skip = self.create_test('skip', code=)
         tests = [test_ok, test_skip]
 
         output = self.run_tests(*tests)
@@ -906,7 +906,7 @@ class ArgsTestCase(BaseTestCase):
                     self.fail("bug")
         """)
         test_ok = self.create_test('ok')
-        test_failing = self.create_test('failing', code=code)
+        test_failing = self.create_test('failing', code=)
         tests = [test_ok, test_failing]
 
         output = self.run_tests(*tests, exitcode=EXITCODE_BAD_TEST)
@@ -977,7 +977,7 @@ class ArgsTestCase(BaseTestCase):
         timestamp = '1697839080'
         env = dict(os.environ, SOURCE_DATE_EPOCH=timestamp)
         output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
-                                env=env)
+                                env=)
         randseed = self.parse_random_seed(output)
         self.assertEqual(randseed, timestamp)
         self.check_line(output, 'TESTRANDOM: 520')
@@ -985,7 +985,7 @@ class ArgsTestCase(BaseTestCase):
         # check SOURCE_DATE_EPOCH (string)
         env = dict(os.environ, SOURCE_DATE_EPOCH='XYZ')
         output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
-                                env=env)
+                                env=)
         randseed = self.parse_random_seed(output)
         self.assertEqual(randseed, 'XYZ')
         self.check_line(output, 'TESTRANDOM: 22')
@@ -993,7 +993,7 @@ class ArgsTestCase(BaseTestCase):
         # check SOURCE_DATE_EPOCH (empty string): ignore the env var
         env = dict(os.environ, SOURCE_DATE_EPOCH='')
         output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
-                                env=env)
+                                env=)
         randseed = self.parse_random_seed(output)
         self.assertTrue(randseed.isdigit(), randseed)
 
@@ -1020,7 +1020,7 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests('--fromfile', filename)
         stats = len(tests)
-        self.check_executed_tests(output, tests, stats=stats)
+        self.check_executed_tests(output, tests, stats=)
 
         # test format '[2/7] test_opcodes'
         with open(filename, "w") as fp:
@@ -1028,7 +1028,7 @@ class ArgsTestCase(BaseTestCase):
                 print("[%s/%s] %s" % (index, len(tests), name), file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests, stats=stats)
+        self.check_executed_tests(output, tests, stats=)
 
         # test format 'test_opcodes'
         with open(filename, "w") as fp:
@@ -1036,7 +1036,7 @@ class ArgsTestCase(BaseTestCase):
                 print(name, file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests, stats=stats)
+        self.check_executed_tests(output, tests, stats=)
 
         # test format 'Lib/test/test_opcodes.py'
         with open(filename, "w") as fp:
@@ -1044,11 +1044,11 @@ class ArgsTestCase(BaseTestCase):
                 print('Lib/test/%s.py' % name, file=fp)
 
         output = self.run_tests('--fromfile', filename)
-        self.check_executed_tests(output, tests, stats=stats)
+        self.check_executed_tests(output, tests, stats=)
 
     def test_interrupted(self):
         code = TEST_INTERRUPTED
-        test = self.create_test('sigint', code=code)
+        test = self.create_test('sigint', code=)
         output = self.run_tests(test, exitcode=EXITCODE_INTERRUPTED)
         self.check_executed_tests(output, test, omitted=test,
                                   interrupted=True, stats=0)
@@ -1066,10 +1066,10 @@ class ArgsTestCase(BaseTestCase):
     def test_slowest_interrupted(self):
         # Issue #25373: test --slowest with an interrupted test
         code = TEST_INTERRUPTED
-        test = self.create_test("sigint", code=code)
+        test = self.create_test("sigint", code=)
 
         for multiprocessing in (False, True):
-            with self.subTest(multiprocessing=multiprocessing):
+            with self.subTest(multiprocessing=):
                 if multiprocessing:
                     args = ("--slowest", "-j2", test)
                 else:
@@ -1114,7 +1114,7 @@ class ArgsTestCase(BaseTestCase):
                     else:
                         builtins.__dict__['RUN'] = 1
         """)
-        test = self.create_test('forever', code=code)
+        test = self.create_test('forever', code=)
 
         # --forever
         output = self.run_tests('--forever', test, exitcode=EXITCODE_BAD_TEST)
@@ -1133,7 +1133,7 @@ class ArgsTestCase(BaseTestCase):
 
     @without_optimizer
     def check_leak(self, code, what, *, run_workers=False):
-        test = self.create_test('huntrleaks', code=code)
+        test = self.create_test('huntrleaks', code=)
 
         filename = 'reflog.txt'
         self.addCleanup(os_helper.unlink, filename)
@@ -1168,7 +1168,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_leak(self):
                     GLOBAL_LIST.append(object())
         """)
-        self.check_leak(code, 'references', run_workers=run_workers)
+        self.check_leak(code, 'references', run_workers=)
 
     def test_huntrleaks(self):
         self.check_huntrleaks(run_workers=False)
@@ -1208,7 +1208,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_method2(self):
                     pass
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # Test --list-cases
         all_methods = ['%s.Tests.test_method1' % testname,
@@ -1227,7 +1227,7 @@ class ArgsTestCase(BaseTestCase):
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
-        crash_test = self.create_test(name="crash", code=code)
+        crash_test = self.create_test(name="crash", code=)
 
         tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=EXITCODE_BAD_TEST)
@@ -1252,7 +1252,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_method4(self):
                     pass
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # only run a subset
         filename = os_helper.TESTFN
@@ -1288,7 +1288,7 @@ class ArgsTestCase(BaseTestCase):
         """)
         all_methods = ['test_method1', 'test_method2',
                        'test_method3', 'test_method4']
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # by default, all methods should be run
         output = self.run_tests("-v", testname)
@@ -1321,7 +1321,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_env_changed(self):
                     open("env_changed", "w").close()
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # don't fail by default
         output = self.run_tests(testname)
@@ -1356,7 +1356,7 @@ class ArgsTestCase(BaseTestCase):
                     # test that always fails
                     self.fail("bug")
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
@@ -1386,7 +1386,7 @@ class ArgsTestCase(BaseTestCase):
                         open(marker_filename, "w").close()
                         self.fail("bug")
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # FAILURE then SUCCESS => exit code 0
         output = self.run_tests("--rerun", testname, exitcode=0)
@@ -1421,7 +1421,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1444,7 +1444,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1466,7 +1466,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1488,7 +1488,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, [testname],
@@ -1510,7 +1510,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1532,7 +1532,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1554,7 +1554,7 @@ class ArgsTestCase(BaseTestCase):
                 async def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1575,7 +1575,7 @@ class ArgsTestCase(BaseTestCase):
                 async def test_success(self):
                     return
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--rerun", testname, exitcode=EXITCODE_BAD_TEST)
         self.check_executed_tests(output, testname,
@@ -1593,7 +1593,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_bug(self):
                     pass
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests(testname, "-m", "nosuchtest",
                                 exitcode=EXITCODE_NO_TESTS_RAN)
@@ -1609,7 +1609,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_skipped(self):
                     self.skipTest("because")
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests(testname)
         self.check_executed_tests(output, [testname],
@@ -1623,8 +1623,8 @@ class ArgsTestCase(BaseTestCase):
                 def test_bug(self):
                     pass
         """)
-        testname = self.create_test(code=code)
-        testname2 = self.create_test(code=code)
+        testname = self.create_test(code=)
+        testname2 = self.create_test(code=)
 
         output = self.run_tests(testname, testname2, "-m", "nosuchtest",
                                 exitcode=EXITCODE_NO_TESTS_RAN)
@@ -1640,7 +1640,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_bug(self):
                     pass
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
         other_code = textwrap.dedent("""
             import unittest
 
@@ -1675,7 +1675,7 @@ class ArgsTestCase(BaseTestCase):
                     obj.ref_cycle = obj
                     obj = None
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--fail-env-changed", testname,
                                 exitcode=EXITCODE_ENV_CHANGED)
@@ -1703,7 +1703,7 @@ class ArgsTestCase(BaseTestCase):
 
                     time.sleep(60 * 5)
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("-j2", "--timeout=1.0", testname,
                                 exitcode=EXITCODE_BAD_TEST)
@@ -1736,7 +1736,7 @@ class ArgsTestCase(BaseTestCase):
                         obj = None
                     self.assertEqual(stderr.getvalue(), '')
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--fail-env-changed", "-v", testname,
                                 exitcode=EXITCODE_ENV_CHANGED)
@@ -1769,7 +1769,7 @@ class ArgsTestCase(BaseTestCase):
                         thread.join()
                     self.assertEqual(stderr.getvalue(), '')
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--fail-env-changed", "-v", testname,
                                 exitcode=EXITCODE_ENV_CHANGED)
@@ -1801,7 +1801,7 @@ class ArgsTestCase(BaseTestCase):
                     # Fail with ENV CHANGED to see print_warning() log
                     support.environment_altered = True
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # Expect an output like:
         #
@@ -1812,7 +1812,7 @@ class ArgsTestCase(BaseTestCase):
                  r"Warning -- msg2: print_warning\n"
                  r"ok\n")
         for option in ("-v", "-W"):
-            with self.subTest(option=option):
+            with self.subTest(option=):
                 cmd = ["--fail-env-changed", option, testname]
                 output = self.run_tests(*cmd, exitcode=EXITCODE_ENV_CHANGED)
                 self.check_executed_tests(output, [testname],
@@ -1858,7 +1858,7 @@ class ArgsTestCase(BaseTestCase):
                     with open(filename, "wb") as fp:
                         fp.write(b'content')
         """)
-        testnames = [self.create_test(code=code) for _ in range(3)]
+        testnames = [self.create_test(code=) for _ in range(3)]
 
         output = self.run_tests("--fail-env-changed", "-v", "-j2", *testnames,
                                 exitcode=EXITCODE_ENV_CHANGED)
@@ -1911,7 +1911,7 @@ class ArgsTestCase(BaseTestCase):
             sys.stdout.buffer.write(corrupted_output)
             sys.stdout.buffer.flush()
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--fail-env-changed", "-v", "-j1", testname)
         self.check_executed_tests(output, [testname],
@@ -1949,7 +1949,7 @@ class ArgsTestCase(BaseTestCase):
                 tests.addTest(doctest.DocTestSuite())
                 return tests
         ''')
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         output = self.run_tests("--fail-env-changed", "-v", "-j1", testname,
                                 exitcode=EXITCODE_BAD_TEST)
@@ -1970,7 +1970,7 @@ class ArgsTestCase(BaseTestCase):
                     numbers = [random.randint(0, 1000) for _ in range(10)]
                     print(f"Random numbers: {numbers}")
         ''')
-        tests = [self.create_test(name=f'test_random{i}', code=code)
+        tests = [self.create_test(name=f'test_random{i}', code=)
                  for i in range(1, 3+1)]
 
         random_seed = 856_656_202
@@ -2007,7 +2007,7 @@ class ArgsTestCase(BaseTestCase):
                 def test_dev_mode(self):
                     self.assertTrue(sys.flags.dev_mode)
         """)
-        tests = [self.create_test(code=code) for _ in range(3)]
+        tests = [self.create_test(code=) for _ in range(3)]
 
         # Custom Python command: "python -X dev"
         python_cmd = [sys.executable, '-X', 'dev']
@@ -2061,7 +2061,7 @@ class ArgsTestCase(BaseTestCase):
                     self.assertEqual(not sys.flags.ignore_environment,
                                      use_environment)
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # Use directly subprocess to control the exact command line
         cmd = [sys.executable,
@@ -2076,7 +2076,7 @@ class ArgsTestCase(BaseTestCase):
 
     def test_add_python_opts(self):
         for opt in ("--fast-ci", "--slow-ci"):
-            with self.subTest(opt=opt):
+            with self.subTest(opt=):
                 self.check_add_python_opts(opt)
 
     # gh-76319: Raising SIGSEGV on Android may not cause a crash.
@@ -2100,7 +2100,7 @@ class ArgsTestCase(BaseTestCase):
                     with support.SuppressCrashReport():
                         faulthandler._sigsegv(True)
         """)
-        testname = self.create_test(code=code)
+        testname = self.create_test(code=)
 
         # Sanitizers must not handle SIGSEGV (ex: for test_enable_fd())
         env = dict(os.environ)
@@ -2109,7 +2109,7 @@ class ArgsTestCase(BaseTestCase):
 
         output = self.run_tests("-j1", testname,
                                 exitcode=EXITCODE_BAD_TEST,
-                                env=env)
+                                env=)
         self.check_executed_tests(output, testname,
                                   failed=[testname],
                                   stats=0, parallel=True)

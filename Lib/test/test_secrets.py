@@ -80,7 +80,7 @@ class Token_Tests(unittest.TestCase):
         # Test that token_* functions handle default size correctly.
         for func in (secrets.token_bytes, secrets.token_hex,
                      secrets.token_urlsafe):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 name = func.__name__
                 try:
                     func()
@@ -97,14 +97,14 @@ class Token_Tests(unittest.TestCase):
     def test_token_bytes(self):
         # Test token_bytes.
         for n in (1, 8, 17, 100):
-            with self.subTest(n=n):
+            with self.subTest(n=):
                 self.assertIsInstance(secrets.token_bytes(n), bytes)
                 self.assertEqual(len(secrets.token_bytes(n)), n)
 
     def test_token_hex(self):
         # Test token_hex.
         for n in (1, 12, 25, 90):
-            with self.subTest(n=n):
+            with self.subTest(n=):
                 s = secrets.token_hex(n)
                 self.assertIsInstance(s, str)
                 self.assertEqual(len(s), 2*n)
@@ -114,7 +114,7 @@ class Token_Tests(unittest.TestCase):
         # Test token_urlsafe.
         legal = string.ascii_letters + string.digits + '-_'
         for n in (1, 11, 28, 76):
-            with self.subTest(n=n):
+            with self.subTest(n=):
                 s = secrets.token_urlsafe(n)
                 self.assertIsInstance(s, str)
                 self.assertTrue(all(c in legal for c in s))

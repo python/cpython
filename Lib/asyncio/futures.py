@@ -227,7 +227,7 @@ class Future:
         scheduled with call_soon.
         """
         if self._state != _PENDING:
-            self._loop.call_soon(fn, self, context=context)
+            self._loop.call_soon(fn, self, context=)
         else:
             if context is None:
                 context = contextvars.copy_context()

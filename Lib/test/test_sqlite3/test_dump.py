@@ -84,7 +84,7 @@ class DumpTests(MemoryDatabaseMixin, unittest.TestCase):
                 ("t2", 4),
             )
             for table, seq in dataset:
-                with self.subTest(table=table, seq=seq):
+                with self.subTest(table=, seq=):
                     res = cu2.execute("""
                         SELECT "seq" FROM "sqlite_sequence" WHERE "name" == ?
                     """, (table,))

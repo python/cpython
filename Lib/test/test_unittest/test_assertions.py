@@ -207,7 +207,7 @@ class TestLongMessage(unittest.TestCase):
                 kwargs = {"msg": "oops"}
 
             with self.assertRaisesRegex(self.failureException,
-                                        expected_regex=expected_regex):
+                                        expected_regex=):
                 testMethod(*args, **kwargs)
 
     def testAssertTrue(self):

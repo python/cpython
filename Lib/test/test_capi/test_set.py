@@ -136,7 +136,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_set_contains(self):
         contains = _testcapi.set_contains
         for cls in (set, frozenset, set_subclass, frozenset_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls((1, 2))
                 self.assertTrue(contains(instance, 1))
                 self.assertFalse(contains(instance, 'missing'))
@@ -149,7 +149,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_add(self):
         add = _testcapi.set_add
         for cls in (set, set_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls((1, 2))
                 self.assertEqual(add(instance, 1), 0)
                 self.assertEqual(instance, {1, 2})
@@ -167,7 +167,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_discard(self):
         discard = _testcapi.set_discard
         for cls in (set, set_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls((1, 2))
                 self.assertEqual(discard(instance, 3), 0)
                 self.assertEqual(instance, {1, 2})
@@ -190,7 +190,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
         pop = _testcapi.set_pop
         orig = (1, 2)
         for cls in (set, set_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls(orig)
                 self.assertIn(pop(instance), orig)
                 self.assertEqual(len(instance), 1)
@@ -206,7 +206,7 @@ class TestSetCAPI(BaseSetTests, unittest.TestCase):
     def test_clear(self):
         clear = _testcapi.set_clear
         for cls in (set, set_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls((1, 2))
                 self.assertEqual(clear(instance), 0)
                 self.assertEqual(instance, set())
@@ -225,7 +225,7 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
             for it in ('ab', ('a', 'b'), ['a', 'b'],
                        set('ab'), set_subclass('ab'),
                        frozenset('ab'), frozenset_subclass('ab')):
-                with self.subTest(cls=cls, it=it):
+                with self.subTest(cls=, it=):
                     instance = cls()
                     self.assertEqual(update(instance, it), 0)
                     self.assertEqual(instance, {'a', 'b'})
@@ -246,7 +246,7 @@ class TestInternalCAPI(BaseSetTests, unittest.TestCase):
     def test_set_next_entry(self):
         set_next = _testinternalcapi.set_next_entry
         for cls in (set, set_subclass, frozenset, frozenset_subclass):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 instance = cls('abc')
                 pos = 0
                 items = []

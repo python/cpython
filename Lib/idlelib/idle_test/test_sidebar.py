@@ -265,7 +265,7 @@ class LineNumbersTest(unittest.TestCase):
 
         # Click on the second line.
         x, y = self.get_line_screen_position(2)
-        self.linenumber.sidebar_text.event_generate('<Button-1>', x=x, y=y)
+        self.linenumber.sidebar_text.event_generate('<Button-1>', x=, y=)
         self.linenumber.sidebar_text.update()
         self.root.update()
 
@@ -289,7 +289,7 @@ class LineNumbersTest(unittest.TestCase):
                 map(int, lerp(start_x, end_x, steps=11)),
                 map(int, lerp(start_y, end_y, steps=11)),
         ):
-            self.linenumber.sidebar_text.event_generate('<B1-Motion>', x=x, y=y)
+            self.linenumber.sidebar_text.event_generate('<B1-Motion>', x=, y=)
             self.root.update()
 
         self.linenumber.sidebar_text.event_generate('<ButtonRelease-1>',
@@ -693,7 +693,7 @@ class ShellSidebarTest(unittest.TestCase):
         # Scroll up using the <MouseWheel> event.
         # The meaning of delta is platform-dependent.
         delta = -1 if sys.platform == 'darwin' else 120
-        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=delta)
+        sidebar.canvas.event_generate('<MouseWheel>', x=0, y=0, delta=)
         yield
         if sys.platform != 'darwin':  # .update_idletasks() does not work.
             self.assertIsNone(text.dlineinfo(text.index(f'{last_lineno}.0')))

@@ -393,7 +393,7 @@ def synopsis(filename, cache={}):
             loader = loader_cls('__temp__', filename)
             # XXX We probably don't need to pass in the loader here.
             spec = importlib.util.spec_from_file_location('__temp__', filename,
-                                                          loader=loader)
+                                                          loader=)
             try:
                 module = importlib._bootstrap._load(spec)
             except:
@@ -435,7 +435,7 @@ def importfile(path):
     else:
         loader = importlib._bootstrap_external.SourceFileLoader(name, path)
     # XXX We probably don't need to pass in the loader here.
-    spec = importlib.util.spec_from_file_location(name, path, loader=loader)
+    spec = importlib.util.spec_from_file_location(name, path, loader=)
     try:
         return importlib._bootstrap._load(spec)
     except BaseException as err:
@@ -1410,7 +1410,7 @@ location listed above.
                         obj = getattr(object, name)
                     except AttributeError:
                         obj = homecls.__dict__[name]
-                    push(self.docother(obj, name, mod, maxlen=70, doc=doc) +
+                    push(self.docother(obj, name, mod, maxlen=70, doc=) +
                          '\n')
             return attrs
 
@@ -2063,13 +2063,13 @@ has the same effect as typing a particular string at the help> prompt.
             elif request in self.symbols: self.showsymbol(request)
             elif request in ['True', 'False', 'None']:
                 # special case these keywords since they are objects too
-                doc(eval(request), 'Help on %s:', is_cli=is_cli)
+                doc(eval(request), 'Help on %s:', is_cli=)
             elif request in self.keywords: self.showtopic(request)
             elif request in self.topics: self.showtopic(request)
-            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
-            else: doc(str, 'Help on %s:', output=self._output, is_cli=is_cli)
+            elif request: doc(request, 'Help on %s:', output=self._output, is_cli=)
+            else: doc(str, 'Help on %s:', output=self._output, is_cli=)
         elif isinstance(request, Helper): self()
-        else: doc(request, 'Help on %s:', output=self._output, is_cli=is_cli)
+        else: doc(request, 'Help on %s:', output=self._output, is_cli=)
         self.output.write('\n')
 
     def intro(self):
@@ -2209,7 +2209,7 @@ Please wait a moment while I gather a list of all available modules...
                     modules[modname] = 1
             def onerror(modname):
                 callback(None, modname, None)
-            ModuleScanner().run(callback, onerror=onerror)
+            ModuleScanner().run(callback, onerror=)
             self.list(modules.keys())
             self.output.write('''
 Enter any module name to get more help.  Or, type "modules spam" to search
@@ -2238,7 +2238,7 @@ class ModuleScanner:
                     if name.lower().find(key) >= 0:
                         callback(None, modname, desc)
 
-        for importer, modname, ispkg in pkgutil.walk_packages(onerror=onerror):
+        for importer, modname, ispkg in pkgutil.walk_packages(onerror=):
             if self.quit:
                 break
 
@@ -2289,7 +2289,7 @@ def apropos(key):
         pass
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore') # ignore problems during import
-        ModuleScanner().run(callback, key, onerror=onerror)
+        ModuleScanner().run(callback, key, onerror=)
 
 # --------------------------------------- enhanced web browser interface
 
@@ -2539,7 +2539,7 @@ def _url_handler(url, content_type="text/html"):
             warnings.filterwarnings('ignore') # ignore problems during import
             def onerror(modname):
                 pass
-            ModuleScanner().run(callback, key, onerror=onerror)
+            ModuleScanner().run(callback, key, onerror=)
 
         # format page
         def bltinlink(name):
@@ -2790,7 +2790,7 @@ def cli():
                 hostname = val
 
         if start_server:
-            browse(port, hostname=hostname, open_browser=open_browser)
+            browse(port, hostname=, open_browser=)
             return
 
         if not args: raise BadUsage
@@ -2843,7 +2843,7 @@ def cli():
     Write out the HTML documentation for a module to a file in the current
     directory.  If <name> contains a '{sep}', it is treated as a filename; if
     it names a directory, documentation is written for all the contents.
-""".format(cmd=cmd, sep=os.sep))
+""".format(cmd=, sep=os.sep))
 
 if __name__ == '__main__':
     cli()

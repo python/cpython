@@ -224,7 +224,7 @@ def _parse_next_local_static(m, srcinfo, anon_name, func, depth):
         kind = inline_kind
         name = inline_name or anon_name('inline-')
         # Immediately emit a forward declaration.
-        yield srcinfo.resolve(kind, name=name, data=None), depth
+        yield srcinfo.resolve(kind, name=, data=None), depth
 
         # un-inline the decl.  Note that it might not actually be inline.
         # We handle the case in the "maybe_inline_actual" branch.

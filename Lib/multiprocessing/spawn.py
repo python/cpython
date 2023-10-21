@@ -110,8 +110,7 @@ def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
                 False, parent_pid)
         else:
             source_process = None
-        new_handle = reduction.duplicate(pipe_handle,
-                                         source_process=source_process)
+        new_handle = reduction.duplicate(pipe_handle, source_process=)
         fd = msvcrt.open_osfhandle(new_handle, os.O_RDONLY)
         parent_sentinel = source_process
     else:
@@ -179,8 +178,8 @@ def get_preparation_data(name):
         sys_path[i] = process.ORIGINAL_DIR
 
     d.update(
-        name=name,
-        sys_path=sys_path,
+        name=,
+        sys_path=,
         sys_argv=sys.argv,
         orig_dir=process.ORIGINAL_DIR,
         dir=os.getcwd(),

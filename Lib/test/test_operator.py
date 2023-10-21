@@ -582,7 +582,7 @@ class OperatorPickleTestCase:
         a.t.u = A()
         a.t.u.v = 'V'
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 f = attrgetter('x')
                 f2 = self.copy(f, proto)
                 self.assertEqual(repr(f2), repr(f))
@@ -602,7 +602,7 @@ class OperatorPickleTestCase:
         itemgetter = self.module.itemgetter
         a = 'ABCDE'
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 f = itemgetter(2)
                 f2 = self.copy(f, proto)
                 self.assertEqual(repr(f2), repr(f))
@@ -624,7 +624,7 @@ class OperatorPickleTestCase:
                 return kwds['name'], kwds['self']
         a = A()
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 f = methodcaller('bar')
                 f2 = self.copy(f, proto)
                 self.assertEqual(repr(f2), repr(f))

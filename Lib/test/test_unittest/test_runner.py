@@ -113,7 +113,7 @@ class TestCleanUp(unittest.TestCase):
 
         test = TestableTest('testNothing')
         result = unittest.TestResult()
-        outcome = test._outcome = _Outcome(result=result)
+        outcome = test._outcome = _Outcome(result=)
 
         CleanUpExc = CustomError('foo')
         exc2 = CustomError('bar')
@@ -338,7 +338,7 @@ class TestClassCleanup(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
                 ordering.append('setUpClass')
-                cls.addClassCleanup(cleanup, ordering, blowUp=blowUp)
+                cls.addClassCleanup(cleanup, ordering, blowUp=)
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -367,7 +367,7 @@ class TestClassCleanup(unittest.TestCase):
             @classmethod
             def setUpClass(cls):
                 ordering.append('setUpClass')
-                cls.addClassCleanup(cleanup, ordering, blowUp=blowUp)
+                cls.addClassCleanup(cleanup, ordering, blowUp=)
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -841,7 +841,7 @@ class TestModuleCleanUp(unittest.TestCase):
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
-                unittest.addModuleCleanup(cleanup, ordering, blowUp=blowUp)
+                unittest.addModuleCleanup(cleanup, ordering, blowUp=)
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -882,7 +882,7 @@ class TestModuleCleanUp(unittest.TestCase):
             @staticmethod
             def setUpModule():
                 ordering.append('setUpModule')
-                unittest.addModuleCleanup(cleanup, ordering, blowUp=blowUp)
+                unittest.addModuleCleanup(cleanup, ordering, blowUp=)
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -1392,7 +1392,7 @@ class Test_TextTestRunner(unittest.TestCase):
     def test_durations(self):
         def run(test, *, expect_durations=True):
             stream = BufferedWriter()
-            runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
+            runner = unittest.TextTestRunner(stream=, durations=5, verbosity=2)
             result = runner.run(test)
             self.assertEqual(result.durations, 5)
             stream.flush()

@@ -7,7 +7,7 @@ class PLexer:
     def __init__(self, src: str, filename: str):
         self.src = src
         self.filename = filename
-        self.tokens = list(lx.tokenize(self.src, filename=filename))
+        self.tokens = list(lx.tokenize(self.src, filename=))
         self.pos = 0
 
     def getpos(self) -> int:
@@ -40,13 +40,13 @@ class PLexer:
 
     def peek(self, raw: bool = False) -> Token | None:
         # Return next token without advancing position
-        tok = self.next(raw=raw)
+        tok = self.next(raw=)
         self.backup()
         return tok
 
     def maybe(self, kind: str, raw: bool = False) -> Token | None:
         # Return next token without advancing position if kind matches
-        tok = self.peek(raw=raw)
+        tok = self.peek(raw=)
         if tok and tok.kind == kind:
             return tok
         return None

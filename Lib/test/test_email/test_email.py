@@ -2809,7 +2809,7 @@ class TestIdempotent(TestEmailBase):
         eq = self.ndiffAssertEqual
         s = StringIO()
         g = Generator(s, maxheaderlen=0)
-        g.flatten(msg, unixfrom=unixfrom)
+        g.flatten(msg, unixfrom=)
         eq(text, s.getvalue())
 
     def test_parse_text_message(self):
@@ -3062,7 +3062,7 @@ class TestMiscellaneous(TestEmailBase):
             'Friday, 19-Nov- 16:14:55 EST',
         ]
         for dtstr in invalid_dates:
-            with self.subTest(dtstr=dtstr):
+            with self.subTest(dtstr=):
                 self.assertIsNone(utils.parsedate(dtstr))
                 self.assertIsNone(utils.parsedate_tz(dtstr))
         # Not a part of the spec but, but this has historically worked:
@@ -3400,7 +3400,7 @@ Foo
         eq(charsets[0], 'utf-8')
         charset = Charset(charsets[0])
         eq(charset.get_body_encoding(), 'base64')
-        msg.set_payload(b'hello world', charset=charset)
+        msg.set_payload(b'hello world', charset=)
         eq(msg.get_payload(), 'aGVsbG8gd29ybGQ=\n')
         eq(msg.get_payload(decode=True), b'hello world')
         eq(msg['content-transfer-encoding'], 'base64')
@@ -3412,7 +3412,7 @@ Foo
         eq(charsets[0], 'us-ascii')
         charset = Charset(charsets[0])
         eq(charset.get_body_encoding(), encoders.encode_7or8bit)
-        msg.set_payload('hello world', charset=charset)
+        msg.set_payload('hello world', charset=)
         eq(msg.get_payload(), 'hello world')
         eq(msg['content-transfer-encoding'], '7bit')
 
@@ -4329,7 +4329,7 @@ class BaseTestBytesGeneratorIdempotent:
     def _idempotent(self, msg, data, unixfrom=False):
         b = BytesIO()
         g = email.generator.BytesGenerator(b, maxheaderlen=0)
-        g.flatten(msg, unixfrom=unixfrom, linesep=self.linesep)
+        g.flatten(msg, unixfrom=, linesep=self.linesep)
         self.assertEqual(data, b.getvalue())
 
 
@@ -4524,7 +4524,7 @@ class TestQuopri(unittest.TestCase):
         if eol is None:
             decoded = quoprimime.decode(encoded)
         else:
-            decoded = quoprimime.decode(encoded, eol=eol)
+            decoded = quoprimime.decode(encoded, eol=)
         self.assertEqual(decoded, expected_decoded)
 
     def test_decode_null_word(self):
@@ -5553,7 +5553,7 @@ Content-Transfer-Encoding: 8bit
 ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 """]
         for m in messages:
-            with self.subTest(m=m):
+            with self.subTest(m=):
                 msg = email.message_from_string(m)
 
 

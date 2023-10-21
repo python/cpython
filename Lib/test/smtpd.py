@@ -123,7 +123,7 @@ class SMTPChannel(asynchat.async_chat):
 
     def __init__(self, server, conn, addr, data_size_limit=DATA_SIZE_DEFAULT,
                  map=None, enable_SMTPUTF8=False, decode_data=False):
-        asynchat.async_chat.__init__(self, conn, map=map)
+        asynchat.async_chat.__init__(self, conn, map=)
         self.smtp_server = server
         self.conn = conn
         self.addr = addr
@@ -631,7 +631,7 @@ class SMTPServer(asyncore.dispatcher):
         if enable_SMTPUTF8 and decode_data:
             raise ValueError("decode_data and enable_SMTPUTF8 cannot"
                              " be set to True at the same time")
-        asyncore.dispatcher.__init__(self, map=map)
+        asyncore.dispatcher.__init__(self, map=)
         try:
             gai_results = socket.getaddrinfo(*localaddr,
                                              type=socket.SOCK_STREAM)

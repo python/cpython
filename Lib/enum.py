@@ -733,12 +733,12 @@ class EnumType(type):
                     )
         return cls._create_(
                 class_name=value,
-                names=names,
-                module=module,
-                qualname=qualname,
-                type=type,
-                start=start,
-                boundary=boundary,
+                names=,
+                module=,
+                qualname=,
+                type=,
+                start=,
+                boundary=,
                 )
 
     def __contains__(cls, value):
@@ -884,7 +884,7 @@ class EnumType(type):
         if qualname is not None:
             classdict['__qualname__'] = qualname
 
-        return metacls.__new__(metacls, class_name, bases, classdict, boundary=boundary)
+        return metacls.__new__(metacls, class_name, bases, classdict, boundary=)
 
     def _convert_(cls, name, module, filter, source=None, *, boundary=None, as_global=False):
         """
@@ -1698,7 +1698,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
         # things break (such as pickle)
         # however, if the method is defined in the Enum itself, don't replace
         # it
-        enum_class = type(cls_name, (etype, ), body, boundary=boundary, _simple=True)
+        enum_class = type(cls_name, (etype, ), body, boundary=, _simple=True)
         for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
             if name not in body:
                 # check for mixin overrides before replacing
@@ -2047,7 +2047,7 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
     except TypeError:
         # unless some values aren't comparable, in which case sort by name
         members.sort(key=lambda t: t[0])
-    cls = etype(name, members, module=module, boundary=boundary or KEEP)
+    cls = etype(name, members, module=, boundary=boundary or KEEP)
     return cls
 
 _stdlib_enums = IntEnum, StrEnum, IntFlag

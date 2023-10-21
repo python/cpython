@@ -30,7 +30,7 @@ class StdIOBuffer(io.TextIOWrapper):
     def __init__(self, initial_value='', newline='\n'):
         initial_value = initial_value.encode('utf-8')
         super().__init__(io.BufferedWriter(io.BytesIO(initial_value)),
-                         'utf-8', newline=newline)
+                         'utf-8', newline=)
 
     def getvalue(self):
         self.flush()
@@ -55,7 +55,7 @@ class StdStreamTest(unittest.TestCase):
             functools.partial(parser.parse_args, ['-h'])
         ):
             with (
-                self.subTest(func=func),
+                self.subTest(func=),
                 contextlib.redirect_stdout(None),
                 # argparse uses stderr as a fallback
                 StdIOBuffer() as mocked_stderr,
@@ -2171,7 +2171,7 @@ class TestAddSubparsers(TestCase):
         # create a parser with a subparsers argument
         if prefix_chars:
             parser = ErrorRaisingArgumentParser(
-                prog='PROG', description='main description', prefix_chars=prefix_chars)
+                prog='PROG', description='main description', prefix_chars=)
             parser.add_argument(
                 prefix_chars[0] * 2 + 'foo', action='store_true', help='foo help')
         else:
@@ -2662,7 +2662,7 @@ class TestParentParsers(TestCase):
 
     def test_single_granparent_mutex(self):
         parents = [self.ab_mutex_parent]
-        parser = ErrorRaisingArgumentParser(add_help=False, parents=parents)
+        parser = ErrorRaisingArgumentParser(add_help=False, parents=)
         parser = ErrorRaisingArgumentParser(parents=[parser])
         self._test_mutex_ab(parser.parse_args)
 
@@ -2678,13 +2678,13 @@ class TestParentParsers(TestCase):
 
     def test_multiple_parents(self):
         parents = [self.abcd_parent, self.wxyz_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(parents=)
         self.assertEqual(parser.parse_args('--d 1 --w 2 3 4'.split()),
                          NS(a='3', b=None, d='1', w='2', y=None, z='4'))
 
     def test_multiple_parents_mutex(self):
         parents = [self.ab_mutex_parent, self.wxyz_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(parents=)
         self.assertEqual(parser.parse_args('-a --w 2 3'.split()),
                          NS(a=True, b=False, w='2', y=None, z='3'))
         self.assertArgumentParserError(
@@ -2706,7 +2706,7 @@ class TestParentParsers(TestCase):
 
     def test_same_argument_name_parents(self):
         parents = [self.wxyz_parent, self.z_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(parents=)
         self.assertEqual(parser.parse_args('1 2'.split()),
                          NS(w=None, y=None, z='2'))
 
@@ -2722,11 +2722,11 @@ class TestParentParsers(TestCase):
         parser = ErrorRaisingArgumentParser()
         subparsers = parser.add_subparsers()
         parents = [self.ab_mutex_parent]
-        abc_parser = subparsers.add_parser('foo', parents=parents)
+        abc_parser = subparsers.add_parser('foo', parents=)
         c_group = abc_parser.add_argument_group('c_group')
         c_group.add_argument('c')
         parents = [self.wxyz_parent, self.ab_mutex_parent]
-        wxyzabe_parser = subparsers.add_parser('bar', parents=parents)
+        wxyzabe_parser = subparsers.add_parser('bar', parents=)
         wxyzabe_parser.add_argument('e')
         self.assertEqual(parser.parse_args('foo -a 4'.split()),
                          NS(a=True, b=False, c='4'))
@@ -2739,7 +2739,7 @@ class TestParentParsers(TestCase):
 
     def test_parent_help(self):
         parents = [self.abcd_parent, self.wxyz_parent]
-        parser = ErrorRaisingArgumentParser(parents=parents)
+        parser = ErrorRaisingArgumentParser(parents=)
         parser_help = parser.format_help()
         progname = self.main_program
         self.assertEqual(parser_help, textwrap.dedent('''\
@@ -2895,7 +2895,7 @@ class TestMutuallyExclusiveSimple(MEMixin, TestCase):
 
     def get_parser(self, required=None):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('--bar', help='bar help')
         group.add_argument('--baz', nargs='?', const='Z', help='baz help')
         return parser
@@ -2932,7 +2932,7 @@ class TestMutuallyExclusiveLong(MEMixin, TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('--abcde', help='abcde help')
         parser.add_argument('--fghij', help='fghij help')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('--klmno', help='klmno help')
         group.add_argument('--pqrst', help='pqrst help')
         return parser
@@ -2973,7 +2973,7 @@ class TestMutuallyExclusiveFirstSuppressed(MEMixin, TestCase):
 
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('-x', help=argparse.SUPPRESS)
         group.add_argument('-y', action='store_false', help='y help')
         return parser
@@ -3006,7 +3006,7 @@ class TestMutuallyExclusiveManySuppressed(MEMixin, TestCase):
 
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         add = group.add_argument
         add('--spam', action='store_true', help=argparse.SUPPRESS)
         add('--badger', action='store_false', help=argparse.SUPPRESS)
@@ -3042,7 +3042,7 @@ class TestMutuallyExclusiveOptionalAndPositional(MEMixin, TestCase):
 
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('--foo', action='store_true', help='FOO')
         group.add_argument('--spam', help='SPAM')
         group.add_argument('badger', nargs='*', default='X', help='BADGER')
@@ -3088,7 +3088,7 @@ class TestMutuallyExclusiveOptionalsMixed(MEMixin, TestCase):
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('-x', action='store_true', help='x help')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('-a', action='store_true', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         parser.add_argument('-y', action='store_true', help='y help')
@@ -3132,7 +3132,7 @@ class TestMutuallyExclusiveInGroup(MEMixin, TestCase):
         titled_group = parser.add_argument_group(
             title='Titled group', description='Group description')
         mutex_group = \
-            titled_group.add_mutually_exclusive_group(required=required)
+            titled_group.add_mutually_exclusive_group(required=)
         mutex_group.add_argument('--bar', help='bar help')
         mutex_group.add_argument('--baz', help='baz help')
         return parser
@@ -3171,7 +3171,7 @@ class TestMutuallyExclusiveOptionalsAndPositionalsMixed(MEMixin, TestCase):
         parser = ErrorRaisingArgumentParser(prog='PROG')
         parser.add_argument('x', help='x help')
         parser.add_argument('-y', action='store_true', help='y help')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('a', nargs='?', help='a help')
         group.add_argument('-b', action='store_true', help='b help')
         group.add_argument('-c', action='store_true', help='c help')
@@ -3215,17 +3215,17 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
 
     def get_parser(self, required):
         parser = ErrorRaisingArgumentParser(prog='PROG')
-        group = parser.add_mutually_exclusive_group(required=required)
+        group = parser.add_mutually_exclusive_group(required=)
         group.add_argument('-a')
         group.add_argument('-b')
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            group2 = group.add_mutually_exclusive_group(required=required)
+            group2 = group.add_mutually_exclusive_group(required=)
         group2.add_argument('-c')
         group2.add_argument('-d')
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
-            group3 = group2.add_mutually_exclusive_group(required=required)
+            group3 = group2.add_mutually_exclusive_group(required=)
         group3.add_argument('-e')
         group3.add_argument('-f')
         return parser
@@ -3262,7 +3262,7 @@ class TestMutuallyExclusiveNested(MEMixin, TestCase):
 class MEPBase(object):
 
     def get_parser(self, required=None):
-        parent = super(MEPBase, self).get_parser(required=required)
+        parent = super(MEPBase, self).get_parser(required=)
         parser = ErrorRaisingArgumentParser(
             prog=parent.prog, add_help=False, parents=[parent])
         return parser
@@ -4683,7 +4683,7 @@ class TestHelpSubparsersOrdering(HelpTestCase):
                            description='display some subcommands')
     argument_signatures = [Sig('-v', '--version', action='version', version='0.1')]
 
-    subparsers_signatures = [Sig(name=name)
+    subparsers_signatures = [Sig(name=)
                              for name in ('a', 'b', 'c', 'd', 'e')]
 
     usage = '''\
@@ -4719,7 +4719,7 @@ class TestHelpSubparsersWithHelpOrdering(HelpTestCase):
                        ('e', 'e subcommand help'),
                        )
 
-    subparsers_signatures = [Sig(name=name, help=help)
+    subparsers_signatures = [Sig(name=, help=)
                              for name, help in subcommand_data]
 
     usage = '''\
@@ -4804,7 +4804,7 @@ class TestInvalidArgumentConstructors(TestCase):
     def test_missing_destination(self):
         self.assertTypeError()
         for action in ['append', 'store']:
-            self.assertTypeError(action=action)
+            self.assertTypeError(action=)
 
     def test_invalid_option_strings(self):
         self.assertValueError('--')
@@ -4839,37 +4839,35 @@ class TestInvalidArgumentConstructors(TestCase):
                        'append_const', 'count']:
             for attrs in [dict(type=int), dict(nargs='+'),
                           dict(choices='ab')]:
-                self.assertTypeError('-x', action=action, **attrs)
+                self.assertTypeError('-x', action=, **attrs)
 
     def test_no_argument_no_const_actions(self):
         # options with zero arguments
         for action in ['store_true', 'store_false', 'count']:
 
             # const is always disallowed
-            self.assertTypeError('-x', const='foo', action=action)
+            self.assertTypeError('-x', const='foo', action=)
 
             # nargs is always disallowed
-            self.assertTypeError('-x', nargs='*', action=action)
+            self.assertTypeError('-x', nargs='*', action=)
 
     def test_more_than_one_argument_actions(self):
         for action in ['store', 'append']:
 
             # nargs=0 is disallowed
-            self.assertValueError('-x', nargs=0, action=action)
-            self.assertValueError('spam', nargs=0, action=action)
+            self.assertValueError('-x', nargs=0, action=)
+            self.assertValueError('spam', nargs=0, action=)
 
             # const is disallowed with non-optional arguments
             for nargs in [1, '*', '+']:
-                self.assertValueError('-x', const='foo',
-                                      nargs=nargs, action=action)
-                self.assertValueError('spam', const='foo',
-                                      nargs=nargs, action=action)
+                self.assertValueError('-x', const='foo', nargs=, action=)
+                self.assertValueError('spam', const='foo', nargs=, action=)
 
     def test_required_const_actions(self):
         for action in ['store_const', 'append_const']:
 
             # nargs is always disallowed
-            self.assertTypeError('-x', nargs='+', action=action)
+            self.assertTypeError('-x', nargs='+', action=)
 
     def test_parsers_action_missing_params(self):
         self.assertTypeError('command', action='parsers')
@@ -5514,12 +5512,12 @@ class TestAddArgumentMetavar(TestCase):
 
     def do_test_no_exception(self, nargs, metavar):
         parser = argparse.ArgumentParser()
-        parser.add_argument("--foo", nargs=nargs, metavar=metavar)
+        parser.add_argument("--foo", nargs=, metavar=)
 
     def do_test_exception(self, nargs, metavar):
         parser = argparse.ArgumentParser()
         with self.assertRaises(ValueError) as cm:
-            parser.add_argument("--foo", nargs=nargs, metavar=metavar)
+            parser.add_argument("--foo", nargs=, metavar=)
         self.assertEqual(cm.exception.args[0], self.EXPECTED_MESSAGE)
 
     # Unit tests for different values of metavar when nargs=None
@@ -5686,13 +5684,13 @@ class TestInvalidNargs(TestCase):
     def do_test_range_exception(self, nargs):
         parser = argparse.ArgumentParser()
         with self.assertRaises(ValueError) as cm:
-            parser.add_argument("--foo", nargs=nargs)
+            parser.add_argument("--foo", nargs=)
         self.assertEqual(cm.exception.args[0], self.EXPECTED_RANGE_MESSAGE)
 
     def do_test_invalid_exception(self, nargs):
         parser = argparse.ArgumentParser()
         with self.assertRaises(ValueError) as cm:
-            parser.add_argument("--foo", nargs=nargs)
+            parser.add_argument("--foo", nargs=)
         self.assertEqual(cm.exception.args[0], self.EXPECTED_INVALID_MESSAGE)
 
     # Unit tests for different values of nargs
@@ -5734,7 +5732,7 @@ class TestWrappingMetavar(TestCase):
         # this metavar was triggering library assertion errors due to usage
         # message formatting incorrectly splitting on the ] chars within
         metavar = '<http[s]://example:1234>'
-        self.parser.add_argument('--proxy', metavar=metavar)
+        self.parser.add_argument('--proxy', metavar=)
 
     def test_help_with_metavar(self):
         help_text = self.parser.format_help()

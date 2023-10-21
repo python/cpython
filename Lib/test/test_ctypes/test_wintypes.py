@@ -49,11 +49,11 @@ class WinTypesTest(unittest.TestCase):
     def test_signedness(self):
         for ctype in (wintypes.BYTE, wintypes.WORD, wintypes.DWORD,
                      wintypes.BOOLEAN, wintypes.UINT, wintypes.ULONG):
-            with self.subTest(ctype=ctype):
+            with self.subTest(ctype=):
                 self.assertIsUnsigned(ctype)
 
         for ctype in (wintypes.BOOL, wintypes.INT, wintypes.LONG):
-            with self.subTest(ctype=ctype):
+            with self.subTest(ctype=):
                 self.assertIsSigned(ctype)
 
 

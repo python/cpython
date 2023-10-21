@@ -126,7 +126,7 @@ def _tempfile(
     # Not using tempfile.NamedTemporaryFile as it leads to deeper 'try'
     # blocks due to the need to close the temporary file to work on Windows
     # properly.
-    fd, raw_path = tempfile.mkstemp(suffix=suffix)
+    fd, raw_path = tempfile.mkstemp(suffix=)
     try:
         try:
             os.write(fd, reader())

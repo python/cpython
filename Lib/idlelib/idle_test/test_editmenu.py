@@ -38,7 +38,7 @@ class PasteTest(unittest.TestCase):
         "Test pasting into text with and without a selection."
         text = self.text
         for tag, ans in ('', 'onetwo\n'), ('sel', 'two\n'):
-            with self.subTest(tag=tag, ans=ans):
+            with self.subTest(tag=, ans=):
                 text.delete('1.0', 'end')
                 text.insert('1.0', 'one', tag)
                 text.event_generate('<<Paste>>')
@@ -50,7 +50,7 @@ class PasteTest(unittest.TestCase):
         # range for 'no selection'.  Live widget works fine.
         for entry in self.entry, self.tentry:
             for end, ans in (0, 'onetwo'), ('end', 'two'):
-                with self.subTest(entry=entry, end=end, ans=ans):
+                with self.subTest(entry=, end=, ans=):
                     entry.delete(0, 'end')
                     entry.insert(0, 'one')
                     entry.select_range(0, end)
@@ -62,7 +62,7 @@ class PasteTest(unittest.TestCase):
         # See note above for entry.
         spin = self.spin
         for end, ans in (0, 'onetwo'), ('end', 'two'):
-            with self.subTest(end=end, ans=ans):
+            with self.subTest(end=, ans=):
                 spin.delete(0, 'end')
                 spin.insert(0, 'one')
                 spin.selection('range', 0, end)  # see note

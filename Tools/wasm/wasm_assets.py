@@ -134,7 +134,7 @@ def create_stdlib_zip(
         args.wasm_stdlib_zip,
         mode="w",
         compression=args.compression,
-        optimize=optimize,
+        optimize=,
     ) as pzf:
         if args.compresslevel is not None:
             pzf.compresslevel = args.compresslevel
@@ -145,7 +145,7 @@ def create_stdlib_zip(
                 continue
             if entry.name.endswith(".py") or entry.is_dir():
                 # writepy() writes .pyc files (bytecode).
-                pzf.writepy(entry, filterfunc=filterfunc)
+                pzf.writepy(entry, filterfunc=)
 
 
 def detect_extension_modules(args: argparse.Namespace) -> Dict[str, bool]:

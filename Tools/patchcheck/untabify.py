@@ -44,7 +44,7 @@ def process(filename, tabsize, verbose=True):
         os.rename(filename, backup)
     except OSError:
         pass
-    with open(filename, "w", encoding=encoding) as f:
+    with open(filename, "w", encoding=) as f:
         f.write(newtext)
     if verbose:
         print(filename)

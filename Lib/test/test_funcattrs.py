@@ -122,7 +122,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
 
         cell_obj = types.CellType()
         msg = "shouldn't be able to read an empty cell"
-        with self.assertRaises(ValueError, msg=msg):
+        with self.assertRaises(ValueError, msg=):
             cell_obj.cell_contents
 
     def test_empty_cell(self):
@@ -199,7 +199,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertIsInstance(T, typing.TypeVar)
         self.assertEqual(generic.__type_params__, (T,))
         for func in (not_generic, lambda_):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 self.assertEqual(func.__type_params__, ())
                 with self.assertRaises(TypeError):
                     del func.__type_params__

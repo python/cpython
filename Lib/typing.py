@@ -162,7 +162,7 @@ def _type_convert(arg, module=None, *, allow_special_forms=False):
     if arg is None:
         return type(None)
     if isinstance(arg, str):
-        return ForwardRef(arg, module=module, is_class=allow_special_forms)
+        return ForwardRef(arg, module=, is_class=allow_special_forms)
     return arg
 
 
@@ -184,7 +184,7 @@ def _type_check(arg, msg, is_argument=True, module=None, *, allow_special_forms=
         if is_argument:
             invalid_generic_forms += (Final,)
 
-    arg = _type_convert(arg, module=module, allow_special_forms=allow_special_forms)
+    arg = _type_convert(arg, module=, allow_special_forms=)
     if (isinstance(arg, _GenericAlias) and
             arg.__origin__ in invalid_generic_forms):
         raise TypeError(f"{arg} is not valid as type argument")
@@ -357,7 +357,7 @@ def _tp_cache(func=None, /, *, typed=False):
         # This breaks a reference that can be problematic when combined with
         # C API extensions that leak references to types. See GH-98253.
 
-        cache = functools.lru_cache(typed=typed)(func)
+        cache = functools.lru_cache(typed=)(func)
         _caches[func] = cache
         _cleanups.append(cache.cache_clear)
         del cache
@@ -1201,7 +1201,7 @@ class _GenericAlias(_BaseGenericAlias, _root=True):
     #     TypeVar[bool]
 
     def __init__(self, origin, args, *, inst=True, name=None):
-        super().__init__(origin, inst=inst, name=name)
+        super().__init__(origin, inst=, name=)
         if not isinstance(args, tuple):
             args = (args,)
         self.__args__ = tuple(... if a is _TypingEllipsis else
@@ -1400,7 +1400,7 @@ class _SpecialGenericAlias(_NotIterable, _BaseGenericAlias, _root=True):
     def __init__(self, origin, nparams, *, inst=True, name=None):
         if name is None:
             name = origin.__name__
-        super().__init__(origin, inst=inst, name=name)
+        super().__init__(origin, inst=, name=)
         self._nparams = nparams
         if origin.__module__ == 'builtins':
             self.__doc__ = f'A generic version of {origin.__qualname__}.'
@@ -1444,7 +1444,7 @@ class _DeprecatedGenericAlias(_SpecialGenericAlias, _root=True):
     def __init__(
         self, origin, nparams, *, removal_version, inst=True, name=None
     ):
-        super().__init__(origin, nparams, inst=inst, name=name)
+        super().__init__(origin, nparams, inst=, name=)
         self._removal_version = removal_version
 
     def __instancecheck__(self, inst):
@@ -2686,8 +2686,7 @@ def _make_nmtuple(name, types, module, defaults = ()):
     fields = [n for n, t in types]
     types = {n: _type_check(t, f"field {n} annotation must be a type")
              for n, t in types}
-    nm_tpl = collections.namedtuple(name, fields,
-                                    defaults=defaults, module=module)
+    nm_tpl = collections.namedtuple(name, fields, defaults=, module=)
     nm_tpl.__annotations__ = nm_tpl.__new__.__annotations__ = types
     return nm_tpl
 
@@ -2959,7 +2958,7 @@ def TypedDict(typename, fields=_sentinel, /, *, total=True):
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = module
 
-    td = _TypedDictMeta(typename, (), ns, total=total)
+    td = _TypedDictMeta(typename, (), ns, total=)
     td.__orig_bases__ = (TypedDict,)
     return td
 

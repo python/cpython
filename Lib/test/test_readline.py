@@ -296,7 +296,7 @@ readline.write_history_file(history_file)
             env["INPUTRC"] = inputrc
             env["HISTORY_FILE"] = history_file
 
-            run_pty(script, input=b"last input\r", env=env)
+            run_pty(script, input=b"last input\r", env=)
 
             with open(history_file, "rb") as f:
                 lines = f.readlines()
@@ -309,7 +309,7 @@ def run_pty(script, input=b"dummy input\r", env=None):
     output = bytearray()
     [master, slave] = pty.openpty()
     args = (sys.executable, '-c', script)
-    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=env)
+    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave, env=)
     os.close(slave)
     with ExitStack() as cleanup:
         cleanup.enter_context(proc)

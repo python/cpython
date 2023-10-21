@@ -278,7 +278,7 @@ class CodeTest(unittest.TestCase):
             ("co_name", "newname"),
             ("co_linetable", code2.co_linetable),
         ):
-            with self.subTest(attr=attr, value=value):
+            with self.subTest(attr=, value=):
                 new_code = code.replace(**{attr: value})
                 self.assertEqual(getattr(new_code, attr), value)
                 new_code = copy.replace(code, **{attr: value})

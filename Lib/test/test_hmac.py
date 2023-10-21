@@ -210,10 +210,10 @@ class TestVectorsTestCase(unittest.TestCase):
 
             self.assert_hmac(
                 key, data, digest,
-                hashfunc=hashfunc,
+                hashfunc=,
                 hashname=hash_name,
-                digest_size=digest_size,
-                block_size=block_size
+                digest_size=,
+                block_size=
             )
 
         # 4.2.  Test Case 1

@@ -39,7 +39,7 @@ class FindSpecTests(abc.FinderTests):
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
- ) = util.test_both(FindSpecTests, machinery=machinery)
+ ) = util.test_both(FindSpecTests, machinery=)
 
 
 if __name__ == '__main__':

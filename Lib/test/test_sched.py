@@ -100,7 +100,7 @@ class TestCase(unittest.TestCase):
             ([1, 2, 3, 2, 1], [1, 1, 2, 2, 3]),
         ]
         for priorities, expected in cases:
-            with self.subTest(priorities=priorities, expected=expected):
+            with self.subTest(priorities=, expected=):
                 for priority in priorities:
                     scheduler.enterabs(0.01, priority, fun, (priority,))
                 scheduler.run()

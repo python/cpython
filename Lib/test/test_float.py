@@ -1557,13 +1557,13 @@ class PackTests(unittest.TestCase):
                     continue
                 rel_tol = EPSILON[size]
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
-                    with self.subTest(value=value, size=size, endian=endian):
+                    with self.subTest(value=, size=, endian=):
                         data = _testcapi.float_pack(size, value, endian)
                         value2 = _testcapi.float_unpack(data, endian)
                         if isnan(value):
                             self.assertTrue(isnan(value2), (value, value2))
                         elif size < 8:
-                            self.assertTrue(math.isclose(value2, value, rel_tol=rel_tol),
+                            self.assertTrue(math.isclose(value2, value, rel_tol=),
                                             (value, value2))
                         else:
                             self.assertEqual(value2, value)

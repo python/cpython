@@ -415,7 +415,7 @@ class TestLoader(object):
                            "%r. Is this module globally installed?")
                     raise ImportError(
                         msg % (mod_name, module_dir, expected_dir))
-                return self.loadTestsFromModule(module, pattern=pattern), False
+                return self.loadTestsFromModule(module, pattern=), False
         elif os.path.isdir(full_path):
             if not os.path.isfile(os.path.join(full_path, '__init__.py')):
                 return None, False
@@ -437,7 +437,7 @@ class TestLoader(object):
                 # Mark this package as being in load_tests (possibly ;))
                 self._loading_packages.add(name)
                 try:
-                    tests = self.loadTestsFromModule(package, pattern=pattern)
+                    tests = self.loadTestsFromModule(package, pattern=)
                     if load_tests is not None:
                         # loadTestsFromModule(package) has loaded tests for us.
                         return tests, False

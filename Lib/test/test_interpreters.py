@@ -42,7 +42,7 @@ def clean_up_interpreters():
 def _run_output(interp, request, channels=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interp.run(script, channels=channels)
+        interp.run(script, channels=)
         return rpipe.read()
 
 
@@ -676,12 +676,7 @@ class StartupTests(TestBase):
             argv = shlex.split(argv)
         argv = [sys.executable, *argv]
         try:
-            proc = subprocess.run(
-                argv,
-                cwd=cwd,
-                capture_output=True,
-                text=True,
-            )
+            proc = subprocess.run(argv, cwd=, capture_output=True, text=True)
         except Exception as exc:
             self.debug(f'# cmd: {shlex.join(argv)}')
             if isinstance(exc, FileNotFoundError) and not exc.filename:
@@ -739,7 +734,7 @@ class StartupTests(TestBase):
         ]
         for argv, expected in cases:
             with self.subTest(f'python3 {argv}'):
-                out = self.run_python(argv, cwd=cwd)
+                out = self.run_python(argv, cwd=)
                 data = json.loads(out)
                 sp0_main, sp0_sub = data['main'], data['sub']
                 self.assertEqual(sp0_sub, sp0_main)

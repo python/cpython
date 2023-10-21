@@ -52,7 +52,7 @@ def parse(source, filename='<unknown>', mode='exec', *,
         feature_version = minor
     # Else it should be an int giving the minor version for 3.x.
     return compile(source, filename, mode, flags,
-                   _feature_version=feature_version, optimize=optimize)
+                   _feature_version=feature_version, optimize=)
 
 
 def literal_eval(node_or_string):
@@ -1219,7 +1219,7 @@ class _Unparser(NodeVisitor):
 
     def _write_str_avoiding_backslashes(self, string, *, quote_types=_ALL_QUOTES):
         """Write string literal value with a best effort attempt to avoid backslashes."""
-        string, quote_types = self._str_literal_helper(string, quote_types=quote_types)
+        string, quote_types = self._str_literal_helper(string, quote_types=)
         quote_type = quote_types[0]
         self.write(f"{quote_type}{string}{quote_type}")
 
@@ -1241,7 +1241,7 @@ class _Unparser(NodeVisitor):
             if is_constant:
                 value, new_quote_types = self._str_literal_helper(
                     value,
-                    quote_types=quote_types,
+                    quote_types=,
                     escape_special_whitespace=True,
                 )
                 if set(new_quote_types).isdisjoint(quote_types):
@@ -1274,7 +1274,7 @@ class _Unparser(NodeVisitor):
         if isinstance(node, JoinedStr):
             # for both the f-string itself, and format_spec
             for value in node.values:
-                self._write_fstring_inner(value, scape_newlines=scape_newlines)
+                self._write_fstring_inner(value, scape_newlines=)
         elif isinstance(node, Constant) and isinstance(node.value, str):
             value = node.value.replace("{", "{{").replace("}", "}}")
             if scape_newlines:

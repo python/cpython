@@ -361,7 +361,7 @@ class BasicSocketTests(unittest.TestCase):
             _ssl.SSLError,
         ]
         for ssl_type in ssl_types:
-            with self.subTest(ssl_type=ssl_type):
+            with self.subTest(ssl_type=):
                 with self.assertRaisesRegex(TypeError, "immutable type"):
                     ssl_type.value = None
         support.check_disallow_instantiation(self, _ssl.Certificate)
@@ -605,7 +605,7 @@ class BasicSocketTests(unittest.TestCase):
         ]
 
         for option in options:
-            with self.subTest(option=option):
+            with self.subTest(option=):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.options |= option
@@ -617,7 +617,7 @@ class BasicSocketTests(unittest.TestCase):
         for protocol in protocols:
             if not has_tls_protocol(protocol):
                 continue
-            with self.subTest(protocol=protocol):
+            with self.subTest(protocol=):
                 with self.assertWarns(DeprecationWarning) as cm:
                     ssl.SSLContext(protocol)
                 self.assertEqual(
@@ -628,7 +628,7 @@ class BasicSocketTests(unittest.TestCase):
         for version in versions:
             if not has_tls_version(version):
                 continue
-            with self.subTest(version=version):
+            with self.subTest(version=):
                 ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
                 with self.assertWarns(DeprecationWarning) as cm:
                     ctx.minimum_version = version
@@ -645,8 +645,7 @@ class BasicSocketTests(unittest.TestCase):
         sock = socket.socket()
         self.addCleanup(sock.close)
         with self.assertRaises(ssl.SSLError):
-            test_wrap_socket(sock,
-                             certfile=certfile)
+            test_wrap_socket(sock, certfile=)
 
     def test_empty_cert(self):
         """Wrapping with an empty cert file"""
@@ -1502,7 +1501,7 @@ class ContextTests(unittest.TestCase):
         with open(SIGNING_CA) as f:
             cadata = f.read()
         ctx = ssl.create_default_context(cafile=SIGNING_CA, capath=CAPATH,
-                                         cadata=cadata)
+                                         cadata=)
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
         self._assert_context_options(ctx)
@@ -2509,7 +2508,7 @@ class AsyncoreEchoServer(threading.Thread):
 
             def __init__(self, conn, certfile):
                 self.socket = test_wrap_socket(conn, server_side=True,
-                                              certfile=certfile,
+                                              certfile=,
                                               do_handshake_on_connect=False)
                 asyncore.dispatcher_with_send.__init__(self, self.socket)
                 self._ssl_accepting = True
@@ -2626,11 +2625,11 @@ def server_params_test(client_context, server_context, indata=b"FOO\n",
     """
     stats = {}
     server = ThreadedEchoServer(context=server_context,
-                                chatty=chatty,
+                                chatty=,
                                 connectionchatty=False)
     with server:
         with client_context.wrap_socket(socket.socket(),
-                server_hostname=sni_name, session=session) as s:
+                server_hostname=sni_name, session=) as s:
             s.connect((HOST, server.port))
             for arg in [indata, bytearray(indata), memoryview(indata)]:
                 if connectionchatty:
@@ -2754,8 +2753,8 @@ class ThreadedTests(unittest.TestCase):
         client_context, server_context, hostname = testing_context()
 
         with self.subTest(client=ssl.PROTOCOL_TLS_CLIENT, server=ssl.PROTOCOL_TLS_SERVER):
-            server_params_test(client_context=client_context,
-                               server_context=server_context,
+            server_params_test(client_context=,
+                               server_context=,
                                chatty=True, connectionchatty=True,
                                sni_name=hostname)
 
@@ -2774,7 +2773,7 @@ class ThreadedTests(unittest.TestCase):
         with self.subTest(client=ssl.PROTOCOL_TLS_SERVER, server=ssl.PROTOCOL_TLS_SERVER):
             with self.assertRaises(ssl.SSLError) as e:
                 server_params_test(client_context=server_context,
-                                   server_context=server_context,
+                                   server_context=,
                                    chatty=True, connectionchatty=True)
             self.assertIn(
                 'Cannot create a client socket with a PROTOCOL_TLS_SERVER context',
@@ -3011,7 +3010,7 @@ class ThreadedTests(unittest.TestCase):
             server = ThreadedEchoServer(context=server_context, chatty=True)
             with server:
                 with context.wrap_socket(socket.socket(),
-                                         server_hostname=server_hostname) as s:
+                                         server_hostname=) as s:
                     self.assertEqual(s.server_hostname, expected_hostname)
                     s.connect((HOST, server.port))
                     cert = s.getpeercert()
@@ -3320,7 +3319,7 @@ class ThreadedTests(unittest.TestCase):
         # now fetch the same data from the HTTPS server
         url = f'https://localhost:{server.port}/test_ssl.py'
         context = ssl.create_default_context(cafile=SIGNING_CA)
-        f = urllib.request.urlopen(url, context=context)
+        f = urllib.request.urlopen(url, context=)
         try:
             dlen = f.info().get("content-length")
             if dlen and (int(dlen) > 0):
@@ -3412,7 +3411,7 @@ class ThreadedTests(unittest.TestCase):
                 try:
                     ret = send_meth(indata, *args)
                     msg = "sending with {}".format(meth_name)
-                    self.assertEqual(ret, ret_val_meth(indata), msg=msg)
+                    self.assertEqual(ret, ret_val_meth(indata), msg=)
                     outdata = s.read()
                     if outdata != indata.lower():
                         self.fail(
@@ -4150,7 +4149,7 @@ class ThreadedTests(unittest.TestCase):
 
         # reuse session
         stats = server_params_test(client_context, server_context,
-                                   session=session, sni_name=hostname)
+                                   session=, sni_name=hostname)
         sess_stat = server_context.session_stats()
         self.assertEqual(sess_stat['accept'], 2)
         self.assertEqual(sess_stat['hits'], 1)
@@ -4175,7 +4174,7 @@ class ThreadedTests(unittest.TestCase):
 
         # reuse session again
         stats = server_params_test(client_context, server_context,
-                                   session=session, sni_name=hostname)
+                                   session=, sni_name=hostname)
         self.assertTrue(stats['session_reused'])
         session4 = stats['session']
         self.assertEqual(session4.id, session.id)
@@ -4688,7 +4687,7 @@ class TestPreHandshakeClose(unittest.TestCase):
                 self.timeout = support.SHORT_TIMEOUT
             else:
                 self.timeout = timeout
-            super().__init__(name=name)
+            super().__init__(name=)
 
         def __enter__(self):
             self.start()
@@ -4772,7 +4771,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             return False  # Tell the server thread to continue.
 
         server = self.SingleConnectionTestServerThread(
-                call_after_accept=call_after_accept,
+                call_after_accept=,
                 name="preauth_data_to_tls_server")
         self.enterContext(server)  # starts it & unittest.TestCase stops it.
 
@@ -4824,7 +4823,7 @@ class TestPreHandshakeClose(unittest.TestCase):
             return True  # Tell the server to stop.
 
         server = self.SingleConnectionTestServerThread(
-                call_after_accept=call_after_accept,
+                call_after_accept=,
                 name="preauth_data_to_tls_client")
         self.enterContext(server)  # starts it & unittest.TestCase stops it.
         # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
@@ -4890,9 +4889,9 @@ class TestPreHandshakeClose(unittest.TestCase):
 
         timeout = 2.0
         server = self.SingleConnectionTestServerThread(
-                call_after_accept=call_after_accept,
+                call_after_accept=,
                 name="non_tls_http_RST_responder",
-                timeout=timeout)
+                timeout=)
         self.enterContext(server)  # starts it & unittest.TestCase stops it.
         # Redundant; call_after_accept sets SO_LINGER on the accepted conn.
         set_socket_so_linger_on_with_zero_timeout(server.listener)
@@ -4901,7 +4900,7 @@ class TestPreHandshakeClose(unittest.TestCase):
                 server.listener.getsockname()[0],
                 port=server.port,
                 context=ssl.create_default_context(),
-                timeout=timeout,
+                timeout=,
         )
 
         # There are lots of reasons this raises as desired, long before this

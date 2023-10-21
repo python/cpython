@@ -316,7 +316,7 @@ class TestCurses(unittest.TestCase):
         # reject embedded null bytes and characters
         stdscr = self.stdscr
         for arg in ['a\0', b'a\0']:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 self.assertRaises(ValueError, stdscr.addstr, arg)
                 self.assertRaises(ValueError, stdscr.addnstr, arg, 1)
                 self.assertRaises(ValueError, stdscr.insstr, arg)
@@ -1224,7 +1224,7 @@ class TestAscii(unittest.TestCase):
 
     def test_ctypes(self):
         def check(func, expected):
-            with self.subTest(ch=c, func=func):
+            with self.subTest(ch=c, func=):
                 self.assertEqual(func(i), expected)
                 self.assertEqual(func(c), expected)
 

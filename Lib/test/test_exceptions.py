@@ -43,7 +43,7 @@ class BrokenStrException(Exception):
 class ExceptionTests(unittest.TestCase):
 
     def raise_catch(self, exc, excname):
-        with self.subTest(exc=exc, excname=excname):
+        with self.subTest(exc=, excname=):
             try:
                 raise exc("spam")
             except exc as err:
@@ -144,7 +144,7 @@ class ExceptionTests(unittest.TestCase):
         # these code fragments
 
         def ckmsg(src, msg):
-            with self.subTest(src=src, msg=msg):
+            with self.subTest(src=, msg=):
                 try:
                     compile(src, '<fragment>', 'exec')
                 except SyntaxError as e:
@@ -205,7 +205,7 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
     def check(self, src, lineno, offset, end_lineno=None, end_offset=None, encoding='utf-8'):
-        with self.subTest(source=src, lineno=lineno, offset=offset):
+        with self.subTest(source=src, lineno=, offset=):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
@@ -591,7 +591,7 @@ class ExceptionTests(unittest.TestCase):
 
     def test_notes(self):
         for e in [BaseException(1), Exception(2), ValueError(3)]:
-            with self.subTest(e=e):
+            with self.subTest(e=):
                 self.assertFalse(hasattr(e, '__notes__'))
                 e.add_note("My Note")
                 self.assertEqual(e.__notes__, ["My Note"])
@@ -1487,7 +1487,7 @@ class ExceptionTests(unittest.TestCase):
         try:
             set_relative_recursion_limit(10)
             for func in (recurse_in_except, recurse_after_except, recurse_in_body_and_except):
-                with self.subTest(func=func):
+                with self.subTest(func=):
                     try:
                         func()
                     except RecursionError:
@@ -2151,7 +2151,7 @@ class SyntaxErrorTests(unittest.TestCase):
              """)),
         ]
         for args, expected in cases:
-            with self.subTest(args=args):
+            with self.subTest(args=):
                 try:
                     raise SyntaxError("bad bad", args)
                 except SyntaxError as exc:

@@ -949,9 +949,9 @@ frozenset2({0,
         # Check that the pprint is a usable repr
         special *= 10
         for width in range(3, 40):
-            formatted = pprint.pformat(special, width=width)
+            formatted = pprint.pformat(special, width=)
             self.assertEqual(eval(formatted), special)
-            formatted = pprint.pformat([special] * 2, width=width)
+            formatted = pprint.pformat([special] * 2, width=)
             self.assertEqual(eval(formatted), [special] * 2)
 
     def test_compact(self):
@@ -1030,9 +1030,9 @@ frozenset2({0,
       b'\\x08\\t\\n\\x0b\\x0c\\r\\x0e\\x0f']]]]]]""")
         # Check that the pprint is a usable repr
         for width in range(1, 64):
-            formatted = pprint.pformat(special, width=width)
+            formatted = pprint.pformat(special, width=)
             self.assertEqual(eval(formatted), special)
-            formatted = pprint.pformat([special] * 2, width=width)
+            formatted = pprint.pformat([special] * 2, width=)
             self.assertEqual(eval(formatted), [special] * 2)
 
     def test_bytearray_wrap(self):

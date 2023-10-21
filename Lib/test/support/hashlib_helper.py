@@ -39,9 +39,9 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
         def wrapper(*args, **kwargs):
             try:
                 if openssl and _hashlib is not None:
-                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                    _hashlib.new(digestname, usedforsecurity=)
                 else:
-                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                    hashlib.new(digestname, usedforsecurity=)
             except ValueError:
                 raise unittest.SkipTest(
                     f"hash digest '{digestname}' is not available."

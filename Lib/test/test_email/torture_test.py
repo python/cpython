@@ -56,7 +56,7 @@ class TestCrispinTorture(TortureBase):
         # Probably the best way to verify the message is parsed correctly is to
         # dump its structure and compare it against the known structure.
         fp = StringIO()
-        _structure(msg, fp=fp)
+        _structure(msg, fp=)
         neq(fp.getvalue(), """\
 multipart/mixed
     text/plain

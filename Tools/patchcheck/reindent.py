@@ -124,7 +124,7 @@ def check(file):
             errprint("%s: SyntaxError: %s" % (file, str(se)))
             return
     try:
-        with open(file, encoding=encoding) as f:
+        with open(file, encoding=) as f:
             r = Reindenter(f)
     except IOError as msg:
         errprint("%s: I/O Error: %s" % (file, str(msg)))
@@ -146,7 +146,7 @@ def check(file):
                 shutil.copyfile(file, bak)
                 if verbose:
                     print("backed up", file, "to", bak)
-            with open(file, "w", encoding=encoding, newline=newline) as f:
+            with open(file, "w", encoding=, newline=) as f:
                 r.write(f)
             if verbose:
                 print("wrote new", file)

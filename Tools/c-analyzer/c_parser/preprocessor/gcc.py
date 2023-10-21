@@ -86,14 +86,14 @@ def preprocess(filename,
     text = _common.preprocess(
         TOOL,
         filename,
-        incldirs=incldirs,
-        includes=includes,
-        macros=macros,
+        incldirs=,
+        includes=,
+        macros=,
         #preargs=PRE_ARGS,
         postargs=postargs,
         executable=['gcc'],
         compiler='unix',
-        cwd=cwd,
+        cwd=,
     )
     return _iter_lines(text, filename, samefiles, cwd)
 
@@ -194,7 +194,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
             else:
                 line = re.sub(r'__inline__', 'inline', line)
                 if not raw:
-                    line, partial = _strip_directives(line, partial=partial)
+                    line, partial = _strip_directives(line, partial=)
                 yield _common.SourceLine(
                     make_info(lno),
                     'source',

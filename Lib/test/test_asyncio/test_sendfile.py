@@ -252,8 +252,7 @@ class SendfileMixin(SendfileBase):
 
     def prepare_sendfile(self, *, is_ssl=False, close_after=0):
         port = socket_helper.find_unused_port()
-        srv_proto = MySendfileProto(loop=self.loop,
-                                    close_after=close_after)
+        srv_proto = MySendfileProto(loop=self.loop, close_after=)
         if is_ssl:
             if not ssl:
                 self.skipTest("No ssl module")
@@ -278,7 +277,7 @@ class SendfileMixin(SendfileBase):
         cli_proto = MySendfileProto(loop=self.loop)
         tr, pr = self.run_loop(self.loop.create_connection(
             lambda: cli_proto, sock=cli_sock,
-            ssl=cli_ctx, server_hostname=server_hostname))
+            ssl=cli_ctx, server_hostname=))
         self.reduce_send_buffer_size(cli_sock, transport=tr)
 
         def cleanup():

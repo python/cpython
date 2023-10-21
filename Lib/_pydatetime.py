@@ -1633,7 +1633,7 @@ class time:
             tzinfo = self.tzinfo
         if fold is None:
             fold = self._fold
-        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
+        return type(self)(hour, minute, second, microsecond, tzinfo, fold=)
 
     __replace__ = replace
 
@@ -1981,7 +1981,7 @@ class datetime(date):
         if fold is None:
             fold = self.fold
         return type(self)(year, month, day, hour, minute, second,
-                          microsecond, tzinfo, fold=fold)
+                          microsecond, tzinfo, fold=)
 
     __replace__ = replace
 

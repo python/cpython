@@ -52,7 +52,7 @@ def encode(input, output, quotetabs, header=False):
 
     if b2a_qp is not None:
         data = input.read()
-        odata = b2a_qp(data, quotetabs=quotetabs, header=header)
+        odata = b2a_qp(data, quotetabs=, header=)
         output.write(odata)
         return
 
@@ -102,7 +102,7 @@ def encode(input, output, quotetabs, header=False):
 
 def encodestring(s, quotetabs=False, header=False):
     if b2a_qp is not None:
-        return b2a_qp(s, quotetabs=quotetabs, header=header)
+        return b2a_qp(s, quotetabs=, header=)
     from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
@@ -118,7 +118,7 @@ def decode(input, output, header=False):
 
     if a2b_qp is not None:
         data = input.read()
-        odata = a2b_qp(data, header=header)
+        odata = a2b_qp(data, header=)
         output.write(odata)
         return
 
@@ -154,11 +154,11 @@ def decode(input, output, header=False):
 
 def decodestring(s, header=False):
     if a2b_qp is not None:
-        return a2b_qp(s, header=header)
+        return a2b_qp(s, header=)
     from io import BytesIO
     infp = BytesIO(s)
     outfp = BytesIO()
-    decode(infp, outfp, header=header)
+    decode(infp, outfp, header=)
     return outfp.getvalue()
 
 

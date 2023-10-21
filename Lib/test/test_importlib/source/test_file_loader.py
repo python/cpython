@@ -356,7 +356,7 @@ class SimpleTest(abc.LoaderTests):
 
 (Frozen_SimpleTest,
  Source_SimpleTest
- ) = util.test_both(SimpleTest, importlib=importlib, machinery=machinery,
+ ) = util.test_both(SimpleTest, importlib=, machinery=,
                     abc=importlib_abc, util=importlib_util)
 
 
@@ -386,7 +386,7 @@ class BadBytecodeTest:
             del sys.modules['_temp']
         except KeyError:
             pass
-        py_compile.compile(mapping[name], invalidation_mode=invalidation_mode)
+        py_compile.compile(mapping[name], invalidation_mode=)
         if not del_source:
             bytecode_path = self.util.cache_from_source(mapping[name])
         else:
@@ -405,7 +405,7 @@ class BadBytecodeTest:
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: b'',
-                                                del_source=del_source)
+                                                del_source=)
             test('_temp', mapping, bc_path)
 
     @util.writes_bytecode_files
@@ -415,21 +415,21 @@ class BadBytecodeTest:
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:3],
-                                                del_source=del_source)
+                                                del_source=)
             test('_temp', mapping, bc_path)
 
     def _test_magic_only(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:4],
-                                                del_source=del_source)
+                                                del_source=)
             test('_temp', mapping, bc_path)
 
     def _test_partial_flags(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                lambda bc: bc[:7],
-                                               del_source=del_source)
+                                               del_source=)
             test('_temp', mapping, bc_path)
 
     def _test_partial_hash(self, test, *, del_source=False):
@@ -438,7 +438,7 @@ class BadBytecodeTest:
                 '_temp',
                 mapping,
                 lambda bc: bc[:13],
-                del_source=del_source,
+                del_source=,
                 invalidation_mode=py_compile.PycInvalidationMode.CHECKED_HASH,
             )
             test('_temp', mapping, bc_path)
@@ -447,7 +447,7 @@ class BadBytecodeTest:
                 '_temp',
                 mapping,
                 lambda bc: bc[:13],
-                del_source=del_source,
+                del_source=,
                 invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH,
             )
             test('_temp', mapping, bc_path)
@@ -456,21 +456,21 @@ class BadBytecodeTest:
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:11],
-                                                del_source=del_source)
+                                                del_source=)
             test('_temp', mapping, bc_path)
 
     def _test_partial_size(self, test, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:15],
-                                                del_source=del_source)
+                                                del_source=)
             test('_temp', mapping, bc_path)
 
     def _test_no_marshal(self, *, del_source=False):
         with util.create_modules('_temp') as mapping:
             bc_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:16],
-                                                del_source=del_source)
+                                                del_source=)
             file_path = mapping['_temp'] if not del_source else bc_path
             with self.assertRaises(EOFError):
                 self.import_(file_path, '_temp')
@@ -479,7 +479,7 @@ class BadBytecodeTest:
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
                                     lambda bc: bc[:16] + marshal.dumps(b'abcd'),
-                                    del_source=del_source)
+                                    del_source=)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(ImportError) as cm:
                 self.import_(file_path, '_temp')
@@ -490,7 +490,7 @@ class BadBytecodeTest:
         with util.create_modules('_temp') as mapping:
             bytecode_path = self.manipulate_bytecode('_temp', mapping,
                                                 lambda bc: bc[:16] + b'<test>',
-                                                del_source=del_source)
+                                                del_source=)
             file_path = mapping['_temp'] if not del_source else bytecode_path
             with self.assertRaises(EOFError):
                 self.import_(file_path, '_temp')
@@ -676,8 +676,8 @@ class SourceLoaderBadBytecodeTestPEP451(
 
 (Frozen_SourceBadBytecodePEP451,
  Source_SourceBadBytecodePEP451
- ) = util.test_both(SourceLoaderBadBytecodeTestPEP451, importlib=importlib,
-                    machinery=machinery, abc=importlib_abc,
+ ) = util.test_both(SourceLoaderBadBytecodeTestPEP451, importlib=,
+                    machinery=, abc=importlib_abc,
                     util=importlib_util)
 
 
@@ -688,8 +688,8 @@ class SourceLoaderBadBytecodeTestPEP302(
 
 (Frozen_SourceBadBytecodePEP302,
  Source_SourceBadBytecodePEP302
- ) = util.test_both(SourceLoaderBadBytecodeTestPEP302, importlib=importlib,
-                    machinery=machinery, abc=importlib_abc,
+ ) = util.test_both(SourceLoaderBadBytecodeTestPEP302, importlib=,
+                    machinery=, abc=importlib_abc,
                     util=importlib_util)
 
 
@@ -774,8 +774,8 @@ class SourcelessLoaderBadBytecodeTestPEP451(SourcelessLoaderBadBytecodeTest,
 
 (Frozen_SourcelessBadBytecodePEP451,
  Source_SourcelessBadBytecodePEP451
- ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP451, importlib=importlib,
-                    machinery=machinery, abc=importlib_abc,
+ ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP451, importlib=,
+                    machinery=, abc=importlib_abc,
                     util=importlib_util)
 
 
@@ -786,8 +786,8 @@ class SourcelessLoaderBadBytecodeTestPEP302(SourcelessLoaderBadBytecodeTest,
 
 (Frozen_SourcelessBadBytecodePEP302,
  Source_SourcelessBadBytecodePEP302
- ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP302, importlib=importlib,
-                    machinery=machinery, abc=importlib_abc,
+ ) = util.test_both(SourcelessLoaderBadBytecodeTestPEP302, importlib=,
+                    machinery=, abc=importlib_abc,
                     util=importlib_util)
 
 

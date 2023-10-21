@@ -628,7 +628,7 @@ def render_summary(items, *,
         groupby = 'kind'
     summary = summarize(
         items,
-        groupby=groupby,
+        groupby=,
         includeempty=showempty,
         minimize=None if showempty else not verbose,
     )

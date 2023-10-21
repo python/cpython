@@ -207,8 +207,8 @@ class BaseXYTestCase(unittest.TestCase):
             data_str = data.decode('ascii')
             altchars_str = altchars.decode('ascii')
 
-            eq(base64.b64decode(data, altchars=altchars), res)
-            eq(base64.b64decode(data_str, altchars=altchars), res)
+            eq(base64.b64decode(data, altchars=), res)
+            eq(base64.b64decode(data_str, altchars=), res)
             eq(base64.b64decode(data, altchars=altchars_str), res)
             eq(base64.b64decode(data_str, altchars=altchars_str), res)
 
@@ -255,7 +255,7 @@ class BaseXYTestCase(unittest.TestCase):
         )
         for bstr, res in tests:
             for func in funcs:
-                with self.subTest(bstr=bstr, func=func):
+                with self.subTest(bstr=, func=):
                     self.assertEqual(func(bstr), res)
                     self.assertEqual(func(bstr.decode('ascii')), res)
             with self.assertRaises(binascii.Error):
@@ -332,8 +332,8 @@ class BaseXYTestCase(unittest.TestCase):
             data_str = data.decode('ascii')
             map01_str = map01.decode('ascii')
 
-            eq(base64.b32decode(data, map01=map01), res)
-            eq(base64.b32decode(data_str, map01=map01), res)
+            eq(base64.b32decode(data, map01=), res)
+            eq(base64.b32decode(data_str, map01=), res)
             eq(base64.b32decode(data, map01=map01_str), res)
             eq(base64.b32decode(data_str, map01=map01_str), res)
             self.assertRaises(binascii.Error, base64.b32decode, data)
@@ -349,7 +349,7 @@ class BaseXYTestCase(unittest.TestCase):
                 if len(prefix) + i != 8:
                     tests.append(prefix + b'='*i)
         for data in tests:
-            with self.subTest(data=data):
+            with self.subTest(data=):
                 with self.assertRaises(binascii.Error):
                     base64.b32decode(data)
                 with self.assertRaises(binascii.Error):
@@ -398,7 +398,7 @@ class BaseXYTestCase(unittest.TestCase):
             (b'c5h66p35', b'abcde', True),
         ]
         for to_decode, expected, casefold in test_cases:
-            with self.subTest(to_decode=to_decode, casefold=casefold):
+            with self.subTest(to_decode=, casefold=):
                 self.assertEqual(base64.b32hexdecode(to_decode, casefold),
                                  expected)
                 self.assertEqual(base64.b32hexdecode(to_decode.decode('ascii'),

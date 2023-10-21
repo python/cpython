@@ -186,7 +186,7 @@ class MockTest(unittest.TestCase):
 
         def side_effect():
             return DEFAULT
-        mock = Mock(side_effect=side_effect, return_value=sentinel.RETURN)
+        mock = Mock(side_effect=, return_value=sentinel.RETURN)
         self.assertEqual(mock(), sentinel.RETURN)
 
     def test_autospec_side_effect(self):
@@ -247,9 +247,9 @@ class MockTest(unittest.TestCase):
 
     def test_explicit_parent(self):
         parent = Mock()
-        mock1 = Mock(parent=parent, return_value=None)
+        mock1 = Mock(parent=, return_value=None)
         mock1(1, 2, 3)
-        mock2 = Mock(parent=parent, return_value=None)
+        mock2 = Mock(parent=, return_value=None)
         mock2(4, 5, 6)
 
         self.assertEqual(parent.mock_calls, [call(1, 2, 3), call(4, 5, 6)])
@@ -257,7 +257,7 @@ class MockTest(unittest.TestCase):
     def test_reset_mock(self):
         parent = Mock()
         spec = ["something"]
-        mock = Mock(name="child", parent=parent, spec=spec)
+        mock = Mock(name="child", parent=, spec=)
         mock(sentinel.Something, something=sentinel.SomethingElse)
         something = mock.something
         mock.something()
@@ -1644,7 +1644,7 @@ class MockTest(unittest.TestCase):
             @staticmethod
             def static_method(): pass
         for method in ('class_method', 'static_method'):
-            with self.subTest(method=method):
+            with self.subTest(method=):
                 mock_method = mock.create_autospec(getattr(TestClass, method))
                 mock_method()
                 mock_method.assert_called_once_with()

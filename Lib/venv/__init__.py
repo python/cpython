@@ -105,7 +105,7 @@ class EnvBuilder:
             'installed_base': env_dir,
             'installed_platbase': env_dir,
         }
-        return sysconfig.get_path(name, scheme='venv', vars=vars)
+        return sysconfig.get_path(name, scheme='venv', vars=)
 
     def ensure_directories(self, env_dir):
         """
@@ -484,10 +484,10 @@ def create(env_dir, system_site_packages=False, clear=False,
            symlinks=False, with_pip=False, prompt=None, upgrade_deps=False,
            *, scm_ignore_files=frozenset()):
     """Create a virtual environment in a directory."""
-    builder = EnvBuilder(system_site_packages=system_site_packages,
-                         clear=clear, symlinks=symlinks, with_pip=with_pip,
-                         prompt=prompt, upgrade_deps=upgrade_deps,
-                         scm_ignore_files=scm_ignore_files)
+    builder = EnvBuilder(system_site_packages=,
+                         clear=, symlinks=, with_pip=,
+                         prompt=, upgrade_deps=,
+                         scm_ignore_files=)
     builder.create(env_dir)
 
 

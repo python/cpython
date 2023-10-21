@@ -255,7 +255,7 @@ def test_coverage(coverdir):
     tracer.run('import importlib; importlib.reload(cmd); test_main()')
     r=tracer.results()
     print("Writing coverage results...")
-    r.write_results(show_missing=True, summary=True, coverdir=coverdir)
+    r.write_results(show_missing=True, summary=True, coverdir=)
 
 if __name__ == "__main__":
     if "-c" in sys.argv:

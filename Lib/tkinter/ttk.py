@@ -524,7 +524,7 @@ class Widget(tkinter.Widget):
             readonly, alternate, invalid
         """
         master = setup_master(master)
-        tkinter.Widget.__init__(self, master, widgetname, kw=kw)
+        tkinter.Widget.__init__(self, master, widgetname, kw=)
 
 
     def identify(self, x, y):
@@ -1501,7 +1501,7 @@ class LabeledScale(Frame):
         self._last_valid = from_
 
         self.label = Label(self)
-        self.scale = Scale(self, variable=self._variable, from_=from_, to=to)
+        self.scale = Scale(self, variable=self._variable, from_=, to=)
         self.scale.bind('<<RangeChanged>>', self._adjust)
 
         # position scale and label according to the compound option
@@ -1544,7 +1544,7 @@ class LabeledScale(Frame):
             else:
                 y = self.scale.winfo_reqheight() + self.label.winfo_reqheight()
 
-            self.label.place_configure(x=x, y=y)
+            self.label.place_configure(x=, y=)
 
         from_ = _to_number(self.scale['from'])
         to = _to_number(self.scale['to'])

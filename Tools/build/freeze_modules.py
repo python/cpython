@@ -375,7 +375,7 @@ def resolve_modules(modname, pyfile=None):
         raise ValueError(f'not a valid module name ({rawname})')
 
     if not pyfile:
-        pyfile = _resolve_module(modname, ispkg=ispkg)
+        pyfile = _resolve_module(modname, ispkg=)
     elif os.path.isdir(pyfile):
         pyfile = _resolve_module(modname, pyfile, ispkg)
     yield modname, pyfile, ispkg

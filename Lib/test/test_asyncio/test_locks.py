@@ -62,7 +62,7 @@ class LockTests(unittest.IsolatedAsyncioTestCase):
                 rf"{cls.__name__}\.__init__\(\) got an unexpected "
                 rf"keyword argument 'loop'"
             ):
-                cls(loop=loop)
+                cls(loop=)
 
     async def test_lock_by_with_statement(self):
         primitives = [
@@ -720,7 +720,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
 
         async def wrong_loop_in_lock():
             with self.assertRaises(TypeError):
-                asyncio.Lock(loop=loop)  # actively disallowed since 3.10
+                asyncio.Lock(loop=)  # actively disallowed since 3.10
             lock = asyncio.Lock()
             lock._loop = loop  # use private API for testing
             async with lock:
@@ -740,7 +740,7 @@ class ConditionTests(unittest.IsolatedAsyncioTestCase):
             lock = asyncio.Lock()
             async with lock:
                 with self.assertRaises(TypeError):
-                    asyncio.Condition(lock, loop=loop)
+                    asyncio.Condition(lock, loop=)
                 cond = asyncio.Condition(lock)
                 cond._loop = loop
                 with self.assertRaisesRegex(

@@ -147,7 +147,7 @@ class ShlexTest(unittest.TestCase):
 
     def splitTest(self, data, comments):
         for i in range(len(data)):
-            l = shlex.split(data[i][0], comments=comments)
+            l = shlex.split(data[i][0], comments=)
             self.assertEqual(l, data[i][1:],
                              "%s: %s != %s" %
                              (data[i][0], l, data[i][1:]))
@@ -344,21 +344,21 @@ class ShlexTest(unittest.TestCase):
             (['a', ' ', 'b'], "a ' ' b"),
             (['"a', 'b"'], '\'"a\' \'b"\''),
         ]:
-            with self.subTest(command=command):
+            with self.subTest(command=):
                 joined = shlex.join(split_command)
                 self.assertEqual(joined, command)
 
     def testJoinRoundtrip(self):
         all_data = self.data + self.posix_data
         for command, *split_command in all_data:
-            with self.subTest(command=command):
+            with self.subTest(command=):
                 joined = shlex.join(split_command)
                 resplit = shlex.split(joined)
                 self.assertEqual(split_command, resplit)
 
     def testPunctuationCharsReadOnly(self):
         punctuation_chars = "/|$%^"
-        shlex_instance = shlex.shlex(punctuation_chars=punctuation_chars)
+        shlex_instance = shlex.shlex(punctuation_chars=)
         self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False

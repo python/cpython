@@ -632,7 +632,7 @@ class RawConfigParser(MutableMapping):
         read_ok = []
         for filename in filenames:
             try:
-                with open(filename, encoding=encoding) as fp:
+                with open(filename, encoding=) as fp:
                     self._read(fp, filename)
             except OSError:
                 continue
@@ -735,8 +735,7 @@ class RawConfigParser(MutableMapping):
     def _get_conv(self, section, option, conv, *, raw=False, vars=None,
                   fallback=_UNSET, **kwargs):
         try:
-            return self._get(section, conv, option, raw=raw, vars=vars,
-                             **kwargs)
+            return self._get(section, conv, option, raw=, vars=, **kwargs)
         except (NoSectionError, NoOptionError):
             if fallback is _UNSET:
                 raise
@@ -745,18 +744,18 @@ class RawConfigParser(MutableMapping):
     # getint, getfloat and getboolean provided directly for backwards compat
     def getint(self, section, option, *, raw=False, vars=None,
                fallback=_UNSET, **kwargs):
-        return self._get_conv(section, option, int, raw=raw, vars=vars,
-                              fallback=fallback, **kwargs)
+        return self._get_conv(section, option, int, raw=, vars=,
+                              fallback=, **kwargs)
 
     def getfloat(self, section, option, *, raw=False, vars=None,
                  fallback=_UNSET, **kwargs):
-        return self._get_conv(section, option, float, raw=raw, vars=vars,
-                              fallback=fallback, **kwargs)
+        return self._get_conv(section, option, float, raw=, vars=,
+                              fallback=, **kwargs)
 
     def getboolean(self, section, option, *, raw=False, vars=None,
                    fallback=_UNSET, **kwargs):
         return self._get_conv(section, option, self._convert_to_boolean,
-                              raw=raw, vars=vars, fallback=fallback, **kwargs)
+                              raw=, vars=, fallback=, **kwargs)
 
     def items(self, section=_UNSET, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
@@ -1130,14 +1129,14 @@ class ConfigParser(RawConfigParser):
     def set(self, section, option, value=None):
         """Set an option.  Extends RawConfigParser.set by validating type and
         interpolation syntax on the value."""
-        self._validate_value_types(option=option, value=value)
+        self._validate_value_types(option=, value=)
         super().set(section, option, value)
 
     def add_section(self, section):
         """Create a new section in the configuration.  Extends
         RawConfigParser.add_section by validating if the section name is
         a string."""
-        self._validate_value_types(section=section)
+        self._validate_value_types(section=)
         super().add_section(section)
 
     def _read_defaults(self, defaults):
@@ -1175,7 +1174,7 @@ class SectionProxy(MutableMapping):
         return self._parser.get(self._name, key)
 
     def __setitem__(self, key, value):
-        self._parser._validate_value_types(option=key, value=value)
+        self._parser._validate_value_types(option=key, value=)
         return self._parser.set(self._name, key, value)
 
     def __delitem__(self, key):
@@ -1220,8 +1219,7 @@ class SectionProxy(MutableMapping):
         # object that provides the desired type conversion.
         if not _impl:
             _impl = self._parser.get
-        return _impl(self._name, option, raw=raw, vars=vars,
-                     fallback=fallback, **kwargs)
+        return _impl(self._name, option, raw=, vars=, fallback=, **kwargs)
 
 
 class ConverterMapping(MutableMapping):

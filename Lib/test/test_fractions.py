@@ -857,7 +857,7 @@ class FractionTest(unittest.TestCase):
             (F(-3), '', '-3'),
         ]
         for fraction, spec, expected in testcases:
-            with self.subTest(fraction=fraction, spec=spec):
+            with self.subTest(fraction=, spec=):
                 self.assertEqual(format(fraction, spec), expected)
 
     def test_format_e_presentation_type(self):
@@ -915,7 +915,7 @@ class FractionTest(unittest.TestCase):
             (F(-1, 7**100), 'z.6e', '-3.091690e-85'),
         ]
         for fraction, spec, expected in testcases:
-            with self.subTest(fraction=fraction, spec=spec):
+            with self.subTest(fraction=, spec=):
                 self.assertEqual(format(fraction, spec), expected)
 
     def test_format_f_presentation_type(self):
@@ -1109,7 +1109,7 @@ class FractionTest(unittest.TestCase):
             (F(151, 1000), '.1f', '0.2'),
         ]
         for fraction, spec, expected in testcases:
-            with self.subTest(fraction=fraction, spec=spec):
+            with self.subTest(fraction=, spec=):
                 self.assertEqual(format(fraction, spec), expected)
 
     def test_format_g_presentation_type(self):
@@ -1177,7 +1177,7 @@ class FractionTest(unittest.TestCase):
             (F(-1, 7**100), 'zg', '-3.09169e-85'),
         ]
         for fraction, spec, expected in testcases:
-            with self.subTest(fraction=fraction, spec=spec):
+            with self.subTest(fraction=, spec=):
                 self.assertEqual(format(fraction, spec), expected)
 
     def test_invalid_formats(self):
@@ -1220,7 +1220,7 @@ class FractionTest(unittest.TestCase):
             'Z.2f'
         ]
         for spec in invalid_specs:
-            with self.subTest(spec=spec):
+            with self.subTest(spec=):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
 
@@ -1239,7 +1239,7 @@ class FractionTest(unittest.TestCase):
                 if fmt == '%r':
                     continue
                 fmt2 = fmt[1:]
-                with self.subTest(fmt=fmt, arg=arg):
+                with self.subTest(fmt=, arg=):
                     f = F(float(arg))
                     self.assertEqual(format(f, fmt2), rhs)
                     if f:  # skip negative zero

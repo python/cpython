@@ -118,8 +118,7 @@ class Bdb(_bdb.Bdb):
             lineno = code.co_firstlineno
             funcname = code.co_name
 
-        res = super().set_break(filename, lineno, temporary=temporary,
-                                 cond=cond, funcname=funcname)
+        res = super().set_break(filename, lineno, temporary=, cond=, funcname=)
         if isinstance(res, str):
             raise BdbError(res)
         return res
@@ -165,7 +164,7 @@ class Tracer(Bdb):
     """A tracer for testing the bdb module."""
 
     def __init__(self, expect_set, skip=None, dry_run=False, test_case=None):
-        super().__init__(skip=skip)
+        super().__init__(skip=)
         self.expect_set = expect_set
         self.dry_run = dry_run
         self.header = ('Dry-run results for %s:' % test_case if
@@ -416,7 +415,7 @@ class TracerRun():
     def __init__(self, test_case, skip=None):
         self.test_case = test_case
         self.dry_run = test_case.dry_run
-        self.tracer = Tracer(test_case.expect_set, skip=skip,
+        self.tracer = Tracer(test_case.expect_set, skip=,
                              dry_run=self.dry_run, test_case=test_case.id())
         self._original_tracer = None
 
@@ -528,7 +527,7 @@ def run_test(modules, set_list, skip=None):
     test.id = lambda : None
     test.expect_set = list(gen(repeat(()), iter(sl)))
     with create_modules(modules):
-        with TracerRun(test, skip=skip) as tracer:
+        with TracerRun(test, skip=) as tracer:
             tracer.runcall(tfunc_import)
 
 @contextmanager
@@ -598,7 +597,7 @@ class StateTestCase(BaseTestCase):
 
     def test_step_next_on_last_statement(self):
         for set_type in ('step', 'next'):
-            with self.subTest(set_type=set_type):
+            with self.subTest(set_type=):
                 self.expect_set = [
                     ('line', 2, 'tfunc_main'),               ('step', ),
                     ('line', 3, 'tfunc_main'),               ('step', ),
@@ -738,7 +737,7 @@ class StateTestCase(BaseTestCase):
                 ('line', 3, 'tfunc_import'), ('quit', ),
             ]
             skip = ('importlib*', 'zipimport', 'encodings.*', TEST_MODULE)
-            with TracerRun(self, skip=skip) as tracer:
+            with TracerRun(self, skip=) as tracer:
                 tracer.runcall(tfunc_import)
 
     def test_skip_with_no_name_module(self):
@@ -1088,7 +1087,7 @@ class IssuesTestCase(BaseTestCase):
         """
         modules = { TEST_MODULE: code }
         for set_type in ('next', 'until', 'return'):
-            with self.subTest(set_type=set_type):
+            with self.subTest(set_type=):
                 with create_modules(modules):
                     self.expect_set = [
                         ('line', 2, 'tfunc_import'),

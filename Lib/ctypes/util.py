@@ -124,7 +124,7 @@ elif os.name == "posix":
                 proc = subprocess.Popen(args,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.STDOUT,
-                                        env=env)
+                                        env=)
             except OSError:  # E.g. bad executable
                 return None
             with proc:
@@ -243,7 +243,7 @@ elif os.name == "posix":
                 proc = subprocess.Popen(args,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL,
-                                        env=env)
+                                        env=)
             except OSError:  # E.g. bad executable
                 return None
             with proc:

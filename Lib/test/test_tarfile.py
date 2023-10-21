@@ -252,7 +252,7 @@ class UstarReadTest(ReadTest, unittest.TestCase):
                 tar.format = tarfile.USTAR_FORMAT
                 try:
                     os.mkdir(name)
-                    tar.add(name, filter=filter)
+                    tar.add(name, filter=)
                 finally:
                     os.rmdir(name)
             with tarfile.open(tmpname) as tar:
@@ -1419,7 +1419,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
             tar = tarfile.open(tmpname, self.mode, encoding="iso8859-1")
             try:
-                tar.add(tempdir, arcname="empty_dir", filter=filter)
+                tar.add(tempdir, arcname="empty_dir", filter=)
             finally:
                 tar.close()
 
@@ -1636,8 +1636,7 @@ class _CompressedWriteTest(TarTest):
 
     def _compressed_tar(self, compresslevel):
         fobj = io.BytesIO()
-        with tarfile.open(tmpname, self.mode, fobj,
-                          compresslevel=compresslevel) as tarfl:
+        with tarfile.open(tmpname, self.mode, fobj, compresslevel=) as tarfl:
             tarfl.addfile(tarfile.TarInfo("foo"), io.BytesIO(self.source))
         return fobj
 
@@ -1685,7 +1684,7 @@ class CompressLevelRaises(unittest.TestCase):
         compresslevel = 5
         fobj = io.BytesIO()
         with self.assertRaises(TypeError):
-            tarfile.open(tmpname, "w:", fobj, compresslevel=compresslevel)
+            tarfile.open(tmpname, "w:", fobj, compresslevel=)
 
     @support.requires_bz2()
     def test_wrong_compresslevels(self):
@@ -2029,7 +2028,7 @@ class PaxWriteTest(GNUWriteTest):
                 "\xe4\xf6\xfc": "test"}
 
         tar = tarfile.open(tmpname, "w", format=tarfile.PAX_FORMAT,
-                pax_headers=pax_headers)
+                pax_headers=)
         try:
             tar.addfile(tarfile.TarInfo("test"))
         finally:
@@ -2146,14 +2145,14 @@ class UnicodeTest:
 
     def _test_unicode_filename(self, encoding):
         tar = tarfile.open(tmpname, "w", format=self.format,
-                           encoding=encoding, errors="strict")
+                           encoding=, errors="strict")
         try:
             name = "\xe4\xf6\xfc"
             tar.addfile(tarfile.TarInfo(name))
         finally:
             tar.close()
 
-        tar = tarfile.open(tmpname, encoding=encoding)
+        tar = tarfile.open(tmpname, encoding=)
         try:
             self.assertEqual(tar.getmembers()[0].name, name)
         finally:
@@ -2303,7 +2302,7 @@ class GNUUnicodeTest(UnicodeTest, unittest.TestCase):
         for encoding, name in (
                 ("utf-8", "pax/bad-pax-\udce4\udcf6\udcfc"),
                 ("iso8859-1", "pax/bad-pax-\xe4\xf6\xfc"),):
-            with tarfile.open(tarname, encoding=encoding,
+            with tarfile.open(tarname, encoding=,
                               errors="surrogateescape") as tar:
                 try:
                     t = tar.getmember(name)
@@ -2323,7 +2322,7 @@ class PAXUnicodeTest(UnicodeTest, unittest.TestCase):
         for encoding, name in (
                 ("utf-8", "pax/hdrcharset-\udce4\udcf6\udcfc"),
                 ("iso8859-1", "pax/hdrcharset-\xe4\xf6\xfc"),):
-            with tarfile.open(tarname, encoding=encoding,
+            with tarfile.open(tarname, encoding=,
                               errors="surrogateescape") as tar:
                 try:
                     t = tar.getmember(name)
@@ -2355,11 +2354,11 @@ class AppendTest(AppendTestBase, unittest.TestCase):
     test_append_compressed = None
 
     def _add_testfile(self, fileobj=None):
-        with tarfile.open(self.tarname, "a", fileobj=fileobj) as tar:
+        with tarfile.open(self.tarname, "a", fileobj=) as tar:
             tar.addfile(tarfile.TarInfo("bar"))
 
     def _test(self, names=["bar"], fileobj=None):
-        with tarfile.open(self.tarname, fileobj=fileobj) as tar:
+        with tarfile.open(self.tarname, fileobj=) as tar:
             self.assertEqual(tar.getnames(), names)
 
     def test_non_existing(self):
@@ -2562,7 +2561,7 @@ class MiscTest(unittest.TestCase):
             'copyfileobj', 'filemode', 'EmptyHeaderError',
             'TruncatedHeaderError', 'EOFHeaderError', 'InvalidHeaderError',
             'SubsequentHeaderError', 'ExFileObject', 'main'}
-        support.check__all__(self, tarfile, not_exported=not_exported)
+        support.check__all__(self, tarfile, not_exported=)
 
     def test_useful_error_message_when_modules_missing(self):
         fname = os.path.join(os.path.dirname(__file__), 'testtar.tar.xz')
@@ -2637,7 +2636,7 @@ class CommandLineTest(unittest.TestCase):
         self.assertEqual(rc, 1)
 
         for tar_name in testtarnames:
-            with self.subTest(tar_name=tar_name):
+            with self.subTest(tar_name=):
                 with open(tar_name, 'rb') as f:
                     data = f.read()
                 try:
@@ -2917,7 +2916,7 @@ class Bz2PartialReadTest(Bz2Test, unittest.TestCase):
         data = bz2.compress(tarfile.TarInfo("foo").tobuf())
         for x in range(len(data) + 1):
             try:
-                tarfile.open(fileobj=MyBytesIO(data[:x]), mode=mode)
+                tarfile.open(fileobj=MyBytesIO(data[:x]), mode=)
             except tarfile.ReadError:
                 pass # we have no interest in ReadErrors
 
@@ -3093,7 +3092,7 @@ class ReplaceTests(ReadTest, unittest.TestCase):
         member = self.tar.getmember('ustar/regtype')
         for attr_name in ('name', 'mtime', 'mode', 'linkname',
                           'uid', 'gid', 'uname', 'gname'):
-            with self.subTest(attr_name=attr_name):
+            with self.subTest(attr_name=):
                 replaced = member.replace(**{attr_name: None})
                 self.assertEqual(getattr(replaced, attr_name), None)
                 self.assertNotEqual(getattr(member, attr_name), None)
@@ -3156,7 +3155,7 @@ class NoneInfoExtractTests(ReadTest):
         now = pathlib.Path(TEMPDIR).stat().st_mtime
         with self.extract_with_none('mtime') as DIR:
             for path in pathlib.Path(DIR).glob('**/*'):
-                with self.subTest(path=path):
+                with self.subTest(path=):
                     try:
                         mtime = path.stat().st_mtime
                     except OSError:
@@ -3175,7 +3174,7 @@ class NoneInfoExtractTests(ReadTest):
         regular_file_mode = regular_file.stat().st_mode
         with self.extract_with_none('mode') as DIR:
             for path in pathlib.Path(DIR).glob('**/*'):
-                with self.subTest(path=path):
+                with self.subTest(path=):
                     if path.is_dir():
                         self.assertEqual(path.stat().st_mode, dir_mode)
                     elif path.is_file():
@@ -3222,7 +3221,7 @@ class NoneInfoTests_Misc(unittest.TestCase):
         bio = io.BytesIO()
         for tarformat in (tarfile.USTAR_FORMAT, tarfile.GNU_FORMAT,
                           tarfile.PAX_FORMAT):
-            with self.subTest(tarformat=tarformat):
+            with self.subTest(tarformat=):
                 tar = tarfile.open(fileobj=bio, mode='w', format=tarformat)
                 tarinfo = tar.gettarinfo(tarname)
                 try:
@@ -3237,7 +3236,7 @@ class NoneInfoTests_Misc(unittest.TestCase):
                 else:
                     for attr_name in ('mtime', 'mode', 'uid', 'gid',
                                     'uname', 'gname'):
-                        with self.subTest(attr_name=attr_name):
+                        with self.subTest(attr_name=):
                             replaced = tarinfo.replace(**{attr_name: None})
                             with self.assertRaisesRegex(ValueError,
                                                         f"{attr_name}"):
@@ -3251,7 +3250,7 @@ class NoneInfoTests_Misc(unittest.TestCase):
         for attr_names in ({'mtime'}, {'mode'}, {'uid'}, {'gid'},
                            {'uname'}, {'gname'},
                            {'uid', 'uname'}, {'gid', 'gname'}):
-            with (self.subTest(attr_names=attr_names),
+            with (self.subTest(attr_names=),
                   tarfile.open(tarname, encoding="iso8859-1") as tar):
                 tio_prev = io.TextIOWrapper(io.BytesIO(), 'ascii', newline='\n')
                 with support.swap_attr(sys, 'stdout', tio_prev):
@@ -3427,7 +3426,7 @@ class TestExtractionFilters(unittest.TestCase):
         """
         with os_helper.temp_dir(self.outerdir):
             try:
-                tar.extractall(self.destdir, filter=filter)
+                tar.extractall(self.destdir, filter=)
             except Exception as exc:
                 self.raised_exception = exc
                 self.expected_paths = set()

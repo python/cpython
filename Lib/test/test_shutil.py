@@ -81,7 +81,7 @@ def write_file(path, content, binary=False):
         path = os.path.join(*path)
     mode = 'wb' if binary else 'w'
     encoding = None if binary else "utf-8"
-    with open(path, mode, encoding=encoding) as fp:
+    with open(path, mode, encoding=) as fp:
         fp.write(content)
 
 def write_test_file(path, size):
@@ -113,7 +113,7 @@ def read_file(path, binary=False):
         path = os.path.join(*path)
     mode = 'rb' if binary else 'r'
     encoding = None if binary else "utf-8"
-    with open(path, mode, encoding=encoding) as fp:
+    with open(path, mode, encoding=) as fp:
         return fp.read()
 
 def rlistdir(path):
@@ -179,7 +179,7 @@ class BaseTest:
 
         Returns the path of the directory.
         """
-        d = tempfile.mkdtemp(prefix=prefix, dir=os.getcwd())
+        d = tempfile.mkdtemp(prefix=, dir=os.getcwd())
         self.addCleanup(os_helper.rmtree, d)
         return d
 
@@ -209,7 +209,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         def onerror(*args):
             errors.append(args)
         with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+            shutil.rmtree(link, onerror=)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -228,7 +228,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onexc(*args):
             errors.append(args)
-        shutil.rmtree(link, onexc=onexc)
+        shutil.rmtree(link, onexc=)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -271,7 +271,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         def onerror(*args):
             errors.append(args)
         with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(link, onerror=onerror)
+            shutil.rmtree(link, onerror=)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -291,7 +291,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onexc(*args):
             errors.append(args)
-        shutil.rmtree(link, onexc=onexc)
+        shutil.rmtree(link, onexc=)
         self.assertEqual(len(errors), 1)
         self.assertIs(errors[0][0], os.path.islink)
         self.assertEqual(errors[0][1], link)
@@ -341,7 +341,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         def onerror(*args):
             errors.append(args)
         with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(filename, onerror=onerror)
+            shutil.rmtree(filename, onerror=)
         self.assertEqual(len(errors), 2)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
@@ -373,7 +373,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         errors = []
         def onexc(*args):
             errors.append(args)
-        shutil.rmtree(filename, onexc=onexc)
+        shutil.rmtree(filename, onexc=)
         self.assertEqual(len(errors), 2)
         self.assertIs(errors[0][0], os.scandir)
         self.assertEqual(errors[0][1], filename)
@@ -538,7 +538,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         self.addCleanup(os.chmod, self.child_dir_path, old_child_dir_mode)
 
         with self.assertWarns(DeprecationWarning):
-            shutil.rmtree(TESTFN, onerror=onerror, onexc=onexc)
+            shutil.rmtree(TESTFN, onerror=, onexc=)
         self.assertTrue(onexc_called)
         self.assertFalse(onerror_called)
 
@@ -593,7 +593,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         os.mkdir(os.path.join(fullname, 'subdir'))
         write_file(os.path.join(fullname, 'subdir', 'somefile'), 'foo')
         self.assertTrue(os.path.exists(fullname))
-        shutil.rmtree(victim, dir_fd=dir_fd)
+        shutil.rmtree(victim, dir_fd=)
         self.assertFalse(os.path.exists(fullname))
 
     @unittest.skipIf(shutil._use_fd_functions, "dir_fd is supported")
@@ -1186,7 +1186,7 @@ class TestCopy(BaseTest, unittest.TestCase):
         def _raise_on_src(fname, *, follow_symlinks=True):
             if fname == src:
                 raise OSError(errno.ENOTSUP, 'Operation not supported')
-            return orig_listxattr(fname, follow_symlinks=follow_symlinks)
+            return orig_listxattr(fname, follow_symlinks=)
         try:
             orig_listxattr = os.listxattr
             os.listxattr = _raise_on_src
@@ -1710,15 +1710,15 @@ class TestArchives(BaseTest, unittest.TestCase):
 
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        res = make_archive(base_name, 'zip', root_dir, base_dir, owner=owner,
-                           group=group)
+        res = make_archive(base_name, 'zip', root_dir, base_dir, owner=,
+                           group=)
         self.assertTrue(os.path.isfile(res))
 
         res = make_archive(base_name, 'zip', root_dir, base_dir)
         self.assertTrue(os.path.isfile(res))
 
         res = make_archive(base_name, 'tar', root_dir, base_dir,
-                           owner=owner, group=group)
+                           owner=, group=)
         self.assertTrue(os.path.isfile(res))
 
         res = make_archive(base_name, 'tar', root_dir, base_dir,
@@ -1735,7 +1735,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         owner = pwd.getpwuid(0)[0]
         with os_helper.change_cwd(root_dir), no_chdir:
             archive_name = make_archive(base_name, 'gztar', root_dir, 'dist',
-                                        owner=owner, group=group)
+                                        owner=, group=)
 
         # check if the compressed tarball was created
         self.assertTrue(os.path.isfile(archive_name))
@@ -1783,7 +1783,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         try:
             with support.swap_attr(os, 'chdir', _chdir) as orig_chdir:
                 with self.assertRaises(RuntimeError):
-                    make_archive('basename', 'xxx', root_dir=root_dir)
+                    make_archive('basename', 'xxx', root_dir=)
             self.assertEqual(os.getcwd(), current_dir)
             self.assertEqual(dirs, [root_dir, current_dir])
         finally:
@@ -1803,7 +1803,7 @@ class TestArchives(BaseTest, unittest.TestCase):
         try:
             with no_chdir:
                 with self.assertRaises(RuntimeError):
-                    make_archive('basename', 'xxx', root_dir=root_dir)
+                    make_archive('basename', 'xxx', root_dir=)
             self.assertEqual(os.getcwd(), current_dir)
         finally:
             unregister_archive_format('xxx')
@@ -1843,11 +1843,11 @@ class TestArchives(BaseTest, unittest.TestCase):
         # GH-99203
         self.addCleanup(os_helper.unlink, f'{TESTFN}.tar')
         for dry_run in (False, True):
-            with self.subTest(dry_run=dry_run):
+            with self.subTest(dry_run=):
                 tmp_dir = self.mkdtemp()
                 nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
                 with self.assertRaises(FileNotFoundError) as cm:
-                    make_archive(TESTFN, 'tar', nonexisting_file, dry_run=dry_run)
+                    make_archive(TESTFN, 'tar', nonexisting_file, dry_run=)
                 self.assertEqual(cm.exception.errno, errno.ENOENT)
                 self.assertEqual(cm.exception.filename, nonexisting_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
@@ -1855,7 +1855,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                 tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
                 os.close(tmp_fd)
                 with self.assertRaises(NotADirectoryError) as cm:
-                    make_archive(TESTFN, 'tar', tmp_file, dry_run=dry_run)
+                    make_archive(TESTFN, 'tar', tmp_file, dry_run=)
                 self.assertEqual(cm.exception.errno, errno.ENOTDIR)
                 self.assertEqual(cm.exception.filename, tmp_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.tar'))
@@ -1865,11 +1865,11 @@ class TestArchives(BaseTest, unittest.TestCase):
         # GH-99203
         self.addCleanup(os_helper.unlink, f'{TESTFN}.zip')
         for dry_run in (False, True):
-            with self.subTest(dry_run=dry_run):
+            with self.subTest(dry_run=):
                 tmp_dir = self.mkdtemp()
                 nonexisting_file = os.path.join(tmp_dir, 'nonexisting')
                 with self.assertRaises(FileNotFoundError) as cm:
-                    make_archive(TESTFN, 'zip', nonexisting_file, dry_run=dry_run)
+                    make_archive(TESTFN, 'zip', nonexisting_file, dry_run=)
                 self.assertEqual(cm.exception.errno, errno.ENOENT)
                 self.assertEqual(cm.exception.filename, nonexisting_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
@@ -1877,7 +1877,7 @@ class TestArchives(BaseTest, unittest.TestCase):
                 tmp_fd, tmp_file = tempfile.mkstemp(dir=tmp_dir)
                 os.close(tmp_fd)
                 with self.assertRaises(NotADirectoryError) as cm:
-                    make_archive(TESTFN, 'zip', tmp_file, dry_run=dry_run)
+                    make_archive(TESTFN, 'zip', tmp_file, dry_run=)
                 self.assertEqual(cm.exception.errno, errno.ENOTDIR)
                 self.assertEqual(cm.exception.filename, tmp_file)
                 self.assertFalse(os.path.exists(f'{TESTFN}.zip'))
@@ -1906,7 +1906,7 @@ class TestArchives(BaseTest, unittest.TestCase):
 
         # and again, this time with the format specified
         tmpdir3 = self.mkdtemp()
-        unpack_archive(converter(filename), converter(tmpdir3), format=format,
+        unpack_archive(converter(filename), converter(tmpdir3), format=,
                        **kwargs)
         self.assertEqual(rlistdir(tmpdir3), expected)
 
@@ -2027,7 +2027,7 @@ class TestMisc(BaseTest, unittest.TestCase):
         shutil.chown(filename, user=uid)
         check_chown(filename, uid)
         shutil.chown(filename, group=gid)
-        check_chown(filename, gid=gid)
+        check_chown(filename, gid=)
 
         shutil.chown(dirname, uid, gid)
         check_chown(dirname, uid, gid)
@@ -2036,7 +2036,7 @@ class TestMisc(BaseTest, unittest.TestCase):
         shutil.chown(dirname, user=uid)
         check_chown(dirname, uid)
         shutil.chown(dirname, group=gid)
-        check_chown(dirname, gid=gid)
+        check_chown(dirname, gid=)
 
         try:
             user = pwd.getpwuid(uid)[0]

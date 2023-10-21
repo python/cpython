@@ -82,7 +82,7 @@ def idle_showwarning(
         file = warning_stream
     try:
         file.write(idle_formatwarning(
-                message, category, filename, lineno, line=line))
+                message, category, filename, lineno, line=))
         file.write(">>> ")
     except (AttributeError, OSError):
         pass  # if file (probably __stderr__) is invalid, skip warning.
@@ -417,7 +417,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def __init__(self, tkconsole):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
-        InteractiveInterpreter.__init__(self, locals=locals)
+        InteractiveInterpreter.__init__(self, locals=)
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
@@ -511,7 +511,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except TimeoutError:
             self.display_no_subprocess_error()
             return None
-        self.transfer_path(with_cwd=with_cwd)
+        self.transfer_path(with_cwd=)
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
@@ -1402,7 +1402,7 @@ class PyShell(OutputWindow):
 
     def show_warning(self, msg):
         width = self.interp.tkconsole.width
-        wrapper = TextWrapper(width=width, tabsize=8, expand_tabs=True)
+        wrapper = TextWrapper(width=, tabsize=8, expand_tabs=True)
         wrapped_msg = '\n'.join(wrapper.wrap(msg))
         if not wrapped_msg.endswith('\n'):
             wrapped_msg += '\n'

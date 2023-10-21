@@ -398,7 +398,7 @@ def _rank(data, /, *, key=None, reverse=False, ties='average', start=1) -> list[
         raise ValueError(f'Unknown tie resolution method: {ties!r}')
     if key is not None:
         data = map(key, data)
-    val_pos = sorted(zip(data, count()), reverse=reverse)
+    val_pos = sorted(zip(data, count()), reverse=)
     i = start - 1
     result = [0] * len(val_pos)
     for _, g in groupby(val_pos, key=itemgetter(0)):
@@ -1096,8 +1096,8 @@ def correlation(x, y, /, *, method='linear'):
         raise ValueError(f'Unknown method: {method!r}')
     if method == 'ranked':
         start = (n - 1) / -2            # Center rankings around zero
-        x = _rank(x, start=start)
-        y = _rank(y, start=start)
+        x = _rank(x, start=)
+        y = _rank(y, start=)
     else:
         xbar = fsum(x) / n
         ybar = fsum(y) / n
@@ -1170,7 +1170,7 @@ def linear_regression(x, y, /, *, proportional=False):
     except ZeroDivisionError:
         raise StatisticsError('x is constant')
     intercept = 0.0 if proportional else ybar - slope * xbar
-    return LinearRegression(slope=slope, intercept=intercept)
+    return LinearRegression(slope=, intercept=)
 
 
 ## Normal Distribution #####################################################

@@ -287,7 +287,7 @@ class PurePathTest(unittest.TestCase):
 
     def test_repr_common(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
+            with self.subTest(pathstr=):
                 p = self.cls(pathstr)
                 clsname = p.__class__.__name__
                 r = repr(p)
@@ -299,7 +299,7 @@ class PurePathTest(unittest.TestCase):
 
     def test_repr_roundtrips(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
-            with self.subTest(pathstr=pathstr):
+            with self.subTest(pathstr=):
                 p = self.cls(pathstr)
                 r = repr(p)
                 # The repr() roundtrips.
@@ -1724,7 +1724,7 @@ class DummyPath(pathlib._PathBase):
         else:
             raise NotImplementedError
         if text:
-            stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors, newline=newline)
+            stream = io.TextIOWrapper(stream, encoding=, errors=, newline=)
         return stream
 
     def iterdir(self):
@@ -1751,7 +1751,7 @@ class DummyPath(pathlib._PathBase):
             if not parents:
                 raise FileNotFoundError(errno.ENOENT, "File not found", str(self.parent)) from None
             self.parent.mkdir(parents=True, exist_ok=True)
-            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+            self.mkdir(mode, parents=False, exist_ok=)
 
 
 class DummyPathTest(unittest.TestCase):
@@ -1985,7 +1985,7 @@ class DummyPathTest(unittest.TestCase):
     def test_glob_case_sensitive(self):
         P = self.cls
         def _check(path, pattern, case_sensitive, expected):
-            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=)}
             expected = {str(P(BASE, q)) for q in expected}
             self.assertEqual(actual, expected)
         path = P(BASE)

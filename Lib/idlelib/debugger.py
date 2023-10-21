@@ -522,10 +522,10 @@ class NamespaceViewer:
                 if rpc_client:
                     svalue = svalue[1:-1]
                 l = Label(subframe, text=name)
-                l.grid(row=row, column=0, sticky="nw")
+                l.grid(row=, column=0, sticky="nw")
                 l = Entry(subframe, width=0, borderwidth=0)
                 l.insert(0, svalue)
-                l.grid(row=row, column=1, sticky="nw")
+                l.grid(row=, column=1, sticky="nw")
                 row = row+1
         self.dict = dict
         # XXX Could we use a <Configure> callback for the following?

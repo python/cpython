@@ -54,7 +54,7 @@ def _find_module(name, path=None):
     spec = importlib.machinery.PathFinder.find_spec(name, path)
 
     if spec is None:
-        raise ImportError("No module named {name!r}".format(name=name), name=name)
+        raise ImportError("No module named {name!r}".format(name=), name=)
 
     # Some special cases:
 
@@ -161,7 +161,7 @@ class ModuleFinder:
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         self.msg(3, "import_hook", name, caller, fromlist, level)
-        parent = self.determine_parent(caller, level=level)
+        parent = self.determine_parent(caller, level=)
         q, tail = self.find_head_package(parent, name)
         m = self.load_tail(q, tail)
         if not fromlist:
@@ -364,7 +364,7 @@ class ModuleFinder:
             self._add_badmodule(name, caller)
             return
         try:
-            self.import_hook(name, caller, level=level)
+            self.import_hook(name, caller, level=)
         except ImportError as msg:
             self.msg(2, "ImportError:", str(msg))
             self._add_badmodule(name, caller)
@@ -379,7 +379,7 @@ class ModuleFinder:
                         self._add_badmodule(fullname, caller)
                         continue
                     try:
-                        self.import_hook(name, caller, [sub], level=level)
+                        self.import_hook(name, caller, [sub], level=)
                     except ImportError as msg:
                         self.msg(2, "ImportError:", str(msg))
                         self._add_badmodule(fullname, caller)
@@ -431,9 +431,9 @@ class ModuleFinder:
             elif what == "relative_import":
                 level, fromlist, name = args
                 if name:
-                    self._safe_import_hook(name, m, fromlist, level=level)
+                    self._safe_import_hook(name, m, fromlist, level=)
                 else:
-                    parent = self.determine_parent(m, level=level)
+                    parent = self.determine_parent(m, level=)
                     self._safe_import_hook(parent.__name__, None, fromlist, level=0)
             else:
                 # We don't expect anything else from the generator.

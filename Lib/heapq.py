@@ -470,7 +470,7 @@ def nsmallest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        result = min(it, default=sentinel, key=key)
+        result = min(it, default=sentinel, key=)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -480,7 +480,7 @@ def nsmallest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key)[:n]
+            return sorted(iterable, key=)[:n]
 
     # When key is none, use simpler decoration
     if key is None:
@@ -530,7 +530,7 @@ def nlargest(n, iterable, key=None):
     if n == 1:
         it = iter(iterable)
         sentinel = object()
-        result = max(it, default=sentinel, key=key)
+        result = max(it, default=sentinel, key=)
         return [] if result is sentinel else [result]
 
     # When n>=size, it's faster to use sorted()
@@ -540,7 +540,7 @@ def nlargest(n, iterable, key=None):
         pass
     else:
         if n >= size:
-            return sorted(iterable, key=key, reverse=True)[:n]
+            return sorted(iterable, key=, reverse=True)[:n]
 
     # When key is none, use simpler decoration
     if key is None:

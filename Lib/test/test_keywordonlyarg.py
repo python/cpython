@@ -19,10 +19,10 @@ def mixedargs_sum2(a, b=0, *arg, k1, k2=0, **kwargs):
     return a + b + k1 + k2 + sum(arg) + sum(kwargs.values())
 
 def sortnum(*nums, reverse=False):
-    return sorted(list(nums), reverse=reverse)
+    return sorted(list(nums), reverse=)
 
 def sortwords(*words, reverse=False, **kwargs):
-    return sorted(list(words), reverse=reverse)
+    return sorted(list(words), reverse=)
 
 class Foo:
     def __init__(self, *, k1, k2=0):

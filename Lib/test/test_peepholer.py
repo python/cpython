@@ -85,7 +85,7 @@ class TestTranforms(BytecodeTestCase):
             ('not a in b', 'CONTAINS_OP', 1,),
             ('not a not in b', 'CONTAINS_OP', 0,),
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertInBytecode(code, cmp_op, invert)
                 self.check_lnotab(code)
@@ -104,7 +104,7 @@ class TestTranforms(BytecodeTestCase):
             return x
 
         for func, elem in ((f, None), (g, True), (h, False)):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 self.assertNotInBytecode(func, 'LOAD_GLOBAL')
                 self.assertInBytecode(func, 'LOAD_CONST', elem)
                 self.check_lnotab(func)
@@ -135,7 +135,7 @@ class TestTranforms(BytecodeTestCase):
             ('a, b = a, b', 'SWAP',),
             ('a, b, c = a, b, c', 'SWAP',),
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line,'','single')
                 self.assertInBytecode(code, elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
@@ -150,7 +150,7 @@ class TestTranforms(BytecodeTestCase):
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line,'','single')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
                 self.assertNotInBytecode(code, 'BUILD_TUPLE')
@@ -191,7 +191,7 @@ class TestTranforms(BytecodeTestCase):
             ('a in [None, 1, None]', (None, 1, None)),
             ('a not in [(1, 2), 3, 4]', ((1, 2), 3, 4)),
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
                 self.assertNotInBytecode(code, 'BUILD_LIST')
@@ -206,7 +206,7 @@ class TestTranforms(BytecodeTestCase):
             ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
             ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertNotInBytecode(code, 'BUILD_SET')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
@@ -246,7 +246,7 @@ class TestTranforms(BytecodeTestCase):
             ('a = 13 ^ 7', 10),                 # binary xor
             ('a = 13 | 7', 15),                 # binary or
             ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
@@ -305,7 +305,7 @@ class TestTranforms(BytecodeTestCase):
             ('~-2', 1),                         # unary invert
             ('+1', 1),                          # unary positive
         ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
@@ -325,7 +325,7 @@ class TestTranforms(BytecodeTestCase):
             ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
             ('~"abc"', 'abc', 'UNARY_INVERT'),
         ):
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 code = compile(line, '', 'single')
                 self.assertInBytecode(code, 'LOAD_CONST', elem)
                 self.assertInBytecode(code, opname)
@@ -459,7 +459,7 @@ class TestTranforms(BytecodeTestCase):
             'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
         ]
         for e in exprs:
-            with self.subTest(e=e):
+            with self.subTest(e=):
                 code = compile(e, '', 'single')
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('UNARY_'))
@@ -542,7 +542,7 @@ class TestTranforms(BytecodeTestCase):
                 for r in range(len(flags) + 1):
                     for spec in combinations(flags, r):
                         fmt = '%' + ''.join(spec) + width + prec + suffix
-                        with self.subTest(fmt=fmt, value=value):
+                        with self.subTest(fmt=, value=):
                             s1 = fmt % value
                             s2 = eval(f'{fmt!r} % (x,)', {'x': value})
                             self.assertEqual(s2, s1, f'{fmt = }')

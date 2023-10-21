@@ -47,11 +47,11 @@ class AbstractWidgetTest(AbstractTkTest):
                 expected = str(expected)
         if eq is None:
             eq = tcl_obj_eq
-        self.assertEqual2(widget[name], expected, eq=eq)
-        self.assertEqual2(widget.cget(name), expected, eq=eq)
+        self.assertEqual2(widget[name], expected, eq=)
+        self.assertEqual2(widget.cget(name), expected, eq=)
         t = widget.configure(name)
         self.assertEqual(len(t), 5)
-        self.assertEqual2(t[4], expected, eq=eq)
+        self.assertEqual2(t[4], expected, eq=)
 
     def checkInvalidParam(self, widget, name, value, errmsg=None):
         orig = widget[name]
@@ -83,7 +83,7 @@ class AbstractWidgetTest(AbstractTkTest):
 
     def checkFloatParam(self, widget, name, *values, conv=float, **kwargs):
         for value in values:
-            self.checkParam(widget, name, value, conv=conv, **kwargs)
+            self.checkParam(widget, name, value, conv=, **kwargs)
         self.checkInvalidParam(widget, name, '',
                 errmsg='expected floating-point number but got ""')
         self.checkInvalidParam(widget, name, 'spam',
@@ -131,7 +131,7 @@ class AbstractWidgetTest(AbstractTkTest):
             self.checkInvalidParam(widget, name, '',
                                    errmsg='ambiguous' + errmsg2)
             errmsg = 'bad' + errmsg2
-        self.checkInvalidParam(widget, name, 'spam', errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=)
 
     def checkPixelsParam(self, widget, name, *values,
                          conv=None, **kwargs):
@@ -144,7 +144,7 @@ class AbstractWidgetTest(AbstractTkTest):
                 if conv1 and conv1 is not str:
                     expected = pixels_conv(value) * self.scaling
                     conv1 = round
-            self.checkParam(widget, name, value, expected=expected,
+            self.checkParam(widget, name, value, expected=,
                             conv=conv1, **kwargs)
         self.checkInvalidParam(widget, name, '6x',
                 errmsg='bad screen distance "6x"')
@@ -158,8 +158,7 @@ class AbstractWidgetTest(AbstractTkTest):
                'flat, groove, raised, ridge, solid, or sunken'
         if tk_version < (8, 6):
             errmsg = None
-        self.checkInvalidParam(widget, name, 'spam',
-                errmsg=errmsg)
+        self.checkInvalidParam(widget, name, 'spam', errmsg=)
 
     def checkImageParam(self, widget, name):
         image = tkinter.PhotoImage(master=self.root, name='image1')

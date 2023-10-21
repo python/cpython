@@ -39,7 +39,7 @@ def spawn_repl(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
                             executable=sys.executable,
                             text=True,
                             stdin=subprocess.PIPE,
-                            stdout=stdout, stderr=stderr,
+                            stdout=, stderr=,
                             **kw)
 
 def run_on_interactive_mode(source):

@@ -2338,7 +2338,7 @@ class TestPatma(unittest.TestCase):
     def test_patma_220(self):
         def f():
             match Point(..., ...):
-                case Point(x, y=y):
+                case Point(x, y=):
                     return locals()
         self.assertEqual(set(f()), {"x", "y"})
 
@@ -2986,7 +2986,7 @@ class TestSyntaxErrors(unittest.TestCase):
 
     def test_real_number_wrong_ops(self):
         for op in ["*", "/", "@", "**", "%", "//"]:
-            with self.subTest(op=op):
+            with self.subTest(op=):
                 self.assert_syntax_error(f"""
                 match ...:
                     case 0 {op} 0j:

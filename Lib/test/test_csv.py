@@ -225,9 +225,9 @@ class Test_Csv(unittest.TestCase):
 
     def test_write_lineterminator(self):
         for lineterminator in '\r\n', '\n', '\r', '!@#', '\0':
-            with self.subTest(lineterminator=lineterminator):
+            with self.subTest(lineterminator=):
                 with StringIO() as sio:
-                    writer = csv.writer(sio, lineterminator=lineterminator)
+                    writer = csv.writer(sio, lineterminator=)
                     writer.writerow(['a', 'b'])
                     writer.writerow([1, 2])
                     self.assertEqual(sio.getvalue(),
@@ -1090,7 +1090,7 @@ class TestDialectValidity(unittest.TestCase):
             d = mydialect()
 
         for field_name in ("delimiter", "escapechar", "quotechar"):
-            with self.subTest(field_name=field_name):
+            with self.subTest(field_name=):
                 self.assertRaises(csv.Error, create_invalid, field_name, "")
                 self.assertRaises(csv.Error, create_invalid, field_name, "abc")
                 self.assertRaises(csv.Error, create_invalid, field_name, b'x')
@@ -1412,7 +1412,7 @@ class KeyOrderingTest(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         extra = {'__doc__', '__version__'}
-        support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
+        support.check__all__(self, csv, ('csv', '_csv'), extra=)
 
     def test_subclassable(self):
         # issue 44089
@@ -1422,7 +1422,7 @@ class MiscTestCase(unittest.TestCase):
     def test_disallow_instantiation(self):
         _csv = import_helper.import_module("_csv")
         for tp in _csv.Reader, _csv.Writer:
-            with self.subTest(tp=tp):
+            with self.subTest(tp=):
                 check_disallow_instantiation(self, tp)
 
 if __name__ == '__main__':

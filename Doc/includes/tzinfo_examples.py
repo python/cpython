@@ -27,8 +27,7 @@ class LocalTimezone(tzinfo):
         dst_diff = DSTDIFF // SECOND
         # Detect fold
         fold = (args == _time.localtime(stamp - dst_diff))
-        return datetime(*args, microsecond=dt.microsecond,
-                        tzinfo=self, fold=fold)
+        return datetime(*args, microsecond=dt.microsecond, tzinfo=self, fold=)
 
     def utcoffset(self, dt):
         if self._isdst(dt):
@@ -102,15 +101,15 @@ def us_dst_range(year):
     else:
         return (datetime(year, 1, 1), ) * 2
 
-    start = first_sunday_on_or_after(dststart.replace(year=year))
-    end = first_sunday_on_or_after(dstend.replace(year=year))
+    start = first_sunday_on_or_after(dststart.replace(year=))
+    end = first_sunday_on_or_after(dstend.replace(year=))
     return start, end
 
 
 class USTimeZone(tzinfo):
 
     def __init__(self, hours, reprname, stdname, dstname):
-        self.stdoffset = timedelta(hours=hours)
+        self.stdoffset = timedelta(hours=)
         self.reprname = reprname
         self.stdname = stdname
         self.dstname = dstname

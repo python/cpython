@@ -189,9 +189,9 @@ class ZipAppTest(unittest.TestCase):
             '.a:b', 'a:b.', 'a:.b', 'a:silly name'
         ]
         for main in problems:
-            with self.subTest(main=main):
+            with self.subTest(main=):
                 with self.assertRaises(zipapp.ZipAppError):
-                    zipapp.create_archive(str(source), str(target), main=main)
+                    zipapp.create_archive(str(source), str(target), main=)
 
     def test_default_no_shebang(self):
         # Test that no shebang line is written to the target by default.

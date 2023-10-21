@@ -422,7 +422,7 @@ class Random(_random.Random):
                 raise TypeError('Counts must be integers')
             if total <= 0:
                 raise ValueError('Total of counts must be greater than zero')
-            selections = self.sample(range(total), k=k)
+            selections = self.sample(range(total), k=)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
         randbelow = self._randbelow

@@ -164,24 +164,22 @@ class CompressorDecompressorTestCase(unittest.TestCase):
 
         # Feed first half the input
         len_ = len(COMPRESSED_XZ) // 2
-        out.append(lzd.decompress(COMPRESSED_XZ[:len_],
-                                  max_length=max_length))
+        out.append(lzd.decompress(COMPRESSED_XZ[:len_], max_length=))
         self.assertFalse(lzd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data without providing more input
-        out.append(lzd.decompress(b'', max_length=max_length))
+        out.append(lzd.decompress(b'', max_length=))
         self.assertFalse(lzd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data while providing more input
-        out.append(lzd.decompress(COMPRESSED_XZ[len_:],
-                                  max_length=max_length))
+        out.append(lzd.decompress(COMPRESSED_XZ[len_:], max_length=))
         self.assertLessEqual(len(out[-1]), max_length)
 
         # Retrieve remaining uncompressed data
         while not lzd.eof:
-            out.append(lzd.decompress(b'', max_length=max_length))
+            out.append(lzd.decompress(b'', max_length=))
             self.assertLessEqual(len(out[-1]), max_length)
 
         out = b"".join(out)
@@ -1344,7 +1342,7 @@ class OpenTestCase(unittest.TestCase):
         for mode in ("x", "xb", "xt"):
             unlink(TESTFN)
             encoding = "ascii" if "t" in mode else None
-            with lzma.open(TESTFN, mode, encoding=encoding):
+            with lzma.open(TESTFN, mode, encoding=):
                 pass
             with self.assertRaises(FileExistsError):
                 with lzma.open(TESTFN, mode):

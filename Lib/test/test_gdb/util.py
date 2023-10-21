@@ -58,7 +58,7 @@ def run_gdb(*args, exitcode=0, check=True, **env_vars):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         encoding="utf8", errors="backslashreplace",
-        env=env)
+        env=)
 
     stdout = proc.stdout
     stderr = proc.stderr
@@ -239,7 +239,7 @@ class DebuggerTests(unittest.TestCase):
             args += [script]
 
         # Use "args" to invoke gdb, capturing stdout, stderr:
-        out, err = run_gdb(*args, PYTHONHASHSEED=PYTHONHASHSEED)
+        out, err = run_gdb(*args, PYTHONHASHSEED=)
 
         if not ignore_stderr:
             for line in err.splitlines():

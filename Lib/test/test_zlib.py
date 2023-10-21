@@ -286,13 +286,13 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         wbits = -12
         memLevel = 9
         strategy = zlib.Z_FILTERED
-        co = zlib.compressobj(level=level,
-                              method=method,
-                              wbits=wbits,
-                              memLevel=memLevel,
-                              strategy=strategy,
+        co = zlib.compressobj(level=,
+                              method=,
+                              wbits=,
+                              memLevel=,
+                              strategy=,
                               zdict=b"")
-        do = zlib.decompressobj(wbits=wbits, zdict=b"")
+        do = zlib.decompressobj(wbits=, zdict=b"")
         with self.assertRaises(TypeError):
             co.compress(data=HAMLET_SCENE)
         with self.assertRaises(TypeError):
@@ -539,10 +539,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         random.shuffle(words)
         zdict = b''.join(words)
         # Use it to compress HAMLET.
-        co = zlib.compressobj(zdict=zdict)
+        co = zlib.compressobj(zdict=)
         cd = co.compress(h) + co.flush()
         # Verify that it will decompress with the dictionary.
-        dco = zlib.decompressobj(zdict=zdict)
+        dco = zlib.decompressobj(zdict=)
         self.assertEqual(dco.decompress(cd) + dco.flush(), h)
         # Verify that it fails when not given the dictionary.
         dco = zlib.decompressobj()
@@ -623,9 +623,9 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     # issue27164
     def test_decompress_raw_with_dictionary(self):
         zdict = b'abcdefghijklmnopqrstuvwxyz'
-        co = zlib.compressobj(wbits=-zlib.MAX_WBITS, zdict=zdict)
+        co = zlib.compressobj(wbits=-zlib.MAX_WBITS, zdict=)
         comp = co.compress(zdict) + co.flush()
-        dco = zlib.decompressobj(wbits=-zlib.MAX_WBITS, zdict=zdict)
+        dco = zlib.decompressobj(wbits=-zlib.MAX_WBITS, zdict=)
         uncomp = dco.decompress(comp) + dco.flush()
         self.assertEqual(zdict, uncomp)
 
@@ -849,10 +849,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
 
         for wbits in (-15, 15, 31):
-            with self.subTest(wbits=wbits):
+            with self.subTest(wbits=):
                 expected = HAMLET_SCENE
                 actual = zlib.decompress(
-                    zlib.compress(HAMLET_SCENE, wbits=wbits), wbits=wbits
+                    zlib.compress(HAMLET_SCENE, wbits=), wbits=
                 )
                 self.assertEqual(expected, actual)
 
@@ -1002,24 +1002,22 @@ class ZlibDecompressorTest(unittest.TestCase):
 
         # Feed some input
         len_ = len(self.BIG_DATA) - 64
-        out.append(zlibd.decompress(self.BIG_DATA[:len_],
-                                  max_length=max_length))
+        out.append(zlibd.decompress(self.BIG_DATA[:len_], max_length=))
         self.assertFalse(zlibd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data without providing more input
-        out.append(zlibd.decompress(b'', max_length=max_length))
+        out.append(zlibd.decompress(b'', max_length=))
         self.assertFalse(zlibd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data while providing more input
-        out.append(zlibd.decompress(self.BIG_DATA[len_:],
-                                  max_length=max_length))
+        out.append(zlibd.decompress(self.BIG_DATA[len_:], max_length=))
         self.assertLessEqual(len(out[-1]), max_length)
 
         # Retrieve remaining uncompressed data
         while not zlibd.eof:
-            out.append(zlibd.decompress(b'', max_length=max_length))
+            out.append(zlibd.decompress(b'', max_length=))
             self.assertLessEqual(len(out[-1]), max_length)
 
         out = b"".join(out)

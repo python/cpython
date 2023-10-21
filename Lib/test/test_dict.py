@@ -340,7 +340,7 @@ class DictTest(unittest.TestCase):
         for dict_size in [10, 100, 1000, 10000, 100000]:
             dict_size = random.randrange(
                 dict_size // 2, dict_size + dict_size // 2)
-            with self.subTest(dict_size=dict_size):
+            with self.subTest(dict_size=):
                 d = {}
                 for i in range(dict_size):
                     d[i] = i
@@ -723,7 +723,7 @@ class DictTest(unittest.TestCase):
         for _ in range(100):
             left = {x:rr(3) for x in range(20) if rr(2)}
             right = {x:rr(3) for x in range(20) if rr(2)}
-            with self.subTest(left=left, right=right):
+            with self.subTest(left=, right=):
                 expected = set(left.items()) ^ set(right.items())
                 actual = left.items() ^ right.items()
                 self.assertEqual(actual, expected)
@@ -962,14 +962,14 @@ class DictTest(unittest.TestCase):
         dd.update(d)
         self._tracked(dd)
 
-        d = dict(x=x, y=y, z=z)
+        d = dict(x=, y=, z=)
         self._not_tracked(d)
-        d = dict(x=x, y=y, z=z, w=w)
+        d = dict(x=, y=, z=, w=)
         self._tracked(d)
         d = dict()
-        d.update(x=x, y=y, z=z)
+        d.update(x=, y=, z=)
         self._not_tracked(d)
-        d.update(w=w)
+        d.update(w=)
         self._tracked(d)
 
         d = dict([(x, y), (z, 1)])
@@ -1548,7 +1548,7 @@ class DictTest(unittest.TestCase):
             dicts.append(d)
 
         for d in dicts:
-            with self.subTest(d=d):
+            with self.subTest(d=):
                 self.assertEqual(d.get('key1'), 42)
 
                 # Try to make an object that is of type `str` and is equal to

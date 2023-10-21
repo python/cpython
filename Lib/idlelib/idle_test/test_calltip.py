@@ -135,7 +135,7 @@ you\'ll probably have to override _wrap_chunks().''')
                "bbbbbbbbbbbbbbbbbbbbbb')"
 
         for func,doc in [(foo, sfoo), (bar, sbar), (baz, sbaz)]:
-            with self.subTest(func=func, doc=doc):
+            with self.subTest(func=, doc=):
                 self.assertEqual(get_spec(func), doc)
 
     def test_docline_truncation(self):
@@ -176,13 +176,13 @@ bytes() -> empty bytes object''')
 
         doc = '\ndoc' if t1.__doc__ is not None else ''
         for func in (t1, t2, t3, t4, t5, TC):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 self.assertEqual(get_spec(func), func.tip + doc)
 
     def test_methods(self):
         doc = '\ndoc' if TC.__doc__ is not None else ''
         for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.__call__):
-            with self.subTest(meth=meth):
+            with self.subTest(meth=):
                 self.assertEqual(get_spec(meth), meth.tip + doc)
         self.assertEqual(get_spec(TC.cm), "(a)" + doc)
         self.assertEqual(get_spec(TC.sm), "(b)" + doc)
@@ -193,7 +193,7 @@ bytes() -> empty bytes object''')
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"),
                             (tc.t6, "(self)"), (tc.__call__, '(ci)'),
                             (tc, '(ci)'), (TC.cm, "(a)"),):
-            with self.subTest(meth=meth, mtip=mtip):
+            with self.subTest(meth=, mtip=):
                 self.assertEqual(get_spec(meth), mtip + doc)
 
     def test_starred_parameter(self):
@@ -202,7 +202,7 @@ bytes() -> empty bytes object''')
             def m1(*args): pass
         c = C()
         for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),):
-            with self.subTest(meth=meth, mtip=mtip):
+            with self.subTest(meth=, mtip=):
                 self.assertEqual(get_spec(meth), mtip)
 
     def test_invalid_method_get_spec(self):
@@ -223,7 +223,7 @@ bytes() -> empty bytes object''')
 
     def test_no_docstring(self):
         for meth, mtip in ((TC.nd, "(self)"), (tc.nd, "()")):
-            with self.subTest(meth=meth, mtip=mtip):
+            with self.subTest(meth=, mtip=):
                 self.assertEqual(get_spec(meth), mtip)
 
     def test_buggy_getattr_class(self):
@@ -240,7 +240,7 @@ bytes() -> empty bytes object''')
         for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
                             (NoCall(), ''), (CallA(), '(ci)'),
                             (CallB(), '(a, b, c)')):
-            with self.subTest(meth=meth, mtip=mtip):
+            with self.subTest(meth=, mtip=):
                 self.assertEqual(get_spec(meth), mtip)
 
     def test_metaclass_class(self):  # Failure case for issue 38689.
@@ -250,12 +250,12 @@ bytes() -> empty bytes object''')
             __slots__ = '__class__'
         for meth, mtip  in ((Type, get_spec(type)), (Object, default_tip),
                             (Object(), '')):
-            with self.subTest(meth=meth, mtip=mtip):
+            with self.subTest(meth=, mtip=):
                 self.assertEqual(get_spec(meth), mtip)
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 self.assertEqual(get_spec(obj), '')
 
 
@@ -343,7 +343,7 @@ class CalltipTest(unittest.TestCase):
     def test_repeated_parens(self):
         def parens(self):
             for context in "a", "'":
-                with self.subTest(context=context):
+                with self.subTest(context=):
                     self.text.insert('insert', context)
                     for char in '(()())':
                         self.text.insert('insert', char)

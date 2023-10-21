@@ -124,7 +124,7 @@ def _get_module_details(mod_name, error=ImportError):
             msg = "{mod_name!r} found in sys.modules after import of " \
                 "package {pkg_name!r}, but prior to execution of " \
                 "{mod_name!r}; this may result in unpredictable " \
-                "behaviour".format(mod_name=mod_name, pkg_name=pkg_name)
+                "behaviour".format(mod_name=, pkg_name=)
             warn(RuntimeWarning(msg))
 
     try:
@@ -284,7 +284,7 @@ def run_path(path_name, init_globals=None, run_name=None):
         # execfile() doesn't help as we want to allow compiled files
         code, fname = _get_code_from_file(run_name, path_name)
         return _run_module_code(code, init_globals, run_name,
-                                pkg_name=pkg_name, script_name=fname)
+                                pkg_name=, script_name=fname)
     else:
         # Finder is defined for path, so add it to
         # the start of sys.path

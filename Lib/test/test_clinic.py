@@ -23,7 +23,7 @@ with test_tools.imports_under_tool('clinic'):
 
 def _make_clinic(*, filename='clinic_tests'):
     clang = clinic.CLanguage(None)
-    c = clinic.Clinic(clang, filename=filename, limited_capi=False)
+    c = clinic.Clinic(clang, filename=, limited_capi=False)
     c.block_parser = clinic.BlockParser('', clang)
     return c
 
@@ -57,7 +57,7 @@ class ClinicWholeFileTest(TestCase):
 
     def expect_failure(self, raw, errmsg, *, filename=None, lineno=None):
         _expect_failure(self, self.clinic.parse, raw, errmsg,
-                        filename=filename, lineno=lineno)
+                        filename=, lineno=)
 
     def setUp(self):
         self.clinic = _make_clinic(filename="test.c")
@@ -220,7 +220,7 @@ class ClinicWholeFileTest(TestCase):
             "parser_prototype",
         }
         for field in fields:
-            with self.subTest(field=field):
+            with self.subTest(field=):
                 self.assertIn(field, out)
         last_line = out.rstrip().split("\n")[-1]
         self.assertTrue(
@@ -286,8 +286,7 @@ class ClinicWholeFileTest(TestCase):
             ('1.2b3', '1.2b3'),  # required version == clinic version
         )
         for clinic_version, required_version in dataset:
-            with self.subTest(clinic_version=clinic_version,
-                              required_version=required_version):
+            with self.subTest(clinic_version=, required_version=):
                 with self._clinic_version(clinic_version):
                     block = dedent(f"""
                         /*[clinic input]
@@ -721,8 +720,8 @@ class ParseFileUnitTest(TestCase):
             "foo.js": "Can't identify file type for file 'foo.js'",
         }
         for filename, errmsg in filenames_to_errors.items():
-            with self.subTest(filename=filename):
-                self.expect_parsing_failure(filename=filename, expected_error=errmsg)
+            with self.subTest(filename=):
+                self.expect_parsing_failure(filename=, expected_error=errmsg)
 
 
 class ClinicGroupPermuterTest(TestCase):
@@ -922,7 +921,7 @@ class ClinicParserTest(TestCase):
     def expect_failure(self, block, err, *,
                        filename=None, lineno=None, strip=True):
         return _expect_failure(self, self.parse_function, block, err,
-                               filename=filename, lineno=lineno, strip=strip)
+                               filename=, lineno=, strip=)
 
     def checkDocstring(self, fn, expected):
         self.assertTrue(hasattr(fn, "docstring"))
@@ -1325,7 +1324,7 @@ class ClinicParserTest(TestCase):
             ('attr', 1),
         )
         for name, group in dataset:
-            with self.subTest(name=name, group=group):
+            with self.subTest(name=, group=):
                 p = function.parameters[name]
                 self.assertEqual(p.group, group)
                 self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
@@ -1387,7 +1386,7 @@ class ClinicParserTest(TestCase):
             ('attr4', 2), ('attr5', 2), ('attr6', 2),
         )
         for name, group in dataset:
-            with self.subTest(name=name, group=group):
+            with self.subTest(name=, group=):
                 p = function.parameters[name]
                 self.assertEqual(p.group, group)
                 self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
@@ -1557,7 +1556,7 @@ class ClinicParserTest(TestCase):
             "parameters are positional-only ('/')"
         )
         for block in dataset:
-            with self.subTest(block=block):
+            with self.subTest(block=):
                 self.expect_failure(block, err)
 
     def test_no_parameters(self):
@@ -1628,7 +1627,7 @@ class ClinicParserTest(TestCase):
         )
         err = "Function 'bar' specifies '*' without following parameters."
         for block in dataset:
-            with self.subTest(block=block):
+            with self.subTest(block=):
                 self.expect_failure(block, err)
 
     def test_fulldisplayname_class(self):
@@ -1651,7 +1650,7 @@ class ClinicParserTest(TestCase):
             """),
         )
         for name, code in dataset:
-            with self.subTest(name=name, code=code):
+            with self.subTest(name=, code=):
                 block = self.parse(code)
                 func = block.signatures[-1]
                 self.assertEqual(func.fulldisplayname, name)
@@ -1680,7 +1679,7 @@ class ClinicParserTest(TestCase):
             """),
         )
         for name, code in dataset:
-            with self.subTest(name=name, code=code):
+            with self.subTest(name=, code=):
                 block = self.parse(code)
                 func = block.signatures[-1]
                 self.assertEqual(func.fulldisplayname, name)
@@ -2087,7 +2086,7 @@ class ClinicParserTest(TestCase):
             'module os\nos.access\n   path: b"42"',
         )
         for block in dataset:
-            with self.subTest(block=block):
+            with self.subTest(block=):
                 self.expect_failure(block, err, lineno=2)
 
     def test_other_bizarre_things_in_annotations_fail(self):
@@ -2098,7 +2097,7 @@ class ClinicParserTest(TestCase):
             'module os\nos.access\n   path: (x for x in range(42))',
         )
         for block in dataset:
-            with self.subTest(block=block):
+            with self.subTest(block=):
                 self.expect_failure(block, err, lineno=2)
 
     def test_kwarg_splats_disallowed_in_function_call_annotations(self):
@@ -2110,7 +2109,7 @@ class ClinicParserTest(TestCase):
             'module fo\nfo.barbaz\n   o: bool(**{"bang": None})',
         )
         for block in dataset:
-            with self.subTest(block=block):
+            with self.subTest(block=):
                 self.expect_failure(block, err)
 
     def test_self_param_placement(self):
@@ -2221,7 +2220,7 @@ class ClinicParserTest(TestCase):
         )
         for param in dataset:
             name, unused = param.values()
-            with self.subTest(name=name, unused=unused):
+            with self.subTest(name=, unused=):
                 p = conv(name)
                 # Verify that the unused flag is parsed correctly.
                 self.assertEqual(unused, p.unused)
@@ -2515,16 +2514,16 @@ class ClinicExternalTest(TestCase):
 
             # expect verbose mode to only mention the C files in tmp_dir
             for filename in c_files:
-                with self.subTest(filename=filename):
+                with self.subTest(filename=):
                     path = os.path.join(tmp_dir, filename)
                     self.assertIn(path, out)
             for filename in py_files:
-                with self.subTest(filename=filename):
+                with self.subTest(filename=):
                     path = os.path.join(tmp_dir, filename)
                     self.assertNotIn(path, out)
             # don't expect C files from the externals dir
             for filename in c_files:
-                with self.subTest(filename=filename):
+                with self.subTest(filename=):
                     path = os.path.join(ext_path, filename)
                     self.assertNotIn(path, out)
 
@@ -2636,7 +2635,7 @@ class ClinicExternalTest(TestCase):
         lines = out.split("\n")
         for converter, line in zip(expected_converters, lines):
             line = line.lstrip()
-            with self.subTest(converter=converter):
+            with self.subTest(converter=):
                 self.assertTrue(
                     line.startswith(converter),
                     f"expected converter {converter!r}, got {line!r}"
@@ -2659,7 +2658,7 @@ class ClinicExternalTest(TestCase):
     def test_cli_fail_filename_or_output_and_make(self):
         msg = "can't use -o or filenames with --make"
         for opts in ("-o", "out.c"), ("filename.c",):
-            with self.subTest(opts=opts):
+            with self.subTest(opts=):
                 _, err = self.expect_failure("--make", *opts)
                 self.assertIn(msg, err)
 
@@ -3237,7 +3236,7 @@ class ClinicFunctionalTest(unittest.TestCase):
              ('a', (), True)),
         ]
         for args, kwargs, expected in valid_args_for_test:
-            with self.subTest(args=args, kwargs=kwargs):
+            with self.subTest(args=, kwargs=):
                 self.assertEqual(
                     ac_tester.null_or_tuple_for_varargs(*args, **kwargs),
                     expected,
@@ -3262,7 +3261,7 @@ class ClinicFunctionalTest(unittest.TestCase):
 
     def test_cloned_func_with_converter_exception_message(self):
         for name in "clone_with_conv_f1", "clone_with_conv_f2":
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
 
@@ -3707,7 +3706,7 @@ class FormatHelperTests(unittest.TestCase):
             (" \n \n a\nb \n \n ",  " a\nb"),
         )
         for lines, expected in dataset:
-            with self.subTest(lines=lines, expected=expected):
+            with self.subTest(lines=, expected=):
                 out = clinic.strip_leading_and_trailing_blank_lines(lines)
                 self.assertEqual(out, expected)
 
@@ -3736,8 +3735,8 @@ class FormatHelperTests(unittest.TestCase):
         )
         expected_outputs = {0: zero_indent, 4: four_indent, 8: eight_indent}
         for indent, expected in expected_outputs.items():
-            with self.subTest(indent=indent):
-                actual = clinic.normalize_snippet(snippet, indent=indent)
+            with self.subTest(indent=):
+                actual = clinic.normalize_snippet(snippet, indent=)
                 self.assertEqual(actual, expected)
 
     def test_accumulator(self):
@@ -3765,7 +3764,7 @@ class FormatHelperTests(unittest.TestCase):
             (r"'a'",    r"\'a\'"),
         )
         for line, expected in dataset:
-            with self.subTest(line=line, expected=expected):
+            with self.subTest(line=, expected=):
                 out = clinic.quoted_for_c_string(line)
                 self.assertEqual(out, expected)
 
@@ -3922,8 +3921,8 @@ class ClinicReprTests(unittest.TestCase):
         parameter = clinic.Parameter(
             "bar",
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
-            function=function,
-            converter=converter
+            function=,
+            converter=
         )
         self.assertEqual(repr(parameter), "<clinic.Parameter 'bar'>")
 

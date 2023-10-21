@@ -652,13 +652,13 @@ class HashLibTestCase(unittest.TestCase):
         for i in range(salt_size + 1):
             constructor(salt=b'a' * i)
         salt = b'a' * (salt_size + 1)
-        self.assertRaises(ValueError, constructor, salt=salt)
+        self.assertRaises(ValueError, constructor, salt=)
 
         self.assertEqual(constructor.PERSON_SIZE, person_size)
         for i in range(person_size+1):
             constructor(person=b'a' * i)
         person = b'a' * (person_size + 1)
-        self.assertRaises(ValueError, constructor, person=person)
+        self.assertRaises(ValueError, constructor, person=)
 
         self.assertEqual(constructor.MAX_DIGEST_SIZE, digest_size)
         for i in range(1, digest_size + 1):
@@ -671,7 +671,7 @@ class HashLibTestCase(unittest.TestCase):
         for i in range(key_size+1):
             constructor(key=b'a' * i)
         key = b'a' * (key_size + 1)
-        self.assertRaises(ValueError, constructor, key=key)
+        self.assertRaises(ValueError, constructor, key=)
         self.assertEqual(constructor().hexdigest(),
                          constructor(key=b'').hexdigest())
 
@@ -743,7 +743,7 @@ class HashLibTestCase(unittest.TestCase):
                 key = selftest_seq(outlen, outlen)
                 unkeyed = constructor(indata, digest_size=outlen)
                 outer.update(unkeyed.digest())
-                keyed = constructor(indata, key=key, digest_size=outlen)
+                keyed = constructor(indata, key=, digest_size=outlen)
                 outer.update(keyed.digest())
         return outer.hexdigest()
 
@@ -790,7 +790,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_blake2b_vectors(self):
         for msg, key, md in read_vectors('blake2b'):
             key = bytes.fromhex(key)
-            self.check('blake2b', msg, md, key=key)
+            self.check('blake2b', msg, md, key=)
 
     @requires_blake2
     def test_blake2s(self):
@@ -833,7 +833,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_blake2s_vectors(self):
         for msg, key, md in read_vectors('blake2s'):
             key = bytes.fromhex(key)
-            self.check('blake2s', msg, md, key=key)
+            self.check('blake2s', msg, md, key=)
 
     @requires_sha3
     def test_case_sha3_224_0(self):
@@ -981,7 +981,7 @@ class HashLibTestCase(unittest.TestCase):
                     h = constructor()
                 except ValueError:
                     continue
-                with self.subTest(constructor=constructor):
+                with self.subTest(constructor=):
                     support.check_disallow_instantiation(self, type(h))
 
     @unittest.skipUnless(HASH is not None, 'need _hashlib')
@@ -999,7 +999,7 @@ class HashLibTestCase(unittest.TestCase):
                     hash_type = type(constructor())
                 except ValueError:
                     continue
-                with self.subTest(hash_type=hash_type):
+                with self.subTest(hash_type=):
                     with self.assertRaisesRegex(TypeError, "immutable type"):
                         hash_type.value = False
 
@@ -1119,7 +1119,7 @@ class KDFTests(unittest.TestCase):
     @unittest.skipIf(get_fips_mode(), reason="scrypt is blocked in FIPS mode")
     def test_scrypt(self):
         for password, salt, n, r, p, expected in self.scrypt_test_vectors:
-            result = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p)
+            result = hashlib.scrypt(password, salt=, n=, r=, p=)
             self.assertEqual(result, expected)
 
         # this values should work
@@ -1138,21 +1138,21 @@ class KDFTests(unittest.TestCase):
             hashlib.scrypt(b'password', 2, 8, 1, salt=b'salt')
         for n in [-1, 0, 1, None]:
             with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=n, r=8, p=1)
+                hashlib.scrypt(b'password', salt=b'salt', n=, r=8, p=1)
         for r in [-1, 0, None]:
             with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=r, p=1)
+                hashlib.scrypt(b'password', salt=b'salt', n=2, r=, p=1)
         for p in [-1, 0, None]:
             with self.assertRaises((ValueError, OverflowError, TypeError)):
-                hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=p)
+                hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=)
         for maxmem in [-1, None]:
             with self.assertRaises((ValueError, OverflowError, TypeError)):
                 hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
-                               maxmem=maxmem)
+                               maxmem=)
         for dklen in [-1, None]:
             with self.assertRaises((ValueError, OverflowError, TypeError)):
                 hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
-                               dklen=dklen)
+                               dklen=)
 
     def test_normalized_name(self):
         self.assertNotIn("blake2b512", hashlib.algorithms_available)

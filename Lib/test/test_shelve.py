@@ -65,7 +65,7 @@ class TestCase(unittest.TestCase):
         os.mkdir(self.dirname)
         self.addCleanup(os_helper.rmtree, self.dirname)
         s = shelve.open(filename=filename if filename is not None else self.fn,
-                        protocol=protocol)
+                        protocol=)
         try:
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))

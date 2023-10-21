@@ -1585,7 +1585,7 @@ class OptionParser (OptionContainer):
         or not defined.
         """
         if self.usage:
-            print(self.get_usage(), file=file)
+            print(self.get_usage(), file=)
 
     def get_version(self):
         if self.version:
@@ -1602,7 +1602,7 @@ class OptionParser (OptionContainer):
         name.  Does nothing if self.version is empty or undefined.
         """
         if self.version:
-            print(self.get_version(), file=file)
+            print(self.get_version(), file=)
 
     def format_option_help(self, formatter=None):
         if formatter is None:

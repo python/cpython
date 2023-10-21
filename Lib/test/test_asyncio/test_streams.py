@@ -585,8 +585,7 @@ class StreamTests(test_utils.TestCase):
             def start(self):
                 sock = socket.create_server(('127.0.0.1', 0))
                 self.server = self.loop.run_until_complete(
-                    asyncio.start_server(self.handle_client,
-                                         sock=sock))
+                    asyncio.start_server(self.handle_client, sock=))
                 return sock.getsockname()
 
             def handle_client_callback(self, client_reader, client_writer):
@@ -733,8 +732,7 @@ class StreamTests(test_utils.TestCase):
             def start(self):
                 sock = socket.create_server(('127.0.0.1', 0))
                 self.server = self.loop.run_until_complete(
-                    asyncio.start_server(self.handle_client,
-                                         sock=sock))
+                    asyncio.start_server(self.handle_client, sock=))
                 return sock.getsockname()
 
             def stop(self):

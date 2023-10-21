@@ -746,24 +746,22 @@ class BZ2DecompressorTest(BaseTest):
 
         # Feed some input
         len_ = len(self.BIG_DATA) - 64
-        out.append(bzd.decompress(self.BIG_DATA[:len_],
-                                  max_length=max_length))
+        out.append(bzd.decompress(self.BIG_DATA[:len_], max_length=))
         self.assertFalse(bzd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data without providing more input
-        out.append(bzd.decompress(b'', max_length=max_length))
+        out.append(bzd.decompress(b'', max_length=))
         self.assertFalse(bzd.needs_input)
         self.assertEqual(len(out[-1]), max_length)
 
         # Retrieve more data while providing more input
-        out.append(bzd.decompress(self.BIG_DATA[len_:],
-                                  max_length=max_length))
+        out.append(bzd.decompress(self.BIG_DATA[len_:], max_length=))
         self.assertLessEqual(len(out[-1]), max_length)
 
         # Retrieve remaining uncompressed data
         while not bzd.eof:
-            out.append(bzd.decompress(b'', max_length=max_length))
+            out.append(bzd.decompress(b'', max_length=))
             self.assertLessEqual(len(out[-1]), max_length)
 
         out = b"".join(out)
@@ -953,7 +951,7 @@ class OpenTest(BaseTest):
         for mode in ("x", "xb", "xt"):
             unlink(self.filename)
             encoding = "utf-8" if "t" in mode else None
-            with self.open(self.filename, mode, encoding=encoding) as f:
+            with self.open(self.filename, mode, encoding=) as f:
                 pass
             with self.assertRaises(FileExistsError):
                 with self.open(self.filename, mode) as f:

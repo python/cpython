@@ -166,7 +166,7 @@ class BuiltinTypeInfo(namedtuple('BuiltinTypeInfo', 'file lno name static decl')
         name, isdecl, kind = parsed
         if isdecl:
             return None
-        return cls.from_parsed(name, kind, filename, lno, decls=decls)
+        return cls.from_parsed(name, kind, filename, lno, decls=)
 
     @classmethod
     def from_parsed(cls, name, kind, filename, lno, *, decls=None):

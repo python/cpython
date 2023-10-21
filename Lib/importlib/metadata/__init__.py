@@ -193,7 +193,7 @@ class EntryPoint(DeprecatedTuple):
     dist: Optional['Distribution'] = None
 
     def __init__(self, name, value, group):
-        vars(self).update(name=name, value=value, group=group)
+        vars(self).update(name=, value=, group=)
 
     def load(self):
         """Load the entry point from its definition. If only a module
@@ -221,7 +221,7 @@ class EntryPoint(DeprecatedTuple):
         return re.findall(r'\w+', match.group('extras') or '')
 
     def _for(self, dist):
-        vars(self).update(dist=dist)
+        vars(self).update(dist=)
         return self
 
     def matches(self, **params):
@@ -281,7 +281,7 @@ class EntryPoints(tuple):
         Get the EntryPoint in self matching name.
         """
         try:
-            return next(iter(self.select(name=name)))
+            return next(iter(self.select(name=)))
         except StopIteration:
             raise KeyError(name)
 
@@ -322,7 +322,7 @@ class PackagePath(pathlib.PurePosixPath):
     """A reference to a path in a package"""
 
     def read_text(self, encoding='utf-8'):
-        with self.locate().open(encoding=encoding) as stream:
+        with self.locate().open(encoding=) as stream:
             return stream.read()
 
     def read_binary(self):
@@ -393,7 +393,7 @@ class Distribution(DeprecatedNonAbstract):
         if not name:
             raise ValueError("A distribution name is required.")
         try:
-            return next(cls.discover(name=name))
+            return next(cls.discover(name=))
         except StopIteration:
             raise PackageNotFoundError(name)
 

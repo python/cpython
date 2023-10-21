@@ -327,7 +327,7 @@ class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCas
         ]
 
         for input, expected in test_cases:
-            with self.subTest(input=input):
+            with self.subTest(input=):
                 res = _testcapi.unstable_exc_prep_reraise_star(orig, input)
                 self.assertExceptionIsLike(res, expected)
 
@@ -358,7 +358,7 @@ class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCas
         ]
 
         for (input, expected) in test_cases:
-            with self.subTest(input=input):
+            with self.subTest(input=):
                 res = _testcapi.unstable_exc_prep_reraise_star(orig, input)
                 self.assertExceptionIsLike(res, expected)
 

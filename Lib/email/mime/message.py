@@ -23,7 +23,7 @@ class MIMEMessage(MIMENonMultipart):
         default is "rfc822" (this is defined by the MIME standard, even though
         the term "rfc822" is technically outdated by RFC 2822).
         """
-        MIMENonMultipart.__init__(self, 'message', _subtype, policy=policy)
+        MIMENonMultipart.__init__(self, 'message', _subtype, policy=)
         if not isinstance(_msg, message.Message):
             raise TypeError('Argument is not an instance of Message')
         # It's convenient to use this base class method.  We need to do it

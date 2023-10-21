@@ -278,7 +278,7 @@ class TestSupport(unittest.TestCase):
         """Check the warning message when os.chdir() fails."""
         path = TESTFN + '_does_not_exist'
         with warnings_helper.check_warnings() as recorder:
-            with os_helper.change_cwd(path=path, quiet=True):
+            with os_helper.change_cwd(path=, quiet=True):
                 pass
             messages = [str(w.message) for w in recorder.warnings]
 
@@ -414,20 +414,17 @@ class TestSupport(unittest.TestCase):
         ignore = ['attribute1', 'attribute3', '__magic_2__', 'not_in_either']
 
         missing_items = support.detect_api_mismatch(
-                self.RefClass, self.OtherClass, ignore=ignore)
+                self.RefClass, self.OtherClass, ignore=)
         self.assertEqual(set(), missing_items)
 
         missing_items = support.detect_api_mismatch(
-                self.OtherClass, self.RefClass, ignore=ignore)
+                self.OtherClass, self.RefClass, ignore=)
         self.assertEqual(set(), missing_items)
 
     def test_check__all__(self):
         extra = {'tempdir'}
         not_exported = {'template'}
-        support.check__all__(self,
-                             tempfile,
-                             extra=extra,
-                             not_exported=not_exported)
+        support.check__all__(self, tempfile, extra=, not_exported=)
 
         extra = {
             'TextTestResult',
@@ -440,8 +437,8 @@ class TestSupport(unittest.TestCase):
                               "unittest.suite", "unittest.loader",
                               "unittest.main", "unittest.runner",
                               "unittest.signals", "unittest.async_case"),
-                             extra=extra,
-                             not_exported=not_exported)
+                             extra=,
+                             not_exported=)
 
         self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
@@ -492,7 +489,7 @@ class TestSupport(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.DEVNULL,
                               universal_newlines=True,
-                              env=env)
+                              env=)
         if expected is None:
             expected = args
         self.assertEqual(proc.stdout.rstrip(), repr(expected))
@@ -528,7 +525,7 @@ class TestSupport(unittest.TestCase):
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
         ):
-            with self.subTest(opts=opts):
+            with self.subTest(opts=):
                 self.check_options(opts, 'args_from_interpreter_flags')
 
         self.check_options(['-I', '-E', '-s', '-P'],
@@ -544,7 +541,7 @@ class TestSupport(unittest.TestCase):
             ['-OO'],
             ['-OOOO'],
         ):
-            with self.subTest(opts=opts):
+            with self.subTest(opts=):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
     def test_match_test(self):
@@ -783,7 +780,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(parse('1t'), TiB)
 
         for limit in ('', '3', '3.5.10k', '10x'):
-            with self.subTest(limit=limit):
+            with self.subTest(limit=):
                 with self.assertRaises(ValueError):
                     parse(limit)
 

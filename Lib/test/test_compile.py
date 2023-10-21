@@ -905,7 +905,7 @@ class TestSpecifics(unittest.TestCase):
 
         # Check that condition is removed.
         for func in funcs:
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 opcodes = list(dis.get_instructions(func))
                 self.assertLessEqual(len(opcodes), 3)
                 self.assertIn('LOAD_', opcodes[-2].opname)
@@ -983,7 +983,7 @@ class TestSpecifics(unittest.TestCase):
             nonlocal frame
             frame = sys._getframe(1)
         for func, lastline in zip(funcs, lastlines, strict=True):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 func(save_caller_frame)
                 self.assertEqual(frame.f_lineno-frame.f_code.co_firstlineno, lastline)
 
@@ -995,7 +995,7 @@ class TestSpecifics(unittest.TestCase):
             a: int
 
         for func in (no_code1, no_code2):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1051,7 +1051,7 @@ class TestSpecifics(unittest.TestCase):
                  store_attr_lines, aug_store_attr_lines]
 
         for func, lines in zip(funcs, func_lines, strict=True):
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 code_lines = self.get_code_lines(func.__code__)
                 self.assertEqual(lines, code_lines)
 
@@ -1210,7 +1210,7 @@ class TestSpecifics(unittest.TestCase):
             "def f():\n\tif not (False if 1 else True): return 12",
         ]
         for expr in exprs:
-            with self.subTest(expr=expr):
+            with self.subTest(expr=):
                 compile(expr, "<single>", "exec")
 
     def test_multi_line_lambda_as_argument(self):

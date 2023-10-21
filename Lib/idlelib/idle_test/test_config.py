@@ -202,7 +202,7 @@ class IdleConfTest(unittest.TestCase):
         config._warn = cls.orig_warn
 
     def new_config(self, _utest=False):
-        return config.IdleConf(_utest=_utest)
+        return config.IdleConf(_utest=)
 
     def mock_config(self):
         """Return a mocked idleConf
@@ -561,7 +561,7 @@ class IdleConfTest(unittest.TestCase):
         root = Tk()
         root.withdraw()
 
-        f = Font.actual(Font(name='TkFixedFont', exists=True, root=root))
+        f = Font.actual(Font(name='TkFixedFont', exists=True, root=))
         self.assertEqual(
             conf.GetFont(root, 'main', 'EditorWindow'),
             (f['family'], 10 if f['size'] <= 0 else f['size'], f['weight']))

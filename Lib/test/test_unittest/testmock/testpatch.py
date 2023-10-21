@@ -1794,7 +1794,7 @@ class PatchTest(unittest.TestCase):
 
     def test_callable_spec_as_list(self):
         spec = ('__call__',)
-        p = patch(MODNAME, spec=spec)
+        p = patch(MODNAME, spec=)
         m = p.start()
         try:
             self.assertTrue(callable(m))
@@ -1804,7 +1804,7 @@ class PatchTest(unittest.TestCase):
 
     def test_not_callable_spec_as_list(self):
         spec = ('foo', 'bar')
-        p = patch(MODNAME, spec=spec)
+        p = patch(MODNAME, spec=)
         m = p.start()
         try:
             self.assertFalse(callable(m))
@@ -1967,7 +1967,7 @@ class PatchTest(unittest.TestCase):
             pass
 
         for target in ['', 12, Foo()]:
-            with self.subTest(target=target):
+            with self.subTest(target=):
                 with self.assertRaises(TypeError):
                     patch(target)
 

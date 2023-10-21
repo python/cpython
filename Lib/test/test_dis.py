@@ -967,7 +967,7 @@ class DisTests(DisTestBase):
         for opcode, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue
-            with self.subTest(opname=opname):
+            with self.subTest(opname=):
                 width = dis._OPNAME_WIDTH
                 if opcode in dis.hasarg:
                     width += 1 + dis._OPARG_WIDTH
@@ -1289,7 +1289,7 @@ class DisTests(DisTestBase):
             # "copy" the code to un-quicken it:
             f.__code__ = f.__code__.replace()
         for instruction in dis.get_instructions(
-            f, show_caches=True, adaptive=adaptive
+            f, show_caches=True, adaptive=
         ):
             if instruction.opname == "CACHE":
                 yield instruction.argrepr
@@ -1904,7 +1904,7 @@ class InstructionTests(InstructionTestCase):
         code_without_location_table = code.replace(co_linetable=b'')
         actual = dis.get_instructions(code_without_location_table)
         for instruction in actual:
-            with self.subTest(instruction=instruction):
+            with self.subTest(instruction=):
                 positions = instruction.positions
                 self.assertEqual(len(positions), 4)
                 if instruction.opname == "RESUME":
@@ -1944,7 +1944,7 @@ class InstructionTests(InstructionTestCase):
                             instruction.positions.end_col_offset,
                         )
                         for instruction in dis.get_instructions(
-                            code, adaptive=adaptive, show_caches=show_caches
+                            code, adaptive=, show_caches=
                         )
                     ]
                     self.assertEqual(co_positions, dis_positions)
@@ -2083,7 +2083,7 @@ class BytecodeTests(InstructionTestCase, DisTestBase):
     def test_instantiation(self):
         # Test with function, method, code string and code object
         for obj in [_f, _C(1).__init__, "a=1", _f.__code__]:
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 b = dis.Bytecode(obj)
                 self.assertIsInstance(b.codeobj, types.CodeType)
 
@@ -2091,7 +2091,7 @@ class BytecodeTests(InstructionTestCase, DisTestBase):
 
     def test_iteration(self):
         for obj in [_f, _C(1).__init__, "a=1", _f.__code__]:
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 via_object = list(dis.Bytecode(obj))
                 via_generator = list(dis.get_instructions(obj))
                 self.assertInstructionsEqual(via_object, via_generator)
@@ -2170,7 +2170,7 @@ class TestFinderMethods(unittest.TestCase):
             ("from ..a.b import *", ('a.b', 2, ('*',))),
         ]
         for src, expected in cases:
-            with self.subTest(src=src):
+            with self.subTest(src=):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_imports(code))
                 self.assertEqual(len(res), 1)
@@ -2185,7 +2185,7 @@ class TestFinderMethods(unittest.TestCase):
             ("global x\nz=x", ('z',)),
         ]
         for src, expected in cases:
-            with self.subTest(src=src):
+            with self.subTest(src=):
                 code = compile(src, "<string>", "exec")
                 res = tuple(dis._find_store_names(code))
                 self.assertEqual(res, expected)

@@ -374,14 +374,11 @@ def parse_file(filename, *,
                ignore_exc=None,
                log_err=None,
                ):
-    get_file_preprocessor = get_preprocessor(
-        ignore_exc=ignore_exc,
-        log_err=log_err,
-    )
+    get_file_preprocessor = get_preprocessor(ignore_exc=, log_err=)
     yield from _parse_file(
         filename,
-        match_kind=match_kind,
-        get_file_preprocessor=get_file_preprocessor,
+        match_kind=,
+        get_file_preprocessor=,
         file_maxsizes=MAX_SIZES,
     )
 
@@ -394,14 +391,11 @@ def parse_files(filenames=None, *,
                 **file_kwargs
                 ):
     if get_file_preprocessor is None:
-        get_file_preprocessor = get_preprocessor(
-            ignore_exc=ignore_exc,
-            log_err=log_err,
-        )
+        get_file_preprocessor = get_preprocessor(ignore_exc=, log_err=)
     yield from _parse_files(
         filenames,
-        match_kind=match_kind,
-        get_file_preprocessor=get_file_preprocessor,
+        match_kind=,
+        get_file_preprocessor=,
         file_maxsizes=MAX_SIZES,
         **file_kwargs
     )

@@ -92,7 +92,7 @@ class MiscTestCase(unittest.TestCase):
             'markobject', 'stackslice', 'OpcodeInfo', 'opcodes',
             'code2op',
         }
-        support.check__all__(self, pickletools, not_exported=not_exported)
+        support.check__all__(self, pickletools, not_exported=)
 
 
 def load_tests(loader, tests, pattern):

@@ -134,7 +134,7 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         not_exported = {'WAVE_FORMAT_PCM', 'WAVE_FORMAT_EXTENSIBLE', 'KSDATAFORMAT_SUBTYPE_PCM'}
-        support.check__all__(self, wave, not_exported=not_exported)
+        support.check__all__(self, wave, not_exported=)
 
     def test_read_deprecations(self):
         filename = support.findfile('pluck-pcm8.wav', subdir='audiodata')

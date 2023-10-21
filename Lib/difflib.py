@@ -1725,8 +1725,8 @@ class HtmlDiff(object):
             styles=self._styles,
             legend=self._legend,
             table=self.make_table(fromlines, tolines, fromdesc, todesc,
-                                  context=context, numlines=numlines),
-            charset=charset
+                                  context=, numlines=),
+            charset=
         )).encode(charset, 'xmlcharrefreplace').decode(charset)
 
     def _tab_newline_replace(self,fromlines,tolines):
@@ -2005,7 +2005,7 @@ class HtmlDiff(object):
 
         table = self._table_template % dict(
             data_rows=''.join(s),
-            header_row=header_row,
+            header_row=,
             prefix=self._prefix[1])
 
         return table.replace('\0+','<span class="diff_add">'). \

@@ -33,7 +33,7 @@ class SmtpTest(unittest.TestCase):
         with socket_helper.transient_internet(self.testServer):
             server = smtplib.SMTP(self.testServer, self.remotePort)
             try:
-                server.starttls(context=context)
+                server.starttls(context=)
             except smtplib.SMTPException as e:
                 if e.args[0] == 'STARTTLS extension not supported by server.':
                     unittest.skip(e.args[0])
@@ -68,7 +68,7 @@ class SmtpSSLTest(unittest.TestCase):
         context.verify_mode = ssl.CERT_NONE
         support.get_attribute(smtplib, 'SMTP_SSL')
         with socket_helper.transient_internet(self.testServer):
-            server = smtplib.SMTP_SSL(self.testServer, self.remotePort, context=context)
+            server = smtplib.SMTP_SSL(self.testServer, self.remotePort, context=)
             server.ehlo()
             server.quit()
 
@@ -81,7 +81,7 @@ class SmtpSSLTest(unittest.TestCase):
         support.get_attribute(smtplib, 'SMTP_SSL')
         context = ssl.create_default_context()
         with socket_helper.transient_internet(self.testServer):
-            server = smtplib.SMTP_SSL(self.testServer, self.remotePort, context=context)
+            server = smtplib.SMTP_SSL(self.testServer, self.remotePort, context=)
             server.ehlo()
             server.quit()
 

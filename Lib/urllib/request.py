@@ -180,7 +180,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     '''
     global _opener
     if context:
-        https_handler = HTTPSHandler(context=context)
+        https_handler = HTTPSHandler(context=)
         opener = build_opener(https_handler)
     elif _opener is None:
         _opener = opener = build_opener()
@@ -770,7 +770,7 @@ class ProxyHandler(BaseHandler):
         for type, url in proxies.items():
             type = type.lower()
             setattr(self, '%s_open' % type,
-                    lambda r, proxy=url, type=type, meth=self.proxy_open:
+                    lambda r, proxy=url, type=, meth=self.proxy_open:
                         meth(r, proxy, type))
 
     def proxy_open(self, req, proxy, type):
@@ -1914,7 +1914,7 @@ class URLopener:
             headers["Content-Type"] = "application/x-www-form-urlencoded"
             http_conn.request("POST", selector, data, headers)
         else:
-            http_conn.request("GET", selector, headers=headers)
+            http_conn.request("GET", selector, headers=)
 
         try:
             response = http_conn.getresponse()
@@ -1969,7 +1969,7 @@ class URLopener:
                     context.post_handshake_auth = True
             else:
                 context = None
-            return http.client.HTTPSConnection(host, context=context)
+            return http.client.HTTPSConnection(host, context=)
 
         def open_https(self, url, data=None):
             """Use HTTPS protocol."""

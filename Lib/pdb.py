@@ -151,11 +151,7 @@ class _ScriptTarget(str):
 
     @property
     def namespace(self):
-        return dict(
-            __name__='__main__',
-            __file__=self,
-            __builtins__=__builtins__,
-        )
+        return dict(__name__='__main__', __file__=self, __builtins__=)
 
     @property
     def code(self):
@@ -201,7 +197,7 @@ class _ModuleTarget(str):
             __package__=self._spec.parent,
             __loader__=self._spec.loader,
             __spec__=self._spec,
-            __builtins__=__builtins__,
+            __builtins__=,
         )
 
 
@@ -223,7 +219,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
                  nosigint=False, readrc=True):
-        bdb.Bdb.__init__(self, skip=skip)
+        bdb.Bdb.__init__(self, skip=)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
         if stdout:

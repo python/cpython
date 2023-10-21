@@ -676,7 +676,7 @@ def main():
             if arg == "-":
                 f = sys.stdin.buffer
                 g = GzipFile(filename="", mode="wb", fileobj=sys.stdout.buffer,
-                             compresslevel=compresslevel)
+                             compresslevel=)
             else:
                 f = builtins.open(arg, "rb")
                 g = open(arg + ".gz", "wb")

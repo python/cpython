@@ -276,7 +276,7 @@ class TestLiterals(unittest.TestCase):
     def check_encoding(self, encoding, extra=""):
         modname = "xx_" + encoding.replace("-", "_")
         fn = os.path.join(self.tmpdir, modname + ".py")
-        f = open(fn, "w", encoding=encoding)
+        f = open(fn, "w", encoding=)
         try:
             f.write(TEMPLATE % encoding)
             f.write(extra)

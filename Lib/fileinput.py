@@ -86,8 +86,8 @@ def input(files=None, inplace=False, backup="", *, mode="r", openhook=None,
     global _state
     if _state and _state._file:
         raise RuntimeError("input() already active")
-    _state = FileInput(files, inplace, backup, mode=mode, openhook=openhook,
-                       encoding=encoding, errors=errors)
+    _state = FileInput(files, inplace, backup, mode=, openhook=,
+                       encoding=, errors=)
     return _state
 
 def close():
@@ -336,12 +336,12 @@ class FileInput:
                 # The next few lines may raise OSError
                 os.rename(self._filename, self._backupfilename)
                 self._file = open(self._backupfilename, self._mode,
-                                  encoding=encoding, errors=self._errors)
+                                  encoding=, errors=self._errors)
                 try:
                     perm = os.fstat(self._file.fileno()).st_mode
                 except OSError:
                     self._output = open(self._filename, self._write_mode,
-                                        encoding=encoding, errors=self._errors)
+                                        encoding=, errors=self._errors)
                 else:
                     mode = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
                     if hasattr(os, 'O_BINARY'):
@@ -349,7 +349,7 @@ class FileInput:
 
                     fd = os.open(self._filename, mode, perm)
                     self._output = os.fdopen(fd, self._write_mode,
-                                             encoding=encoding, errors=self._errors)
+                                             encoding=, errors=self._errors)
                     try:
                         os.chmod(self._filename, perm)
                     except OSError:
@@ -367,7 +367,7 @@ class FileInput:
                         self._file = self._openhook(
                             self._filename, self._mode, encoding=self._encoding, errors=self._errors)
                 else:
-                    self._file = open(self._filename, self._mode, encoding=encoding, errors=self._errors)
+                    self._file = open(self._filename, self._mode, encoding=, errors=self._errors)
         self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()
 
@@ -409,17 +409,17 @@ def hook_compressed(filename, mode, *, encoding=None, errors=None):
         import bz2
         stream = bz2.BZ2File(filename, mode)
     else:
-        return open(filename, mode, encoding=encoding, errors=errors)
+        return open(filename, mode, encoding=, errors=)
 
     # gzip and bz2 are binary mode by default.
     if "b" not in mode:
-        stream = io.TextIOWrapper(stream, encoding=encoding, errors=errors)
+        stream = io.TextIOWrapper(stream, encoding=, errors=)
     return stream
 
 
 def hook_encoded(encoding, errors=None):
     def openhook(filename, mode):
-        return open(filename, mode, encoding=encoding, errors=errors)
+        return open(filename, mode, encoding=, errors=)
     return openhook
 
 
@@ -431,7 +431,7 @@ def _test():
     for o, a in opts:
         if o == '-i': inplace = True
         if o == '-b': backup = a
-    for line in input(args, inplace=inplace, backup=backup):
+    for line in input(args, inplace=, backup=):
         if line[-1:] == '\n': line = line[:-1]
         if line[-1:] == '\r': line = line[:-1]
         print("%d: %s[%d]%s %s" % (lineno(), filename(), filelineno(),

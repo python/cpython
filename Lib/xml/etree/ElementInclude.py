@@ -91,7 +91,7 @@ def default_loader(href, parse, encoding=None):
     else:
         if not encoding:
             encoding = 'UTF-8'
-        with open(href, 'r', encoding=encoding) as file:
+        with open(href, 'r', encoding=) as file:
             data = file.read()
     return data
 

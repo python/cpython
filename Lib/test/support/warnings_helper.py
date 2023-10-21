@@ -37,8 +37,7 @@ def check_syntax_warning(testcase, statement, errtext='',
     # error report.
     with warnings.catch_warnings(record=True) as warns:
         warnings.simplefilter('error', SyntaxWarning)
-        check_syntax_error(testcase, statement, errtext,
-                           lineno=lineno, offset=offset)
+        check_syntax_error(testcase, statement, errtext, lineno=, offset=)
     # No warnings are leaked when a SyntaxError is raised.
     testcase.assertEqual(warns, [])
 
@@ -53,7 +52,7 @@ def ignore_warnings(*, category):
         @functools.wraps(test)
         def wrapper(self, *args, **kwargs):
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore', category=category)
+                warnings.simplefilter('ignore', category=)
                 return test(self, *args, **kwargs)
         return wrapper
     return decorator
@@ -122,9 +121,7 @@ def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
     """
     from test.support import gc_collect
     with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always',
-                                message=message,
-                                category=category)
+        warnings.filterwarnings('always', message=, category=)
         yield
         if force_gc:
             gc_collect()

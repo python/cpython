@@ -333,7 +333,7 @@ class TraceCallbackTests(MemoryDatabaseMixin, unittest.TestCase):
         # SQLITE_LIMIT_LENGTH.
         template = "select 1 as a where a="
         category = sqlite.SQLITE_LIMIT_LENGTH
-        with memory_database() as cx, cx_limit(cx, category=category) as lim:
+        with memory_database() as cx, cx_limit(cx, category=) as lim:
             ok_param = "a"
             bad_param = "a" * lim
 

@@ -78,7 +78,7 @@ def extract_pip_files(ns):
             "--only-binary",
             ":all:",
         ],
-        env=env,
+        env=,
     )
 
     try:

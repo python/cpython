@@ -619,8 +619,8 @@ def _init_fn(fields, std_fields, kw_only_fields, frozen, has_post_init,
     return _create_fn('__init__',
                       [self_name] + _init_params,
                       body_lines,
-                      locals=locals,
-                      globals=globals,
+                      locals=,
+                      globals=,
                       return_type=None)
 
 
@@ -631,7 +631,7 @@ def _repr_fn(fields, globals):
                      ', '.join([f"{f.name}={{self.{f.name}!r}}"
                                 for f in fields]) +
                      ')"'],
-                     globals=globals)
+                     globals=)
     return _recursive_repr(fn)
 
 
@@ -646,15 +646,15 @@ def _frozen_get_del_attr(cls, fields, globals):
                       (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot assign to field {name!r}")',
                        f'super(cls, self).__setattr__(name, value)'),
-                       locals=locals,
-                       globals=globals),
+                       locals=,
+                       globals=),
             _create_fn('__delattr__',
                       ('self', 'name'),
                       (f'if {condition}:',
                         ' raise FrozenInstanceError(f"cannot delete field {name!r}")',
                        f'super(cls, self).__delattr__(name)'),
-                       locals=locals,
-                       globals=globals),
+                       locals=,
+                       globals=),
             )
 
 
@@ -669,7 +669,7 @@ def _cmp_fn(name, op, self_tuple, other_tuple, globals):
                       [ 'if other.__class__ is self.__class__:',
                        f' return {self_tuple}{op}{other_tuple}',
                         'return NotImplemented'],
-                      globals=globals)
+                      globals=)
 
 
 def _hash_fn(fields, globals):
@@ -677,7 +677,7 @@ def _hash_fn(fields, globals):
     return _create_fn('__hash__',
                       ('self',),
                       [f'return hash({self_tuple})'],
-                      globals=globals)
+                      globals=)
 
 
 def _is_classvar(a_type, typing):
@@ -772,7 +772,7 @@ def _get_field(cls, a_name, a_type, default_kw_only):
         if isinstance(default, types.MemberDescriptorType):
             # This is a field in __slots__, so it has no default value.
             default = MISSING
-        f = field(default=default)
+        f = field(default=)
 
     # Only at this point do we know the name and the type.  Set them.
     f.name = a_name
@@ -1098,10 +1098,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
         body =  [f'if other.__class__ is self.__class__:',
                  f' return {field_comparisons}',
                  f'return NotImplemented']
-        func = _create_fn('__eq__',
-                          ('self', 'other'),
-                          body,
-                          globals=globals)
+        func = _create_fn('__eq__', ('self', 'other'), body, globals=)
         _set_new_attribute(cls, '__eq__', func)
 
     if order:
@@ -1116,7 +1113,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
                          ]:
             if _set_new_attribute(cls, name,
                                   _cmp_fn(name, op, self_tuple, other_tuple,
-                                          globals=globals)):
+                                          globals=)):
                 raise TypeError(f'Cannot overwrite attribute {name} '
                                 f'in class {cls.__name__}. Consider using '
                                 'functools.total_ordering')
@@ -1533,10 +1530,10 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         cls.__module__ = module
 
     # Apply the normal decorator.
-    return dataclass(cls, init=init, repr=repr, eq=eq, order=order,
-                     unsafe_hash=unsafe_hash, frozen=frozen,
-                     match_args=match_args, kw_only=kw_only, slots=slots,
-                     weakref_slot=weakref_slot)
+    return dataclass(cls, init=, repr=, eq=, order=,
+                     unsafe_hash=, frozen=,
+                     match_args=, kw_only=, slots=,
+                     weakref_slot=)
 
 
 def replace(obj, /, **changes):

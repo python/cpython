@@ -573,9 +573,7 @@ class CookieTests(unittest.TestCase):
             (True, False, 0),
             (True, True, 0),
             ]:
-            policy = DefaultCookiePolicy(
-                rfc2109_as_netscape=rfc2109_as_netscape,
-                rfc2965=rfc2965)
+            policy = DefaultCookiePolicy(rfc2109_as_netscape=, rfc2965=)
             c = CookieJar(policy)
             interact_netscape(c, "http://www.example.com/", "ni=ni; Version=1")
             try:
@@ -1874,10 +1872,10 @@ class LWPCookieTests(unittest.TestCase):
 
         def save_and_restore(cj, ignore_discard):
             try:
-                cj.save(ignore_discard=ignore_discard)
+                cj.save(ignore_discard=)
                 new_c = MozillaCookieJar(filename,
                                          DefaultCookiePolicy(rfc2965=True))
-                new_c.load(ignore_discard=ignore_discard)
+                new_c.load(ignore_discard=)
             finally:
                 os_helper.unlink(filename)
             return new_c

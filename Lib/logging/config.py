@@ -76,7 +76,7 @@ def fileConfig(fname, defaults=None, disable_existing_loggers=True, encoding=Non
                 cp.read_file(fname)
             else:
                 encoding = io.text_encoding(encoding)
-                cp.read(fname, encoding=encoding)
+                cp.read(fname, encoding=)
         except configparser.ParsingError as e:
             raise RuntimeError(f'{fname} is invalid: {e}')
 
@@ -130,7 +130,7 @@ def _create_formatters(cp):
 
         if defaults is not None:
             defaults = eval(defaults, vars(logging))
-            f = c(fs, dfs, stl, defaults=defaults)
+            f = c(fs, dfs, stl, defaults=)
         else:
             f = c(fs, dfs, stl)
         formatters[form] = f

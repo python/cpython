@@ -250,7 +250,7 @@ class BaseHeader(str):
             header.append(
                 parser.CFWSList([parser.WhiteSpaceTerminal(' ', 'fws')]))
         header.append(self._parse_tree)
-        return header.fold(policy=policy)
+        return header.fold(policy=)
 
 
 def _reconstruct_header(cls_name, bases, value):

@@ -214,7 +214,7 @@ class SimpleXMLRPCDispatcher:
         """
         # decorator factory
         if function is None:
-            return partial(self.register_function, name=name)
+            return partial(self.register_function, name=)
 
         if name is None:
             name = function.__name__

@@ -186,7 +186,7 @@ class IOBinding:
             self.filename or "this untitled document")
         confirm = messagebox.askyesnocancel(
                   title="Save On Close",
-                  message=message,
+                  message=,
                   default=messagebox.YES,
                   parent=self.text)
         if confirm:

@@ -50,11 +50,11 @@ class TestIndent:
     def test_indent0(self):
         h = {3: 1}
         def check(indent, expected):
-            d1 = self.dumps(h, indent=indent)
+            d1 = self.dumps(h, indent=)
             self.assertEqual(d1, expected)
 
             sio = StringIO()
-            self.json.dump(h, sio, indent=indent)
+            self.json.dump(h, sio, indent=)
             self.assertEqual(sio.getvalue(), expected)
 
         # indent=0 should emit newlines

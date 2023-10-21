@@ -92,7 +92,7 @@ class TestFormatWitnesses(TestCase):
         ]
 
         for words, expected in tests:
-            with self.subTest(words=words, expected=expected):
+            with self.subTest(words=, expected=):
                 self.assertEqual(tabnanny.format_witnesses(words), expected)
 
 
@@ -109,7 +109,7 @@ class TestErrPrint(TestCase):
         ]
 
         for args, expected in tests:
-            with self.subTest(arguments=args, expected=expected):
+            with self.subTest(arguments=args, expected=):
                 with self.assertRaises(SystemExit):
                     with captured_stderr() as stderr:
                         tabnanny.errprint(*args)
@@ -133,13 +133,11 @@ class TestNannyNag(TestCase):
             line_number = nanny.get_lineno()
             msg = nanny.get_msg()
             line = nanny.get_line()
-            with self.subTest(
-                line_number=line_number, expected=expected['lineno']
-            ):
+            with self.subTest(line_number=, expected=expected['lineno']):
                 self.assertEqual(expected['lineno'], line_number)
-            with self.subTest(msg=msg, expected=expected['msg']):
+            with self.subTest(msg=, expected=expected['msg']):
                 self.assertEqual(expected['msg'], msg)
-            with self.subTest(line=line, expected=expected['line']):
+            with self.subTest(line=, expected=expected['line']):
                 self.assertEqual(expected['line'], line)
 
 
@@ -188,7 +186,7 @@ class TestCheck(TestCase):
                     tabnanny.check(tmp_dir)
                 stdout = stdout.getvalue()
                 for line in lines:
-                    with self.subTest(line=line):
+                    with self.subTest(line=):
                         self.assertIn(line, stdout)
                 self.assertEqual(stderr.getvalue(), "")
 
@@ -205,7 +203,7 @@ class TestCheck(TestCase):
                 ' (<tokenize>, line 3)\n')
             err = f"{file_path!r}: Indentation Error: {err}"
             with self.assertRaises(SystemExit):
-                self.verify_tabnanny_check(file_path, err=err)
+                self.verify_tabnanny_check(file_path, err=)
 
     def test_when_tokenize_tokenerror(self):
         """A python source code file eligible for raising 'tokenize.TokenError'."""
@@ -213,7 +211,7 @@ class TestCheck(TestCase):
             err = "('EOF in multi-line statement', (7, 0))\n"
             err = f"{file_path!r}: Token Error: {err}"
             with self.assertRaises(SystemExit):
-                self.verify_tabnanny_check(file_path, err=err)
+                self.verify_tabnanny_check(file_path, err=)
 
     def test_when_nannynag_error_verbose(self):
         """A python source code file eligible for raising `tabnanny.NannyNag`.
@@ -226,13 +224,13 @@ class TestCheck(TestCase):
             out += "inconsistent use of tabs and spaces in indentation\n"
 
             tabnanny.verbose = 1
-            self.verify_tabnanny_check(file_path, out=out)
+            self.verify_tabnanny_check(file_path, out=)
 
     def test_when_nannynag_error(self):
         """A python source code file eligible for raising `tabnanny.NannyNag`."""
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as file_path:
             out = f"{file_path} 3 '\\tprint(\"world\")'\n"
-            self.verify_tabnanny_check(file_path, out=out)
+            self.verify_tabnanny_check(file_path, out=)
 
     def test_when_no_file(self):
         """A python file which does not exist actually in system."""
@@ -240,7 +238,7 @@ class TestCheck(TestCase):
         err = (f"{path!r}: I/O Error: [Errno {errno.ENOENT}] "
               f"{os.strerror(errno.ENOENT)}: {path!r}\n")
         with self.assertRaises(SystemExit):
-            self.verify_tabnanny_check(path, err=err)
+            self.verify_tabnanny_check(path, err=)
 
     def test_errored_directory(self):
         """Directory containing wrongly indented python source code files."""
@@ -256,7 +254,7 @@ class TestCheck(TestCase):
                             ' (<tokenize>, line 3)\n')
                 err = f"{e_file!r}: Indentation Error: {err}"
                 with self.assertRaises(SystemExit):
-                    self.verify_tabnanny_check(tmp_dir, err=err)
+                    self.verify_tabnanny_check(tmp_dir, err=)
 
 
 class TestProcessTokens(TestCase):
@@ -281,7 +279,7 @@ class TestProcessTokens(TestCase):
         #                        `tabnanny.process_tokens()`.
 
         for key in ["tab_space_errored_1", "tab_space_errored_2"]:
-            with self.subTest(key=key):
+            with self.subTest(key=):
                 with TemporaryPyFile(SOURCE_CODES[key]) as file_path:
                     with open(file_path) as f:
                         tokens = tokenize.generate_tokens(f.readline)
@@ -318,7 +316,7 @@ class TestCommandLine(TestCase):
             stderr  = f"{file_path!r}: Token Error: "
             stderr += ('unindent does not match any outer indentation level'
                        ' (<string>, line 3)')
-            self.validate_cmd(file_path, stderr=stderr, expect_failure=True)
+            self.validate_cmd(file_path, stderr=, expect_failure=True)
 
     def test_with_error_free_file(self):
         """Should not display anything if python file is correctly indented."""
@@ -329,13 +327,13 @@ class TestCommandLine(TestCase):
         """Should display usage on no arguments."""
         path = findfile('tabnanny.py')
         stderr = f"Usage: {path} [-v] file_or_directory ..."
-        self.validate_cmd(stderr=stderr, expect_failure=True)
+        self.validate_cmd(stderr=, expect_failure=True)
 
     def test_quiet_flag(self):
         """Should display less when quite mode is on."""
         with TemporaryPyFile(SOURCE_CODES["nannynag_errored"]) as file_path:
             stdout = f"{file_path}\n"
-            self.validate_cmd("-q", file_path, stdout=stdout)
+            self.validate_cmd("-q", file_path, stdout=)
 
     def test_verbose_mode(self):
         """Should display more error information if verbose mode is on."""
@@ -343,7 +341,7 @@ class TestCommandLine(TestCase):
             stdout = textwrap.dedent(
                 "offending line: '\\tprint(\"world\")'"
             ).strip()
-            self.validate_cmd("-v", path, stdout=stdout, partial=True)
+            self.validate_cmd("-v", path, stdout=, partial=True)
 
     def test_double_verbose_mode(self):
         """Should display detailed error information if double verbose is on."""
@@ -351,4 +349,4 @@ class TestCommandLine(TestCase):
             stdout = textwrap.dedent(
                 "offending line: '\\tprint(\"world\")'"
             ).strip()
-            self.validate_cmd("-vv", path, stdout=stdout, partial=True)
+            self.validate_cmd("-vv", path, stdout=, partial=True)

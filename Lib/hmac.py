@@ -64,7 +64,7 @@ class HMAC:
             self._init_old(key, msg, digestmod)
 
     def _init_hmac(self, key, msg, digestmod):
-        self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=digestmod)
+        self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=)
         self.digest_size = self._hmac.digest_size
         self.block_size = self._hmac.block_size
 

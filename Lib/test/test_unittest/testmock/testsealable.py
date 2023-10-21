@@ -183,8 +183,8 @@ class TestSealable(unittest.TestCase):
                 def ban(self): pass
 
         for spec_set in (True, False):
-            with self.subTest(spec_set=spec_set):
-                foo = mock.create_autospec(Foo, spec_set=spec_set)
+            with self.subTest(spec_set=):
+                foo = mock.create_autospec(Foo, spec_set=)
                 foo.bar1.return_value = 'a'
                 foo.Baz.ban.return_value = 'b'
 

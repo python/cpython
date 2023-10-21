@@ -37,7 +37,7 @@ class GravSys(object):
 
 class Star(Turtle):
     def __init__(self, m, x, v, gravSys, shape):
-        Turtle.__init__(self, shape=shape)
+        Turtle.__init__(self, shape=)
         self.penup()
         self.m = m
         self.setpos(x)

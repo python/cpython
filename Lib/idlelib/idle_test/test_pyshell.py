@@ -15,7 +15,7 @@ class FunctionTest(unittest.TestCase):
         for file, mul, extra in (('', 22, ''), ('finame', 21, '=')):
             width = 60
             bar = mul * '='
-            with self.subTest(file=file, bar=bar):
+            with self.subTest(file=, bar=):
                 file = file or 'Shell'
                 line = pyshell.restart_line(width, file)
                 eq(len(line), width)
@@ -24,7 +24,7 @@ class FunctionTest(unittest.TestCase):
     def test_restart_line_narrow(self):
         expect, taglen = "= RESTART: Shell", 16
         for width in (taglen-1, taglen, taglen+1):
-            with self.subTest(width=width):
+            with self.subTest(width=):
                 self.assertEqual(pyshell.restart_line(width, ''), expect)
         self.assertEqual(pyshell.restart_line(taglen+2, ''), expect+' =')
 

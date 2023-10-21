@@ -38,5 +38,5 @@ def can_sign(file):
 @public
 def write_catalog(target, files):
     with target.open("w", encoding="utf-8") as cat:
-        cat.write(CATALOG_TEMPLATE.format(target=target))
+        cat.write(CATALOG_TEMPLATE.format(target=))
         cat.writelines("<HASH>{}={}\n".format(n, f) for n, f in files if can_sign(f))

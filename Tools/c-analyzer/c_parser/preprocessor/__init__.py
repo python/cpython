@@ -128,7 +128,7 @@ def get_preprocessor(*,
             if file_same and 'samefiles' not in kwargs:
                 kwargs['samefiles'] = samefiles
             kwargs.setdefault('filename', filename)
-            with handling_errors(ignore_exc, log_err=log_err):
+            with handling_errors(ignore_exc, log_err=):
                 return _preprocess(filename, **kwargs)
         return preprocess
     return get_file_preprocessor

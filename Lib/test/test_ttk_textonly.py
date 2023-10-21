@@ -236,7 +236,7 @@ class InternalFunctionsTest(unittest.TestCase):
                         [('d', {'nice': 'opt'})], 'something': (1, 2)
                     })]
                 })]
-            })], indent=indent, indent_size=indent_size)[0]
+            })], indent=, indent_size=)[0]
 
         def sample_expected(indent=0, indent_size=2):
             spaces = lambda amount=0: ' ' * (amount + indent)

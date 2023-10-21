@@ -255,11 +255,11 @@ def add_sepval_cli(parser, opt, dest, choices, *, sep=',', **kwargs):
     if not isinstance(opt, str):
         parser.error(f'opt must be a string, got {opt!r}')
     elif opt.startswith('-'):
-        parser.add_argument(opt, dest=dest, action='append', **kwargs)
+        parser.add_argument(opt, dest=, action='append', **kwargs)
     else:
         kwargs.setdefault('nargs', '+')
         #kwargs.setdefault('metavar', opt.upper())
-        parser.add_argument(opt, dest=dest, action='append', **kwargs)
+        parser.add_argument(opt, dest=, action='append', **kwargs)
 
     def process_args(args, *, argv=None):
         ns = vars(args)
@@ -278,7 +278,7 @@ def add_sepval_cli(parser, opt, dest, choices, *, sep=',', **kwargs):
 
 
 def add_files_cli(parser, *, excluded=None, nargs=None):
-    process_files = add_file_filtering_cli(parser, excluded=excluded)
+    process_files = add_file_filtering_cli(parser, excluded=)
     parser.add_argument('filenames', nargs=nargs or '+', metavar='FILENAME')
     return [
         process_files,
@@ -307,7 +307,7 @@ def add_file_filtering_cli(parser, *, excluded=None):
             # We use the default for "show_header"
         )
         def process_filenames(filenames, relroot=None):
-            return fsutil.process_filenames(filenames, relroot=relroot, **kwargs)
+            return fsutil.process_filenames(filenames, relroot=, **kwargs)
         ns[key] = process_filenames
     return process_args
 
@@ -440,11 +440,7 @@ def add_commands_cli(parser, commands, *, commonspecs=COMMON_CLI, subset=None):
         subs = parser.add_subparsers(dest='cmd')
         for cmdname in cmdnames:
             description, argspecs, _ = commands[cmdname]
-            sub = subs.add_parser(
-                cmdname,
-                description=description,
-                parents=[common],
-            )
+            sub = subs.add_parser(cmdname, description=, parents=[common])
             cmd_processors = _add_cmd_cli(sub, (), argspecs)
             arg_processors[cmdname] = common_processors + cmd_processors
     return arg_processors
@@ -491,12 +487,12 @@ def process_args(args, argv, processors, *, keys=None):
     extracted = {}
     if keys is None:
         for process_args in processors:
-            for key in process_args(args, argv=argv):
+            for key in process_args(args, argv=):
                 extracted[key] = ns.pop(key)
     else:
         remainder = set(keys)
         for process_args in processors:
-            hanging = process_args(args, argv=argv)
+            hanging = process_args(args, argv=)
             if isinstance(hanging, str):
                 hanging = [hanging]
             for key in hanging or ():
@@ -510,7 +506,7 @@ def process_args(args, argv, processors, *, keys=None):
 
 
 def process_args_by_key(args, argv, processors, keys):
-    extracted = process_args(args, argv, processors, keys=keys)
+    extracted = process_args(args, argv, processors, keys=)
     return [extracted[key] for key in keys]
 
 
@@ -540,7 +536,7 @@ def filter_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
 
 
 def main_for_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD):
-    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=)
     for filename, relfile, check, show in _iter_filenames(filenames, process_filenames, relroot):
         if show:
             print()
@@ -554,11 +550,11 @@ def main_for_filenames(filenames, process_filenames=None, relroot=fsutil.USE_CWD
 
 def _iter_filenames(filenames, process, relroot):
     if process is None:
-        yield from fsutil.process_filenames(filenames, relroot=relroot)
+        yield from fsutil.process_filenames(filenames, relroot=)
         return
 
     onempty = Exception('no filenames provided')
-    items = process(filenames, relroot=relroot)
+    items = process(filenames, relroot=)
     items, peeked = iterutil.peek_and_iter(items)
     if not items:
         raise onempty
@@ -577,7 +573,7 @@ def _iter_filenames(filenames, process, relroot):
 
 def track_progress_compact(items, *, groups=5, **mark_kwargs):
     last = os.linesep
-    marks = iter_marks(groups=groups, **mark_kwargs)
+    marks = iter_marks(groups=, **mark_kwargs)
     for item in items:
         last = next(marks)
         print(last, end='', flush=True)

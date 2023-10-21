@@ -596,7 +596,7 @@ class _Pickler:
                                 "two to six elements" % reduce)
 
         # Save the reduce() output and finally memoize the object
-        self.save_reduce(obj=obj, *rv)
+        self.save_reduce(obj=, *rv)
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
@@ -785,10 +785,10 @@ class _Pickler:
     def save_bytes(self, obj):
         if self.proto < 3:
             if not obj: # bytes object is empty
-                self.save_reduce(bytes, (), obj=obj)
+                self.save_reduce(bytes, (), obj=)
             else:
                 self.save_reduce(codecs.encode,
-                                 (str(obj, 'latin1'), 'latin1'), obj=obj)
+                                 (str(obj, 'latin1'), 'latin1'), obj=)
             return
         n = len(obj)
         if n <= 0xff:
@@ -805,9 +805,9 @@ class _Pickler:
     def save_bytearray(self, obj):
         if self.proto < 5:
             if not obj:  # bytearray is empty
-                self.save_reduce(bytearray, (), obj=obj)
+                self.save_reduce(bytearray, (), obj=)
             else:
-                self.save_reduce(bytearray, (bytes(obj),), obj=obj)
+                self.save_reduce(bytearray, (bytes(obj),), obj=)
             return
         n = len(obj)
         if n >= self.framer._FRAME_SIZE_TARGET:
@@ -1005,7 +1005,7 @@ class _Pickler:
         write = self.write
 
         if self.proto < 4:
-            self.save_reduce(set, (list(obj),), obj=obj)
+            self.save_reduce(set, (list(obj),), obj=)
             return
 
         write(EMPTY_SET)
@@ -1029,7 +1029,7 @@ class _Pickler:
         write = self.write
 
         if self.proto < 4:
-            self.save_reduce(frozenset, (list(obj),), obj=obj)
+            self.save_reduce(frozenset, (list(obj),), obj=)
             return
 
         write(MARK)
@@ -1115,11 +1115,11 @@ class _Pickler:
 
     def save_type(self, obj):
         if obj is type(None):
-            return self.save_reduce(type, (None,), obj=obj)
+            return self.save_reduce(type, (None,), obj=)
         elif obj is type(NotImplemented):
-            return self.save_reduce(type, (NotImplemented,), obj=obj)
+            return self.save_reduce(type, (NotImplemented,), obj=)
         elif obj is type(...):
-            return self.save_reduce(type, (...,), obj=obj)
+            return self.save_reduce(type, (...,), obj=)
         return self.save_global(obj)
 
     dispatch[FunctionType] = save_global
@@ -1742,29 +1742,25 @@ class _Unpickler:
 # Shorthands
 
 def _dump(obj, file, protocol=None, *, fix_imports=True, buffer_callback=None):
-    _Pickler(file, protocol, fix_imports=fix_imports,
-             buffer_callback=buffer_callback).dump(obj)
+    _Pickler(file, protocol, fix_imports=, buffer_callback=).dump(obj)
 
 def _dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None):
     f = io.BytesIO()
-    _Pickler(f, protocol, fix_imports=fix_imports,
-             buffer_callback=buffer_callback).dump(obj)
+    _Pickler(f, protocol, fix_imports=, buffer_callback=).dump(obj)
     res = f.getvalue()
     assert isinstance(res, bytes_types)
     return res
 
 def _load(file, *, fix_imports=True, encoding="ASCII", errors="strict",
           buffers=None):
-    return _Unpickler(file, fix_imports=fix_imports, buffers=buffers,
-                     encoding=encoding, errors=errors).load()
+    return _Unpickler(file, fix_imports=, buffers=, encoding=, errors=).load()
 
 def _loads(s, /, *, fix_imports=True, encoding="ASCII", errors="strict",
            buffers=None):
     if isinstance(s, str):
         raise TypeError("Can't load pickle from unicode string")
     file = io.BytesIO(s)
-    return _Unpickler(file, fix_imports=fix_imports, buffers=buffers,
-                      encoding=encoding, errors=errors).load()
+    return _Unpickler(file, fix_imports=, buffers=, encoding=, errors=).load()
 
 # Use the faster _pickle if possible
 try:

@@ -2605,7 +2605,7 @@ class Unseekable:
 class UnseekableTests(unittest.TestCase):
     def test_writestr(self):
         for wrapper in (lambda f: f), Tellable, Unseekable:
-            with self.subTest(wrapper=wrapper):
+            with self.subTest(wrapper=):
                 f = io.BytesIO()
                 f.write(b'abc')
                 bf = io.BufferedWriter(f)
@@ -2621,7 +2621,7 @@ class UnseekableTests(unittest.TestCase):
 
     def test_write(self):
         for wrapper in (lambda f: f), Tellable, Unseekable:
-            with self.subTest(wrapper=wrapper):
+            with self.subTest(wrapper=):
                 f = io.BytesIO()
                 f.write(b'abc')
                 bf = io.BufferedWriter(f)
@@ -2642,7 +2642,7 @@ class UnseekableTests(unittest.TestCase):
 
     def test_open_write(self):
         for wrapper in (lambda f: f), Tellable, Unseekable:
-            with self.subTest(wrapper=wrapper):
+            with self.subTest(wrapper=):
                 f = io.BytesIO()
                 f.write(b'abc')
                 bf = io.BufferedWriter(f)

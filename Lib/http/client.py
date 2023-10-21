@@ -233,7 +233,7 @@ def _parse_header_lines(header_lines, _class=HTTPMessage):
 
     """
     hstring = b''.join(header_lines).decode('iso-8859-1')
-    return email.parser.Parser(_class=_class).parsestr(hstring)
+    return email.parser.Parser(_class=).parsestr(hstring)
 
 def parse_headers(fp, _class=HTTPMessage):
     """Parses only RFC2822 headers from a file pointer."""
@@ -1311,7 +1311,7 @@ class HTTPConnection:
             self.__state = _CS_REQ_SENT
         else:
             raise CannotSendHeader()
-        self._send_output(message_body, encode_chunked=encode_chunked)
+        self._send_output(message_body, encode_chunked=)
 
     def request(self, method, url, body=None, headers={}, *,
                 encode_chunked=False):
@@ -1362,7 +1362,7 @@ class HTTPConnection:
             # RFC 2616 Section 3.7.1 says that text default has a
             # default charset of iso-8859-1.
             body = _encode(body, 'body')
-        self.endheaders(body, encode_chunked=encode_chunked)
+        self.endheaders(body, encode_chunked=)
 
     def getresponse(self):
         """Get the response from the server.
@@ -1442,7 +1442,7 @@ else:
                      source_address=None, context=None, blocksize=8192):
             super(HTTPSConnection, self).__init__(host, port, timeout,
                                                   source_address,
-                                                  blocksize=blocksize)
+                                                  blocksize=)
             if context is None:
                 context = _create_https_context(self._http_vsn)
             self._context = context
@@ -1457,8 +1457,7 @@ else:
             else:
                 server_hostname = self.host
 
-            self.sock = self._context.wrap_socket(self.sock,
-                                                  server_hostname=server_hostname)
+            self.sock = self._context.wrap_socket(self.sock, server_hostname=)
 
     __all__.append("HTTPSConnection")
 

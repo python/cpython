@@ -526,7 +526,7 @@ class FastCallTests(unittest.TestCase):
         # Test PyObject_VectorcallDict()
 
         for func, args, expected in self.CALLS_POSARGS:
-            with self.subTest(func=func, args=args):
+            with self.subTest(func=, args=):
                 # kwargs=NULL
                 result = _testcapi.pyobject_fastcalldict(func, args, None)
                 self.check_result(result, expected)
@@ -537,7 +537,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
-            with self.subTest(func=func, args=args, kwargs=kwargs):
+            with self.subTest(func=, args=, kwargs=):
                 result = _testcapi.pyobject_fastcalldict(func, args, kwargs)
                 self.check_result(result, expected)
 
@@ -545,7 +545,7 @@ class FastCallTests(unittest.TestCase):
         # Test PyObject_Vectorcall()
 
         for func, args, expected in self.CALLS_POSARGS:
-            with self.subTest(func=func, args=args):
+            with self.subTest(func=, args=):
                 # kwnames=NULL
                 result = _testcapi.pyobject_vectorcall(func, args, None)
                 self.check_result(result, expected)
@@ -564,7 +564,7 @@ class FastCallTests(unittest.TestCase):
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:
-            with self.subTest(func=func, args=args, kwargs=kwargs):
+            with self.subTest(func=, args=, kwargs=):
                 kwnames = tuple(kwargs.keys())
                 args = args + tuple(kwargs.values())
                 result = _testcapi.pyobject_vectorcall(func, args, kwnames)
@@ -1029,7 +1029,7 @@ class TestRecursion(unittest.TestCase):
 class TestFunctionWithManyArgs(unittest.TestCase):
     def test_function_with_many_args(self):
         for N in (10, 500, 1000):
-            with self.subTest(N=N):
+            with self.subTest(N=):
                 args = ",".join([f"a{i}" for i in range(N)])
                 src = f"def f({args}) : return a{N//2}"
                 l = {}

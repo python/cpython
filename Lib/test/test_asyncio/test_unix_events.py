@@ -348,8 +348,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_server_path_inetsock(self):
         sock = socket.socket()
         with sock:
-            coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                sock=sock)
+            coro = self.loop.create_unix_server(lambda: None, path=None, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
@@ -357,8 +356,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_server_path_dgram(self):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
         with sock:
-            coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                sock=sock)
+            coro = self.loop.create_unix_server(lambda: None, path=None, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
@@ -374,8 +372,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
                              socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
         with sock:
             sock.bind(fn)
-            coro = self.loop.create_unix_server(lambda: None, path=None,
-                                                sock=sock)
+            coro = self.loop.create_unix_server(lambda: None, path=None, sock=)
             srv = self.loop.run_until_complete(coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
@@ -391,8 +388,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
     def test_create_unix_connection_path_inetsock(self):
         sock = socket.socket()
         with sock:
-            coro = self.loop.create_unix_connection(lambda: None,
-                                                    sock=sock)
+            coro = self.loop.create_unix_connection(lambda: None, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
@@ -683,13 +679,13 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
     def read_pipe_transport(self, waiter=None):
         transport = unix_events._UnixReadPipeTransport(self.loop, self.pipe,
                                                        self.protocol,
-                                                       waiter=waiter)
+                                                       waiter=)
         self.addCleanup(close_pipe_transport, transport)
         return transport
 
     def test_ctor(self):
         waiter = self.loop.create_future()
-        tr = self.read_pipe_transport(waiter=waiter)
+        tr = self.read_pipe_transport(waiter=)
         self.loop.run_until_complete(waiter)
 
         self.protocol.connection_made.assert_called_with(tr)
@@ -860,13 +856,13 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
     def write_pipe_transport(self, waiter=None):
         transport = unix_events._UnixWritePipeTransport(self.loop, self.pipe,
                                                         self.protocol,
-                                                        waiter=waiter)
+                                                        waiter=)
         self.addCleanup(close_pipe_transport, transport)
         return transport
 
     def test_ctor(self):
         waiter = self.loop.create_future()
-        tr = self.write_pipe_transport(waiter=waiter)
+        tr = self.write_pipe_transport(waiter=)
         self.loop.run_until_complete(waiter)
 
         self.protocol.connection_made.assert_called_with(tr)

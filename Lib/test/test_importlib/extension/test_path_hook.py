@@ -24,7 +24,7 @@ class PathHookTests:
 
 (Frozen_PathHooksTests,
  Source_PathHooksTests
- ) = util.test_both(PathHookTests, machinery=machinery)
+ ) = util.test_both(PathHookTests, machinery=)
 
 
 if __name__ == '__main__':

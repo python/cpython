@@ -468,7 +468,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         modulename = self.grammar.metas.get("modulename", "parse")
         trailer = self.grammar.metas.get("trailer", EXTENSION_SUFFIX)
         if trailer:
-            self.print(trailer.rstrip("\n") % dict(mode=mode, modulename=modulename))
+            self.print(trailer.rstrip("\n") % dict(mode=, modulename=))
 
     def _group_keywords_by_length(self) -> Dict[int, List[Tuple[str, int]]]:
         groups: Dict[int, List[Tuple[str, int]]] = {}
@@ -699,7 +699,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         if is_loop:
             assert len(node.alts) == 1
         for alt in node.alts:
-            self.visit(alt, is_loop=is_loop, is_gather=is_gather, rulename=rulename)
+            self.visit(alt, is_loop=, is_gather=, rulename=)
 
     def join_conditions(self, keyword: str, node: Any) -> None:
         self.print(f"{keyword} (")
@@ -756,7 +756,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.print("_res = _PyPegen_dummy_name(p);")
 
     def handle_alt_normal(self, node: Alt, is_gather: bool, rulename: Optional[str]) -> None:
-        self.join_conditions(keyword="if", node=node)
+        self.join_conditions(keyword="if", node=)
         self.print("{")
         # We have parsed successfully all the conditions for the option.
         with self.indent():
@@ -780,7 +780,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
 
     def handle_alt_loop(self, node: Alt, is_gather: bool, rulename: Optional[str]) -> None:
         # Condition of the main body of the alternative
-        self.join_conditions(keyword="while", node=node)
+        self.join_conditions(keyword="while", node=)
         self.print("{")
         # We have parsed successfully one item!
         with self.indent():

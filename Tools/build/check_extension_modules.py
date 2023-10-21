@@ -376,7 +376,7 @@ class ModuleChecker:
         if modinfo.state == ModuleState.SHARED:
             location = os.fspath(self.get_location(modinfo))
             loader = ExtensionFileLoader(modinfo.name, location)
-            return spec_from_file_location(modinfo.name, location, loader=loader)
+            return spec_from_file_location(modinfo.name, location, loader=)
         elif modinfo.state == ModuleState.BUILTIN:
             return spec_from_loader(modinfo.name, loader=BuiltinImporter)
         else:

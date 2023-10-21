@@ -1653,7 +1653,7 @@ class TestParseNumber(BaseTest):
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         not_exported = {'check_builtin', 'AmbiguousOptionError', 'NO_DEFAULT'}
-        support.check__all__(self, optparse, not_exported=not_exported)
+        support.check__all__(self, optparse, not_exported=)
 
 
 if __name__ == '__main__':

@@ -563,9 +563,9 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         fd, name = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
         return fd
     try:
-        file = _io.open(dir, mode, buffering=buffering,
-                        newline=newline, encoding=encoding, errors=errors,
-                        opener=opener)
+        file = _io.open(dir, mode, buffering=,
+                        newline=, encoding=, errors=,
+                        opener=)
         try:
             raw = getattr(file, 'buffer', file)
             raw = getattr(raw, 'raw', raw)
@@ -623,9 +623,9 @@ else:
                 fd = _os.open(dir, flags2, 0o600)
                 return fd
             try:
-                file = _io.open(dir, mode, buffering=buffering,
-                                newline=newline, encoding=encoding,
-                                errors=errors, opener=opener)
+                file = _io.open(dir, mode, buffering=,
+                                newline=, encoding=,
+                                errors=, opener=)
                 raw = getattr(file, 'buffer', file)
                 raw = getattr(raw, 'raw', raw)
                 raw.name = fd
@@ -658,9 +658,9 @@ else:
                 _os.close(fd)
                 raise
             return fd
-        file = _io.open(dir, mode, buffering=buffering,
-                        newline=newline, encoding=encoding, errors=errors,
-                        opener=opener)
+        file = _io.open(dir, mode, buffering=,
+                        newline=, encoding=, errors=,
+                        opener=)
         raw = getattr(file, 'buffer', file)
         raw = getattr(raw, 'raw', raw)
         raw.name = fd
@@ -681,8 +681,8 @@ class SpooledTemporaryFile(_io.IOBase):
         else:
             encoding = _io.text_encoding(encoding)
             self._file = _io.TextIOWrapper(_io.BytesIO(),
-                            encoding=encoding, errors=errors,
-                            newline=newline)
+                            encoding=, errors=,
+                            newline=)
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
@@ -891,7 +891,7 @@ class TemporaryDirectory:
                         _os.unlink(path)
                     # PermissionError is raised on FreeBSD for directories
                     except (IsADirectoryError, PermissionError):
-                        cls._rmtree(path, ignore_errors=ignore_errors)
+                        cls._rmtree(path, ignore_errors=)
                 except FileNotFoundError:
                     pass
             elif isinstance(exc, FileNotFoundError):
@@ -900,12 +900,12 @@ class TemporaryDirectory:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onexc=onexc)
+        _shutil.rmtree(name, onexc=)
 
     @classmethod
     def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
         if delete:
-            cls._rmtree(name, ignore_errors=ignore_errors)
+            cls._rmtree(name, ignore_errors=)
             _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):

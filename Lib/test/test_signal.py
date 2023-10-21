@@ -128,7 +128,7 @@ class PosixTests(unittest.TestCase):
             if name in {"SIG_IGN", "SIG_DFL"}:
                 # SIG_IGN and SIG_DFL are pointers
                 continue
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 signum = getattr(signal, name)
                 self.assertGreaterEqual(signum, 0)
                 self.assertLess(signum, signal.NSIG)
@@ -548,7 +548,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
         if ('Exception ignored when trying to {action} to the signal wakeup fd'
             not in err):
             raise AssertionError(err)
-        """.format(action=action)
+        """.format(action=)
         assert_python_ok('-c', code)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
@@ -661,7 +661,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
             raise AssertionError("second set_wakeup_fd() test failed, "
                                  "stderr: %r" % err)
 
-        """.format(action=action)
+        """.format(action=)
         assert_python_ok('-c', code)
 
 

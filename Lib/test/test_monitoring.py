@@ -1221,12 +1221,12 @@ class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
+                          recorders=, must_include = self.MUST_INCLUDE_LI)
 
     def test_instruction_then_line(self):
         recorders = [ InstructionRecorder, LineRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
+                          recorders=, must_include = self.MUST_INCLUDE_LI)
 
     @staticmethod
     def func2():
@@ -1244,12 +1244,12 @@ class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
     def test_call_then_instruction(self):
         recorders = [ CallRecorder, InstructionRecorder ]
         self.check_events(self.func2,
-                          recorders = recorders, must_include = self.MUST_INCLUDE_CI)
+                          recorders=, must_include = self.MUST_INCLUDE_CI)
 
     def test_instruction_then_call(self):
         recorders = [ InstructionRecorder, CallRecorder ]
         self.check_events(self.func2,
-                          recorders = recorders, must_include = self.MUST_INCLUDE_CI)
+                          recorders=, must_include = self.MUST_INCLUDE_CI)
 
 LOCAL_RECORDERS = CallRecorder, LineRecorder, CReturnRecorder, CRaiseRecorder
 
@@ -1648,7 +1648,7 @@ class TestLoadSuperAttr(CheckEvents):
             ]
 
         for call_method in [True, False]:
-            with self.subTest(call_method=call_method):
+            with self.subTest(call_method=):
                 call_str = "()" if call_method else ""
                 code_super = code_template.format(cls="super", call=call_str)
                 code_int = code_template.format(cls="int", call=call_str)

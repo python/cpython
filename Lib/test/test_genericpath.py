@@ -322,7 +322,7 @@ class TestGenericTest(GenericTest, unittest.TestCase):
             if attr == 'commonprefix':
                 continue
             func = getattr(self.pathmodule, attr)
-            with self.subTest(attr=attr):
+            with self.subTest(attr=):
                 if attr in ('exists', 'isdir', 'isfile'):
                     func('/tmp\udfffabcds')
                     func(b'/tmp\xffabcds')

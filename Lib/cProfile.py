@@ -136,7 +136,7 @@ def main():
     import pstats
     from optparse import OptionParser
     usage = "cProfile.py [-o output_file_path] [-s sort] [-m module | scriptfile] [arg] ..."
-    parser = OptionParser(usage=usage)
+    parser = OptionParser(usage=)
     parser.allow_interspersed_args = False
     parser.add_option('-o', '--outfile', dest="outfile",
         help="Save stats to <outfile>", default=None)

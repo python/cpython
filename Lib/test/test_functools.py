@@ -146,7 +146,7 @@ class TestPartial:
     def test_keyword(self):
         # make sure keyword arguments are captured correctly
         for a in ['a', 0, None, 3.5]:
-            p = self.partial(capture, a=a)
+            p = self.partial(capture, a=)
             expected = {'a':a,'x':None}
             empty, got = p(x=None)
             self.assertTrue(expected == got and empty == ())
@@ -537,7 +537,7 @@ class TestPartialMethod(unittest.TestCase):
 
     def test_descriptors(self):
         for obj in [self.A, self.a]:
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 self.assertEqual(obj.static(), ((8,), {}))
                 self.assertEqual(obj.static(5), ((8, 5), {}))
                 self.assertEqual(obj.static(d=8), ((8,), {'d': 8}))
@@ -1226,7 +1226,7 @@ class TestTotalOrdering(unittest.TestCase):
     def test_pickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for name in '__lt__', '__gt__', '__le__', '__ge__':
-                with self.subTest(method=name, proto=proto):
+                with self.subTest(method=name, proto=):
                     method = getattr(Orderable_LT, name)
                     method_copy = pickle.loads(pickle.dumps(method, proto))
                     self.assertIs(method_copy, method)
@@ -1548,7 +1548,7 @@ class TestLRU:
 
     def test_lru_with_types(self):
         for maxsize in (None, 128):
-            @self.module.lru_cache(maxsize=maxsize, typed=True)
+            @self.module.lru_cache(maxsize=, typed=True)
             def square(x):
                 return x * x
             self.assertEqual(square(3), 9)
@@ -1787,7 +1787,7 @@ class TestLRU:
         cls = self.__class__
         for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(proto=proto, func=f):
+                with self.subTest(proto=, func=f):
                     f_copy = pickle.loads(pickle.dumps(f, proto))
                     self.assertIs(f_copy, f)
 
@@ -2146,7 +2146,7 @@ class TestSingleDispatch(unittest.TestCase):
                 pass   # implies Callable
         expected = [X, c.Callable, D, C, c.Container, B, c.Sized, A, object]
         for abcs in permutations([c.Sized, c.Callable, c.Container]):
-            self.assertEqual(mro(X, abcs=abcs), expected)
+            self.assertEqual(mro(X, abcs=), expected)
         # unrelated ABCs don't appear in the resulting MRO
         many_abcs = [c.Mapping, c.Sized, c.Callable, c.Container, c.Iterable]
         self.assertEqual(mro(X, abcs=many_abcs), expected)
@@ -2683,7 +2683,7 @@ class TestSingleDispatch(unittest.TestCase):
             A.static_func,
             A().static_func
         ):
-            with self.subTest(meth=meth):
+            with self.subTest(meth=):
                 self.assertEqual(meth.__doc__, 'My function docstring')
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -2772,7 +2772,7 @@ class TestSingleDispatch(unittest.TestCase):
             WithSingleDispatch.decorated_classmethod,
             WithSingleDispatch().decorated_classmethod
         ):
-            with self.subTest(meth=meth):
+            with self.subTest(meth=):
                 self.assertEqual(meth.__doc__, 'My function docstring')
                 self.assertEqual(meth.__annotations__['arg'], int)
 

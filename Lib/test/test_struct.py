@@ -696,7 +696,7 @@ class StructTest(unittest.TestCase):
         Struct = struct.Struct
         unpack_iterator = type(struct.iter_unpack("b", b'x'))
         for cls in (Struct, unpack_iterator):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 with self.assertRaises(TypeError):
                     cls.x = 1
 
@@ -735,7 +735,7 @@ class StructTest(unittest.TestCase):
                 min_ = -2 ** (size * 8 - 1)
             error_msg = f"'{int_type}' format requires {min_} <= number <= {max_}"
             for number in [int(-1e50), min_ - 1, max_ + 1, int(1e50)]:
-                with self.subTest(format_str=fmt_str, number=number):
+                with self.subTest(format_str=fmt_str, number=):
                     with self.assertRaisesRegex(struct.error, error_msg):
                         struct.pack(fmt_str, number)
             error_msg = "required argument is not an integer"

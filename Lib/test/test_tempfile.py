@@ -441,7 +441,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         # _mkstemp_inner can create files in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
-            self.do_create(dir=dir).write(b"blat")
+            self.do_create(dir=).write(b"blat")
             self.do_create(dir=pathlib.Path(dir)).write(b"blat")
         finally:
             support.gc_collect()  # For PyPy or other GCs.
@@ -636,7 +636,7 @@ class TestMkstemp(BaseTestCase):
             pre = output_type()
         if suf is None:
             suf = output_type()
-        (fd, name) = tempfile.mkstemp(dir=dir, prefix=pre, suffix=suf)
+        (fd, name) = tempfile.mkstemp(dir=, prefix=pre, suffix=suf)
         (ndir, nbase) = os.path.split(name)
         adir = os.path.abspath(dir)
         self.assertEqual(adir, ndir,
@@ -679,7 +679,7 @@ class TestMkstemp(BaseTestCase):
         # mkstemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
-            self.do_create(dir=dir)
+            self.do_create(dir=)
             self.do_create(dir=pathlib.Path(dir))
         finally:
             os.rmdir(dir)
@@ -733,7 +733,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             pre = output_type()
         if suf is None:
             suf = output_type()
-        name = tempfile.mkdtemp(dir=dir, prefix=pre, suffix=suf)
+        name = tempfile.mkdtemp(dir=, prefix=pre, suffix=suf)
 
         try:
             self.nameCheck(name, dir, pre, suf)
@@ -780,7 +780,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         # mkdtemp can create directories in a user-selected directory
         dir = tempfile.mkdtemp()
         try:
-            os.rmdir(self.do_create(dir=dir))
+            os.rmdir(self.do_create(dir=))
             os.rmdir(self.do_create(dir=pathlib.Path(dir)))
         finally:
             os.rmdir(dir)
@@ -880,7 +880,7 @@ class TestMktemp(BaseTestCase):
         _bflags = tempfile._bin_openflags
 
         def __init__(self, dir, pre, suf):
-            self.name = tempfile.mktemp(dir=dir, prefix=pre, suffix=suf)
+            self.name = tempfile.mktemp(dir=, prefix=pre, suffix=suf)
             # Create the file.  This will raise an exception if it's
             # mysteriously appeared in the meanwhile.
             os.close(os.open(self.name, self._bflags, 0o600))
@@ -928,8 +928,8 @@ class TestNamedTemporaryFile(BaseTestCase):
     def do_create(self, dir=None, pre="", suf="", delete=True):
         if dir is None:
             dir = tempfile.gettempdir()
-        file = tempfile.NamedTemporaryFile(dir=dir, prefix=pre, suffix=suf,
-                                           delete=delete)
+        file = tempfile.NamedTemporaryFile(dir=, prefix=pre, suffix=suf,
+                                           delete=)
 
         self.nameCheck(file.name, dir, pre, suf)
         return file
@@ -982,7 +982,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # A NamedTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
-            with tempfile.NamedTemporaryFile(dir=dir) as f:
+            with tempfile.NamedTemporaryFile(dir=) as f:
                 f.write(b'blat')
             self.assertEqual(os.listdir(dir), [])
             self.assertFalse(os.path.exists(f.name),
@@ -995,7 +995,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         dir = tempfile.mkdtemp()
         tmp = None
         try:
-            f = tempfile.NamedTemporaryFile(dir=dir, delete=False)
+            f = tempfile.NamedTemporaryFile(dir=, delete=False)
             tmp = f.name
             f.write(b'blat')
             f.close()
@@ -1031,7 +1031,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # delete_on_close=False, but is deleted on context manager exit
         dir = tempfile.mkdtemp()
         try:
-            with tempfile.NamedTemporaryFile(dir=dir,
+            with tempfile.NamedTemporaryFile(dir=,
                                              delete=True,
                                              delete_on_close=False) as f:
                 f.write(b'blat')
@@ -1057,7 +1057,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # deleted in a with-statement context without causing an error.
         dir = tempfile.mkdtemp()
         try:
-            with tempfile.NamedTemporaryFile(dir=dir,
+            with tempfile.NamedTemporaryFile(dir=,
                                              delete=True,
                                              delete_on_close=False) as f:
                 f.write(b'blat')
@@ -1073,7 +1073,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         f_name = ""
         try:
             # Test that delete_on_close=True has no effect if delete=False.
-            with tempfile.NamedTemporaryFile(dir=dir, delete=False,
+            with tempfile.NamedTemporaryFile(dir=, delete=False,
                                              delete_on_close=True) as f:
                 f.write(b'blat')
                 f_name = f.name
@@ -1087,7 +1087,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # A NamedTemporaryFile is deleted when finalized in the case of
         # delete=True, delete_on_close=False, and no with-statement is used.
         def my_func(dir):
-            f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
+            f = tempfile.NamedTemporaryFile(dir=, delete=True,
                                             delete_on_close=False)
             tmp_name = f.name
             f.write(b'blat')
@@ -1110,7 +1110,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         # delete_on_close=False, no with-statement is used, and the file is
         # deleted manually.
         def my_func(dir)->str:
-            f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
+            f = tempfile.NamedTemporaryFile(dir=, delete=True,
                                             delete_on_close=False)
             tmp_name = f.name
             f.write(b'blat')
@@ -1124,16 +1124,16 @@ class TestNamedTemporaryFile(BaseTestCase):
         dir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, dir)
         with self.assertRaises(ValueError):
-            tempfile.NamedTemporaryFile(mode='wr', dir=dir)
+            tempfile.NamedTemporaryFile(mode='wr', dir=)
         with self.assertRaises(TypeError):
-            tempfile.NamedTemporaryFile(mode=2, dir=dir)
+            tempfile.NamedTemporaryFile(mode=2, dir=)
         self.assertEqual(os.listdir(dir), [])
 
     def test_bad_encoding(self):
         dir = tempfile.mkdtemp()
         self.addCleanup(os_helper.rmtree, dir)
         with self.assertRaises(LookupError):
-            tempfile.NamedTemporaryFile('w', encoding='bad-encoding', dir=dir)
+            tempfile.NamedTemporaryFile('w', encoding='bad-encoding', dir=)
         self.assertEqual(os.listdir(dir), [])
 
     def test_unexpected_error(self):
@@ -1143,7 +1143,7 @@ class TestNamedTemporaryFile(BaseTestCase):
              mock.patch('io.open', mock.mock_open()) as mock_open:
             mock_ntf.side_effect = KeyboardInterrupt()
             with self.assertRaises(KeyboardInterrupt):
-                tempfile.NamedTemporaryFile(dir=dir)
+                tempfile.NamedTemporaryFile(dir=)
         mock_open().close.assert_called()
         self.assertEqual(os.listdir(dir), [])
 
@@ -1155,7 +1155,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
     def do_create(self, max_size=0, dir=None, pre="", suf=""):
         if dir is None:
             dir = tempfile.gettempdir()
-        file = tempfile.SpooledTemporaryFile(max_size=max_size, dir=dir, prefix=pre, suffix=suf)
+        file = tempfile.SpooledTemporaryFile(max_size=, dir=, prefix=pre, suffix=suf)
 
         return file
 
@@ -1196,7 +1196,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         # A SpooledTemporaryFile is deleted when closed
         dir = tempfile.mkdtemp()
         try:
-            f = tempfile.SpooledTemporaryFile(max_size=10, dir=dir)
+            f = tempfile.SpooledTemporaryFile(max_size=10, dir=)
             self.assertFalse(f._rolled)
             f.write(b'blat ' * 5)
             self.assertTrue(f._rolled)
@@ -1487,7 +1487,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
         def test_has_no_name(self):
             # TemporaryFile creates files with no names (on this system)
             dir = tempfile.mkdtemp()
-            f = tempfile.TemporaryFile(dir=dir)
+            f = tempfile.TemporaryFile(dir=)
             f.write(b'blat')
 
             # Sneaky: because this file has no name, it should not prevent
@@ -1526,16 +1526,16 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             dir = tempfile.mkdtemp()
             self.addCleanup(os_helper.rmtree, dir)
             with self.assertRaises(ValueError):
-                tempfile.TemporaryFile(mode='wr', dir=dir)
+                tempfile.TemporaryFile(mode='wr', dir=)
             with self.assertRaises(TypeError):
-                tempfile.TemporaryFile(mode=2, dir=dir)
+                tempfile.TemporaryFile(mode=2, dir=)
             self.assertEqual(os.listdir(dir), [])
 
         def test_bad_encoding(self):
             dir = tempfile.mkdtemp()
             self.addCleanup(os_helper.rmtree, dir)
             with self.assertRaises(LookupError):
-                tempfile.TemporaryFile('w', encoding='bad-encoding', dir=dir)
+                tempfile.TemporaryFile('w', encoding='bad-encoding', dir=)
             self.assertEqual(os.listdir(dir), [])
 
         def test_unexpected_error(self):
@@ -1547,7 +1547,7 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
                  mock.patch('os.close') as mock_close:
                 mock_unlink.side_effect = KeyboardInterrupt()
                 with self.assertRaises(KeyboardInterrupt):
-                    tempfile.TemporaryFile(dir=dir)
+                    tempfile.TemporaryFile(dir=)
             mock_close.assert_called()
             self.assertEqual(os.listdir(dir), [])
 
@@ -1577,8 +1577,8 @@ class TestTemporaryDirectory(BaseTestCase):
         if dir is None:
             dir = tempfile.gettempdir()
         tmp = tempfile.TemporaryDirectory(
-            dir=dir, prefix=pre, suffix=suf,
-            ignore_cleanup_errors=ignore_cleanup_errors)
+            dir=, prefix=pre, suffix=suf,
+            ignore_cleanup_errors=)
         self.nameCheck(tmp.name, dir, pre, suf)
         self.do_create2(tmp.name, recurse, dirs, files)
         return tmp
@@ -1608,7 +1608,7 @@ class TestTemporaryDirectory(BaseTestCase):
         # A TemporaryDirectory is deleted when cleaned up
         dir = tempfile.mkdtemp()
         try:
-            d = self.do_create(dir=dir)
+            d = self.do_create(dir=)
             self.assertTrue(os.path.exists(d.name),
                             "TemporaryDirectory %s does not exist" % d.name)
             d.cleanup()
@@ -1667,7 +1667,7 @@ class TestTemporaryDirectory(BaseTestCase):
         # A TemporaryDirectory is deleted when garbage collected
         dir = tempfile.mkdtemp()
         try:
-            d = self.do_create(dir=dir)
+            d = self.do_create(dir=)
             name = d.name
             del d # Rely on refcounting to invoke __del__
             self.assertFalse(os.path.exists(name),
@@ -1719,7 +1719,7 @@ class TestTemporaryDirectory(BaseTestCase):
                     {mod}.tmp = tmp
 
                     warnings.filterwarnings("always", category=ResourceWarning)
-                    """.format(dir=dir, mod=mod)
+                    """.format(dir=, mod=)
                 rc, out, err = script_helper.assert_python_ok("-c", code)
                 tmp_name = out.decode().strip()
                 self.assertFalse(os.path.exists(tmp_name),
@@ -1749,7 +1749,7 @@ class TestTemporaryDirectory(BaseTestCase):
                 open_file.write("Hello world!")
 
                 warnings.filterwarnings("always", category=ResourceWarning)
-                """.format(working_dir=working_dir)
+                """.format(working_dir=)
             __, out, err = script_helper.assert_python_ok("-c", code)
             temp_path = pathlib.Path(out.decode().strip())
             self.assertEqual(len(list(temp_path.glob("*"))),
@@ -1780,7 +1780,7 @@ class TestTemporaryDirectory(BaseTestCase):
                 sys.stdout.buffer.write(next(g).encode())
 
                 warnings.filterwarnings("always", category=ResourceWarning)
-                """.format(dir=dir)
+                """.format(dir=)
             rc, out, err = script_helper.assert_python_ok("-c", code)
             tmp_name = out.decode().strip()
             self.assertFalse(os.path.exists(tmp_name),
@@ -1792,7 +1792,7 @@ class TestTemporaryDirectory(BaseTestCase):
     def test_warnings_on_cleanup(self):
         # ResourceWarning will be triggered by __del__
         with self.do_create() as dir:
-            d = self.do_create(dir=dir, recurse=3)
+            d = self.do_create(dir=, recurse=3)
             name = d.name
 
             # Check for the resource warning

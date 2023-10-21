@@ -234,7 +234,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
                  (writing and "w" or "") +
                  (appending and "a" or "") +
                  (updating and "+" or ""),
-                 closefd, opener=opener)
+                 closefd, opener=)
     result = raw
     try:
         line_buffering = False
@@ -1880,7 +1880,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
     one piece.
     """
     def __init__(self, decoder, translate, errors='strict'):
-        codecs.IncrementalDecoder.__init__(self, errors=errors)
+        codecs.IncrementalDecoder.__init__(self, errors=)
         self.translate = translate
         self.decoder = decoder
         self.seennl = 0
@@ -1891,7 +1891,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
         if self.decoder is None:
             output = input
         else:
-            output = self.decoder.decode(input, final=final)
+            output = self.decoder.decode(input, final=)
         if self.pendingcr and (output or final):
             output = "\r" + output
             self.pendingcr = False
@@ -2643,7 +2643,7 @@ class StringIO(TextIOWrapper):
         super(StringIO, self).__init__(BytesIO(),
                                        encoding="utf-8",
                                        errors="surrogatepass",
-                                       newline=newline)
+                                       newline=)
         # Issue #5645: make universal newlines semantics the same as in the
         # C version, even under Windows.
         if newline is None:

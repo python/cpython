@@ -40,8 +40,7 @@ class ExtensionModuleCaseSensitivityTest(util.CASEOKTestBase):
 
 (Frozen_ExtensionCaseSensitivity,
  Source_ExtensionCaseSensitivity
- ) = util.test_both(ExtensionModuleCaseSensitivityTest, importlib=importlib,
-                    machinery=machinery)
+ ) = util.test_both(ExtensionModuleCaseSensitivityTest, importlib=, machinery=)
 
 
 if __name__ == '__main__':

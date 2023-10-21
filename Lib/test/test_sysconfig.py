@@ -432,7 +432,7 @@ class TestSysConfig(unittest.TestCase):
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            env=env)
+            env=)
         test_platform = p.communicate()[0].strip()
         test_platform = test_platform.decode('utf-8')
         status = p.wait()
@@ -451,7 +451,7 @@ class TestSysConfig(unittest.TestCase):
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
-            env=env)
+            env=)
         test_platform = p.communicate()[0].strip()
         test_platform = test_platform.decode('utf-8')
         status = p.wait()

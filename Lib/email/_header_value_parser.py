@@ -153,13 +153,13 @@ class TokenList(list):
         return comments
 
     def fold(self, *, policy):
-        return _refold_parse_tree(self, policy=policy)
+        return _refold_parse_tree(self, policy=)
 
     def pprint(self, indent=''):
-        print(self.ppstr(indent=indent))
+        print(self.ppstr(indent=))
 
     def ppstr(self, indent=''):
-        return '\n'.join(self._pp(indent=indent))
+        return '\n'.join(self._pp(indent=))
 
     def _pp(self, indent=''):
         yield '{}{}/{}('.format(
@@ -2800,7 +2800,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 want_encoding = False
                 last_ew = None
                 if part.syntactic_break:
-                    encoded_part = part.fold(policy=policy)[:-len(policy.linesep)]
+                    encoded_part = part.fold(policy=)[:-len(policy.linesep)]
                     if policy.linesep not in encoded_part:
                         # It fits on a single line
                         if len(encoded_part) > maxlen - len(lines[-1]):

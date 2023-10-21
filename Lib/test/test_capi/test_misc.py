@@ -712,7 +712,7 @@ class CAPITest(unittest.TestCase):
         # gh-103968: a metaclass with custom tp_new is deprecated, but still
         # allowed for functions that existed in 3.11
         # (PyType_FromSpecWithBases is used here).
-        class Base(metaclass=metaclass):
+        class Base(metaclass=):
             pass
 
         # Class creation from C
@@ -766,7 +766,7 @@ class CAPITest(unittest.TestCase):
 
     def test_pytype_fromspec_with_repeated_slots(self):
         for variant in range(2):
-            with self.subTest(variant=variant):
+            with self.subTest(variant=):
                 with self.assertRaises(SystemError):
                     _testcapi.create_type_from_repeated_slots(variant)
 
@@ -813,7 +813,7 @@ class CAPITest(unittest.TestCase):
                       (10, '123', '18446744073709551616'),
                       (16, '0x7b', '0x10000000000000000'))
         for base, small_target, large_target in test_cases:
-            with self.subTest(base=base, st=small_target, lt=large_target):
+            with self.subTest(base=, st=small_target, lt=large_target):
                 # Test for small number
                 self.assertEqual(pynumber_tobase(small_number, base), small_target)
                 self.assertEqual(pynumber_tobase(-small_number, base), '-' + small_target)
@@ -868,7 +868,7 @@ class CAPITest(unittest.TestCase):
             names.append('Py_FrozenMain')
 
         for name in names:
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 self.assertTrue(hasattr(ctypes.pythonapi, name))
 
     def test_clear_managed_dict(self):
@@ -1188,8 +1188,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         object.__basicsize__+1})
         for extra_base_size in sizes:
             for extra_size in sizes:
-                args = dict(extra_base_size=extra_base_size,
-                            extra_size=extra_size)
+                args = dict(extra_base_size=, extra_size=)
                 with self.subTest(**args):
                     check(**args)
 
@@ -1205,7 +1204,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         object.__basicsize__-1,
                         object.__basicsize__+1})
         for extra_size in sizes:
-            with self.subTest(extra_size=extra_size):
+            with self.subTest(extra_size=):
                 Sub = _testcapi.subclass_var_heaptype(
                     _testcapi.HeapCCollection, -extra_size, 0, 0)
                 collection = Sub(1, 2, 3)
@@ -1231,7 +1230,7 @@ class TestHeapTypeRelative(unittest.TestCase):
         for extra_base_size in sizes:
             for extra_size in sizes:
                 for offset in sizes:
-                    with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size, offset=offset):
+                    with self.subTest(extra_base_size=, extra_size=, offset=):
                         if offset < extra_size:
                             Sub = _testcapi.make_heaptype_with_member(
                                 extra_base_size, -extra_size, offset, True)
@@ -1257,7 +1256,7 @@ class TestHeapTypeRelative(unittest.TestCase):
                         with self.assertRaises(SystemError):
                             Sub = _testcapi.make_heaptype_with_member(
                                 extra_base_size, extra_size, offset, True)
-                with self.subTest(extra_base_size=extra_base_size, extra_size=extra_size):
+                with self.subTest(extra_base_size=, extra_size=):
                     with self.assertRaises(SystemError):
                         Sub = _testcapi.make_heaptype_with_member(
                             extra_base_size, -extra_size, -1, True)
@@ -2133,7 +2132,7 @@ class TestThreadState(unittest.TestCase):
                              "Couldn't find main thread correctly in the list")
 
         target()
-        t = threading.Thread(target=target)
+        t = threading.Thread(target=)
         t.start()
         t.join()
 

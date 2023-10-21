@@ -104,7 +104,7 @@ class PickleBufferTest(unittest.TestCase):
 
     def test_raw(self):
         for obj in (b"foo", bytearray(b"foo")):
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 self.check_raw(obj, obj)
 
     def test_raw_ndarray(self):

@@ -338,7 +338,7 @@ class BaseTest:
             left = ''.join(choices('abcdef', k=rr(2000)))
             right = ''.join(choices('abcdef', k=rr(2000)))
             text = left + p + right
-            with self.subTest(p=p, text=text):
+            with self.subTest(p=, text=):
                 self.checkequal(reference_find(p, text),
                                 text, 'find', p)
 
@@ -1259,7 +1259,7 @@ class StringLikeTest(BaseTest):
 
         for idx_type in ('def', object()):
             expected_msg = "string indices must be integers, not '{}'".format(type(idx_type).__name__)
-            self.checkraises(TypeError, 'abc', '__getitem__', idx_type, expected_msg=expected_msg)
+            self.checkraises(TypeError, 'abc', '__getitem__', idx_type, expected_msg=)
 
     def test_slice(self):
         self.checkequal('abc', 'abc', '__getitem__', slice(0, 1000))

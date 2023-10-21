@@ -48,7 +48,7 @@ class PyParseTest(unittest.TestCase):
                  'a\n')
 
         for string in tests:
-            with self.subTest(string=string):
+            with self.subTest(string=):
                 setcode(string)
                 eq(p.code, string)
                 eq(p.study_level, 0)
@@ -346,7 +346,7 @@ class PyParseTest(unittest.TestCase):
                   ('a = #\\\n'),                     # Inline comment.
                   )
         for string in errors:
-            with self.subTest(string=string):
+            with self.subTest(string=):
                 setcode(string)
                 with self.assertRaises(AssertionError):
                     indent()

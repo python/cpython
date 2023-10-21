@@ -71,11 +71,11 @@ class CountLinesTest(unittest.TestCase):
 
             7 chars
             13 characters""")
-        self.check(expected=5, text=text, linewidth=80)
+        self.check(expected=5, text=, linewidth=80)
         self.check(expected=5, text=text + '\n', linewidth=80)
-        self.check(expected=6, text=text, linewidth=40)
-        self.check(expected=7, text=text, linewidth=20)
-        self.check(expected=11, text=text, linewidth=10)
+        self.check(expected=6, text=, linewidth=40)
+        self.check(expected=7, text=, linewidth=20)
+        self.check(expected=11, text=, linewidth=10)
 
 
 class SqueezerTest(unittest.TestCase):
@@ -128,9 +128,7 @@ class SqueezerTest(unittest.TestCase):
             (r"'aa\t' * 21", 80, 3),
             (r"'aa\t' * 20", 40, 4),
         ]:
-            with self.subTest(text_code=text_code,
-                              line_width=line_width,
-                              expected=expected):
+            with self.subTest(text_code=, line_width=, expected=):
                 text = eval(text_code)
                 with patch.object(editwin, 'width', line_width):
                     self.assertEqual(squeezer.count_lines(text), expected)
@@ -459,7 +457,7 @@ class ExpandingButtonTest(unittest.TestCase):
             self.assertEqual(mock_menu.add_command.call_count,
                              len(expandingbutton.rmenu_specs))
             for label, *data in expandingbutton.rmenu_specs:
-                mock_menu.add_command.assert_any_call(label=label, command=ANY)
+                mock_menu.add_command.assert_any_call(label=, command=ANY)
 
 
 if __name__ == '__main__':

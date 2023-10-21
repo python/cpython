@@ -181,11 +181,8 @@ class Message:
         from email.generator import Generator
         policy = self.policy if policy is None else policy
         fp = StringIO()
-        g = Generator(fp,
-                      mangle_from_=False,
-                      maxheaderlen=maxheaderlen,
-                      policy=policy)
-        g.flatten(self, unixfrom=unixfrom)
+        g = Generator(fp, mangle_from_=False, maxheaderlen=, policy=)
+        g.flatten(self, unixfrom=)
         return fp.getvalue()
 
     def __bytes__(self):
@@ -204,8 +201,8 @@ class Message:
         from email.generator import BytesGenerator
         policy = self.policy if policy is None else policy
         fp = BytesIO()
-        g = BytesGenerator(fp, mangle_from_=False, policy=policy)
-        g.flatten(self, unixfrom=unixfrom)
+        g = BytesGenerator(fp, mangle_from_=False, policy=)
+        g.flatten(self, unixfrom=)
         return fp.getvalue()
 
     def is_multipart(self):
@@ -754,7 +751,7 @@ class Message:
             ctype = 'text/plain'
         else:
             ctype = self.get(header)
-        if not self.get_param(param, header=header):
+        if not self.get_param(param, header=):
             if not ctype:
                 ctype = _formatparam(param, value, requote)
             else:
@@ -762,7 +759,7 @@ class Message:
                     [ctype, _formatparam(param, value, requote)])
         else:
             ctype = ''
-            for old_param, old_value in self.get_params(header=header,
+            for old_param, old_value in self.get_params(header=,
                                                         unquote=requote):
                 append_param = ''
                 if old_param.lower() == param.lower():
@@ -791,7 +788,7 @@ class Message:
         if header not in self:
             return
         new_ctype = ''
-        for p, v in self.get_params(header=header, unquote=requote):
+        for p, v in self.get_params(header=, unquote=requote):
             if p.lower() != param.lower():
                 if not new_ctype:
                     new_ctype = _formatparam(p, v, requote)
@@ -827,7 +824,7 @@ class Message:
         if header not in self:
             self[header] = type
             return
-        params = self.get_params(header=header, unquote=requote)
+        params = self.get_params(header=, unquote=requote)
         del self[header]
         self[header] = type
         # Skip the first param; it's the old type.

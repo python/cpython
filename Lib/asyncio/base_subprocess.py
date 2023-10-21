@@ -33,8 +33,8 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
 
         # Create the child process: set the _proc attribute
         try:
-            self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
-                        stderr=stderr, bufsize=bufsize, **kwargs)
+            self._start(args=, shell=, stdin=, stdout=,
+                        stderr=, bufsize=, **kwargs)
         except:
             self.close()
             raise

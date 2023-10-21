@@ -43,8 +43,8 @@ async def open_connection(host=None, port=None, *,
     really nothing special here except some convenience.)
     """
     loop = events.get_running_loop()
-    reader = StreamReader(limit=limit, loop=loop)
-    protocol = StreamReaderProtocol(reader, loop=loop)
+    reader = StreamReader(limit=, loop=)
+    protocol = StreamReaderProtocol(reader, loop=)
     transport, _ = await loop.create_connection(
         lambda: protocol, host, port, **kwds)
     writer = StreamWriter(transport, protocol, reader, loop)
@@ -76,9 +76,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     loop = events.get_running_loop()
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop)
-        protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                        loop=loop)
+        reader = StreamReader(limit=, loop=)
+        protocol = StreamReaderProtocol(reader, client_connected_cb, loop=)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
@@ -92,8 +91,8 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
         loop = events.get_running_loop()
 
-        reader = StreamReader(limit=limit, loop=loop)
-        protocol = StreamReaderProtocol(reader, loop=loop)
+        reader = StreamReader(limit=, loop=)
+        protocol = StreamReaderProtocol(reader, loop=)
         transport, _ = await loop.create_unix_connection(
             lambda: protocol, path, **kwds)
         writer = StreamWriter(transport, protocol, reader, loop)
@@ -105,9 +104,8 @@ if hasattr(socket, 'AF_UNIX'):
         loop = events.get_running_loop()
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop)
-            protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                            loop=loop)
+            reader = StreamReader(limit=, loop=)
+            protocol = StreamReaderProtocol(reader, client_connected_cb, loop=)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -189,7 +187,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     _source_traceback = None
 
     def __init__(self, stream_reader, client_connected_cb=None, loop=None):
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         if stream_reader is not None:
             self._stream_reader_wr = weakref.ref(stream_reader)
             self._source_traceback = stream_reader._source_traceback
@@ -386,9 +384,9 @@ class StreamWriter:
         await self.drain()
         new_transport = await self._loop.start_tls(  # type: ignore
             self._transport, protocol, sslcontext,
-            server_side=server_side, server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            server_side=, server_hostname=,
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=)
         self._transport = new_transport
         protocol._replace_writer(self)
 

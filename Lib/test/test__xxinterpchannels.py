@@ -1049,7 +1049,7 @@ class ChannelTests(TestBase):
                 cid = channels.create()
                 channels.send(cid, b'spam', blocking=False)
                 channels.recv(cid)
-                channels.close(cid, send=send, recv=recv)
+                channels.close(cid, send=, recv=)
 
                 with self.assertRaises(channels.ChannelClosedError):
                     channels.send(cid, b'eggs')
@@ -1648,7 +1648,7 @@ class ExhaustiveChannelTests(TestBase):
                 action.action,
                 end,
                 fix.state,
-                hideclosed=hideclosed,
+                hideclosed=,
                 )
             fix.record_action(action, result)
         else:

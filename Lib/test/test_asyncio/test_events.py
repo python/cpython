@@ -764,7 +764,7 @@ class EventLoopTestsMixin:
         thread.start()
 
         conn, _ = lsock.accept()
-        proto = MyProto(loop=loop)
+        proto = MyProto(loop=)
         proto.loop = loop
         loop.run_until_complete(
             loop.connect_accepted_socket(
@@ -959,7 +959,7 @@ class EventLoopTestsMixin:
         proto = MyProto(loop=self.loop)
         sock = socket.socket()
         with sock:
-            f = self.loop.create_unix_server(lambda: proto, '/test', sock=sock)
+            f = self.loop.create_unix_server(lambda: proto, '/test', sock=)
             with self.assertRaisesRegex(ValueError,
                                         'path and sock can not be specified '
                                         'at the same time'):
@@ -1226,7 +1226,7 @@ class EventLoopTestsMixin:
         sock = server.sockets[0]
         host, port = sock.getsockname()
 
-        f = self.loop.create_server(MyProto, host=host, port=port)
+        f = self.loop.create_server(MyProto, host=, port=)
         with self.assertRaises(OSError) as cm:
             self.loop.run_until_complete(f)
         self.assertEqual(cm.exception.errno, errno.EADDRINUSE)
@@ -1246,7 +1246,7 @@ class EventLoopTestsMixin:
         while True:
             try:
                 port = socket_helper.find_unused_port()
-                f = self.loop.create_server(TestMyProto, host=None, port=port)
+                f = self.loop.create_server(TestMyProto, host=None, port=)
                 server = self.loop.run_until_complete(f)
             except OSError as ex:
                 if ex.errno == errno.EADDRINUSE:
@@ -1303,7 +1303,7 @@ class EventLoopTestsMixin:
                 self.transport.sendto(b'resp:'+data, addr)
 
         coro = self.loop.create_datagram_endpoint(
-            TestMyDatagramProto, local_addr=local_addr, family=family)
+            TestMyDatagramProto, local_addr=, family=)
         s_transport, server = self.loop.run_until_complete(coro)
         sockname = s_transport.get_extra_info('sockname')
         host, port = socket.getnameinfo(
@@ -1356,7 +1356,7 @@ class EventLoopTestsMixin:
                 *local_address, type=socket.SOCK_DGRAM))
         for family, type, proto, cname, address in infos:
             try:
-                sock = socket.socket(family=family, type=type, proto=proto)
+                sock = socket.socket(family=, type=, proto=)
                 sock.setblocking(False)
                 sock.bind(address)
             except:
@@ -1367,7 +1367,7 @@ class EventLoopTestsMixin:
             self.fail('Can not create socket.')
 
         f = self.loop.create_datagram_endpoint(
-            lambda: MyDatagramProto(loop=self.loop), sock=sock)
+            lambda: MyDatagramProto(loop=self.loop), sock=)
         tr, pr = self.loop.run_until_complete(f)
         self.assertIsInstance(tr, asyncio.Transport)
         self.assertIsInstance(pr, MyDatagramProto)
@@ -1425,8 +1425,8 @@ class EventLoopTestsMixin:
     def test_unclosed_pipe_transport(self):
         # This test reproduces the issue #314 on GitHub
         loop = self.create_event_loop()
-        read_proto = MyReadPipeProto(loop=loop)
-        write_proto = MyWritePipeProto(loop=loop)
+        read_proto = MyReadPipeProto(loop=)
+        write_proto = MyWritePipeProto(loop=)
 
         rpipe, wpipe = os.pipe()
         rpipeobj = io.open(rpipe, 'rb', 1024)
@@ -2768,8 +2768,7 @@ class GetEventLoopTestsMixin:
                     mp_context = multiprocessing.get_context('forkserver')
                 else:
                     mp_context = None
-                pool = concurrent.futures.ProcessPoolExecutor(
-                        mp_context=mp_context)
+                pool = concurrent.futures.ProcessPoolExecutor(mp_context=)
                 result = await self.loop.run_in_executor(
                     pool, _test_get_event_loop_new_process__sub_proc)
                 pool.shutdown()

@@ -1097,7 +1097,7 @@ class Decimal(object):
         can leave up to 3 digits to the left of the decimal place and may
         require the addition of either one or two trailing zeros.
         """
-        return self.__str__(eng=True, context=context)
+        return self.__str__(eng=True, context=)
 
     def __neg__(self, context=None):
         """Returns a copy with the sign switched.
@@ -1105,7 +1105,7 @@ class Decimal(object):
         Rounds, if it has reason.
         """
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
 
@@ -1127,7 +1127,7 @@ class Decimal(object):
         Rounds the number (if more than precision digits)
         """
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
 
@@ -1153,14 +1153,14 @@ class Decimal(object):
             return self.copy_abs()
 
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
 
         if self._sign:
-            ans = self.__neg__(context=context)
+            ans = self.__neg__(context=)
         else:
-            ans = self.__pos__(context=context)
+            ans = self.__pos__(context=)
 
         return ans
 
@@ -1259,12 +1259,12 @@ class Decimal(object):
             return other
 
         if self._is_special or other._is_special:
-            ans = self._check_nans(other, context=context)
+            ans = self._check_nans(other, context=)
             if ans:
                 return ans
 
         # self - other is computed as self + other.copy_negate()
-        return self.__add__(other.copy_negate(), context=context)
+        return self.__add__(other.copy_negate(), context=)
 
     def __rsub__(self, other, context=None):
         """Return other - self"""
@@ -1272,7 +1272,7 @@ class Decimal(object):
         if other is NotImplemented:
             return other
 
-        return other.__sub__(self, context=context)
+        return other.__sub__(self, context=)
 
     def __mul__(self, other, context=None):
         """Return self * other.
@@ -1428,7 +1428,7 @@ class Decimal(object):
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__truediv__(self, context=context)
+        return other.__truediv__(self, context=)
 
     def __divmod__(self, other, context=None):
         """
@@ -1471,7 +1471,7 @@ class Decimal(object):
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__divmod__(self, context=context)
+        return other.__divmod__(self, context=)
 
     def __mod__(self, other, context=None):
         """
@@ -1505,7 +1505,7 @@ class Decimal(object):
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__mod__(self, context=context)
+        return other.__mod__(self, context=)
 
     def remainder_near(self, other, context=None):
         """
@@ -1615,7 +1615,7 @@ class Decimal(object):
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__floordiv__(self, context=context)
+        return other.__floordiv__(self, context=)
 
     def __float__(self):
         """Float representation."""
@@ -2516,7 +2516,7 @@ class Decimal(object):
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__pow__(self, context=context)
+        return other.__pow__(self, context=)
 
     def normalize(self, context=None):
         """Normalize- strip trailing 0s, change anything equal to 0 to 0e0"""
@@ -2525,7 +2525,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
 
@@ -2687,7 +2687,7 @@ class Decimal(object):
         this method except that it doesn't raise Inexact or Rounded.
         """
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
             return Decimal(self)
@@ -2712,7 +2712,7 @@ class Decimal(object):
         if rounding is None:
             rounding = context.rounding
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
             return Decimal(self)
@@ -2730,7 +2730,7 @@ class Decimal(object):
             context = getcontext()
 
         if self._is_special:
-            ans = self._check_nans(context=context)
+            ans = self._check_nans(context=)
             if ans:
                 return ans
 
@@ -2940,7 +2940,7 @@ class Decimal(object):
         ans = self._compare_check_nans(other, context)
         if ans:
             return ans
-        return self.compare(other, context=context)
+        return self.compare(other, context=)
 
     def compare_total(self, other, context=None):
         """Compares self to other using the abstract representations.
@@ -3050,7 +3050,7 @@ class Decimal(object):
             context = getcontext()
 
         # exp(NaN) = NaN
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3206,7 +3206,7 @@ class Decimal(object):
             context = getcontext()
 
         # ln(NaN) = NaN
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3286,7 +3286,7 @@ class Decimal(object):
             context = getcontext()
 
         # log10(NaN) = NaN
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3339,7 +3339,7 @@ class Decimal(object):
         without limiting the resulting exponent).
         """
         # logb(NaN) = NaN
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3510,7 +3510,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3533,7 +3533,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        ans = self._check_nans(context=context)
+        ans = self._check_nans(context=)
         if ans:
             return ans
 
@@ -3628,7 +3628,7 @@ class Decimal(object):
                 return "+Zero"
         if context is None:
             context = getcontext()
-        if self.is_subnormal(context=context):
+        if self.is_subnormal(context=):
             if self._sign:
                 return "-Subnormal"
             else:
@@ -3773,7 +3773,7 @@ class Decimal(object):
         if context is None:
             context = getcontext()
 
-        spec = _parse_format_specifier(specifier, _localeconv=_localeconv)
+        spec = _parse_format_specifier(specifier, _localeconv=)
 
         # special values don't care about the type or precision
         if self._is_special:

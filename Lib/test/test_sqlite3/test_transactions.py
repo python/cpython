@@ -380,7 +380,7 @@ class AutocommitAttribute(unittest.TestCase):
             sqlite.LEGACY_TRANSACTION_CONTROL,
         )
         for mode in dataset:
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with memory_database(autocommit=mode) as cx:
                     self.assertEqual(cx.autocommit, mode)
                 with memory_database() as cx:
@@ -390,7 +390,7 @@ class AutocommitAttribute(unittest.TestCase):
     def test_autocommit_setget_invalid(self):
         msg = "autocommit must be True, False, or.*LEGACY"
         for mode in "a", 12, (), None:
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with self.assertRaisesRegex(ValueError, msg):
                     sqlite.connect(":memory:", autocommit=mode)
 
@@ -427,7 +427,7 @@ class AutocommitAttribute(unittest.TestCase):
 
     def test_autocommit_enabled_txn_ctl(self):
         for op in "commit", "rollback":
-            with self.subTest(op=op):
+            with self.subTest(op=):
                 with memory_database(autocommit=True) as cx:
                     meth = getattr(cx, op)
                     self.assertFalse(cx.in_transaction)

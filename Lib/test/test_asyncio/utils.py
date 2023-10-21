@@ -273,14 +273,14 @@ if hasattr(socket, 'AF_UNIX'):
     @contextlib.contextmanager
     def run_test_unix_server(*, use_ssl=False):
         with unix_socket_path() as path:
-            yield from _run_test_server(address=path, use_ssl=use_ssl,
+            yield from _run_test_server(address=path, use_ssl=,
                                         server_cls=SilentUnixWSGIServer,
                                         server_ssl_cls=UnixSSLWSGIServer)
 
 
 @contextlib.contextmanager
 def run_test_server(*, host='127.0.0.1', port=0, use_ssl=False):
-    yield from _run_test_server(address=(host, port), use_ssl=use_ssl,
+    yield from _run_test_server(address=(host, port), use_ssl=,
                                 server_cls=SilentWSGIServer,
                                 server_ssl_cls=SSLWSGIServer)
 
@@ -496,7 +496,7 @@ class TestLoop(base_events.BaseEventLoop):
 
     def call_at(self, when, callback, *args, context=None):
         self._timers.append(when)
-        return super().call_at(when, callback, *args, context=context)
+        return super().call_at(when, callback, *args, context=)
 
     def _process_events(self, event_list):
         return

@@ -44,7 +44,7 @@ def urlopen(url, data=None, proxies=None):
     """urlopen(url [, data]) -> open file-like object"""
     global _urlopener
     if proxies is not None:
-        opener = urllib.request.FancyURLopener(proxies=proxies)
+        opener = urllib.request.FancyURLopener(proxies=)
     elif not _urlopener:
         opener = FancyURLopener()
         _urlopener = opener
@@ -112,7 +112,7 @@ def fakehttp(fakedata, mock_close=False):
 
 class FakeHTTPMixin(object):
     def fakehttp(self, fakedata, mock_close=False):
-        fake_http_class = fakehttp(fakedata, mock_close=mock_close)
+        fake_http_class = fakehttp(fakedata, mock_close=)
         self._connection_class = http.client.HTTPConnection
         http.client.HTTPConnection = fake_http_class
 

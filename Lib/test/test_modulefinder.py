@@ -326,8 +326,7 @@ class ModuleFinderTest(unittest.TestCase):
     def _do_test(self, info, report=False, debug=0, replace_paths=[], modulefinder_class=modulefinder.ModuleFinder):
         import_this, modules, missing, maybe_missing, source = info
         create_package(self.test_dir, source)
-        mf = modulefinder_class(path=self.test_path, debug=debug,
-                                        replace_paths=replace_paths)
+        mf = modulefinder_class(path=self.test_path, debug=, replace_paths=)
         mf.import_hook(import_this)
         if report:
             mf.report()

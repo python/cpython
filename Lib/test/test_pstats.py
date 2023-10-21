@@ -33,7 +33,7 @@ class StatsTestCase(unittest.TestCase):
 
     def test_add(self):
         stream = StringIO()
-        stats = pstats.Stats(stream=stream)
+        stats = pstats.Stats(stream=)
         stats.add(self.stats, self.stats)
 
     def test_sort_stats_int(self):

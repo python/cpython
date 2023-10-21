@@ -397,7 +397,7 @@ class ThreadableTest:
 class ThreadedTCPSocketTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketTCPTest.__init__(self, methodName=methodName)
+        SocketTCPTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -411,7 +411,7 @@ class ThreadedTCPSocketTest(SocketTCPTest, ThreadableTest):
 class ThreadedUDPSocketTest(SocketUDPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketUDPTest.__init__(self, methodName=methodName)
+        SocketUDPTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -427,7 +427,7 @@ class ThreadedUDPSocketTest(SocketUDPTest, ThreadableTest):
 class ThreadedUDPLITESocketTest(SocketUDPLITETest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketUDPLITETest.__init__(self, methodName=methodName)
+        SocketUDPLITETest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -441,7 +441,7 @@ class ThreadedUDPLITESocketTest(SocketUDPLITETest, ThreadableTest):
 class ThreadedCANSocketTest(SocketCANTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketCANTest.__init__(self, methodName=methodName)
+        SocketCANTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -461,7 +461,7 @@ class ThreadedCANSocketTest(SocketCANTest, ThreadableTest):
 class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketRDSTest.__init__(self, methodName=methodName)
+        SocketRDSTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -488,7 +488,7 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        unittest.TestCase.__init__(self, methodName=methodName)
+        unittest.TestCase.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def setUp(self):
@@ -523,7 +523,7 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
     """
 
     def __init__(self, methodName='runTest'):
-        ThreadedTCPSocketTest.__init__(self, methodName=methodName)
+        ThreadedTCPSocketTest.__init__(self, methodName=)
 
     def setUp(self):
         ThreadedTCPSocketTest.setUp(self)
@@ -551,7 +551,7 @@ class SocketConnectedTest(ThreadedTCPSocketTest):
 class SocketPairTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        unittest.TestCase.__init__(self, methodName=methodName)
+        unittest.TestCase.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def setUp(self):
@@ -1746,15 +1746,15 @@ class GeneralModuleTests(unittest.TestCase):
 
     def test_makefile_mode(self):
         for mode in 'r', 'rb', 'rw', 'w', 'wb':
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with socket.socket() as sock:
                     encoding = None if "b" in mode else "utf-8"
-                    with sock.makefile(mode, encoding=encoding) as fp:
+                    with sock.makefile(mode, encoding=) as fp:
                         self.assertEqual(fp.mode, mode)
 
     def test_makefile_invalid_mode(self):
         for mode in 'rt', 'x', '+', 'a':
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with socket.socket() as sock:
                     with self.assertRaisesRegex(ValueError, 'invalid mode'):
                         sock.makefile(mode)
@@ -2143,7 +2143,7 @@ class BasicCANTest(unittest.TestCase):
 class CANTest(ThreadedCANSocketTest):
 
     def __init__(self, methodName='runTest'):
-        ThreadedCANSocketTest.__init__(self, methodName=methodName)
+        ThreadedCANSocketTest.__init__(self, methodName=)
 
     @classmethod
     def build_can_frame(cls, can_id, data):
@@ -2357,7 +2357,7 @@ class BasicRDSTest(unittest.TestCase):
 class RDSTest(ThreadedRDSSocketTest):
 
     def __init__(self, methodName='runTest'):
-        ThreadedRDSSocketTest.__init__(self, methodName=methodName)
+        ThreadedRDSSocketTest.__init__(self, methodName=)
 
     def setUp(self):
         super().setUp()
@@ -2588,7 +2588,7 @@ class BasicHyperVTest(unittest.TestCase):
 class BasicTCPTest(SocketConnectedTest):
 
     def __init__(self, methodName='runTest'):
-        SocketConnectedTest.__init__(self, methodName=methodName)
+        SocketConnectedTest.__init__(self, methodName=)
 
     def testRecv(self):
         # Testing large receive over TCP
@@ -2711,7 +2711,7 @@ class BasicTCPTest(SocketConnectedTest):
 class BasicUDPTest(ThreadedUDPSocketTest):
 
     def __init__(self, methodName='runTest'):
-        ThreadedUDPSocketTest.__init__(self, methodName=methodName)
+        ThreadedUDPSocketTest.__init__(self, methodName=)
 
     def testSendtoAndRecv(self):
         # Testing sendto() and Recv() over UDP
@@ -2742,7 +2742,7 @@ class BasicUDPTest(ThreadedUDPSocketTest):
 class BasicUDPLITETest(ThreadedUDPLITESocketTest):
 
     def __init__(self, methodName='runTest'):
-        ThreadedUDPLITESocketTest.__init__(self, methodName=methodName)
+        ThreadedUDPLITESocketTest.__init__(self, methodName=)
 
     def testSendtoAndRecv(self):
         # Testing sendto() and Recv() over UDPLITE
@@ -4736,7 +4736,7 @@ class TCPCloserTest(ThreadedTCPSocketTest):
 class BasicSocketPairTest(SocketPairTest):
 
     def __init__(self, methodName='runTest'):
-        SocketPairTest.__init__(self, methodName=methodName)
+        SocketPairTest.__init__(self, methodName=)
 
     def _check_defaults(self, sock):
         self.assertIsInstance(sock, socket.socket)
@@ -4772,7 +4772,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def __init__(self, methodName='runTest'):
         self.event = threading.Event()
-        ThreadedTCPSocketTest.__init__(self, methodName=methodName)
+        ThreadedTCPSocketTest.__init__(self, methodName=)
 
     def assert_sock_timeout(self, sock, timeout):
         self.assertEqual(self.serv.gettimeout(), timeout)
@@ -4951,7 +4951,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
     write_msg = MSG
 
     def __init__(self, methodName='runTest'):
-        SocketConnectedTest.__init__(self, methodName=methodName)
+        SocketConnectedTest.__init__(self, methodName=)
 
     def setUp(self):
         self.evt1, self.evt2, self.serv_finished, self.cli_finished = [
@@ -5339,7 +5339,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
     cli = None
 
     def __init__(self, methodName='runTest'):
-        SocketTCPTest.__init__(self, methodName=methodName)
+        SocketTCPTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -5411,7 +5411,7 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 class NetworkConnectionBehaviourTest(SocketTCPTest, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
-        SocketTCPTest.__init__(self, methodName=methodName)
+        SocketTCPTest.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def clientSetUp(self):
@@ -5703,7 +5703,7 @@ class BufferIOTest(SocketConnectedTest):
     Test the buffer versions of socket.recv() and socket.send().
     """
     def __init__(self, methodName='runTest'):
-        SocketConnectedTest.__init__(self, methodName=methodName)
+        SocketConnectedTest.__init__(self, methodName=)
 
     def testRecvIntoArray(self):
         buf = array.array("B", [0] * len(MSG))
@@ -5833,7 +5833,7 @@ class TIPCTest(unittest.TestCase):
                      "TIPC module is not loaded, please 'sudo modprobe tipc'")
 class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName = 'runTest'):
-        unittest.TestCase.__init__(self, methodName = methodName)
+        unittest.TestCase.__init__(self, methodName=)
         ThreadableTest.__init__(self)
 
     def setUp(self):
@@ -6281,7 +6281,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         with sock, file:
             count = 5000007
             meth = self.meth_from_sock(sock)
-            sent = meth(file, count=count)
+            sent = meth(file, count=)
             self.assertEqual(sent, count)
             self.assertEqual(file.tell(), count)
 
@@ -6302,7 +6302,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         with sock, file:
             count = 1
             meth = self.meth_from_sock(sock)
-            sent = meth(file, count=count)
+            sent = meth(file, count=)
             self.assertEqual(sent, count)
             self.assertEqual(file.tell(), count)
 
@@ -6321,7 +6321,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         with socket.create_connection(address, timeout=2) as sock, file as file:
             count = 100007
             meth = self.meth_from_sock(sock)
-            sent = meth(file, offset=2007, count=count)
+            sent = meth(file, offset=2007, count=)
             self.assertEqual(sent, count)
             self.assertEqual(file.tell(), count + 2007)
 
@@ -6481,15 +6481,14 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, key)
             op, _ = algo.accept()
             with op:
-                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
+                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=,
                                  flags=socket.MSG_MORE)
                 op.sendall(msg)
                 self.assertEqual(op.recv(msglen), ciphertext)
 
             op, _ = algo.accept()
             with op:
-                op.sendmsg_afalg([ciphertext],
-                                 op=socket.ALG_OP_DECRYPT, iv=iv)
+                op.sendmsg_afalg([ciphertext], op=socket.ALG_OP_DECRYPT, iv=)
                 self.assertEqual(op.recv(msglen), msg)
 
             # long message
@@ -6497,16 +6496,14 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             longmsg = [msg] * multiplier
             op, _ = algo.accept()
             with op:
-                op.sendmsg_afalg(longmsg,
-                                 op=socket.ALG_OP_ENCRYPT, iv=iv)
+                op.sendmsg_afalg(longmsg, op=socket.ALG_OP_ENCRYPT, iv=)
                 enc = op.recv(msglen * multiplier)
             self.assertEqual(len(enc), msglen * multiplier)
             self.assertEqual(enc[:msglen], ciphertext)
 
             op, _ = algo.accept()
             with op:
-                op.sendmsg_afalg([enc],
-                                 op=socket.ALG_OP_DECRYPT, iv=iv)
+                op.sendmsg_afalg([enc], op=socket.ALG_OP_DECRYPT, iv=)
                 dec = op.recv(msglen * multiplier)
             self.assertEqual(len(dec), msglen * multiplier)
             self.assertEqual(dec, msg * multiplier)
@@ -6531,8 +6528,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             # send assoc, plain and tag buffer in separate steps
             op, _ = algo.accept()
             with op:
-                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=iv,
-                                 assoclen=assoclen, flags=socket.MSG_MORE)
+                op.sendmsg_afalg(op=socket.ALG_OP_ENCRYPT, iv=,
+                                 assoclen=, flags=socket.MSG_MORE)
                 op.sendall(assoc, socket.MSG_MORE)
                 op.sendall(plain)
                 res = op.recv(assoclen + len(plain) + taglen)
@@ -6543,8 +6540,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             op, _ = algo.accept()
             with op:
                 msg = assoc + plain
-                op.sendmsg_afalg([msg], op=socket.ALG_OP_ENCRYPT, iv=iv,
-                                 assoclen=assoclen)
+                op.sendmsg_afalg([msg], op=socket.ALG_OP_ENCRYPT, iv=,
+                                 assoclen=)
                 res = op.recv(assoclen + len(plain) + taglen)
                 self.assertEqual(expected_ct, res[assoclen:-taglen])
                 self.assertEqual(expected_tag, res[-taglen:])
@@ -6569,8 +6566,8 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
             op, _ = algo.accept()
             with op:
                 msg = assoc + expected_ct + expected_tag
-                op.sendmsg_afalg([msg], op=socket.ALG_OP_DECRYPT, iv=iv,
-                                 assoclen=assoclen)
+                op.sendmsg_afalg([msg], op=socket.ALG_OP_DECRYPT, iv=,
+                                 assoclen=)
                 res = op.recv(len(msg) - taglen)
                 self.assertEqual(plain, res[assoclen:])
 
@@ -6723,7 +6720,7 @@ class CreateServerFunctionalTest(unittest.TestCase):
         event.set()
 
     def echo_client(self, addr, family):
-        with socket.socket(family=family) as sock:
+        with socket.socket(family=) as sock:
             sock.settimeout(self.timeout)
             sock.connect(addr)
             sock.sendall(b'foo')

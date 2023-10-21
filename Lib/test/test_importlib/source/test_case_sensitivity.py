@@ -70,8 +70,7 @@ class CaseSensitivityTestPEP451(CaseSensitivityTest):
 
 (Frozen_CaseSensitivityTestPEP451,
  Source_CaseSensitivityTestPEP451
- ) = util.test_both(CaseSensitivityTestPEP451, importlib=importlib,
-                    machinery=machinery)
+ ) = util.test_both(CaseSensitivityTestPEP451, importlib=, machinery=)
 
 
 if __name__ == '__main__':

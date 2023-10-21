@@ -713,7 +713,7 @@ class UnionTests(unittest.TestCase):
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 self.assertIsInstance(1, x)
                 self.assertIsInstance(True, x)
                 self.assertIsInstance('a', x)
@@ -724,7 +724,7 @@ class UnionTests(unittest.TestCase):
                 self.assertFalse(issubclass(type(None), x))
 
         for x in (int | None, typing.Union[int, None]):
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 self.assertIsInstance(None, x)
                 self.assertTrue(issubclass(type(None), x))
 
@@ -732,7 +732,7 @@ class UnionTests(unittest.TestCase):
             int | collections.abc.Mapping,
             typing.Union[int, collections.abc.Mapping],
         ):
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 self.assertIsInstance({}, x)
                 self.assertNotIsInstance((), x)
                 self.assertTrue(issubclass(dict, x))
@@ -746,7 +746,7 @@ class UnionTests(unittest.TestCase):
             typing.Union[int, T],
         )
         for x in will_resolve:
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 self.assertIsInstance(1, x)
                 self.assertTrue(issubclass(int, x))
 
@@ -755,14 +755,14 @@ class UnionTests(unittest.TestCase):
             typing.Union[T, int],
         )
         for x in wont_resolve:
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 with self.assertRaises(TypeError):
                     issubclass(int, x)
                 with self.assertRaises(TypeError):
                     isinstance(1, x)
 
         for x in (*will_resolve, *wont_resolve):
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 with self.assertRaises(TypeError):
                     issubclass(object, x)
                 with self.assertRaises(TypeError):
@@ -1815,8 +1815,8 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns2._y = 5
         name = "namespace"
 
-        self.assertEqual(repr(ns1), "{name}(x=1, y=2, w=3)".format(name=name))
-        self.assertEqual(repr(ns2), "{name}(x='spam', _y=5)".format(name=name))
+        self.assertEqual(repr(ns1), "{name}(x=1, y=2, w=3)".format(name=))
+        self.assertEqual(repr(ns2), "{name}(x='spam', _y=5)".format(name=))
 
     def test_equal(self):
         ns1 = types.SimpleNamespace(x=1)
@@ -1864,8 +1864,8 @@ class SimpleNamespaceTests(unittest.TestCase):
         ns2.spam = ns3
         ns3.spam = ns2
         name = "namespace"
-        repr1 = "{name}(c='cookie', spam={name}(...))".format(name=name)
-        repr2 = "{name}(spam={name}(x=1, spam={name}(...)))".format(name=name)
+        repr1 = "{name}(c='cookie', spam={name}(...))".format(name=)
+        repr2 = "{name}(spam={name}(x=1, spam={name}(...)))".format(name=)
 
         self.assertEqual(repr(ns1), repr1)
         self.assertEqual(repr(ns2), repr2)

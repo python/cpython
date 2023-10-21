@@ -729,7 +729,7 @@ class ProcessTestCase(BaseTestCase):
              'import sys; sys.stdin.read(); sys.stdout.write("out"); '
              'sys.stderr.write("error!")'],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, pipesize=pipesize)
+            stderr=subprocess.PIPE, pipesize=)
         try:
             for fifo in [p.stdin, p.stdout, p.stderr]:
                 self.assertEqual(
@@ -1142,7 +1142,7 @@ class ProcessTestCase(BaseTestCase):
             popen = subprocess.Popen(args,
                                      stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE,
-                                     encoding=encoding)
+                                     encoding=)
             stdout, stderr = popen.communicate(input='')
             self.assertEqual(stdout, '1\n2\n3\n4')
 
@@ -1163,7 +1163,7 @@ class ProcessTestCase(BaseTestCase):
                                      stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE,
                                      encoding='utf-8',
-                                     errors=errors)
+                                     errors=)
             stdout, stderr = popen.communicate(input='')
             self.assertEqual(stdout, '[{}]'.format(expected))
 
@@ -1272,7 +1272,7 @@ class ProcessTestCase(BaseTestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.DEVNULL,
                               bufsize=1,
-                              universal_newlines=universal_newlines) as p:
+                              universal_newlines=) as p:
             p.stdin.write(line) # expect that it flushes the line in text mode
             os.close(p.stdin.fileno()) # close it without flushing the buffer
             read_line = p.stdout.readline()
@@ -1490,7 +1490,7 @@ class ProcessTestCase(BaseTestCase):
         ]
         with unittest.mock.patch.object(subprocess.Popen, '_execute_child'):
             for cmd, shell, code, sx in cases:
-                p = subprocess.Popen(cmd, shell=shell)
+                p = subprocess.Popen(cmd, shell=)
                 p.returncode = code
                 self.assertEqual(repr(p), sx)
 
@@ -1979,13 +1979,13 @@ class POSIXProcessTestCase(BaseTestCase):
         for user in test_users:
             # posix_spawn() may be used with close_fds=False
             for close_fds in (False, True):
-                with self.subTest(user=user, close_fds=close_fds):
+                with self.subTest(user=, close_fds=):
                     try:
                         output = subprocess.check_output(
                                 [sys.executable, "-c",
                                  "import os; print(os.getuid())"],
-                                user=user,
-                                close_fds=close_fds)
+                                user=,
+                                close_fds=)
                     except PermissionError:  # (EACCES, EPERM)
                         pass
                     except OSError as e:
@@ -2027,13 +2027,13 @@ class POSIXProcessTestCase(BaseTestCase):
         for group in group_list + [gid]:
             # posix_spawn() may be used with close_fds=False
             for close_fds in (False, True):
-                with self.subTest(group=group, close_fds=close_fds):
+                with self.subTest(group=, close_fds=):
                     try:
                         output = subprocess.check_output(
                                 [sys.executable, "-c",
                                  "import os; print(os.getgid())"],
-                                group=group,
-                                close_fds=close_fds)
+                                group=,
+                                close_fds=)
                     except PermissionError:  # (EACCES, EPERM)
                         pass
                     else:
@@ -2442,7 +2442,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def _restore_fds(self, fds):
         for fd, saved, inheritable in fds:
-            os.dup2(saved, fd, inheritable=inheritable)
+            os.dup2(saved, fd, inheritable=)
             os.close(saved)
 
     def check_close_std_fds(self, fds):
@@ -2462,7 +2462,7 @@ class POSIXProcessTestCase(BaseTestCase):
                               'sys.stdout.write("apple");'
                               'sys.stdout.flush();'
                               'sys.stderr.write("orange")'],
-                       stdin=stdin,
+                       stdin=,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE).communicate()
             self.assertEqual(out, b'apple')
@@ -2697,7 +2697,7 @@ class POSIXProcessTestCase(BaseTestCase):
             decoded_value = value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
-                env=env)
+                env=)
             stdout = stdout.rstrip(b'\n\r')
             self.assertEqual(stdout.decode('ascii'), ascii(decoded_value))
 
@@ -2708,7 +2708,7 @@ class POSIXProcessTestCase(BaseTestCase):
             env[key] = encoded_value
             stdout = subprocess.check_output(
                 [sys.executable, "-c", script],
-                env=env)
+                env=)
             stdout = stdout.rstrip(b'\n\r')
             self.assertEqual(stdout.decode('ascii'), ascii(encoded_value))
 
@@ -2730,7 +2730,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # bytes program, unicode PATH
         env = os.environ.copy()
         env["PATH"] = path
-        exitcode = subprocess.call([program]+args, env=env)
+        exitcode = subprocess.call([program]+args, env=)
         self.assertEqual(exitcode, 0)
 
         # bytes program, bytes PATH
@@ -2982,7 +2982,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
         p = subprocess.Popen(args,
                              stdout=subprocess.PIPE, close_fds=True,
-                             pass_fds=pass_fds)
+                             pass_fds=)
         output, ignored = p.communicate()
         fds = set(map(int, output.split(b',')))
 
@@ -3017,7 +3017,7 @@ class POSIXProcessTestCase(BaseTestCase):
                               stdout=pass_fds[1],
                               stderr=pass_fds[2],
                               close_fds=True,
-                              pass_fds=pass_fds):
+                              pass_fds=):
             output = os.read(stdout_r, 1024)
         fds = {int(num) for num in output.split(b',')}
 
@@ -3380,8 +3380,7 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        subprocess.call(ZERO_RETURN_CMD, startupinfo=)
 
     def test_startupinfo_keywords(self):
         # startupinfo argument
@@ -3396,8 +3395,7 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        subprocess.call(ZERO_RETURN_CMD, startupinfo=)
 
     def test_startupinfo_copy(self):
         # bpo-34044: Popen must not modify input STARTUPINFO structure
@@ -3413,7 +3411,7 @@ class Win32ProcessTestCase(BaseTestCase):
                 proc = subprocess.Popen(cmd,
                                         stdout=null,
                                         stderr=subprocess.STDOUT,
-                                        startupinfo=startupinfo)
+                                        startupinfo=)
                 with proc:
                     proc.communicate()
                 self.assertEqual(proc.returncode, 0)
@@ -3490,7 +3488,7 @@ class Win32ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                               "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             startupinfo=startupinfo, close_fds=True)
+                             startupinfo=, close_fds=True)
         stdout, stderr = p.communicate()
         self.assertEqual(p.returncode, 1)
         self.assertIn(b"OSError", stderr)
@@ -3503,21 +3501,19 @@ class Win32ProcessTestCase(BaseTestCase):
             p = subprocess.Popen([sys.executable, "-c",
                                   "import msvcrt; print(msvcrt.open_osfhandle({}, 0))".format(handles[0])],
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                 startupinfo=startupinfo, close_fds=False)
+                                 startupinfo=, close_fds=False)
             stdout, stderr = p.communicate()
             self.assertEqual(p.returncode, 0)
 
     def test_empty_attribute_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        subprocess.call(ZERO_RETURN_CMD, startupinfo=)
 
     def test_empty_handle_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {"handle_list": []}
-        subprocess.call(ZERO_RETURN_CMD,
-                        startupinfo=startupinfo)
+        subprocess.call(ZERO_RETURN_CMD, startupinfo=)
 
     def test_shell_sequence(self):
         # Run command through the shell (sequence)

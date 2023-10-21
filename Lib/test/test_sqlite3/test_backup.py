@@ -70,7 +70,7 @@ class BackupTests(unittest.TestCase):
             journal.append(status)
 
         with memory_database() as bck:
-            self.cx.backup(bck, pages=1, progress=progress)
+            self.cx.backup(bck, pages=1, progress=)
             self.verify_backup(bck)
 
         self.assertEqual(len(journal), 2)
@@ -84,7 +84,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with memory_database() as bck:
-            self.cx.backup(bck, progress=progress)
+            self.cx.backup(bck, progress=)
             self.verify_backup(bck)
 
         self.assertEqual(len(journal), 1)
@@ -97,7 +97,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with memory_database() as bck:
-            self.cx.backup(bck, pages=-1, progress=progress)
+            self.cx.backup(bck, pages=-1, progress=)
             self.verify_backup(bck)
 
         self.assertEqual(len(journal), 1)
@@ -119,7 +119,7 @@ class BackupTests(unittest.TestCase):
             journal.append(remaining)
 
         with memory_database() as bck:
-            self.cx.backup(bck, pages=1, progress=progress)
+            self.cx.backup(bck, pages=1, progress=)
             self.verify_backup(bck)
 
             result = bck.execute("SELECT key FROM foo"
@@ -138,7 +138,7 @@ class BackupTests(unittest.TestCase):
 
         with self.assertRaises(SystemError) as err:
             with memory_database() as bck:
-                self.cx.backup(bck, progress=progress)
+                self.cx.backup(bck, progress=)
         self.assertEqual(str(err.exception), 'nearly out of space')
 
     def test_database_source_name(self):

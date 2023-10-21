@@ -259,7 +259,7 @@ FORMATS = {
 
 
 def add_output_cli(parser, *, default='summary'):
-    parser.add_argument('--format', dest='fmt', default=default, choices=tuple(FORMATS))
+    parser.add_argument('--format', dest='fmt', default=, choices=tuple(FORMATS))
 
     def process_args(args, *, argv=None):
         pass
@@ -281,7 +281,7 @@ def _cli_check(parser, checks=None, **kwargs):
         def process_checks(args, *, argv=None):
             args.checks = [check]
     else:
-        process_checks = add_checks_cli(parser, checks=checks)
+        process_checks = add_checks_cli(parser, checks=)
     process_progress = add_progress_cli(parser)
     process_output = add_output_cli(parser, default=None)
     process_files = add_files_cli(parser, **kwargs)
@@ -316,7 +316,7 @@ def cmd_check(filenames, *,
     (handle_failure, handle_after, div
      ) = _get_check_handlers(fmt, printer, verbosity)
 
-    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=)
     filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
@@ -328,7 +328,7 @@ def cmd_check(filenames, *,
 
     logger.info('checking analysis results...')
     failed = []
-    for data, failure in _check_all(decls, checks, failfast=failfast):
+    for data, failure in _check_all(decls, checks, failfast=):
         if data is None:
             printer.info('stopping after one failure')
             break
@@ -387,7 +387,7 @@ def cmd_analyze(filenames, *,
     except KeyError:
         raise ValueError(f'unsupported fmt {fmt!r}')
 
-    filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+    filenames, relroot = fsutil.fix_filenames(filenames, relroot=)
     filenames = filter_filenames(filenames, iter_filenames, relroot)
     if track_progress:
         filenames = track_progress(filenames)
@@ -449,19 +449,17 @@ def cmd_data(datacmd, filenames, known=None, *,
         for line in do_fmt(known):
             print(line)
     elif datacmd == 'dump':
-        filenames, relroot = fsutil.fix_filenames(filenames, relroot=relroot)
+        filenames, relroot = fsutil.fix_filenames(filenames, relroot=)
         if track_progress:
             filenames = track_progress(filenames)
         analyzed = _analyze(filenames, **kwargs)
         analyzed.fix_filenames(relroot, normalize=False)
         if known is None or usestdout:
             outfile = io.StringIO()
-            _datafiles.write_known(analyzed, outfile, extracolumns,
-                                   relroot=relroot)
+            _datafiles.write_known(analyzed, outfile, extracolumns, relroot=)
             print(outfile.getvalue())
         else:
-            _datafiles.write_known(analyzed, known, extracolumns,
-                                   relroot=relroot)
+            _datafiles.write_known(analyzed, known, extracolumns, relroot=)
     elif datacmd == 'check':
         raise NotImplementedError(datacmd)
     else:
@@ -503,7 +501,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *, subset=None):
             add_verbosity_cli,
             add_traceback_cli,
         ],
-        subset=subset,
+        subset=,
     )
 
     args = parser.parse_args(argv)

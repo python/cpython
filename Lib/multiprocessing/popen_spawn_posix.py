@@ -52,8 +52,7 @@ class Popen(popen_fork.Popen):
         try:
             parent_r, child_w = os.pipe()
             child_r, parent_w = os.pipe()
-            cmd = spawn.get_command_line(tracker_fd=tracker_fd,
-                                         pipe_handle=child_r)
+            cmd = spawn.get_command_line(tracker_fd=, pipe_handle=child_r)
             self._fds.extend([child_r, child_w])
             self.pid = util.spawnv_passfds(spawn.get_executable(),
                                            cmd, self._fds)

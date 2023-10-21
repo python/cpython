@@ -338,8 +338,8 @@ class ApproxEqualSymmetryTest(unittest.TestCase):
         rel = (rel_err1 + rel_err2)/2
         # Now see that values a and b compare approx equal regardless of
         # which is given first.
-        self.assertTrue(approx_equal(a, b, tol=0, rel=rel))
-        self.assertTrue(approx_equal(b, a, tol=0, rel=rel))
+        self.assertTrue(approx_equal(a, b, tol=0, rel=))
+        self.assertTrue(approx_equal(b, a, tol=0, rel=))
 
     def test_symmetry(self):
         # Test that approx_equal(a, b) == approx_equal(b, a)
@@ -379,9 +379,9 @@ class ApproxEqualExactTest(unittest.TestCase):
     # equal regardless of the error tolerances given.
 
     def do_exactly_equal_test(self, x, tol, rel):
-        result = approx_equal(x, x, tol=tol, rel=rel)
+        result = approx_equal(x, x, tol=, rel=)
         self.assertTrue(result, 'equality failure for x=%r' % x)
-        result = approx_equal(-x, -x, tol=tol, rel=rel)
+        result = approx_equal(-x, -x, tol=, rel=)
         self.assertTrue(result, 'equality failure for x=%r' % -x)
 
     def test_exactly_equal_ints(self):
@@ -561,11 +561,11 @@ class ApproxEqualInexactTest(unittest.TestCase):
 
     def do_check_both(self, a, b, tol, rel, tol_flag, rel_flag):
         check = self.assertTrue if tol_flag else self.assertFalse
-        check(approx_equal(a, b, tol=tol, rel=0))
+        check(approx_equal(a, b, tol=, rel=0))
         check = self.assertTrue if rel_flag else self.assertFalse
-        check(approx_equal(a, b, tol=0, rel=rel))
+        check(approx_equal(a, b, tol=0, rel=))
         check = self.assertTrue if (tol_flag or rel_flag) else self.assertFalse
-        check(approx_equal(a, b, tol=tol, rel=rel))
+        check(approx_equal(a, b, tol=, rel=))
 
     def test_approx_equal_both1(self):
         # Test actual error <= both absolute and relative error.
@@ -1343,7 +1343,7 @@ class AverageMixin(UnivariateCommonMixin):
         # The average of a single repeated value is the value itself.
         for x in self.prepare_values_for_repeated_single_test():
             for count in (2, 5, 10, 20):
-                with self.subTest(x=x, count=count):
+                with self.subTest(x=, count=):
                     data = [x]*count
                     self.assertEqual(self.func(data), x)
 
@@ -1467,7 +1467,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
         # Test that harmonic mean raises when given a negative value.
         exc = statistics.StatisticsError
         for values in ([-1], [1, -2, 3]):
-            with self.subTest(values=values):
+            with self.subTest(values=):
                 self.assertRaises(exc, self.func, values)
 
     def test_invalid_type_error(self):
@@ -1478,7 +1478,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
             [1, '2', 3, '4', 5],    # mixed strings and valid integers
             [2.3, 3.4, 4.5, '5.6']  # only one string and valid floats
         ]:
-            with self.subTest(data=data):
+            with self.subTest(data=):
                 with self.assertRaises(TypeError):
                     self.func(data)
 
@@ -2163,7 +2163,7 @@ class TestSqrtHelpers(unittest.TestCase):
         for i in range(60_000):
             numerator: int = randrange(10 ** randrange(50))
             denonimator: int = randrange(10 ** randrange(50)) + 1
-            with self.subTest(numerator=numerator, denonimator=denonimator):
+            with self.subTest(numerator=, denonimator=):
                 x: Fraction = Fraction(numerator, denonimator)
                 root: float = statistics._float_sqrt_of_frac(numerator, denonimator)
                 self.assertTrue(is_root_correctly_rounded(x, root))
@@ -2340,7 +2340,7 @@ class TestGeometricMean(unittest.TestCase):
             [2.0, 3.0, 5.0, 7.0],
         ]
         for v in values:
-            with self.subTest(v=v):
+            with self.subTest(v=):
                 actual_mean = geometric_mean(v)
                 self.assertAlmostEqual(actual_mean, expected_mean, places=5)
 
@@ -2367,16 +2367,16 @@ class TestQuantiles(unittest.TestCase):
             (15, [72.0, 104.0, 136.0, 168.0, 200.0, 220.0, 240.0, 264.0, 292.0,
                   320.0, 332.0, 344.0, 356.0, 368.0]),
                 ]:
-            self.assertEqual(expected, quantiles(data, n=n))
-            self.assertEqual(len(quantiles(data, n=n)), n - 1)
+            self.assertEqual(expected, quantiles(data, n=))
+            self.assertEqual(len(quantiles(data, n=)), n - 1)
             # Preserve datatype when possible
             for datatype in (float, Decimal, Fraction):
-                result = quantiles(map(datatype, data), n=n)
+                result = quantiles(map(datatype, data), n=)
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
             # Quantiles should be idempotent
             if len(expected) >= 2:
-                self.assertEqual(quantiles(expected, n=n), expected)
+                self.assertEqual(quantiles(expected, n=), expected)
             # Cross-check against method='inclusive' which should give
             # the same result after adding in minimum and maximum values
             # extrapolated from the two lowest and two highest points.
@@ -2385,19 +2385,19 @@ class TestQuantiles(unittest.TestCase):
             hi = 2 * sdata[-1] - sdata[-2]
             padded_data = data + [lo, hi]
             self.assertEqual(
-                quantiles(data, n=n),
-                quantiles(padded_data, n=n, method='inclusive'),
+                quantiles(data, n=),
+                quantiles(padded_data, n=, method='inclusive'),
                 (n, data),
             )
             # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
-            act = quantiles(map(f, data), n=n)
+            act = quantiles(map(f, data), n=)
             self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
         # Q2 agrees with median()
         for k in range(2, 60):
-            data = random.choices(range(100), k=k)
+            data = random.choices(range(100), k=)
             q1, q2, q3 = quantiles(data)
             self.assertEqual(q2, statistics.median(data))
 
@@ -2422,18 +2422,18 @@ class TestQuantiles(unittest.TestCase):
             (15, [120.0, 140.0, 160.0, 180.0, 200.0, 240.0, 280.0, 320.0, 360.0,
                   400.0, 480.0, 560.0, 640.0, 720.0]),
                 ]:
-            self.assertEqual(expected, quantiles(data, n=n, method="inclusive"))
-            self.assertEqual(len(quantiles(data, n=n, method="inclusive")), n - 1)
+            self.assertEqual(expected, quantiles(data, n=, method="inclusive"))
+            self.assertEqual(len(quantiles(data, n=, method="inclusive")), n - 1)
             # Preserve datatype when possible
             for datatype in (float, Decimal, Fraction):
-                result = quantiles(map(datatype, data), n=n, method="inclusive")
+                result = quantiles(map(datatype, data), n=, method="inclusive")
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
             # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
-            act = quantiles(map(f, data), n=n, method="inclusive")
+            act = quantiles(map(f, data), n=, method="inclusive")
             self.assertTrue(all(math.isclose(e, a) for e, a in zip(exp, act)))
         # Natural deciles
         self.assertEqual(quantiles([0, 100], n=10, method='inclusive'),
@@ -2451,7 +2451,7 @@ class TestQuantiles(unittest.TestCase):
         self.assertEqual(expected, actual)
         # Q2 agrees with median()
         for k in range(2, 60):
-            data = random.choices(range(100), k=k)
+            data = random.choices(range(100), k=)
             q1, q2, q3 = quantiles(data, method='inclusive')
             self.assertEqual(q2, statistics.median(data))
         # Base case with a single data point:  When estimating quantiles from
@@ -2480,14 +2480,14 @@ class TestQuantiles(unittest.TestCase):
         for n in (1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000):
             group_size = total // n
             self.assertEqual(
-                [bisect.bisect(data, q) for q in quantiles(data, n=n)],
+                [bisect.bisect(data, q) for q in quantiles(data, n=)],
                 list(range(group_size, total, group_size)))
 
         # When the group sizes can't be exactly equal, they should
         # differ by no more than one
         for n in (13, 19, 59, 109, 211, 571, 1019, 1907, 5261, 9769):
             group_sizes = {total // n, total // n + 1}
-            pos = [bisect.bisect(data, q) for q in quantiles(data, n=n)]
+            pos = [bisect.bisect(data, q) for q in quantiles(data, n=)]
             sizes = {q - p for p, q in zip(pos, pos[1:])}
             self.assertTrue(sizes <= group_sizes)
 
@@ -2575,7 +2575,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
             y = random.expovariate()
             expected = math.sqrt(x * y)
             actual = statistics._sqrtprod(x, y)
-            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+            with self.subTest(x=, y=, expected=, actual=):
                 self.assertAlmostEqual(expected, actual)
 
         x, y, target = 0.8035720646477457, 0.7957468097636939, 0.7996498651651661
@@ -2600,7 +2600,7 @@ class TestCorrelationAndCovariance(unittest.TestCase):
                 actual = statistics._sqrtprod(x, y)
             except ValueError:
                 actual = 'ValueError'
-            with self.subTest(x=x, y=y, expected=expected, actual=actual):
+            with self.subTest(x=, y=, expected=, actual=):
                 if isinstance(expected, str) and expected == 'ValueError':
                     self.assertEqual(actual, 'ValueError')
                     continue
@@ -2922,7 +2922,7 @@ class TestNormalDist:
             (3, [-0.4307, 0.4307]),
             (4 ,[-0.6745, 0.0, 0.6745]),
                 ]:
-            actual = Z.quantiles(n=n)
+            actual = Z.quantiles(n=)
             self.assertTrue(all(math.isclose(e, a, abs_tol=0.0001)
                             for e, a in zip(expected, actual)))
 
@@ -3101,7 +3101,7 @@ class TestNormalDist:
     def test_pickle(self):
         nd = self.module.NormalDist(37.5, 5.625)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 pickled = pickle.loads(pickle.dumps(nd, protocol=proto))
                 self.assertEqual(nd, pickled)
 

@@ -34,7 +34,7 @@ def _run_quiet(cmd, *, cwd=None):
     try:
         return subprocess.run(
             cmd,
-            cwd=cwd,
+            cwd=,
             capture_output=True,
             text=True,
             check=True,

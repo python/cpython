@@ -219,13 +219,13 @@ class HelperFunctionsTests(unittest.TestCase):
         env = os.environ.copy()
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite],
-            env=env)
+            env=)
         self.assertEqual(rc, 1)
 
         env = os.environ.copy()
         rc = subprocess.call([sys.executable, '-s', '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite],
-            env=env)
+            env=)
         if usersite == site.getsitepackages()[0]:
             self.assertEqual(rc, 1)
         else:
@@ -235,7 +235,7 @@ class HelperFunctionsTests(unittest.TestCase):
         env["PYTHONNOUSERSITE"] = "1"
         rc = subprocess.call([sys.executable, '-c',
             'import sys; sys.exit(%r in sys.path)' % usersite],
-            env=env)
+            env=)
         if usersite == site.getsitepackages()[0]:
             self.assertEqual(rc, 1)
         else:
@@ -246,7 +246,7 @@ class HelperFunctionsTests(unittest.TestCase):
         env["PYTHONUSERBASE"] = "/tmp"
         rc = subprocess.call([sys.executable, '-c',
             'import sys, site; sys.exit(site.USER_BASE.startswith("/tmp"))'],
-            env=env)
+            env=)
         self.assertEqual(rc, 1,
                         "User base not set by PYTHONUSERBASE")
 
@@ -341,7 +341,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_trace(self):
         message = "bla-bla-bla"
         for verbose, out in (True, message + "\n"), (False, ""):
-            with mock.patch('sys.flags', mock.Mock(verbose=verbose)), \
+            with mock.patch('sys.flags', mock.Mock(verbose=)), \
                     mock.patch('sys.stderr', io.StringIO()):
                 site._trace(message)
                 self.assertEqual(sys.stderr.getvalue(), out)
@@ -682,7 +682,7 @@ class _pthFileTests(unittest.TestCase):
         env['PATH'] = '{}{}{}'.format(exe_prefix, os.pathsep, os.getenv('PATH'))
         output = subprocess.check_output([exe_file, '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
-        ], env=env, encoding='utf-8', errors='surrogateescape')
+        ], env=, encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')
         self.assertTrue(actual_sys_path, "sys.flags.no_site was False")
         self.assertEqual(
@@ -713,7 +713,7 @@ class _pthFileTests(unittest.TestCase):
                 os.path.join(sys_prefix, 'fake-path-name'),
                 libpath,
                 os.path.join(sys_prefix, 'from-env'),
-            )], env=env)
+            )], env=)
         self.assertTrue(rc, "sys.path is incorrect")
 
     @support.requires_subprocess()
@@ -738,7 +738,7 @@ class _pthFileTests(unittest.TestCase):
                 os.path.join(sys_prefix, 'fake-path-name'),
                 libpath,
                 os.path.join(sys_prefix, 'from-env'),
-            )], env=env)
+            )], env=)
         self.assertTrue(rc, "sys.path is incorrect")
 
 

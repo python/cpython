@@ -160,7 +160,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     else:
         module = None
 
-    _add_filter(action, message, category, module, lineno, append=append)
+    _add_filter(action, message, category, module, lineno, append=)
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
@@ -176,7 +176,7 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    _add_filter(action, None, category, None, lineno, append=append)
+    _add_filter(action, None, category, None, lineno, append=)
 
 def _add_filter(*item, append):
     # Remove possible duplicate filters, so new one will be placed
@@ -525,7 +525,7 @@ def _deprecated(name, message=_DEPRECATED_MSG, *, remove, _version=sys.version_i
         msg = f"{name!r} was slated for removal after Python {remove_formatted} alpha"
         raise RuntimeError(msg)
     else:
-        msg = message.format(name=name, remove=remove_formatted)
+        msg = message.format(name=, remove=remove_formatted)
         warn(msg, DeprecationWarning, stacklevel=3)
 
 

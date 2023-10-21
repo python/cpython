@@ -296,7 +296,7 @@ class IntTestCases(unittest.TestCase):
             int('0', base=2**234)
         # Bases 2 through 36 are supported.
         for base in range(2,37):
-            self.assertEqual(int('0', base=base), 0)
+            self.assertEqual(int('0', base=), 0)
 
     def test_int_base_bad_types(self):
         """Not integer types are not valid bases; issue16772."""
@@ -747,7 +747,7 @@ class IntStrDigitLimitsTests(unittest.TestCase):
         maxdigits = sys.get_int_max_str_digits()
 
         for base in (2, 4, 8, 16, 32):
-            with self.subTest(base=base):
+            with self.subTest(base=):
                 self.int_class('1' * (maxdigits + 1), base)
                 assert maxdigits < 100_000
                 self.int_class('1' * 100_000, base)
@@ -790,10 +790,10 @@ class IntStrDigitLimitsTests(unittest.TestCase):
 
     def test_int_from_other_bases(self):
         base = 3
-        with self.subTest(base=base):
+        with self.subTest(base=):
             self._other_base_helper(base)
         base = 36
-        with self.subTest(base=base):
+        with self.subTest(base=):
             self._other_base_helper(base)
 
     def test_int_max_str_digits_is_per_interpreter(self):

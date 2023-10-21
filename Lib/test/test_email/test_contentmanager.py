@@ -234,7 +234,7 @@ class TestRawDataManager(TestEmailBase):
             Ym9ndXMgZGF0YQ==
             """)
         for maintype in 'audio image video application'.split():
-            with self.subTest(maintype=maintype):
+            with self.subTest(maintype=):
                 m = self._str_msg(template.format(maintype+'/foo'))
                 self.assertEqual(raw_data_manager.get_content(m), b"bogus data")
 
@@ -269,7 +269,7 @@ class TestRawDataManager(TestEmailBase):
             an example message
             """)
         for subtype in 'rfc822 external-body'.split():
-            with self.subTest(subtype=subtype):
+            with self.subTest(subtype=):
                 m = self._str_msg(template.format(subtype))
                 sub_msg = raw_data_manager.get_content(m)
                 self.assertIsInstance(sub_msg, self.message)
@@ -578,17 +578,17 @@ class TestRawDataManager(TestEmailBase):
         content = self._make_message()
         for cte in 'quoted-printable base64'.split():
             for subtype in 'rfc822 external-body'.split():
-                with self.subTest(cte=cte, subtype=subtype):
+                with self.subTest(cte=, subtype=):
                     with self.assertRaises(ValueError) as ar:
-                        m.set_content(content, subtype, cte=cte)
+                        m.set_content(content, subtype, cte=)
                     exc = str(ar.exception)
                     self.assertIn(cte, exc)
                     self.assertIn(subtype, exc)
         subtype = 'external-body'
         for cte in '8bit binary'.split():
-            with self.subTest(cte=cte, subtype=subtype):
+            with self.subTest(cte=, subtype=):
                 with self.assertRaises(ValueError) as ar:
-                    m.set_content(content, subtype, cte=cte)
+                    m.set_content(content, subtype, cte=)
                 exc = str(ar.exception)
                 self.assertIn(cte, exc)
                 self.assertIn(subtype, exc)
@@ -597,7 +597,7 @@ class TestRawDataManager(TestEmailBase):
         for content in (b"bogus content",
                         bytearray(b"bogus content"),
                         memoryview(b"bogus content")):
-            with self.subTest(content=content):
+            with self.subTest(content=):
                 m = self._make_message()
                 raw_data_manager.set_content(m, content, 'image', 'jpeg')
                 self.assertEqual(str(m), textwrap.dedent("""\
@@ -826,7 +826,7 @@ class TestRawDataManager(TestEmailBase):
     def content_object_as_params_receiver(self, obj, mimetype):
         m = self._make_message()
         params = {'foo': 'bár', 'abc': 'xyz'}
-        m.set_content(obj, *mimetype, params=params)
+        m.set_content(obj, *mimetype, params=)
         if isinstance(obj, str):
             params['charset'] = 'utf-8'
         self.assertEqual(m['Content-Type'].params, params)

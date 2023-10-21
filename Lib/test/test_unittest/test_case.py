@@ -343,11 +343,11 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test(self):
                 super(Foo, self).test()
                 for i in [1, 2, 3]:
-                    with self.subTest(i=i):
+                    with self.subTest(i=):
                         if i == 1:
                             self.fail('failure')
                         for j in [2, 3]:
-                            with self.subTest(j=j):
+                            with self.subTest(j=):
                                 if i * j == 6:
                                     raise RuntimeError('raised by Foo.test')
                 1 / 0
@@ -385,9 +385,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
             def test(self):
                 super(Foo, self).test()
                 for i in [1, 2]:
-                    with self.subTest(i=i):
+                    with self.subTest(i=):
                         for j in [2, 3]:
-                            with self.subTest(j=j):
+                            with self.subTest(j=):
                                 pass
 
         Foo(events).run(result)
@@ -1693,7 +1693,7 @@ test case
     def checkAssertLogsPerLevel(self, level):
         # Check level filtering
         with self.assertNoStderr():
-            with self.assertLogs(level=level) as cm:
+            with self.assertLogs(level=) as cm:
                 log_foo.warning("1")
                 log_foobar.error("2")
                 log_quux.critical("3")
@@ -1865,7 +1865,7 @@ test case
         for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
 
             # blew up prior to fix
-            pickled_test = pickle.dumps(test, protocol=protocol)
+            pickled_test = pickle.dumps(test, protocol=)
             unpickled_test = pickle.loads(pickled_test)
             self.assertEqual(test, unpickled_test)
 

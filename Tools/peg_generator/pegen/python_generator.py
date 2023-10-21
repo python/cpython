@@ -267,7 +267,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("start_lineno, start_col_offset = tok.start")
             if is_loop:
                 self.print("children = []")
-            self.visit(rhs, is_loop=is_loop, is_gather=is_gather)
+            self.visit(rhs, is_loop=, is_gather=)
             if is_loop:
                 self.print("return children")
             else:
@@ -288,7 +288,7 @@ class PythonParserGenerator(ParserGenerator, GrammarVisitor):
         if is_loop:
             assert len(node.alts) == 1
         for alt in node.alts:
-            self.visit(alt, is_loop=is_loop, is_gather=is_gather)
+            self.visit(alt, is_loop=, is_gather=)
 
     def visit_Alt(self, node: Alt, is_loop: bool, is_gather: bool) -> None:
         has_cut = any(isinstance(item.item, Cut) for item in node.items)

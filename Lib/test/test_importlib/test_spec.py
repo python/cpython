@@ -212,7 +212,7 @@ class ModuleSpecTests:
 
 (Frozen_ModuleSpecTests,
  Source_ModuleSpecTests
- ) = test_util.test_both(ModuleSpecTests, util=util, machinery=machinery)
+ ) = test_util.test_both(ModuleSpecTests, util=, machinery=)
 
 
 class ModuleSpecMethodsTests:
@@ -355,8 +355,7 @@ class ModuleSpecMethodsTests:
 
 (Frozen_ModuleSpecMethodsTests,
  Source_ModuleSpecMethodsTests
- ) = test_util.test_both(ModuleSpecMethodsTests, init=init, util=util,
-                         machinery=machinery)
+ ) = test_util.test_both(ModuleSpecMethodsTests, init=, util=, machinery=)
 
 
 class FactoryTests:
@@ -399,8 +398,7 @@ class FactoryTests:
 
     def test_spec_from_loader_origin(self):
         origin = 'somewhere over the rainbow'
-        spec = self.util.spec_from_loader(self.name, self.loader,
-                                          origin=origin)
+        spec = self.util.spec_from_loader(self.name, self.loader, origin=)
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, self.loader)
@@ -437,7 +435,7 @@ class FactoryTests:
     def test_spec_from_loader_origin_and_is_package(self):
         origin = 'where the streets have no name'
         spec = self.util.spec_from_loader(self.name, self.loader,
-                                          origin=origin, is_package=True)
+                                          origin=, is_package=True)
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, self.loader)
@@ -569,7 +567,7 @@ class FactoryTests:
             def get_filename(self, name):
                 raise ImportError
         loader = Loader()
-        spec = self.util.spec_from_file_location(self.name, loader=loader)
+        spec = self.util.spec_from_file_location(self.name, loader=)
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, loader)
@@ -635,8 +633,7 @@ class FactoryTests:
             def is_package(self, name):
                 return False
         loader = Loader()
-        spec = self.util.spec_from_file_location(self.name, self.path,
-                                                 loader=loader)
+        spec = self.util.spec_from_file_location(self.name, self.path, loader=)
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, loader)
@@ -663,8 +660,7 @@ class FactoryTests:
             def is_package(self, name):
                 raise ImportError
         loader = Loader()
-        spec = self.util.spec_from_file_location(self.name, self.path,
-                                                 loader=loader)
+        spec = self.util.spec_from_file_location(self.name, self.path, loader=)
 
         self.assertEqual(spec.name, self.name)
         self.assertEqual(spec.loader, loader)
@@ -688,7 +684,7 @@ class FactoryTests:
 
 (Frozen_FactoryTests,
  Source_FactoryTests
- ) = test_util.test_both(FactoryTests, util=util, machinery=machinery)
+ ) = test_util.test_both(FactoryTests, util=, machinery=)
 
 
 if __name__ == '__main__':

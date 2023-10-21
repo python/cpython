@@ -42,8 +42,7 @@ def _walk_dir(dir, maxlevels, quiet=0):
             yield fullname
         elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
               os.path.isdir(fullname) and not os.path.islink(fullname)):
-            yield from _walk_dir(fullname, maxlevels=maxlevels - 1,
-                                 quiet=quiet)
+            yield from _walk_dir(fullname, maxlevels=maxlevels - 1, quiet=)
 
 def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
@@ -94,7 +93,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
             from concurrent.futures import ProcessPoolExecutor
     if maxlevels is None:
         maxlevels = sys.getrecursionlimit()
-    files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
+    files = _walk_dir(dir, quiet=, maxlevels=)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
         import multiprocessing
@@ -104,27 +103,26 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
             mp_context = None
         # If workers == 0, let ProcessPoolExecutor choose
         workers = workers or None
-        with ProcessPoolExecutor(max_workers=workers,
-                                 mp_context=mp_context) as executor:
+        with ProcessPoolExecutor(max_workers=workers, mp_context=) as executor:
             results = executor.map(partial(compile_file,
-                                           ddir=ddir, force=force,
-                                           rx=rx, quiet=quiet,
-                                           legacy=legacy,
-                                           optimize=optimize,
-                                           invalidation_mode=invalidation_mode,
-                                           stripdir=stripdir,
-                                           prependdir=prependdir,
-                                           limit_sl_dest=limit_sl_dest,
-                                           hardlink_dupes=hardlink_dupes),
+                                           ddir=, force=,
+                                           rx=, quiet=,
+                                           legacy=,
+                                           optimize=,
+                                           invalidation_mode=,
+                                           stripdir=,
+                                           prependdir=,
+                                           limit_sl_dest=,
+                                           hardlink_dupes=),
                                    files)
             success = min(results, default=True)
     else:
         for file in files:
             if not compile_file(file, ddir, force, rx, quiet,
                                 legacy, optimize, invalidation_mode,
-                                stripdir=stripdir, prependdir=prependdir,
-                                limit_sl_dest=limit_sl_dest,
-                                hardlink_dupes=hardlink_dupes):
+                                stripdir=, prependdir=,
+                                limit_sl_dest=,
+                                hardlink_dupes=):
                 success = False
     return success
 
@@ -245,7 +243,7 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                     cfile = opt_cfiles[opt_level]
                     ok = py_compile.compile(fullname, cfile, dfile, True,
                                             optimize=opt_level,
-                                            invalidation_mode=invalidation_mode)
+                                            invalidation_mode=)
                     if index > 0 and hardlink_dupes:
                         previous_cfile = opt_cfiles[optimize[index - 1]]
                         if filecmp.cmp(cfile, previous_cfile, shallow=False):
@@ -303,10 +301,10 @@ def compile_path(skip_curdir=1, maxlevels=0, force=False, quiet=0,
                 maxlevels,
                 None,
                 force,
-                quiet=quiet,
-                legacy=legacy,
-                optimize=optimize,
-                invalidation_mode=invalidation_mode,
+                quiet=,
+                legacy=,
+                optimize=,
+                invalidation_mode=,
             )
     return success
 
@@ -434,7 +432,7 @@ def main():
                 if os.path.isfile(dest):
                     if not compile_file(dest, args.ddir, args.force, args.rx,
                                         args.quiet, args.legacy,
-                                        invalidation_mode=invalidation_mode,
+                                        invalidation_mode=,
                                         stripdir=args.stripdir,
                                         prependdir=args.prependdir,
                                         optimize=args.opt_levels,
@@ -445,7 +443,7 @@ def main():
                     if not compile_dir(dest, maxlevels, args.ddir,
                                        args.force, args.rx, args.quiet,
                                        args.legacy, workers=args.workers,
-                                       invalidation_mode=invalidation_mode,
+                                       invalidation_mode=,
                                        stripdir=args.stripdir,
                                        prependdir=args.prependdir,
                                        optimize=args.opt_levels,
@@ -456,7 +454,7 @@ def main():
         else:
             return compile_path(legacy=args.legacy, force=args.force,
                                 quiet=args.quiet,
-                                invalidation_mode=invalidation_mode)
+                                invalidation_mode=)
     except KeyboardInterrupt:
         if args.quiet < 2:
             print("\n[interrupted]")

@@ -140,7 +140,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         for test_case, code in cases:
             for lpar, rpar in [('(', ')'), ('[', ']'), ('{', '}')]:
                 code = code.format(lpar, rpar)
-                with self.subTest(case=test_case, lpar=lpar, rpar=rpar):
+                with self.subTest(case=test_case, lpar=, rpar=):
                     # Names used in snippets are not defined,
                     # but we are fine with it: just must not be a SyntaxError.
                     # Names used in snippets are not defined,
@@ -165,7 +165,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
             msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
             for lpar, rpar in [('(', ')'), ('[', ']'), ('{', '}')]:
                 code = code.format(lpar, rpar)
-                with self.subTest(case=test_case, lpar=lpar, rpar=rpar):
+                with self.subTest(case=test_case, lpar=, rpar=):
                     # Names used in snippets are not defined,
                     # but we are fine with it: just must not be a SyntaxError.
                     # Names used in snippets are not defined,
@@ -190,7 +190,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, target, code in cases:
             msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -205,7 +205,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, target, code in cases:
             msg = f"comprehension inner loop cannot rebind assignment expression target '{target}'"
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -227,7 +227,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         msg = "assignment expression cannot be used in a comprehension iterable expression"
         for case, code in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -253,7 +253,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, target, code in cases:
             msg = f"assignment expression cannot rebind comprehension iteration variable '{target}'"
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -268,7 +268,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         for case, target, code in cases:
             msg = f"comprehension inner loop cannot rebind assignment expression target '{target}'"
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -290,7 +290,7 @@ class NamedExpressionInvalidTest(unittest.TestCase):
         ]
         msg = "assignment expression cannot be used in a comprehension iterable expression"
         for case, code in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 with self.assertRaisesRegex(SyntaxError, msg):
                     exec(code, {}) # Module scope
                 with self.assertRaisesRegex(SyntaxError, msg):
@@ -616,7 +616,7 @@ spam()"""
             ("Nested nonlocal", f"result, x = (lambda x=1: ({nested_ref}, x))()"),
         ]
         for case, code in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 ns = {}
                 exec(code, ns)
                 self.assertEqual(ns["x"], 2)

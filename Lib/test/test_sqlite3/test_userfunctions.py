@@ -177,7 +177,7 @@ class FunctionTests(unittest.TestCase):
     def test_func_too_many_args(self):
         category = sqlite.SQLITE_LIMIT_FUNCTION_ARG
         msg = "too many arguments on function"
-        with cx_limit(self.con, category=category, limit=1):
+        with cx_limit(self.con, category=, limit=1):
             self.con.execute("select abs(-1)");
             with self.assertRaisesRegex(sqlite.OperationalError, msg):
                 self.con.execute("select max(1, 2)");
@@ -514,7 +514,7 @@ class WindowFunctionTests(unittest.TestCase):
     @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
         for meth in "__init__", "step", "value", "inverse":
-            with self.subTest(meth=meth):
+            with self.subTest(meth=):
                 with patch.object(WindowSumInt, meth, side_effect=BadWindow):
                     name = f"exc_{meth}"
                     self.con.create_window_function(name, 1, WindowSumInt)
@@ -557,7 +557,7 @@ class WindowFunctionTests(unittest.TestCase):
             ("inverse", MissingInverse),
         )
         for meth, cls in dataset:
-            with self.subTest(meth=meth, cls=cls):
+            with self.subTest(meth=, cls=):
                 name = f"exc_{meth}"
                 self.con.create_window_function(name, 1, cls)
                 with self.assertRaisesRegex(sqlite.OperationalError,
@@ -732,7 +732,7 @@ class AggregateTests(unittest.TestCase):
     def test_aggr_text(self):
         cur = self.con.cursor()
         for txt in ["foo", "1\x002"]:
-            with self.subTest(txt=txt):
+            with self.subTest(txt=):
                 cur.execute("select aggtxt(?) from test", (txt,))
                 val = cur.fetchone()[0]
                 self.assertEqual(val, txt)

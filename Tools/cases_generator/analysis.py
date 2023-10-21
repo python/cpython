@@ -137,7 +137,7 @@ class Analyzer:
                 )
 
             match thing:
-                case parsing.InstDef(name=name):
+                case parsing.InstDef(name=):
                     macro: parsing.Macro | None = None
                     if thing.kind == "inst" and not thing.override:
                         macro = parsing.Macro(name, [parsing.OpName(name)])

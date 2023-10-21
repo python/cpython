@@ -74,7 +74,7 @@ class Counter(object):
 
 class TestThread(threading.Thread):
     def __init__(self, name, testcase, sema, mutex, nrunning):
-        threading.Thread.__init__(self, name=name)
+        threading.Thread.__init__(self, name=)
         self.testcase = testcase
         self.sema = sema
         self.mutex = mutex
@@ -165,8 +165,8 @@ class ThreadTests(BaseTestCase):
         )
 
         for args, target in test_cases:
-            with self.subTest(target=target, args=args):
-                t = threading.Thread(target=target, args=args)
+            with self.subTest(target=, args=):
+                t = threading.Thread(target=, args=)
                 t.start()
                 t.join()
 
@@ -950,9 +950,9 @@ class ThreadTests(BaseTestCase):
     @cpython_only
     def test_shutdown_locks(self):
         for daemon in (False, True):
-            with self.subTest(daemon=daemon):
+            with self.subTest(daemon=):
                 event = threading.Event()
-                thread = threading.Thread(target=event.wait, daemon=daemon)
+                thread = threading.Thread(target=event.wait, daemon=)
 
                 # Thread.start() must add lock to _shutdown_locks,
                 # but only for non-daemon thread
@@ -1002,7 +1002,7 @@ class ThreadTests(BaseTestCase):
                 self.ran = True
 
         target = BooleanTarget()
-        thread = threading.Thread(target=target)
+        thread = threading.Thread(target=)
         thread.start()
         thread.join()
         self.assertTrue(target.ran)
@@ -1814,7 +1814,7 @@ class CRLockTests(lock_tests.RLockTests):
             ((1, 2), {'a': 1}),
         ]
         for args, kwargs in arg_types:
-            with self.subTest(args=args, kwargs=kwargs):
+            with self.subTest(args=, kwargs=):
                 with self.assertWarns(DeprecationWarning):
                     threading.RLock(*args, **kwargs)
 
@@ -1857,7 +1857,7 @@ class MiscTestCase(unittest.TestCase):
         extra = {"ThreadError"}
         not_exported = {'currentThread', 'activeCount'}
         support.check__all__(self, threading, ('threading', '_thread'),
-                             extra=extra, not_exported=not_exported)
+                             extra=, not_exported=)
 
 
 class InterruptMainTests(unittest.TestCase):

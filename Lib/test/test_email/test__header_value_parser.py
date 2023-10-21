@@ -2881,7 +2881,7 @@ class TestFolding(TestEmailBase):
     policy = policy.default
 
     def _test(self, tl, folded, policy=policy):
-        self.assertEqual(tl.fold(policy=policy), folded, tl.ppstr())
+        self.assertEqual(tl.fold(policy=), folded, tl.ppstr())
 
     def test_simple_unstructured_no_folds(self):
         self._test(parser.get_unstructured("This is a test"),

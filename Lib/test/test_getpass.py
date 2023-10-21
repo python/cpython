@@ -56,14 +56,14 @@ class GetpassRawinputTest(unittest.TestCase):
         # see issue 1703
         stream = mock.Mock(spec=StringIO)
         input = StringIO('input_string')
-        getpass._raw_input('some_prompt', stream, input=input)
+        getpass._raw_input('some_prompt', stream, input=)
         stream.flush.assert_called_once_with()
 
     def test_uses_stderr_as_default(self):
         input = StringIO('input_string')
         prompt = 'some_prompt'
         with mock.patch('sys.stderr') as stderr:
-            getpass._raw_input(prompt, input=input)
+            getpass._raw_input(prompt, input=)
             stderr.write.assert_called_once_with(prompt)
 
     @mock.patch('sys.stdin')
@@ -76,17 +76,17 @@ class GetpassRawinputTest(unittest.TestCase):
     def test_uses_stdin_as_different_locale(self, mock_input):
         stream = TextIOWrapper(BytesIO(), encoding="ascii")
         mock_input.readline.return_value = "HasÅ‚o: "
-        getpass._raw_input(prompt="HasÅ‚o: ",stream=stream)
+        getpass._raw_input(prompt="HasÅ‚o: ", stream=)
         mock_input.readline.assert_called_once_with()
 
 
     def test_raises_on_empty_input(self):
         input = StringIO('')
-        self.assertRaises(EOFError, getpass._raw_input, input=input)
+        self.assertRaises(EOFError, getpass._raw_input, input=)
 
     def test_trims_trailing_newline(self):
         input = StringIO('test\n')
-        self.assertEqual('test', getpass._raw_input(input=input))
+        self.assertEqual('test', getpass._raw_input(input=))
 
 
 # Some of these tests are a bit white-box.  The functional requirement is that

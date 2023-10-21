@@ -357,8 +357,7 @@ class TkTestRunner(BaseGUITestRunner):
         self.errorListbox.configure(yscrollcommand=listScroll.set)
 
     def errorDialog(self, title, message):
-        messagebox.showerror(parent=self.root, title=title,
-                             message=message)
+        messagebox.showerror(parent=self.root, title=, message=)
 
     def notifyRunning(self):
         self.runCountVar.set(0)

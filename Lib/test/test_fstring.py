@@ -30,7 +30,7 @@ a_global = 'global variable'
 class TestCase(unittest.TestCase):
     def assertAllRaise(self, exception_type, regex, error_strings):
         for str in error_strings:
-            with self.subTest(str=str):
+            with self.subTest(str=):
                 with self.assertRaisesRegex(exception_type, regex):
                     eval(str)
 
@@ -1026,7 +1026,7 @@ x = (
         # All of these variations are invalid python syntax,
         # so they are also invalid in f-strings as well.
         cases = [
-            formatting.format(expr=expr)
+            formatting.format(expr=)
             for formatting in [
                 "{expr}",
                 "f'{{{expr}}}'",
@@ -1107,7 +1107,7 @@ x = (
             (r"f'{1+1}\}}'", '2\\}')
         ]
         for case, expected_result in deprecated_cases:
-            with self.subTest(case=case, expected_result=expected_result):
+            with self.subTest(case=, expected_result=):
                 with self.assertWarns(SyntaxWarning):
                     result = eval(case)
                 self.assertEqual(result, expected_result)
@@ -1486,8 +1486,8 @@ x = (
         self.assertEqual(f'{d[0]}', 'integer')
         self.assertEqual(f'{d["a"]}', 'string')
         self.assertEqual(f'{d[a]}', 'integer')
-        self.assertEqual('{d[a]}'.format(d=d), 'string')
-        self.assertEqual('{d[0]}'.format(d=d), 'integer')
+        self.assertEqual('{d[a]}'.format(d=), 'string')
+        self.assertEqual('{d[0]}'.format(d=), 'integer')
 
     def test_errors(self):
         # see issue 26287

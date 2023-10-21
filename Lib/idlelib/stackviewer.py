@@ -121,7 +121,7 @@ def _stack_viewer(parent):  # htest #
     try: # to obtain a traceback object
         intentional_name_error
     except NameError as e:
-        StackBrowser(top, e, flist=flist, top=top)
+        StackBrowser(top, e, flist=, top=)
 
 
 if __name__ == '__main__':

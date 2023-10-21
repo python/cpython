@@ -658,7 +658,7 @@ def _check_name(method):
             name = self.name
         elif self.name != name:
             raise ImportError('loader for %s cannot handle %s' %
-                                (self.name, name), name=name)
+                                (self.name, name), name=)
         return method(self, name, *args, **kwargs)
 
     # FIXME: @_check_name is used to define class methods before the
@@ -771,7 +771,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
         return code
     else:
         raise ImportError(f'Non-code object in {bytecode_path!r}',
-                          name=name, path=bytecode_path)
+                          name=, path=bytecode_path)
 
 
 def _code_to_timestamp_pyc(code, mtime=0, source_size=0):
@@ -957,7 +957,7 @@ class WindowsRegistryFinder:
             registry_key = cls.REGISTRY_KEY_DEBUG
         else:
             registry_key = cls.REGISTRY_KEY
-        key = registry_key.format(fullname=fullname,
+        key = registry_key.format(fullname=,
                                   sys_version='%d.%d' % sys.version_info[:2])
         try:
             with cls._open_registry(key) as hkey:
@@ -1135,8 +1135,8 @@ class SourceLoader(_LoaderBasics):
                         _bootstrap._verbose_message('{} matches {}', bytecode_path,
                                                     source_path)
                         return _compile_bytecode(bytes_data, name=fullname,
-                                                 bytecode_path=bytecode_path,
-                                                 source_path=source_path)
+                                                 bytecode_path=,
+                                                 source_path=)
         if source_bytes is None:
             source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
@@ -1597,7 +1597,7 @@ class FileFinder:
 
     def _get_spec(self, loader_class, fullname, path, smsl, target):
         loader = loader_class(fullname, path)
-        return spec_from_file_location(fullname, path, loader=loader,
+        return spec_from_file_location(fullname, path, loader=,
                                        submodule_search_locations=smsl)
 
     def find_spec(self, fullname, target=None):
@@ -1695,7 +1695,7 @@ class FileFinder:
         def path_hook_for_FileFinder(path):
             """Path hook for importlib.machinery.FileFinder."""
             if not _path_isdir(path):
-                raise ImportError('only directories are supported', path=path)
+                raise ImportError('only directories are supported', path=)
             return cls(path, *loader_details)
 
         return path_hook_for_FileFinder
@@ -1718,7 +1718,7 @@ def _fix_up_module(ns, name, pathname, cpathname=None):
         else:
             loader = SourceFileLoader(name, pathname)
     if not spec:
-        spec = spec_from_file_location(name, pathname, loader=loader)
+        spec = spec_from_file_location(name, pathname, loader=)
         if cpathname:
             spec.cached = _path_abspath(cpathname)
     try:

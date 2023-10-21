@@ -144,7 +144,7 @@ class StackItem:
 
     def as_stack_effect(self, lax: bool = False) -> StackEffect:
         return StackEffect(
-            self.as_variable(lax=lax),
+            self.as_variable(lax=),
             self.effect.type if self.effect.size else "",
             self.effect.cond,
             self.effect.size,

@@ -217,7 +217,7 @@ class RunTests(BaseTest):
         # See https://github.com/python/cpython/issues/95097
         class Task:
             def __init__(self, loop, coro, **kwargs):
-                self._task = asyncio.Task(coro, loop=loop, **kwargs)
+                self._task = asyncio.Task(coro, loop=, **kwargs)
 
             def cancel(self, *args, **kwargs):
                 return self._task.cancel(*args, **kwargs)

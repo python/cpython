@@ -738,7 +738,7 @@ class SMTP:
             try:
                 (code, resp) = self.auth(
                     authmethod, getattr(self, method_name),
-                    initial_response_ok=initial_response_ok)
+                    initial_response_ok=)
                 # 235 == 'Authentication successful'
                 # 503 == 'Error: already authenticated'
                 if code in (235, 503):
@@ -1056,13 +1056,13 @@ class LMTP(SMTP):
     def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
                  source_address=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         """Initialize a new instance."""
-        super().__init__(host, port, local_hostname=local_hostname,
-                         source_address=source_address, timeout=timeout)
+        super().__init__(host, port, local_hostname=,
+                         source_address=, timeout=)
 
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
-            return super().connect(host, port, source_address=source_address)
+            return super().connect(host, port, source_address=)
 
         if self.timeout is not None and not self.timeout:
             raise ValueError('Non-blocking socket (timeout=0) is not supported')

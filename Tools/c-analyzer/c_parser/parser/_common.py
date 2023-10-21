@@ -40,7 +40,7 @@ def set_capture_group(pattern, group, *, strict=True):
 
 def set_capture_groups(pattern, groups, *, strict=True):
     for group in groups:
-        pattern = set_capture_group(pattern, group, strict=strict)
+        pattern = set_capture_group(pattern, group, strict=)
     return pattern
 
 

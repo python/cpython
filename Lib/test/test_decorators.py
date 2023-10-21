@@ -188,7 +188,7 @@ class TestDecorators(unittest.TestCase):
 
         def unimp(func):
             raise NotImplementedError
-        context = dict(nullval=None, unimp=unimp)
+        context = dict(nullval=None, unimp=)
 
         for expr, exc in [ ("undef", NameError),
                            ("nullval", TypeError),

@@ -102,8 +102,8 @@ class GetKeysFrame(Frame):
             label = self.modifier_label.get(modifier, modifier)
             check = Checkbutton(self.frame_controls_basic,
                                 command=self.build_key_string, text=label,
-                                variable=variable, onvalue=modifier, offvalue='')
-            check.grid(row=0, column=column, padx=2, sticky='w')
+                                variable=, onvalue=modifier, offvalue='')
+            check.grid(row=0, column=, padx=2, sticky='w')
             self.modifier_checkbuttons[modifier] = check
             column += 1
 
@@ -249,17 +249,17 @@ class GetKeysFrame(Frame):
                            message='Missing the final Key')
         elif (not modifiers
               and final_key not in FUNCTION_KEYS + MOVE_KEYS):
-            self.showerror(title=title, parent=self,
+            self.showerror(title=, parent=self,
                            message='No modifier key(s) specified.')
         elif (modifiers == ['Shift']) \
                  and (final_key not in
                       FUNCTION_KEYS + MOVE_KEYS + ('Tab', 'Space')):
             msg = 'The shift modifier by itself may not be used with'\
                   ' this key symbol.'
-            self.showerror(title=title, parent=self, message=msg)
+            self.showerror(title=, parent=self, message=msg)
         elif keys in key_sequences:
             msg = 'This key combination is already in use.'
-            self.showerror(title=title, parent=self, message=msg)
+            self.showerror(title=, parent=self, message=msg)
         else:
             return True
         return False

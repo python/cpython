@@ -311,7 +311,7 @@ class TypeAliasPickleTest(unittest.TestCase):
         ]
         for thing in things_to_test:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(thing=thing, proto=proto):
+                with self.subTest(thing=, proto=):
                     pickled = pickle.dumps(thing, protocol=proto)
                     self.assertEqual(pickle.loads(pickled), thing)
 
@@ -325,6 +325,6 @@ class TypeAliasPickleTest(unittest.TestCase):
         ]
         for thing in things_to_test:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(thing=thing, proto=proto):
+                with self.subTest(thing=, proto=):
                     with self.assertRaises(pickle.PickleError):
                         pickle.dumps(thing, protocol=proto)

@@ -137,7 +137,7 @@ class TestCParser(unittest.TestCase):
         test_source = textwrap.indent(textwrap.dedent(test_source), 8 * " ")
         assert_python_ok(
             "-c",
-            TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=test_source),
+            TEST_TEMPLATE.format(extension_path=self.tmp_path, test_source=),
         )
 
     def test_c_parser(self) -> None:

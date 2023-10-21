@@ -344,7 +344,7 @@ class HashDistributionTestCase(unittest.TestCase):
         base = "abcdefghabcdefg"
         for i in range(1, len(base)):
             prefix = base[:i]
-            with self.subTest(prefix=prefix):
+            with self.subTest(prefix=):
                 s15 = set()
                 s255 = set()
                 for c in range(256):

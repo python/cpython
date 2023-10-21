@@ -450,7 +450,7 @@ def emit_comparative_execution_counts(
     base_opcode_stats, base_total, head_opcode_stats, head_total, level=2
 ):
     with Section(
-        "Execution counts", summary="execution counts for all instructions", level=level
+        "Execution counts", summary="execution counts for all instructions", level=
     ):
         base_rows = calculate_execution_counts(base_opcode_stats, base_total)
         head_rows = calculate_execution_counts(head_opcode_stats, head_total)

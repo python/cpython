@@ -24,7 +24,7 @@ EPOCHORDINAL = datetime(1970, 1, 1).toordinal()
 # of memory.
 @functools.lru_cache(maxsize=512)
 def _load_timedelta(seconds):
-    return timedelta(seconds=seconds)
+    return timedelta(seconds=)
 
 
 class ZoneInfo(tzinfo):

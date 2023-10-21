@@ -400,7 +400,7 @@ class AsyncBadSyntaxTest(unittest.TestCase):
             ]
 
         for code in samples:
-            with self.subTest(code=code), self.assertRaises(SyntaxError):
+            with self.subTest(code=), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
     def test_badsyntax_2(self):
@@ -439,7 +439,7 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code), self.assertRaises(SyntaxError):
+            with self.subTest(code=), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
     def test_badsyntax_3(self):
@@ -493,7 +493,7 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         ]
 
         for code in samples:
-            with self.subTest(code=code), self.assertRaises(SyntaxError):
+            with self.subTest(code=), self.assertRaises(SyntaxError):
                 compile(code, "<test>", "exec")
 
 
@@ -502,7 +502,7 @@ class TokenizerRegrTest(unittest.TestCase):
     def test_oneline_defs(self):
         buf = []
         for i in range(500):
-            buf.append('def i{i}(): return {i}'.format(i=i))
+            buf.append('def i{i}(): return {i}'.format(i=))
         buf = '\n'.join(buf)
 
         # Test that 500 consequent, one-line defs is OK

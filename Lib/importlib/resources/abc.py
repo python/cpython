@@ -86,7 +86,7 @@ class Traversable(Protocol):
         """
         Read contents of self as text
         """
-        with self.open(encoding=encoding) as strm:
+        with self.open(encoding=) as strm:
             return strm.read()
 
     @abc.abstractmethod

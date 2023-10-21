@@ -673,7 +673,7 @@ class CAPITest(unittest.TestCase):
         for fmt in (b'%', b'%0', b'%01', b'%.', b'%.1',
                     b'%0%s', b'%1%s', b'%.%s', b'%.1%s', b'%1abc',
                     b'%l', b'%ll', b'%z', b'%lls', b'%zs'):
-            with self.subTest(fmt=fmt):
+            with self.subTest(fmt=):
                 self.assertRaisesRegex(SystemError, 'invalid format string',
                     PyUnicode_FromFormat, fmt, b'abc')
         self.assertRaisesRegex(SystemError, 'invalid format string',

@@ -94,8 +94,7 @@ class ImportModuleTests:
 
 (Frozen_ImportModuleTests,
  Source_ImportModuleTests
- ) = test_util.test_both(
-     ImportModuleTests, init=init, util=util, machinery=machinery)
+ ) = test_util.test_both(ImportModuleTests, init=, util=, machinery=)
 
 
 class FindLoaderTests:
@@ -170,8 +169,7 @@ class FindLoaderPEP451Tests(FindLoaderTests):
 
 (Frozen_FindLoaderPEP451Tests,
  Source_FindLoaderPEP451Tests
- ) = test_util.test_both(
-     FindLoaderPEP451Tests, init=init, util=util, machinery=machinery)
+ ) = test_util.test_both(FindLoaderPEP451Tests, init=, util=, machinery=)
 
 
 class ReloadTests:
@@ -356,8 +354,7 @@ class ReloadTests:
 
 (Frozen_ReloadTests,
  Source_ReloadTests
- ) = test_util.test_both(
-     ReloadTests, init=init, util=util, machinery=machinery)
+ ) = test_util.test_both(ReloadTests, init=, util=, machinery=)
 
 
 class InvalidateCacheTests:
@@ -391,8 +388,7 @@ class InvalidateCacheTests:
 
 (Frozen_InvalidateCacheTests,
  Source_InvalidateCacheTests
- ) = test_util.test_both(
-     InvalidateCacheTests, init=init, util=util, machinery=machinery)
+ ) = test_util.test_both(InvalidateCacheTests, init=, util=, machinery=)
 
 
 class FrozenImportlibTests(unittest.TestCase):
@@ -413,7 +409,7 @@ class StartupTests:
         # Issue #17098: all modules should have __loader__ defined.
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
-                with self.subTest(name=name):
+                with self.subTest(name=):
                     self.assertTrue(hasattr(module, '__loader__'),
                                     '{!r} lacks a __loader__ attribute'.format(name))
                     if self.machinery.BuiltinImporter.find_spec(name):
@@ -424,7 +420,7 @@ class StartupTests:
     def test_everyone_has___spec__(self):
         for name, module in sys.modules.items():
             if isinstance(module, types.ModuleType):
-                with self.subTest(name=name):
+                with self.subTest(name=):
                     self.assertTrue(hasattr(module, '__spec__'))
                     if self.machinery.BuiltinImporter.find_spec(name):
                         self.assertIsNot(module.__spec__, None)
@@ -434,7 +430,7 @@ class StartupTests:
 
 (Frozen_StartupTests,
  Source_StartupTests
- ) = test_util.test_both(StartupTests, machinery=machinery)
+ ) = test_util.test_both(StartupTests, machinery=)
 
 
 if __name__ == '__main__':

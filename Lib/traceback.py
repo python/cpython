@@ -24,7 +24,7 @@ def print_list(extracted_list, file=None):
     if file is None:
         file = sys.stderr
     for item in StackSummary.from_list(extracted_list).format():
-        print(item, file=file, end="")
+        print(item, file=, end="")
 
 def format_list(extracted_list):
     """Format a list of tuples or FrameSummary objects for printing.
@@ -52,11 +52,11 @@ def print_tb(tb, limit=None, file=None):
     'file' should be an open file or file-like object with a write()
     method.
     """
-    print_list(extract_tb(tb, limit=limit), file=file)
+    print_list(extract_tb(tb, limit=), file=)
 
 def format_tb(tb, limit=None):
     """A shorthand for 'format_list(extract_tb(tb, limit))'."""
-    return extract_tb(tb, limit=limit).format()
+    return extract_tb(tb, limit=).format()
 
 def extract_tb(tb, limit=None):
     """
@@ -72,7 +72,7 @@ def extract_tb(tb, limit=None):
     whitespace stripped; if the source is not available it is None.
     """
     return StackSummary._extract_from_extended_frame_gen(
-        _walk_tb_with_full_positions(tb), limit=limit)
+        _walk_tb_with_full_positions(tb), limit=)
 
 #
 # Exception formatting and output.
@@ -121,8 +121,8 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     position of the error.
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    te.print(file=file, chain=chain)
+    te = TracebackException(type(value), value, tb, limit=, compact=True)
+    te.print(file=, chain=)
 
 
 BUILTIN_EXCEPTION_LIMIT = object()
@@ -130,7 +130,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file)
+    return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=)
 
 
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
@@ -144,8 +144,8 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     printed as does print_exception().
     """
     value, tb = _parse_value_tb(exc, value, tb)
-    te = TracebackException(type(value), value, tb, limit=limit, compact=True)
-    return list(te.format(chain=chain))
+    te = TracebackException(type(value), value, tb, limit=, compact=True)
+    return list(te.format(chain=))
 
 
 def format_exception_only(exc, /, value=_sentinel):
@@ -185,11 +185,11 @@ def _safe_string(value, what, func=str):
 
 def print_exc(limit=None, file=None, chain=True):
     """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
-    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
+    print_exception(sys.exception(), limit=, file=, chain=)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
-    return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
+    return "".join(format_exception(sys.exception(), limit=, chain=))
 
 def print_last(limit=None, file=None, chain=True):
     """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
@@ -216,14 +216,14 @@ def print_stack(f=None, limit=None, file=None):
     """
     if f is None:
         f = sys._getframe().f_back
-    print_list(extract_stack(f, limit=limit), file=file)
+    print_list(extract_stack(f, limit=), file=)
 
 
 def format_stack(f=None, limit=None):
     """Shorthand for 'format_list(extract_stack(f, limit))'."""
     if f is None:
         f = sys._getframe().f_back
-    return format_list(extract_stack(f, limit=limit))
+    return format_list(extract_stack(f, limit=))
 
 
 def extract_stack(f=None, limit=None):
@@ -237,7 +237,7 @@ def extract_stack(f=None, limit=None):
     """
     if f is None:
         f = sys._getframe().f_back
-    stack = StackSummary.extract(walk_stack(f), limit=limit)
+    stack = StackSummary.extract(walk_stack(f), limit=)
     stack.reverse()
     return stack
 
@@ -401,8 +401,8 @@ class StackSummary(list):
                 yield f, (lineno, None, None, None)
 
         return klass._extract_from_extended_frame_gen(
-            extended_frame_gen(), limit=limit, lookup_lines=lookup_lines,
-            capture_locals=capture_locals)
+            extended_frame_gen(), limit=, lookup_lines=,
+            capture_locals=)
 
     @classmethod
     def _extract_from_extended_frame_gen(klass, frame_gen, *, limit=None,
@@ -440,7 +440,7 @@ class StackSummary(list):
                 f_locals = None
             result.append(FrameSummary(
                 filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+                end_lineno=, colno=, end_colno=))
         for filename in fnames:
             linecache.checkcache(filename)
 
@@ -466,7 +466,7 @@ class StackSummary(list):
                 result.append(frame)
             else:
                 filename, lineno, name, line = frame
-                result.append(FrameSummary(filename, lineno, name, line=line))
+                result.append(FrameSummary(filename, lineno, name, line=))
         return result
 
     def format_frame_summary(self, frame_summary):
@@ -524,7 +524,7 @@ class StackSummary(list):
 
         if frame_summary.locals:
             for name, value in sorted(frame_summary.locals.items()):
-                row.append('    {name} = {value}\n'.format(name=name, value=value))
+                row.append('    {name} = {value}\n'.format(name=, value=))
 
         return ''.join(row)
 
@@ -719,8 +719,8 @@ class TracebackException:
 
         self.stack = StackSummary._extract_from_extended_frame_gen(
             _walk_tb_with_full_positions(exc_traceback),
-            limit=limit, lookup_lines=lookup_lines,
-            capture_locals=capture_locals)
+            limit=, lookup_lines=,
+            capture_locals=)
         self.exc_type = exc_type
         # Capture now to permit freeing resources: only complication is in the
         # unofficial API _format_final_exc_line
@@ -774,12 +774,12 @@ class TracebackException:
                         type(e.__cause__),
                         e.__cause__,
                         e.__cause__.__traceback__,
-                        limit=limit,
-                        lookup_lines=lookup_lines,
-                        capture_locals=capture_locals,
-                        max_group_width=max_group_width,
-                        max_group_depth=max_group_depth,
-                        _seen=_seen)
+                        limit=,
+                        lookup_lines=,
+                        capture_locals=,
+                        max_group_width=,
+                        max_group_depth=,
+                        _seen=)
                 else:
                     cause = None
 
@@ -795,12 +795,12 @@ class TracebackException:
                         type(e.__context__),
                         e.__context__,
                         e.__context__.__traceback__,
-                        limit=limit,
-                        lookup_lines=lookup_lines,
-                        capture_locals=capture_locals,
-                        max_group_width=max_group_width,
-                        max_group_depth=max_group_depth,
-                        _seen=_seen)
+                        limit=,
+                        lookup_lines=,
+                        capture_locals=,
+                        max_group_width=,
+                        max_group_depth=,
+                        _seen=)
                 else:
                     context = None
 
@@ -811,12 +811,12 @@ class TracebackException:
                             type(exc),
                             exc,
                             exc.__traceback__,
-                            limit=limit,
-                            lookup_lines=lookup_lines,
-                            capture_locals=capture_locals,
-                            max_group_width=max_group_width,
-                            max_group_depth=max_group_depth,
-                            _seen=_seen)
+                            limit=,
+                            lookup_lines=,
+                            capture_locals=,
+                            max_group_width=,
+                            max_group_depth=,
+                            _seen=)
                         exceptions.append(texc)
                 else:
                     exceptions = None
@@ -892,7 +892,7 @@ class TracebackException:
 
         if self.exceptions and show_group:
             for ex in self.exceptions:
-                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1)
+                yield from ex.format_exception_only(show_group=, _depth=_depth+1)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
@@ -1017,7 +1017,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                        yield from exc.exceptions[i].format(chain=, _ctx=)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''
@@ -1039,8 +1039,8 @@ class TracebackException:
         """Print the result of self.format(chain=chain) to 'file'."""
         if file is None:
             file = sys.stderr
-        for line in self.format(chain=chain):
-            print(line, file=file, end="")
+        for line in self.format(chain=):
+            print(line, file=, end="")
 
 
 _MAX_CANDIDATE_ITEMS = 750

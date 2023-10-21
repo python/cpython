@@ -42,7 +42,7 @@ def add_common_cli(parser, *, get_preprocessor=_get_preprocessor):
     def process_args(args, *, argv):
         ns = vars(args)
 
-        process_fail_arg(args, argv=argv)
+        process_fail_arg(args, argv=)
         ignore_exc = ns.pop('ignore_exc')
         # We later pass ignore_exc to _get_preprocessor().
 
@@ -50,7 +50,7 @@ def add_common_cli(parser, *, get_preprocessor=_get_preprocessor):
             file_macros=ns.pop('macros'),
             file_incldirs=ns.pop('incldirs'),
             file_same=ns.pop('same'),
-            ignore_exc=ignore_exc,
+            ignore_exc=,
             log_err=print,
         )
     return process_args
@@ -77,7 +77,7 @@ def _cli_preprocess(parser, excluded=None, **prepr_kwargs):
     process_kinds = add_kind_filtering_cli(parser)
     process_common = add_common_cli(parser, **prepr_kwargs)
     parser.add_argument('--raw', action='store_true')
-    process_files = add_files_cli(parser, excluded=excluded)
+    process_files = add_files_cli(parser, excluded=)
 
     return [
         process_kinds,
@@ -163,7 +163,7 @@ def parse_args(argv=sys.argv[1:], prog=sys.argv[0], *,
             add_verbosity_cli,
             add_traceback_cli,
         ],
-        subset=subset,
+        subset=,
     )
 
     args = parser.parse_args(argv)

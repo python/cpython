@@ -46,7 +46,7 @@ def run_cmd(argv, *,
     env = dict(os.environ)
     env.pop('LANG', None)
 
-    proc = subprocess.run(argv, env=env, **kwargs)
+    proc = subprocess.run(argv, env=, **kwargs)
     return proc.stdout
 
 
@@ -65,7 +65,7 @@ def preprocess(tool, filename, cwd=None, **kwargs):
         # distutil compiler object's preprocess() method, since that
         # one writes to stdout/stderr and it's simpler to do it directly
         # through subprocess.
-        return run_cmd(argv, cwd=cwd)
+        return run_cmd(argv, cwd=)
 
 
 def _build_argv(

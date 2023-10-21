@@ -97,7 +97,7 @@ class Runner:
 
         if context is None:
             context = self._context
-        task = self._loop.create_task(coro, context=context)
+        task = self._loop.create_task(coro, context=)
 
         if (threading.current_thread() is threading.main_thread()
             and signal.getsignal(signal.SIGINT) is signal.default_int_handler
@@ -190,7 +190,7 @@ def run(main, *, debug=None, loop_factory=None):
         raise RuntimeError(
             "asyncio.run() cannot be called from a running event loop")
 
-    with Runner(debug=debug, loop_factory=loop_factory) as runner:
+    with Runner(debug=, loop_factory=) as runner:
         return runner.run(main)
 
 

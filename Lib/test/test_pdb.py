@@ -2759,7 +2759,7 @@ def bœr():
         with ExitStack() as resources:
             resources.enter_context(patch('sys.stdout', stdout))
             resources.enter_context(patch.object(pdb.Pdb, 'set_trace'))
-            pdb.set_trace(header=header)
+            pdb.set_trace(header=)
         self.assertEqual(stdout.getvalue(), header + '\n')
 
     def test_run_module(self):

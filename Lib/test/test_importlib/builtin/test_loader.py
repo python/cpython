@@ -69,7 +69,7 @@ class LoaderTests(abc.LoaderTests):
 
 (Frozen_LoaderTests,
  Source_LoaderTests
- ) = util.test_both(LoaderTests, machinery=machinery)
+ ) = util.test_both(LoaderTests, machinery=)
 
 
 @unittest.skipIf(util.BUILTINS.good_name is None, 'no reasonable builtin module')
@@ -103,7 +103,7 @@ class InspectLoaderTests:
 
 (Frozen_InspectLoaderTests,
  Source_InspectLoaderTests
- ) = util.test_both(InspectLoaderTests, machinery=machinery)
+ ) = util.test_both(InspectLoaderTests, machinery=)
 
 
 if __name__ == '__main__':

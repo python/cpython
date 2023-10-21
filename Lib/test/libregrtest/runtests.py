@@ -57,7 +57,7 @@ class JsonFile:
             import msvcrt
             # Create a file descriptor from the handle
             file = msvcrt.open_osfhandle(file, os.O_WRONLY)
-        return open(file, mode, encoding=encoding)
+        return open(file, mode, encoding=)
 
 
 @dataclasses.dataclass(slots=True, frozen=True)

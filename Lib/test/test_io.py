@@ -865,7 +865,7 @@ class IOTest(unittest.TestCase):
         fd = os.open(os_helper.TESTFN, os.O_RDONLY)
         def opener(path, flags):
             return fd
-        with self.open("non-existent", "r", encoding="utf-8", opener=opener) as f:
+        with self.open("non-existent", "r", encoding="utf-8", opener=) as f:
             self.assertEqual(f.read(), "egg\n")
 
     def test_bad_opener_negative_1(self):
@@ -1064,14 +1064,14 @@ class TestIOCTypes(unittest.TestCase):
 
     def test_immutable_types(self):
         for tp in self.types:
-            with self.subTest(tp=tp):
+            with self.subTest(tp=):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = "bar"
 
     def test_class_hierarchy(self):
         def check_subs(types, base):
             for tp in types:
-                with self.subTest(tp=tp, base=base):
+                with self.subTest(tp=, base=):
                     self.assertTrue(issubclass(tp, base))
 
         def recursive_check(d):
@@ -1113,7 +1113,7 @@ class TestIOCTypes(unittest.TestCase):
         dataset[_io._BytesIOBuffer] = False
 
         for tp, is_basetype in dataset.items():
-            with self.subTest(tp=tp, is_basetype=is_basetype):
+            with self.subTest(tp=, is_basetype=):
                 name = f"{tp.__name__}_subclass"
                 bases = (tp,)
                 if is_basetype:
@@ -1424,7 +1424,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
     def test_readinto1(self):
         buffer_size = 10
         rawio = self.MockRawIO((b"abc", b"de", b"fgh", b"jkl"))
-        bufio = self.tp(rawio, buffer_size=buffer_size)
+        bufio = self.tp(rawio, buffer_size=)
         b = bytearray(2)
         self.assertEqual(bufio.peek(3), b'abc')
         self.assertEqual(rawio._reads, 1)
@@ -1448,7 +1448,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         buffer_size = 60
         data = b"a" * 26
         rawio = self.MockRawIO((data,))
-        bufio = self.tp(rawio, buffer_size=buffer_size)
+        bufio = self.tp(rawio, buffer_size=)
 
         # Create an array with element size > 1 byte
         b = array.array('i', b'x' * 32)
@@ -1469,7 +1469,7 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         buffer_size = 60
         data = b"a" * 26
         rawio = self.MockRawIO((data,))
-        bufio = self.tp(rawio, buffer_size=buffer_size)
+        bufio = self.tp(rawio, buffer_size=)
 
         # Create an array with element size > 1 byte
         b = array.array('i', b'x' * 32)
@@ -2919,8 +2919,7 @@ class TextIOWrapperTest(unittest.TestCase):
                 for bufsize in range(1, 10):
                     for newline, exp_lines in tests:
                         bufio = self.BufferedReader(self.BytesIO(data), bufsize)
-                        textio = self.TextIOWrapper(bufio, newline=newline,
-                                                  encoding=encoding)
+                        textio = self.TextIOWrapper(bufio, newline=, encoding=)
                         if do_reads:
                             got_lines = []
                             while True:
@@ -2947,7 +2946,7 @@ class TextIOWrapperTest(unittest.TestCase):
             ("\r",  ["AAA\nBB\x00B\nCCC\r", "DDD\r", "EEE\r", "\nFFF\r", "\nGGG"]),
             ]:
             buf = self.BytesIO(testdata)
-            txt = self.TextIOWrapper(buf, encoding="ascii", newline=newline)
+            txt = self.TextIOWrapper(buf, encoding="ascii", newline=)
             self.assertEqual(txt.readlines(), expected)
             txt.seek(0)
             self.assertEqual(txt.read(), "".join(expected))
@@ -2962,7 +2961,7 @@ class TextIOWrapperTest(unittest.TestCase):
         tests = [(None, testdict[os.linesep])] + sorted(testdict.items())
         for newline, expected in tests:
             buf = self.BytesIO()
-            txt = self.TextIOWrapper(buf, encoding="ascii", newline=newline)
+            txt = self.TextIOWrapper(buf, encoding="ascii", newline=)
             txt.write("AAA\nB")
             txt.write("BB\nCCC\n")
             txt.write("X\rY\r\nZ")
@@ -3203,7 +3202,7 @@ class TextIOWrapperTest(unittest.TestCase):
                  "utf-32-be")
         for encoding in tests:
             buf = self.BytesIO()
-            f = self.TextIOWrapper(buf, encoding=encoding)
+            f = self.TextIOWrapper(buf, encoding=)
             # Check if the BOM is written only once (see issue1753).
             f.write(data)
             f.write(data)
@@ -3627,7 +3626,7 @@ class TextIOWrapperTest(unittest.TestCase):
                     io.TextIOWrapper(self.buf, **{kwargs})
                     print("ok")
             c = C()
-            """.format(iomod=iomod, kwargs=kwargs)
+            """.format(iomod=, kwargs=)
         return assert_python_ok("-c", code)
 
     def test_create_at_shutdown_without_encoding(self):
@@ -4247,7 +4246,7 @@ class MiscIOTest(unittest.TestCase):
             if "b" not in kwargs["mode"]:
                 kwargs["encoding"] = "utf-8"
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(protocol=protocol, kwargs=kwargs):
+                with self.subTest(protocol=, kwargs=):
                     with self.open(os_helper.TESTFN, **kwargs) as f:
                         with self.assertRaisesRegex(TypeError, msg):
                             pickle.dumps(f, protocol)

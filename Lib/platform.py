@@ -668,7 +668,7 @@ def _syscmd_file(target, default=''):
         # -b: do not prepend filenames to output lines (brief mode)
         output = subprocess.check_output(['file', '-b', target],
                                          stderr=subprocess.DEVNULL,
-                                         env=env)
+                                         env=)
     except (OSError, subprocess.CalledProcessError):
         return default
     if not output:

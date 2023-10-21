@@ -264,7 +264,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
         ]
 
         for val, exc_type in bad_values:
-            with self.subTest(val=val):
+            with self.subTest(val=):
                 with self.assertRaises(exc_type):
                     zone.fromutc(val)
 
@@ -297,7 +297,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 )
 
         for key, dt, offset in test_cases:
-            with self.subTest(key=key, dt=dt, offset=offset):
+            with self.subTest(key=, dt=, offset=):
                 tzi = self.zone_from_key(key)
                 dt = dt.replace(tzinfo=tzi)
 
@@ -350,11 +350,11 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
                 test_cases.append(((key, grp), test_group))
 
         for (key, grp), tests in test_cases:
-            with self.subTest(key=key, grp=grp):
+            with self.subTest(key=, grp=):
                 tzi = self.zone_from_key(key)
 
                 for dt, fold, offset in tests:
-                    dt = dt.replace(fold=fold, tzinfo=tzi)
+                    dt = dt.replace(fold=, tzinfo=tzi)
 
                     self.assertEqual(dt.tzname(), offset.tzname, dt)
                     self.assertEqual(dt.utcoffset(), offset.utcoffset, dt)
@@ -363,7 +363,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
     def test_folds_from_utc(self):
         for key in self.zones():
             zi = self.zone_from_key(key)
-            with self.subTest(key=key):
+            with self.subTest(key=):
                 for zt in self.load_transition_examples(key):
                     if not zt.fold:
                         continue
@@ -384,7 +384,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             zi = self.zone_from_key(key)
             t = time(11, 15, 1, 34471, tzinfo=zi)
 
-            with self.subTest(key=key):
+            with self.subTest(key=):
                 self.assertIs(t.tzname(), None)
                 self.assertIs(t.utcoffset(), None)
                 self.assertIs(t.dst(), None)
@@ -395,7 +395,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
 
             t = time(11, 15, 1, 34471, tzinfo=zi)
 
-            with self.subTest(key=key):
+            with self.subTest(key=):
                 self.assertEqual(t.tzname(), offset.tzname)
                 self.assertEqual(t.utcoffset(), offset.utcoffset)
                 self.assertEqual(t.dst(), offset.dst)
@@ -414,7 +414,7 @@ class CZoneInfoTest(ZoneInfoTest):
             self.klass.from_file,
         )
         for method in must_have_signatures:
-            with self.subTest(method=method):
+            with self.subTest(method=):
                 inspect.Signature.from_callable(method)
 
     def test_fold_mutate(self):
@@ -461,7 +461,7 @@ class CZoneInfoTest(ZoneInfoTest):
             else:
                 dt = example
 
-            with self.subTest(subclass=subclass):
+            with self.subTest(subclass=):
                 dt_fromutc = zi.fromutc(dt)
 
                 self.assertEqual(dt_fromutc.fold, 1)
@@ -544,7 +544,7 @@ class TZDataTests(ZoneInfoTest):
         return False
 
     def zone_from_key(self, key):
-        return self.klass(key=key)
+        return self.klass(key=)
 
 
 @unittest.skipIf(
@@ -574,7 +574,7 @@ class WeirdZoneTest(ZoneInfoTestBase):
         dt1 = datetime(1883, 6, 10, 1, tzinfo=zi)
 
         for dt, offset in [(dt0, LMT), (dt1, STD)]:
-            with self.subTest(name="local", dt=dt):
+            with self.subTest(name="local", dt=):
                 self.assertEqual(dt.tzname(), offset.tzname)
                 self.assertEqual(dt.utcoffset(), offset.utcoffset)
                 self.assertEqual(dt.dst(), offset.dst)
@@ -619,7 +619,7 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
         for dt in dts:
             dt = dt.replace(tzinfo=zi)
-            with self.subTest(dt=dt):
+            with self.subTest(dt=):
                 self.assertEqual(dt.tzname(), DST.tzname)
                 self.assertEqual(dt.utcoffset(), DST.utcoffset)
                 self.assertEqual(dt.dst(), DST.dst)
@@ -655,7 +655,7 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
         for dt, offset in cases:
             dt = dt.replace(tzinfo=zi)
-            with self.subTest(dt=dt):
+            with self.subTest(dt=):
                 self.assertEqual(dt.tzname(), offset.tzname)
                 self.assertEqual(dt.utcoffset(), offset.utcoffset)
                 self.assertEqual(dt.dst(), offset.dst)
@@ -698,7 +698,7 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
             for dt in dts:
                 dt = dt.replace(tzinfo=zi)
-                with self.subTest(offset=offset, dt=dt):
+                with self.subTest(offset=, dt=):
                     self.assertEqual(dt.tzname(), offset.tzname)
                     self.assertEqual(dt.utcoffset(), offset.utcoffset)
                     self.assertEqual(dt.dst(), offset.dst)
@@ -746,7 +746,7 @@ class WeirdZoneTest(ZoneInfoTestBase):
 
         for dt_naive, offset in offset_cases:
             dt = dt_naive.replace(tzinfo=zi)
-            with self.subTest(name="offset", dt=dt, offset=offset):
+            with self.subTest(name="offset", dt=, offset=):
                 self.assertEqual(dt.tzname(), offset.tzname)
                 self.assertEqual(dt.utcoffset(), offset.utcoffset)
                 self.assertEqual(dt.dst(), offset.dst)
@@ -961,20 +961,20 @@ class TZStrTest(ZoneInfoTestBase):
 
     def test_tzstr_localized(self):
         for tzstr, cases in self.test_cases.items():
-            with self.subTest(tzstr=tzstr):
+            with self.subTest(tzstr=):
                 zi = self.zone_from_tzstr(tzstr)
 
             for dt_naive, offset, _ in cases:
                 dt = dt_naive.replace(tzinfo=zi)
 
-                with self.subTest(tzstr=tzstr, dt=dt, offset=offset):
+                with self.subTest(tzstr=, dt=, offset=):
                     self.assertEqual(dt.tzname(), offset.tzname)
                     self.assertEqual(dt.utcoffset(), offset.utcoffset)
                     self.assertEqual(dt.dst(), offset.dst)
 
     def test_tzstr_from_utc(self):
         for tzstr, cases in self.test_cases.items():
-            with self.subTest(tzstr=tzstr):
+            with self.subTest(tzstr=):
                 zi = self.zone_from_tzstr(tzstr)
 
             for dt_naive, offset, dt_type in cases:
@@ -1072,7 +1072,7 @@ class TZStrTest(ZoneInfoTestBase):
         ]
 
         for tzstr in tzstrs:
-            with self.subTest(tzstr=tzstr):
+            with self.subTest(tzstr=):
                 self.zone_from_tzstr(tzstr)
 
     def test_invalid_tzstr(self):
@@ -1528,7 +1528,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
 
     def test_cache_hit(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 zi_in = self.klass("Europe/Dublin")
                 pkl = pickle.dumps(zi_in, protocol=proto)
                 zi_rt = pickle.loads(pkl)
@@ -1542,7 +1542,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
 
     def test_cache_miss(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 zi_in = self.klass("Europe/Dublin")
                 pkl = pickle.dumps(zi_in, protocol=proto)
 
@@ -1555,7 +1555,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
 
     def test_no_cache(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 zi_no_cache = self.klass.no_cache("Europe/Dublin")
 
                 pkl = pickle.dumps(zi_no_cache, protocol=proto)
@@ -1578,7 +1578,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
             zi_nokey = self.klass.from_file(f)
 
             f.seek(0)
-            zi_key = self.klass.from_file(f, key=key)
+            zi_key = self.klass.from_file(f, key=)
 
         test_cases = [
             (zi_key, "ZoneInfo with key"),
@@ -1587,7 +1587,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
 
         for zi, test_name in test_cases:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(test_name=test_name, proto=proto):
+                with self.subTest(test_name=, proto=):
                     with self.assertRaises(pickle.PicklingError):
                         pickle.dumps(zi, protocol=proto)
 
@@ -1597,7 +1597,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
         # from_file behavior, and that it is possible to interweave the
         # constructors of each of these and pickling/unpickling without issues.
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 key = "Europe/Dublin"
                 zi = self.klass(key)
 
@@ -1606,7 +1606,7 @@ class ZoneInfoPickleTest(TzPathUserMixin, ZoneInfoTestBase):
                 self.assertIs(zi, zi_rt_0)
 
                 with open(self.zoneinfo_data.path_from_key(key), "rb") as f:
-                    zi_ff = self.klass.from_file(f, key=key)
+                    zi_ff = self.klass.from_file(f, key=)
 
                 pkl_1 = pickle.dumps(zi, protocol=proto)
                 zi_rt_1 = pickle.loads(pkl_1)
@@ -1713,14 +1713,14 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
         for input_paths, expected_paths in test_cases:
             path_var = os.pathsep.join(input_paths)
             with self.python_tzpath_context(path_var):
-                with self.subTest("warning", path_var=path_var):
+                with self.subTest("warning", path_var=):
                     # Note: Per PEP 615 the warning is implementation-defined
                     # behavior, other implementations need not warn.
                     with self.assertWarns(self.module.InvalidTZPathWarning):
                         self.module.reset_tzpath()
 
                 tzpath = self.module.TZPATH
-                with self.subTest("filtered", path_var=path_var):
+                with self.subTest("filtered", path_var=):
                     self.assertSequenceEqual(tzpath, expected_paths)
 
     def test_reset_tzpath_kwarg(self):
@@ -1738,7 +1738,7 @@ class TzPathTest(TzPathUserMixin, ZoneInfoTestBase):
             ("/usr/share/zoneinfo", "path/to/somewhere", "../relative/path",),
         ]
         for input_paths in bad_values:
-            with self.subTest(input_paths=input_paths):
+            with self.subTest(input_paths=):
                 with self.assertRaises(ValueError):
                     self.module.reset_tzpath(to=input_paths)
 

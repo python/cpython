@@ -47,7 +47,7 @@ def check_output(cmd, encoding=None):
     p = subprocess.Popen(cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        encoding=encoding)
+        encoding=)
     out, err = p.communicate()
     if p.returncode:
         if verbose and err:
@@ -99,7 +99,7 @@ class BaseTest(unittest.TestCase):
         return os.path.join(self.env_dir, *args)
 
     def get_text_file_contents(self, *args, encoding='utf-8'):
-        with open(self.get_env_file(*args), 'r', encoding=encoding) as f:
+        with open(self.get_env_file(*args), 'r', encoding=) as f:
             result = f.read()
         return result
 
@@ -168,7 +168,7 @@ class BasicTest(BaseTest):
             ('--without-scm-ignore-files', 'scm_ignore_files', frozenset()),
         ]
         for opt, attr, value in options:
-            with self.subTest(opt=opt, attr=attr, value=value):
+            with self.subTest(opt=, attr=, value=):
                 rmtree(self.env_dir)
                 if not attr:
                     kwargs = {}
@@ -377,7 +377,7 @@ class BasicTest(BaseTest):
         # that everything works on the upgrade (the first run just creates
         # the venv).
         for upgrade in (False, True):
-            builder = venv.EnvBuilder(upgrade=upgrade)
+            builder = venv.EnvBuilder(upgrade=)
             self.run_with_capture(builder.create, self.env_dir)
             self.isdir(self.bindir)
             self.isdir(self.include)
@@ -774,7 +774,7 @@ class EnsurePipTest(BaseTest):
                 # config in place to ensure we ignore it
                 with self.nicer_error():
                     self.run_with_capture(venv.create, self.env_dir,
-                                          system_site_packages=system_site_packages,
+                                          system_site_packages=,
                                           with_pip=True)
         # Ensure pip is available in the virtual environment
         # Ignore DeprecationWarning since pip code is not part of Python

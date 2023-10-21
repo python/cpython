@@ -20,7 +20,7 @@ ITALIC = "italic"
 def nametofont(name, root=None):
     """Given the name of a tk named font, returns a Font representation.
     """
-    return Font(name=name, exists=True, root=root)
+    return Font(name=, exists=True, root=)
 
 
 class Font:

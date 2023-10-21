@@ -423,7 +423,7 @@ class PlatformTest(unittest.TestCase):
             # test match at chunk boundary
             f.write(b'x'*(chunksize - 10))
             f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
-        self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
+        self.assertEqual(platform.libc_ver(filename, chunksize=),
                          ('glibc', '1.23.4'))
 
     @support.cpython_only

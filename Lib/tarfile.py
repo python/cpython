@@ -1899,7 +1899,7 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("bz2 module is not available") from None
 
-        fileobj = BZ2File(fileobj or name, mode, compresslevel=compresslevel)
+        fileobj = BZ2File(fileobj or name, mode, compresslevel=)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
@@ -1927,7 +1927,7 @@ class TarFile(object):
         except ImportError:
             raise CompressionError("lzma module is not available") from None
 
-        fileobj = LZMAFile(fileobj or name, mode, preset=preset)
+        fileobj = LZMAFile(fileobj or name, mode, preset=)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
@@ -2184,7 +2184,7 @@ class TarFile(object):
             if recursive:
                 for f in sorted(os.listdir(name)):
                     self.add(os.path.join(name, f), os.path.join(arcname, f),
-                            recursive, filter=filter)
+                            recursive, filter=)
 
         else:
             self.addfile(tarinfo)
@@ -2205,7 +2205,7 @@ class TarFile(object):
         bufsize=self.copybufsize
         # If there's data to follow, append it.
         if fileobj is not None:
-            copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=bufsize)
+            copyfileobj(fileobj, self.fileobj, tarinfo.size, bufsize=)
             blocks, remainder = divmod(tarinfo.size, BLOCKSIZE)
             if remainder > 0:
                 self.fileobj.write(NUL * (BLOCKSIZE - remainder))
@@ -2268,7 +2268,7 @@ class TarFile(object):
                 # extracting contents can reset mtime.
                 directories.append(tarinfo)
             self._extract_one(tarinfo, path, set_attrs=not tarinfo.isdir(),
-                              numeric_owner=numeric_owner)
+                              numeric_owner=)
 
         # Reverse sort directories.
         directories.sort(key=lambda a: a.name, reverse=True)
@@ -2277,7 +2277,7 @@ class TarFile(object):
         for tarinfo in directories:
             dirpath = os.path.join(path, tarinfo.name)
             try:
-                self.chown(tarinfo, dirpath, numeric_owner=numeric_owner)
+                self.chown(tarinfo, dirpath, numeric_owner=)
                 self.utime(tarinfo, dirpath)
                 self.chmod(tarinfo, dirpath)
             except ExtractError as e:
@@ -2331,8 +2331,8 @@ class TarFile(object):
 
         try:
             self._extract_member(tarinfo, os.path.join(path, tarinfo.name),
-                                 set_attrs=set_attrs,
-                                 numeric_owner=numeric_owner)
+                                 set_attrs=,
+                                 numeric_owner=)
         except OSError as e:
             self._handle_fatal_error(e)
         except ExtractError as e:
@@ -2809,7 +2809,7 @@ def main():
     import argparse
 
     description = 'A simple command-line interface for tarfile module.'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=)
     parser.add_argument('-v', '--verbose', action='store_true', default=False,
                         help='Verbose output')
     parser.add_argument('--filter', metavar='<filtername>',

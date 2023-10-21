@@ -23,8 +23,8 @@ __all__ = [
 
 def create(*, isolated=True):
     """Return a new (idle) Python interpreter."""
-    id = _interpreters.create(isolated=isolated)
-    return Interpreter(id, isolated=isolated)
+    id = _interpreters.create(isolated=)
+    return Interpreter(id, isolated=)
 
 
 def list_all():
@@ -231,7 +231,7 @@ class SendChannel(_ChannelEnd):
 
         This blocks until the object is received.
         """
-        _channels.send(self._id, obj, timeout=timeout, blocking=True)
+        _channels.send(self._id, obj, timeout=, blocking=True)
 
     def send_nowait(self, obj):
         """Send the object to the channel's receiving end.
@@ -249,7 +249,7 @@ class SendChannel(_ChannelEnd):
 
         This blocks until the object is received.
         """
-        _channels.send_buffer(self._id, obj, timeout=timeout, blocking=True)
+        _channels.send_buffer(self._id, obj, timeout=, blocking=True)
 
     def send_buffer_nowait(self, obj):
         """Send the object's buffer to the channel's receiving end.

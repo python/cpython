@@ -206,7 +206,7 @@ class TestBasicOps(unittest.TestCase):
             for i in range(len(data)):
                 s = data[:i]
                 batches = list(batched(s, n))
-                with self.subTest(s=s, n=n, batches=batches):
+                with self.subTest(s=, n=, batches=):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(chain(*batches)), s)
                     # Each batch is an exact tuple
@@ -583,7 +583,7 @@ class TestBasicOps(unittest.TestCase):
                 ('ABC', [0,1,1,1,1,1], 'BC', 'C'),
                 ]:
 
-                self.assertEqual(list(op(compress(data=data, selectors=selectors))), list(result1))
+                self.assertEqual(list(op(compress(data=, selectors=))), list(result1))
                 self.assertEqual(list(op(compress(data, selectors))), list(result1))
                 testIntermediate = compress(data, selectors)
                 if result1:
@@ -1765,7 +1765,7 @@ class TestBasicOps(unittest.TestCase):
             zip_longest,
         )
         for tp in dataset:
-            with self.subTest(tp=tp):
+            with self.subTest(tp=):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foobar = 1
 
@@ -1897,7 +1897,7 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
         for iterable, n in product(
                 ['', 'a', 'ab', 'abc', 'abcd', 'abcde', 'abcdef', 'abcdefg', None],
                 [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, None]):
-            with self.subTest(iterable=iterable, n=n):
+            with self.subTest(iterable=, n=):
                 try:
                     e1, r1 = None, list(batched(iterable, n))
                 except Exception as e:
@@ -2167,7 +2167,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         r = [('a', 'b'), ('c', 'd'), ('e',)]
         n = 2
         for g in (G, I, Ig, L, R):
-            with self.subTest(g=g):
+            with self.subTest(g=):
                 self.assertEqual(list(batched(g(s), n)), r)
         self.assertEqual(list(batched(S(s), 2)), [])
         self.assertRaises(TypeError, batched, X(s), 2)

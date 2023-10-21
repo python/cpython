@@ -186,7 +186,7 @@ def cmd_analyze(filenames=None, **kwargs):
         filenames,
         relroot=REPO_ROOT,
         _analyze=_analyzer.analyze,
-        formats=formats,
+        formats=,
         file_maxsizes=_parser.MAX_SIZES,
         **kwargs
     )
@@ -247,8 +247,8 @@ def cmd_data(datacmd, **kwargs):
         filenames,
         known,
         _analyze=analyze,
-        formats=formats,
-        extracolumns=extracolumns,
+        formats=,
+        extracolumns=,
         relroot=REPO_ROOT,
         **kwargs
     )
@@ -344,7 +344,7 @@ def cmd_capi(filenames=None, *,
              ):
     render = _capi.get_renderer(format)
 
-    filenames = _files.iter_header_files(filenames, levels=levels)
+    filenames = _files.iter_header_files(filenames, levels=)
     #filenames = (file for file, _ in main_for_filenames(filenames))
     if track_progress:
         filenames = track_progress(filenames)
@@ -358,12 +358,7 @@ def cmd_capi(filenames=None, *,
     if filter:
         items = (item for item in items if filter(item, log=lambda msg: logger.log(1, msg)))
 
-    lines = render(
-        items,
-        groupby=groupby,
-        showempty=showempty,
-        verbose=verbosity > VERBOSITY,
-    )
+    lines = render(items, groupby=, showempty=, verbose=verbosity > VERBOSITY)
     print()
     for line in lines:
         print(line)
@@ -469,7 +464,7 @@ def parse_args(argv=sys.argv[1:], prog=None, *, subset=None):
             add_verbosity_cli,
             add_traceback_cli,
         ],
-        subset=subset,
+        subset=,
     )
 
     args = parser.parse_args(argv)

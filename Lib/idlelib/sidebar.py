@@ -295,7 +295,7 @@ class LineNumbers(BaseSideBar):
     def init_widgets(self):
         _padx, pady = get_widget_padding(self.text)
         self.sidebar_text = tk.Text(self.parent, width=1, wrap=tk.NONE,
-                                    padx=2, pady=pady,
+                                    padx=2, pady=,
                                     borderwidth=0, highlightthickness=0)
         self.sidebar_text.config(state=tk.DISABLED)
 
@@ -497,7 +497,7 @@ class ShellSidebar(BaseSideBar):
     def update_font(self):
         """Update the sidebar text font, usually after config changes."""
         font = idleConf.GetFont(self.text, 'main', 'EditorWindow')
-        tk_font = Font(self.text, font=font)
+        tk_font = Font(self.text, font=)
         char_width = max(tk_font.measure(char) for char in ['>', '.'])
         self.canvas.configure(width=char_width * 3 + 4)
         self.font = font
@@ -510,7 +510,7 @@ class ShellSidebar(BaseSideBar):
         foreground = prompt_colors['foreground']
         background = linenumbers_colors['background']
         self.colors = (foreground, background)
-        self.canvas.configure(background=background)
+        self.canvas.configure(background=)
         self.change_callback()
 
 
@@ -524,7 +524,7 @@ def _linenumbers_drag_scrolling(parent):  # htest #
     text_frame.columnconfigure(1, weight=1)
 
     font = idleConf.GetFont(toplevel, 'main', 'EditorWindow')
-    text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE, font=font)
+    text = tk.Text(text_frame, width=80, height=24, wrap=tk.NONE, font=)
     text.grid(row=1, column=1, sticky=tk.NSEW)
 
     editwin = Dummy_editwin(text)

@@ -148,7 +148,7 @@ class LifetimeTests:
 
 (Frozen_LifetimeTests,
  Source_LifetimeTests
- ) = test_util.test_both(LifetimeTests, init=init)
+ ) = test_util.test_both(LifetimeTests, init=)
 
 
 def setUpModule():

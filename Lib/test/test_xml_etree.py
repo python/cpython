@@ -123,7 +123,7 @@ ATTLIST_XML = """\
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
         def newtest(*args, **kwargs):
-            with warnings_helper.check_warnings(*filters, quiet=quiet):
+            with warnings_helper.check_warnings(*filters, quiet=):
                 test(*args, **kwargs)
         functools.update_wrapper(newtest, test)
         return newtest
@@ -152,7 +152,7 @@ def serialize(elem, to_string=True, encoding='unicode', **options):
     else:
         file = io.StringIO()
     tree = ET.ElementTree(elem)
-    tree.write(file, encoding=encoding, **options)
+    tree.write(file, encoding=, **options)
     if to_string:
         return file.getvalue()
     else:
@@ -499,7 +499,7 @@ class ElementTreeTest(unittest.TestCase):
                 '</root>')
 
         target = ET.TreeBuilder()
-        parser = ET.XMLParser(target=target)
+        parser = ET.XMLParser(target=)
         parser.feed(data)
         self.serialize_check(parser.close(),
                 '<root>\n'
@@ -558,7 +558,7 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
 
         events = ()
-        context = iterparse(SIMPLE_XMLFILE, events=events)
+        context = iterparse(SIMPLE_XMLFILE, events=)
         self.assertEqual([(action, elem.tag) for action, elem in context], [])
 
         events = ("start", "end")
@@ -1000,11 +1000,7 @@ class ElementTreeTest(unittest.TestCase):
             with self.subTest(f'encoding={encoding} '
                               f'xml_declaration={xml_declaration}'):
                 self.assertEqual(
-                    ET.tostring(
-                        elem,
-                        encoding=encoding,
-                        xml_declaration=xml_declaration
-                    ),
+                    ET.tostring(elem, encoding=, xml_declaration=),
                     expected_retval
                 )
 
@@ -1400,7 +1396,7 @@ class XMLPullParserTest(unittest.TestCase):
 
     def test_simple_xml(self):
         for chunk_size in (None, 1, 5):
-            with self.subTest(chunk_size=chunk_size):
+            with self.subTest(chunk_size=):
                 parser = ET.XMLPullParser()
                 self.assert_event_tags(parser, [])
                 self._feed(parser, "<!-- comment -->\n", chunk_size)
@@ -2613,7 +2609,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         # Issue #27863
         def element_factory(x, y):
             return []
-        b = ET.TreeBuilder(element_factory=element_factory)
+        b = ET.TreeBuilder(element_factory=)
 
         b.start('tag', {})
         b.data('ABCD')
@@ -2625,7 +2621,7 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         # Issue #27863
         def element_factory(x, y):
             return []
-        b = ET.TreeBuilder(element_factory=element_factory)
+        b = ET.TreeBuilder(element_factory=)
 
         b.start('tag', {})
         b.data('ABCD')
@@ -3041,7 +3037,7 @@ class ElementIterTest(unittest.TestCase):
         # With an explicit parser too (issue #9708)
         sourcefile = serialize(doc, to_string=False)
         parser = ET.XMLParser(target=ET.TreeBuilder())
-        self.assertEqual(next(ET.iterparse(sourcefile, parser=parser))[0],
+        self.assertEqual(next(ET.iterparse(sourcefile, parser=))[0],
                          'end')
 
         tree = ET.ElementTree(None)
@@ -4180,8 +4176,8 @@ class C14NTest(unittest.TestCase):
                     text = ET.canonicalize(
                         from_file=f,
                         with_comments=keep_comments,
-                        strip_text=strip_text,
-                        rewrite_prefixes=rewrite_prefixes,
+                        strip_text=,
+                        rewrite_prefixes=,
                         qname_aware_tags=qtags, qname_aware_attrs=qattrs)
 
                     with open(full_path(output_file + ".xml"), 'r', encoding='utf8') as f:

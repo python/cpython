@@ -309,12 +309,12 @@ class PkgutilTests(unittest.TestCase):
         failure_cases += ('\u0966\u0935\u092e\u0938', ValueError),
 
         for s, expected in success_cases:
-            with self.subTest(s=s):
+            with self.subTest(s=):
                 o = pkgutil.resolve_name(s)
                 self.assertEqual(o, expected)
 
         for s, exc in failure_cases:
-            with self.subTest(s=s):
+            with self.subTest(s=):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
 
@@ -337,7 +337,7 @@ class PkgutilPEP302Tests(unittest.TestCase):
             loader = PkgutilPEP302Tests.MyTestLoader()
             return spec_from_file_location(fullname,
                                            '<%s>' % loader.__class__.__name__,
-                                           loader=loader,
+                                           loader=,
                                            submodule_search_locations=[])
 
     def setUp(self):

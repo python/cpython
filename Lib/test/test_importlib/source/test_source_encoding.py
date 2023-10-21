@@ -99,7 +99,7 @@ class EncodingTestPEP451(EncodingTest):
 
 (Frozen_EncodingTestPEP451,
  Source_EncodingTestPEP451
- ) = util.test_both(EncodingTestPEP451, machinery=machinery)
+ ) = util.test_both(EncodingTestPEP451, machinery=)
 
 
 class EncodingTestPEP302(EncodingTest):
@@ -112,7 +112,7 @@ class EncodingTestPEP302(EncodingTest):
 
 (Frozen_EncodingTestPEP302,
  Source_EncodingTestPEP302
- ) = util.test_both(EncodingTestPEP302, machinery=machinery)
+ ) = util.test_both(EncodingTestPEP302, machinery=)
 
 
 class LineEndingTest:
@@ -155,7 +155,7 @@ class LineEndingTestPEP451(LineEndingTest):
 
 (Frozen_LineEndingTestPEP451,
  Source_LineEndingTestPEP451
- ) = util.test_both(LineEndingTestPEP451, machinery=machinery)
+ ) = util.test_both(LineEndingTestPEP451, machinery=)
 
 
 class LineEndingTestPEP302(LineEndingTest):
@@ -168,7 +168,7 @@ class LineEndingTestPEP302(LineEndingTest):
 
 (Frozen_LineEndingTestPEP302,
  Source_LineEndingTestPEP302
- ) = util.test_both(LineEndingTestPEP302, machinery=machinery)
+ ) = util.test_both(LineEndingTestPEP302, machinery=)
 
 
 if __name__ == '__main__':

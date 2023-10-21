@@ -250,7 +250,7 @@ class OtherNetworkTests(unittest.TestCase):
             urlopen = _wrap_with_retry_thrice(urlopen, urllib.error.URLError)
 
         for url in urls:
-            with self.subTest(url=url):
+            with self.subTest(url=):
                 if isinstance(url, tuple):
                     url, req, expected_err = url
                 else:

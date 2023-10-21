@@ -329,7 +329,7 @@ class SysModuleTest(unittest.TestCase):
         old_limit = sys.getrecursionlimit()
         try:
             depth = support.get_recursion_depth()
-            with self.subTest(limit=sys.getrecursionlimit(), depth=depth):
+            with self.subTest(limit=sys.getrecursionlimit(), depth=):
                 # depth + 1 is OK
                 sys.setrecursionlimit(depth + 1)
 
@@ -787,21 +787,21 @@ class SysModuleTest(unittest.TestCase):
 
         env["PYTHONIOENCODING"] = "cp424"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
-                             stdout = subprocess.PIPE, env=env)
+                             stdout = subprocess.PIPE, env=)
         out = p.communicate()[0].strip()
         expected = ("\xa2" + os.linesep).encode("cp424")
         self.assertEqual(out, expected)
 
         env["PYTHONIOENCODING"] = "ascii:replace"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
-                             stdout = subprocess.PIPE, env=env)
+                             stdout = subprocess.PIPE, env=)
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'?')
 
         env["PYTHONIOENCODING"] = "ascii"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             env=env)
+                             env=)
         out, err = p.communicate()
         self.assertEqual(out, b'')
         self.assertIn(b'UnicodeEncodeError:', err)
@@ -810,7 +810,7 @@ class SysModuleTest(unittest.TestCase):
         env["PYTHONIOENCODING"] = "ascii:"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xa2))'],
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             env=env)
+                             env=)
         out, err = p.communicate()
         self.assertEqual(out, b'')
         self.assertIn(b'UnicodeEncodeError:', err)
@@ -818,7 +818,7 @@ class SysModuleTest(unittest.TestCase):
 
         env["PYTHONIOENCODING"] = ":surrogateescape"
         p = subprocess.Popen([sys.executable, "-c", 'print(chr(0xdcbd))'],
-                             stdout=subprocess.PIPE, env=env)
+                             stdout=subprocess.PIPE, env=)
         out = p.communicate()[0].strip()
         self.assertEqual(out, b'\xbd')
 
@@ -833,7 +833,7 @@ class SysModuleTest(unittest.TestCase):
         env["PYTHONIOENCODING"] = ""
         p = subprocess.Popen([sys.executable, "-c",
                                 'print(%a)' % os_helper.FS_NONASCII],
-                                stdout=subprocess.PIPE, env=env)
+                                stdout=subprocess.PIPE, env=)
         out = p.communicate()[0].strip()
         self.assertEqual(out, os.fsencode(os_helper.FS_NONASCII))
 
@@ -898,7 +898,7 @@ class SysModuleTest(unittest.TestCase):
         p = subprocess.Popen(args,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
-                              env=env,
+                              env=,
                               universal_newlines=True)
         stdout, stderr = p.communicate()
         return stdout
@@ -1228,7 +1228,7 @@ class UnraisableHookTest(unittest.TestCase):
 
     def test_original_unraisablehook(self):
         for err_msg in (None, "original hook"):
-            with self.subTest(err_msg=err_msg):
+            with self.subTest(err_msg=):
                 obj = "an object"
 
                 with test.support.captured_output("stderr") as stderr:
@@ -1295,7 +1295,7 @@ class UnraisableHookTest(unittest.TestCase):
                     pass
 
         for moduleName in 'builtins', '__main__', 'some_module':
-            with self.subTest(moduleName=moduleName):
+            with self.subTest(moduleName=):
                 A.B.X.__module__ = moduleName
                 with test.support.captured_stderr() as stderr, test.support.swap_attr(
                     sys, 'unraisablehook', sys.__unraisablehook__
@@ -1740,7 +1740,7 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(old.finalizer)
 
         firstiter = lambda *a: None
-        sys.set_asyncgen_hooks(firstiter=firstiter)
+        sys.set_asyncgen_hooks(firstiter=)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
         self.assertIs(hooks[0], firstiter)
@@ -1748,7 +1748,7 @@ class SizeofTest(unittest.TestCase):
         self.assertIs(hooks[1], None)
 
         finalizer = lambda *a: None
-        sys.set_asyncgen_hooks(finalizer=finalizer)
+        sys.set_asyncgen_hooks(finalizer=)
         hooks = sys.get_asyncgen_hooks()
         self.assertIs(hooks.firstiter, firstiter)
         self.assertIs(hooks[0], firstiter)

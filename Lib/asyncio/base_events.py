@@ -435,7 +435,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name, context=context)
+            task = tasks.Task(coro, loop=self, name=, context=)
             if task._source_traceback:
                 del task._source_traceback[-1]
         else:
@@ -443,7 +443,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 # Use legacy API if context is not needed
                 task = self._task_factory(self, coro)
             else:
-                task = self._task_factory(self, coro, context=context)
+                task = self._task_factory(self, coro, context=)
 
             task.set_name(name)
 
@@ -760,8 +760,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         """
         if delay is None:
             raise TypeError('delay must not be None')
-        timer = self.call_at(self.time() + delay, callback, *args,
-                             context=context)
+        timer = self.call_at(self.time() + delay, callback, *args, context=)
         if timer._source_traceback:
             del timer._source_traceback[-1]
         return timer
@@ -983,7 +982,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         family, type_, proto, _, address = addr_info
         sock = None
         try:
-            sock = socket.socket(family=family, type=type_, proto=proto)
+            sock = socket.socket(family=, type=type_, proto=)
             sock.setblocking(False)
             if local_addr_infos is not None:
                 for lfamily, _, _, _, laddr in local_addr_infos:
@@ -1080,16 +1079,16 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'host/port and sock can not be specified at the same time')
 
             infos = await self._ensure_resolved(
-                (host, port), family=family,
-                type=socket.SOCK_STREAM, proto=proto, flags=flags, loop=self)
+                (host, port), family=,
+                type=socket.SOCK_STREAM, proto=, flags=, loop=self)
             if not infos:
                 raise OSError('getaddrinfo() returned empty list')
 
             if local_addr is not None:
                 laddr_infos = await self._ensure_resolved(
-                    local_addr, family=family,
-                    type=socket.SOCK_STREAM, proto=proto,
-                    flags=flags, loop=self)
+                    local_addr, family=,
+                    type=socket.SOCK_STREAM, proto=,
+                    flags=, loop=self)
                 if not laddr_infos:
                     raise OSError('getaddrinfo() returned empty list')
             else:
@@ -1150,8 +1149,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -1174,9 +1173,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             sslcontext = None if isinstance(ssl, bool) else ssl
             transport = self._make_ssl_transport(
                 sock, protocol, sslcontext, waiter,
-                server_side=server_side, server_hostname=server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout)
+                server_side=, server_hostname=,
+                ssl_handshake_timeout=,
+                ssl_shutdown_timeout=)
         else:
             transport = self._make_socket_transport(sock, protocol, waiter)
 
@@ -1290,8 +1289,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         ssl_protocol = sslproto.SSLProtocol(
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout,
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=,
             call_connection_made=False)
 
         # Pause early so that "ssl_protocol.data_received()" doesn't
@@ -1326,10 +1325,10 @@ class BaseEventLoop(events.AbstractEventLoop):
                     family or proto or flags or
                     reuse_port or allow_broadcast):
                 # show the problematic kwargs in exception msg
-                opts = dict(local_addr=local_addr, remote_addr=remote_addr,
-                            family=family, proto=proto, flags=flags,
-                            reuse_port=reuse_port,
-                            allow_broadcast=allow_broadcast)
+                opts = dict(local_addr=, remote_addr=,
+                            family=, proto=, flags=,
+                            reuse_port=,
+                            allow_broadcast=)
                 problems = ', '.join(f'{k}={v}' for k, v in opts.items() if v)
                 raise ValueError(
                     f'socket modifier keyword arguments can not be used '
@@ -1369,8 +1368,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                             raise TypeError('2-tuple is expected')
 
                         infos = await self._ensure_resolved(
-                            addr, family=family, type=socket.SOCK_DGRAM,
-                            proto=proto, flags=flags, loop=self)
+                            addr, family=, type=socket.SOCK_DGRAM,
+                            proto=, flags=, loop=self)
                         if not infos:
                             raise OSError('getaddrinfo() returned empty list')
 
@@ -1397,7 +1396,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 r_addr = None
                 try:
                     sock = socket.socket(
-                        family=family, type=socket.SOCK_DGRAM, proto=proto)
+                        family=, type=socket.SOCK_DGRAM, proto=)
                     if reuse_port:
                         _set_reuseport(sock)
                     if allow_broadcast:
@@ -1455,13 +1454,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             # "host" is already a resolved IP.
             return [info]
         else:
-            return await loop.getaddrinfo(host, port, family=family, type=type,
-                                          proto=proto, flags=flags)
+            return await loop.getaddrinfo(host, port, family=, type=,
+                                          proto=, flags=)
 
     async def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = await self._ensure_resolved((host, port), family=family,
+        infos = await self._ensure_resolved((host, port), family=,
                                             type=socket.SOCK_STREAM,
-                                            flags=flags, loop=self)
+                                            flags=, loop=self)
         if not infos:
             raise OSError(f'getaddrinfo({host!r}) returned empty list')
         return infos
@@ -1524,8 +1523,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             else:
                 hosts = host
 
-            fs = [self._create_server_getaddrinfo(host, port, family=family,
-                                                  flags=flags)
+            fs = [self._create_server_getaddrinfo(host, port, family=, flags=)
                   for host in hosts]
             infos = await tasks.gather(*fs)
             infos = set(itertools.chain.from_iterable(infos))
@@ -1613,8 +1611,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout)
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=)
         if self._debug:
             # Get the socket from the transport because SSL transport closes
             # the old socket and creates a new SSL socket
@@ -1807,7 +1805,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 value = repr(value)
             log_lines.append(f'{key}: {value}')
 
-        logger.error('\n'.join(log_lines), exc_info=exc_info)
+        logger.error('\n'.join(log_lines), exc_info=)
 
     def call_exception_handler(self, context):
         """Call the current event loop's exception handler.

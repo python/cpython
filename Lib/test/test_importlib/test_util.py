@@ -132,8 +132,7 @@ class ModuleFromSpecTests:
 
 (Frozen_ModuleFromSpecTests,
  Source_ModuleFromSpecTests
-) = util.test_both(ModuleFromSpecTests, abc=abc, machinery=machinery,
-                   util=importlib_util)
+) = util.test_both(ModuleFromSpecTests, abc=, machinery=, util=importlib_util)
 
 
 class ResolveNameTests:
@@ -307,8 +306,7 @@ class FindSpecTests:
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
- ) = util.test_both(FindSpecTests, init=init, util=importlib_util,
-                         machinery=machinery)
+ ) = util.test_both(FindSpecTests, init=, util=importlib_util, machinery=)
 
 
 class MagicNumberTests:

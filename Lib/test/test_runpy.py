@@ -290,8 +290,8 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                          *, namespace=False, parent_namespaces=False):
         pkg_dir, mod_fname, mod_name, mod_spec = (
                self._make_pkg(example_source, depth,
-                              namespace=namespace,
-                              parent_namespaces=parent_namespaces))
+                              namespace=,
+                              parent_namespaces=))
         forget(mod_name)
         expected_ns = example_namespace.copy()
         expected_ns.update({
@@ -308,7 +308,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 "module_in_sys_modules": True,
             })
         def create_ns(init_globals):
-            return run_module(mod_name, init_globals, alter_sys=alter_sys)
+            return run_module(mod_name, init_globals, alter_sys=)
         try:
             if verbose > 1: print("Running from source:", mod_name)
             self.check_code_execution(create_ns, expected_ns)
@@ -330,8 +330,8 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                           *, namespace=False, parent_namespaces=False):
         pkg_dir, mod_fname, mod_name, mod_spec = (
                self._make_pkg(example_source, depth, "__main__",
-                              namespace=namespace,
-                              parent_namespaces=parent_namespaces))
+                              namespace=,
+                              parent_namespaces=))
         pkg_name = mod_name.rpartition(".")[0]
         forget(mod_name)
         expected_ns = example_namespace.copy()
@@ -349,7 +349,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
                 "module_in_sys_modules": True,
             })
         def create_ns(init_globals):
-            return run_module(pkg_name, init_globals, alter_sys=alter_sys)
+            return run_module(pkg_name, init_globals, alter_sys=)
         try:
             if verbose > 1: print("Running from source:", pkg_name)
             self.check_code_execution(create_ns, expected_ns)
@@ -406,7 +406,7 @@ from ..uncle.cousin import nephew
             self._add_relative_modules(pkg_dir, contents, depth)
             pkg_name = mod_name.rpartition('.')[0]
             if verbose > 1: print("Running from source:", mod_name)
-            d1 = run_module(mod_name, run_name=run_name) # Read from source
+            d1 = run_module(mod_name, run_name=) # Read from source
             self.assertEqual(d1["__name__"], expected_name)
             self.assertEqual(d1["__package__"], pkg_name)
             self.assertIn("sibling", d1)
@@ -420,7 +420,7 @@ from ..uncle.cousin import nephew
                 unload(mod_name)  # In case the loader caches paths
                 if verbose > 1: print("Running from compiled:", mod_name)
                 importlib.invalidate_caches()
-                d2 = run_module(mod_name, run_name=run_name) # Read from bytecode
+                d2 = run_module(mod_name, run_name=) # Read from bytecode
                 self.assertEqual(d2["__name__"], expected_name)
                 self.assertEqual(d2["__package__"], pkg_name)
                 self.assertIn("sibling", d2)
@@ -686,7 +686,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             mod_name = '__main__'
             script_name = self._make_test_script(script_dir, mod_name)
             self._check_script(script_dir, "<run_path>", script_name,
-                               script_dir, mod_name=mod_name)
+                               script_dir, mod_name=)
 
     def test_directory_compiled(self):
         with temp_dir() as script_dir:
@@ -697,7 +697,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             if not sys.dont_write_bytecode:
                 legacy_pyc = make_legacy_pyc(script_name)
                 self._check_script(script_dir, "<run_path>", legacy_pyc,
-                                   script_dir, mod_name=mod_name)
+                                   script_dir, mod_name=)
 
     def test_directory_error(self):
         with temp_dir() as script_dir:
@@ -712,7 +712,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             script_name = self._make_test_script(script_dir, mod_name)
             zip_name, fname = make_zip_script(script_dir, 'test_zip', script_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name,
-                               mod_name=mod_name, check_loader=False)
+                               mod_name=, check_loader=False)
 
     def test_zipfile_compiled(self):
         with temp_dir() as script_dir:
@@ -722,7 +722,7 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             zip_name, fname = make_zip_script(script_dir, 'test_zip',
                                               compiled_name)
             self._check_script(zip_name, "<run_path>", fname, zip_name,
-                               mod_name=mod_name, check_loader=False)
+                               mod_name=, check_loader=False)
 
     def test_zipfile_error(self):
         with temp_dir() as script_dir:

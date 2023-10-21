@@ -52,7 +52,7 @@ class Node(xml.dom.Node):
             writer = io.StringIO()
         else:
             writer = io.TextIOWrapper(io.BytesIO(),
-                                      encoding=encoding,
+                                      encoding=,
                                       errors="xmlcharrefreplace",
                                       newline='\n')
         if self.nodeType == Node.DOCUMENT_NODE:

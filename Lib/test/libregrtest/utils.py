@@ -119,7 +119,7 @@ def printlist(x, width=70, indent=4, file=None):
     # Print the sorted list: 'x' may be a '--random' list or a set()
     print(textwrap.fill(' '.join(str(elt) for elt in sorted(x)), width,
                         initial_indent=blanks, subsequent_indent=blanks),
-          file=file)
+          file=)
 
 
 def print_warning(msg):

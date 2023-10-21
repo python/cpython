@@ -172,7 +172,7 @@ class IntegrationTests(TestCase):
         ]
 
         for status, exc_message in tests:
-            with self.subTest(status=status):
+            with self.subTest(status=):
                 out, err = run_amock(create_bad_app(status))
                 self.assertTrue(out.endswith(
                     b"A server error occurred.  Please contact the administrator."
@@ -803,7 +803,7 @@ class HandlerTests(TestCase):
             BrokenPipeError,
             ConnectionResetError,
         ):
-            with self.subTest(exception=exception):
+            with self.subTest(exception=):
                 class AbortingWriter:
                     def write(self, b):
                         raise exception

@@ -448,7 +448,7 @@ if ssl is not None:
         dtp_handler = DummyTLS_DTPHandler
 
         def __init__(self, conn, encoding=DEFAULT_ENCODING):
-            DummyFTPHandler.__init__(self, conn, encoding=encoding)
+            DummyFTPHandler.__init__(self, conn, encoding=)
             self.secure_data_channel = False
             self._ccc = False
 
@@ -489,9 +489,9 @@ if ssl is not None:
 class TestFTPClass(TestCase):
 
     def setUp(self, encoding=DEFAULT_ENCODING):
-        self.server = DummyFTPServer((HOST, 0), encoding=encoding)
+        self.server = DummyFTPServer((HOST, 0), encoding=)
         self.server.start()
-        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=encoding)
+        self.client = ftplib.FTP(timeout=TIMEOUT, encoding=)
         self.client.connect(self.server.host, self.server.port)
 
     def tearDown(self):
@@ -598,7 +598,7 @@ class TestFTPClass(TestCase):
     def test_retrbinary_rest(self):
         for rest in (0, 10, 20):
             received = []
-            self.client.retrbinary('retr', received.append, rest=rest)
+            self.client.retrbinary('retr', received.append, rest=)
             self.check_data(b''.join(received),
                             RETR_DATA[rest:].encode(self.client.encoding))
 
@@ -841,9 +841,9 @@ class TestFTPClass(TestCase):
     def test_encoding_param(self):
         encodings = ['latin-1', 'utf-8']
         for encoding in encodings:
-            with self.subTest(encoding=encoding):
+            with self.subTest(encoding=):
                 self.tearDown()
-                self.setUp(encoding=encoding)
+                self.setUp(encoding=)
                 self.assertEqual(encoding, self.client.encoding)
                 self.test_retrbinary()
                 self.test_storbinary()
@@ -906,9 +906,9 @@ class TestTLS_FTPClassMixin(TestFTPClass):
     """
 
     def setUp(self, encoding=DEFAULT_ENCODING):
-        self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
+        self.server = DummyTLS_FTPServer((HOST, 0), encoding=)
         self.server.start()
-        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=encoding)
+        self.client = ftplib.FTP_TLS(timeout=TIMEOUT, encoding=)
         self.client.connect(self.server.host, self.server.port)
         # enable TLS
         self.client.auth()
@@ -920,7 +920,7 @@ class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 
     def setUp(self, encoding=DEFAULT_ENCODING):
-        self.server = DummyTLS_FTPServer((HOST, 0), encoding=encoding)
+        self.server = DummyTLS_FTPServer((HOST, 0), encoding=)
         self.server.start()
         self.client = ftplib.FTP_TLS(timeout=TIMEOUT)
         self.client.connect(self.server.host, self.server.port)
@@ -1145,7 +1145,7 @@ class MiscTestCase(TestCase):
             'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF', 'Error',
             'parse150', 'parse227', 'parse229', 'parse257', 'print_line',
             'ftpcp', 'test'}
-        support.check__all__(self, ftplib, not_exported=not_exported)
+        support.check__all__(self, ftplib, not_exported=)
 
 
 def setUpModule():

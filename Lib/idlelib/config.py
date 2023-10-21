@@ -62,7 +62,7 @@ class IdleConfParser(ConfigParser):
         elif type == 'int':
             return self.getint(section, option)
         else:
-            return self.get(section, option, raw=raw)
+            return self.get(section, option, raw=)
 
     def GetOptionList(self, section):
         "Return a list of options for given section, else []."
@@ -227,18 +227,18 @@ class IdleConf:
         try:
             if self.userCfg[configType].has_option(section, option):
                 return self.userCfg[configType].Get(section, option,
-                                                    type=type, raw=raw)
+                                                    type=, raw=)
         except ValueError:
             warning = ('\n Warning: config.py - IdleConf.GetOption -\n'
                        ' invalid %r value for configuration option %r\n'
                        ' from section %r: %r' %
                        (type, option, section,
-                       self.userCfg[configType].Get(section, option, raw=raw)))
+                       self.userCfg[configType].Get(section, option, raw=)))
             _warn(warning, configType, section, option)
         try:
             if self.defaultCfg[configType].has_option(section,option):
                 return self.defaultCfg[configType].Get(
-                        section, option, type=type, raw=raw)
+                        section, option, type=, raw=)
         except ValueError:
             pass
         #returning default, print warning
@@ -744,7 +744,7 @@ class IdleConf:
         bold = self.GetOption(configType, section, 'font-bold', default=0,
                               type='bool')
         if (family == 'TkFixedFont'):
-            f = Font(name='TkFixedFont', exists=True, root=root)
+            f = Font(name='TkFixedFont', exists=True, root=)
             actualFont = Font.actual(f)
             family = actualFont['family']
             size = actualFont['size']

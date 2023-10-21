@@ -886,7 +886,7 @@ class CodecCallbackTest(unittest.TestCase):
             *itertools.product(("utf-32le", "utf-32be"),
                                [b"a", b"ab", b"abc", b"abcde"]),
         ):
-            with self.subTest(encoding=enc, repl=repl):
+            with self.subTest(encoding=enc, repl=):
                 with self.assertRaises(UnicodeEncodeError) as cm:
                     input.encode(enc, "test.replacing")
                 exc = cm.exception
@@ -1226,12 +1226,12 @@ class CodecCallbackTest(unittest.TestCase):
             class FakeUnicodeError(str):
                 __class__ = cls
             for handler in handlers:
-                with self.subTest(handler=handler, error_class=cls):
+                with self.subTest(handler=, error_class=cls):
                     self.assertRaises(TypeError, handler, FakeUnicodeError())
             class FakeUnicodeError(Exception):
                 __class__ = cls
             for handler in handlers:
-                with self.subTest(handler=handler, error_class=cls):
+                with self.subTest(handler=, error_class=cls):
                     with self.assertRaises((TypeError, FakeUnicodeError)):
                         handler(FakeUnicodeError())
 

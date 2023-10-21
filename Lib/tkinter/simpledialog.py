@@ -34,7 +34,7 @@ class SimpleDialog:
                  text='', buttons=[], default=None, cancel=None,
                  title=None, class_=None):
         if class_:
-            self.root = Toplevel(master, class_=class_)
+            self.root = Toplevel(master, class_=)
         else:
             self.root = Toplevel(master)
         if title:
@@ -43,7 +43,7 @@ class SimpleDialog:
 
         _setup_dialog(self.root)
 
-        self.message = Message(self.root, text=text, aspect=400)
+        self.message = Message(self.root, text=, aspect=400)
         self.message.pack(expand=1, fill=BOTH)
         self.frame = Frame(self.root)
         self.frame.pack()

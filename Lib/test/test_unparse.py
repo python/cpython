@@ -131,14 +131,14 @@ docstring_prefixes = (
 
 class ASTTestCase(ASTTestMixin, unittest.TestCase):
     def check_ast_roundtrip(self, code1, **kwargs):
-        with self.subTest(code1=code1, ast_parse_kwargs=kwargs):
+        with self.subTest(code1=, ast_parse_kwargs=kwargs):
             ast1 = ast.parse(code1, **kwargs)
             code2 = ast.unparse(ast1)
             ast2 = ast.parse(code2, **kwargs)
             self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
-        with self.subTest(node=node):
+        with self.subTest(node=):
             self.assertRaises(raises, ast.unparse, node)
 
     def get_source(self, code1, code2=None):
@@ -148,12 +148,12 @@ class ASTTestCase(ASTTestMixin, unittest.TestCase):
 
     def check_src_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        with self.subTest(code1=code1, code2=code2):
+        with self.subTest(code1=, code2=):
             self.assertEqual(code2, code1)
 
     def check_src_dont_roundtrip(self, code1, code2=None):
         code1, code2 = self.get_source(code1, code2)
-        with self.subTest(code1=code1, code2=code2):
+        with self.subTest(code1=, code2=):
             self.assertNotEqual(code2, code1)
 
 class UnparseTestCase(ASTTestCase):
@@ -623,8 +623,8 @@ class CosmeticTestCase(ASTTestCase):
                 "[a, b, (c, d), (e, f)]",
                 "a, b, [*c], d, e"
             ]:
-                with self.subTest(source_type=source_type, target=target):
-                    self.check_src_roundtrip(source.format(target=target))
+                with self.subTest(source_type=, target=):
+                    self.check_src_roundtrip(source.format(target=))
 
     def test_star_expr_assign_target_multiple(self):
         self.check_src_roundtrip("() = []")

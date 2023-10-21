@@ -53,7 +53,7 @@ class TraceBackend:
         actual_output = normalize_trace_output(self.trace_python(
             script_file=abspath(name + self.EXTENSION),
             python_file=abspath(name + ".py"),
-            optimize_python=optimize_python))
+            optimize_python=))
 
         with open(abspath(name + self.EXTENSION + ".expected")) as f:
             expected_output = f.read().rstrip()
@@ -237,7 +237,7 @@ class CheckDtraceProbes(unittest.TestCase):
         ]
 
         for probe_name in available_probe_names:
-            with self.subTest(probe_name=probe_name):
+            with self.subTest(probe_name=):
                 self.assertIn(probe_name, readelf_output)
 
     @unittest.expectedFailure
@@ -252,7 +252,7 @@ class CheckDtraceProbes(unittest.TestCase):
         ]
 
         for probe_name in missing_probe_names:
-            with self.subTest(probe_name=probe_name):
+            with self.subTest(probe_name=):
                 self.assertIn(probe_name, readelf_output)
 
 

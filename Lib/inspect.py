@@ -2334,7 +2334,7 @@ def _signature_fromstr(cls, obj, s, skip_bound_arg=True):
                 default = ast.literal_eval(default_node)
             except ValueError:
                 raise ValueError("{!r} builtin has invalid signature".format(obj)) from None
-        parameters.append(Parameter(name, kind, default=default, annotation=empty))
+        parameters.append(Parameter(name, kind, default=, annotation=empty))
 
     # non-keyword-only parameters
     total_non_kw_args = len(f.args.posonlyargs) + len(f.args.args)
@@ -2427,7 +2427,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     positional = arg_names[:pos_count]
     keyword_only_count = func_code.co_kwonlyargcount
     keyword_only = arg_names[pos_count:pos_count + keyword_only_count]
-    annotations = get_annotations(func, globals=globals, locals=locals, eval_str=eval_str)
+    annotations = get_annotations(func, globals=, locals=, eval_str=)
     defaults = func.__defaults__
     kwdefaults = func.__kwdefaults__
 
@@ -2445,8 +2445,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     for name in positional[:non_default_count]:
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=kind))
+        parameters.append(Parameter(name, annotation=, kind=))
         if posonly_left:
             posonly_left -= 1
 
@@ -2454,8 +2453,8 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     for offset, name in enumerate(positional[non_default_count:]):
         kind = _POSITIONAL_ONLY if posonly_left else _POSITIONAL_OR_KEYWORD
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=kind,
+        parameters.append(Parameter(name, annotation=,
+                                    kind=,
                                     default=defaults[offset]))
         if posonly_left:
             posonly_left -= 1
@@ -2464,8 +2463,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
     if func_code.co_flags & CO_VARARGS:
         name = arg_names[pos_count + keyword_only_count]
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_VAR_POSITIONAL))
+        parameters.append(Parameter(name, annotation=, kind=_VAR_POSITIONAL))
 
     # Keyword-only parameters.
     for name in keyword_only:
@@ -2474,9 +2472,9 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
             default = kwdefaults.get(name, _empty)
 
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
+        parameters.append(Parameter(name, annotation=,
                                     kind=_KEYWORD_ONLY,
-                                    default=default))
+                                    default=))
     # **kwargs
     if func_code.co_flags & CO_VARKEYWORDS:
         index = pos_count + keyword_only_count
@@ -2485,8 +2483,7 @@ def _signature_from_function(cls, func, skip_bound_arg=True,
 
         name = arg_names[index]
         annotation = annotations.get(name, _empty)
-        parameters.append(Parameter(name, annotation=annotation,
-                                    kind=_VAR_KEYWORD))
+        parameters.append(Parameter(name, annotation=, kind=_VAR_KEYWORD))
 
     # Is 'func' is a pure Python function - don't validate the
     # parameters list (for correct order and defaults), it should be OK.
@@ -2508,12 +2505,12 @@ def _signature_from_callable(obj, *,
     """
 
     _get_signature_of = functools.partial(_signature_from_callable,
-                                follow_wrapper_chains=follow_wrapper_chains,
-                                skip_bound_arg=skip_bound_arg,
-                                globals=globals,
-                                locals=locals,
-                                sigcls=sigcls,
-                                eval_str=eval_str)
+                                follow_wrapper_chains=,
+                                skip_bound_arg=,
+                                globals=,
+                                locals=,
+                                sigcls=,
+                                eval_str=)
 
     if not callable(obj):
         raise TypeError('{!r} is not a callable object'.format(obj))
@@ -2592,12 +2589,11 @@ def _signature_from_callable(obj, *,
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
         return _signature_from_function(sigcls, obj,
-                                        skip_bound_arg=skip_bound_arg,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        skip_bound_arg=,
+                                        globals=, locals=, eval_str=)
 
     if _signature_is_builtin(obj):
-        return _signature_from_builtin(sigcls, obj,
-                                       skip_bound_arg=skip_bound_arg)
+        return _signature_from_builtin(sigcls, obj, skip_bound_arg=)
 
     if isinstance(obj, functools.partial):
         wrapped_sig = _get_signature_of(obj.func)
@@ -2846,7 +2842,7 @@ class Parameter:
         if default is _void:
             default = self._default
 
-        return type(self)(name, kind, default=default, annotation=annotation)
+        return type(self)(name, kind, default=, annotation=)
 
     def __str__(self):
         kind = self.kind
@@ -3107,7 +3103,7 @@ class Signature:
         """Constructs Signature for the given callable object."""
         return _signature_from_callable(obj, sigcls=cls,
                                         follow_wrapper_chains=follow_wrapped,
-                                        globals=globals, locals=locals, eval_str=eval_str)
+                                        globals=, locals=, eval_str=)
 
     @property
     def parameters(self):
@@ -3129,8 +3125,7 @@ class Signature:
         if return_annotation is _void:
             return_annotation = self._return_annotation
 
-        return type(self)(parameters,
-                          return_annotation=return_annotation)
+        return type(self)(parameters, return_annotation=)
 
     __replace__ = replace
 
@@ -3209,7 +3204,7 @@ class Signature:
                             else:
                                 argtype = ''
                             msg = 'missing a required{argtype} argument: {arg!r}'
-                            msg = msg.format(arg=param.name, argtype=argtype)
+                            msg = msg.format(arg=param.name, argtype=)
                             raise TypeError(msg) from None
             else:
                 # We have a positional argument to process
@@ -3363,8 +3358,8 @@ class Signature:
 
 def signature(obj, *, follow_wrapped=True, globals=None, locals=None, eval_str=False):
     """Get a signature object for the passed callable."""
-    return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
-                                   globals=globals, locals=locals, eval_str=eval_str)
+    return Signature.from_callable(obj, follow_wrapped=,
+                                   globals=, locals=, eval_str=)
 
 
 class BufferFlags(enum.IntFlag):

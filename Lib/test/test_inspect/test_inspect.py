@@ -632,7 +632,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
             # only inspect.cleandoc() strip \n
             expected = expected.strip('\n')
-            with self.subTest(i=i):
+            with self.subTest(i=):
                 self.assertEqual(func(input), expected)
 
     @cpython_only
@@ -640,7 +640,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         import _testinternalcapi
         func = _testinternalcapi.compiler_cleandoc
         for i, (input, expected) in enumerate(self.cleandoc_testdata):
-            with self.subTest(i=i):
+            with self.subTest(i=):
                 self.assertEqual(func(input), expected)
 
     def test_getcomments(self):
@@ -1810,14 +1810,14 @@ class TestGetClosureVars(unittest.TestCase):
 class TestGetcallargsFunctions(unittest.TestCase):
 
     def assertEqualCallArgs(self, func, call_params_string, locs=None):
-        locs = dict(locs or {}, func=func)
+        locs = dict(locs or {}, func=)
         r1 = eval('func(%s)' % call_params_string, None, locs)
         r2 = eval('inspect.getcallargs(func, %s)' % call_params_string, None,
                   locs)
         self.assertEqual(r1, r2)
 
     def assertEqualException(self, func, call_param_string, locs=None):
-        locs = dict(locs or {}, func=func)
+        locs = dict(locs or {}, func=)
         try:
             eval('func(%s)' % call_param_string, None, locs)
         except Exception as e:
@@ -3662,7 +3662,7 @@ class TestSignatureObject(unittest.TestCase):
             unittest.mock.AsyncMock(),
             unittest.mock.MagicMock(),
         ):
-            with self.subTest(mock=mock):
+            with self.subTest(mock=):
                 self.assertEqual(str(inspect.signature(mock)), '(*args, **kwargs)')
 
     def test_signature_on_noncallable_mocks(self):
@@ -3670,7 +3670,7 @@ class TestSignatureObject(unittest.TestCase):
             unittest.mock.NonCallableMock(),
             unittest.mock.NonCallableMagicMock(),
         ):
-            with self.subTest(mock=mock):
+            with self.subTest(mock=):
                 with self.assertRaises(TypeError):
                     inspect.signature(mock)
 
@@ -3940,7 +3940,7 @@ class TestSignatureObject(unittest.TestCase):
         def func2(foo: Foo, bar: 'Bar') -> int: pass
 
         for signature_func in (inspect.signature, inspect.Signature.from_callable):
-            with self.subTest(signature_func = signature_func):
+            with self.subTest(signature_func=):
                 sig1 = signature_func(func)
                 self.assertEqual(sig1.return_annotation, int)
                 self.assertEqual(sig1.parameters['foo'].annotation, Foo)
@@ -3960,7 +3960,7 @@ class TestSignatureObject(unittest.TestCase):
         par = inspect.Parameter
         PORK = inspect.Parameter.POSITIONAL_OR_KEYWORD
         for signature_func in (inspect.signature, inspect.Signature.from_callable):
-            with self.subTest(signature_func = signature_func):
+            with self.subTest(signature_func=):
                 self.assertEqual(
                     signature_func(isa.MyClass),
                     sig(
@@ -4080,7 +4080,7 @@ class TestSignatureObject(unittest.TestCase):
         foo = funclike(foo)
         foo.__annotations__ = None
         for signature_func in (inspect.signature, inspect.Signature.from_callable):
-            with self.subTest(signature_func = signature_func):
+            with self.subTest(signature_func=):
                 self.assertEqual(signature_func(foo), inspect.Signature())
         self.assertEqual(inspect.get_annotations(foo), {})
 

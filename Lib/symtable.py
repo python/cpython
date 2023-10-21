@@ -133,7 +133,7 @@ class SymbolTable:
             namespaces = self.__check_children(name)
             module_scope = (self._table.name == "top")
             sym = self._symbols[name] = Symbol(name, flags, namespaces,
-                                               module_scope=module_scope)
+                                               module_scope=)
         return sym
 
     def get_symbols(self):

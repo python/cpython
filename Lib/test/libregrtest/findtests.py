@@ -49,8 +49,8 @@ def findtests(*, testdir: StrPath | None = None, exclude=(),
             subdir = os.path.join(testdir, mod)
             if not base_mod:
                 fullname = f"test.{mod}"
-            tests.extend(findtests(testdir=subdir, exclude=exclude,
-                                   split_test_dirs=split_test_dirs,
+            tests.extend(findtests(testdir=subdir, exclude=,
+                                   split_test_dirs=,
                                    base_mod=fullname))
         elif ext in (".py", ""):
             tests.append(fullname)
@@ -64,8 +64,8 @@ def split_test_packages(tests, *, testdir: StrPath | None = None, exclude=(),
     for name in tests:
         if name in split_test_dirs:
             subdir = os.path.join(testdir, name)
-            splitted.extend(findtests(testdir=subdir, exclude=exclude,
-                                      split_test_dirs=split_test_dirs,
+            splitted.extend(findtests(testdir=subdir, exclude=,
+                                      split_test_dirs=,
                                       base_mod=name))
         else:
             splitted.append(name)

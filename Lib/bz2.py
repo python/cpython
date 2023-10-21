@@ -301,7 +301,7 @@ def open(filename, mode="rb", compresslevel=9,
             raise ValueError("Argument 'newline' not supported in binary mode")
 
     bz_mode = mode.replace("t", "")
-    binary_file = BZ2File(filename, bz_mode, compresslevel=compresslevel)
+    binary_file = BZ2File(filename, bz_mode, compresslevel=)
 
     if "t" in mode:
         encoding = io.text_encoding(encoding)

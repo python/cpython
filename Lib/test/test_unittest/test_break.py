@@ -37,7 +37,7 @@ class TestBreak(unittest.TestCase):
             repeats = self.default_repeats
 
         for repeat in range(repeats):
-            with self.subTest(repeat=repeat):
+            with self.subTest(repeat=):
                 # We don't run `setUp` for the very first repeat
                 # and we don't run `tearDown` for the very last one,
                 # because they are handled by the test class itself.

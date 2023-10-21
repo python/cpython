@@ -124,7 +124,7 @@ class Test_TestProgram(unittest.TestCase):
         stream = BufferedWriter()
         program = unittest.main(exit=False,
                                 argv=["foobar"],
-                                testRunner=unittest.TextTestRunner(stream=stream),
+                                testRunner=unittest.TextTestRunner(stream=),
                                 testLoader=self.TestLoader(self.FooBar))
         self.assertTrue(hasattr(program, 'result'))
         out = stream.getvalue()
@@ -140,7 +140,7 @@ class Test_TestProgram(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             unittest.main(
                 argv=["foobar"],
-                testRunner=unittest.TextTestRunner(stream=stream),
+                testRunner=unittest.TextTestRunner(stream=),
                 exit=True,
                 testLoader=self.TestLoader(self.FooBar))
         self.assertEqual(cm.exception.code, 1)
@@ -157,7 +157,7 @@ class Test_TestProgram(unittest.TestCase):
         with self.assertRaises(SystemExit):
             unittest.main(
                 argv=["foobar"],
-                testRunner=unittest.TextTestRunner(stream=stream),
+                testRunner=unittest.TextTestRunner(stream=),
                 testLoader=self.TestLoader(self.FooBar))
         out = stream.getvalue()
         self.assertIn('\nFAIL: testFail ', out)
@@ -172,7 +172,7 @@ class Test_TestProgram(unittest.TestCase):
         with self.assertRaises(SystemExit) as cm:
             unittest.main(
                 argv=["empty"],
-                testRunner=unittest.TextTestRunner(stream=stream),
+                testRunner=unittest.TextTestRunner(stream=),
                 testLoader=self.TestLoader(self.Empty))
         self.assertEqual(cm.exception.code, 5)
         out = stream.getvalue()

@@ -170,7 +170,7 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
     def test_pickling(self):
         vec = Vec2D(0.5, 2)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 pickled = pickle.dumps(vec, protocol=proto)
                 unpickled = pickle.loads(pickled)
                 self.assertEqual(unpickled, vec)
@@ -250,7 +250,7 @@ class TestVec2D(VectorComparisonMixin, unittest.TestCase):
         ]
 
         for case in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 (vec, rot), expected = case
                 vec = Vec2D(*vec)
                 got = vec.rotate(rot)
@@ -475,7 +475,7 @@ class TestModuleLevel(unittest.TestCase):
         }
 
         for name in known_signatures:
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 obj = getattr(turtle, name)
                 sig = inspect.signature(obj)
                 self.assertEqual(str(sig), known_signatures[name])

@@ -26,7 +26,7 @@ class MainMenuTest(unittest.TestCase):
             ('options', '.*ode.*ontext'),  # EW.__init__, CodeContext.toggle...
             ('options', '.*ine.*umbers'),  # EW.__init__, EW.toggle...event.
             ):
-            with self.subTest(menu=menu, pattern=pattern):
+            with self.subTest(menu=, pattern=):
                 for menutup in mainmenu.menudefs:
                     if menutup[0] == menu:
                         break

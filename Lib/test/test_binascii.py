@@ -198,7 +198,7 @@ class BinASCIITest(unittest.TestCase):
             lines = []
             for i in range(0, len(self.data), MAX_UU):
                 b = self.type2test(self.rawdata[i:i+MAX_UU])
-                a = binascii.b2a_uu(b, backtick=backtick)
+                a = binascii.b2a_uu(b, backtick=)
                 lines.append(a)
             res = bytes()
             for line in lines:
@@ -234,9 +234,9 @@ class BinASCIITest(unittest.TestCase):
         backtick=hypothesis.strategies.booleans(),
     )
     def test_b2a_roundtrip(self, binary, backtick):
-        converted = binascii.b2a_uu(self.type2test(binary), backtick=backtick)
+        converted = binascii.b2a_uu(self.type2test(binary), backtick=)
         restored = binascii.a2b_uu(self.type2test(converted))
-        self.assertConversion(binary, converted, restored, backtick=backtick)
+        self.assertConversion(binary, converted, restored, backtick=)
 
     def test_crc_hqx(self):
         crc = binascii.crc_hqx(self.type2test(b"Test the CRC-32 of"), 0)
@@ -404,11 +404,11 @@ class BinASCIITest(unittest.TestCase):
     def test_b2a_qp_a2b_qp_round_trip(self, binary, quotetabs, istext, header):
         converted = binascii.b2a_qp(
             self.type2test(binary),
-            quotetabs=quotetabs, istext=istext, header=header,
+            quotetabs=, istext=, header=,
         )
-        restored = binascii.a2b_qp(self.type2test(converted), header=header)
+        restored = binascii.a2b_qp(self.type2test(converted), header=)
         self.assertConversion(binary, converted, restored,
-                              quotetabs=quotetabs, istext=istext, header=header)
+                              quotetabs=, istext=, header=)
 
     def test_empty_string(self):
         # A test for SF bug #1022953.  Make sure SystemError is not raised.
@@ -470,9 +470,9 @@ class BinASCIITest(unittest.TestCase):
         newline=hypothesis.strategies.booleans(),
     )
     def test_base64_roundtrip(self, binary, newline):
-        converted = binascii.b2a_base64(self.type2test(binary), newline=newline)
+        converted = binascii.b2a_base64(self.type2test(binary), newline=)
         restored = binascii.a2b_base64(self.type2test(converted))
-        self.assertConversion(binary, converted, restored, newline=newline)
+        self.assertConversion(binary, converted, restored, newline=)
 
     def test_c_contiguity(self):
         m = memoryview(bytearray(b'noncontig'))

@@ -93,7 +93,7 @@ def get_git_remote_default_branch(remote_name):
                                               stderr=subprocess.DEVNULL,
                                               cwd=SRCDIR,
                                               encoding='UTF-8',
-                                              env=env)
+                                              env=)
     except subprocess.CalledProcessError:
         return None
     for line in remote_info.splitlines():

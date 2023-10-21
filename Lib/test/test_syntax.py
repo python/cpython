@@ -2376,7 +2376,7 @@ while 1:
     def test_error_on_parser_stack_overflow(self):
         source = "-" * 100000 + "4"
         for mode in ["exec", "eval", "single"]:
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with self.assertRaisesRegex(MemoryError, r"too complex"):
                     compile(source, "<string>", mode)
 

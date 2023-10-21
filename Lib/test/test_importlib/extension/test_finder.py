@@ -43,7 +43,7 @@ class FinderTests(abc.FinderTests):
 
 (Frozen_FinderTests,
  Source_FinderTests
- ) = util.test_both(FinderTests, machinery=machinery)
+ ) = util.test_both(FinderTests, machinery=)
 
 
 if __name__ == '__main__':

@@ -87,7 +87,7 @@ class CommonTestMixin:
 
     def pickle_test(self, addr):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 x = self.factory(addr)
                 y = pickle.loads(pickle.dumps(x, proto))
                 self.assertEqual(y, x)
@@ -109,7 +109,7 @@ class CommonTestMixin_v4(CommonTestMixin):
             "1.2.3.040",
         ]
         for address in addresses:
-            with self.subTest(address=address):
+            with self.subTest(address=):
                 with self.assertAddressError(msg):
                     self.factory(address)
 

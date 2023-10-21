@@ -30,8 +30,8 @@ class PrettyPrintTests(DebuggerTests):
         # (issue #19743).
         cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
         gdb_output = self.get_stack_trace(source, breakpoint=BREAKPOINT_FN,
-                                          cmds_after_breakpoint=cmds_after_breakpoint,
-                                          import_site=import_site)
+                                          cmds_after_breakpoint=,
+                                          import_site=)
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
@@ -263,8 +263,7 @@ id(foo)''')
             cmds_after_breakpoint=['backtrace']
 
         gdb_repr, gdb_output = \
-            self.get_gdb_repr(source,
-                              cmds_after_breakpoint=cmds_after_breakpoint)
+            self.get_gdb_repr(source, cmds_after_breakpoint=)
         if exprepr:
             if gdb_repr == exprepr:
                 # gdb managed to print the value in spite of the corruption;

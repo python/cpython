@@ -49,7 +49,7 @@ class ReTests(unittest.TestCase):
     def checkPatternError(self, pattern, errmsg, pos=None):
         with self.assertRaises(re.error) as cm:
             re.compile(pattern)
-        with self.subTest(pattern=pattern):
+        with self.subTest(pattern=):
             err = cm.exception
             self.assertEqual(err.msg, errmsg)
             if pos is not None:
@@ -58,7 +58,7 @@ class ReTests(unittest.TestCase):
     def checkTemplateError(self, pattern, repl, string, errmsg, pos=None):
         with self.assertRaises(re.error) as cm:
             re.sub(pattern, repl, string)
-        with self.subTest(pattern=pattern, repl=repl):
+        with self.subTest(pattern=, repl=):
             err = cm.exception
             self.assertEqual(err.msg, errmsg)
             if pos is not None:
@@ -436,7 +436,7 @@ class ReTests(unittest.TestCase):
             ('(:*)', ['', ':', '', '', 'a', ':', '', '', 'b', '::', '', '', 'c', '', '']),
             ('(:)*', ['', ':', '', None, 'a', ':', '', None, 'b', ':', '', None, 'c', None, '']),
         ]:
-            with self.subTest(sep=sep):
+            with self.subTest(sep=):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
         for sep, expected in [
@@ -445,7 +445,7 @@ class ReTests(unittest.TestCase):
             (r'(?=:)', ['', ':a', ':b', ':', ':c']),
             (r'(?<=:)', [':', 'a:', 'b:', ':', 'c']),
         ]:
-            with self.subTest(sep=sep):
+            with self.subTest(sep=):
                 self.assertTypedEqual(re.split(sep, ':a:b::c'), expected)
 
     def test_qualified_re_split(self):
@@ -2795,7 +2795,7 @@ class ExternalTests(unittest.TestCase):
         're_tests benchmarks'
         from test.re_tests import benchmarks
         for pattern, s in benchmarks:
-            with self.subTest(pattern=pattern, string=s):
+            with self.subTest(pattern=, string=s):
                 p = re.compile(pattern)
                 self.assertTrue(p.search(s))
                 self.assertTrue(p.match(s))
@@ -2818,7 +2818,7 @@ class ExternalTests(unittest.TestCase):
             else:
                 raise ValueError('Test tuples should have 3 or 5 fields', t)
 
-            with self.subTest(pattern=pattern, string=s):
+            with self.subTest(pattern=, string=s):
                 if outcome == SYNTAX_ERROR:  # Expected a syntax error
                     with self.assertRaises(re.error):
                         re.compile(pattern)

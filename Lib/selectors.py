@@ -265,7 +265,7 @@ class _BaseSelectorImpl(BaseSelector):
             key = self.register(fileobj, events, data)
         elif data != key.data:
             # Use a shortcut to update the data.
-            key = key._replace(data=data)
+            key = key._replace(data=)
             self._fd_to_key[key.fd] = key
         return key
 
@@ -378,7 +378,7 @@ class _PollLikeSelector(_BaseSelectorImpl):
             changed = True
 
         if changed:
-            key = key._replace(events=events, data=data)
+            key = key._replace(events=, data=)
             self._fd_to_key[key.fd] = key
         return key
 

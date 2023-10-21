@@ -19,7 +19,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
     """Like StreamReaderProtocol, but for a subprocess."""
 
     def __init__(self, limit, loop):
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         self._limit = limit
         self.stdin = self.stdout = self.stderr = None
         self._transport = None
@@ -206,12 +206,11 @@ class Process:
 async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                   limit=streams._DEFAULT_LIMIT, **kwds):
     loop = events.get_running_loop()
-    protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
-                                                        loop=loop)
+    protocol_factory = lambda: SubprocessStreamProtocol(limit=, loop=)
     transport, protocol = await loop.subprocess_shell(
         protocol_factory,
-        cmd, stdin=stdin, stdout=stdout,
-        stderr=stderr, **kwds)
+        cmd, stdin=, stdout=,
+        stderr=, **kwds)
     return Process(transport, protocol, loop)
 
 
@@ -219,11 +218,10 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                  stderr=None, limit=streams._DEFAULT_LIMIT,
                                  **kwds):
     loop = events.get_running_loop()
-    protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
-                                                        loop=loop)
+    protocol_factory = lambda: SubprocessStreamProtocol(limit=, loop=)
     transport, protocol = await loop.subprocess_exec(
         protocol_factory,
         program, *args,
-        stdin=stdin, stdout=stdout,
-        stderr=stderr, **kwds)
+        stdin=, stdout=,
+        stderr=, **kwds)
     return Process(transport, protocol, loop)

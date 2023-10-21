@@ -51,7 +51,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     work_dir = os_helper.SAVEDCWD
 
     kwargs: dict[str, Any] = dict(
-        env=env,
+        env=,
         stdout=output_fd,
         # bpo-45410: Write stderr into stdout to keep messages order
         stderr=output_fd,

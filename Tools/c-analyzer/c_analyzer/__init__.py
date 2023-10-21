@@ -51,9 +51,9 @@ def analyze_decls(decls, known, *,
                   ):
     knowntypes, knowntypespecs = _datafiles.get_known(
         known,
-        handle_unresolved=handle_unresolved,
-        analyze_resolved=analyze_resolved,
-        relroot=relroot,
+        handle_unresolved=,
+        analyze_resolved=,
+        relroot=,
     )
 
     decls = list(decls)
@@ -69,7 +69,7 @@ def analyze_decls(decls, known, *,
             knowntypespecs,
             types,
             knowntypes,
-            analyze_resolved=analyze_resolved,
+            analyze_resolved=,
         )
     _analyze.analyze_type_decls(types, analyze_decl, handle_unresolved)
     for decl in decls:

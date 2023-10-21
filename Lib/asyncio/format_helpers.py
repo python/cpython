@@ -70,7 +70,7 @@ def extract_stack(f=None, limit=None):
         # can be called for each coroutine and future in debug mode.
         limit = constants.DEBUG_STACK_DEPTH
     stack = traceback.StackSummary.extract(traceback.walk_stack(f),
-                                           limit=limit,
+                                           limit=,
                                            lookup_lines=False)
     stack.reverse()
     return stack

@@ -93,10 +93,10 @@ def read_table(infile, header, *,
             yield from read_table(
                 infile,
                 header,
-                sep=sep,
-                fix=fix,
-                _open=_open,
-                _get_reader=_get_reader,
+                sep=,
+                fix=,
+                _open=,
+                _get_reader=,
             )
             return
     lines = strutil._iter_significant_lines(infile)
@@ -132,11 +132,11 @@ def write_table(outfile, header, rows, *,
                 outfile,
                 header,
                 rows,
-                sep=sep,
-                fix=fix,
-                backup=backup,
-                _open=_open,
-                _get_writer=_get_writer,
+                sep=,
+                fix=,
+                backup=,
+                _open=,
+                _get_writer=,
             )
 
     if isinstance(header, str):
@@ -235,7 +235,7 @@ def resolve_columns(specs):
 
 def build_table(specs, *, sep=' ', defaultwidth=None):
     columns = resolve_columns(specs)
-    return _build_table(columns, sep=sep, defaultwidth=defaultwidth)
+    return _build_table(columns, sep=, defaultwidth=)
 
 
 class ColumnSpec(namedtuple('ColumnSpec', 'field label fmt')):

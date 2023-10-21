@@ -251,7 +251,7 @@ class BrowserRegistrationTest(unittest.TestCase):
         instance = ExampleBrowser()
         if preferred is not None:
             webbrowser.register('example2', ExampleBrowser, instance,
-                                preferred=preferred)
+                                preferred=)
         else:
             webbrowser.register('example2', ExampleBrowser, instance)
         if preferred:

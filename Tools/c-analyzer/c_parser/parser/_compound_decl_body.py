@@ -66,7 +66,7 @@ def _parse_struct_next(m, srcinfo, anon_name, parent):
         kind = inline_kind
         name = inline_name or anon_name('inline-')
         # Immediately emit a forward declaration.
-        yield srcinfo.resolve(kind, name=name, data=None)
+        yield srcinfo.resolve(kind, name=, data=None)
 
         # un-inline the decl.  Note that it might not actually be inline.
         # We handle the case in the "maybe_inline_actual" branch.

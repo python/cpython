@@ -300,7 +300,7 @@ class SSLProtocol(protocols.BufferedProtocol):
         self._sslcontext = sslcontext
         # SSL-specific extra info. More info are set when the handshake
         # completes.
-        self._extra = dict(sslcontext=sslcontext)
+        self._extra = dict(sslcontext=)
 
         # App data write buffering
         self._write_backlog = collections.deque()
@@ -590,7 +590,7 @@ class SSLProtocol(protocols.BufferedProtocol):
             logger.debug("%r: SSL handshake took %.1f ms", self, dt * 1e3)
 
         # Add extra info that becomes available after handshake.
-        self._extra.update(peercert=peercert,
+        self._extra.update(peercert=,
                            cipher=sslobj.cipher(),
                            compression=sslobj.compression(),
                            ssl_object=sslobj)

@@ -74,7 +74,7 @@ class TestDiscovery(unittest.TestCase):
         orig_load_tests = loader.loadTestsFromModule
         def loadTestsFromModule(module, pattern=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(module, pattern=)
             return base + [module + ' tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -120,7 +120,7 @@ class TestDiscovery(unittest.TestCase):
         orig_load_tests = loader.loadTestsFromModule
         def loadTestsFromModule(module, pattern=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(module, pattern=)
             return base + [module + ' tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -175,7 +175,7 @@ class TestDiscovery(unittest.TestCase):
         orig_load_tests = loader.loadTestsFromModule
         def loadTestsFromModule(module, pattern=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(module, pattern=)
             return base + [module.path + ' module tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -249,7 +249,7 @@ class TestDiscovery(unittest.TestCase):
         orig_load_tests = loader.loadTestsFromModule
         def loadTestsFromModule(module, pattern=None):
             # This is where load_tests is called.
-            base = orig_load_tests(module, pattern=pattern)
+            base = orig_load_tests(module, pattern=)
             return base + [module.path + ' module tests']
         loader.loadTestsFromModule = loadTestsFromModule
         loader.suiteClass = lambda thing: thing
@@ -332,7 +332,7 @@ class TestDiscovery(unittest.TestCase):
                         __file__ = '/foo/my_package/__init__.py'
                         this_dir = os.path.dirname(__file__)
                         pkg_tests = loader.discover(
-                            start_dir=this_dir, pattern=pattern)
+                            start_dir=this_dir, pattern=)
                         return [self.path + ' load_tests', tests
                             ] + pkg_tests
                 self.load_tests = load_tests
@@ -650,56 +650,56 @@ class TestDiscovery(unittest.TestCase):
                 self.args.append((start_dir, pattern, top_level_dir))
                 return 'tests'
 
-        program._do_discovery(['-v'], Loader=Loader)
+        program._do_discovery(['-v'], Loader=)
         self.assertEqual(program.verbosity, 2)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['--verbose'], Loader=Loader)
+        program._do_discovery(['--verbose'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery([], Loader=Loader)
+        program._do_discovery([], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['fish'], Loader=Loader)
+        program._do_discovery(['fish'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['fish', 'eggs'], Loader=Loader)
+        program._do_discovery(['fish', 'eggs'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['fish', 'eggs', 'ham'], Loader=Loader)
+        program._do_discovery(['fish', 'eggs', 'ham'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', 'ham')])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['-s', 'fish'], Loader=Loader)
+        program._do_discovery(['-s', 'fish'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'test*.py', None)])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['-t', 'fish'], Loader=Loader)
+        program._do_discovery(['-t', 'fish'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'test*.py', 'fish')])
 
         Loader.args = []
         program = TestableTestProgram()
-        program._do_discovery(['-p', 'fish'], Loader=Loader)
+        program._do_discovery(['-p', 'fish'], Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('.', 'fish', None)])
         self.assertFalse(program.failfast)
@@ -708,7 +708,7 @@ class TestDiscovery(unittest.TestCase):
         Loader.args = []
         program = TestableTestProgram()
         program._do_discovery(['-p', 'eggs', '-s', 'fish', '-v', '-f', '-c'],
-                              Loader=Loader)
+                              Loader=)
         self.assertEqual(program.test, 'tests')
         self.assertEqual(Loader.args, [('fish', 'eggs', None)])
         self.assertEqual(program.verbosity, 2)

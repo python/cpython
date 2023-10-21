@@ -528,9 +528,9 @@ def _transform_msg(msg):
 def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False):
     """Tokenize a source reading Python code as unicode strings using the internal C tokenizer"""
     if encoding is None:
-        it = _tokenize.TokenizerIter(source, extra_tokens=extra_tokens)
+        it = _tokenize.TokenizerIter(source, extra_tokens=)
     else:
-        it = _tokenize.TokenizerIter(source, encoding=encoding, extra_tokens=extra_tokens)
+        it = _tokenize.TokenizerIter(source, encoding=, extra_tokens=)
     try:
         for info in it:
             yield TokenInfo._make(info)

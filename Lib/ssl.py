@@ -453,13 +453,13 @@ class SSLContext(_SSLContext):
         # SSLSocket class handles server_hostname encoding before it calls
         # ctx._wrap_socket()
         return self.sslsocket_class._create(
-            sock=sock,
-            server_side=server_side,
-            do_handshake_on_connect=do_handshake_on_connect,
-            suppress_ragged_eofs=suppress_ragged_eofs,
-            server_hostname=server_hostname,
+            sock=,
+            server_side=,
+            do_handshake_on_connect=,
+            suppress_ragged_eofs=,
+            server_hostname=,
             context=self,
-            session=session
+            session=
         )
 
     def wrap_bio(self, incoming, outgoing, server_side=False,
@@ -467,9 +467,9 @@ class SSLContext(_SSLContext):
         # Need to encode server_hostname here because _wrap_bio() can only
         # handle ASCII str.
         return self.sslobject_class._create(
-            incoming, outgoing, server_side=server_side,
+            incoming, outgoing, server_side=,
             server_hostname=self._encode_hostname(server_hostname),
-            session=session, context=self,
+            session=, context=self,
         )
 
     def set_npn_protocols(self, npn_protocols):
@@ -806,9 +806,9 @@ class SSLObject:
                  server_hostname=None, session=None, context=None):
         self = cls.__new__(cls)
         sslobj = context._wrap_bio(
-            incoming, outgoing, server_side=server_side,
-            server_hostname=server_hostname,
-            owner=self, session=session
+            incoming, outgoing, server_side=,
+            server_hostname=,
+            owner=self, session=
         )
         self._sslobj = sslobj
         return self
@@ -1495,10 +1495,8 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS_CLIENT,
         cert_reqs = CERT_REQUIRED
     else:
         cert_reqs = CERT_NONE
-    context = _create_stdlib_context(ssl_version,
-                                     cert_reqs=cert_reqs,
-                                     cafile=ca_certs)
-    with create_connection(addr, timeout=timeout) as sock:
+    context = _create_stdlib_context(ssl_version, cert_reqs=, cafile=ca_certs)
+    with create_connection(addr, timeout=) as sock:
         with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)

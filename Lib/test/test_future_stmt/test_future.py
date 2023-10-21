@@ -39,16 +39,16 @@ class FutureTest(unittest.TestCase):
                           parametrize_docstring=True):
         code = dedent(code.lstrip('\n'))
         for add_docstring in ([False, True] if parametrize_docstring else [False]):
-            with self.subTest(code=code, add_docstring=add_docstring):
+            with self.subTest(code=, add_docstring=):
                 if add_docstring:
                     code = '"""Docstring"""\n' + code
                     lineno += 1
                 with self.assertRaises(SyntaxError) as cm:
                     exec(code)
                 self.check_syntax_error(cm.exception, "<string>",
-                                        lineno=lineno,
-                                        message=message,
-                                        offset=offset)
+                                        lineno=,
+                                        message=,
+                                        offset=)
 
     def test_import_nested_scope_twice(self):
         # Import the name nested_scopes twice to trigger SF bug #407394

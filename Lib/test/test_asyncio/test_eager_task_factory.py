@@ -256,7 +256,7 @@ class AsyncTaskCounter:
             factory = asyncio.create_eager_task_factory(CountingTask)
         else:
             def factory(loop, coro, **kwargs):
-                return CountingTask(coro, loop=loop, **kwargs)
+                return CountingTask(coro, loop=, **kwargs)
         loop.set_task_factory(factory)
 
     def get(self):

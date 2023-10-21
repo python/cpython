@@ -44,12 +44,12 @@ def listicons(icondir=ICONDIR):
     row = column = 0
     for file in list:
         name = os.path.splitext(os.path.basename(file))[0]
-        image = PhotoImage(file=file, master=root)
+        image = PhotoImage(file=, master=root)
         images.append(image)
-        label = Label(root, image=image, bd=1, relief="raised")
-        label.grid(row=row, column=column)
+        label = Label(root, image=, bd=1, relief="raised")
+        label.grid(row=, column=)
         label = Label(root, text=name)
-        label.grid(row=row+1, column=column)
+        label.grid(row=row+1, column=)
         column = column + 1
         if column >= 10:
             row = row+2
@@ -229,7 +229,7 @@ class TreeNode:
                     iconname = "plusnode"
                     callback = child.expand
                 image = self.geticonimage(iconname)
-                id = self.canvas.create_image(x+9, cylast+7, image=image)
+                id = self.canvas.create_image(x+9, cylast+7, image=)
                 # XXX This leaks bindings until canvas is deleted:
                 self.canvas.tag_bind(id, "<1>", callback)
                 self.canvas.tag_bind(id, "<Double-1>", lambda x: None)
@@ -247,7 +247,7 @@ class TreeNode:
         else:
             imagename = self.item.GetIconName() or "folder"
         image = self.geticonimage(imagename)
-        id = self.canvas.create_image(self.x, self.y, anchor="nw", image=image)
+        id = self.canvas.create_image(self.x, self.y, anchor="nw", image=)
         self.image_id = id
         self.canvas.tag_bind(id, "<1>", self.select)
         self.canvas.tag_bind(id, "<Double-1>", self.flip)
@@ -274,7 +274,7 @@ class TreeNode:
             self.label
         except AttributeError:
             # padding carefully selected (on Windows) to match Entry widget:
-            self.label = Label(self.canvas, text=text, bd=0, padx=2, pady=2)
+            self.label = Label(self.canvas, text=, bd=0, padx=2, pady=2)
         theme = idleConf.CurrentTheme()
         if self.selected:
             self.label.configure(idleConf.GetHighlight(theme, 'hilite'))

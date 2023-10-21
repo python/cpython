@@ -130,7 +130,7 @@ class SemLock(object):
 class Semaphore(SemLock):
 
     def __init__(self, value=1, *, ctx):
-        SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=ctx)
+        SemLock.__init__(self, SEMAPHORE, value, SEM_VALUE_MAX, ctx=)
 
     def get_value(self):
         return self._semlock._get_value()
@@ -149,7 +149,7 @@ class Semaphore(SemLock):
 class BoundedSemaphore(Semaphore):
 
     def __init__(self, value=1, *, ctx):
-        SemLock.__init__(self, SEMAPHORE, value, value, ctx=ctx)
+        SemLock.__init__(self, SEMAPHORE, value, value, ctx=)
 
     def __repr__(self):
         try:
@@ -166,7 +166,7 @@ class BoundedSemaphore(Semaphore):
 class Lock(SemLock):
 
     def __init__(self, *, ctx):
-        SemLock.__init__(self, SEMAPHORE, 1, 1, ctx=ctx)
+        SemLock.__init__(self, SEMAPHORE, 1, 1, ctx=)
 
     def __repr__(self):
         try:
@@ -191,7 +191,7 @@ class Lock(SemLock):
 class RLock(SemLock):
 
     def __init__(self, *, ctx):
-        SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1, ctx=ctx)
+        SemLock.__init__(self, RECURSIVE_MUTEX, 1, 1, ctx=)
 
     def __repr__(self):
         try:

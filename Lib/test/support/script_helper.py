@@ -133,7 +133,7 @@ def run_python_until_end(*args, **env_vars):
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         env=env, cwd=cwd)
+                         env=, cwd=)
     with proc:
         try:
             out, err = proc.communicate()
@@ -197,7 +197,7 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
     env = kw.setdefault('env', dict(os.environ))
     env['TERM'] = 'vt100'
     return subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
-                            stdout=stdout, stderr=stderr,
+                            stdout=, stderr=,
                             **kw)
 
 

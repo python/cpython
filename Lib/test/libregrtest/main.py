@@ -241,12 +241,12 @@ class Regrtest:
         # Re-run failed tests
         self.log(f"Re-running {len(tests)} failed tests in verbose mode in subprocesses")
         runtests = runtests.copy(
-            tests=tests,
+            tests=,
             rerun=True,
             verbose=True,
             forever=False,
             fail_fast=False,
-            match_tests_dict=match_tests_dict,
+            match_tests_dict=,
             output_on_failure=False)
         self.logger.set_tests(runtests)
         self._run_tests_mp(runtests, self.num_workers)
@@ -662,4 +662,4 @@ class Regrtest:
 def main(tests=None, _add_python_opts=False, **kwargs):
     """Run the Python suite."""
     ns = _parse_args(sys.argv[1:], **kwargs)
-    Regrtest(ns, _add_python_opts=_add_python_opts).main(tests=tests)
+    Regrtest(ns, _add_python_opts=).main(tests=)

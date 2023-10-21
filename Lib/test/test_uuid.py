@@ -174,8 +174,8 @@ class BaseTestUUID:
             equivalents = []
             # Construct each UUID in several different ways.
             for u in [self.uuid.UUID(string), self.uuid.UUID(curly), self.uuid.UUID(hex),
-                      self.uuid.UUID(bytes=bytes), self.uuid.UUID(bytes_le=bytes_le),
-                      self.uuid.UUID(fields=fields), self.uuid.UUID(int=integer),
+                      self.uuid.UUID(bytes=), self.uuid.UUID(bytes_le=),
+                      self.uuid.UUID(fields=), self.uuid.UUID(int=integer),
                       self.uuid.UUID(urn)]:
                 # Test all conversions and properties of the UUID object.
                 equal(str(u), string)
@@ -336,7 +336,7 @@ class BaseTestUUID:
         with support.swap_item(sys.modules, 'uuid', self.uuid):
             for is_safe in self.uuid.SafeUUID:
                 u = self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5',
-                                   is_safe=is_safe)
+                                   is_safe=)
                 check(copy.copy(u), u)
                 check(copy.deepcopy(u), u)
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
@@ -483,7 +483,7 @@ class BaseTestUUID:
         # uuid.getnode fell back on uuid._random_getnode() rather than using
         # the value from too_large_getter above.
         try:
-            self.uuid.uuid1(node=node)
+            self.uuid.uuid1(node=)
         except ValueError:
             self.fail('uuid1 was given an invalid node ID')
 
@@ -820,7 +820,7 @@ class BaseTestInternals:
             ):
                 if aix:
                     mac = mac.replace(b':', b'.')
-                with self.subTest(mac=mac):
+                with self.subTest(mac=):
                     self.assertIsNone(self.uuid._parse_mac(mac))
 
     def test_parse_mac(self):

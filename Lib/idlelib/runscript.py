@@ -140,8 +140,7 @@ class ScriptBinding:
         self.cli_args, restart = run_args if customize else ([], True)
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
-            interp.restart_subprocess(
-                    with_cwd=False, filename=filename)
+            interp.restart_subprocess(with_cwd=False, filename=)
         dirname = os.path.dirname(filename)
         argv = [filename]
         if self.cli_args:

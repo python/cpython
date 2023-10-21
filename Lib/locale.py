@@ -196,7 +196,7 @@ def _localize(formatted, grouping=False, monetary=False):
         seps = 0
         parts = formatted.split('.')
         if grouping:
-            parts[0], seps = _group(parts[0], monetary=monetary)
+            parts[0], seps = _group(parts[0], monetary=)
         decimal_point = localeconv()[monetary and 'mon_decimal_point'
                                               or 'decimal_point']
         formatted = decimal_point.join(parts)
@@ -205,7 +205,7 @@ def _localize(formatted, grouping=False, monetary=False):
     else:
         seps = 0
         if grouping:
-            formatted, seps = _group(formatted, monetary=monetary)
+            formatted, seps = _group(formatted, monetary=)
         if seps:
             formatted = _strip_padding(formatted, seps)
     return formatted

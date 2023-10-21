@@ -123,7 +123,7 @@ class MockGetPathTests(unittest.TestCase):
         ns = MockNTNamespace(
             argv0=r"C:\Python\python.exe",
             real_executable=r"C:\Python\python.exe",
-            winreg=winreg,
+            winreg=,
         )
         ns.add_known_xfile(r"C:\Python\python.exe")
         ns.add_known_file(r"C:\Python\Lib\os.py")

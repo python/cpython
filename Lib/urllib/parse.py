@@ -724,8 +724,8 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
     """
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
-                      encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields, separator=separator)
+                      encoding=, errors=,
+                      max_num_fields=, separator=)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -793,10 +793,10 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
                 continue
         if len(nv[1]) or keep_blank_values:
             name = nv[0].replace('+', ' ')
-            name = unquote(name, encoding=encoding, errors=errors)
+            name = unquote(name, encoding=, errors=)
             name = _coerce_result(name)
             value = nv[1].replace('+', ' ')
-            value = unquote(value, encoding=encoding, errors=errors)
+            value = unquote(value, encoding=, errors=)
             value = _coerce_result(value)
             r.append((name, value))
     return r

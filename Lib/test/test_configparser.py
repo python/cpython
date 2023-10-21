@@ -46,7 +46,7 @@ class CfgParserTestCaseClass:
 
     def newconfig(self, defaults=None):
         arguments = dict(
-            defaults=defaults,
+            defaults=,
             allow_no_value=self.allow_no_value,
             delimiters=self.delimiters,
             comment_prefixes=self.comment_prefixes,
@@ -671,7 +671,7 @@ boolean {0[0]} NO
         cf = self.fromstring(config_string)
         for space_around_delimiters in (True, False):
             output = io.StringIO()
-            cf.write(output, space_around_delimiters=space_around_delimiters)
+            cf.write(output, space_around_delimiters=)
             delimiter = self.delimiters[0]
             if space_around_delimiters:
                 delimiter = " {} ".format(delimiter)
@@ -1018,7 +1018,7 @@ class ConfigParserTestCaseNoInterpolation(BasicTestCase, unittest.TestCase):
 class ConfigParserTestCaseInvalidInterpolationType(unittest.TestCase):
     def test_error_on_wrong_type_for_interpolation(self):
         for value in [configparser.ExtendedInterpolation,  42,  "a string"]:
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 with self.assertRaises(TypeError):
                     configparser.ConfigParser(interpolation=value)
 
@@ -1889,7 +1889,7 @@ class ConvertersTestCase(BasicTestCase, unittest.TestCase):
     config_class = configparser.ConfigParser
 
     def newconfig(self, defaults=None):
-        instance = super().newconfig(defaults=defaults)
+        instance = super().newconfig(defaults=)
         instance.converters['list'] = lambda v: [e.strip() for e in v.split()
                                                  if e.strip()]
         return instance
@@ -1995,12 +1995,12 @@ class BlatantOverrideConvertersTestCase(unittest.TestCase):
                         fallback=configparser._UNSET):
                 if section == option:
                     return True
-                return super().getboolean(section, option, raw=raw, vars=vars,
-                                          fallback=fallback)
+                return super().getboolean(section, option, raw=, vars=,
+                                          fallback=)
             def getlen(self, section, option, *, raw=False, vars=None,
                        fallback=configparser._UNSET):
-                return self._get_conv(section, option, len, raw=raw, vars=vars,
-                                      fallback=fallback)
+                return self._get_conv(section, option, len, raw=, vars=,
+                                      fallback=)
 
         cfg = StrangeConfigParser()
         cfg.read_string(self.config)

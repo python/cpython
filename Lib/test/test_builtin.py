@@ -369,7 +369,7 @@ class BuiltinTest(unittest.TestCase):
                   (1, False, 'doc', False, False),
                   (2, False, None, False, False)]
         for optval, *expected in values:
-            with self.subTest(optval=optval):
+            with self.subTest(optval=):
             # test both direct compilation and compilation via AST
                 codeobjs = []
                 codeobjs.append(compile(codestr, "<test>", "exec", optimize=optval))
@@ -2147,7 +2147,7 @@ class TestBreakpoint(unittest.TestCase):
                 'nosuchbuiltin',
                 'nosuchmodule.nosuchcallable',
                 ):
-            with self.subTest(envar=envar):
+            with self.subTest(envar=):
                 self.env['PYTHONBREAKPOINT'] = envar
                 mock = self.resources.enter_context(patch('pdb.set_trace'))
                 w = self.resources.enter_context(check_warnings(quiet=True))
@@ -2463,7 +2463,7 @@ class TestType(unittest.TestCase):
 
     def test_type_name(self):
         for name in 'A', '\xc4', '\U0001f40d', 'B.A', '42', '':
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 A = type(name, (), {})
                 self.assertEqual(A.__name__, name)
                 self.assertEqual(A.__qualname__, name)
@@ -2477,7 +2477,7 @@ class TestType(unittest.TestCase):
 
         C = type('C', (), {})
         for name in 'A', '\xc4', '\U0001f40d', 'B.A', '42', '':
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 C.__name__ = name
                 self.assertEqual(C.__name__, name)
                 self.assertEqual(C.__qualname__, 'C')

@@ -279,14 +279,14 @@ class EnumerateStartTestCase(EnumerateTestCase):
 
 class TestStart(EnumerateStartTestCase):
     def enum(self, iterable, start=11):
-        return enumerate(iterable, start=start)
+        return enumerate(iterable, start=)
 
     seq, res = 'abc', [(11, 'a'), (12, 'b'), (13, 'c')]
 
 
 class TestLongStart(EnumerateStartTestCase):
     def enum(self, iterable, start=sys.maxsize + 1):
-        return enumerate(iterable, start=start)
+        return enumerate(iterable, start=)
 
     seq, res = 'abc', [(sys.maxsize+1,'a'), (sys.maxsize+2,'b'),
                        (sys.maxsize+3,'c')]

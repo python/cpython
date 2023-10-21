@@ -169,7 +169,7 @@ class SearchDialogBase:
     def make_button(self, label, command, isdef=0):
         "Return command button gridded in command frame."
         b = Button(self.buttonframe,
-                   text=label, command=command,
+                   text=label, command=,
                    default=isdef and "active" or "normal")
         cols,rows=self.buttonframe.grid_size()
         b.grid(pady=1,row=rows,column=0,sticky="ew")

@@ -522,7 +522,7 @@ class FormatTest(unittest.TestCase):
     def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524
         for value in [12j, 12, 12.0, "12"]:
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 # The format spec must be invalid for all types we're testing.
                 # '%M' will suffice.
                 bad_format_spec = '%M'
@@ -530,7 +530,7 @@ class FormatTest(unittest.TestCase):
                                 f"'{bad_format_spec}' for object of type "
                                 f"'{type(value).__name__}'")
                 with self.assertRaisesRegex(ValueError, err):
-                    f"xx{{value:{bad_format_spec}}}yy".format(value=value)
+                    f"xx{{value:{bad_format_spec}}}yy".format(value=)
 
                 # Also test the builtin format() function.
                 with self.assertRaisesRegex(ValueError, err):

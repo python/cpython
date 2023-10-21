@@ -63,7 +63,7 @@ def load(fp: BinaryIO, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:
         raise TypeError(
             "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`"
         ) from None
-    return loads(s, parse_float=parse_float)
+    return loads(s, parse_float=)
 
 
 def loads(s: str, /, *, parse_float: ParseFloat = float) -> dict[str, Any]:  # noqa: C901

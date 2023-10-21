@@ -205,7 +205,7 @@ class ColorDelegatorTest(unittest.TestCase):
     def test_LoadTagDefs(self):
         highlight = partial(config.idleConf.GetHighlight, theme='IDLE Classic')
         for tag, colors in self.color.tagdefs.items():
-            with self.subTest(tag=tag):
+            with self.subTest(tag=):
                 self.assertIn('background', colors)
                 self.assertIn('foreground', colors)
                 if tag not in ('SYNC', 'TODO'):
@@ -216,7 +216,7 @@ class ColorDelegatorTest(unittest.TestCase):
         highlight = partial(config.idleConf.GetHighlight, theme='IDLE Classic')
         for tag in self.color.tagdefs:
             for plane in ('background', 'foreground'):
-                with self.subTest(tag=tag, plane=plane):
+                with self.subTest(tag=, plane=):
                     if tag in ('SYNC', 'TODO'):
                         self.assertEqual(text.tag_cget(tag, plane), '')
                     else:
@@ -411,7 +411,7 @@ class ColorDelegatorTest(unittest.TestCase):
         text.tag_remove('TODO', '1.0', 'end')
         color.recolorize_main()
         for tag in text.tag_names():
-            with self.subTest(tag=tag):
+            with self.subTest(tag=):
                 eq(text.tag_ranges(tag), ())
 
         # Source marked for processing.
@@ -419,7 +419,7 @@ class ColorDelegatorTest(unittest.TestCase):
         # Check some indexes.
         color.recolorize_main()
         for index, expected_tags in expected:
-            with self.subTest(index=index):
+            with self.subTest(index=):
                 eq(text.tag_names(index), expected_tags)
 
         # Check for some tags for ranges.
@@ -609,12 +609,12 @@ class ColorDelegatorTest(unittest.TestCase):
         text.tag_add("TODO", "1.0")
         text.tag_add("hit", "1.0")
         for tag in color.tagdefs:
-            with self.subTest(tag=tag):
+            with self.subTest(tag=):
                 self.assertNotEqual(text.tag_ranges(tag), ())
 
         color.removecolors()
         for tag in color.tagdefs:
-            with self.subTest(tag=tag):
+            with self.subTest(tag=):
                 self.assertEqual(text.tag_ranges(tag), ())
 
 

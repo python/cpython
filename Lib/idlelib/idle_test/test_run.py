@@ -48,7 +48,7 @@ class ExceptionTest(unittest.TestCase):
 
     def test_get_message(self):
         for code, exc, msg in self.data:
-            with self.subTest(code=code):
+            with self.subTest(code=):
                 try:
                     eval(compile(code, '', 'eval'))
                 except exc:

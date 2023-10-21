@@ -914,7 +914,7 @@ class MathTests(unittest.TestCase):
         ]:
             x = float.fromhex(hx)
             y = float.fromhex(hy)
-            with self.subTest(hx=hx, hy=hy, x=x, y=y):
+            with self.subTest(hx=, hy=, x=, y=):
                 with decimal.localcontext(high_precision):
                     z = float((Decimal(x)**2 + Decimal(y)**2).sqrt())
                 self.assertEqual(hypot(x, y), z)
@@ -1053,7 +1053,7 @@ class MathTests(unittest.TestCase):
         )
 
         for value in test_values:
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 s = math.isqrt(value)
                 self.assertIs(type(s), int)
                 self.assertLessEqual(s*s, value)
@@ -1092,7 +1092,7 @@ class MathTests(unittest.TestCase):
             100.0, -4.0,
         ]
         for value in bad_values:
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
@@ -1258,7 +1258,7 @@ class MathTests(unittest.TestCase):
             (25, Decimal(4.5)),    # int/decimal
         ]:
             for p, q in [(v, v), (v, v[::-1])]:
-                with self.subTest(p=p, q=q):
+                with self.subTest(p=, q=):
                     expected = sum(p_i * q_i for p_i, q_i in zip(p, q, strict=True))
                     actual = sumprod(p, q)
                     self.assertEqual(expected, actual)
@@ -1745,7 +1745,7 @@ class MathTests(unittest.TestCase):
         ]
 
         for case in testcases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 x_hex, y_hex, expected_hex = case.split()
                 x = float.fromhex(x_hex)
                 y = float.fromhex(y_hex)
@@ -2340,9 +2340,9 @@ class MathTests(unittest.TestCase):
 
         # x == y: y is returned
         for steps in range(1, 5):
-            self.assertEqual(math.nextafter(2.0, 2.0, steps=steps), 2.0)
-            self.assertEqualSign(math.nextafter(-0.0, +0.0, steps=steps), +0.0)
-            self.assertEqualSign(math.nextafter(+0.0, -0.0, steps=steps), -0.0)
+            self.assertEqual(math.nextafter(2.0, 2.0, steps=), 2.0)
+            self.assertEqualSign(math.nextafter(-0.0, +0.0, steps=), +0.0)
+            self.assertEqualSign(math.nextafter(+0.0, -0.0, steps=), -0.0)
 
         # around 0.0
         smallest_subnormal = sys.float_info.min * sys.float_info.epsilon
@@ -2392,7 +2392,7 @@ class MathTests(unittest.TestCase):
 
         # negative number: ulp(-x) == ulp(x)
         for x in (0.0, 1.0, 2 ** 52, 2 ** 64, INF):
-            with self.subTest(x=x):
+            with self.subTest(x=):
                 self.assertEqual(math.ulp(-x), math.ulp(x))
 
     def test_issue39871(self):

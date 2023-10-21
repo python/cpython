@@ -45,7 +45,7 @@ class ExecModuleTests(abc.LoaderTests):
             name,
             self.machinery.FrozenImporter,
             origin='frozen',
-            is_package=is_package,
+            is_package=,
             loader_state=types.SimpleNamespace(
                 origname=origname or name,
                 filename=resolve_stdlib_file(origname or name, is_package),
@@ -83,7 +83,7 @@ class ExecModuleTests(abc.LoaderTests):
             attr_value = getattr(module, attr)
             self.assertEqual(attr_value, value,
                         'for {name}.{attr}, {given!r} != {expected!r}'.format(
-                                 name=name, attr=attr, given=attr_value,
+                                 name=, attr=, given=attr_value,
                                  expected=value))
         self.assertEqual(output, 'Hello world!\n')
         self.assertEqual(module.__spec__.loader_state.origname, name)
@@ -97,7 +97,7 @@ class ExecModuleTests(abc.LoaderTests):
             attr_value = getattr(module, attr)
             self.assertEqual(attr_value, value,
                     'for {name}.{attr}, {given} != {expected!r}'.format(
-                             name=name, attr=attr, given=attr_value,
+                             name=, attr=, given=attr_value,
                              expected=value))
         self.assertEqual(output, 'Hello world!\n')
 
@@ -120,7 +120,7 @@ class ExecModuleTests(abc.LoaderTests):
 
 (Frozen_ExecModuleTests,
  Source_ExecModuleTests
- ) = util.test_both(ExecModuleTests, machinery=machinery)
+ ) = util.test_both(ExecModuleTests, machinery=)
 
 
 class InspectLoaderTests:
@@ -165,7 +165,7 @@ class InspectLoaderTests:
 
 (Frozen_ILTests,
  Source_ILTests
- ) = util.test_both(InspectLoaderTests, machinery=machinery)
+ ) = util.test_both(InspectLoaderTests, machinery=)
 
 
 if __name__ == '__main__':

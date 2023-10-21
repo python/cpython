@@ -287,7 +287,7 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(posixpath.expanduser("~"), "/home/victor")
 
             for home in '/', '', '//', '///':
-                with self.subTest(home=home):
+                with self.subTest(home=):
                     env['HOME'] = home
                     self.assertEqual(posixpath.expanduser("~"), "/")
                     self.assertEqual(posixpath.expanduser("~/"), "/")

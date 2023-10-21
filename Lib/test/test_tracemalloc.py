@@ -953,7 +953,7 @@ class TestCommandLine(unittest.TestCase):
 
     def test_env_var_invalid(self):
         for nframe in INVALID_NFRAME:
-            with self.subTest(nframe=nframe):
+            with self.subTest(nframe=):
                 self.check_env_var_invalid(nframe)
 
     def test_sys_xoptions(self):
@@ -962,7 +962,7 @@ class TestCommandLine(unittest.TestCase):
             ('tracemalloc=1', 1),
             ('tracemalloc=15', 15),
         ):
-            with self.subTest(xoptions=xoptions, nframe=nframe):
+            with self.subTest(xoptions=, nframe=):
                 code = 'import tracemalloc; print(tracemalloc.get_traceback_limit())'
                 ok, stdout, stderr = assert_python_ok('-X', xoptions, '-c', code)
                 stdout = stdout.rstrip()
@@ -981,7 +981,7 @@ class TestCommandLine(unittest.TestCase):
 
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
-            with self.subTest(nframe=nframe):
+            with self.subTest(nframe=):
                 self.check_sys_xoptions_invalid(nframe)
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
@@ -1063,7 +1063,7 @@ class TestCAPI(unittest.TestCase):
 
         # calling _PyTraceMalloc_Track() must remove the old trace and add
         # a new trace with the new traceback
-        frames = self.track(nframe=nframe)
+        frames = self.track(nframe=)
         self.assertEqual(self.get_traceback(),
                          tracemalloc.Traceback(frames))
 

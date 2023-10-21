@@ -25,7 +25,7 @@ def replace(text, insert_tags=None):
     if not hasattr(engine, "_replacedialog"):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
-    dialog.open(text, insert_tags=insert_tags)
+    dialog.open(text, insert_tags=)
 
 
 class ReplaceDialog(SearchDialogBase):
@@ -159,7 +159,7 @@ class ReplaceDialog(SearchDialogBase):
         # XXX ought to replace circular instead of top-to-bottom when wrapping
         text.undo_block_start()
         while res := self.engine.search_forward(
-                text, prog, line, col, wrap=False, ok=ok):
+                text, prog, line, col, wrap=False, ok=):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()

@@ -185,11 +185,10 @@ class MultiProcessingCmdLineMixin():
         # See https://github.com/ipython/ipython/issues/4698
         source = test_source_main_skipped_in_children
         with os_helper.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, 'ipython',
-                                            source=source)
+            script_name = _make_test_script(script_dir, 'ipython', source=)
             self._check_script(script_name)
             script_no_suffix = _make_test_script(script_dir, 'ipython',
-                                                 source=source,
+                                                 source=,
                                                  omit_suffix=True)
             self._check_script(script_no_suffix)
 
@@ -204,15 +203,13 @@ class MultiProcessingCmdLineMixin():
     def test_directory(self):
         source = self.main_in_children_source
         with os_helper.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(script_dir, '__main__', source=)
             self._check_script(script_dir)
 
     def test_directory_compiled(self):
         source = self.main_in_children_source
         with os_helper.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(script_dir, '__main__', source=)
             py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
             pyc_file = import_helper.make_legacy_pyc(script_name)
@@ -221,16 +218,14 @@ class MultiProcessingCmdLineMixin():
     def test_zipfile(self):
         source = self.main_in_children_source
         with os_helper.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(script_dir, '__main__', source=)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', script_name)
             self._check_script(zip_name)
 
     def test_zipfile_compiled(self):
         source = self.main_in_children_source
         with os_helper.temp_dir() as script_dir:
-            script_name = _make_test_script(script_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(script_dir, '__main__', source=)
             compiled_name = py_compile.compile(script_name, doraise=True)
             zip_name, run_name = make_zip_script(script_dir, 'test_zip', compiled_name)
             self._check_script(zip_name)
@@ -261,8 +256,7 @@ class MultiProcessingCmdLineMixin():
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
-            script_name = _make_test_script(pkg_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(pkg_dir, '__main__', source=)
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
             self._check_script(launch_name)
 
@@ -271,8 +265,7 @@ class MultiProcessingCmdLineMixin():
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
             make_pkg(pkg_dir)
-            script_name = _make_test_script(pkg_dir, '__main__',
-                                            source=source)
+            script_name = _make_test_script(pkg_dir, '__main__', source=)
             compiled_name = py_compile.compile(script_name, doraise=True)
             os.remove(script_name)
             pyc_file = import_helper.make_legacy_pyc(script_name)

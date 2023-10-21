@@ -704,7 +704,7 @@ class HandlerTest(BaseTest):
             remover = threading.Thread(target=remove_loop, args=(fn, del_count))
             remover.daemon = True
             remover.start()
-            h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=delay)
+            h = logging.handlers.WatchedFileHandler(fn, encoding='utf-8', delay=)
             f = logging.Formatter('%(asctime)s: %(levelname)s: %(message)s')
             h.setFormatter(f)
             try:
@@ -2171,14 +2171,14 @@ class HTTPHandlerTest(BaseTest):
                 sslctx = None
                 context = None
             self.server = server = TestHTTPServer(addr, self.handle_request,
-                                                    0.01, sslctx=sslctx)
+                                                    0.01, sslctx=)
             server.start()
             server.ready.wait()
             host = 'localhost:%d' % server.server_port
             secure_client = secure and sslctx
             self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob',
                                                        secure=secure_client,
-                                                       context=context,
+                                                       context=,
                                                        credentials=('foo', 'bar'))
             self.log_data = None
             root_logger.addHandler(self.h_hdlr)
@@ -4014,7 +4014,7 @@ class QueueHandlerTest(BaseTest):
         levelname = logging.getLevelName(logging.WARNING)
         log_format_str = '{name} -> {levelname}: {message}'
         formatted_msg = log_format_str.format(name=self.name,
-                                              levelname=levelname, message=msg)
+                                              levelname=, message=msg)
         formatter = logging.Formatter(self.log_format)
         self.que_hdlr.setFormatter(formatter)
         self.que_logger.warning(msg)
@@ -4438,19 +4438,19 @@ class FormatterTest(unittest.TestCase, AssertErrorMessage):
         fmts = ['%(custom)s %(message)s', '{custom} {message}', '$custom $message']
         styles = ['%', '{', '$']
         for fmt, style in zip(fmts, styles):
-            f = logging.Formatter(fmt, style=style, defaults={'custom': 'Default'})
+            f = logging.Formatter(fmt, style=, defaults={'custom': 'Default'})
             r = self.get_record()
             self.assertEqual(f.format(r), 'Default Message with 2 placeholders')
             r = self.get_record("custom")
             self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
             # Without default
-            f = logging.Formatter(fmt, style=style)
+            f = logging.Formatter(fmt, style=)
             r = self.get_record()
             self.assertRaises(ValueError, f.format, r)
 
             # Non-existing default is ignored
-            f = logging.Formatter(fmt, style=style, defaults={'Non-existing': 'Default'})
+            f = logging.Formatter(fmt, style=, defaults={'Non-existing': 'Default'})
             r = self.get_record("custom")
             self.assertEqual(f.format(r), '1234 Message with 2 placeholders')
 
@@ -5114,7 +5114,7 @@ class BasicConfigTest(unittest.TestCase):
     def test_stream(self):
         stream = io.StringIO()
         self.addCleanup(stream.close)
-        logging.basicConfig(stream=stream)
+        logging.basicConfig(stream=)
 
         self.assertEqual(len(logging.root.handlers), 1)
         handler = logging.root.handlers[0]
@@ -5154,11 +5154,10 @@ class BasicConfigTest(unittest.TestCase):
         handlers = [logging.StreamHandler()]
         stream = sys.stderr
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                      stream=stream)
+                                                      stream=)
         assertRaises(ValueError, logging.basicConfig, filename='test.log',
-                                                      handlers=handlers)
-        assertRaises(ValueError, logging.basicConfig, stream=stream,
-                                                      handlers=handlers)
+                                                      handlers=)
+        assertRaises(ValueError, logging.basicConfig, stream=, handlers=)
         # Issue 23207: test for invalid kwargs
         assertRaises(ValueError, logging.basicConfig, loglevel=logging.INFO)
         # Should pop both filename and filemode even if filename is None
@@ -5172,7 +5171,7 @@ class BasicConfigTest(unittest.TestCase):
         ]
         f = logging.Formatter()
         handlers[2].setFormatter(f)
-        logging.basicConfig(handlers=handlers)
+        logging.basicConfig(handlers=)
         self.assertIs(handlers[0], logging.root.handlers[0])
         self.assertIs(handlers[1], logging.root.handlers[1])
         self.assertIs(handlers[2], logging.root.handlers[2])
@@ -5205,7 +5204,7 @@ class BasicConfigTest(unittest.TestCase):
     def test_encoding(self):
         try:
             encoding = 'utf-8'
-            logging.basicConfig(filename='test.log', encoding=encoding,
+            logging.basicConfig(filename='test.log', encoding=,
                                 errors='strict',
                                 format='%(message)s', level=logging.DEBUG)
 
@@ -5225,7 +5224,7 @@ class BasicConfigTest(unittest.TestCase):
     def test_encoding_errors(self):
         try:
             encoding = 'ascii'
-            logging.basicConfig(filename='test.log', encoding=encoding,
+            logging.basicConfig(filename='test.log', encoding=,
                                 errors='ignore',
                                 format='%(message)s', level=logging.DEBUG)
 
@@ -5244,7 +5243,7 @@ class BasicConfigTest(unittest.TestCase):
     def test_encoding_errors_default(self):
         try:
             encoding = 'ascii'
-            logging.basicConfig(filename='test.log', encoding=encoding,
+            logging.basicConfig(filename='test.log', encoding=,
                                 format='%(message)s', level=logging.DEBUG)
 
             self.assertEqual(len(logging.root.handlers), 1)
@@ -5265,7 +5264,7 @@ class BasicConfigTest(unittest.TestCase):
         # Specifying None should behave as 'strict'
         try:
             encoding = 'ascii'
-            logging.basicConfig(filename='test.log', encoding=encoding,
+            logging.basicConfig(filename='test.log', encoding=,
                                 errors=None,
                                 format='%(message)s', level=logging.DEBUG)
 
@@ -5304,7 +5303,7 @@ class BasicConfigTest(unittest.TestCase):
         try:
             encoding = 'utf-8'
             logging.basicConfig(filename=log_filename, errors='strict',
-                                encoding=encoding, level=logging.WARNING,
+                                encoding=, level=logging.WARNING,
                                 format='%(taskName)s - %(message)s')
 
             self.assertEqual(len(logging.root.handlers), 1)
@@ -5617,7 +5616,7 @@ class LoggerTest(BaseTest, AssertErrorMessage):
             extra = {key: 'some value'}
             self.assertRaises(KeyError, self.logger.makeRecord, name, level,
                               fn, lno, msg, args, exc_info,
-                              extra=extra, sinfo=sinfo)
+                              extra=, sinfo=)
 
     def test_make_record_with_extra_no_overwrite(self):
         name = 'my record'
@@ -5625,7 +5624,7 @@ class LoggerTest(BaseTest, AssertErrorMessage):
         fn = lno = msg = args = exc_info = func = sinfo = None
         extra = {'valid_key': 'some value'}
         result = self.logger.makeRecord(name, level, fn, lno, msg, args,
-                                        exc_info, extra=extra, sinfo=sinfo)
+                                        exc_info, extra=, sinfo=)
         self.assertIn('valid_key', result.__dict__)
 
     def test_has_handlers(self):
@@ -5947,7 +5946,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 path = os.path.join(dn, f)
                 with open(path, 'r') as tf:
                     print(tf.read())
-        self.assertTrue(found, msg=msg)
+        self.assertTrue(found, msg=)
 
     def test_invalid(self):
         assertRaises = self.assertRaises
@@ -5963,7 +5962,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         atTime = datetime.time(12, 0, 0)
         rh = logging.handlers.TimedRotatingFileHandler(
             self.fn, encoding="utf-8", when='MIDNIGHT', interval=1, backupCount=0,
-            utc=True, atTime=atTime)
+            utc=True, atTime=)
         try:
             actual = rh.computeRollover(currentTime)
             self.assertEqual(actual, currentTime + 12 * 60 * 60)
@@ -5984,7 +5983,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
         for day in range(7):
             rh = logging.handlers.TimedRotatingFileHandler(
                 self.fn, encoding="utf-8", when='W%d' % day, interval=1, backupCount=0,
-                utc=True, atTime=atTime)
+                utc=True, atTime=)
             try:
                 if wday > day:
                     # The rollover day has already passed this week, so we
@@ -6076,7 +6075,7 @@ for when, exp in (('S', 1),
                  ):
     def test_compute_rollover(self, when=when, exp=exp):
         rh = logging.handlers.TimedRotatingFileHandler(
-            self.fn, encoding="utf-8", when=when, interval=1, backupCount=0, utc=True)
+            self.fn, encoding="utf-8", when=, interval=1, backupCount=0, utc=True)
         currentTime = 0.0
         actual = rh.computeRollover(currentTime)
         if exp != actual:
@@ -6143,7 +6142,7 @@ class NTEventLogHandlerTest(BaseTest):
             found = True
             break
         msg = 'Record not found in event log, went back %d records' % GO_BACK
-        self.assertTrue(found, msg=msg)
+        self.assertTrue(found, msg=)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -6153,7 +6152,7 @@ class MiscTestCase(unittest.TestCase):
             'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
             'Filterer', 'PlaceHolder', 'Manager', 'RootLogger', 'root',
             'threading', 'logAsyncioTasks'}
-        support.check__all__(self, logging, not_exported=not_exported)
+        support.check__all__(self, logging, not_exported=)
 
 
 # Set the locale to the platform-dependent default.  I have no idea

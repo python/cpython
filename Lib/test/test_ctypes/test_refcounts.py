@@ -99,7 +99,7 @@ class AnotherLeak(unittest.TestCase):
         # does not decrement the refcount of None.
 
         for FUNCTYPE in (ctypes.CFUNCTYPE, ctypes.PYFUNCTYPE):
-            with self.subTest(FUNCTYPE=FUNCTYPE):
+            with self.subTest(FUNCTYPE=):
                 @FUNCTYPE(ctypes.py_object)
                 def func():
                     return None

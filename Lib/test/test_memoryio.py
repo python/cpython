@@ -686,7 +686,7 @@ class TextIOTestMixin:
         self.assertRaises(ValueError, self.ioclass, newline="error")
         # These should not raise an error
         for newline in (None, "", "\n", "\r", "\r\n"):
-            self.ioclass(newline=newline)
+            self.ioclass(newline=)
 
 
 class PyStringIOTest(MemoryTestMixin, MemorySeekTestMixin,

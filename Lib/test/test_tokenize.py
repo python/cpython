@@ -1508,7 +1508,7 @@ class TestDetectEncoding(TestCase):
 
         # test coding cookie
         for encoding in ('iso-8859-15', 'utf-8'):
-            with open(filename, 'w', encoding=encoding) as fp:
+            with open(filename, 'w', encoding=) as fp:
                 print("# coding: %s" % encoding, file=fp)
                 print("print('euro:\u20ac')", file=fp)
             with tokenize.open(filename) as fp:
@@ -1606,7 +1606,7 @@ class TestTokenize(TestCase):
     def test_oneline_defs(self):
         buf = []
         for i in range(500):
-            buf.append('def i{i}(): return {i}'.format(i=i))
+            buf.append('def i{i}(): return {i}'.format(i=))
         buf.append('OK')
         buf = '\n'.join(buf)
 
@@ -1983,11 +1983,11 @@ class CTokenizeTest(TestCase):
             tokenize.TokenInfo(type=tokenize.ENDMARKER, string='', start=(2, 0), end=(2, 0), line='')
         ]
         for encoding in ["utf-8", "latin-1", "utf-16"]:
-            with self.subTest(encoding=encoding):
+            with self.subTest(encoding=):
                 tokens = list(tokenize._generate_tokens_from_c_tokenizer(
                     readline(encoding).__next__,
                     extra_tokens=True,
-                    encoding=encoding,
+                    encoding=,
                 ))
                 self.assertEqual(tokens, expected)
 
@@ -2920,7 +2920,7 @@ async def f():
             "("*1000+"a"+")"*1000,
             "]",
         ]:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
 
     def test_max_indent(self):

@@ -46,7 +46,7 @@ def from_cache(seconds, repeat):
     module.__package__ = ''
     with util.uncache(name):
         sys.modules[name] = module
-        yield from bench(name, repeat=repeat, seconds=seconds)
+        yield from bench(name, repeat=, seconds=)
 
 
 def builtin_mod(seconds, repeat):
@@ -55,8 +55,7 @@ def builtin_mod(seconds, repeat):
     if name in sys.modules:
         del sys.modules[name]
     # Relying on built-in importer being implicit.
-    yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                     seconds=seconds)
+    yield from bench(name, lambda: sys.modules.pop(name), repeat=, seconds=)
 
 
 def source_wo_bytecode(seconds, repeat):
@@ -71,8 +70,8 @@ def source_wo_bytecode(seconds, repeat):
             loader = (importlib.machinery.SourceFileLoader,
                       importlib.machinery.SOURCE_SUFFIXES)
             sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
-            yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                             seconds=seconds)
+            yield from bench(name, lambda: sys.modules.pop(name), repeat=,
+                             seconds=)
     finally:
         sys.dont_write_bytecode = False
 
@@ -87,7 +86,7 @@ def _wo_bytecode(module):
         sys.dont_write_bytecode = True
         try:
             yield from bench(name, lambda: sys.modules.pop(name),
-                             repeat=repeat, seconds=seconds)
+                             repeat=, seconds=)
         finally:
             sys.dont_write_bytecode = False
 
@@ -110,7 +109,7 @@ def source_writing_bytecode(seconds, repeat):
         def cleanup():
             sys.modules.pop(name)
             os.unlink(cache_from_source(mapping[name]))
-        for result in bench(name, cleanup, repeat=repeat, seconds=seconds):
+        for result in bench(name, cleanup, repeat=, seconds=):
             assert not os.path.exists(cache_from_source(mapping[name]))
             yield result
 
@@ -123,7 +122,7 @@ def _writing_bytecode(module):
         def cleanup():
             sys.modules.pop(name)
             os.unlink(cache_from_source(module.__file__))
-        yield from bench(name, cleanup, repeat=repeat, seconds=seconds)
+        yield from bench(name, cleanup, repeat=, seconds=)
 
     writing_bytecode_benchmark.__doc__ = (
                                 writing_bytecode_benchmark.__doc__.format(name))
@@ -143,8 +142,8 @@ def source_using_bytecode(seconds, repeat):
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         py_compile.compile(mapping[name])
         assert os.path.exists(cache_from_source(mapping[name]))
-        yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                         seconds=seconds)
+        yield from bench(name, lambda: sys.modules.pop(name), repeat=,
+                         seconds=)
 
 
 def _using_bytecode(module):
@@ -152,8 +151,8 @@ def _using_bytecode(module):
     def using_bytecode_benchmark(seconds, repeat):
         """Source w/ bytecode: {}"""
         py_compile.compile(module.__file__)
-        yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
-                         seconds=seconds)
+        yield from bench(name, lambda: sys.modules.pop(name), repeat=,
+                         seconds=)
 
     using_bytecode_benchmark.__doc__ = (
                                 using_bytecode_benchmark.__doc__.format(name))
@@ -200,7 +199,7 @@ def main(import_, options):
         print(benchmark.__doc__, "[", end=' ')
         sys.stdout.flush()
         results = []
-        for result in benchmark(seconds=seconds, repeat=repeat):
+        for result in benchmark(seconds=, repeat=):
             results.append(result)
             print(result, end=' ')
             sys.stdout.flush()

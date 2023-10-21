@@ -267,7 +267,7 @@ def _compile_one_py(src, dest, name, optimize, checked=True):
                 dest,
                 str(name),
                 doraise=True,
-                optimize=optimize,
+                optimize=,
                 invalidation_mode=mode,
             )
         )
@@ -281,11 +281,11 @@ def _py_temp_compile(src, name, ns, dest_dir=None, checked=True):
     if not ns.precompile or src not in PY_FILES or src.parent in DATA_DIRS:
         return None
     dest = (dest_dir or ns.temp) / (src.stem + ".pyc")
-    return _compile_one_py(src, dest, name, optimize=2, checked=checked)
+    return _compile_one_py(src, dest, name, optimize=2, checked=)
 
 
 def _write_to_zip(zf, dest, src, ns, checked=True):
-    pyc = _py_temp_compile(src, dest, ns, checked=checked)
+    pyc = _py_temp_compile(src, dest, ns, checked=)
     if pyc:
         try:
             zf.write(str(pyc), dest.with_suffix(".pyc"))
@@ -543,7 +543,7 @@ def main():
         default=None,
     )
     for opt, help in get_argparse_options():
-        parser.add_argument(opt, help=help, action="store_true")
+        parser.add_argument(opt, help=, action="store_true")
 
     ns = parser.parse_args()
     update_presets(ns)
@@ -584,7 +584,7 @@ Arch:   {ns.arch}
 Copy to: {ns.copy}
 Zip to:  {ns.zip}
 Catalog: {ns.catalog}""",
-        ns=ns,
+        ns=,
     )
 
     if ns.arch not in ("win32", "amd64", "arm32", "arm64"):

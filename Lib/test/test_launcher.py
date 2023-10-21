@@ -223,7 +223,7 @@ class RunPyMixin:
             argv = [self.py_exe, *args]
         with subprocess.Popen(
             argv,
-            env=env,
+            env=,
             executable=self.py_exe,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -263,7 +263,7 @@ class RunPyMixin:
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
         file = Path(tempfile.mktemp(dir=os.getcwd()) + ".py")
-        file.write_text(content, encoding=encoding)
+        file.write_text(content, encoding=)
         try:
             yield file
         finally:
@@ -514,7 +514,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
     def test_virtualenv_in_list(self):
         with self.fake_venv() as (venv_exe, env):
-            data = self.run_py(["-0p"], env=env)
+            data = self.run_py(["-0p"], env=)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -523,7 +523,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             else:
                 self.fail("did not find active venv path")
 
-            data = self.run_py(["-0"], env=env)
+            data = self.run_py(["-0"], env=)
             for line in data["stdout"].splitlines():
                 m = re.match(r"\s*\*\s+(.+)$", line)
                 if m:
@@ -733,9 +733,9 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             env["PATH"] = f"{Path(sys.executable).parent};{os.environ['PATH']}"
 
             with self.script(f'#! /usr/bin/env {stem} arg1') as script:
-                data = self.run_py([script], env=env)
+                data = self.run_py([script], env=)
             self.assertEqual(data["stdout"].strip(), f"{venv_exe} arg1 {script}")
 
             with self.script(f'#! /usr/bin/env {Path(sys.executable).stem} arg1') as script:
-                data = self.run_py([script], env=env)
+                data = self.run_py([script], env=)
             self.assertEqual(data["stdout"].strip(), f"{sys.executable} arg1 {script}")

@@ -49,21 +49,21 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
            compact=False, sort_dicts=True, underscore_numbers=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
-        stream=stream, indent=indent, width=width, depth=depth,
-        compact=compact, sort_dicts=sort_dicts,
-        underscore_numbers=underscore_numbers)
+        stream=, indent=, width=, depth=,
+        compact=, sort_dicts=,
+        underscore_numbers=)
     printer.pprint(object)
 
 def pformat(object, indent=1, width=80, depth=None, *,
             compact=False, sort_dicts=True, underscore_numbers=False):
     """Format a Python object into a pretty-printed representation."""
-    return PrettyPrinter(indent=indent, width=width, depth=depth,
-                         compact=compact, sort_dicts=sort_dicts,
-                         underscore_numbers=underscore_numbers).pformat(object)
+    return PrettyPrinter(indent=, width=, depth=,
+                         compact=, sort_dicts=,
+                         underscore_numbers=).pformat(object)
 
 def pp(object, *args, sort_dicts=False, **kwargs):
     """Pretty-print a Python object"""
-    pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
+    pprint(object, *args, sort_dicts=, **kwargs)
 
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""

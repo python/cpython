@@ -212,7 +212,7 @@ def makedirs(name, mode=0o777, exist_ok=False):
         head, tail = path.split(head)
     if head and tail and not path.exists(head):
         try:
-            makedirs(head, exist_ok=exist_ok)
+            makedirs(head, exist_ok=)
         except FileExistsError:
             # Defeats race condition when another thread created the path
             pass
@@ -472,8 +472,8 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         if not follow_symlinks:
-            orig_st = stat(top, follow_symlinks=False, dir_fd=dir_fd)
-        topfd = open(top, O_RDONLY, dir_fd=dir_fd)
+            orig_st = stat(top, follow_symlinks=False, dir_fd=)
+        topfd = open(top, O_RDONLY, dir_fd=)
         try:
             if (follow_symlinks or (st.S_ISDIR(orig_st.st_mode) and
                                     path.samestat(orig_st, stat(topfd)))):

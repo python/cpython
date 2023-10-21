@@ -132,13 +132,12 @@ class BaseContext(object):
     def Value(self, typecode_or_type, *args, lock=True):
         '''Returns a synchronized shared object'''
         from .sharedctypes import Value
-        return Value(typecode_or_type, *args, lock=lock,
-                     ctx=self.get_context())
+        return Value(typecode_or_type, *args, lock=, ctx=self.get_context())
 
     def Array(self, typecode_or_type, size_or_initializer, *, lock=True):
         '''Returns a synchronized shared array'''
         from .sharedctypes import Array
-        return Array(typecode_or_type, size_or_initializer, lock=lock,
+        return Array(typecode_or_type, size_or_initializer, lock=,
                      ctx=self.get_context())
 
     def freeze_support(self):

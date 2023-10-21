@@ -380,7 +380,7 @@ def wrap(text, width=70, **kwargs):
     space.  See TextWrapper class for available keyword args to customize
     wrapping behaviour.
     """
-    w = TextWrapper(width=width, **kwargs)
+    w = TextWrapper(width=, **kwargs)
     return w.wrap(text)
 
 def fill(text, width=70, **kwargs):
@@ -392,7 +392,7 @@ def fill(text, width=70, **kwargs):
     whitespace characters converted to space.  See TextWrapper class for
     available keyword args to customize wrapping behaviour.
     """
-    w = TextWrapper(width=width, **kwargs)
+    w = TextWrapper(width=, **kwargs)
     return w.fill(text)
 
 def shorten(text, width, **kwargs):
@@ -407,7 +407,7 @@ def shorten(text, width, **kwargs):
         >>> textwrap.shorten("Hello  world!", width=11)
         'Hello [...]'
     """
-    w = TextWrapper(width=width, max_lines=1, **kwargs)
+    w = TextWrapper(width=, max_lines=1, **kwargs)
     return w.fill(' '.join(text.strip().split()))
 
 

@@ -329,12 +329,12 @@ class ScrolledCanvas(TK.Frame):
     """
     def __init__(self, master, width=500, height=350,
                                           canvwidth=600, canvheight=500):
-        TK.Frame.__init__(self, master, width=width, height=height)
+        TK.Frame.__init__(self, master, width=, height=)
         self._rootwindow = self.winfo_toplevel()
         self.width, self.height = width, height
         self.canvwidth, self.canvheight = canvwidth, canvheight
         self.bg = "white"
-        self._canvas = TK.Canvas(master, width=width, height=height,
+        self._canvas = TK.Canvas(master, width=, height=,
                                  bg=self.bg, relief=TK.SUNKEN, borderwidth=2)
         self.hscroll = TK.Scrollbar(master, command=self._canvas.xview,
                                     orient=TK.HORIZONTAL)
@@ -360,7 +360,7 @@ class ScrolledCanvas(TK.Frame):
             self.canvheight = canvheight
         if bg:
             self.bg = bg
-        self._canvas.config(bg=bg,
+        self._canvas.config(bg=,
                         scrollregion=(-self.canvwidth//2, -self.canvheight//2,
                                        self.canvwidth//2, self.canvheight//2))
         self._canvas.xview_moveto(0.5*(self.canvwidth - self.width + 30) /
@@ -506,11 +506,11 @@ class TurtleScreenBase(object):
             cl.append(-y * self.yscale)
         self.cv.coords(polyitem, *cl)
         if fill is not None:
-            self.cv.itemconfigure(polyitem, fill=fill)
+            self.cv.itemconfigure(polyitem, fill=)
         if outline is not None:
-            self.cv.itemconfigure(polyitem, outline=outline)
+            self.cv.itemconfigure(polyitem, outline=)
         if width is not None:
-            self.cv.itemconfigure(polyitem, width=width)
+            self.cv.itemconfigure(polyitem, width=)
         if top:
             self.cv.tag_raise(polyitem)
 
@@ -537,9 +537,9 @@ class TurtleScreenBase(object):
                 cl.append(-y * self.yscale)
             self.cv.coords(lineitem, *cl)
         if fill is not None:
-            self.cv.itemconfigure(lineitem, fill=fill)
+            self.cv.itemconfigure(lineitem, fill=)
         if width is not None:
-            self.cv.itemconfigure(lineitem, width=width)
+            self.cv.itemconfigure(lineitem, width=)
         if top:
             self.cv.tag_raise(lineitem)
 
@@ -587,7 +587,7 @@ class TurtleScreenBase(object):
         y = y * self.yscale
         anchor = {"left":"sw", "center":"s", "right":"se" }
         item = self.cv.create_text(x-1, -y, text = txt, anchor = anchor[align],
-                                        fill = pencolor, font = font)
+                                        fill = pencolor, font=)
         x0, y0, x1, y1 = self.cv.bbox(item)
         return item, x1-1
 
@@ -709,7 +709,7 @@ class TurtleScreenBase(object):
     def _createimage(self, image):
         """Create and return image item on canvas.
         """
-        return self.cv.create_image(0, 0, image=image)
+        return self.cv.create_image(0, 0, image=)
 
     def _drawimage(self, item, pos, image):
         """Configure image item as to draw image object
@@ -717,14 +717,14 @@ class TurtleScreenBase(object):
         """
         x, y = pos
         self.cv.coords(item, (x * self.xscale, -y * self.yscale))
-        self.cv.itemconfig(item, image=image)
+        self.cv.itemconfig(item, image=)
 
     def _setbgpic(self, item, image):
         """Configure image item as to draw image object
         at center of canvas. Set item to the first item
         in the displaylist, so it will be drawn below
         any other item ."""
-        self.cv.itemconfig(item, image=image)
+        self.cv.itemconfig(item, image=)
         self.cv.tag_lower(item)
 
     def _type(self, item):
@@ -2169,7 +2169,7 @@ class TPen(object):
             speed = int(round(speed))
         else:
             speed = 0
-        self.pen(speed=speed)
+        self.pen(speed=)
 
     def color(self, *args):
         """Return or set the pencolor and fillcolor.
@@ -2297,7 +2297,7 @@ class TPen(object):
         pendown = self.isdown()
         if pendown:
             self.pen(pendown=False)
-        self.pen(pendown=pendown)
+        self.pen(pendown=)
 
     def showturtle(self):
         """Makes the turtle visible.
@@ -2761,7 +2761,7 @@ class RawTurtle(TPen, TNavigator):
         new_x = x if x is not None else self._position[0]
         new_y = y if y is not None else self._position[1]
         self._position = Vec2D(new_x, new_y)
-        self.pen(pendown=pendown)
+        self.pen(pendown=)
         if was_filling and not fill_gap:
             self.begin_fill()
 
@@ -2869,8 +2869,7 @@ class RawTurtle(TPen, TNavigator):
             stretchfactor = self._stretchfactor
         if outline is None:
             outline = self._outlinewidth
-        self.pen(resizemode="user",
-                 stretchfactor=stretchfactor, outline=outline)
+        self.pen(resizemode="user", stretchfactor=, outline=)
 
     def shearfactor(self, shear=None):
         """Set or return the current shearfactor.
@@ -2929,7 +2928,7 @@ class RawTurtle(TPen, TNavigator):
         else:
             tilt = -angle * self._degreesPerAU * self._angleOrient
             tilt = math.radians(tilt) % math.tau
-            self.pen(resizemode="user", tilt=tilt)
+            self.pen(resizemode="user", tilt=)
 
     def tilt(self, angle):
         """Rotate the turtleshape by angle.
@@ -3843,9 +3842,9 @@ class Turtle(RawTurtle):
         if Turtle._screen is None:
             Turtle._screen = Screen()
         RawTurtle.__init__(self, Turtle._screen,
-                           shape=shape,
-                           undobuffersize=undobuffersize,
-                           visible=visible)
+                           shape=,
+                           undobuffersize=,
+                           visible=)
 
 Pen = Turtle
 
@@ -3999,7 +3998,7 @@ def _make_global_funcs(functions, cls, obj, init, docrevise):
         if pl1 == "":
             print(">>>>>>", pl1, pl2)
             continue
-        defstr = __func_body.format(obj=obj, init=init, name=methodname,
+        defstr = __func_body.format(obj=, init=, name=methodname,
                                     paramslist=pl1, argslist=pl2)
         exec(defstr, globals())
         globals()[methodname].__doc__ = docrevise(method.__doc__)

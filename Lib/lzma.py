@@ -108,8 +108,8 @@ class LZMAFile(_compression.BaseStream):
             if format is None:
                 format = FORMAT_XZ
             mode_code = _MODE_WRITE
-            self._compressor = LZMACompressor(format=format, check=check,
-                                              preset=preset, filters=filters)
+            self._compressor = LZMACompressor(format=, check=,
+                                              preset=, filters=)
             self._pos = 0
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
@@ -128,7 +128,7 @@ class LZMAFile(_compression.BaseStream):
 
         if self._mode == _MODE_READ:
             raw = _compression.DecompressReader(self._fp, LZMADecompressor,
-                trailing_error=LZMAError, format=format, filters=filters)
+                trailing_error=LZMAError, format=, filters=)
             self._buffer = io.BufferedReader(raw)
 
     def close(self):
@@ -306,8 +306,8 @@ def open(filename, mode="rb", *,
             raise ValueError("Argument 'newline' not supported in binary mode")
 
     lz_mode = mode.replace("t", "")
-    binary_file = LZMAFile(filename, lz_mode, format=format, check=check,
-                           preset=preset, filters=filters)
+    binary_file = LZMAFile(filename, lz_mode, format=, check=,
+                           preset=, filters=)
 
     if "t" in mode:
         encoding = io.text_encoding(encoding)

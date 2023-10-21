@@ -107,8 +107,7 @@ class TestTimeit(unittest.TestCase):
 
     def timeit(self, stmt, setup, number=None, globals=None):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer,
-                globals=globals)
+        t = timeit.Timer(stmt=, setup=, timer=self.fake_timer, globals=)
         kwargs = {}
         if number is None:
             number = DEFAULT_NUMBER
@@ -163,7 +162,7 @@ class TestTimeit(unittest.TestCase):
 
     def repeat(self, stmt, setup, repeat=None, number=None):
         self.fake_timer = FakeTimer()
-        t = timeit.Timer(stmt=stmt, setup=setup, timer=self.fake_timer)
+        t = timeit.Timer(stmt=, setup=, timer=self.fake_timer)
         kwargs = {}
         if repeat is None:
             repeat = DEFAULT_REPEAT
@@ -238,7 +237,7 @@ class TestTimeit(unittest.TestCase):
 
     def run_main(self, seconds_per_increment=1.0, switches=None, timer=None):
         if timer is None:
-            timer = FakeTimer(seconds_per_increment=seconds_per_increment)
+            timer = FakeTimer(seconds_per_increment=)
         if switches is None:
             args = []
         else:
@@ -247,7 +246,7 @@ class TestTimeit(unittest.TestCase):
         # timeit.main() modifies sys.path, so save and restore it.
         orig_sys_path = sys.path[:]
         with captured_stdout() as s:
-            timeit.main(args=args, _wrap_timer=timer.wrap_timer)
+            timeit.main(args=, _wrap_timer=timer.wrap_timer)
         sys.path[:] = orig_sys_path[:]
         return s.getvalue()
 
@@ -364,8 +363,8 @@ class TestTimeit(unittest.TestCase):
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
     def autorange(self, seconds_per_increment=1/1024, callback=None):
-        timer = FakeTimer(seconds_per_increment=seconds_per_increment)
-        t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=timer)
+        timer = FakeTimer(seconds_per_increment=)
+        t = timeit.Timer(stmt=self.fake_stmt, setup=self.fake_setup, timer=)
         return t.autorange(callback)
 
     def test_autorange(self):
@@ -382,7 +381,7 @@ class TestTimeit(unittest.TestCase):
         def callback(a, b):
             print("{} {:.3f}".format(a, b))
         with captured_stdout() as s:
-            num_loops, time_taken = self.autorange(callback=callback)
+            num_loops, time_taken = self.autorange(callback=)
         self.assertEqual(num_loops, 500)
         self.assertEqual(time_taken, 500/1024)
         expected = ('1 0.001\n'

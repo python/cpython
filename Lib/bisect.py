@@ -14,7 +14,7 @@ def insort_right(a, x, lo=0, hi=None, *, key=None):
     if key is None:
         lo = bisect_right(a, x, lo, hi)
     else:
-        lo = bisect_right(a, key(x), lo, hi, key=key)
+        lo = bisect_right(a, key(x), lo, hi, key=)
     a.insert(lo, x)
 
 
@@ -68,7 +68,7 @@ def insort_left(a, x, lo=0, hi=None, *, key=None):
     if key is None:
         lo = bisect_left(a, x, lo, hi)
     else:
-        lo = bisect_left(a, key(x), lo, hi, key=key)
+        lo = bisect_left(a, key(x), lo, hi, key=)
     a.insert(lo, x)
 
 def bisect_left(a, x, lo=0, hi=None, *, key=None):

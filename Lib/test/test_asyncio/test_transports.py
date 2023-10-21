@@ -82,7 +82,7 @@ class TransportTests(unittest.TestCase):
                 return 512
 
         loop = mock.Mock()
-        transport = MyTransport(loop=loop)
+        transport = MyTransport(loop=)
         transport._protocol = mock.Mock()
 
         self.assertFalse(transport._protocol_paused)

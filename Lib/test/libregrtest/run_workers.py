@@ -93,7 +93,7 @@ class WorkerError(Exception):
                  err_msg: str | None,
                  stdout: str | None,
                  state: str):
-        result = TestResult(test_name, state=state)
+        result = TestResult(test_name, state=)
         self.mp_result = MultiprocessResult(result, stdout, err_msg)
         super().__init__()
 
@@ -225,7 +225,7 @@ class WorkerThread(threading.Thread):
         # stdout+stderr, instead of failing with a UnicodeDecodeError and not
         # logging stdout+stderr at all.
         stdout_file = tempfile.TemporaryFile('w+',
-                                             encoding=encoding,
+                                             encoding=,
                                              errors='backslashreplace')
         stack.enter_context(stdout_file)
         return stdout_file
@@ -265,10 +265,7 @@ class WorkerThread(threading.Thread):
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False
-        return self.runtests.copy(
-            tests=tests,
-            json_file=json_file,
-            **kwargs)
+        return self.runtests.copy(tests=, json_file=, **kwargs)
 
     def run_tmp_files(self, worker_runtests: RunTests,
                       stdout_fd: int) -> tuple[int | None, list[StrPath]]:
@@ -351,7 +348,7 @@ class WorkerThread(threading.Thread):
             stdout = self.read_stdout(stdout_file)
 
             if retcode is None:
-                raise WorkerError(self.test_name, stdout=stdout,
+                raise WorkerError(self.test_name, stdout=,
                                   err_msg=None,
                                   state=State.TIMEOUT)
             if retcode != 0:

@@ -65,7 +65,7 @@ class zipimporter(_bootstrap_external._LoaderBasics):
         if not isinstance(path, str):
             raise TypeError(f"expected str, not {type(path)!r}")
         if not path:
-            raise ZipImportError('archive path is empty', path=path)
+            raise ZipImportError('archive path is empty', path=)
         if alt_path_sep:
             path = path.replace(alt_path_sep, path_sep)
 
@@ -78,14 +78,14 @@ class zipimporter(_bootstrap_external._LoaderBasics):
                 # Back up one path element.
                 dirname, basename = _bootstrap_external._path_split(path)
                 if dirname == path:
-                    raise ZipImportError('not a Zip file', path=path)
+                    raise ZipImportError('not a Zip file', path=)
                 path = dirname
                 prefix.append(basename)
             else:
                 # it exists
                 if (st.st_mode & 0o170000) != 0o100000:  # stat.S_ISREG
                     # it's a not file
-                    raise ZipImportError('not a Zip file', path=path)
+                    raise ZipImportError('not a Zip file', path=)
                 break
 
         if path not in _zip_directory_cache:

@@ -14,7 +14,7 @@ class RegressionTestResult(unittest.TextTestResult):
     USE_XML = False
 
     def __init__(self, stream, descriptions, verbosity):
-        super().__init__(stream=stream, descriptions=descriptions,
+        super().__init__(stream=, descriptions=,
                          verbosity=2 if verbosity else 0)
         self.buffer = True
         if self.USE_XML:
@@ -150,9 +150,9 @@ def get_test_runner_class(verbosity, buffer=False):
     if verbosity:
         return functools.partial(unittest.TextTestRunner,
                                  resultclass=RegressionTestResult,
-                                 buffer=buffer,
-                                 verbosity=verbosity)
-    return functools.partial(QuietRegressionTestRunner, buffer=buffer)
+                                 buffer=,
+                                 verbosity=)
+    return functools.partial(QuietRegressionTestRunner, buffer=)
 
 def get_test_runner(stream, verbosity, capture_output=False):
     return get_test_runner_class(verbosity, capture_output)(stream)

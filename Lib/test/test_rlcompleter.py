@@ -14,7 +14,7 @@ class TestRlcompleter(unittest.TestCase):
         self.stdcompleter = rlcompleter.Completer()
         self.completer = rlcompleter.Completer(dict(spam=int,
                                                     egg=str,
-                                                    CompleteMe=CompleteMe))
+                                                    CompleteMe=))
 
         # forces stdcompleter to bind builtins namespace
         self.stdcompleter.complete('', 0)
@@ -100,7 +100,7 @@ class TestRlcompleter(unittest.TestCase):
                 return super().__getattribute__(name)
 
         f = Foo()
-        completer = rlcompleter.Completer(dict(f=f))
+        completer = rlcompleter.Completer(dict(f=))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
 
@@ -115,7 +115,7 @@ class TestRlcompleter(unittest.TestCase):
                 return self._bar
 
         f = Foo()
-        completer = rlcompleter.Completer(dict(f=f))
+        completer = rlcompleter.Completer(dict(f=))
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertFalse(f.property_called)
 

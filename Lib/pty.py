@@ -130,7 +130,7 @@ def _copy(master_fd, master_read=_read, stdin_read=_read):
         # the copy operation.
         os.set_blocking(master_fd, False)
         try:
-            _copy(master_fd, master_read=master_read, stdin_read=stdin_read)
+            _copy(master_fd, master_read=, stdin_read=)
         finally:
             # restore blocking mode for backwards compatibility
             os.set_blocking(master_fd, True)

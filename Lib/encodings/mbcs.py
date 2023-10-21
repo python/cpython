@@ -38,8 +38,8 @@ class StreamReader(codecs.StreamReader):
 def getregentry():
     return codecs.CodecInfo(
         name='mbcs',
-        encode=encode,
-        decode=decode,
+        encode=,
+        decode=,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
         streamreader=StreamReader,

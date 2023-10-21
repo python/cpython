@@ -57,7 +57,7 @@ class SubprocessTransportTests(test_utils.TestCase):
         protocol = mock.Mock()
         transport = TestSubprocessTransport(
                         self.loop, protocol, ['test'], False,
-                        None, None, None, 0, waiter=waiter)
+                        None, None, None, 0, waiter=)
         return (transport, protocol)
 
     def test_proc_exited(self):
@@ -218,7 +218,7 @@ class SubprocessMixin:
             creationflags = CREATE_NEW_PROCESS_GROUP
         proc = self.loop.run_until_complete(
             asyncio.create_subprocess_shell(blocking_shell_command, stdout=asyncio.subprocess.PIPE,
-            creationflags=creationflags)
+            creationflags=)
         )
         self.loop.run_until_complete(asyncio.sleep(1))
         if sys.platform == 'win32':
@@ -294,7 +294,7 @@ class SubprocessMixin:
             from subprocess import STARTUPINFO
             startupinfo = STARTUPINFO()
             startupinfo.lpAttributeList = {"handle_list": [handle]}
-            kwargs = dict(startupinfo=startupinfo)
+            kwargs = dict(startupinfo=)
         else:
             code = f'import os; fd = {rfd}; os.read(fd, 1)'
             kwargs = dict(pass_fds=(rfd,))
@@ -363,7 +363,7 @@ class SubprocessMixin:
                 sys.executable, '-c', code,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
-                limit=limit,
+                limit=,
             )
             stdout_transport = proc._transport.get_pipe_transport(1)
 
@@ -652,7 +652,7 @@ class SubprocessMixin:
                         sys.executable,
                         '-c',
                         'pass',
-                        stdin=stdin
+                        stdin=
                     )
                 self.assertEqual(warns, [])
 
@@ -749,7 +749,7 @@ class SubprocessMixin:
             env = os.environ.copy()
             env["FOO"] = "bar"
             proc = await asyncio.create_subprocess_shell(
-                cmd, env=env, stdout=subprocess.PIPE
+                cmd, env=, stdout=subprocess.PIPE
             )
             return proc
 
@@ -762,7 +762,7 @@ class SubprocessMixin:
             env = os.environ.copy()
             env["FOO"] = "baz"
             proc = await asyncio.create_subprocess_exec(
-                *cmd, env=env, stdout=subprocess.PIPE
+                *cmd, env=, stdout=subprocess.PIPE
             )
             return proc
 

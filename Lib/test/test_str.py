@@ -184,7 +184,7 @@ class StrTest(string_tests.StringLikeTest,
     def test_iterators_invocation(self):
         cases = [type(iter('abc')), type(iter('🚀'))]
         for cls in cases:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertRaises(TypeError, cls)
 
     def test_iteration(self):
@@ -196,7 +196,7 @@ class StrTest(string_tests.StringLikeTest,
     def test_exhausted_iterator(self):
         cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
         for case in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 iterator = iter(case)
                 tuple(iterator)
                 self.assertRaises(StopIteration, next, iterator)
@@ -204,10 +204,10 @@ class StrTest(string_tests.StringLikeTest,
     def test_pickle_iterator(self):
         cases = ['abc', '🚀🚀🚀', "\u1111\u2222\u3333"]
         for case in cases:
-            with self.subTest(case=case):
+            with self.subTest(case=):
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     it = iter(case)
-                    with self.subTest(proto=proto):
+                    with self.subTest(proto=):
                         pickled = "".join(pickle.loads(pickle.dumps(it, proto)))
                         self.assertEqual(case, pickled)
 
@@ -2439,11 +2439,7 @@ class StrTest(string_tests.StringLikeTest,
             # be allocatable, given enough memory.
             maxlen = ((sys.maxsize - struct_size) // char_size)
             alloc = lambda: char * maxlen
-            with self.subTest(
-                char=char,
-                struct_size=struct_size,
-                char_size=char_size
-            ):
+            with self.subTest(char=, struct_size=, char_size=):
                 # self-check
                 self.assertEqual(
                     sys.getsizeof(char * 42),

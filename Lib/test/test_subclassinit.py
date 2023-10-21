@@ -250,8 +250,7 @@ class Test(unittest.TestCase):
         # These tests failed before Python 3.6, PEP 487
         class MyMeta(type):
             def __new__(cls, name, bases, namespace):
-                return super().__new__(cls, name=name, bases=bases,
-                                       dict=namespace)
+                return super().__new__(cls, name=, bases=, dict=namespace)
 
         with self.assertRaises(TypeError):
             class MyClass(metaclass=MyMeta):

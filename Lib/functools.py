@@ -74,8 +74,7 @@ def wraps(wrapped,
        This is a convenience function to simplify applying partial() to
        update_wrapper().
     """
-    return partial(update_wrapper, wrapped=wrapped,
-                   assigned=assigned, updated=updated)
+    return partial(update_wrapper, wrapped=, assigned=, updated=)
 
 
 ################################################################################
@@ -380,8 +379,8 @@ class partialmethod(object):
         return format_string.format(module=self.__class__.__module__,
                                     cls=self.__class__.__qualname__,
                                     func=self.func,
-                                    args=args,
-                                    keywords=keywords)
+                                    args=,
+                                    keywords=)
 
     def _make_unbound_method(self):
         def _method(cls_or_self, /, *args, **keywords):
@@ -722,9 +721,9 @@ def _c3_mro(cls, abcs=None):
             abstract_bases.append(base)
     for base in abstract_bases:
         abcs.remove(base)
-    explicit_c3_mros = [_c3_mro(base, abcs=abcs) for base in explicit_bases]
-    abstract_c3_mros = [_c3_mro(base, abcs=abcs) for base in abstract_bases]
-    other_c3_mros = [_c3_mro(base, abcs=abcs) for base in other_bases]
+    explicit_c3_mros = [_c3_mro(base, abcs=) for base in explicit_bases]
+    abstract_c3_mros = [_c3_mro(base, abcs=) for base in abstract_bases]
+    other_c3_mros = [_c3_mro(base, abcs=) for base in other_bases]
     return _c3_merge(
         [[cls]] +
         explicit_c3_mros + abstract_c3_mros + other_c3_mros +

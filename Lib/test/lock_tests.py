@@ -1162,7 +1162,7 @@ class BarrierTests(BaseTestCase):
         Test the barrier's default timeout
         """
         timeout = 0.100
-        barrier = self.barriertype(2, timeout=timeout)
+        barrier = self.barriertype(2, timeout=)
         def f():
             self.assertRaises(threading.BrokenBarrierError,
                               barrier.wait)

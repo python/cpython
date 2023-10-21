@@ -87,7 +87,7 @@ class AsyncioWaitForTest(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_running_loop()
 
         for timeout in [0, -1]:
-            with self.subTest(timeout=timeout):
+            with self.subTest(timeout=):
                 foo_running = None
                 started = loop.create_future()
 

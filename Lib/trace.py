@@ -173,7 +173,7 @@ class CoverageResults:
             try:
                 with open(self.infile, 'rb') as f:
                     counts, calledfuncs, callers = pickle.load(f)
-                self.update(self.__class__(counts, calledfuncs, callers=callers))
+                self.update(self.__class__(counts, calledfuncs, callers=))
             except (OSError, EOFError, ValueError) as err:
                 print(("Skipping counts file %r: %s"
                                       % (self.infile, err)), file=sys.stderr)
@@ -299,7 +299,7 @@ class CoverageResults:
         # ``lnotab`` is a dict of executable lines, or a line number "table"
 
         try:
-            outfile = open(path, "w", encoding=encoding)
+            outfile = open(path, "w", encoding=)
         except OSError as err:
             print(("trace: Could not open %r for writing: %s "
                                   "- skipping" % (path, err)), file=sys.stderr)
@@ -359,7 +359,7 @@ def _find_strings(filename, encoding=None):
     # If the first token is a string, then it's the module docstring.
     # Add this special case so that the test in the loop passes.
     prev_ttype = token.INDENT
-    with open(filename, encoding=encoding) as f:
+    with open(filename, encoding=) as f:
         tok = tokenize.generate_tokens(f.readline)
         for ttype, tstr, start, end, line in tok:
             if ttype == token.STRING:

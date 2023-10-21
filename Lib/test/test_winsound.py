@@ -147,7 +147,7 @@ class PlaySoundTest(unittest.TestCase):
             "SystemQuestion",
         ]
         for alias in aliases:
-            with self.subTest(alias=alias):
+            with self.subTest(alias=):
                 safe_PlaySound(alias, winsound.SND_ALIAS)
 
     def test_alias_fallback(self):

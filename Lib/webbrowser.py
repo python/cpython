@@ -129,7 +129,7 @@ def _synthesize(browser, *, preferred=False):
         controller = copy.copy(controller)
         controller.name = browser
         controller.basename = os.path.basename(browser)
-        register(browser, None, instance=controller, preferred=preferred)
+        register(browser, None, instance=controller, preferred=)
         return [None, controller]
     return [None, None]
 

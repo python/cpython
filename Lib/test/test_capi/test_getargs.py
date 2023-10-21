@@ -1258,7 +1258,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         parse = _testcapi.parse_tuple_and_keywords
 
         for name in ('a', 'ä', 'ŷ', '㷷', '𐀀'):
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 self.assertEqual(parse((), {name: 1}, 'O', [name]), (1,))
                 self.assertEqual(parse((), {}, '|O', [name]), (NULL,))
                 with self.assertRaisesRegex(TypeError,
@@ -1290,7 +1290,7 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                     parse((), {'b': 1}, '|O', [invalid])
 
                 for name2 in ('b', 'ë', 'ĉ', 'Ɐ', '𐀁'):
-                    with self.subTest(name2=name2):
+                    with self.subTest(name2=):
                         with self.assertRaisesRegex(TypeError,
                                 f"'{name2}' is an invalid keyword argument"):
                             parse((), {name2: 1}, '|O', [name])

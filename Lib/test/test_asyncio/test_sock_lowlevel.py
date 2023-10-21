@@ -526,7 +526,7 @@ class BaseSockTestsMixin:
                     *httpd.address, type=socket.SOCK_STREAM))
             for family, type, proto, cname, address in infos:
                 try:
-                    sock = socket.socket(family=family, type=type, proto=proto)
+                    sock = socket.socket(family=, type=, proto=)
                     sock.setblocking(False)
                     self.loop.run_until_complete(
                         self.loop.sock_connect(sock, address))
@@ -538,7 +538,7 @@ class BaseSockTestsMixin:
                 self.fail('Can not create socket.')
 
             f = self.loop.create_connection(
-                lambda: MyProto(loop=self.loop), sock=sock)
+                lambda: MyProto(loop=self.loop), sock=)
             tr, pr = self.loop.run_until_complete(f)
             self.assertIsInstance(tr, asyncio.Transport)
             self.assertIsInstance(pr, asyncio.Protocol)

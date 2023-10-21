@@ -15,19 +15,19 @@ dispatch = {
     (False, False, False):
         lambda args, sep, end, file: print(*args),
     (False, False, True):
-        lambda args, sep, end, file: print(file=file, *args),
+        lambda args, sep, end, file: print(file=, *args),
     (False, True,  False):
-        lambda args, sep, end, file: print(end=end, *args),
+        lambda args, sep, end, file: print(end=, *args),
     (False, True,  True):
-        lambda args, sep, end, file: print(end=end, file=file, *args),
+        lambda args, sep, end, file: print(end=, file=, *args),
     (True,  False, False):
-        lambda args, sep, end, file: print(sep=sep, *args),
+        lambda args, sep, end, file: print(sep=, *args),
     (True,  False, True):
-        lambda args, sep, end, file: print(sep=sep, file=file, *args),
+        lambda args, sep, end, file: print(sep=, file=, *args),
     (True,  True,  False):
-        lambda args, sep, end, file: print(sep=sep, end=end, *args),
+        lambda args, sep, end, file: print(sep=, end=, *args),
     (True,  True,  True):
-        lambda args, sep, end, file: print(sep=sep, end=end, file=file, *args),
+        lambda args, sep, end, file: print(sep=, end=, file=, *args),
 }
 
 
@@ -65,11 +65,11 @@ class TestPrint(unittest.TestCase):
             # Run the test 2 ways: not using file, and using
             # file directed to a StringIO.
 
-            self.check(expected, args, sep=sep, end=end)
+            self.check(expected, args, sep=, end=)
 
             # When writing to a file, stdout is expected to be empty
             o = StringIO()
-            self.check('', args, sep=sep, end=end, file=o)
+            self.check('', args, sep=, end=, file=o)
 
             # And o will contain the expected output
             self.assertEqual(o.getvalue(), expected)

@@ -448,7 +448,7 @@ class Test_TestResult(unittest.TestCase):
 
     def testFailFastSetByRunner(self):
         stream = BufferedWriter()
-        runner = unittest.TextTestRunner(stream=stream, failfast=True)
+        runner = unittest.TextTestRunner(stream=, failfast=True)
         def test(result):
             result.testsRun += 1
             self.assertTrue(result.failfast)

@@ -348,13 +348,13 @@ class TestCase(unittest.TestCase):
             pass
 
         for cls in [C0, C1]:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertEqual(cls(), cls())
                 for idx, fn in enumerate([lambda a, b: a < b,
                                           lambda a, b: a <= b,
                                           lambda a, b: a > b,
                                           lambda a, b: a >= b]):
-                    with self.subTest(idx=idx):
+                    with self.subTest(idx=):
                         with self.assertRaisesRegex(TypeError,
                                                     f"not supported between instances of '{cls.__name__}' and '{cls.__name__}'"):
                             fn(cls(), cls())
@@ -376,14 +376,14 @@ class TestCase(unittest.TestCase):
             x: int
 
         for cls in [C0, C1]:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertEqual(cls(1), cls(1))
                 self.assertNotEqual(cls(0), cls(1))
                 for idx, fn in enumerate([lambda a, b: a < b,
                                           lambda a, b: a <= b,
                                           lambda a, b: a > b,
                                           lambda a, b: a >= b]):
-                    with self.subTest(idx=idx):
+                    with self.subTest(idx=):
                         with self.assertRaisesRegex(TypeError,
                                                     f"not supported between instances of '{cls.__name__}' and '{cls.__name__}'"):
                             fn(cls(0), cls(0))
@@ -411,7 +411,7 @@ class TestCase(unittest.TestCase):
             y: int
 
         for cls in [C0, C1]:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertEqual(cls(0, 0), cls(0, 0))
                 self.assertEqual(cls(1, 2), cls(1, 2))
                 self.assertNotEqual(cls(1, 0), cls(0, 0))
@@ -420,7 +420,7 @@ class TestCase(unittest.TestCase):
                                           lambda a, b: a <= b,
                                           lambda a, b: a > b,
                                           lambda a, b: a >= b]):
-                    with self.subTest(idx=idx):
+                    with self.subTest(idx=):
                         with self.assertRaisesRegex(TypeError,
                                                     f"not supported between instances of '{cls.__name__}' and '{cls.__name__}'"):
                             fn(cls(0, 0), cls(0, 0))
@@ -433,13 +433,13 @@ class TestCase(unittest.TestCase):
         for idx, fn in enumerate([lambda a, b: a == b,
                                   lambda a, b: a <= b,
                                   lambda a, b: a >= b]):
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 self.assertTrue(fn(C(0, 0), C(0, 0)))
 
         for idx, fn in enumerate([lambda a, b: a < b,
                                   lambda a, b: a <= b,
                                   lambda a, b: a != b]):
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 self.assertTrue(fn(C(0, 0), C(0, 1)))
                 self.assertTrue(fn(C(0, 1), C(1, 0)))
                 self.assertTrue(fn(C(1, 0), C(1, 1)))
@@ -447,7 +447,7 @@ class TestCase(unittest.TestCase):
         for idx, fn in enumerate([lambda a, b: a > b,
                                   lambda a, b: a >= b,
                                   lambda a, b: a != b]):
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 self.assertTrue(fn(C(0, 1), C(0, 0)))
                 self.assertTrue(fn(C(1, 0), C(0, 1)))
                 self.assertTrue(fn(C(1, 1), C(1, 0)))
@@ -465,14 +465,14 @@ class TestCase(unittest.TestCase):
 
         for idx, (fn, expected) in enumerate([(lambda a, b: a == b, False),
                                               (lambda a, b: a != b, True)]):
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 self.assertEqual(fn(B(0), C(0)), expected)
 
         for idx, fn in enumerate([lambda a, b: a < b,
                                   lambda a, b: a <= b,
                                   lambda a, b: a > b,
                                   lambda a, b: a >= b]):
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 with self.assertRaisesRegex(TypeError,
                                             "not supported between instances of 'B' and 'C'"):
                     fn(B(0), C(0))
@@ -485,14 +485,14 @@ class TestCase(unittest.TestCase):
             (True,  False, 'eq_only'),
             (True,  True,  'both'),
         ]:
-            with self.subTest(eq=eq, order=order):
+            with self.subTest(eq=, order=):
                 if result == 'exception':
                     with self.assertRaisesRegex(ValueError, 'eq must be true if order is true'):
-                        @dataclass(eq=eq, order=order)
+                        @dataclass(eq=, order=)
                         class C:
                             pass
                 else:
-                    @dataclass(eq=eq, order=order)
+                    @dataclass(eq=, order=)
                     class C:
                         pass
 
@@ -533,7 +533,7 @@ class TestCase(unittest.TestCase):
         default = object()
         @dataclass
         class C:
-            x: object = field(default=default)
+            x: object = field(default=)
 
         self.assertIs(C.x, default)
         c = C(10)
@@ -611,10 +611,10 @@ class TestCase(unittest.TestCase):
             (None,     False,   'absent'),
             (None,     True,    'field' ),
             ]:
-            with self.subTest(hash=hash_, compare=compare):
+            with self.subTest(hash=hash_, compare=):
                 @dataclass(unsafe_hash=True)
                 class C:
-                    x: int = field(compare=compare, hash=hash_, default=5)
+                    x: int = field(compare=, hash=hash_, default=5)
 
                 if result == 'field':
                     # __hash__ contains the field.
@@ -735,7 +735,7 @@ class TestCase(unittest.TestCase):
                                       (dict, {}, {0:1}),
                                       (set, set(), set([1])),
                                       ]:
-            with self.subTest(typ=typ):
+            with self.subTest(typ=):
                 # Can't use a zero-length value.
                 with self.assertRaisesRegex(ValueError,
                                             f'mutable default {typ} for field '
@@ -1501,7 +1501,7 @@ class TestCase(unittest.TestCase):
         b.__dataclass_fields__ = []
 
         for obj in a, b:
-            with self.subTest(obj=obj):
+            with self.subTest(obj=):
                 self.assertFalse(is_dataclass(obj))
 
                 # Indirect tests for _is_dataclass_instance().
@@ -2139,7 +2139,7 @@ class TestCase(unittest.TestCase):
         samples = [P(1), P(1, 2), Q(1), q, R(1), R(1, [2, 3, 4])]
         for sample in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(sample=sample, proto=proto):
+                with self.subTest(sample=, proto=):
                     new_sample = pickle.loads(pickle.dumps(sample, proto))
                     self.assertEqual(sample.x, new_sample.x)
                     self.assertEqual(sample.y, new_sample.y)
@@ -2608,16 +2608,15 @@ class TestHash(unittest.TestCase):
             return 0
 
         def test(case, unsafe_hash, eq, frozen, with_hash, result):
-            with self.subTest(case=case, unsafe_hash=unsafe_hash, eq=eq,
-                              frozen=frozen):
+            with self.subTest(case=, unsafe_hash=, eq=, frozen=):
                 if result != 'exception':
                     if with_hash:
-                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        @dataclass(unsafe_hash=, eq=, frozen=)
                         class C:
                             def __hash__(self):
                                 return 0
                     else:
-                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        @dataclass(unsafe_hash=, eq=, frozen=)
                         class C:
                             pass
 
@@ -2642,7 +2641,7 @@ class TestHash(unittest.TestCase):
                     #  This only happens with with_hash==True.
                     assert(with_hash)
                     with self.assertRaisesRegex(TypeError, 'Cannot overwrite attribute __hash__'):
-                        @dataclass(unsafe_hash=unsafe_hash, eq=eq, frozen=frozen)
+                        @dataclass(unsafe_hash=, eq=, frozen=)
                         class C:
                             def __hash__(self):
                                 return 0
@@ -2768,22 +2767,22 @@ class TestHash(unittest.TestCase):
             (True,  True,  Base,   'tuple'),
             ]:
 
-            with self.subTest(frozen=frozen, eq=eq, base=base, expected=expected):
+            with self.subTest(frozen=, eq=, base=, expected=):
                 # First, create the class.
                 if frozen is None and eq is None:
                     @dataclass
                     class C(base):
                         i: int
                 elif frozen is None:
-                    @dataclass(eq=eq)
+                    @dataclass(eq=)
                     class C(base):
                         i: int
                 elif eq is None:
-                    @dataclass(frozen=frozen)
+                    @dataclass(frozen=)
                     class C(base):
                         i: int
                 else:
-                    @dataclass(frozen=frozen, eq=eq)
+                    @dataclass(frozen=, eq=)
                     class C(base):
                         i: int
 
@@ -2881,7 +2880,7 @@ class TestFrozen(unittest.TestCase):
             (Frozen, NotDataclass),
             (NotDataclass, Frozen),
         ):
-            with self.subTest(bases=bases):
+            with self.subTest(bases=):
                 with self.assertRaisesRegex(
                     TypeError,
                     'cannot inherit non-frozen dataclass from a frozen one',
@@ -2896,7 +2895,7 @@ class TestFrozen(unittest.TestCase):
             (NotFrozen, NotDataclass),
             (NotDataclass, NotFrozen),
         ):
-            with self.subTest(bases=bases):
+            with self.subTest(bases=):
                 with self.assertRaisesRegex(
                     TypeError,
                     'cannot inherit frozen dataclass from a non-frozen one',
@@ -2975,7 +2974,7 @@ class TestFrozen(unittest.TestCase):
     #  class and without an intermediate class.
     def test_inherit_nonfrozen_from_frozen(self):
         for intermediate_class in [True, False]:
-            with self.subTest(intermediate_class=intermediate_class):
+            with self.subTest(intermediate_class=):
                 @dataclass(frozen=True)
                 class C:
                     i: int
@@ -2993,7 +2992,7 @@ class TestFrozen(unittest.TestCase):
 
     def test_inherit_frozen_from_nonfrozen(self):
         for intermediate_class in [True, False]:
-            with self.subTest(intermediate_class=intermediate_class):
+            with self.subTest(intermediate_class=):
                 @dataclass
                 class C:
                     i: int
@@ -3011,7 +3010,7 @@ class TestFrozen(unittest.TestCase):
 
     def test_inherit_from_normal_class(self):
         for intermediate_class in [True, False]:
-            with self.subTest(intermediate_class=intermediate_class):
+            with self.subTest(intermediate_class=):
                 class C:
                     pass
 
@@ -3268,7 +3267,7 @@ class TestSlots(unittest.TestCase):
 
         self.assertEqual(self.FrozenSlotsClass.__slots__, ("foo", "bar"))
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 obj = self.FrozenSlotsClass("a", 1)
                 p = pickle.loads(pickle.dumps(obj, protocol=proto))
                 self.assertIsNot(obj, p)
@@ -3321,7 +3320,7 @@ class TestSlots(unittest.TestCase):
 
     def test_frozen_slots_pickle_custom_state(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 obj = self.FrozenSlotsGetStateClass('a', 1)
                 dumped = pickle.dumps(obj, protocol=proto)
 
@@ -3329,7 +3328,7 @@ class TestSlots(unittest.TestCase):
                 self.assertEqual(obj, pickle.loads(dumped))
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 obj = self.FrozenSlotsSetStateClass('a', 1)
                 obj2 = pickle.loads(pickle.dumps(obj, protocol=proto))
 
@@ -3337,7 +3336,7 @@ class TestSlots(unittest.TestCase):
                 self.assertEqual(obj, obj2)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 obj = self.FrozenSlotsAllStateClass('a', 1)
                 dumped = pickle.dumps(obj, protocol=proto)
 
@@ -3701,7 +3700,7 @@ class TestStringAnnotations(unittest.TestCase):
                         'typing.ClassVar.[int]',
                         'typing.ClassVar+',
                         ):
-            with self.subTest(typestr=typestr):
+            with self.subTest(typestr=):
                 @dataclass
                 class C:
                     x: typestr
@@ -3725,7 +3724,7 @@ class TestStringAnnotations(unittest.TestCase):
                         'dataclasses.ClassVar[int]',
                         'typingxClassVar[str]',
                         ):
-            with self.subTest(typestr=typestr):
+            with self.subTest(typestr=):
                 @dataclass
                 class C:
                     x: typestr
@@ -3754,7 +3753,7 @@ class TestStringAnnotations(unittest.TestCase):
                         'dataclasses.InitVar.[int]',
                         'dataclasses.InitVar+',
                         ):
-            with self.subTest(typestr=typestr):
+            with self.subTest(typestr=):
                 @dataclass
                 class C:
                     x: typestr
@@ -3770,7 +3769,7 @@ class TestStringAnnotations(unittest.TestCase):
                         'xdataclasses.xInitVar',
                         'typing.xInitVar[int]',
                         ):
-            with self.subTest(typestr=typestr):
+            with self.subTest(typestr=):
                 @dataclass
                 class C:
                     x: typestr
@@ -3787,7 +3786,7 @@ class TestStringAnnotations(unittest.TestCase):
         for m in (dataclass_module_1, dataclass_module_1_str,
                   dataclass_module_2, dataclass_module_2_str,
                   ):
-            with self.subTest(m=m):
+            with self.subTest(m=):
                 # There's a difference in how the ClassVars are
                 # interpreted when using string annotations or
                 # not. See the imported modules for details.
@@ -3804,7 +3803,7 @@ class TestStringAnnotations(unittest.TestCase):
                 c = m.IV(0, 1, 2, 3, 4)
 
                 for field_name in ('iv0', 'iv1', 'iv2', 'iv3'):
-                    with self.subTest(field_name=field_name):
+                    with self.subTest(field_name=):
                         with self.assertRaisesRegex(AttributeError, f"object has no attribute '{field_name}'"):
                             # Since field_name is an InitVar, it's
                             # not an instance field.
@@ -3960,7 +3959,7 @@ class TestMakeDataclass(unittest.TestCase):
     def test_pickle_support(self):
         for klass in [ByMakeDataClass, ManualModuleMakeDataClass]:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(proto=proto):
+                with self.subTest(proto=):
                     self.assertEqual(
                         pickle.loads(pickle.dumps(klass, proto)),
                         klass,
@@ -3973,7 +3972,7 @@ class TestMakeDataclass(unittest.TestCase):
     def test_cannot_be_pickled(self):
         for klass in [WrongNameMakeDataclass, WrongModuleMakeDataclass]:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(proto=proto):
+                with self.subTest(proto=):
                     with self.assertRaises(pickle.PickleError):
                         pickle.dumps(klass, proto)
                     with self.assertRaises(pickle.PickleError):
@@ -3983,7 +3982,7 @@ class TestMakeDataclass(unittest.TestCase):
         for bad_field in [(),
                           (1, 2, 3, 4),
                           ]:
-            with self.subTest(bad_field=bad_field):
+            with self.subTest(bad_field=):
                 with self.assertRaisesRegex(TypeError, r'Invalid field: '):
                     make_dataclass('C', ['a', bad_field])
 
@@ -3991,19 +3990,19 @@ class TestMakeDataclass(unittest.TestCase):
         for bad_field in [float,
                           lambda x:x,
                           ]:
-            with self.subTest(bad_field=bad_field):
+            with self.subTest(bad_field=):
                 with self.assertRaisesRegex(TypeError, r'has no len\(\)'):
                     make_dataclass('C', ['a', bad_field])
 
     def test_duplicate_field_names(self):
         for field in ['a', 'ab']:
-            with self.subTest(field=field):
+            with self.subTest(field=):
                 with self.assertRaisesRegex(TypeError, 'Field name duplicated'):
                     make_dataclass('C', [field, 'a', field])
 
     def test_keyword_field_names(self):
         for field in ['for', 'async', 'await', 'as']:
-            with self.subTest(field=field):
+            with self.subTest(field=):
                 with self.assertRaisesRegex(TypeError, 'must not be keywords'):
                     make_dataclass('C', ['a', field])
                 with self.assertRaisesRegex(TypeError, 'must not be keywords'):
@@ -4013,7 +4012,7 @@ class TestMakeDataclass(unittest.TestCase):
 
     def test_non_identifier_field_names(self):
         for field in ['()', 'x,y', '*', '2@3', '', 'little johnny tables']:
-            with self.subTest(field=field):
+            with self.subTest(field=):
                 with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', ['a', field])
                 with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
@@ -4030,7 +4029,7 @@ class TestMakeDataclass(unittest.TestCase):
         # No reason to prevent weird class names, since
         # types.new_class allows them.
         for classname in ['()', 'x,y', '*', '2@3', '']:
-            with self.subTest(classname=classname):
+            with self.subTest(classname=):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
 

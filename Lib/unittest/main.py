@@ -239,7 +239,7 @@ class TestProgram(object):
                 self._initArgParsers()
             self._discovery_parser.parse_args(argv, self)
 
-        self.createTests(from_discovery=True, Loader=Loader)
+        self.createTests(from_discovery=True, Loader=)
 
     def runTests(self):
         if self.catchbreak:

@@ -188,9 +188,9 @@ class TestHeap:
             for reverse in [False, True]:
                 seqs = []
                 for seq in inputs:
-                    seqs.append(sorted(seq, key=key, reverse=reverse))
-                self.assertEqual(sorted(chain(*inputs), key=key, reverse=reverse),
-                                 list(self.module.merge(*seqs, key=key, reverse=reverse)))
+                    seqs.append(sorted(seq, key=, reverse=))
+                self.assertEqual(sorted(chain(*inputs), key=, reverse=),
+                                 list(self.module.merge(*seqs, key=, reverse=)))
                 self.assertEqual(list(self.module.merge()), [])
 
     def test_empty_merges(self):

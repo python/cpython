@@ -266,8 +266,7 @@ class LocaleConfigurationTests(_LocaleHandlingTestCase):
                 if env_var == "LANG" and locale_to_set == "UTF-8":
                     continue
 
-                with self.subTest(env_var=env_var,
-                                  configured_locale=locale_to_set):
+                with self.subTest(env_var=, configured_locale=locale_to_set):
                     var_dict = base_var_dict.copy()
                     var_dict[env_var] = locale_to_set
                     self._check_child_encoding_details(var_dict,
@@ -346,7 +345,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         # Check behaviour for explicitly configured locales
         for locale_to_set in EXPECTED_C_LOCALE_EQUIVALENTS:
             for env_var in ("LANG", "LC_CTYPE"):
-                with self.subTest(env_var=env_var,
+                with self.subTest(env_var=,
                                   nominal_locale=locale_to_set,
                                   PYTHONCOERCECLOCALE=coerce_c_locale):
                     var_dict = base_var_dict.copy()
@@ -422,7 +421,7 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         env = dict(os.environ, PYTHONCOERCECLOCALE='1')
         cmd = subprocess.run([sys.executable, '-c', code],
                              stdout=subprocess.PIPE,
-                             env=env,
+                             env=,
                              text=True)
         self.assertEqual(cmd.stdout.rstrip(), loc)
 

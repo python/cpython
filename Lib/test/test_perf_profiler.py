@@ -271,7 +271,7 @@ def run_perf(cwd, *args, **env_vars):
         base_cmd + args,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env=env,
+        env=,
     )
     if proc.returncode:
         print(proc.stderr)
@@ -282,7 +282,7 @@ def run_perf(cwd, *args, **env_vars):
         ("perf", "script", "-i", output_file),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        env=env,
+        env=,
         check=True,
     )
     return proc.stdout.decode("utf-8", "replace"), proc.stderr.decode(

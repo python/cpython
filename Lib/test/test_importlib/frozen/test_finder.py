@@ -45,10 +45,7 @@ class FindSpecTests(abc.FinderTests):
         actual = dict(vars(spec.loader_state))
 
         # Check the rest of spec.loader_state.
-        expected = dict(
-            origname=origname,
-            filename=filename if origname else None,
-        )
+        expected = dict(origname=, filename=filename if origname else None)
         self.assertDictEqual(actual, expected)
 
     def check_search_locations(self, spec):
@@ -144,7 +141,7 @@ class FindSpecTests(abc.FinderTests):
             actual = self.find(name)
             for path in (None, object(), '', 'eggs', [], [''], ['eggs']):
                 with self.subTest((name, path)):
-                    spec = self.find(name, path=path)
+                    spec = self.find(name, path=)
                     self.assertEqual(spec, actual)
 
     def test_target_ignored(self):
@@ -156,7 +153,7 @@ class FindSpecTests(abc.FinderTests):
         actual = self.find(name)
         for target in (None, match, nonmatch, object(), 'not-a-module-object'):
             with self.subTest(target):
-                spec = self.find(name, target=target)
+                spec = self.find(name, target=)
                 self.assertEqual(spec, actual)
 
     def test_failure(self):
@@ -176,7 +173,7 @@ class FindSpecTests(abc.FinderTests):
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
- ) = util.test_both(FindSpecTests, machinery=machinery)
+ ) = util.test_both(FindSpecTests, machinery=)
 
 
 if __name__ == '__main__':

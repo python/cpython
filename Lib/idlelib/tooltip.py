@@ -154,7 +154,7 @@ class Hovertip(OnHoverTooltipBase):
         e.g. after hovering over the anchor widget with the mouse for enough
         time.
         """
-        super().__init__(anchor_widget, hover_delay=hover_delay)
+        super().__init__(anchor_widget, hover_delay=)
         self.text = text
 
     def showcontents(self):

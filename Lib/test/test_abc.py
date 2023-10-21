@@ -442,7 +442,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 class S(metaclass=abc_ABCMeta):
                     __subclasses__ = func
 
-                with self.subTest(i=i):
+                with self.subTest(i=):
                     with self.assertRaises(TypeError):
                         issubclass(int, S)
 

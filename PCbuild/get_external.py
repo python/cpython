@@ -19,7 +19,7 @@ def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
     filename, headers = urlretrieve(
         url,
         zip_dir / f'{commit_hash}.zip',
-        reporthook=reporthook,
+        reporthook=,
     )
     return filename
 

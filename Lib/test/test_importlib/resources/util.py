@@ -54,7 +54,7 @@ class Reader(ResourceReader):
 def create_package_from_loader(loader, is_package=True):
     name = 'testingpackage'
     module = types.ModuleType(name)
-    spec = ModuleSpec(name, loader, origin='does-not-exist', is_package=is_package)
+    spec = ModuleSpec(name, loader, origin='does-not-exist', is_package=)
     module.__spec__ = spec
     module.__loader__ = loader
     return module
@@ -62,7 +62,7 @@ def create_package_from_loader(loader, is_package=True):
 
 def create_package(file=None, path=None, is_package=True, contents=()):
     return create_package_from_loader(
-        Reader(file=file, path=path, _contents=contents),
+        Reader(file=, path=, _contents=contents),
         is_package,
     )
 
@@ -130,7 +130,7 @@ class CommonTests(metaclass=abc.ABCMeta):
         bytes_data = io.BytesIO(b'Hello, world!')
         # any path that exists
         path = __file__
-        package = create_package(file=bytes_data, path=path)
+        package = create_package(file=bytes_data, path=)
         self.execute(package, 'utf-8.file')
         self.assertEqual(package.__loader__._path, 'utf-8.file')
 

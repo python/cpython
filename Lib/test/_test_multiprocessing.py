@@ -344,7 +344,7 @@ class _TestProcess(BaseTestCase):
         test_cases = itertools.product(args_cases, args_types)
 
         for args, args_type in test_cases:
-            with self.subTest(args=args, args_type=args_type):
+            with self.subTest(args=, args_type=):
                 q = self.Queue(1)
                 # pass a tuple or list as args
                 p = self.Process(target=self._test_args, args=args_type((q, args)))
@@ -445,9 +445,7 @@ class _TestProcess(BaseTestCase):
         args = (q, 1, 2)
         kwargs = {'hello':23, 'bye':2.54}
         name = 'SomeProcess'
-        p = self.Process(
-            target=self._test, args=args, kwargs=kwargs, name=name
-            )
+        p = self.Process(target=self._test, args=, kwargs=, name=)
         p.daemon = True
         current = self.current_process()
 
@@ -994,8 +992,8 @@ class _TestSubclassingProcess(BaseTestCase):
             ]
 
         for args, expected in cases:
-            with self.subTest(args=args):
-                p = self.Process(target=sys.exit, args=args)
+            with self.subTest(args=):
+                p = self.Process(target=sys.exit, args=)
                 p.daemon = True
                 p.start()
                 join_process(p)
@@ -2180,7 +2178,7 @@ class _TestValue(BaseTestCase):
         obj2 = val2.get_obj()
 
         lock = self.Lock()
-        val3 = self.Value('i', 5, lock=lock)
+        val3 = self.Value('i', 5, lock=)
         lock3 = val3.get_lock()
         obj3 = val3.get_obj()
         self.assertEqual(lock, lock3)
@@ -2260,7 +2258,7 @@ class _TestArray(BaseTestCase):
         obj2 = arr2.get_obj()
 
         lock = self.Lock()
-        arr3 = self.Array('i', list(range(10)), lock=lock)
+        arr3 = self.Array('i', list(range(10)), lock=)
         lock3 = arr3.get_lock()
         obj3 = arr3.get_obj()
         self.assertEqual(lock, lock3)
@@ -2370,7 +2368,7 @@ class _TestContainers(BaseTestCase):
     def test_dict_proxy_nested(self):
         pets = self.dict(ferrets=2, hamsters=4)
         supplies = self.dict(water=10, feed=3)
-        d = self.dict(pets=pets, supplies=supplies)
+        d = self.dict(pets=, supplies=)
 
         self.assertEqual(supplies['water'], 10)
         self.assertEqual(d['supplies']['water'], 10)
@@ -3064,7 +3062,7 @@ class _TestRemoteManager(BaseTestCase):
     @classmethod
     def _putter(cls, address, authkey):
         manager = QueueManager2(
-            address=address, authkey=authkey, serializer=SERIALIZER,
+            address=, authkey=, serializer=SERIALIZER,
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.connect()
         queue = manager.get_queue()
@@ -3075,7 +3073,7 @@ class _TestRemoteManager(BaseTestCase):
         authkey = os.urandom(32)
 
         manager = QueueManager(
-            address=(socket_helper.HOST, 0), authkey=authkey, serializer=SERIALIZER,
+            address=(socket_helper.HOST, 0), authkey=, serializer=SERIALIZER,
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.start()
         self.addCleanup(manager.shutdown)
@@ -3085,7 +3083,7 @@ class _TestRemoteManager(BaseTestCase):
         p.start()
 
         manager2 = QueueManager2(
-            address=manager.address, authkey=authkey, serializer=SERIALIZER,
+            address=manager.address, authkey=, serializer=SERIALIZER,
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager2.connect()
         queue = manager2.get_queue()
@@ -3106,7 +3104,7 @@ class _TestManagerRestart(BaseTestCase):
     @classmethod
     def _putter(cls, address, authkey):
         manager = QueueManager(
-            address=address, authkey=authkey, serializer=SERIALIZER,
+            address=, authkey=, serializer=SERIALIZER,
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         manager.connect()
         queue = manager.get_queue()
@@ -3115,7 +3113,7 @@ class _TestManagerRestart(BaseTestCase):
     def test_rapid_restart(self):
         authkey = os.urandom(32)
         manager = QueueManager(
-            address=(socket_helper.HOST, 0), authkey=authkey,
+            address=(socket_helper.HOST, 0), authkey=,
             serializer=SERIALIZER, shutdown_timeout=SHUTDOWN_TIMEOUT)
         try:
             srvr = manager.get_server()
@@ -3136,7 +3134,7 @@ class _TestManagerRestart(BaseTestCase):
                 manager.shutdown()
 
         manager = QueueManager(
-            address=addr, authkey=authkey, serializer=SERIALIZER,
+            address=addr, authkey=, serializer=SERIALIZER,
             shutdown_timeout=SHUTDOWN_TIMEOUT)
         try:
             manager.start()
@@ -3148,7 +3146,7 @@ class _TestManagerRestart(BaseTestCase):
             # (sporadic failure on buildbots)
             time.sleep(1.0)
             manager = QueueManager(
-                address=addr, authkey=authkey, serializer=SERIALIZER,
+                address=addr, authkey=, serializer=SERIALIZER,
                 shutdown_timeout=SHUTDOWN_TIMEOUT)
             if hasattr(manager, "shutdown"):
                 self.addCleanup(manager.shutdown)
@@ -3468,7 +3466,7 @@ class _TestListener(BaseTestCase):
 
     def test_multiple_bind(self):
         for family in self.connection.families:
-            l = self.connection.Listener(family=family)
+            l = self.connection.Listener(family=)
             self.addCleanup(l.close)
             self.assertRaises(OSError, self.connection.Listener,
                               l.address, family)
@@ -3508,7 +3506,7 @@ class _TestListenerClient(BaseTestCase):
 
     def test_listener_client(self):
         for family in self.connection.families:
-            l = self.connection.Listener(family=family)
+            l = self.connection.Listener(family=)
             p = self.Process(target=self._test, args=(l.address,))
             p.daemon = True
             p.start()
@@ -3893,12 +3891,12 @@ class _TestSharedCTypes(BaseTestCase):
             arr[i] *= 2
 
     def test_sharedctypes(self, lock=False):
-        x = Value('i', 7, lock=lock)
-        y = Value(c_double, 1.0/3.0, lock=lock)
-        z = Value(c_longlong, 2 ** 33, lock=lock)
-        foo = Value(_Foo, 3, 2, lock=lock)
-        arr = self.Array('d', list(range(10)), lock=lock)
-        string = self.Array('c', 20, lock=lock)
+        x = Value('i', 7, lock=)
+        y = Value(c_double, 1.0/3.0, lock=)
+        z = Value(c_longlong, 2 ** 33, lock=)
+        foo = Value(_Foo, 3, 2, lock=)
+        arr = self.Array('d', list(range(10)), lock=)
+        string = self.Array('c', 20, lock=)
         string.value = latin('hello')
 
         p = self.Process(target=self._double, args=(x, y, z, foo, arr, string))
@@ -4099,7 +4097,7 @@ class _TestSharedMemory(BaseTestCase):
 
     def test_shared_memory_pickle_unpickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 sms = shared_memory.SharedMemory(create=True, size=512)
                 self.addCleanup(sms.unlink)
                 sms.buf[0:6] = b'pickle'
@@ -4125,7 +4123,7 @@ class _TestSharedMemory(BaseTestCase):
 
     def test_shared_memory_pickle_unpickle_dead_object(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 sms = shared_memory.SharedMemory(create=True, size=512)
                 sms.buf[0:6] = b'pickle'
                 pickled_sms = pickle.dumps(sms, protocol=proto)
@@ -4356,7 +4354,7 @@ class _TestSharedMemory(BaseTestCase):
 
     def test_shared_memory_ShareableList_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 sl = shared_memory.ShareableList(range(10))
                 self.addCleanup(sl.shm.unlink)
 
@@ -4383,7 +4381,7 @@ class _TestSharedMemory(BaseTestCase):
 
     def test_shared_memory_ShareableList_pickling_dead_object(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 sl = shared_memory.ShareableList(range(10))
                 serialized_sl = pickle.dumps(sl, protocol=proto)
 
@@ -5511,13 +5509,13 @@ class TestResourceTracker(unittest.TestCase):
             time.sleep(10)
         '''
         for rtype in resource_tracker._CLEANUP_FUNCS:
-            with self.subTest(rtype=rtype):
+            with self.subTest(rtype=):
                 if rtype == "noop":
                     # Artefact resource type used by the resource_tracker
                     continue
                 r, w = os.pipe()
                 p = subprocess.Popen([sys.executable,
-                                     '-E', '-c', cmd.format(w=w, rtype=rtype)],
+                                     '-E', '-c', cmd.format(w=, rtype=)],
                                      pass_fds=[w],
                                      stderr=subprocess.PIPE)
                 os.close(w)

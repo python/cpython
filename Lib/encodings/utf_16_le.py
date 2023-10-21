@@ -33,8 +33,8 @@ class StreamReader(codecs.StreamReader):
 def getregentry():
     return codecs.CodecInfo(
         name='utf-16-le',
-        encode=encode,
-        decode=decode,
+        encode=,
+        decode=,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
         streamreader=StreamReader,

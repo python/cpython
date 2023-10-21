@@ -571,7 +571,7 @@ class BaseFutureTests:
 
         regex = f'^{self.cls.__name__} exception was never retrieved\n'
         exc_info = (type(exc), exc, exc.__traceback__)
-        m_log.error.assert_called_once_with(mock.ANY, exc_info=exc_info)
+        m_log.error.assert_called_once_with(mock.ANY, exc_info=)
 
         message = m_log.error.call_args[0][0]
         self.assertRegex(message, re.compile(regex, re.DOTALL))

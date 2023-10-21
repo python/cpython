@@ -119,7 +119,7 @@ class CodeContext:
                 height=1,
                 width=1,  # Don't request more than we get.
                 highlightthickness=0,
-                padx=padx, border=border, relief=SUNKEN, state='disabled')
+                padx=, border=, relief=SUNKEN, state='disabled')
             self.update_font()
             self.update_highlight_colors()
             context.bind('<ButtonRelease-1>', self.jumptoline)

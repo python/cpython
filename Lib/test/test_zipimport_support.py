@@ -34,8 +34,8 @@ from test import (test_doctest, sample_doctest, sample_doctest_no_doctests,
 
 
 def _run_object_doctest(obj, module):
-    finder = doctest.DocTestFinder(verbose=verbose, recurse=False)
-    runner = doctest.DocTestRunner(verbose=verbose)
+    finder = doctest.DocTestFinder(verbose=, recurse=False)
+    runner = doctest.DocTestRunner(verbose=)
     # Use the object's fully qualified name if it has one
     # Otherwise, use the module's name
     try:

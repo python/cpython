@@ -390,7 +390,7 @@ class HttpMethodTests(TestCase):
                     ValueError, "method can't contain control characters"):
                 conn = client.HTTPConnection('example.com')
                 conn.sock = FakeSocket(None)
-                conn.request(method=method, url="/")
+                conn.request(method=, url="/")
 
 
 class TransferEncodingTest(TestCase):
@@ -449,7 +449,7 @@ class TransferEncodingTest(TestCase):
             conn = client.HTTPConnection('example.com')
             conn.sock = FakeSocket(b'')
             conn.request(
-                'POST', '/', self._make_body(empty_lines=empty_lines))
+                'POST', '/', self._make_body(empty_lines=))
 
             _, headers, body = self._parse_request(conn.sock.data)
             body = self._parse_chunked(body)
@@ -1027,7 +1027,7 @@ class BasicTest(TestCase):
     def test_blocksize_request(self):
         """Check that request() respects the configured block size."""
         blocksize = 8  # For easy debugging.
-        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        conn = client.HTTPConnection('example.com', blocksize=)
         sock = FakeSocket(None)
         conn.sock = sock
         expected = b"a" * blocksize + b"b"
@@ -1039,7 +1039,7 @@ class BasicTest(TestCase):
     def test_blocksize_send(self):
         """Check that send() respects the configured block size."""
         blocksize = 8  # For easy debugging.
-        conn = client.HTTPConnection('example.com', blocksize=blocksize)
+        conn = client.HTTPConnection('example.com', blocksize=)
         sock = FakeSocket(None)
         conn.sock = sock
         expected = b"a" * blocksize + b"b"
@@ -1812,7 +1812,7 @@ class PersistenceTest(TestCase):
             ('1.1', 'Connection: cloSE\r\n', False),
         )
         for version, header, reuse in tests:
-            with self.subTest(version=version, header=header):
+            with self.subTest(version=, header=):
                 msg = (
                     'HTTP/{} 200 OK\r\n'
                     '{}'
@@ -1849,7 +1849,7 @@ class PersistenceTest(TestCase):
             (make_reset_reader, ConnectionResetError),
         )
         for stream_factory, exception in tests:
-            with self.subTest(exception=exception):
+            with self.subTest(exception=):
                 conn = FakeSocketHTTPConnection(b'', stream_factory)
                 conn.request('GET', '/eof-response')
                 self.assertRaises(exception, conn.getresponse)
@@ -1879,7 +1879,7 @@ class HTTPSTest(TestCase):
 
     def make_server(self, certfile):
         from test.ssl_servers import make_https_server
-        return make_https_server(self, certfile=certfile)
+        return make_https_server(self, certfile=)
 
     def test_attributes(self):
         # simple test to check it's storing the timeout
@@ -1903,7 +1903,7 @@ class HTTPSTest(TestCase):
         with socket_helper.transient_internet('self-signed.pythontest.net'):
             context = ssl._create_unverified_context()
             h = client.HTTPSConnection('self-signed.pythontest.net', 443,
-                                       context=context)
+                                       context=)
             h.request('GET', '/')
             resp = h.getresponse()
             h.close()
@@ -1935,7 +1935,7 @@ class HTTPSTest(TestCase):
             context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
             try:
                 h = client.HTTPSConnection(selfsigned_pythontestdotnet, 443,
-                                           context=context)
+                                           context=)
                 h.request('GET', '/')
                 resp = h.getresponse()
             except ssl.SSLError as ssl_err:
@@ -1964,7 +1964,7 @@ class HTTPSTest(TestCase):
         with socket_helper.transient_internet('self-signed.pythontest.net'):
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             context.load_verify_locations(CERT_localhost)
-            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
+            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=)
             with self.assertRaises(ssl.SSLError) as exc_info:
                 h.request('GET', '/')
             self.assertEqual(exc_info.exception.reason, 'CERTIFICATE_VERIFY_FAILED')
@@ -1984,7 +1984,7 @@ class HTTPSTest(TestCase):
         server = self.make_server(CERT_localhost)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.load_verify_locations(CERT_localhost)
-        h = client.HTTPSConnection('localhost', server.port, context=context)
+        h = client.HTTPSConnection('localhost', server.port, context=)
         self.addCleanup(h.close)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
@@ -1997,19 +1997,19 @@ class HTTPSTest(TestCase):
         server = self.make_server(CERT_fakehostname)
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.load_verify_locations(CERT_fakehostname)
-        h = client.HTTPSConnection('localhost', server.port, context=context)
+        h = client.HTTPSConnection('localhost', server.port, context=)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
 
         # Same with explicit context.check_hostname=True
         context.check_hostname = True
-        h = client.HTTPSConnection('localhost', server.port, context=context)
+        h = client.HTTPSConnection('localhost', server.port, context=)
         with self.assertRaises(ssl.CertificateError):
             h.request('GET', '/')
 
         # With context.check_hostname=False, the mismatching is ignored
         context.check_hostname = False
-        h = client.HTTPSConnection('localhost', server.port, context=context)
+        h = client.HTTPSConnection('localhost', server.port, context=)
         h.request('GET', '/nonexistent')
         resp = h.getresponse()
         resp.close()
@@ -2046,13 +2046,13 @@ class HTTPSTest(TestCase):
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertFalse(context.post_handshake_auth)
-        h = client.HTTPSConnection('localhost', 443, context=context)
+        h = client.HTTPSConnection('localhost', 443, context=)
         self.assertIs(h._context, context)
         self.assertFalse(h._context.post_handshake_auth)
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT, cert_file=CERT_localhost)
         context.post_handshake_auth = True
-        h = client.HTTPSConnection('localhost', 443, context=context)
+        h = client.HTTPSConnection('localhost', 443, context=)
         self.assertTrue(h._context.post_handshake_auth)
 
 

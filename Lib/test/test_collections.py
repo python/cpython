@@ -686,7 +686,7 @@ class TestNamedTuple(unittest.TestCase):
         self.assertRaises(AttributeError, Point.x.__delete__, p)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 class NewPoint(tuple):
                     x = pickle.loads(pickle.dumps(Point.x, proto))
                     y = pickle.loads(pickle.dumps(Point.y, proto))
@@ -2216,7 +2216,7 @@ class TestCounter(unittest.TestCase):
         check(copy.copy(words))
         check(copy.deepcopy(words))
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 check(pickle.loads(pickle.dumps(words, proto)))
         check(eval(repr(words)))
         update_test = Counter()

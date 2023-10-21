@@ -54,7 +54,7 @@ class ForkTest(ForkWait):
                 # Exitcode 1 means the child got a partial module (bad.) No
                 # exitcode (but a hang, which manifests as 'got pid 0')
                 # means the child deadlocked (also bad.)
-                self.wait_impl(pid, exitcode=exitcode)
+                self.wait_impl(pid, exitcode=)
         finally:
             try:
                 os.kill(pid, signal.SIGKILL)
@@ -87,7 +87,7 @@ class ForkTest(ForkWait):
                 raise
             if in_child:
                 os._exit(exitcode)
-            self.wait_impl(pid, exitcode=exitcode)
+            self.wait_impl(pid, exitcode=)
 
         # Check this works with various levels of nested
         # import in the main thread

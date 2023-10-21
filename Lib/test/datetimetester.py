@@ -421,7 +421,7 @@ class TestTimeZone(unittest.TestCase):
         time_deltas.extend([-delta for delta in time_deltas])
 
         for delta in time_deltas:
-            with self.subTest(test_type='good', delta=delta):
+            with self.subTest(test_type='good', delta=):
                 timezone(delta)
 
         # Test timedeltas on and outside the boundaries
@@ -432,7 +432,7 @@ class TestTimeZone(unittest.TestCase):
         bad_time_deltas.extend([-delta for delta in bad_time_deltas])
 
         for delta in bad_time_deltas:
-            with self.subTest(test_type='bad', delta=delta):
+            with self.subTest(test_type='bad', delta=):
                 with self.assertRaises(ValueError):
                     timezone(delta)
 
@@ -1035,7 +1035,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                 return divmodresult
 
         for divmodresult in [None, (), (0, 1, 2), (0, -1)]:
-            with self.subTest(divmodresult=divmodresult):
+            with self.subTest(divmodresult=):
                 # The following examples should not crash.
                 try:
                     timedelta(microseconds=BadInt(1))
@@ -1391,11 +1391,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 test_cases.append((new_date, new_iso))
 
         for d, exp_iso in test_cases:
-            with self.subTest(d=d, comparison="tuple"):
+            with self.subTest(d=, comparison="tuple"):
                 self.assertEqual(d.isocalendar(), exp_iso)
 
             # Check that the tuple contents are accessible by field name
-            with self.subTest(d=d, comparison="fields"):
+            with self.subTest(d=, comparison="fields"):
                 t = d.isocalendar()
                 self.assertEqual((t.year, t.week, t.weekday), exp_iso)
 
@@ -1780,8 +1780,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for constr_name, constr_args in test_cases:
             for base_obj in (DateSubclass, base_d):
                 # Test both the classmethod and method
-                with self.subTest(base_obj_type=type(base_obj),
-                                  constr_name=constr_name):
+                with self.subTest(base_obj_type=type(base_obj), constr_name=):
                     constr = getattr(base_obj, constr_name)
 
                     dt = constr(*constr_args)
@@ -1846,7 +1845,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         for dt_tuple in base_dates:
             dt = self.theclass(*dt_tuple)
             dt_str = dt.isoformat()
-            with self.subTest(dt_str=dt_str):
+            with self.subTest(dt_str=):
                 dt_rt = self.theclass.fromisoformat(dt.isoformat())
 
                 self.assertEqual(dt, dt_rt)
@@ -1882,7 +1881,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         ]
 
         for input_str, expected in examples:
-            with self.subTest(input_str=input_str):
+            with self.subTest(input_str=):
                 actual = self.theclass.fromisoformat(input_str)
                 self.assertEqual(actual, expected)
 
@@ -1946,7 +1945,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         ]
 
         for datecomps in dates:
-            with self.subTest(datecomps=datecomps):
+            with self.subTest(datecomps=):
                 dobj = self.theclass(*datecomps)
                 isocal = dobj.isocalendar()
 
@@ -1972,7 +1971,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         ]
 
         for isocal in isocals:
-            with self.subTest(isocal=isocal):
+            with self.subTest(isocal=):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisocalendar(*isocal)
 
@@ -1995,7 +1994,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
                 isocals.append(tuple(err_val))
 
         for isocal in isocals:
-            with self.subTest(isocal=isocal):
+            with self.subTest(isocal=):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
 
@@ -2119,7 +2118,7 @@ class TestDateTime(TestDate):
         for exp_tz, tzi in tzinfos:
             dt = dt_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
-            with self.subTest(tzi=tzi):
+            with self.subTest(tzi=):
                 assert dt.isoformat() == exp
 
     def test_format(self):
@@ -2573,7 +2572,7 @@ class TestDateTime(TestDate):
                 ("minimum", min_ts, min_dt),
                 ("maximum", max_ts, max_dt),
         ]:
-            with self.subTest(test_name, ts=ts, expected=expected):
+            with self.subTest(test_name, ts=, expected=):
                 actual = self.theclass.fromtimestamp(ts)
 
                 self.assertEqual(actual, expected)
@@ -2587,7 +2586,7 @@ class TestDateTime(TestDate):
         ]
 
         for test_name, ts in test_cases:
-            with self.subTest(test_name, ts=ts):
+            with self.subTest(test_name, ts=):
                 with self.assertRaises((ValueError, OverflowError)):
                     # converting a Python int to C time_t can raise a
                     # OverflowError, especially on 32-bit platforms.
@@ -2610,7 +2609,7 @@ class TestDateTime(TestDate):
                 ("minimum", min_ts, min_dt.replace(tzinfo=None)),
                 ("maximum", max_ts, max_dt.replace(tzinfo=None)),
         ]:
-            with self.subTest(test_name, ts=ts, expected=expected):
+            with self.subTest(test_name, ts=, expected=):
                 with self.assertWarns(DeprecationWarning):
                     try:
                         actual = self.theclass.utcfromtimestamp(ts)
@@ -2628,7 +2627,7 @@ class TestDateTime(TestDate):
         ]
 
         for test_name, ts in test_cases:
-            with self.subTest(test_name, ts=ts):
+            with self.subTest(test_name, ts=):
                 with self.assertRaises((ValueError, OverflowError)):
                     with self.assertWarns(DeprecationWarning):
                         # converting a Python int to C time_t can raise a
@@ -2699,7 +2698,7 @@ class TestDateTime(TestDate):
             ('2004-12-01 13:02\ud80047.197', '%Y-%m-%d %H:%M\ud800%S.%f'),
         ]
         for string, format in inputs:
-            with self.subTest(string=string, format=format):
+            with self.subTest(string=, format=):
                 expected = _strptime._strptime_datetime(self.theclass, string,
                                                         format)
                 got = self.theclass.strptime(string, format)
@@ -2769,10 +2768,7 @@ class TestDateTime(TestDate):
         ]
         for reason, string, format, target in inputs:
             reason = 'test single digit ' + reason
-            with self.subTest(reason=reason,
-                              string=string,
-                              format=format,
-                              target=target):
+            with self.subTest(reason=, string=, format=, target=):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
@@ -2974,8 +2970,7 @@ class TestDateTime(TestDate):
         for constr_name, constr_args, expected in test_cases:
             for base_obj in (DateTimeSubclass, base_d):
                 # Test both the classmethod and method
-                with self.subTest(base_obj_type=type(base_obj),
-                                  constr_name=constr_name):
+                with self.subTest(base_obj_type=type(base_obj), constr_name=):
                     constructor = getattr(base_obj, constr_name)
 
                     if constr_name == "utcfromtimestamp":
@@ -3050,9 +3045,9 @@ class TestDateTime(TestDate):
 
         for dt in dts:
             for sep in separators:
-                dtstr = dt.isoformat(sep=sep)
+                dtstr = dt.isoformat(sep=)
 
-                with self.subTest(dtstr=dtstr):
+                with self.subTest(dtstr=):
                     dt_rt = self.theclass.fromisoformat(dtstr)
                     self.assertEqual(dt, dt_rt)
 
@@ -3092,9 +3087,9 @@ class TestDateTime(TestDate):
 
         for sep in separators:
             dt = self.theclass(2018, 1, 31, 23, 59, 47, 124789)
-            dtstr = dt.isoformat(sep=sep)
+            dtstr = dt.isoformat(sep=)
 
-            with self.subTest(dtstr=dtstr):
+            with self.subTest(dtstr=):
                 dt_rt = self.theclass.fromisoformat(dtstr)
                 self.assertEqual(dt, dt_rt)
 
@@ -3103,9 +3098,9 @@ class TestDateTime(TestDate):
         separators = ['+', '-']
         for sep in separators:
             dt = self.theclass(2018, 1, 31, 12, 15)
-            dtstr = dt.isoformat(sep=sep)
+            dtstr = dt.isoformat(sep=)
 
-            with self.subTest(dtstr=dtstr):
+            with self.subTest(dtstr=):
                 dt_rt = self.theclass.fromisoformat(dtstr)
                 self.assertEqual(dt, dt_rt)
 
@@ -3131,7 +3126,7 @@ class TestDateTime(TestDate):
 
                     dt = self.theclass(*(dt_tuple[0:(4 + ip)]), tzinfo=tzi)
                     dtstr = dt.isoformat(timespec=ts)
-                    with self.subTest(dtstr=dtstr):
+                    with self.subTest(dtstr=):
                         dt_rt = self.theclass.fromisoformat(dtstr)
                         self.assertEqual(dt, dt_rt)
 
@@ -3265,7 +3260,7 @@ class TestDateTime(TestDate):
         ]
 
         for input_str, expected in examples:
-            with self.subTest(input_str=input_str):
+            with self.subTest(input_str=):
                 actual = self.theclass.fromisoformat(input_str)
                 self.assertEqual(actual, expected)
 
@@ -3301,7 +3296,7 @@ class TestDateTime(TestDate):
         ]
 
         for bad_str in bad_strs:
-            with self.subTest(bad_str=bad_str):
+            with self.subTest(bad_str=):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisoformat(bad_str)
 
@@ -3544,7 +3539,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         for exp_tz, tzi in tzinfos:
             t = t_base.replace(tzinfo=tzi)
             exp = exp_base + exp_tz
-            with self.subTest(tzi=tzi):
+            with self.subTest(tzi=):
                 assert t.isoformat() == exp
 
     def test_1653736(self):
@@ -3654,7 +3649,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
              (20, 59, 25, 64**2)),
         ]
         for i, (data, args) in enumerate(tests):
-            with self.subTest(i=i):
+            with self.subTest(i=):
                 expected = self.theclass(*args)
                 for loads in pickle_loads:
                     derived = loads(data, encoding='latin1')
@@ -4188,7 +4183,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                 t = self.theclass(*ttup, tzinfo=tzi)
                 tstr = t.isoformat()
 
-                with self.subTest(tstr=tstr):
+                with self.subTest(tstr=):
                     t_rt = self.theclass.fromisoformat(tstr)
                     self.assertEqual(t, t_rt)
 
@@ -4213,7 +4208,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             t = base_time.replace(tzinfo=tzi)
             tstr = t.isoformat()
 
-            with self.subTest(tstr=tstr):
+            with self.subTest(tstr=):
                 t_rt = self.theclass.fromisoformat(tstr)
                 assert t == t_rt, t_rt
 
@@ -4240,7 +4235,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
                     t = self.theclass(*(t_tuple[0:(1 + ip)]), tzinfo=tzi)
                     tstr = t.isoformat(timespec=ts)
-                    with self.subTest(tstr=tstr):
+                    with self.subTest(tstr=):
                         t_rt = self.theclass.fromisoformat(tstr)
                         self.assertEqual(t, t_rt)
 
@@ -4310,7 +4305,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         ]
 
         for input_str, expected in examples:
-            with self.subTest(input_str=input_str):
+            with self.subTest(input_str=):
                 actual = self.theclass.fromisoformat(input_str)
                 self.assertEqual(actual, expected)
 
@@ -4342,7 +4337,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         ]
 
         for bad_str in bad_strs:
-            with self.subTest(bad_str=bad_str):
+            with self.subTest(bad_str=):
                 with self.assertRaises(ValueError):
                     self.theclass.fromisoformat(bad_str)
 
@@ -5122,7 +5117,7 @@ DSTEND = datetime(1, 10, 25, 1)
 class USTimeZone(tzinfo):
 
     def __init__(self, hours, reprname, stdname, dstname):
-        self.stdoffset = timedelta(hours=hours)
+        self.stdoffset = timedelta(hours=)
         self.reprname = reprname
         self.stdname = stdname
         self.dstname = dstname
@@ -5331,8 +5326,8 @@ class TestTimezoneConversions(unittest.TestCase):
                 for tzhour in (0, 1, 1, 2):
                     expectedbase = self.dstoff.replace(hour=tzhour)
                     for minute in 0, 30, 59:
-                        expected = expectedbase.replace(minute=minute)
-                        asutc = asutcbase.replace(minute=minute)
+                        expected = expectedbase.replace(minute=)
+                        asutc = asutcbase.replace(minute=)
                         astz = asutc.astimezone(tz)
                         self.assertEqual(astz.replace(tzinfo=None), expected)
                     asutcbase += HOUR
@@ -5545,7 +5540,7 @@ class tzinfo2(tzinfo):
 class USTimeZone2(tzinfo2):
 
     def __init__(self, hours, reprname, stdname, dstname):
-        self.stdoffset = timedelta(hours=hours)
+        self.stdoffset = timedelta(hours=)
         self.reprname = reprname
         self.stdname = stdname
         self.dstname = dstname
@@ -6316,7 +6311,7 @@ class CapiTest(unittest.TestCase):
         for use_macro in (True, False):
             capi_utc = _testcapi.get_timezone_utc_capi(use_macro)
 
-            with self.subTest(use_macro=use_macro):
+            with self.subTest(use_macro=):
                 self.assertIs(capi_utc, timezone.utc)
 
     def test_timezones_capi(self):
@@ -6332,7 +6327,7 @@ class CapiTest(unittest.TestCase):
         ]
 
         for name, tz_act, tz_exp in cases:
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 self.assertEqual(tz_act, tz_exp)
 
                 dt1 = datetime(2000, 2, 4, tzinfo=tz_act)
@@ -6457,7 +6452,7 @@ class CapiTest(unittest.TestCase):
                 timedelta(1), timezone.utc, time(12, 00)]
         for arg in args:
             for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
+                with self.subTest(arg=, exact=):
                     self.assertFalse(is_date(arg, exact))
 
     def test_check_time(self):
@@ -6483,7 +6478,7 @@ class CapiTest(unittest.TestCase):
 
         for arg in args:
             for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
+                with self.subTest(arg=, exact=):
                     self.assertFalse(is_time(arg, exact))
 
     def test_check_datetime(self):
@@ -6509,7 +6504,7 @@ class CapiTest(unittest.TestCase):
 
         for arg in args:
             for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
+                with self.subTest(arg=, exact=):
                     self.assertFalse(is_datetime(arg, exact))
 
     def test_check_delta(self):
@@ -6535,7 +6530,7 @@ class CapiTest(unittest.TestCase):
 
         for arg in args:
             for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
+                with self.subTest(arg=, exact=):
                     self.assertFalse(is_timedelta(arg, exact))
 
     def test_check_tzinfo(self):
@@ -6564,14 +6559,14 @@ class CapiTest(unittest.TestCase):
 
         for arg in args:
             for exact in (True, False):
-                with self.subTest(arg=arg, exact=exact):
+                with self.subTest(arg=, exact=):
                     self.assertFalse(is_tzinfo(arg, exact))
 
     def test_date_from_date(self):
         exp_date = date(1993, 8, 26)
 
         for macro in False, True:
-            with self.subTest(macro=macro):
+            with self.subTest(macro=):
                 c_api_date = _testcapi.get_date_fromdate(
                     macro,
                     exp_date.year,
@@ -6584,7 +6579,7 @@ class CapiTest(unittest.TestCase):
         exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999)
 
         for macro in False, True:
-            with self.subTest(macro=macro):
+            with self.subTest(macro=):
                 c_api_date = _testcapi.get_datetime_fromdateandtime(
                     macro,
                     exp_date.year,
@@ -6602,7 +6597,7 @@ class CapiTest(unittest.TestCase):
 
         for fold in [0, 1]:
             for macro in False, True:
-                with self.subTest(macro=macro, fold=fold):
+                with self.subTest(macro=, fold=):
                     c_api_date = _testcapi.get_datetime_fromdateandtimeandfold(
                         macro,
                         exp_date.year,
@@ -6621,7 +6616,7 @@ class CapiTest(unittest.TestCase):
         exp_time = time(22, 12, 55, 99999)
 
         for macro in False, True:
-            with self.subTest(macro=macro):
+            with self.subTest(macro=):
                 c_api_time = _testcapi.get_time_fromtime(
                     macro,
                     exp_time.hour,
@@ -6636,7 +6631,7 @@ class CapiTest(unittest.TestCase):
 
         for fold in [0, 1]:
             for macro in False, True:
-                with self.subTest(macro=macro, fold=fold):
+                with self.subTest(macro=, fold=):
                     c_api_time = _testcapi.get_time_fromtimeandfold(
                         macro,
                         exp_time.hour,
@@ -6652,7 +6647,7 @@ class CapiTest(unittest.TestCase):
         exp_delta = timedelta(26, 55, 99999)
 
         for macro in False, True:
-            with self.subTest(macro=macro):
+            with self.subTest(macro=):
                 c_api_delta = _testcapi.get_delta_fromdsu(
                     macro,
                     exp_delta.days,
@@ -6665,7 +6660,7 @@ class CapiTest(unittest.TestCase):
         ts = datetime(1995, 4, 12).timestamp()
 
         for macro in False, True:
-            with self.subTest(macro=macro):
+            with self.subTest(macro=):
                 d = _testcapi.get_date_fromtimestamp(int(ts), macro)
 
                 self.assertEqual(d, date(1995, 4, 12))
@@ -6683,9 +6678,9 @@ class CapiTest(unittest.TestCase):
         from_timestamp = _testcapi.get_datetime_fromtimestamp
         for case in cases:
             for macro in False, True:
-                with self.subTest(case=case, macro=macro):
+                with self.subTest(case=, macro=):
                     dtup, tzinfo, usetz = case
-                    dt_orig = datetime(*dtup, tzinfo=tzinfo)
+                    dt_orig = datetime(*dtup, tzinfo=)
                     ts = int(dt_orig.timestamp())
 
                     dt_rt = from_timestamp(ts, tzinfo, usetz, macro)

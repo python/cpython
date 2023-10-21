@@ -116,7 +116,7 @@ def xml_bytes(doc, encoding, decl_encoding=...):
 def make_xml_file(doc, encoding, decl_encoding=...):
     if decl_encoding is ...:
         decl_encoding = encoding
-    with open(TESTFN, 'w', encoding=encoding, errors='xmlcharrefreplace') as f:
+    with open(TESTFN, 'w', encoding=, errors='xmlcharrefreplace') as f:
         f.write(xml_str(doc, decl_encoding))
 
 
@@ -138,11 +138,11 @@ class ParseTest(unittest.TestCase):
         for encoding in encodings:
             self.check_parse(StringIO(xml_str(self.data, encoding)))
             make_xml_file(self.data, encoding)
-            with open(TESTFN, 'r', encoding=encoding) as f:
+            with open(TESTFN, 'r', encoding=) as f:
                 self.check_parse(f)
             self.check_parse(StringIO(self.data))
             make_xml_file(self.data, encoding, None)
-            with open(TESTFN, 'r', encoding=encoding) as f:
+            with open(TESTFN, 'r', encoding=) as f:
                 self.check_parse(f)
 
     def test_parse_bytes(self):
@@ -529,7 +529,7 @@ class XmlgenTest:
                      'utf-32', 'utf-32be', 'utf-32le')
         for encoding in encodings:
             result = self.ioclass()
-            gen = XMLGenerator(result, encoding=encoding)
+            gen = XMLGenerator(result, encoding=)
 
             gen.startDocument()
             gen.startElement("doc", {"a": '\u20ac'})
@@ -538,7 +538,7 @@ class XmlgenTest:
             gen.endDocument()
 
             self.assertEqual(result.getvalue(),
-                self.xml('<doc a="\u20ac">\u20ac</doc>', encoding=encoding))
+                self.xml('<doc a="\u20ac">\u20ac</doc>', encoding=))
 
     def test_xmlgen_unencodable(self):
         result = self.ioclass()
@@ -583,7 +583,7 @@ class XmlgenTest:
                      'utf-32', 'utf-32be', 'utf-32le')
         for encoding in encodings:
             result = self.ioclass()
-            gen = XMLGenerator(result, encoding=encoding)
+            gen = XMLGenerator(result, encoding=)
 
             gen.startDocument()
             gen.startElement("doc", {"a": '\u20ac'})
@@ -593,7 +593,7 @@ class XmlgenTest:
             gen.endDocument()
 
             self.assertEqual(result.getvalue(),
-                self.xml('<doc a="\u20ac">\u20ac </doc>', encoding=encoding))
+                self.xml('<doc a="\u20ac">\u20ac </doc>', encoding=))
 
     def test_xmlgen_ns(self):
         result = self.ioclass()

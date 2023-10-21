@@ -96,10 +96,10 @@ class EmbeddingTestsMixin:
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              universal_newlines=True,
-                             env=env,
-                             cwd=cwd)
+                             env=,
+                             cwd=)
         try:
-            (out, err) = p.communicate(input=input, timeout=timeout)
+            (out, err) = p.communicate(input=, timeout=)
         except:
             p.terminate()
             p.wait()
@@ -216,7 +216,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
-        out, err = self.run_embedded_interpreter("test_forced_io_encoding", env=env)
+        out, err = self.run_embedded_interpreter("test_forced_io_encoding", env=)
         if support.verbose > 1:
             print()
             print(out)
@@ -262,7 +262,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         is initialized (via Py_Initialize()).
         """
         env = dict(os.environ, PYTHONPATH=os.pathsep.join(sys.path))
-        out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=env)
+        out, err = self.run_embedded_interpreter("test_pre_initialization_api", env=)
         if MS_WINDOWS:
             expected_path = self.test_exe
         else:
@@ -279,7 +279,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         env = remove_python_envvars()
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
         out, err = self.run_embedded_interpreter(
-                        "test_pre_initialization_sys_options", env=env)
+                        "test_pre_initialization_sys_options", env=)
         expected_output = (
             "sys.warnoptions: ['once', 'module', 'default']\n"
             "sys._xoptions: {'not_an_option': '1', 'also_not_an_option': '2'}\n"
@@ -616,7 +616,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         # Use -S to not import the site module: get the proper configuration
         # when test_embed is run from a venv (bpo-35313)
         args = [sys.executable, '-S', '-c', code]
-        proc = subprocess.run(args, env=env,
+        proc = subprocess.run(args, env=,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
         if proc.returncode:
@@ -791,8 +791,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                  env,
                                  api, modify_path_cb)
 
-        out, err = self.run_embedded_interpreter(testname,
-                                                 env=env, cwd=cwd)
+        out, err = self.run_embedded_interpreter(testname, env=, cwd=)
         if stderr is None and not expected_config['verbose']:
             stderr = ""
         if stderr is not None and not ignore_stderr:
@@ -1215,7 +1214,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env = {'TESTPATH': os.path.pathsep.join(paths)}
 
         self.check_all_configs("test_init_setpath", config,
-                               api=API_COMPAT, env=env,
+                               api=API_COMPAT, env=,
                                ignore_stderr=True)
 
     def test_init_setpath_config(self):
@@ -1241,7 +1240,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         env = {'TESTPATH': os.path.pathsep.join(paths)}
         self.check_all_configs("test_init_setpath_config", config,
-                               api=API_PYTHON, env=env, ignore_stderr=True)
+                               api=API_PYTHON, env=, ignore_stderr=True)
 
     def module_search_paths(self, prefix=None, exec_prefix=None):
         config = self._get_expected_config()
@@ -1329,7 +1328,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.default_program_name(config)
         env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=)
 
     def test_init_is_python_build_with_home(self):
         # Test _Py_path_config._is_python_build configuration (gh-91985)
@@ -1373,7 +1372,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env['NEGATIVE_ISPYTHONBUILD'] = '1'
         config['_is_python_build'] = 0
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=)
 
         env['NEGATIVE_ISPYTHONBUILD'] = '0'
         config['_is_python_build'] = 1
@@ -1385,11 +1384,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             # PREFIX (default) is set when running in build directory
             prefix = exec_prefix = sys.prefix
             # stdlib calculation (/Lib) is not yet supported
-            expected_paths[0] = self.module_search_paths(prefix=prefix)[0]
-            config.update(prefix=prefix, base_prefix=prefix,
-                          exec_prefix=exec_prefix, base_exec_prefix=exec_prefix)
+            expected_paths[0] = self.module_search_paths(prefix=)[0]
+            config.update(prefix=, base_prefix=prefix,
+                          exec_prefix=, base_exec_prefix=exec_prefix)
         self.check_all_configs("test_init_is_python_build", config,
-                               api=API_COMPAT, env=env)
+                               api=API_COMPAT, env=)
 
     def copy_paths_by_env(self, config):
         all_configs = self._get_expected_config()
@@ -1432,7 +1431,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
-                                   api=API_COMPAT, env=env,
+                                   api=API_COMPAT, env=,
                                    ignore_stderr=True, cwd=tmpdir)
 
     @unittest.skipUnless(MS_WINDOWS, 'See test_init_pybuilddir')
@@ -1472,7 +1471,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             }
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
-                                   api=API_COMPAT, env=env,
+                                   api=API_COMPAT, env=,
                                    ignore_stderr=False, cwd=tmpdir)
 
     def test_init_pyvenv_cfg(self):
@@ -1536,7 +1535,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
             env = self.copy_paths_by_env(config)
             self.check_all_configs("test_init_compat_config", config,
-                                   api=API_COMPAT, env=env,
+                                   api=API_COMPAT, env=,
                                    ignore_stderr=True, cwd=tmpdir)
 
     @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
@@ -1667,7 +1666,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             env = {'TESTFROZEN': raw[1:]} if raw else None
             with self.subTest(repr(raw)):
                 self.check_all_configs("test_init_use_frozen_modules", config,
-                                       api=API_PYTHON, env=env)
+                                       api=API_PYTHON, env=)
 
     def test_init_main_interpreter_settings(self):
         OBMALLOC = 1<<5
@@ -1742,7 +1741,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
             self.run_embedded_interpreter("test_audit_run_interactivehook",
                                           timeout=support.SHORT_TIMEOUT,
-                                          returncode=10, env=env)
+                                          returncode=10, env=)
         finally:
             os.unlink(startup)
 
@@ -1754,7 +1753,7 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
             self.run_embedded_interpreter("test_audit_run_startup",
                                           timeout=support.SHORT_TIMEOUT,
-                                          returncode=10, env=env)
+                                          returncode=10, env=)
         finally:
             os.unlink(startup)
 
@@ -1779,7 +1778,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_frozenmain(self):
         env = dict(os.environ)
         env['PYTHONUNBUFFERED'] = '1'
-        out, err = self.run_embedded_interpreter("test_frozenmain", env=env)
+        out, err = self.run_embedded_interpreter("test_frozenmain", env=)
         executable = os.path.realpath('./argv0')
         expected = textwrap.dedent(f"""
             Frozen Hello World
@@ -1816,7 +1815,7 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.fail(f"unexpected output: {out!a}")
             refs = int(match.group(1))
             blocks = int(match.group(2))
-            with self.subTest(frozen_modules=flag, stmt=stmt):
+            with self.subTest(frozen_modules=flag, stmt=):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
 

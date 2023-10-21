@@ -37,8 +37,8 @@ class MyBaseProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
-            self.connected = asyncio.Future(loop=loop)
-            self.done = asyncio.Future(loop=loop)
+            self.connected = asyncio.Future(loop=)
+            self.done = asyncio.Future(loop=)
 
     def connection_made(self, transport):
         self.transport = transport
@@ -341,7 +341,7 @@ class TestSSL(test_utils.TestCase):
             sock = socket.socket()
             sock.connect(addr)
             reader, writer = await asyncio.open_connection(
-                sock=sock,
+                sock=,
                 ssl=client_sslctx,
                 server_hostname='')
 
@@ -599,7 +599,7 @@ class TestSSL(test_utils.TestCase):
         thread.start()
 
         conn, _ = lsock.accept()
-        proto = MyProto(loop=loop)
+        proto = MyProto(loop=)
         proto.loop = loop
 
         extras = {}
@@ -1494,7 +1494,7 @@ class TestSSL(test_utils.TestCase):
 
         class Protocol(asyncio.Protocol):
             def __init__(self):
-                self.fut = asyncio.Future(loop=loop)
+                self.fut = asyncio.Future(loop=)
 
             def connection_lost(self, exc):
                 self.fut.set_result(None)
@@ -1542,7 +1542,7 @@ class TestSSL(test_utils.TestCase):
 
         class Protocol(asyncio.Protocol):
             def __init__(self):
-                self.fut = asyncio.Future(loop=loop)
+                self.fut = asyncio.Future(loop=)
                 self.transport = None
 
             def connection_made(self, transport):
@@ -1603,9 +1603,9 @@ class TestSocketWrapper:
         assert isinstance(ssl_context, ssl.SSLContext)
 
         ssl_sock = ssl_context.wrap_socket(
-            self.__sock, server_side=server_side,
-            server_hostname=server_hostname,
-            do_handshake_on_connect=do_handshake_on_connect)
+            self.__sock, server_side=,
+            server_hostname=,
+            do_handshake_on_connect=)
 
         if server_side:
             ssl_sock.do_handshake()

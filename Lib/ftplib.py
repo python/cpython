@@ -716,7 +716,7 @@ else:
             self.context = context
             self._prot_p = False
             super().__init__(host, user, passwd, acct,
-                             timeout, source_address, encoding=encoding)
+                             timeout, source_address, encoding=)
 
         def login(self, user='', passwd='', acct='', secure=True):
             if secure and not isinstance(self.sock, ssl.SSLSocket):

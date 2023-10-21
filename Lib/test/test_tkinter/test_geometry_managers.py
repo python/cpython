@@ -44,7 +44,7 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
         pack, a, b, c, d = self.create2()
         def check(anchor, geom):
             a.pack_configure(side='top', ipadx=5, padx=10, ipady=15, pady=20,
-                             expand=True, anchor=anchor)
+                             expand=True, anchor=)
             self.root.update()
             self.assertEqual(a.winfo_geometry(), geom)
         check('n', '30x70+135+20')
@@ -201,7 +201,7 @@ class PackTest(AbstractWidgetTest, unittest.TestCase):
     def test_pack_configure_side(self):
         pack, a, b, c, d = self.create2()
         def check(side, geom1, geom2):
-            a.pack_configure(side=side)
+            a.pack_configure(side=)
             self.assertEqual(a.pack_info()['side'], side)
             b.pack_configure(expand=True, fill='both')
             self.root.update()

@@ -134,7 +134,7 @@ def cmd_count_by_section(lines):
 
 def parse_args(argv=None, prog=None):
     import argparse
-    parser = argparse.ArgumentParser(prog=prog)
+    parser = argparse.ArgumentParser(prog=)
     parser.add_argument('filename')
 
     args = parser.parse_args(argv)

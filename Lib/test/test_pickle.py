@@ -312,12 +312,12 @@ if has_c_implementation:
         def test_have_gc(self):
             import gc
             for tp in self._types:
-                with self.subTest(tp=tp):
+                with self.subTest(tp=):
                     self.assertTrue(gc.is_tracked(tp))
 
         def test_immutable(self):
             for tp in self._types:
-                with self.subTest(tp=tp):
+                with self.subTest(tp=):
                     with self.assertRaisesRegex(TypeError, "immutable"):
                         tp.foo = "bar"
 
@@ -350,8 +350,7 @@ if has_c_implementation:
             check = self.check_sizeof
             for encoding in 'ASCII', 'UTF-16', 'latin-1':
                 for errors in 'strict', 'replace':
-                    u = unpickler(io.BytesIO(),
-                                  encoding=encoding, errors=errors)
+                    u = unpickler(io.BytesIO(), encoding=, errors=)
                     self.assertEqual(object.__sizeof__(u), basesize)
                     check(u, basesize +
                              32 * P +  # Minimal memo table size.

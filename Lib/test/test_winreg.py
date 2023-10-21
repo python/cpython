@@ -201,11 +201,11 @@ class BaseWinregTests(unittest.TestCase):
         self._delete_test_data(root_key, subkeystr)
 
     def _test_named_args(self, key, sub_key):
-        with CreateKeyEx(key=key, sub_key=sub_key, reserved=0,
+        with CreateKeyEx(key=, sub_key=, reserved=0,
                          access=KEY_ALL_ACCESS) as ckey:
             self.assertTrue(ckey.handle != 0)
 
-        with OpenKeyEx(key=key, sub_key=sub_key, reserved=0,
+        with OpenKeyEx(key=, sub_key=, reserved=0,
                        access=KEY_ALL_ACCESS) as okey:
             self.assertTrue(okey.handle != 0)
 

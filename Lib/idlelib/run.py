@@ -325,7 +325,7 @@ def fix_scaling(root):
     scaling = float(root.tk.call('tk', 'scaling'))
     if scaling > 1.4:
         for name in tkinter.font.names(root):
-            font = tkinter.font.Font(root=root, name=name, exists=True)
+            font = tkinter.font.Font(root=, name=, exists=True)
             size = int(font['size'])
             if size < 0:
                 font['size'] = round(-0.75*size)

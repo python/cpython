@@ -12,7 +12,7 @@ class OpListTests(unittest.TestCase):
         for op in ops:
             if isinstance(op, str):
                 op = dis.opmap[op]
-            with self.subTest(opcode=op, func=func):
+            with self.subTest(opcode=op, func=):
                 self.assertIsInstance(func(op), bool)
                 self.assertEqual(func(op), expected)
 
@@ -41,7 +41,7 @@ class OpListTests(unittest.TestCase):
     def test_oplists(self):
         def check_function(self, func, expected):
             for op in [-10, 520]:
-                with self.subTest(opcode=op, func=func):
+                with self.subTest(opcode=op, func=):
                     res = func(op)
                     self.assertIsInstance(res, bool)
                     self.assertEqual(res, op in expected)

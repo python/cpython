@@ -144,7 +144,7 @@ class PowTest(unittest.TestCase):
     def test_negative_exponent(self):
         for a in range(-50, 50):
             for m in range(-50, 50):
-                with self.subTest(a=a, m=m):
+                with self.subTest(a=, m=):
                     if m != 0 and math.gcd(a, m) == 1:
                         # Exponent -1 should give an inverse, with the
                         # same sign as m.

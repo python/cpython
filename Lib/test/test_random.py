@@ -196,7 +196,7 @@ class TestBasicOps:
         colors = ['red', 'green', 'blue', 'orange', 'black', 'brown', 'amber']
         counts = [500,      200,     20,       10,       5,       0,       1 ]
         k = 700
-        summary = Counter(sample(colors, counts=counts, k=k))
+        summary = Counter(sample(colors, counts=, k=))
         self.assertEqual(sum(summary.values()), k)
         for color, weight in zip(colors, counts):
             self.assertLessEqual(summary[color], weight)
@@ -204,7 +204,7 @@ class TestBasicOps:
 
         # Case that exhausts the population
         k = sum(counts)
-        summary = Counter(sample(colors, counts=counts, k=k))
+        summary = Counter(sample(colors, counts=, k=))
         self.assertEqual(sum(summary.values()), k)
         for color, weight in zip(colors, counts):
             self.assertLessEqual(summary[color], weight)
@@ -831,10 +831,8 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             # Population range too large (n >= maxsize)
-            self.gen._randbelow_without_getrandbits(
-                maxsize+1, maxsize=maxsize
-            )
-        self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
+            self.gen._randbelow_without_getrandbits(maxsize+1, maxsize=)
+        self.gen._randbelow_without_getrandbits(5640, maxsize=)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -855,7 +853,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         limit = (maxsize - (maxsize % n)) / maxsize
         with unittest.mock.patch.object(random.Random, 'random') as random_mock:
             random_mock.side_effect = [limit + epsilon, limit - epsilon]
-            self.gen._randbelow_without_getrandbits(n, maxsize=maxsize)
+            self.gen._randbelow_without_getrandbits(n, maxsize=)
             self.assertEqual(random_mock.call_count, 2)
 
     def test_randrange_bug_1590891(self):
@@ -896,7 +894,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(a, b)
 
         self.gen.seed(9035768)
-        c = self.gen.choices(population, cum_weights=cum_weights, k=10000)
+        c = self.gen.choices(population, cum_weights=, k=10000)
         self.assertEqual(a, c)
 
     def test_randbytes(self):
@@ -960,17 +958,17 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
         counts = [500,      200,     20,       10,       5,       1 ]
         k = 700
         seed(8675309)
-        s1 = sample(colors, counts=counts, k=k)
+        s1 = sample(colors, counts=, k=)
         seed(8675309)
         expanded = [color for (color, count) in zip(colors, counts) for i in range(count)]
         self.assertEqual(len(expanded), sum(counts))
-        s2 = sample(expanded, k=k)
+        s2 = sample(expanded, k=)
         self.assertEqual(s1, s2)
 
         pop = 'abcdefghi'
         counts = [10, 9, 8, 7, 6, 5, 4, 3, 2]
         seed(8675309)
-        s1 = ''.join(sample(pop, counts=counts, k=30))
+        s1 = ''.join(sample(pop, counts=, k=30))
         expanded = ''.join([letter for (letter, count) in zip(pop, counts) for i in range(count)])
         seed(8675309)
         s2 = ''.join(sample(expanded, k=30))

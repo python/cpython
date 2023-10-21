@@ -156,7 +156,7 @@ class Server(object):
         Listener, Client = listener_client[serializer]
 
         # do authentication later
-        self.listener = Listener(address=address, backlog=16)
+        self.listener = Listener(address=, backlog=16)
         self.address = self.listener.address
 
         self.id_to_obj = {'0': (None, ())}
@@ -667,7 +667,7 @@ class BaseManager(object):
         if process.is_alive():
             util.info('sending shutdown message to manager')
             try:
-                conn = _Client(address, authkey=authkey)
+                conn = _Client(address, authkey=)
                 try:
                     dispatch(conn, None, 'shutdown')
                 finally:
@@ -831,7 +831,7 @@ class BaseProxy(object):
             token.address = self._token.address
             proxy = proxytype(
                 token, self._serializer, manager=self._manager,
-                authkey=self._authkey, exposed=exposed
+                authkey=self._authkey, exposed=
                 )
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
@@ -876,7 +876,7 @@ class BaseProxy(object):
             # tell manager this process no longer cares about referent
             try:
                 util.debug('DECREF %r', token.id)
-                conn = _Client(token.address, authkey=authkey)
+                conn = _Client(token.address, authkey=)
                 dispatch(conn, None, 'decref', (token.id,))
             except Exception as e:
                 util.debug('... decref failed %s', e)
@@ -948,7 +948,7 @@ def RebuildProxy(func, token, serializer, kwds):
         kwds.pop('incref', True) and
         not getattr(process.current_process(), '_inheriting', False)
         )
-    return func(token, serializer, incref=incref, **kwds)
+    return func(token, serializer, incref=, **kwds)
 
 #
 # Functions to create proxies and proxy types
@@ -984,7 +984,7 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
     _Client = listener_client[serializer][1]
 
     if exposed is None:
-        conn = _Client(token.address, authkey=authkey)
+        conn = _Client(token.address, authkey=)
         try:
             exposed = dispatch(conn, None, 'get_methods', (token,))
         finally:
@@ -996,8 +996,8 @@ def AutoProxy(token, serializer, manager=None, authkey=None,
         authkey = process.current_process().authkey
 
     ProxyType = MakeProxyType('AutoProxy[%s]' % token.typeid, exposed)
-    proxy = ProxyType(token, serializer, manager=manager, authkey=authkey,
-                      incref=incref, manager_owned=manager_owned)
+    proxy = ProxyType(token, serializer, manager=, authkey=,
+                      incref=, manager_owned=)
     proxy._isauto = True
     return proxy
 
@@ -1365,7 +1365,7 @@ if HAS_SHMEM:
             """Returns a new SharedMemory instance with the specified size in
             bytes, to be tracked by the manager."""
             with self._Client(self._address, authkey=self._authkey) as conn:
-                sms = shared_memory.SharedMemory(None, create=True, size=size)
+                sms = shared_memory.SharedMemory(None, create=True, size=)
                 try:
                     dispatch(conn, None, 'track_segment', (sms.name,))
                 except BaseException as e:

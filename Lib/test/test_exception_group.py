@@ -370,7 +370,7 @@ class ExceptionGroupSubgroupTests(ExceptionGroupTestBase):
         for match_type, template in testcases:
             f = lambda e: isinstance(e, match_type)
             for callable in [f, Predicate(f), Predicate(f).method]:
-                with self.subTest(callable=callable):
+                with self.subTest(callable=):
                     subeg = eg.subgroup(f)
                     self.assertEqual(subeg.message, eg.message)
                     self.assertMatchesTemplate(subeg, ExceptionGroup, template)

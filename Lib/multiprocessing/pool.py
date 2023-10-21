@@ -486,7 +486,7 @@ class Pool(object):
 
         task_batches = Pool._get_tasks(func, iterable, chunksize)
         result = MapResult(self, chunksize, len(iterable), callback,
-                           error_callback=error_callback)
+                           error_callback=)
         self._taskqueue.put(
             (
                 self._guarded_task_generation(result._job,
@@ -499,7 +499,7 @@ class Pool(object):
 
     @staticmethod
     def _wait_for_updates(sentinels, change_notifier, timeout=None):
-        wait(sentinels, timeout=timeout)
+        wait(sentinels, timeout=)
         while not change_notifier.empty():
             change_notifier.get()
 
@@ -794,8 +794,7 @@ AsyncResult = ApplyResult       # create alias -- see #17805
 class MapResult(ApplyResult):
 
     def __init__(self, pool, chunksize, length, callback, error_callback):
-        ApplyResult.__init__(self, pool, callback,
-                             error_callback=error_callback)
+        ApplyResult.__init__(self, pool, callback, error_callback=)
         self._success = True
         self._value = [None] * length
         self._chunksize = chunksize

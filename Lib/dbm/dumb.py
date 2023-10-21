@@ -314,4 +314,4 @@ def open(file, flag='c', mode=0o666):
         mode = mode & (~um)
     if flag not in ('r', 'w', 'c', 'n'):
         raise ValueError("Flag must be one of 'r', 'w', 'c', or 'n'")
-    return _Database(file, mode, flag=flag)
+    return _Database(file, mode, flag=)

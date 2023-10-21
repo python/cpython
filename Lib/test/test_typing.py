@@ -83,7 +83,7 @@ def all_pickle_protocols(test_func):
     def wrapper(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(pickle_proto=proto):
-                test_func(self, proto=proto)
+                test_func(self, proto=)
 
     return wrapper
 
@@ -207,7 +207,7 @@ class NoReturnTests(BottomTypeTestsMixin, BaseTestCase):
 
         expected = {'arg': NoReturn, 'return': NoReturn}
         for target in [some, some_str]:
-            with self.subTest(target=target):
+            with self.subTest(target=):
                 self.assertEqual(gth(target), expected)
 
     def test_not_equality(self):
@@ -227,7 +227,7 @@ class NeverTests(BottomTypeTestsMixin, BaseTestCase):
 
         expected = {'arg': Never, 'return': Never}
         for target in [some, some_str]:
-            with self.subTest(target=target):
+            with self.subTest(target=):
                 self.assertEqual(gth(target), expected)
 
 
@@ -265,7 +265,7 @@ class SelfTests(BaseTestCase):
             def bar(self) -> 'typing.Self': ...
 
         for target in [Foo, FooStr, FooStrTyping]:
-            with self.subTest(target=target):
+            with self.subTest(target=):
                 self.assertEqual(gth(target.bar), {'return': Self})
         self.assertIs(get_origin(Self), None)
 
@@ -322,7 +322,7 @@ class LiteralStringTests(BaseTestCase):
             def bar(self) -> 'typing.LiteralString': ...
 
         for target in [Foo, FooStr, FooStrTyping]:
-            with self.subTest(target=target):
+            with self.subTest(target=):
                 self.assertEqual(gth(target.bar), {'return': LiteralString})
         self.assertIs(get_origin(LiteralString), None)
 
@@ -536,7 +536,7 @@ class TypeVarTests(BaseTestCase):
             Final, Final[int], ClassVar, ClassVar[int],
         )
         for arg in bad_args:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with self.assertRaises(TypeError):
                     T.__typing_subst__(arg)
                 with self.assertRaises(TypeError):
@@ -547,7 +547,7 @@ class TypeVarTests(BaseTestCase):
     def test_many_weakrefs(self):
         # gh-108295: this used to segfault
         for cls in (ParamSpec, TypeVarTuple, TypeVar):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 vals = weakref.WeakValueDictionary()
 
                 for x in range(10):
@@ -933,7 +933,7 @@ class UnpackTests(BaseTestCase):
         for required_item in [
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_rejects_multiple_types(self):
@@ -1801,7 +1801,7 @@ class UnionTests(BaseTestCase):
         for required_item in [
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_cannot_subclass(self):
@@ -1979,7 +1979,7 @@ class BaseCallableTests:
         for required_item in [
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_cannot_instantiate(self):
@@ -2079,7 +2079,7 @@ class BaseCallableTests:
         ]
         for alias in samples:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(alias=alias, proto=proto):
+                with self.subTest(alias=, proto=):
                     s = pickle.dumps(alias, proto)
                     loaded = pickle.loads(s)
                     self.assertEqual(alias.__origin__, loaded.__origin__)
@@ -2306,7 +2306,7 @@ class LiteralTests(BaseTestCase):
         for required_item in [
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_cannot_init(self):
@@ -3186,7 +3186,7 @@ class ProtocolTests(BaseTestCase):
 
         for obj in cases:
             for klass in C, D, E, F, Empty:
-                with self.subTest(klass=klass.__name__, obj=obj):
+                with self.subTest(klass=klass.__name__, obj=):
                     with self.assertRaises(TypeError):
                         isinstance(klass(), obj)
 
@@ -4145,7 +4145,7 @@ class GenericTests(BaseTestCase):
                     tuple[int, str], Tuple[int, str],
                     typing.Callable[..., None],
                     collections.abc.Callable[..., None]]:
-            with self.subTest(typ=typ):
+            with self.subTest(typ=):
                 self.assertRaises(TypeError, issubclass, typ, object)
                 self.assertRaises(TypeError, issubclass, typ, type)
                 self.assertRaises(TypeError, issubclass, typ, typ)
@@ -4816,7 +4816,7 @@ class GenericTests(BaseTestCase):
         }
 
         for obj, expected_repr in object_to_expected_repr.items():
-            with self.subTest(obj=obj, expected_repr=expected_repr):
+            with self.subTest(obj=, expected_repr=):
                 self.assertRegex(
                     repr(obj),
                     fr"^{re.escape(MyCallable.__module__)}.*\.{re.escape(expected_repr)}$",
@@ -5771,12 +5771,12 @@ class ForwardRefTests(BaseTestCase):
             Other = Other
 
         for klass in [A, A.B, A.B.C, A.D]:
-            with self.subTest(klass=klass):
+            with self.subTest(klass=):
                 self.assertTrue(klass.__no_type_check__)
                 self.assertEqual(get_type_hints(klass), {})
 
         for not_modified in [Other, B]:
-            with self.subTest(not_modified=not_modified):
+            with self.subTest(not_modified=):
                 with self.assertRaises(AttributeError):
                     not_modified.__no_type_check__
                 self.assertNotEqual(get_type_hints(not_modified), {})
@@ -7169,7 +7169,7 @@ class NewTypeTests(BaseTestCase):
 
     def test_or(self):
         for cls in (int, self.UserName):
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertEqual(UserId | cls, typing.Union[UserId, cls])
                 self.assertEqual(cls | UserId, typing.Union[cls, UserId])
 
@@ -7197,7 +7197,7 @@ class NewTypeTests(BaseTestCase):
     def test_pickle(self):
         UserAge = typing.NewType('UserAge', float)
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 pickled = pickle.dumps(UserId, proto)
                 loaded = pickle.loads(pickled)
                 self.assertIs(loaded, UserId)
@@ -7450,7 +7450,7 @@ class NamedTupleTests(BaseTestCase):
             pass  # empty body
 
         for struct in NT1, NT2, NT3, CNT:
-            with self.subTest(struct=struct):
+            with self.subTest(struct=):
                 self.assertEqual(struct._fields, ())
                 self.assertEqual(struct._field_defaults, {})
                 self.assertEqual(struct.__annotations__, {})
@@ -7488,7 +7488,7 @@ class NamedTupleTests(BaseTestCase):
         global Emp  # pickle wants to reference the class by name
         Emp = NamedTuple('Emp', [('name', str), ('cool', int)])
         for cls in Emp, CoolEmployee, self.NestedEmployee:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 jane = cls('jane', 37)
                 for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                     z = pickle.dumps(jane, proto)
@@ -7792,7 +7792,7 @@ class TypedDictTests(BaseTestCase):
             (Untotal, Regular),
         ]
         for bases in wrong_bases:
-            with self.subTest(bases=bases):
+            with self.subTest(bases=):
                 with self.assertRaisesRegex(
                     TypeError,
                     'cannot inherit from both a TypedDict type and a non-TypedDict',
@@ -8259,7 +8259,7 @@ class AnnotatedTests(BaseTestCase):
             '__args__', '__parameters__', '__origin__',
             '__metadata__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_flatten(self):
@@ -8796,7 +8796,7 @@ class ParamSpecTests(BaseTestCase):
         P = ParamSpec('P')
         bad_args = (42, int, None, T, int|str, Union[int, str])
         for arg in bad_args:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with self.assertRaises(TypeError):
                     P.__typing_subst__(arg)
                 with self.assertRaises(TypeError):
@@ -8996,7 +8996,7 @@ class ConcatenateTests(BaseTestCase):
         for required_item in [
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
 
     def test_valid_uses(self):
@@ -9210,7 +9210,7 @@ class SpecialAttrsTests(BaseTestCase):
         }
 
         for cls, name in cls_to_check.items():
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 self.assertEqual(cls.__name__, name, str(cls))
                 self.assertEqual(cls.__qualname__, name, str(cls))
                 self.assertEqual(cls.__module__, 'typing', str(cls))
@@ -9285,7 +9285,7 @@ class SpecialAttrsTests(BaseTestCase):
             'bar', 'baz',
             '__args__', '__parameters__', '__origin__',
         ]:
-            with self.subTest(required_item=required_item):
+            with self.subTest(required_item=):
                 self.assertIn(required_item, dir_items)
         self.assertNotIn('__magic__', dir_items)
 

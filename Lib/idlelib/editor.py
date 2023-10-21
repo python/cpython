@@ -497,14 +497,13 @@ class EditorWindow:
         for name, label in self.menu_specs:
             underline, label = prepstr(label)
             postcommand = getattr(self, f'{name}_menu_postcommand', None)
-            menudict[name] = menu = Menu(mbar, name=name, tearoff=0,
-                                         postcommand=postcommand)
-            mbar.add_cascade(label=label, menu=menu, underline=underline)
+            menudict[name] = menu = Menu(mbar, name=, tearoff=0, postcommand=)
+            mbar.add_cascade(label=, menu=, underline=)
         if macosx.isCarbonTk():
             # Insert the application menu
             menudict['application'] = menu = Menu(mbar, name='apple',
                                                   tearoff=0)
-            mbar.add_cascade(label='IDLE', menu=menu)
+            mbar.add_cascade(label='IDLE', menu=)
         self.fill_menus()
         self.recent_files_menu = Menu(self.menubar, tearoff=0)
         self.menudict['file'].insert_cascade(3, label='Recent Files',
@@ -529,12 +528,12 @@ class EditorWindow:
     def update_menu_label(self, menu, index, label):
         "Update label for menu item at index."
         menuitem = self.menudict[menu]
-        menuitem.entryconfig(index, label=label)
+        menuitem.entryconfig(index, label=)
 
     def update_menu_state(self, menu, index, state):
         "Update state for menu item at index."
         menuitem = self.menudict[menu]
-        menuitem.entryconfig(index, state=state)
+        menuitem.entryconfig(index, state=)
 
     def handle_yview(self, event, *args):
         "Handle scrollbar."
@@ -577,7 +576,7 @@ class EditorWindow:
             if verify_state is None:
                 continue
             state = getattr(self, verify_state)()
-            rmenu.entryconfigure(label, state=state)
+            rmenu.entryconfigure(label, state=)
 
         rmenu.tk_popup(event.x_root, event.y_root)
         if iswin:
@@ -596,7 +595,7 @@ class EditorWindow:
             if label is not None:
                 def command(text=self.text, eventname=eventname):
                     text.event_generate(eventname)
-                rmenu.add_command(label=label, command=command)
+                rmenu.add_command(label=, command=)
             else:
                 rmenu.add_separator()
         self.rmenu = rmenu
@@ -1241,13 +1240,13 @@ class EditorWindow:
                         text.event_generate(eventname)
                     if checkbutton:
                         var = self.get_var_obj(eventname, BooleanVar)
-                        menu.add_checkbutton(label=label, underline=underline,
-                            command=command, accelerator=accelerator,
+                        menu.add_checkbutton(label=, underline=,
+                            command=, accelerator=,
                             variable=var)
                     else:
-                        menu.add_command(label=label, underline=underline,
-                                         command=command,
-                                         accelerator=accelerator)
+                        menu.add_command(label=, underline=,
+                                         command=,
+                                         accelerator=)
 
     def getvar(self, name):
         var = self.get_var_obj(name)
@@ -1739,7 +1738,7 @@ def _editor_window(parent):  # htest #
     else:
         filename = None
     macosx.setupApp(root, None)
-    edit = EditorWindow(root=root, filename=filename)
+    edit = EditorWindow(root=, filename=)
     text = edit.text
     text['height'] = 10
     for i in range(20):

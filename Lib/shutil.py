@@ -322,15 +322,15 @@ if hasattr(os, 'listxattr'):
         """
 
         try:
-            names = os.listxattr(src, follow_symlinks=follow_symlinks)
+            names = os.listxattr(src, follow_symlinks=)
         except OSError as e:
             if e.errno not in (errno.ENOTSUP, errno.ENODATA, errno.EINVAL):
                 raise
             return
         for name in names:
             try:
-                value = os.getxattr(src, name, follow_symlinks=follow_symlinks)
-                os.setxattr(dst, name, value, follow_symlinks=follow_symlinks)
+                value = os.getxattr(src, name, follow_symlinks=)
+                os.setxattr(dst, name, value, follow_symlinks=)
             except OSError as e:
                 if e.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENODATA,
                                    errno.EINVAL, errno.EACCES):
@@ -419,8 +419,8 @@ def copy(src, dst, *, follow_symlinks=True):
     """
     if os.path.isdir(dst):
         dst = os.path.join(dst, os.path.basename(src))
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copymode(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=)
+    copymode(src, dst, follow_symlinks=)
     return dst
 
 def copy2(src, dst, *, follow_symlinks=True):
@@ -459,8 +459,8 @@ def copy2(src, dst, *, follow_symlinks=True):
             else:
                 raise
 
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-    copystat(src, dst, follow_symlinks=follow_symlinks)
+    copyfile(src, dst, follow_symlinks=)
+    copystat(src, dst, follow_symlinks=)
     return dst
 
 def ignore_patterns(*patterns):
@@ -584,10 +584,10 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
     sys.audit("shutil.copytree", src, dst)
     with os.scandir(src) as itr:
         entries = list(itr)
-    return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
-                     ignore=ignore, copy_function=copy_function,
-                     ignore_dangling_symlinks=ignore_dangling_symlinks,
-                     dirs_exist_ok=dirs_exist_ok)
+    return _copytree(entries=, src=, dst=, symlinks=,
+                     ignore=, copy_function=,
+                     ignore_dangling_symlinks=,
+                     dirs_exist_ok=)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     def _rmtree_islink(path):
@@ -754,12 +754,12 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
         # Note: To guard against symlink races, we use the standard
         # lstat()/open()/fstat() trick.
         try:
-            orig_st = os.lstat(path, dir_fd=dir_fd)
+            orig_st = os.lstat(path, dir_fd=)
         except Exception as err:
             onexc(os.lstat, path, err)
             return
         try:
-            fd = os.open(path, os.O_RDONLY, dir_fd=dir_fd)
+            fd = os.open(path, os.O_RDONLY, dir_fd=)
             fd_closed = False
         except Exception as err:
             onexc(os.open, path, err)
@@ -770,7 +770,7 @@ def rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None):
                 try:
                     os.close(fd)
                     fd_closed = True
-                    os.rmdir(path, dir_fd=dir_fd)
+                    os.rmdir(path, dir_fd=)
                 except OSError as err:
                     onexc(os.rmdir, path, err)
             else:
@@ -875,8 +875,7 @@ def move(src, dst, copy_function=copy2):
                 raise PermissionError("Cannot move the non-empty directory "
                                       "'%s': Lacking write permission to '%s'."
                                       % (src, src))
-            copytree(src, real_dst, copy_function=copy_function,
-                     symlinks=True)
+            copytree(src, real_dst, copy_function=, symlinks=True)
             rmtree(src)
         else:
             copy_function(src, real_dst)
@@ -1284,7 +1283,7 @@ def _unpack_tarfile(filename, extract_dir, *, filter=None):
         raise ReadError(
             "%s is not a compressed or uncompressed tar file" % filename)
     try:
-        tarobj.extractall(extract_dir, filter=filter)
+        tarobj.extractall(extract_dir, filter=)
     finally:
         tarobj.close()
 

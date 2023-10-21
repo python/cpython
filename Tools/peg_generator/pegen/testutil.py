@@ -38,7 +38,7 @@ def generate_parser(grammar: Grammar) -> Type[Parser]:
 def run_parser(file: IO[bytes], parser_class: Type[Parser], *, verbose: bool = False) -> Any:
     # Run a parser on a file (stream).
     tokenizer = Tokenizer(tokenize.generate_tokens(file.readline))  # type: ignore[arg-type] # typeshed issue #3515
-    parser = parser_class(tokenizer, verbose=verbose)
+    parser = parser_class(tokenizer, verbose=)
     result = parser.start()
     if result is None:
         raise parser.make_syntax_error("invalid syntax")
@@ -52,7 +52,7 @@ def parse_string(
     if dedent:
         source = textwrap.dedent(source)
     file = io.StringIO(source)
-    return run_parser(file, parser_class, verbose=verbose)  # type: ignore[arg-type] # typeshed issue #3515
+    return run_parser(file, parser_class, verbose=)  # type: ignore[arg-type] # typeshed issue #3515
 
 
 def make_parser(source: str) -> Type[Parser]:
@@ -101,7 +101,7 @@ def generate_parser_c_extension(
     source = path / "parse.c"
     with open(source, "w", encoding="utf-8") as file:
         genr = CParserGenerator(
-            grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=debug
+            grammar, ALL_TOKENS, EXACT_TOKENS, NON_EXACT_TOKENS, file, debug=
         )
         genr.generate("parse.c")
     compile_c_extension(
@@ -109,7 +109,7 @@ def generate_parser_c_extension(
         build_dir=str(path),
         # Significant test_peg_generator speedups
         disable_optimization=True,
-        library_dir=library_dir,
+        library_dir=,
     )
 
 

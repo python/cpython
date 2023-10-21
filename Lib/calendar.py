@@ -516,7 +516,7 @@ class HTMLCalendar(Calendar):
         a('<table border="0" cellpadding="0" cellspacing="0" class="%s">' % (
             self.cssclass_month))
         a('\n')
-        a(self.formatmonthname(theyear, themonth, withyear=withyear))
+        a(self.formatmonthname(theyear, themonth, withyear=))
         a('\n')
         a(self.formatweekheader())
         a('\n')
@@ -758,13 +758,13 @@ def main(args=None):
             parser.error("incorrect number of arguments")
             sys.exit(1)
         if options.locale:
-            cal = LocaleHTMLCalendar(locale=locale)
+            cal = LocaleHTMLCalendar(locale=)
         else:
             cal = HTMLCalendar()
         encoding = options.encoding
         if encoding is None:
             encoding = sys.getdefaultencoding()
-        optdict = dict(encoding=encoding, css=options.css)
+        optdict = dict(encoding=, css=options.css)
         write = sys.stdout.buffer.write
         if options.year is None:
             write(cal.formatyearpage(datetime.date.today().year, **optdict))
@@ -772,7 +772,7 @@ def main(args=None):
             write(cal.formatyearpage(options.year, **optdict))
     else:
         if options.locale:
-            cal = LocaleTextCalendar(locale=locale)
+            cal = LocaleTextCalendar(locale=)
         else:
             cal = TextCalendar()
         optdict = dict(w=options.width, l=options.lines)

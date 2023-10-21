@@ -59,7 +59,7 @@ class Test(unittest.TestCase):
             self.skipTest(str(err))
         flags = _testbuffer.ND_WRITABLE | _testbuffer.ND_FORTRAN
         array = _testbuffer.ndarray(
-            [97] * 16, format="B", shape=[4, 4], flags=flags)
+            [97] * 16, format="B", shape=[4, 4], flags=)
         with self.assertRaisesRegex(TypeError, "not C contiguous"):
             (c_char * 16).from_buffer(array)
         array = memoryview(array)

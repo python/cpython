@@ -347,7 +347,7 @@ class AST_Tests(unittest.TestCase):
                     ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
                     self.assertEqual(to_tuple(ast_tree), o)
                     self._assertTrueorder(ast_tree, (0, 0))
-                with self.subTest(action="compiling", input=i, kind=kind):
+                with self.subTest(action="compiling", input=i, kind=):
                     compile(ast_tree, "?", kind)
 
     def test_ast_validation(self):
@@ -360,7 +360,7 @@ class AST_Tests(unittest.TestCase):
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
-            with self.subTest(optval=optval, expected=expected):
+            with self.subTest(optval=, expected=):
                 res1 = ast.parse("__debug__", optimize=optval)
                 res2 = ast.parse(ast.parse("__debug__"), optimize=optval)
                 for res in [res1, res2]:
@@ -382,7 +382,7 @@ class AST_Tests(unittest.TestCase):
 
         cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
         for (optval, expected) in cases:
-            with self.subTest(optval=optval):
+            with self.subTest(optval=):
                 tree1 = ast.parse("1 + 2", optimize=optval)
                 tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
                 for tree in [tree1, tree2]:
@@ -732,7 +732,7 @@ class AST_Tests(unittest.TestCase):
         )
 
         for arg in 42, 4.2, 4.2j:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with assertNumDeprecated():
                     n = Num(arg)
                 with assertNumDeprecated():
@@ -749,7 +749,7 @@ class AST_Tests(unittest.TestCase):
             self.assertIsInstance(b, Bytes)
 
         for arg in True, False, None:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with assertNameConstantDeprecated():
                     n = NameConstant(arg)
                 with assertNameConstantDeprecated():
@@ -761,7 +761,7 @@ class AST_Tests(unittest.TestCase):
             self.assertIsInstance(e, Ellipsis)
 
         for arg in 42, 4.2, 4.2j:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with assertNumDeprecated():
                     self.assertIsInstance(Constant(arg), Num)
 
@@ -772,7 +772,7 @@ class AST_Tests(unittest.TestCase):
             self.assertIsInstance(Constant(b'42'), Bytes)
 
         for arg in True, False, None:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with assertNameConstantDeprecated():
                     self.assertIsInstance(Constant(arg), NameConstant)
 
@@ -801,7 +801,7 @@ class AST_Tests(unittest.TestCase):
             self.assertNotIsInstance(n, Num)
 
         for arg in '42', True, False:
-            with self.subTest(arg=arg):
+            with self.subTest(arg=):
                 with assertNumDeprecated():
                     self.assertNotIsInstance(Constant(arg), Num)
 
@@ -1596,7 +1596,7 @@ class ASTValidatorTests(unittest.TestCase):
 
     def expr(self, node, msg=None, *, exc=ValueError):
         mod = ast.Module([ast.Expr(node)], [])
-        self.mod(mod, msg, exc=exc)
+        self.mod(mod, msg, exc=)
 
     def stmt(self, stmt, msg=None):
         mod = ast.Module([stmt], [])
@@ -1626,7 +1626,7 @@ class ASTValidatorTests(unittest.TestCase):
                                  kw_defaults, kwarg, defaults)
             return fac(args)
         args = [ast.arg("x", ast.Name("x", ast.Store()))]
-        check(arguments(args=args), "must have Load context")
+        check(arguments(args=), "must have Load context")
         check(arguments(posonlyargs=args), "must have Load context")
         check(arguments(kwonlyargs=args), "must have Load context")
         check(arguments(defaults=[ast.Constant(3)]),
@@ -1634,7 +1634,7 @@ class ASTValidatorTests(unittest.TestCase):
         check(arguments(kw_defaults=[ast.Constant(4)]),
                        "length of kwonlyargs is not the same as kw_defaults")
         args = [ast.arg("x", ast.Name("x", ast.Load()))]
-        check(arguments(args=args, defaults=[ast.Name("x", ast.Store())]),
+        check(arguments(args=, defaults=[ast.Name("x", ast.Store())]),
                        "must have Load context")
         args = [ast.arg("a", ast.Name("x", ast.Load())),
                 ast.arg("b", ast.Name("y", ast.Load()))]
@@ -2184,10 +2184,7 @@ class ASTValidatorTests(unittest.TestCase):
                 node = ast.Match(
                     subject=name_x,
                     cases = [
-                        ast.match_case(
-                            pattern=pattern,
-                            body = [ast.Pass()]
-                        )
+                        ast.match_case(pattern=, body = [ast.Pass()])
                     ]
                 )
                 node = ast.fix_missing_locations(node)
@@ -2203,7 +2200,7 @@ class ConstantTests(unittest.TestCase):
         tree = ast.parse("x = 123")
 
         node = tree.body[0].value
-        new_node = ast.Constant(value=value)
+        new_node = ast.Constant(value=)
         ast.copy_location(new_node, node)
         tree.body[0].value = new_node
 
@@ -2221,7 +2218,7 @@ class ConstantTests(unittest.TestCase):
 
     def test_singletons(self):
         for const in (None, False, True, Ellipsis, b'', frozenset()):
-            with self.subTest(const=const):
+            with self.subTest(const=):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
 
@@ -2236,7 +2233,7 @@ class ConstantTests(unittest.TestCase):
                   tuple("tuple"), frozenset("frozenset"),
                   nested_tuple, nested_frozenset)
         for value in values:
-            with self.subTest(value=value):
+            with self.subTest(value=):
                 result = self.compile_constant(value)
                 self.assertEqual(result, value)
 

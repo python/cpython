@@ -147,7 +147,7 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
     flags = re.MULTILINE
     if not case_sensitive:
         flags |= re.IGNORECASE
-    return re.compile(''.join(parts), flags=flags)
+    return re.compile(''.join(parts), flags=)
 
 
 def _select_children(parent_paths, dir_only, follow_symlinks, match):
@@ -166,7 +166,7 @@ def _select_children(parent_paths, dir_only, follow_symlinks, match):
             for entry in entries:
                 if dir_only:
                     try:
-                        if not entry.is_dir(follow_symlinks=follow_symlinks):
+                        if not entry.is_dir(follow_symlinks=):
                             continue
                     except OSError:
                         continue
@@ -194,7 +194,7 @@ def _select_recursive(parent_paths, dir_only, follow_symlinks):
             else:
                 for entry in entries:
                     try:
-                        if entry.is_dir(follow_symlinks=follow_symlinks):
+                        if entry.is_dir(follow_symlinks=):
                             paths.append(path._make_child_relpath(entry.name))
                             continue
                     except OSError:
@@ -845,7 +845,7 @@ class _PathBase(PurePath):
         add the argument follow_symlinks=False.
         """
         try:
-            self.stat(follow_symlinks=follow_symlinks)
+            self.stat(follow_symlinks=)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -860,7 +860,7 @@ class _PathBase(PurePath):
         Whether this path is a directory.
         """
         try:
-            return S_ISDIR(self.stat(follow_symlinks=follow_symlinks).st_mode)
+            return S_ISDIR(self.stat(follow_symlinks=).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -877,7 +877,7 @@ class _PathBase(PurePath):
         to regular files).
         """
         try:
-            return S_ISREG(self.stat(follow_symlinks=follow_symlinks).st_mode)
+            return S_ISREG(self.stat(follow_symlinks=).st_mode)
         except OSError as e:
             if not _ignore_error(e):
                 raise
@@ -1028,7 +1028,7 @@ class _PathBase(PurePath):
         Open the file in text mode, read it, and close the file.
         """
         encoding = io.text_encoding(encoding)
-        with self.open(mode='r', encoding=encoding, errors=errors) as f:
+        with self.open(mode='r', encoding=, errors=) as f:
             return f.read()
 
     def write_bytes(self, data):
@@ -1048,7 +1048,7 @@ class _PathBase(PurePath):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
         encoding = io.text_encoding(encoding)
-        with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+        with self.open(mode='w', encoding=, errors=, newline=) as f:
             return f.write(data)
 
     def iterdir(self):
@@ -1202,7 +1202,7 @@ class _PathBase(PurePath):
                 filenames = []
                 for entry in scandir_it:
                     try:
-                        is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+                        is_dir = entry.is_dir(follow_symlinks=)
                     except OSError:
                         # Carried over from os.path.isdir().
                         is_dir = False
@@ -1459,7 +1459,7 @@ class Path(_PathBase):
         Return the result of the stat() system call on this path, like
         os.stat() does.
         """
-        return os.stat(self, follow_symlinks=follow_symlinks)
+        return os.stat(self, follow_symlinks=)
 
     def is_mount(self):
         """
@@ -1524,7 +1524,7 @@ class Path(_PathBase):
         normalizing it.
         """
 
-        return self.with_segments(os.path.realpath(self, strict=strict))
+        return self.with_segments(os.path.realpath(self, strict=))
 
     if pwd:
         def owner(self):
@@ -1579,7 +1579,7 @@ class Path(_PathBase):
             if not parents or self.parent == self:
                 raise
             self.parent.mkdir(parents=True, exist_ok=True)
-            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+            self.mkdir(mode, parents=False, exist_ok=)
         except OSError:
             # Cannot rely on checking for EEXIST, since the operating system
             # could give priority to other errors like EACCES or EROFS
@@ -1590,7 +1590,7 @@ class Path(_PathBase):
         """
         Change the permissions of the path, like os.chmod().
         """
-        os.chmod(self, mode, follow_symlinks=follow_symlinks)
+        os.chmod(self, mode, follow_symlinks=)
 
     def unlink(self, missing_ok=False):
         """

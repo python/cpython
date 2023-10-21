@@ -316,7 +316,7 @@ _sentinel = object()
 class JoinableQueue(Queue):
 
     def __init__(self, maxsize=0, *, ctx):
-        Queue.__init__(self, maxsize, ctx=ctx)
+        Queue.__init__(self, maxsize, ctx=)
         self._unfinished_tasks = ctx.Semaphore(0)
         self._cond = ctx.Condition()
 

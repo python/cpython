@@ -66,7 +66,7 @@ class PolicyAPITests(unittest.TestCase):
     def test_defaults(self):
         for policy, expected in self.policies.items():
             for attr, value in expected.items():
-                with self.subTest(policy=policy, attr=attr):
+                with self.subTest(policy=, attr=):
                     self.assertEqual(getattr(policy, attr), value,
                                     ("change {} docs/docstrings if defaults have "
                                     "changed").format(policy))
@@ -74,7 +74,7 @@ class PolicyAPITests(unittest.TestCase):
     def test_all_attributes_covered(self):
         for policy, expected in self.policies.items():
             for attr in dir(policy):
-                with self.subTest(policy=policy, attr=attr):
+                with self.subTest(policy=, attr=):
                     if (attr.startswith('_') or
                             isinstance(getattr(email.policy.EmailPolicy, attr),
                                   types.FunctionType)):
@@ -272,7 +272,7 @@ class PolicyAPITests(unittest.TestCase):
         subject = "Melt away the pounds with this one simple trick! 1234567890"
 
         for maxlen in [3, 7, 9]:
-            with self.subTest(maxlen=maxlen):
+            with self.subTest(maxlen=):
                 policy = email.policy.default.clone(max_line_length=maxlen)
                 with self.assertRaises(email.errors.HeaderParseError):
                     policy.fold("Subject", subject)

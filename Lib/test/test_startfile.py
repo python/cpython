@@ -38,8 +38,8 @@ class TestCase(unittest.TestCase):
         # Passing "-V" ensures that it closes quickly, though still not
         # quickly enough that we can run in the test directory
         cwd, name = path.split(sys.executable)
-        startfile(name, arguments="-V", cwd=cwd)
-        startfile(name, arguments="-V", cwd=cwd, show_cmd=0)
+        startfile(name, arguments="-V", cwd=)
+        startfile(name, arguments="-V", cwd=, show_cmd=0)
 
 if __name__ == "__main__":
     unittest.main()

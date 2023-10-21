@@ -130,9 +130,7 @@ def bootstrap(*, root=None, upgrade=False, user=False,
     Note that calling this function will alter both sys.path and os.environ.
     """
     # Discard the return value
-    _bootstrap(root=root, upgrade=upgrade, user=user,
-               altinstall=altinstall, default_pip=default_pip,
-               verbosity=verbosity)
+    _bootstrap(root=, upgrade=, user=, altinstall=, default_pip=, verbosity=)
 
 
 def _bootstrap(*, root=None, upgrade=False, user=False,

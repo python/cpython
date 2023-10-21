@@ -224,8 +224,7 @@ class TypeCommentTests(unittest.TestCase):
     highest = sys.version_info[1]  # Highest minor version
 
     def parse(self, source, feature_version=highest):
-        return ast.parse(source, type_comments=True,
-                         feature_version=feature_version)
+        return ast.parse(source, type_comments=True, feature_version=)
 
     def parse_all(self, source, minver=lowest, maxver=highest, expected_regex=""):
         for version in range(self.lowest, self.highest + 1):

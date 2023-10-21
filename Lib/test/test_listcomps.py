@@ -96,7 +96,7 @@ class ListComprehensionTest(unittest.TestCase):
         code = textwrap.dedent(code)
         scopes = scopes or ["module", "class", "function"]
         for scope in scopes:
-            with self.subTest(scope=scope):
+            with self.subTest(scope=):
                 if scope == "class":
                     newcode = textwrap.dedent("""
                         class _C:

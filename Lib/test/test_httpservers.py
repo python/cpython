@@ -554,7 +554,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         """
         headers = email.message.Message()
         headers['If-Modified-Since'] = self.last_modif_header
-        response = self.request(self.base_url + '/test', headers=headers)
+        response = self.request(self.base_url + '/test', headers=)
         self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)
 
         # one hour after last modification : must return 304
@@ -562,7 +562,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         headers = email.message.Message()
         headers['If-Modified-Since'] = email.utils.format_datetime(new_dt,
             usegmt=True)
-        response = self.request(self.base_url + '/test', headers=headers)
+        response = self.request(self.base_url + '/test', headers=)
         self.check_status_and_reason(response, HTTPStatus.NOT_MODIFIED)
 
     def test_browser_cache_file_changed(self):
@@ -573,7 +573,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         headers = email.message.Message()
         headers['If-Modified-Since'] = email.utils.format_datetime(old_dt,
             usegmt=True)
-        response = self.request(self.base_url + '/test', headers=headers)
+        response = self.request(self.base_url + '/test', headers=)
         self.check_status_and_reason(response, HTTPStatus.OK)
 
     def test_browser_cache_with_If_None_Match_header(self):
@@ -582,7 +582,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         headers = email.message.Message()
         headers['If-Modified-Since'] = self.last_modif_header
         headers['If-None-Match'] = "*"
-        response = self.request(self.base_url + '/test', headers=headers)
+        response = self.request(self.base_url + '/test', headers=)
         self.check_status_and_reason(response, HTTPStatus.OK)
 
     def test_invalid_requests(self):
@@ -885,7 +885,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
     def test_authorization(self):
         headers = {b'Authorization' : b'Basic ' +
                    base64.b64encode(b'username:pass')}
-        res = self.request('/cgi-bin/file1.py', 'GET', headers=headers)
+        res = self.request('/cgi-bin/file1.py', 'GET', headers=)
         self.assertEqual(
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
             (res.read(), res.getheader('Content-type'), res.status))
@@ -954,7 +954,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
         for headers, expected in tests:
             headers = OrderedDict(headers)
             with self.subTest(headers):
-                res = self.request('/cgi-bin/file6.py', 'GET', headers=headers)
+                res = self.request('/cgi-bin/file6.py', 'GET', headers=)
                 self.assertEqual(http.HTTPStatus.OK, res.status)
                 expected = f"HTTP_ACCEPT={expected}".encode('ascii')
                 self.assertIn(expected, res.read())
@@ -964,7 +964,7 @@ class SocketlessRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, directory=None):
         request = mock.Mock()
         request.makefile.return_value = BytesIO()
-        super().__init__(request, None, None, directory=directory)
+        super().__init__(request, None, None, directory=)
 
         self.get_called = False
         self.protocol_version = "HTTP/1.1"
@@ -1409,14 +1409,14 @@ class ScriptTestCase(unittest.TestCase):
     def test_server_test_ipv6(self, _):
         for bind in self.ipv6_addrs:
             mock_server = self.mock_server_class()
-            server.test(ServerClass=mock_server, bind=bind)
+            server.test(ServerClass=mock_server, bind=)
             self.assertEqual(mock_server.address_family, socket.AF_INET6)
 
     @mock.patch('builtins.print')
     def test_server_test_ipv4(self, _):
         for bind in self.ipv4_addrs:
             mock_server = self.mock_server_class()
-            server.test(ServerClass=mock_server, bind=bind)
+            server.test(ServerClass=mock_server, bind=)
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 

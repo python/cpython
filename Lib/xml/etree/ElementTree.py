@@ -726,7 +726,7 @@ class ElementTree:
                 qnames, namespaces = _namespaces(self._root, default_namespace)
                 serialize = _serialize[method]
                 serialize(write, self._root, qnames, namespaces,
-                          short_empty_elements=short_empty_elements)
+                          short_empty_elements=)
 
     def write_c14n(self, file):
         # lxml.etree compatibility.  use output method instead
@@ -744,7 +744,7 @@ def _get_writer(file_or_filename, encoding):
         # file_or_filename is a file name
         if encoding.lower() == "unicode":
             encoding="utf-8"
-        with open(file_or_filename, "w", encoding=encoding,
+        with open(file_or_filename, "w", encoding=,
                   errors="xmlcharrefreplace") as file:
             yield file.write, encoding
     else:
@@ -777,7 +777,7 @@ def _get_writer(file_or_filename, encoding):
                     except AttributeError:
                         pass
                 file = io.TextIOWrapper(file,
-                                        encoding=encoding,
+                                        encoding=,
                                         errors="xmlcharrefreplace",
                                         newline="\n")
                 # Keep the original file open when the TextIOWrapper is
@@ -860,8 +860,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
             if text:
                 write(_escape_cdata(text))
             for e in elem:
-                _serialize_xml(write, e, qnames, None,
-                               short_empty_elements=short_empty_elements)
+                _serialize_xml(write, e, qnames, None, short_empty_elements=)
         else:
             write("<" + tag)
             items = list(elem.items())
@@ -889,7 +888,7 @@ def _serialize_xml(write, elem, qnames, namespaces,
                     write(_escape_cdata(text))
                 for e in elem:
                     _serialize_xml(write, e, qnames, None,
-                                   short_empty_elements=short_empty_elements)
+                                   short_empty_elements=)
                 write("</" + tag + ">")
             else:
                 write(" />")
@@ -1081,10 +1080,10 @@ def tostring(element, encoding=None, method=None, *,
     """
     stream = io.StringIO() if encoding == 'unicode' else io.BytesIO()
     ElementTree(element).write(stream, encoding,
-                               xml_declaration=xml_declaration,
-                               default_namespace=default_namespace,
-                               method=method,
-                               short_empty_elements=short_empty_elements)
+                               xml_declaration=,
+                               default_namespace=,
+                               method=,
+                               short_empty_elements=)
     return stream.getvalue()
 
 class _ListDataStream(io.BufferedIOBase):
@@ -1110,10 +1109,10 @@ def tostringlist(element, encoding=None, method=None, *,
     lst = []
     stream = _ListDataStream(lst)
     ElementTree(element).write(stream, encoding,
-                               xml_declaration=xml_declaration,
-                               default_namespace=default_namespace,
-                               method=method,
-                               short_empty_elements=short_empty_elements)
+                               xml_declaration=,
+                               default_namespace=,
+                               method=,
+                               short_empty_elements=)
     return lst
 
 
@@ -1221,7 +1220,7 @@ def iterparse(source, events=None, parser=None):
     """
     # Use the internal, undocumented _parser argument for now; When the
     # parser argument of iterparse is removed, this can be killed.
-    pullparser = XMLPullParser(events=events, _parser=parser)
+    pullparser = XMLPullParser(events=, _parser=parser)
 
     def iterator(source):
         close_source = False
@@ -1741,7 +1740,7 @@ def canonicalize(xml_data=None, *, out=None, from_file=None, **options):
         parser.feed(xml_data)
         parser.close()
     elif from_file is not None:
-        parse(from_file, parser=parser)
+        parse(from_file, parser=)
 
     return sio.getvalue() if sio is not None else None
 

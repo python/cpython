@@ -129,7 +129,7 @@ class TestFailedWithDetails(TestFailed):
     def __init__(self, msg, errors, failures, stats):
         self.errors = errors
         self.failures = failures
-        super().__init__(msg, errors, failures, stats=stats)
+        super().__init__(msg, errors, failures, stats=)
 
 class TestDidNotRun(Error):
     """Test did not run any subtests."""
@@ -165,7 +165,7 @@ def load_package_tests(pkg_dir, loader, standard_tests, pattern):
     top_dir = STDLIB_DIR
     package_tests = loader.discover(start_dir=pkg_dir,
                                     top_level_dir=top_dir,
-                                    pattern=pattern)
+                                    pattern=)
     standard_tests.addTests(package_tests)
     return standard_tests
 
@@ -428,7 +428,7 @@ def skip_if_sanitizer(reason=None, *, address=False, memory=False, ub=False):
     """Decorator raising SkipTest if running with a sanitizer active."""
     if not reason:
         reason = 'not working with sanitizers active'
-    skip = check_sanitizer(address=address, memory=memory, ub=ub)
+    skip = check_sanitizer(address=, memory=, ub=)
     return unittest.skipIf(skip, reason)
 
 # gh-89363: True if fork() can hang if Python is built with Address Sanitizer
@@ -1180,7 +1180,7 @@ def _run_suite(suite):
             if not verbose: err += "; run in verbose mode for details"
         errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
         failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures, stats=stats)
+        raise TestFailedWithDetails(err, errors, failures, stats=)
     return result
 
 
@@ -1309,14 +1309,12 @@ def run_doctest(module, verbosity=None, optionflags=0):
     else:
         verbosity = None
 
-    results = doctest.testmod(module,
-                             verbose=verbosity,
-                             optionflags=optionflags)
+    results = doctest.testmod(module, verbose=verbosity, optionflags=)
     if results.failed:
         stats = TestStats.from_doctest(results)
         raise TestFailed(f"{results.failed} of {results.attempted} "
                          f"doctests failed",
-                         stats=stats)
+                         stats=)
     if verbose:
         print('doctest (%s) ... %d tests with zero failures' %
               (module.__name__, results.attempted))
@@ -1580,7 +1578,7 @@ class PythonSymlink:
         import subprocess
         cmd = [python, *args]
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, env=env)
+                             stderr=subprocess.PIPE, env=)
         r = p.communicate()
         if p.returncode != returncode:
             if verbose:
@@ -2305,7 +2303,7 @@ def ignore_deprecations_from(module: str, *, like: str) -> object:
     warnings.filterwarnings(
         "ignore",
         category=DeprecationWarning,
-        module=module,
+        module=,
         message=like + fr"(?#support{id(token)})",
     )
     return token
@@ -2514,7 +2512,7 @@ def sleeping_retry(timeout, err_msg=None, /,
     """
 
     delay = init_delay
-    for _ in busy_retry(timeout, err_msg, error=error):
+    for _ in busy_retry(timeout, err_msg, error=):
         yield
 
         time.sleep(delay)

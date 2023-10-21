@@ -509,7 +509,7 @@ class TestFindLongest(unittest.TestCase):
     def test_default_args(self):
         a = 'foo bar'
         b = 'foo baz bar'
-        sm = difflib.SequenceMatcher(a=a, b=b)
+        sm = difflib.SequenceMatcher(a=, b=)
         match = sm.find_longest_match()
         self.assertEqual(match.a, 0)
         self.assertEqual(match.b, 0)
@@ -537,7 +537,7 @@ class TestFindLongest(unittest.TestCase):
     def test_longest_match_with_popular_chars(self):
         a = 'dabcd'
         b = 'd'*100 + 'abc' + 'd'*100  # length over 200 so popular used
-        sm = difflib.SequenceMatcher(a=a, b=b)
+        sm = difflib.SequenceMatcher(a=, b=)
         match = sm.find_longest_match(0, len(a), 0, len(b))
         self.assertEqual(match.a, 0)
         self.assertEqual(match.b, 99)

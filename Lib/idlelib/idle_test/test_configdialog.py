@@ -183,8 +183,8 @@ class FontPageTest(unittest.TestCase):
         x, y, dx, dy = fontlist.bbox(1)
         x += dx // 2
         y += dy // 2
-        fontlist.event_generate('<Button-1>', x=x, y=y)
-        fontlist.event_generate('<ButtonRelease-1>', x=x, y=y)
+        fontlist.event_generate('<Button-1>', x=, y=)
+        fontlist.event_generate('<ButtonRelease-1>', x=, y=)
 
         font1 = fontlist.get(1)
         select_font = fontlist.get('anchor')
@@ -437,9 +437,9 @@ class HighPageTest(unittest.TestCase):
             x += dx // 2
             y += dy // 2
             hs.event_generate('<Enter>', x=0, y=0)
-            hs.event_generate('<Motion>', x=x, y=y)
-            hs.event_generate('<ButtonPress-1>', x=x, y=y)
-            hs.event_generate('<ButtonRelease-1>', x=x, y=y)
+            hs.event_generate('<Motion>', x=, y=)
+            hs.event_generate('<ButtonPress-1>', x=, y=)
+            hs.event_generate('<ButtonRelease-1>', x=, y=)
 
         # Flip theme_elements to make the tag the key.
         tag_to_element(elem)
@@ -488,8 +488,8 @@ class HighPageTest(unittest.TestCase):
         # Test binding from configdialog.
         hs.event_generate('<Leave>')
         hs.event_generate('<Enter>')
-        hs.event_generate('<Motion>', x=x, y=y)
-        hs.event_generate('<ButtonPress-1>', x=x, y=y)
+        hs.event_generate('<Motion>', x=, y=)
+        hs.event_generate('<ButtonPress-1>', x=, y=)
         hs.event_generate('<B1-Motion>', x=dx, y=dy)
         hs.event_generate('<ButtonRelease-1>', x=dx, y=dy)
 
@@ -1042,9 +1042,9 @@ class KeysPageTest(unittest.TestCase):
         x += dx // 2
         y += dy // 2
         b.event_generate('<Enter>', x=0, y=0)
-        b.event_generate('<Motion>', x=x, y=y)
-        b.event_generate('<Button-1>', x=x, y=y)
-        b.event_generate('<ButtonRelease-1>', x=x, y=y)
+        b.event_generate('<Motion>', x=, y=)
+        b.event_generate('<Button-1>', x=, y=)
+        b.event_generate('<ButtonRelease-1>', x=, y=)
         self.assertEqual(b.get('anchor'), 'find')
         self.assertEqual(d.button_new_keys.state(), ())
 
@@ -1357,9 +1357,9 @@ class HelpSourceTest(unittest.TestCase):
         y += dy // 2
         fr.set.called = fr.upc.called = 0
         helplist.event_generate('<Enter>', x=0, y=0)
-        helplist.event_generate('<Motion>', x=x, y=y)
-        helplist.event_generate('<Button-1>', x=x, y=y)
-        helplist.event_generate('<ButtonRelease-1>', x=x, y=y)
+        helplist.event_generate('<Motion>', x=, y=)
+        helplist.event_generate('<Button-1>', x=, y=)
+        helplist.event_generate('<ButtonRelease-1>', x=, y=)
         self.assertEqual(helplist.get('anchor'), 'source')
         self.assertTrue(fr.set.called)
         self.assertFalse(fr.upc.called)

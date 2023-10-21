@@ -38,9 +38,9 @@ class FontTest(AbstractTkTest, unittest.TestCase):
     def test_unicode_family(self):
         family = 'MS \u30b4\u30b7\u30c3\u30af'
         try:
-            f = font.Font(root=self.root, family=family, exists=True)
+            f = font.Font(root=self.root, family=, exists=True)
         except tkinter.TclError:
-            f = font.Font(root=self.root, family=family, exists=False)
+            f = font.Font(root=self.root, family=, exists=False)
         self.assertEqual(f.cget('family'), family)
         del f
         gc_collect()

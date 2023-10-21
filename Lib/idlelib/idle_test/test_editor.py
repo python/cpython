@@ -35,9 +35,9 @@ class GetLineIndentTest(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:
             for line in ['', '\n']:
-                with self.subTest(line=line, tabwidth=tabwidth):
+                with self.subTest(line=, tabwidth=):
                     self.assertEqual(
-                        editor.get_line_indent(line, tabwidth=tabwidth),
+                        editor.get_line_indent(line, tabwidth=),
                         (0, 0),
                     )
 
@@ -60,7 +60,7 @@ class GetLineIndentTest(unittest.TestCase):
                  ('\nnewline test', (0, 0)))
 
         for line, expected in tests:
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 self.assertEqual(
                     editor.get_line_indent(line, tabwidth=4),
                     expected,
@@ -85,7 +85,7 @@ class GetLineIndentTest(unittest.TestCase):
                  ('\nnewline test', (0, 0)))
 
         for line, expected in tests:
-            with self.subTest(line=line):
+            with self.subTest(line=):
                 self.assertEqual(
                     editor.get_line_indent(line, tabwidth=8),
                     expected,
@@ -205,7 +205,7 @@ class IndentSearcherTest(unittest.TestCase):
                      ("if 1:\n  2\n  3\n", ('if 1:\n', '  2\n')),
                      )
         for code, expected_pair in test_info:
-            with self.subTest(code=code):
+            with self.subTest(code=):
                 insert(text, code)
                 actual_pair = editor.IndentSearcher(text).run()
                 self.assertEqual(actual_pair, expected_pair)

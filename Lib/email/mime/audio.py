@@ -39,8 +39,7 @@ class MIMEAudio(MIMENonMultipart):
             _subtype = _what(_audiodata)
         if _subtype is None:
             raise TypeError('Could not find audio MIME subtype')
-        MIMENonMultipart.__init__(self, 'audio', _subtype, policy=policy,
-                                  **_params)
+        MIMENonMultipart.__init__(self, 'audio', _subtype, policy=, **_params)
         self.set_payload(_audiodata)
         _encoder(self)
 

@@ -83,11 +83,10 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         ssl_protocol = sslproto.SSLProtocol(
             self, protocol, sslcontext, waiter,
             server_side, server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout,
-            ssl_shutdown_timeout=ssl_shutdown_timeout
+            ssl_handshake_timeout=,
+            ssl_shutdown_timeout=
         )
-        _SelectorSocketTransport(self, rawsock, ssl_protocol,
-                                 extra=extra, server=server)
+        _SelectorSocketTransport(self, rawsock, ssl_protocol, extra=, server=)
         return ssl_protocol._app_transport
 
     def _make_datagram_transport(self, sock, protocol,
@@ -222,14 +221,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             waiter = self.create_future()
             if sslcontext:
                 transport = self._make_ssl_transport(
-                    conn, protocol, sslcontext, waiter=waiter,
-                    server_side=True, extra=extra, server=server,
-                    ssl_handshake_timeout=ssl_handshake_timeout,
-                    ssl_shutdown_timeout=ssl_shutdown_timeout)
+                    conn, protocol, sslcontext, waiter=,
+                    server_side=True, extra=, server=,
+                    ssl_handshake_timeout=,
+                    ssl_shutdown_timeout=)
             else:
                 transport = self._make_socket_transport(
-                    conn, protocol, waiter=waiter, extra=extra,
-                    server=server)
+                    conn, protocol, waiter=, extra=,
+                    server=)
 
             try:
                 await waiter
@@ -380,7 +379,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         handle = self._add_reader(fd, self._sock_recv, fut, sock, n)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd, handle=handle))
+            functools.partial(self._sock_read_done, fd, handle=))
         return await fut
 
     def _sock_read_done(self, fd, fut, handle=None):
@@ -421,7 +420,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         handle = self._add_reader(fd, self._sock_recv_into, fut, sock, buf)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd, handle=handle))
+            functools.partial(self._sock_read_done, fd, handle=))
         return await fut
 
     def _sock_recv_into(self, fut, sock, buf):
@@ -461,7 +460,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         handle = self._add_reader(fd, self._sock_recvfrom, fut, sock, bufsize)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd, handle=handle))
+            functools.partial(self._sock_read_done, fd, handle=))
         return await fut
 
     def _sock_recvfrom(self, fut, sock, bufsize):
@@ -503,7 +502,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         handle = self._add_reader(fd, self._sock_recvfrom_into, fut, sock, buf,
                                   nbytes)
         fut.add_done_callback(
-            functools.partial(self._sock_read_done, fd, handle=handle))
+            functools.partial(self._sock_read_done, fd, handle=))
         return await fut
 
     def _sock_recvfrom_into(self, fut, sock, buf, bufsize):
@@ -551,7 +550,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         handle = self._add_writer(fd, self._sock_sendall, fut, sock,
                                   memoryview(data), [n])
         fut.add_done_callback(
-            functools.partial(self._sock_write_done, fd, handle=handle))
+            functools.partial(self._sock_write_done, fd, handle=))
         return await fut
 
     def _sock_sendall(self, fut, sock, view, pos):
@@ -600,7 +599,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         handle = self._add_writer(fd, self._sock_sendto, fut, sock, data,
                                   address)
         fut.add_done_callback(
-            functools.partial(self._sock_write_done, fd, handle=handle))
+            functools.partial(self._sock_write_done, fd, handle=))
         return await fut
 
     def _sock_sendto(self, fut, sock, data, address):
@@ -656,7 +655,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             handle = self._add_writer(
                 fd, self._sock_connect_cb, fut, sock, address)
             fut.add_done_callback(
-                functools.partial(self._sock_write_done, fd, handle=handle))
+                functools.partial(self._sock_write_done, fd, handle=))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
@@ -715,7 +714,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._ensure_fd_no_transport(fd)
             handle = self._add_reader(fd, self._sock_accept, fut, sock)
             fut.add_done_callback(
-                functools.partial(self._sock_read_done, fd, handle=handle))
+                functools.partial(self._sock_read_done, fd, handle=))
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:

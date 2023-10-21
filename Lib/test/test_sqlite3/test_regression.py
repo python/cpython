@@ -167,7 +167,7 @@ class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
         con = self.con
         con.isolation_level = None
         for level in "", "DEFERRED", "IMMEDIATE", "EXCLUSIVE":
-            with self.subTest(level=level):
+            with self.subTest(level=):
                 con.isolation_level = level
                 con.isolation_level = level.lower()
                 con.isolation_level = level.capitalize()
@@ -316,10 +316,10 @@ class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
         cur = self.con.cursor()
         queries = ["\0select 1", "select 1\0"]
         for query in queries:
-            with self.subTest(query=query):
+            with self.subTest(query=):
                 self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
                                        self.con.execute, query)
-            with self.subTest(query=query):
+            with self.subTest(query=):
                 self.assertRaisesRegex(sqlite.ProgrammingError, "null char",
                                        cur.execute, query)
 
@@ -363,7 +363,7 @@ class RegressionTests(MemoryDatabaseMixin, unittest.TestCase):
 
         counter = 0
         for i, row in enumerate(con.execute("select c from t")):
-            with self.subTest(i=i, row=row):
+            with self.subTest(i=, row=):
                 con.execute("insert into t2(c) values (?)", (i,))
                 con.commit()
                 if counter == 0:

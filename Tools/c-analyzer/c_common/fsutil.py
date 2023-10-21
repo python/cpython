@@ -273,8 +273,8 @@ def iter_files(root, suffix=None, relparent=None, *,
         roots = root
         for root in roots:
             yield from iter_files(root, suffix, relparent,
-                                  get_files=get_files,
-                                  _glob=_glob, _walk=_walk)
+                                  get_files=,
+                                  _glob=, _walk=)
         return
 
     # Use the right "walk" function.
@@ -289,7 +289,7 @@ def iter_files(root, suffix=None, relparent=None, *,
         filenames = get_files(root)
         suffix = tuple(suffix)
     else:
-        filenames = get_files(root, suffix=suffix)
+        filenames = get_files(root, suffix=)
         suffix = None
 
     for filename in filenames:

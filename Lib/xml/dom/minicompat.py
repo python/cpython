@@ -105,5 +105,5 @@ def defproperty(klass, name, doc):
             "attempt to modify read-only attribute " + repr(name))
     assert not hasattr(klass, "_set_" + name), \
            "expected not to find _set_" + name
-    prop = property(get, set, doc=doc)
+    prop = property(get, set, doc=)
     setattr(klass, name, prop)

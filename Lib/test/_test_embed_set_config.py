@@ -143,7 +143,7 @@ class SetConfigTests(unittest.TestCase):
         ):
             for key, value in tests:
                 config = self.old_config | {key: value}
-                with self.subTest(key=key, value=value, exc_type=exc_type):
+                with self.subTest(key=, value=, exc_type=):
                     with self.assertRaises(exc_type):
                         _testinternalcapi.set_config(config)
 
@@ -158,7 +158,7 @@ class SetConfigTests(unittest.TestCase):
             ("quiet", "quiet", 11),
             ("isolated", "isolated", 12),
         ):
-            with self.subTest(sys=sys_attr, key=key, value=value):
+            with self.subTest(sys=sys_attr, key=, value=):
                 self.set_config(**{key: value, 'parse_argv': 0})
                 self.assertEqual(getattr(sys.flags, sys_attr), value)
 

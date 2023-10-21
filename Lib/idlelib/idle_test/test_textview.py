@@ -91,7 +91,7 @@ class ScrollableTextFrameTest(unittest.TestCase):
         del cls.root
 
     def make_frame(self, wrap=NONE, **kwargs):
-        frame = tv.ScrollableTextFrame(self.root, wrap=wrap, **kwargs)
+        frame = tv.ScrollableTextFrame(self.root, wrap=, **kwargs)
         def cleanup_frame():
             frame.update_idletasks()
             frame.destroy()
@@ -115,8 +115,8 @@ class ScrollableTextFrameTest(unittest.TestCase):
 
         # wrap != NONE -> no horizontal scrolling
         for wrap in [CHAR, WORD]:
-            with self.subTest(wrap=wrap):
-                frame = self.make_frame(wrap=wrap)
+            with self.subTest(wrap=):
+                frame = self.make_frame(wrap=)
                 self.assertEqual(frame.text.cget('wrap'), wrap)
                 self.assertIsNone(frame.xscroll)
 

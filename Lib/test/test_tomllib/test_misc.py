@@ -98,8 +98,8 @@ class TestMiscellaneous(unittest.TestCase):
             nest_count = (available // 2) - 2
             # Add details if the test fails
             with self.subTest(limit=sys.getrecursionlimit(),
-                              available=available,
-                              nest_count=nest_count):
+                              available=,
+                              nest_count=):
                 recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
                 tomllib.loads(recursive_array_toml)
 
@@ -109,7 +109,7 @@ class TestMiscellaneous(unittest.TestCase):
             nest_count = (available // 3) - 1
             # Add details if the test fails
             with self.subTest(limit=sys.getrecursionlimit(),
-                              available=available,
-                              nest_count=nest_count):
+                              available=,
+                              nest_count=):
                 recursive_table_toml = nest_count * "key = {" + nest_count * "}"
                 tomllib.loads(recursive_table_toml)

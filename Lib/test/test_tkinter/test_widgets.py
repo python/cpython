@@ -93,7 +93,7 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
         self.assertEqual(widget['use'], '')
         parent = self.create(container=True)
         wid = hex(parent.winfo_id())
-        with self.subTest(wid=wid):
+        with self.subTest(wid=):
             widget2 = self.create(use=wid)
             self.assertEqual(widget2['use'], wid)
 
@@ -762,16 +762,16 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
 
     def _test_option_joinstyle(self, c, factory):
         for joinstyle in 'bevel', 'miter', 'round':
-            i = factory(joinstyle=joinstyle)
+            i = factory(joinstyle=)
             self.assertEqual(c.itemcget(i, 'joinstyle'), joinstyle)
         self.assertRaises(TclError, factory, joinstyle='spam')
 
     def _test_option_smooth(self, c, factory):
         for smooth in 1, True, '1', 'true', 'yes', 'on':
-            i = factory(smooth=smooth)
+            i = factory(smooth=)
             self.assertEqual(c.itemcget(i, 'smooth'), 'true')
         for smooth in 0, False, '0', 'false', 'no', 'off':
-            i = factory(smooth=smooth)
+            i = factory(smooth=)
             self.assertEqual(c.itemcget(i, 'smooth'), '0')
         i = factory(smooth=True, splinestep=30)
         self.assertEqual(c.itemcget(i, 'smooth'), 'true')
@@ -840,14 +840,14 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         self.assertRaises(IndexError, c.create_line, [])
 
         for arrow in 'none', 'first', 'last', 'both':
-            i = c.create_line(20, 30, 60, 10, arrow=arrow)
+            i = c.create_line(20, 30, 60, 10, arrow=)
             self.assertEqual(c.itemcget(i, 'arrow'), arrow)
         i = c.create_line(20, 30, 60, 10, arrow='first', arrowshape=[10, 15, 5])
         self.assertEqual(c.itemcget(i, 'arrowshape'), '10 15 5')
         self.assertRaises(TclError, c.create_line, 20, 30, 60, 10, arrow='spam')
 
         for capstyle in 'butt', 'projecting', 'round':
-            i = c.create_line(20, 30, 60, 10, capstyle=capstyle)
+            i = c.create_line(20, 30, 60, 10, capstyle=)
             self.assertEqual(c.itemcget(i, 'capstyle'), capstyle)
         self.assertRaises(TclError, c.create_line, 20, 30, 60, 10, capstyle='spam')
 
@@ -1109,7 +1109,7 @@ class ScaleTest(AbstractWidgetTest, unittest.TestCase):
     def test_configure_from(self):
         widget = self.create()
         conv = float if get_tk_patchlevel(self.root) >= (8, 6, 10) else float_round
-        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=conv)
+        self.checkFloatParam(widget, 'from', 100, 14.9, 15.1, conv=)
 
     def test_configure_label(self):
         widget = self.create()

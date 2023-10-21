@@ -256,7 +256,7 @@ class MmapTests(unittest.TestCase):
             prot = mmap.PROT_READ | getattr(mmap, 'PROT_EXEC', 0)
             with open(TESTFN, "r+b") as f:
                 try:
-                    m = mmap.mmap(f.fileno(), mapsize, prot=prot)
+                    m = mmap.mmap(f.fileno(), mapsize, prot=)
                 except PermissionError:
                     # on macOS 14, PROT_READ | PROT_EXEC is not allowed
                     pass
@@ -320,9 +320,9 @@ class MmapTests(unittest.TestCase):
             raise unittest.SkipTest("mmap flags unavailable") from e
         for i in range(0, 2049):
             with mmap.mmap(-1, PAGESIZE * (i + 1),
-                           flags=flags, prot=PROT_NONE) as guard:
+                           flags=, prot=PROT_NONE) as guard:
                 with mmap.mmap(-1, PAGESIZE * (i + 2048),
-                               flags=flags, prot=PROT_READ) as fm:
+                               flags=, prot=PROT_READ) as fm:
                     fm.find(b"fo", -2)
 
 
@@ -539,7 +539,7 @@ class MmapTests(unittest.TestCase):
             f = open(TESTFN, "r+b")
             for offset in [-2, -1, None]:
                 try:
-                    m = mmap.mmap(f.fileno(), mapsize, offset=offset)
+                    m = mmap.mmap(f.fileno(), mapsize, offset=)
                     self.assertEqual(0, 1)
                 except (ValueError, TypeError, OverflowError):
                     pass
@@ -676,7 +676,7 @@ class MmapTests(unittest.TestCase):
     def test_sizeof(self):
         m1 = mmap.mmap(-1, 100)
         tagname = random_tagname()
-        m2 = mmap.mmap(-1, 100, tagname=tagname)
+        m2 = mmap.mmap(-1, 100, tagname=)
         self.assertEqual(sys.getsizeof(m2),
                          sys.getsizeof(m1) + len(tagname) + 1)
 
@@ -684,9 +684,9 @@ class MmapTests(unittest.TestCase):
     def test_crasher_on_windows(self):
         # Should not crash (Issue 1733986)
         tagname = random_tagname()
-        m = mmap.mmap(-1, 1000, tagname=tagname)
+        m = mmap.mmap(-1, 1000, tagname=)
         try:
-            mmap.mmap(-1, 5000, tagname=tagname)[:] # same tagname, but larger size
+            mmap.mmap(-1, 5000, tagname=)[:] # same tagname, but larger size
         except:
             pass
         m.close()
@@ -807,7 +807,7 @@ class MmapTests(unittest.TestCase):
                     with mmap.mmap(fp.fileno(),
                                    length,
                                    access=accint,
-                                   offset=offset) as mm:
+                                   offset=) as mm:
                         mm.seek(pos)
                         match = open_mmap_repr_pat.match(repr(mm))
                         self.assertIsNotNone(match)
@@ -902,8 +902,8 @@ class MmapTests(unittest.TestCase):
         data_length = 8
         data = bytes(random.getrandbits(8) for _ in range(data_length))
 
-        m1 = mmap.mmap(-1, start_size, tagname=tagname)
-        m2 = mmap.mmap(-1, start_size, tagname=tagname)
+        m1 = mmap.mmap(-1, start_size, tagname=)
+        m2 = mmap.mmap(-1, start_size, tagname=)
         m1[:data_length] = data
         self.assertEqual(m2[:data_length], data)
         with self.assertRaises(OSError):

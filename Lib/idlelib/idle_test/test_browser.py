@@ -61,7 +61,7 @@ class ModuleBrowserTest(unittest.TestCase):
     def test_is_browseable_extension(self):
         path = "/path/to/file"
         for ext in py_extensions:
-            with self.subTest(ext=ext):
+            with self.subTest(ext=):
                 filename = f'{path}{ext}'
                 actual = browser.is_browseable_extension(filename)
                 expected = ext not in browser.browseable_extension_blocklist

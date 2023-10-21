@@ -56,7 +56,7 @@ class LiveDialogTest(unittest.TestCase):
                           (dialog.py_credits, credits, 'credits')]
 
         for button, printer, name in button_sources:
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 printer._Printer__setup()
                 button.invoke()
                 get = dialog._current_textview.viewframe.textframe.text.get
@@ -75,7 +75,7 @@ class LiveDialogTest(unittest.TestCase):
                           (self.dialog.idle_credits, 'CREDITS.txt', 'credits')]
 
         for button, filename, name in button_sources:
-            with  self.subTest(name=name):
+            with  self.subTest(name=):
                 button.invoke()
                 fn = findfile(filename, subdir='idlelib')
                 get = dialog._current_textview.viewframe.textframe.text.get
@@ -172,7 +172,7 @@ class DisplayFileTest(unittest.TestCase):
                         self.dialog.idle_news):
             self.error.message = ''
             self.view.called = False
-            with self.subTest(handler=handler):
+            with self.subTest(handler=):
                 handler()
                 self.assertEqual(self.error.message, '')
                 self.assertEqual(self.view.called, True)

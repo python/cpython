@@ -16,7 +16,7 @@ class TestGeneratorBase:
 
     def msgmaker(self, msg, policy=None):
         policy = self.policy if policy is None else policy
-        return self.msgfunc(msg, policy=policy)
+        return self.msgfunc(msg, policy=)
 
     refold_long_expected = {
         0: textwrap.dedent("""\

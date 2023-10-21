@@ -369,7 +369,7 @@ class BaseTest(unittest.TestCase):
         aliases = [GenericAlias(list, T)] + _UNPACKED_TUPLES
         for alias in aliases:
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(alias=alias, proto=proto):
+                with self.subTest(alias=, proto=):
                     s = pickle.dumps(alias, proto)
                     loaded = pickle.loads(s)
                     self.assertEqual(loaded.__origin__, alias.__origin__)
@@ -390,7 +390,7 @@ class BaseTest(unittest.TestCase):
             GenericAlias(X, T)
         ] + _UNPACKED_TUPLES
         for alias in aliases:
-            with self.subTest(alias=alias):
+            with self.subTest(alias=):
                 copied = copy.copy(alias)
                 self.assertEqual(copied.__origin__, alias.__origin__)
                 self.assertEqual(copied.__args__, alias.__args__)

@@ -91,7 +91,7 @@ class LoaderTests:
 
 (Frozen_LoaderTests,
  Source_LoaderTests
- ) = util.test_both(LoaderTests, machinery=machinery)
+ ) = util.test_both(LoaderTests, machinery=)
 
 
 class SinglePhaseExtensionModuleTests(abc.LoaderTests):
@@ -172,7 +172,7 @@ class SinglePhaseExtensionModuleTests(abc.LoaderTests):
 
 (Frozen_SinglePhaseExtensionModuleTests,
  Source_SinglePhaseExtensionModuleTests
- ) = util.test_both(SinglePhaseExtensionModuleTests, machinery=machinery)
+ ) = util.test_both(SinglePhaseExtensionModuleTests, machinery=)
 
 
 class MultiPhaseExtensionModuleTests(abc.LoaderTests):
@@ -378,7 +378,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
 (Frozen_MultiPhaseExtensionModuleTests,
  Source_MultiPhaseExtensionModuleTests
- ) = util.test_both(MultiPhaseExtensionModuleTests, machinery=machinery)
+ ) = util.test_both(MultiPhaseExtensionModuleTests, machinery=)
 
 
 if __name__ == '__main__':

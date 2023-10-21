@@ -359,8 +359,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-            self.loop._accept_connection(
-                mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(mock.Mock(), sock, backlog=)
         self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
@@ -500,7 +499,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     def socket_transport(self, waiter=None, sendmsg=False):
         transport = _SelectorSocketTransport(self.loop, self.sock,
-                                             self.protocol, waiter=waiter)
+                                             self.protocol, waiter=)
         if sendmsg:
             transport._write_ready = transport._write_sendmsg
         else:
@@ -510,7 +509,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     def test_ctor(self):
         waiter = self.loop.create_future()
-        tr = self.socket_transport(waiter=waiter)
+        tr = self.socket_transport(waiter=)
         self.loop.run_until_complete(waiter)
 
         self.loop.assert_reader(7, tr._read_ready)
@@ -519,7 +518,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
 
     def test_ctor_with_waiter(self):
         waiter = self.loop.create_future()
-        self.socket_transport(waiter=waiter)
+        self.socket_transport(waiter=)
         self.loop.run_until_complete(waiter)
 
         self.assertIsNone(waiter.result())
@@ -1030,13 +1029,13 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
 
     def socket_transport(self, waiter=None):
         transport = _SelectorSocketTransport(self.loop, self.sock,
-                                             self.protocol, waiter=waiter)
+                                             self.protocol, waiter=)
         self.addCleanup(close_transport, transport)
         return transport
 
     def test_ctor(self):
         waiter = self.loop.create_future()
-        tr = self.socket_transport(waiter=waiter)
+        tr = self.socket_transport(waiter=)
         self.loop.run_until_complete(waiter)
 
         self.loop.assert_reader(7, tr._read_ready)
@@ -1207,7 +1206,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.sock.getpeername.side_effect = None if address else OSError
         transport = _SelectorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
-                                               address=address)
+                                               address=)
         self.addCleanup(close_transport, transport)
         return transport
 

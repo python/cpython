@@ -25,8 +25,8 @@ def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     If `recursive` is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
-    return list(iglob(pathname, root_dir=root_dir, dir_fd=dir_fd, recursive=recursive,
-                      include_hidden=include_hidden))
+    return list(iglob(pathname, root_dir=, dir_fd=, recursive=,
+                      include_hidden=))
 
 def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
           include_hidden=False):
@@ -46,8 +46,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         root_dir = os.fspath(root_dir)
     else:
         root_dir = pathname[:0]
-    it = _iglob(pathname, root_dir, dir_fd, recursive, False,
-                include_hidden=include_hidden)
+    it = _iglob(pathname, root_dir, dir_fd, recursive, False, include_hidden=)
     if not pathname or recursive and _isrecursive(pathname[:2]):
         try:
             s = next(it)  # skip empty string
@@ -73,17 +72,17 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
     if not dirname:
         if recursive and _isrecursive(basename):
             yield from _glob2(root_dir, basename, dir_fd, dironly,
-                             include_hidden=include_hidden)
+                             include_hidden=)
         else:
             yield from _glob1(root_dir, basename, dir_fd, dironly,
-                              include_hidden=include_hidden)
+                              include_hidden=)
         return
     # `os.path.split()` returns the argument itself as a dirname if it is a
     # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
     # contains magic characters (i.e. r'\\?\C:').
     if dirname != pathname and has_magic(dirname):
         dirs = _iglob(dirname, root_dir, dir_fd, recursive, True,
-                      include_hidden=include_hidden)
+                      include_hidden=)
     else:
         dirs = [dirname]
     if has_magic(basename):
@@ -95,7 +94,7 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
         glob_in_dir = _glob0
     for dirname in dirs:
         for name in glob_in_dir(_join(root_dir, dirname), basename, dir_fd, dironly,
-                               include_hidden=include_hidden):
+                               include_hidden=):
             yield os.path.join(dirname, name)
 
 # These 2 helper functions non-recursively glob inside a literal directory.
@@ -133,8 +132,7 @@ def glob1(dirname, pattern):
 def _glob2(dirname, pattern, dir_fd, dironly, include_hidden=False):
     assert _isrecursive(pattern)
     yield pattern[:0]
-    yield from _rlistdir(dirname, dir_fd, dironly,
-                         include_hidden=include_hidden)
+    yield from _rlistdir(dirname, dir_fd, dironly, include_hidden=)
 
 # If dironly is false, yields all file names inside a directory.
 # If dironly is true, yields only directory names.
@@ -144,7 +142,7 @@ def _iterdir(dirname, dir_fd, dironly):
         fsencode = None
         if dir_fd is not None:
             if dirname:
-                fd = arg = os.open(dirname, _dir_open_flags, dir_fd=dir_fd)
+                fd = arg = os.open(dirname, _dir_open_flags, dir_fd=)
             else:
                 arg = dir_fd
             if isinstance(dirname, bytes):
@@ -183,8 +181,7 @@ def _rlistdir(dirname, dir_fd, dironly, include_hidden=False):
         if include_hidden or not _ishidden(x):
             yield x
             path = _join(dirname, x) if dirname else x
-            for y in _rlistdir(path, dir_fd, dironly,
-                               include_hidden=include_hidden):
+            for y in _rlistdir(path, dir_fd, dironly, include_hidden=):
                 yield _join(x, y)
 
 
@@ -193,7 +190,7 @@ def _lexists(pathname, dir_fd):
     if dir_fd is None:
         return os.path.lexists(pathname)
     try:
-        os.lstat(pathname, dir_fd=dir_fd)
+        os.lstat(pathname, dir_fd=)
     except (OSError, ValueError):
         return False
     else:
@@ -204,7 +201,7 @@ def _isdir(pathname, dir_fd):
     if dir_fd is None:
         return os.path.isdir(pathname)
     try:
-        st = os.stat(pathname, dir_fd=dir_fd)
+        st = os.stat(pathname, dir_fd=)
     except (OSError, ValueError):
         return False
     else:

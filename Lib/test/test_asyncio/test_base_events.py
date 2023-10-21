@@ -331,7 +331,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             fut = loop.create_future()
             loop.call_soon(event.set)
             args = (loop, event, debug, create_loop, fut)
-            thread = threading.Thread(target=check_in_thread, args=args)
+            thread = threading.Thread(target=check_in_thread, args=)
             thread.start()
             loop.run_until_complete(fut)
             thread.join()
@@ -722,7 +722,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         async def coro():
             pass
 
-        factory = lambda loop, coro: MyTask(coro, loop=loop)
+        factory = lambda loop, coro: MyTask(coro, loop=)
 
         self.assertIsNone(self.loop.get_task_factory())
         self.loop.set_task_factory(factory)
@@ -779,13 +779,13 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         class EventLoop(base_events.BaseEventLoop):
             def create_task(self, coro):
-                return MyTask(coro, loop=loop)
+                return MyTask(coro, loop=)
 
         loop = EventLoop()
         self.set_event_loop(loop)
 
         coro = test()
-        task = asyncio.ensure_future(coro, loop=loop)
+        task = asyncio.ensure_future(coro, loop=)
         self.assertIsInstance(task, MyTask)
 
         # make warnings quiet
@@ -799,7 +799,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         loop.close()
         with warnings.catch_warnings(record=True) as w:
             with self.assertRaises(RuntimeError):
-                asyncio.ensure_future(test(), loop=loop)
+                asyncio.ensure_future(test(), loop=)
             self.assertEqual(len(w), 0)
 
 
@@ -817,7 +817,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
     def test_create_named_task_with_custom_factory(self):
         def task_factory(loop, coro):
-            return asyncio.Task(coro, loop=loop)
+            return asyncio.Task(coro, loop=)
 
         async def test():
             pass
@@ -1176,7 +1176,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     def test_create_connection_wrong_sock(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         with sock:
-            coro = self.loop.create_connection(MyProto, sock=sock)
+            coro = self.loop.create_connection(MyProto, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
@@ -1184,7 +1184,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     def test_create_server_wrong_sock(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         with sock:
-            coro = self.loop.create_server(MyProto, sock=sock)
+            coro = self.loop.create_server(MyProto, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A Stream Socket was expected'):
                 self.loop.run_until_complete(coro)
@@ -1203,7 +1203,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock = socket.socket(
             socket.AF_INET, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
         with sock:
-            coro = self.loop.create_server(lambda: None, sock=sock)
+            coro = self.loop.create_server(lambda: None, sock=)
             srv = self.loop.run_until_complete(coro)
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
@@ -1230,7 +1230,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
     def test_create_datagram_endpoint_wrong_sock(self):
         sock = socket.socket(socket.AF_INET)
         with sock:
-            coro = self.loop.create_datagram_endpoint(MyProto, sock=sock)
+            coro = self.loop.create_datagram_endpoint(MyProto, sock=)
             with self.assertRaisesRegex(ValueError,
                                         'A UDP Socket was expected'):
                 self.loop.run_until_complete(coro)
@@ -1572,7 +1572,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
         sock = socket.socket()
         coro = self.loop.create_connection(MyProto, None, None,
-                                           ssl=True, sock=sock)
+                                           ssl=True, sock=)
         self.addCleanup(sock.close)
         self.assertRaises(ValueError, self.loop.run_until_complete, coro)
 
@@ -1759,7 +1759,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         sock.bind(('127.0.0.1', 0))
         fut = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
-            sock=sock)
+            sock=)
         transport, protocol = self.loop.run_until_complete(fut)
         transport.close()
         self.loop.run_until_complete(protocol.done)

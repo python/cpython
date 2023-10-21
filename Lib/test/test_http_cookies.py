@@ -124,7 +124,7 @@ class CookieTests(unittest.TestCase):
     def test_samesite_attrs(self):
         samesite_values = ['Strict', 'Lax', 'strict', 'lax']
         for val in samesite_values:
-            with self.subTest(val=val):
+            with self.subTest(val=):
                 C = cookies.SimpleCookie('Customer="WILE_E_COYOTE"')
                 C['Customer']['samesite'] = val
                 self.assertEqual(C.output(),
@@ -210,7 +210,7 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(C.output(), expected_output)
 
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 C1 = pickle.loads(pickle.dumps(C, protocol=proto))
                 self.assertEqual(C1.output(), expected_output)
 
@@ -433,7 +433,7 @@ class MorselTests(unittest.TestCase):
             'comment': 'foo',
         })
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 morsel_b = pickle.loads(pickle.dumps(morsel_a, proto))
                 self.assertIsInstance(morsel_b, cookies.Morsel)
                 self.assertEqual(morsel_b, morsel_a)

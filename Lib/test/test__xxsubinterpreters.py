@@ -656,7 +656,7 @@ class RunStringTests(TestBase):
                 interpreters.run_string(
                     interp,
                     f'assert(obj == {obj!r})',
-                    shared=dict(obj=obj),
+                    shared=dict(obj=),
                 )
 
     def test_os_exec(self):
@@ -939,7 +939,7 @@ class RunFuncTests(TestBase):
             with open(w, 'w', encoding="utf-8") as spipe:
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
-        interpreters.run_func(self.id, script, shared=dict(w=w))
+        interpreters.run_func(self.id, script, shared=dict(w=))
 
         with open(r, encoding="utf-8") as outfile:
             out = outfile.read()
@@ -955,7 +955,7 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         def f():
-            interpreters.run_func(self.id, script, shared=dict(w=w))
+            interpreters.run_func(self.id, script, shared=dict(w=))
         t = threading.Thread(target=f)
         t.start()
         t.join()
@@ -975,7 +975,7 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         code = script.__code__
-        interpreters.run_func(self.id, code, shared=dict(w=w))
+        interpreters.run_func(self.id, code, shared=dict(w=))
 
         with open(r, encoding="utf-8") as outfile:
             out = outfile.read()

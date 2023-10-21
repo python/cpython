@@ -56,7 +56,7 @@ class FunctionalTestCaseMixin:
             else:
                 addr = ('127.0.0.1', 0)
 
-        sock = socket.create_server(addr, family=family, backlog=backlog)
+        sock = socket.create_server(addr, family=, backlog=)
         if timeout is None:
             raise RuntimeError('timeout is required')
         if timeout <= 0:
@@ -134,8 +134,8 @@ class TestSocketWrapper:
                   server_hostname=None):
 
         ssl_sock = ssl_context.wrap_socket(
-            self.__sock, server_side=server_side,
-            server_hostname=server_hostname,
+            self.__sock, server_side=,
+            server_hostname=,
             do_handshake_on_connect=False)
 
         try:

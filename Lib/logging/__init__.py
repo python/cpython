@@ -609,7 +609,7 @@ class Formatter(object):
         if style not in _STYLES:
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
-        self._style = _STYLES[style][0](fmt, defaults=defaults)
+        self._style = _STYLES[style][0](fmt, defaults=)
         if validate:
             self._style.validate()
 
@@ -1538,7 +1538,7 @@ class Logger(Filterer):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        self.error(msg, *args, exc_info=exc_info, **kwargs)
+        self.error(msg, *args, exc_info=, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1908,7 +1908,7 @@ class LoggerAdapter(object):
         """
         Delegate an exception call to the underlying logger.
         """
-        self.log(ERROR, msg, *args, exc_info=exc_info, **kwargs)
+        self.log(ERROR, msg, *args, exc_info=, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -1957,9 +1957,9 @@ class LoggerAdapter(object):
             level,
             msg,
             args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
+            exc_info=,
+            extra=,
+            stack_info=,
         )
 
     @property
@@ -2085,8 +2085,7 @@ def basicConfig(**kwargs):
                         errors = None
                     else:
                         encoding = io.text_encoding(encoding)
-                    h = FileHandler(filename, mode,
-                                    encoding=encoding, errors=errors)
+                    h = FileHandler(filename, mode, encoding=, errors=)
                 else:
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
@@ -2156,7 +2155,7 @@ def exception(msg, *args, exc_info=True, **kwargs):
     information. If the logger has no handlers, basicConfig() is called to add
     a console handler with a pre-defined format.
     """
-    error(msg, *args, exc_info=exc_info, **kwargs)
+    error(msg, *args, exc_info=, **kwargs)
 
 def warning(msg, *args, **kwargs):
     """

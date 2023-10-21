@@ -366,7 +366,7 @@ class Compat32(Policy):
             maxlinelen = 0
             if self.max_line_length is not None:
                 maxlinelen = self.max_line_length
-            parts.append(h.encode(linesep=self.linesep, maxlinelen=maxlinelen))
+            parts.append(h.encode(linesep=self.linesep, maxlinelen=))
         parts.append(self.linesep)
         return ''.join(parts)
 

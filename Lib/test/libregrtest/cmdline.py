@@ -396,7 +396,7 @@ def _parse_args(args, **kwargs):
     parser = _create_parser()
     # Issue #14191: argparse doesn't support "intermixed" positional and
     # optional arguments. Use parse_known_args() as workaround.
-    ns.args = parser.parse_known_args(args=args, namespace=ns)[1]
+    ns.args = parser.parse_known_args(args=, namespace=ns)[1]
     for arg in ns.args:
         if arg.startswith('-'):
             parser.error("unrecognized arguments: %s" % arg)

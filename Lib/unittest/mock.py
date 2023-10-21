@@ -651,7 +651,7 @@ class NonCallableMock(Base):
         for child in self._mock_children.values():
             if isinstance(child, _SpecState) or child is _deleted:
                 continue
-            child.reset_mock(visited, return_value=return_value, side_effect=side_effect)
+            child.reset_mock(visited, return_value=, side_effect=)
 
         ret = self._mock_return_value
         if _is_instance_mock(ret) and ret is not self:
@@ -706,7 +706,7 @@ class NonCallableMock(Base):
                     wraps = getattr(self._mock_wraps, name)
 
                 result = self._get_child_mock(
-                    parent=self, name=name, wraps=wraps, _new_name=name,
+                    parent=self, name=, wraps=, _new_name=name,
                     _new_parent=self
                 )
                 self._mock_children[name]  = result
@@ -1578,7 +1578,7 @@ class _patch(object):
                     f'{target_name!r} as it has already been mocked out. '
                     f'[target={self.target!r}, attr={autospec!r}]')
 
-            new = create_autospec(autospec, spec_set=spec_set,
+            new = create_autospec(autospec, spec_set=,
                                   _name=self.attribute, **kwargs)
         elif kwargs:
             # can't set keyword args when we aren't creating the mock
@@ -1681,7 +1681,7 @@ def _patch_object(
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
+        spec_set, autospec, new_callable, kwargs, unsafe=
     )
 
 
@@ -1812,7 +1812,7 @@ def patch(
     getter, attribute = _get_target(target)
     return _patch(
         getter, attribute, new, spec, create,
-        spec_set, autospec, new_callable, kwargs, unsafe=unsafe
+        spec_set, autospec, new_callable, kwargs, unsafe=
     )
 
 
@@ -2626,14 +2626,14 @@ class _Call(tuple):
             return _Call(('', args, kwargs), name='()')
 
         name = self._mock_name + '()'
-        return _Call((self._mock_name, args, kwargs), name=name, parent=self)
+        return _Call((self._mock_name, args, kwargs), name=, parent=self)
 
 
     def __getattr__(self, attr):
         if self._mock_name is None:
             return _Call(name=attr, from_kall=False)
         name = '%s.%s' % (self._mock_name, attr)
-        return _Call(name=name, parent=self, from_kall=False)
+        return _Call(name=, parent=self, from_kall=False)
 
 
     def __getattribute__(self, attr):
@@ -2763,7 +2763,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
         # for a top level object no _new_name should be set
         _new_name = ''
 
-    mock = Klass(parent=_parent, _new_parent=_parent, _new_name=_new_name,
+    mock = Klass(parent=_parent, _new_parent=_parent, _new_name=,
                  name=_name, **_kwargs)
 
     if isinstance(spec, FunctionTypes):
@@ -2820,12 +2820,12 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
-            new = child_klass(parent=parent, name=entry, _new_name=entry,
+            new = child_klass(parent=, name=entry, _new_name=entry,
                               _new_parent=parent,
                               **kwargs)
             mock._mock_children[entry] = new
             new.return_value = child_klass()
-            _check_signature(original, new, skipfirst=skipfirst)
+            _check_signature(original, new, skipfirst=)
 
         # so functions created with _set_signature become instance attributes,
         # *plus* their underlying mock exists in _mock_children of the parent
@@ -3058,7 +3058,7 @@ class ThreadingMixin(Base):
         """
         if timeout is _timeout_unset:
             timeout = self._mock_wait_timeout
-        if not self._mock_event.wait(timeout=timeout):
+        if not self._mock_event.wait(timeout=):
             msg = (f"{self._mock_name or 'mock'} was not called before"
                    f" timeout({timeout}).")
             raise AssertionError(msg)

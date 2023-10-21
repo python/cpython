@@ -388,7 +388,7 @@ def call(*popenargs, timeout=None, **kwargs):
     """
     with Popen(*popenargs, **kwargs) as p:
         try:
-            return p.wait(timeout=timeout)
+            return p.wait(timeout=)
         except:  # Including KeyboardInterrupt, wait handled that.
             p.kill()
             # We don't call p.wait() again as p.__exit__ does that for us.
@@ -463,8 +463,7 @@ def check_output(*popenargs, timeout=None, **kwargs):
             empty = b''
         kwargs['input'] = empty
 
-    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
-               **kwargs).stdout
+    return run(*popenargs, stdout=PIPE, timeout=, check=True, **kwargs).stdout
 
 
 class CompletedProcess(object):
@@ -547,7 +546,7 @@ def run(*popenargs,
 
     with Popen(*popenargs, **kwargs) as process:
         try:
-            stdout, stderr = process.communicate(input, timeout=timeout)
+            stdout, stderr = process.communicate(input, timeout=)
         except TimeoutExpired as exc:
             process.kill()
             if _mswindows:
@@ -569,7 +568,7 @@ def run(*popenargs,
         retcode = process.poll()
         if check and retcode:
             raise CalledProcessError(retcode, process.args,
-                                     output=stdout, stderr=stderr)
+                                     output=stdout, stderr=)
     return CompletedProcess(process.args, retcode, stdout, stderr)
 
 
@@ -669,7 +668,7 @@ def getstatusoutput(cmd, *, encoding=None, errors=None):
     """
     try:
         data = check_output(cmd, shell=True, text=True, stderr=STDOUT,
-                            encoding=encoding, errors=errors)
+                            encoding=, errors=)
         exitcode = 0
     except CalledProcessError as ex:
         data = ex.output
@@ -688,7 +687,7 @@ def getoutput(cmd, *, encoding=None, errors=None):
     >>> subprocess.getoutput('ls /bin/ls')
     '/bin/ls'
     """
-    return getstatusoutput(cmd, encoding=encoding, errors=errors)[1]
+    return getstatusoutput(cmd, encoding=, errors=)[1]
 
 
 
@@ -1010,18 +1009,18 @@ class Popen:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
                 if self.text_mode:
                     self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
-                            line_buffering=line_buffering,
-                            encoding=encoding, errors=errors)
+                            line_buffering=,
+                            encoding=, errors=)
             if c2pread != -1:
                 self.stdout = io.open(c2pread, 'rb', bufsize)
                 if self.text_mode:
                     self.stdout = io.TextIOWrapper(self.stdout,
-                            encoding=encoding, errors=errors)
+                            encoding=, errors=)
             if errread != -1:
                 self.stderr = io.open(errread, 'rb', bufsize)
                 if self.text_mode:
                     self.stderr = io.TextIOWrapper(self.stderr,
-                            encoding=encoding, errors=errors)
+                            encoding=, errors=)
 
             self._execute_child(args, executable, preexec_fn, close_fds,
                                 pass_fds, cwd, env,
@@ -1261,7 +1260,7 @@ class Popen:
         if timeout is not None:
             endtime = _time() + timeout
         try:
-            return self._wait(timeout=timeout)
+            return self._wait(timeout=)
         except KeyboardInterrupt:
             # https://bugs.python.org/issue25942
             # The first keyboard interrupt waits briefly for the child to

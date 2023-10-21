@@ -44,7 +44,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 
     def socket_transport(self, waiter=None):
         transport = _ProactorSocketTransport(self.loop, self.sock,
-                                             self.protocol, waiter=waiter)
+                                             self.protocol, waiter=)
         self.addCleanup(close_transport, transport)
         return transport
 
@@ -463,7 +463,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 
     def pause_writing_transport(self, high):
         tr = self.socket_transport()
-        tr.set_write_buffer_limits(high=high)
+        tr.set_write_buffer_limits(high=)
 
         self.assertEqual(tr.get_write_buffer_size(), 0)
         self.assertFalse(self.protocol.pause_writing.called)
@@ -555,7 +555,7 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.sock.getpeername.side_effect = None if address else OSError
         transport = _ProactorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
-                                               address=address)
+                                               address=)
         self.addCleanup(close_transport, transport)
         return transport
 

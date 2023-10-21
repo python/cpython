@@ -61,7 +61,7 @@ class FinderTests:
         module = '<test module>'
         path = '<test path>'
         importer = util.mock_spec(module)
-        hook = util.mock_path_hook(path, importer=importer)
+        hook = util.mock_path_hook(path, importer=)
         with util.import_state(path_hooks=[hook]):
             found = self.find(module, [path])
             self.check_found(found, importer)
@@ -87,7 +87,7 @@ class FinderTests:
         path = ''
         module = '<test module>'
         importer = util.mock_spec(module)
-        hook = util.mock_path_hook(os.getcwd(), importer=importer)
+        hook = util.mock_path_hook(os.getcwd(), importer=)
         with util.import_state(path=[path], path_hooks=[hook]):
             found = self.find(module)
             self.check_found(found, importer)
@@ -197,7 +197,7 @@ class FindModuleTests(FinderTests):
 
 (Frozen_FindModuleTests,
  Source_FindModuleTests
-) = util.test_both(FindModuleTests, importlib=importlib, machinery=machinery)
+) = util.test_both(FindModuleTests, importlib=, machinery=)
 
 
 class FindSpecTests(FinderTests):
@@ -209,7 +209,7 @@ class FindSpecTests(FinderTests):
 
 (Frozen_FindSpecTests,
  Source_FindSpecTests
- ) = util.test_both(FindSpecTests, importlib=importlib, machinery=machinery)
+ ) = util.test_both(FindSpecTests, importlib=, machinery=)
 
 
 class PathEntryFinderTests:
@@ -235,7 +235,7 @@ class PathEntryFinderTests:
 
 (Frozen_PEFTests,
  Source_PEFTests
- ) = util.test_both(PathEntryFinderTests, machinery=machinery)
+ ) = util.test_both(PathEntryFinderTests, machinery=)
 
 
 if __name__ == '__main__':

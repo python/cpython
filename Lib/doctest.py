@@ -252,7 +252,7 @@ def _load_testfile(filename, package, module_relative, encoding):
             # get_data() opens files as 'rb', so one must do the equivalent
             # conversion as universal newlines would do.
             return _newline_convert(file_contents), filename
-    with open(filename, encoding=encoding) as f:
+    with open(filename, encoding=) as f:
         return f.read(), filename
 
 def _indent(s, indent=4):
@@ -675,9 +675,9 @@ class DocTestParser:
             # Create an Example, and add it to the list.
             if not self._IS_BLANK_OR_COMMENT(source):
                 output.append( Example(source, want, exc_msg,
-                                    lineno=lineno,
+                                    lineno=,
                                     indent=min_indent+len(m.group('indent')),
-                                    options=options) )
+                                    options=) )
             # Update lineno (lines inside this example)
             lineno += string.count('\n', m.start(), m.end())
             # Update charno.
@@ -1986,14 +1986,14 @@ def testmod(m=None, name=None, globs=None, verbose=None,
         name = m.__name__
 
     # Find, parse, and run all tests in the given module.
-    finder = DocTestFinder(exclude_empty=exclude_empty)
+    finder = DocTestFinder(exclude_empty=)
 
     if raise_on_error:
-        runner = DebugRunner(verbose=verbose, optionflags=optionflags)
+        runner = DebugRunner(verbose=, optionflags=)
     else:
-        runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+        runner = DocTestRunner(verbose=, optionflags=)
 
-    for test in finder.find(m, name, globs=globs, extraglobs=extraglobs):
+    for test in finder.find(m, name, globs=, extraglobs=):
         runner.run(test)
 
     if report:
@@ -2112,9 +2112,9 @@ def testfile(filename, module_relative=True, name=None, package=None,
         globs['__name__'] = '__main__'
 
     if raise_on_error:
-        runner = DebugRunner(verbose=verbose, optionflags=optionflags)
+        runner = DebugRunner(verbose=, optionflags=)
     else:
-        runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
+        runner = DocTestRunner(verbose=, optionflags=)
 
     # Read the file, convert it to a test, and run it.
     test = parser.get_doctest(text, globs, name, filename, 0)
@@ -2149,10 +2149,10 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
     information.
     """
     # Find, parse, and run all tests in the given module.
-    finder = DocTestFinder(verbose=verbose, recurse=False)
-    runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
-    for test in finder.find(f, name, globs=globs):
-        runner.run(test, compileflags=compileflags)
+    finder = DocTestFinder(verbose=, recurse=False)
+    runner = DocTestRunner(verbose=, optionflags=)
+    for test in finder.find(f, name, globs=):
+        runner.run(test, compileflags=)
 
 ######################################################################
 ## 7. Unittest Support
@@ -2236,7 +2236,7 @@ class DocTestCase(unittest.TestCase):
             # so add the default reporting flags
             optionflags |= _unittest_reportflags
 
-        runner = DocTestRunner(optionflags=optionflags,
+        runner = DocTestRunner(optionflags=,
                                checker=self._dt_checker, verbose=False)
 
         try:
@@ -2423,7 +2423,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
         test_finder = DocTestFinder()
 
     module = _normalize_module(module)
-    tests = test_finder.find(module, globs=globs, extraglobs=extraglobs)
+    tests = test_finder.find(module, globs=, extraglobs=)
 
     if not tests and sys.flags.optimize >=2:
         # Skip doctests when running with -O2
@@ -2826,10 +2826,10 @@ def _test():
             sys.path.insert(0, dirname)
             m = __import__(filename[:-3])
             del sys.path[0]
-            failures, _ = testmod(m, verbose=verbose, optionflags=options)
+            failures, _ = testmod(m, verbose=, optionflags=options)
         else:
             failures, _ = testfile(filename, module_relative=False,
-                                     verbose=verbose, optionflags=options)
+                                     verbose=, optionflags=options)
         if failures:
             return 1
     return 0

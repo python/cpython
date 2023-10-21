@@ -52,7 +52,7 @@ class _OverlappedFuture(futures.Future):
     """
 
     def __init__(self, ov, *, loop=None):
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         if self._source_traceback:
             del self._source_traceback[-1]
         self._ov = ov
@@ -82,7 +82,7 @@ class _OverlappedFuture(futures.Future):
 
     def cancel(self, msg=None):
         self._cancel_overlapped()
-        return super().cancel(msg=msg)
+        return super().cancel(msg=)
 
     def set_exception(self, exception):
         super().set_exception(exception)
@@ -97,7 +97,7 @@ class _BaseWaitHandleFuture(futures.Future):
     """Subclass of Future which represents a wait handle."""
 
     def __init__(self, ov, handle, wait_handle, *, loop=None):
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         if self._source_traceback:
             del self._source_traceback[-1]
         # Keep a reference to the Overlapped object to keep it alive until the
@@ -156,7 +156,7 @@ class _BaseWaitHandleFuture(futures.Future):
 
     def cancel(self, msg=None):
         self._unregister_wait()
-        return super().cancel(msg=msg)
+        return super().cancel(msg=)
 
     def set_exception(self, exception):
         self._unregister_wait()
@@ -173,7 +173,7 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
     """
 
     def __init__(self, ov, event, wait_handle, *, loop=None):
-        super().__init__(ov, event, wait_handle, loop=loop)
+        super().__init__(ov, event, wait_handle, loop=)
 
         self._done_callback = None
 
@@ -193,7 +193,7 @@ class _WaitCancelFuture(_BaseWaitHandleFuture):
 
 class _WaitHandleFuture(_BaseWaitHandleFuture):
     def __init__(self, ov, handle, wait_handle, proactor, *, loop=None):
-        super().__init__(ov, handle, wait_handle, loop=loop)
+        super().__init__(ov, handle, wait_handle, loop=)
         self._proactor = proactor
         self._unregister_proactor = True
         self._event = _overlapped.CreateEvent(None, True, False, None)
@@ -399,7 +399,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
         waiter = self.create_future()
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
-                                             waiter=waiter, extra=extra,
+                                             waiter=, extra=,
                                              **kwargs)
         try:
             await waiter
@@ -872,8 +872,8 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         self._proc = windows_utils.Popen(
-            args, shell=shell, stdin=stdin, stdout=stdout, stderr=stderr,
-            bufsize=bufsize, **kwargs)
+            args, shell=, stdin=, stdout=, stderr=,
+            bufsize=, **kwargs)
 
         def callback(f):
             returncode = self._proc.poll()

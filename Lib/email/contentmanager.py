@@ -64,7 +64,7 @@ raw_data_manager = ContentManager()
 def get_text_content(msg, errors='replace'):
     content = msg.get_payload(decode=True)
     charset = msg.get_param('charset', 'ASCII')
-    return content.decode(charset, errors=errors)
+    return content.decode(charset, errors=)
 raw_data_manager.add_get_handler('text', get_text_content)
 
 

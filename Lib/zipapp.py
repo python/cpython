@@ -124,7 +124,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
         fn_ok = all(part.isidentifier() for part in fn.split('.'))
         if not (sep == ':' and mod_ok and fn_ok):
             raise ZipAppError("Invalid entry point: " + main)
-        main_py = MAIN_TEMPLATE.format(module=mod, fn=fn)
+        main_py = MAIN_TEMPLATE.format(module=mod, fn=)
 
     if target is None:
         target = source.with_suffix('.pyz')
@@ -135,7 +135,7 @@ def create_archive(source, target=None, interpreter=None, main=None,
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
-        with zipfile.ZipFile(fd, 'w', compression=compression) as z:
+        with zipfile.ZipFile(fd, 'w', compression=) as z:
             for child in sorted(source.rglob('*')):
                 arcname = child.relative_to(source)
                 if filter is None or filter(arcname) and child.resolve() != arcname.resolve():

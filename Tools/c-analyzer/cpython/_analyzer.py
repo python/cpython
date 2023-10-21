@@ -105,10 +105,7 @@ def read_known():
         #extracols = ['unsupported']
         known = _datafiles.read_known(KNOWN_FILE, extracols, REPO_ROOT)
         # For now we ignore known.values() (i.e. "extra").
-        types, _ = _datafiles.analyze_known(
-            known,
-            analyze_resolved=analyze_resolved,
-        )
+        types, _ = _datafiles.analyze_known(known, analyze_resolved=)
         _KNOWN.update(types)
     return _KNOWN.copy()
 
@@ -141,11 +138,7 @@ def analyze(filenames, *,
     known = read_known()
 
     decls = iter_decls(filenames)
-    results = _c_analyzer.analyze_decls(
-        decls,
-        known,
-        analyze_resolved=analyze_resolved,
-    )
+    results = _c_analyzer.analyze_decls(decls, known, analyze_resolved=)
     analysis = Analysis.from_results(results)
 
     return analysis
@@ -374,7 +367,7 @@ class Analyzed(_info.Analyzed):
         if fmt == 'raw':
             yield repr(self)
             return
-        rendered = super().render(fmt, itemonly=itemonly)
+        rendered = super().render(fmt, itemonly=)
         # XXX ???
         #if itemonly:
         #    yield from rendered

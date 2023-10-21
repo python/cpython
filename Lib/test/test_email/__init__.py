@@ -46,14 +46,14 @@ class TestEmailBase(unittest.TestCase):
             policy = self.policy
         if message is None:
             message = self.message
-        return email.message_from_string(string, message, policy=policy)
+        return email.message_from_string(string, message, policy=)
 
     def _bytes_msg(self, bytestring, message=None, policy=None):
         if policy is None:
             policy = self.policy
         if message is None:
             message = self.message
-        return email.message_from_bytes(bytestring, message, policy=policy)
+        return email.message_from_bytes(bytestring, message, policy=)
 
     def _make_message(self):
         return self.message(policy=self.policy)
@@ -153,10 +153,10 @@ def parameterize(cls):
                 testnameroot = 'test_' + name[len(paramsname):]
                 for paramname, params in paramsdict.items():
                     if hasattr(params, 'keys'):
-                        test = (lambda self, name=name, params=params:
+                        test = (lambda self, name=, params=params:
                                     getattr(self, name)(**params))
                     else:
-                        test = (lambda self, name=name, params=params:
+                        test = (lambda self, name=, params=params:
                                         getattr(self, name)(*params))
                     testname = testnameroot + '_' + paramname
                     test.__name__ = testname

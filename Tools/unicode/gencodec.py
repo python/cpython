@@ -258,18 +258,15 @@ def codegen(name, map, encodingname, comments=1):
 
     """
     # Generate code
-    decoding_map_code = python_mapdef_code(
-        'decoding_map',
-        map,
-        comments=comments)
+    decoding_map_code = python_mapdef_code('decoding_map', map, comments=)
     decoding_table_code = python_tabledef_code(
         'decoding_table',
         map,
-        comments=comments)
+        comments=)
     encoding_map_code = python_mapdef_code(
         'encoding_map',
         codecs.make_encoding_map(map),
-        comments=comments,
+        comments=,
         precisions=(4, 2))
 
     if decoding_table_code:

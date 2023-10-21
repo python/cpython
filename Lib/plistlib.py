@@ -880,7 +880,7 @@ def load(fp, *, fmt=None, dict_type=dict):
     else:
         P = _FORMATS[fmt]['parser']
 
-    p = P(dict_type=dict_type)
+    p = P(dict_type=)
     return p.parse(fp)
 
 
@@ -889,7 +889,7 @@ def loads(value, *, fmt=None, dict_type=dict):
     Return the unpacked root object (which usually is a dictionary).
     """
     fp = BytesIO(value)
-    return load(fp, fmt=fmt, dict_type=dict_type)
+    return load(fp, fmt=, dict_type=)
 
 
 def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
@@ -899,7 +899,7 @@ def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
     if fmt not in _FORMATS:
         raise ValueError("Unsupported format: %r"%(fmt,))
 
-    writer = _FORMATS[fmt]["writer"](fp, sort_keys=sort_keys, skipkeys=skipkeys)
+    writer = _FORMATS[fmt]["writer"](fp, sort_keys=, skipkeys=)
     writer.write(value)
 
 
@@ -907,5 +907,5 @@ def dumps(value, *, fmt=FMT_XML, skipkeys=False, sort_keys=True):
     """Return a bytes object with the contents for a .plist file.
     """
     fp = BytesIO()
-    dump(value, fp, fmt=fmt, skipkeys=skipkeys, sort_keys=sort_keys)
+    dump(value, fp, fmt=, skipkeys=, sort_keys=)
     return fp.getvalue()

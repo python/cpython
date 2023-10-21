@@ -368,7 +368,7 @@ class RangeTest(unittest.TestCase):
                      (13, 21, 3), (-2, 2, 2), (2**65, 2**65+2)]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
-                with self.subTest(proto=proto, test=t):
+                with self.subTest(proto=, test=t):
                     r = range(*t)
                     self.assertEqual(list(pickle.loads(pickle.dumps(r, proto))),
                                      list(r))
@@ -385,7 +385,7 @@ class RangeTest(unittest.TestCase):
             ]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             for t in testcases:
-                with self.subTest(proto=proto, t=t):
+                with self.subTest(proto=, t=):
                     it = itorg = iter(range(*t))
                     data = list(range(*t))
 
@@ -405,7 +405,7 @@ class RangeTest(unittest.TestCase):
 
     def test_iterator_pickling_overflowing_index(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.subTest(proto=proto):
+            with self.subTest(proto=):
                 it = iter(range(2**32 + 2))
                 it.__setstate__(2**32 + 1)  # undocumented way to advance an iterator
                 d = pickle.dumps(it, proto)

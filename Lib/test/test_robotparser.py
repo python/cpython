@@ -30,13 +30,13 @@ class BaseRobotTest:
     def test_good_urls(self):
         for url in self.good:
             agent, url = self.get_agent_and_url(url)
-            with self.subTest(url=url, agent=agent):
+            with self.subTest(url=, agent=):
                 self.assertTrue(self.parser.can_fetch(agent, url))
 
     def test_bad_urls(self):
         for url in self.bad:
             agent, url = self.get_agent_and_url(url)
-            with self.subTest(url=url, agent=agent):
+            with self.subTest(url=, agent=):
                 self.assertFalse(self.parser.can_fetch(agent, url))
 
     def test_site_maps(self):
@@ -106,7 +106,7 @@ class BaseRequestRateTest(BaseRobotTest):
         parser = self.parser
         for url in self.good + self.bad:
             agent, url = self.get_agent_and_url(url)
-            with self.subTest(url=url, agent=agent):
+            with self.subTest(url=, agent=):
                 self.assertEqual(parser.crawl_delay(agent), self.crawl_delay)
 
                 parsed_request_rate = parser.request_rate(agent)

@@ -489,7 +489,7 @@ class MockHTTPHandler(urllib.request.HTTPHandler):
     # Very simple mock HTTP handler with no special behavior other than using a mock HTTP connection
 
     def __init__(self, debuglevel=None):
-        super(MockHTTPHandler, self).__init__(debuglevel=debuglevel)
+        super(MockHTTPHandler, self).__init__(debuglevel=)
         self.httpconn = MockHTTPClass()
 
     def http_open(self, req):
@@ -1518,7 +1518,7 @@ class HandlerTests(unittest.TestCase):
                         'expected bypass of %s to be False' % host)
 
     def check_basic_auth(self, headers, realm):
-        with self.subTest(realm=realm, headers=headers):
+        with self.subTest(realm=, headers=):
             opener = OpenerDirector()
             password_manager = MockPasswordManager()
             auth_handler = urllib.request.HTTPBasicAuthHandler(password_manager)

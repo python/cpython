@@ -154,7 +154,7 @@ class LongTest(unittest.TestCase):
 
     def check_division(self, x, y):
         eq = self.assertEqual
-        with self.subTest(x=x, y=y):
+        with self.subTest(x=, y=):
             q, r = divmod(x, y)
             q2, r2 = x//y, x%y
             pab, pba = x*y, y*x
@@ -220,7 +220,7 @@ class LongTest(unittest.TestCase):
             for bbits in bits:
                 if bbits < abits:
                     continue
-                with self.subTest(abits=abits, bbits=bbits):
+                with self.subTest(abits=, bbits=):
                     b = (1 << bbits) - 1
                     x = a * b
                     y = ((1 << (abits + bbits)) -
@@ -231,7 +231,7 @@ class LongTest(unittest.TestCase):
 
     def check_bitop_identities_1(self, x):
         eq = self.assertEqual
-        with self.subTest(x=x):
+        with self.subTest(x=):
             eq(x & 0, 0)
             eq(x | 0, x)
             eq(x ^ 0, x)
@@ -249,7 +249,7 @@ class LongTest(unittest.TestCase):
             eq(-x, ~(x-1))
         for n in range(2*SHIFT):
             p2 = 2 ** n
-            with self.subTest(x=x, n=n, p2=p2):
+            with self.subTest(x=, n=, p2=):
                 eq(x << n >> n, x)
                 eq(x // p2, x >> n)
                 eq(x * p2, x << n)
@@ -258,7 +258,7 @@ class LongTest(unittest.TestCase):
 
     def check_bitop_identities_2(self, x, y):
         eq = self.assertEqual
-        with self.subTest(x=x, y=y):
+        with self.subTest(x=, y=):
             eq(x & y, y & x)
             eq(x | y, y | x)
             eq(x ^ y, y ^ x)
@@ -271,7 +271,7 @@ class LongTest(unittest.TestCase):
 
     def check_bitop_identities_3(self, x, y, z):
         eq = self.assertEqual
-        with self.subTest(x=x, y=y, z=z):
+        with self.subTest(x=, y=, z=):
             eq((x & y) & z, x & (y & z))
             eq((x | y) | z, x | (y | z))
             eq((x ^ y) ^ z, x ^ (y ^ z))
@@ -307,10 +307,10 @@ class LongTest(unittest.TestCase):
     def check_format_1(self, x):
         for base, mapper in (2, bin), (8, oct), (10, str), (10, repr), (16, hex):
             got = mapper(x)
-            with self.subTest(x=x, mapper=mapper.__name__):
+            with self.subTest(x=, mapper=mapper.__name__):
                 expected = self.slow_format(x, base)
                 self.assertEqual(got, expected)
-            with self.subTest(got=got):
+            with self.subTest(got=):
                 self.assertEqual(int(got, 0), x)
 
     def test_format(self):
@@ -613,7 +613,7 @@ class LongTest(unittest.TestCase):
             for y in cases:
                 Ry = Rat(y)
                 Rcmp = (Rx > Ry) - (Rx < Ry)
-                with self.subTest(x=x, y=y, Rcmp=Rcmp):
+                with self.subTest(x=, y=, Rcmp=):
                     xycmp = (x > y) - (x < y)
                     eq(Rcmp, xycmp)
                     eq(x == y, Rcmp == 0)
@@ -1219,7 +1219,7 @@ class LongTest(unittest.TestCase):
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
-                        test.to_bytes(len(expected), byteorder, signed=signed),
+                        test.to_bytes(len(expected), byteorder, signed=),
                         expected)
                 except Exception as err:
                     raise AssertionError(
@@ -1238,7 +1238,7 @@ class LongTest(unittest.TestCase):
                 try:
                     self.assertEqual(
                         equivalent_python(
-                            test, len(expected), byteorder, signed=signed),
+                            test, len(expected), byteorder, signed=),
                         expected
                     )
                 except Exception as err:
@@ -1357,7 +1357,7 @@ class LongTest(unittest.TestCase):
             for test, expected in tests.items():
                 try:
                     self.assertEqual(
-                        int.from_bytes(test, byteorder, signed=signed),
+                        int.from_bytes(test, byteorder, signed=),
                         expected)
                 except Exception as err:
                     raise AssertionError(
@@ -1377,7 +1377,7 @@ class LongTest(unittest.TestCase):
 
                 try:
                     self.assertEqual(
-                        equivalent_python(test, byteorder, signed=signed),
+                        equivalent_python(test, byteorder, signed=),
                         expected
                     )
                 except Exception as err:
@@ -1596,7 +1596,7 @@ class LongTest(unittest.TestCase):
         # cases with a maximal amount of carries.
         for bitlen in range(1, 400):
             n = (1 << bitlen) - 1 # solid string of 1 bits
-            with self.subTest(bitlen=bitlen, n=n):
+            with self.subTest(bitlen=, n=):
                 # (2**i - 1)**2 = 2**(2*i) - 2*2**i + 1
                 self.assertEqual(n**2,
                     (1 << (2 * bitlen)) - (1 << (bitlen + 1)) + 1)

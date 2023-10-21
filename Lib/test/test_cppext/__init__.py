@@ -54,10 +54,10 @@ class TestCPPExt(unittest.TestCase):
             env['CPYTHON_TEST_EXT_NAME'] = extension_name
             if support.verbose:
                 print('Run:', ' '.join(cmd))
-                subprocess.run(cmd, check=True, env=env)
+                subprocess.run(cmd, check=True, env=)
             else:
                 proc = subprocess.run(cmd,
-                                      env=env,
+                                      env=,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.STDOUT,
                                       text=True)

@@ -895,7 +895,7 @@ def getparser(use_datetime=False, use_builtin_types=False):
         target = FastUnmarshaller(True, False, mkbytes, mkdatetime, Fault)
         parser = FastParser(target)
     else:
-        target = Unmarshaller(use_datetime=use_datetime, use_builtin_types=use_builtin_types)
+        target = Unmarshaller(use_datetime=, use_builtin_types=)
         if FastParser:
             parser = FastParser(target)
         else:
@@ -999,7 +999,7 @@ def loads(data, use_datetime=False, use_builtin_types=False):
     If the XML-RPC packet represents a fault condition, this function
     raises a Fault exception.
     """
-    p, u = getparser(use_datetime=use_datetime, use_builtin_types=use_builtin_types)
+    p, u = getparser(use_datetime=, use_builtin_types=)
     p.feed(data)
     p.close()
     return u.close(), u.getmethodname()
@@ -1332,9 +1332,7 @@ class SafeTransport(Transport):
 
     def __init__(self, use_datetime=False, use_builtin_types=False,
                  *, headers=(), context=None):
-        super().__init__(use_datetime=use_datetime,
-                         use_builtin_types=use_builtin_types,
-                         headers=headers)
+        super().__init__(use_datetime=, use_builtin_types=, headers=)
         self.context = context
 
     # FIXME: mostly untested
@@ -1413,9 +1411,9 @@ class ServerProxy:
             else:
                 handler = Transport
                 extra_kwargs = {}
-            transport = handler(use_datetime=use_datetime,
-                                use_builtin_types=use_builtin_types,
-                                headers=headers,
+            transport = handler(use_datetime=,
+                                use_builtin_types=,
+                                headers=,
                                 **extra_kwargs)
         self.__transport = transport
 

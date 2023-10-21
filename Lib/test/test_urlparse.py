@@ -650,7 +650,7 @@ class UrlParseTestCase(unittest.TestCase):
         url = "http://www.python.org/java\nscript:\talert('msg\r\n')/?query\n=\tsomething#frag\nment"
         scheme = "ht\ntp"
         for _ in range(2):
-            p = urllib.parse.urlsplit(url, scheme=scheme)
+            p = urllib.parse.urlsplit(url, scheme=)
             self.assertEqual(p.scheme, "http")
             self.assertEqual(p.geturl(), "http://www.python.org/javascript:alert('msg')/?query=something#fragment")
 
@@ -709,7 +709,7 @@ class UrlParseTestCase(unittest.TestCase):
         url = "//www.python.org/"
         scheme = noise.decode("utf-8") + "https" + noise.decode("utf-8")
         for _ in range(2):
-            p = urllib.parse.urlsplit(url, scheme=scheme)
+            p = urllib.parse.urlsplit(url, scheme=)
             self.assertEqual(p.scheme, "https")
             self.assertEqual(p.geturl(), "https://www.python.org/")
 
@@ -718,7 +718,7 @@ class UrlParseTestCase(unittest.TestCase):
         for bytes in (False, True):
             for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
                 for port in ("foo", "1.5", "-1", "0x10", "-0", "1_1", " 1", "1 ", "६"):
-                    with self.subTest(bytes=bytes, parse=parse, port=port):
+                    with self.subTest(bytes=, parse=, port=):
                         netloc = "www.example.net:" + port
                         url = "http://" + netloc + "/"
                         if bytes:
@@ -737,7 +737,7 @@ class UrlParseTestCase(unittest.TestCase):
         for bytes in (False, True):
             for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
                 for scheme in (".", "+", "-", "0", "http&", "६http"):
-                    with self.subTest(bytes=bytes, parse=parse, scheme=scheme):
+                    with self.subTest(bytes=, parse=, scheme=):
                         url = scheme + "://www.example.net"
                         if bytes:
                             if url.isascii():
@@ -893,7 +893,7 @@ class UrlParseTestCase(unittest.TestCase):
             for func in (urllib.parse.urlparse, urllib.parse.urlsplit):
                 if attr == "params" and func is urllib.parse.urlsplit:
                     attr = "path"
-                with self.subTest(url=url, function=func):
+                with self.subTest(url=, function=func):
                     result = func(url, allow_fragments=False)
                     self.assertEqual(result.fragment, "")
                     self.assertTrue(
@@ -1212,7 +1212,7 @@ class UrlParseTestCase(unittest.TestCase):
             for netloc in ["netloc{}false.netloc", "n{}user@netloc"]:
                 for c in denorm_chars:
                     url = "{}://{}/path".format(scheme, netloc.format(c))
-                    with self.subTest(url=url, char='{:04X}'.format(ord(c))):
+                    with self.subTest(url=, char='{:04X}'.format(ord(c))):
                         with self.assertRaises(ValueError):
                             urllib.parse.urlsplit(url)
 

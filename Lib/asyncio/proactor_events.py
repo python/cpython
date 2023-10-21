@@ -467,7 +467,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
         self._buffer_size = 0
         # We don't need to call _protocol.connection_made() since our base
         # constructor does it for us.
-        super().__init__(loop, sock, protocol, waiter=waiter, extra=extra)
+        super().__init__(loop, sock, protocol, waiter=, extra=)
 
         # The base constructor sets _buffer = None, so we set it here
         self._buffer = collections.deque()
@@ -536,7 +536,7 @@ class _ProactorDatagramTransport(_ProactorBasePipeTransport,
             else:
                 self._write_fut = self._loop._proactor.sendto(self._sock,
                                                               data,
-                                                              addr=addr)
+                                                              addr=)
         except OSError as exc:
             self._protocol.error_received(exc)
         except Exception as exc:
@@ -656,10 +656,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         ssl_protocol = sslproto.SSLProtocol(
                 self, protocol, sslcontext, waiter,
                 server_side, server_hostname,
-                ssl_handshake_timeout=ssl_handshake_timeout,
-                ssl_shutdown_timeout=ssl_shutdown_timeout)
-        _ProactorSocketTransport(self, rawsock, ssl_protocol,
-                                 extra=extra, server=server)
+                ssl_handshake_timeout=,
+                ssl_shutdown_timeout=)
+        _ProactorSocketTransport(self, rawsock, ssl_protocol, extra=, server=)
         return ssl_protocol._app_transport
 
     def _make_datagram_transport(self, sock, protocol,
@@ -849,13 +848,13 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                     if sslcontext is not None:
                         self._make_ssl_transport(
                             conn, protocol, sslcontext, server_side=True,
-                            extra={'peername': addr}, server=server,
-                            ssl_handshake_timeout=ssl_handshake_timeout,
-                            ssl_shutdown_timeout=ssl_shutdown_timeout)
+                            extra={'peername': addr}, server=,
+                            ssl_handshake_timeout=,
+                            ssl_shutdown_timeout=)
                     else:
                         self._make_socket_transport(
                             conn, protocol,
-                            extra={'peername': addr}, server=server)
+                            extra={'peername': addr}, server=)
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)

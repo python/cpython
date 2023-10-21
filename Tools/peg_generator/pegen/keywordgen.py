@@ -67,7 +67,7 @@ def main() -> None:
         soft_keywords = (
             "" if not all_soft_keywords else "    " + ",\n    ".join(map(repr, all_soft_keywords))
         )
-        thefile.write(TEMPLATE.format(keywords=keywords, soft_keywords=soft_keywords))
+        thefile.write(TEMPLATE.format(keywords=, soft_keywords=))
 
 
 if __name__ == "__main__":

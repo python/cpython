@@ -288,7 +288,7 @@ class Path:
         zip_mode = mode[0]
         if not self.exists() and zip_mode == 'r':
             raise FileNotFoundError(self)
-        stream = self.root.open(self.at, zip_mode, pwd=pwd)
+        stream = self.root.open(self.at, zip_mode, pwd=)
         if 'b' in mode:
             if args or kwargs:
                 raise ValueError("encoding args invalid for binary operation")
@@ -377,7 +377,7 @@ class Path:
         return posixpath.join(self.root.filename, self.at)
 
     def __repr__(self):
-        return self.__repr.format(self=self)
+        return self.__repr.format(self=)
 
     def joinpath(self, *other):
         next = posixpath.join(self.at, *other)

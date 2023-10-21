@@ -79,7 +79,7 @@ def Value(typecode_or_type, *args, lock=True, ctx=None):
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
         raise AttributeError("%r has no method 'acquire'" % lock)
-    return synchronized(obj, lock, ctx=ctx)
+    return synchronized(obj, lock, ctx=)
 
 def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
     '''
@@ -93,7 +93,7 @@ def Array(typecode_or_type, size_or_initializer, *, lock=True, ctx=None):
         lock = ctx.RLock()
     if not hasattr(lock, 'acquire'):
         raise AttributeError("%r has no method 'acquire'" % lock)
-    return synchronized(obj, lock, ctx=ctx)
+    return synchronized(obj, lock, ctx=)
 
 def copy(obj):
     new_obj = _new_value(type(obj))

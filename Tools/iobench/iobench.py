@@ -429,7 +429,7 @@ def main():
     global TEXT_ENCODING, NEWLINES
 
     usage = "usage: %prog [-h|--help] [options]"
-    parser = OptionParser(usage=usage)
+    parser = OptionParser(usage=)
     parser.add_option("-b", "--binary",
                       action="store_true", dest="binary", default=False,
                       help="run binary I/O tests")

@@ -104,7 +104,7 @@ def _gettextwriter(out, encoding):
             buffer.tell = out.tell
         except AttributeError:
             pass
-    return io.TextIOWrapper(buffer, encoding=encoding,
+    return io.TextIOWrapper(buffer, encoding=,
                             errors='xmlcharrefreplace',
                             newline='\n',
                             write_through=True)

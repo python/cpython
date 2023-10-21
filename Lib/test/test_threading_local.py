@@ -35,7 +35,7 @@ class BaseLocalTest:
         local = self._local()
         weaklist = []
         for i in range(n):
-            t = threading.Thread(target=target, args=(local, weaklist))
+            t = threading.Thread(target=, args=(local, weaklist))
             t.start()
             t.join()
         del t
@@ -224,8 +224,7 @@ def load_tests(loader, tests, pattern):
         _threading_local.local = _thread._local
     def tearDown(test):
         _threading_local.local = local_orig
-    tests.addTests(DocTestSuite('_threading_local',
-                                setUp=setUp, tearDown=tearDown)
+    tests.addTests(DocTestSuite('_threading_local', setUp=, tearDown=)
                    )
     return tests
 

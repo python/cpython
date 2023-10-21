@@ -744,7 +744,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 self.module.resetwarnings()
                 registry = {}
                 self.module.warn_explicit(message, UserWarning, "<test>", 42,
-                                            registry=registry)
+                                            registry=)
                 self.assertEqual(w[-1].message, message)
                 self.assertEqual(len(w), 1)
                 # One actual registry key plus the "version" key
@@ -756,7 +756,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 __warningregistry__ = {}
                 registry = {}
                 self.module.warn_explicit(message, UserWarning, "<test>", 43,
-                                            registry=registry)
+                                            registry=)
                 self.assertEqual(w[-1].message, message)
                 self.assertEqual(len(w), 1)
                 self.assertEqual(len(registry), 2)
@@ -766,7 +766,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 __warningregistry__ = {}
                 registry = {}
                 self.module.warn_explicit(message, UserWarning, "<test>", 44,
-                                            registry=registry)
+                                            registry=)
                 self.assertEqual(len(w), 0)
         finally:
             self.module.defaultaction = original
@@ -1273,7 +1273,7 @@ class EnvironmentVariableTests(BaseTest):
         rc, stdout, stderr = assert_python_ok("-c",
             "import sys; sys.stdout.write(str(sys.warnoptions))",
             PYTHONIOENCODING="utf-8",
-            PYTHONWARNINGS=PYTHONWARNINGS,
+            PYTHONWARNINGS=,
             PYTHONDEVMODE="")
         self.assertEqual(stdout, str([PYTHONWARNINGS]).encode())
 
@@ -1296,9 +1296,9 @@ class _DeprecatedTest(BaseTest, unittest.TestCase):
         for remove in test:
             msg = rf".*test_warnings.*{remove[0]}\.{remove[1]}"
             filter = msg, DeprecationWarning
-            with self.subTest(remove=remove):
+            with self.subTest(remove=):
                 with warnings_helper.check_warnings(filter, quiet=False):
-                    self.module._deprecated("test_warnings", remove=remove,
+                    self.module._deprecated("test_warnings", remove=,
                                             _version=version)
 
         version = (3, 11, 0, "alpha", 0)
@@ -1311,9 +1311,9 @@ class _DeprecatedTest(BaseTest, unittest.TestCase):
         version = (3, 11, 0, "final", 0)
         test = [(2, 0), (2, 12), (3, 10)]
         for remove in test:
-            with self.subTest(remove=remove):
+            with self.subTest(remove=):
                 with self.assertRaises(RuntimeError):
-                    self.module._deprecated("test_warnings", remove=remove,
+                    self.module._deprecated("test_warnings", remove=,
                                             _version=version)
         for level in ["beta", "candidate", "final"]:
             version = (3, 11, 0, level, 0)

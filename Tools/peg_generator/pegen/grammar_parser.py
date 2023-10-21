@@ -290,7 +290,7 @@ class GeneratedParser(Parser):
             and
             (action := self.action())
         ):
-            return Alt ( items + [NamedItem ( None , NameLeaf ( 'ENDMARKER' ) )] , action = action )
+            return Alt ( items + [NamedItem ( None , NameLeaf ( 'ENDMARKER' ) )] , action= )
         self._reset(mark)
         if (
             (items := self.items())
@@ -304,7 +304,7 @@ class GeneratedParser(Parser):
             and
             (action := self.action())
         ):
-            return Alt ( items , action = action )
+            return Alt (items, action=)
         self._reset(mark)
         if (
             (items := self.items())

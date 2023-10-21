@@ -323,7 +323,7 @@ class OrderedDictTests:
         # pickle directly pulls the module, so we have to fake it
         with replaced_module('collections', self.module):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(proto=proto):
+                with self.subTest(proto=):
                     dup = pickle.loads(pickle.dumps(od, proto))
                     check(dup)
                     self.assertEqual(dup.x, od.x)
@@ -830,7 +830,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
             meth = getattr(od, method_name)
             expected = list(meth())[1:]
             for i in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.subTest(method_name=method_name, protocol=i):
+                with self.subTest(method_name=, protocol=i):
                     it = iter(meth())
                     next(it)
                     p = pickle.dumps(it, i)

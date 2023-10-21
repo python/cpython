@@ -17,12 +17,12 @@ class CodeopTests(unittest.TestCase):
 
     def assertIncomplete(self, str, symbol='single'):
         '''succeed iff str is the start of a valid piece of code'''
-        self.assertEqual(compile_command(str, symbol=symbol), None)
+        self.assertEqual(compile_command(str, symbol=), None)
 
     def assertInvalid(self, str, symbol='single', is_syntax=1):
         '''succeed iff str is the start of an invalid piece of code'''
         try:
-            compile_command(str,symbol=symbol)
+            compile_command(str, symbol=)
             self.fail("No exception raised for invalid code")
         except SyntaxError:
             self.assertTrue(is_syntax)

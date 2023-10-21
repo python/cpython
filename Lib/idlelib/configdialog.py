@@ -2027,21 +2027,21 @@ class ExtPage(Frame):
         for row, opt in enumerate(self.extensions[ext_name]):
             # Create a row with a label and entry/checkbutton.
             label = Label(entry_area, text=opt['name'])
-            label.grid(row=row, column=0, sticky=NW)
+            label.grid(row=, column=0, sticky=NW)
             var = opt['var']
             if opt['type'] == 'bool':
                 Checkbutton(entry_area, variable=var,
                             onvalue='True', offvalue='False', width=8
-                            ).grid(row=row, column=1, sticky=W, padx=7)
+                            ).grid(row=, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
                       validatecommand=(self.is_int, '%P'), width=10
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      ).grid(row=, column=1, sticky=NSEW, padx=7)
 
             else:  # type == 'str'
                 # Limit size to fit non-expanding space with larger font.
                 Entry(entry_area, textvariable=var, width=15
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      ).grid(row=, column=1, sticky=NSEW, padx=7)
         return
 
     def set_extension_value(self, section, opt):

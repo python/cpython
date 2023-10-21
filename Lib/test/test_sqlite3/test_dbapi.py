@@ -51,7 +51,7 @@ class ModuleTests(unittest.TestCase):
     def test_deprecated_version(self):
         msg = "deprecated and will be removed in Python 3.14"
         for attr in "version", "version_info":
-            with self.subTest(attr=attr):
+            with self.subTest(attr=):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     getattr(sqlite, attr)
                 self.assertEqual(cm.filename,  __file__)
@@ -284,7 +284,7 @@ class ModuleTests(unittest.TestCase):
         if sqlite.sqlite_version_info >= (3, 34, 0):
             consts.append("SQLITE_IOERR_CORRUPTFS")
         for const in consts:
-            with self.subTest(const=const):
+            with self.subTest(const=):
                 self.assertTrue(hasattr(sqlite, const))
 
     def test_error_code_on_exception(self):
@@ -435,7 +435,7 @@ class ConnectionTests(unittest.TestCase):
             "Warning",
         ]
         for exc in exceptions:
-            with self.subTest(exc=exc):
+            with self.subTest(exc=):
                 self.assertTrue(hasattr(self.cx, exc))
                 self.assertIs(getattr(sqlite, exc), getattr(self.cx, exc))
 
@@ -490,7 +490,7 @@ class ConnectionTests(unittest.TestCase):
             "EXCLUSIVES",
         )
         for level in levels:
-            with self.subTest(level=level):
+            with self.subTest(level=):
                 with self.assertRaisesRegex(ValueError, msg):
                     memory_database(isolation_level=level)
                 with memory_database() as cx:
@@ -501,7 +501,7 @@ class ConnectionTests(unittest.TestCase):
 
     def test_connection_init_good_isolation_levels(self):
         for level in ("", "DEFERRED", "IMMEDIATE", "EXCLUSIVE", None):
-            with self.subTest(level=level):
+            with self.subTest(level=):
                 with memory_database(isolation_level=level) as cx:
                     self.assertEqual(cx.isolation_level, level)
                 with memory_database() as cx:
@@ -605,7 +605,7 @@ class UninitialisedConnectionTests(unittest.TestCase):
             lambda: self.cx.close(),
         )
         for func in funcs:
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 self.assertRaisesRegex(sqlite.ProgrammingError,
                                        "Base Connection.__init__ not called",
                                        func)
@@ -639,7 +639,7 @@ class SerializeTests(unittest.TestCase):
             (TypeError, None),
         )
         for exc, arg in dataset:
-            with self.subTest(exc=exc, arg=arg):
+            with self.subTest(exc=, arg=):
                 with memory_database() as cx:
                     self.assertRaises(exc, cx.deserialize, arg)
 
@@ -734,7 +734,7 @@ class OpenTests(unittest.TestCase):
         for database in (TESTFN, os.fsencode(TESTFN),
                          FakePath(TESTFN), FakePath(os.fsencode(TESTFN))):
             database_arg = None
-            sqlite.connect(database, factory=factory).close()
+            sqlite.connect(database, factory=).close()
             self.assertEqual(database_arg, database)
 
     def test_database_keyword(self):
@@ -781,7 +781,7 @@ class CursorTests(unittest.TestCase):
             """,
         )
         for query in dataset:
-            with self.subTest(query=query):
+            with self.subTest(query=):
                 with self.assertRaisesRegex(sqlite.ProgrammingError, msg):
                     self.cu.execute(query)
 
@@ -799,7 +799,7 @@ class CursorTests(unittest.TestCase):
             """,
         )
         for query in dataset:
-            with self.subTest(query=query):
+            with self.subTest(query=):
                 self.cu.execute(query)
 
     def test_execute_wrong_sql_arg(self):
@@ -883,7 +883,7 @@ class CursorTests(unittest.TestCase):
         )
         msg = "Binding.*is a named parameter"
         for query, params in dataset:
-            with self.subTest(query=query, params=params):
+            with self.subTest(query=, params=):
                 with self.assertWarnsRegex(DeprecationWarning, msg) as cm:
                     self.cu.execute(query, params)
                 self.assertEqual(cm.filename,  __file__)
@@ -891,7 +891,7 @@ class CursorTests(unittest.TestCase):
     def test_execute_too_many_params(self):
         category = sqlite.SQLITE_LIMIT_VARIABLE_NUMBER
         msg = "too many SQL variables"
-        with cx_limit(self.cx, category=category, limit=1):
+        with cx_limit(self.cx, category=, limit=1):
             self.cu.execute("select * from test where id=?", (1,))
             with self.assertRaisesRegex(sqlite.OperationalError, msg):
                 self.cu.execute("select * from test where id!=? and id!=?",
@@ -1123,7 +1123,7 @@ class CursorTests(unittest.TestCase):
         """
         sql = '{} INTO test(id, unique_test) VALUES (?, ?)'
         for statement in ('INSERT OR REPLACE', 'REPLACE'):
-            with self.subTest(statement=statement):
+            with self.subTest(statement=):
                 self.cu.execute(sql.format(statement), (1, 'foo'))
                 self.assertEqual(self.cu.lastrowid, 1)
 
@@ -1211,7 +1211,7 @@ class BlobTests(unittest.TestCase):
             (ValueError, msg_orig, lambda: self.blob.seek(10, 3)),
         )
         for exc, msg, fn in dataset:
-            with self.subTest(exc=exc, msg=msg, fn=fn):
+            with self.subTest(exc=, msg=, fn=):
                 self.assertRaisesRegex(exc, msg, fn)
 
         # Force overflow errors
@@ -1292,7 +1292,7 @@ class BlobTests(unittest.TestCase):
         )
         regex = "no such"
         for args, kwds in dataset:
-            with self.subTest(args=args, kwds=kwds):
+            with self.subTest(args=, kwds=):
                 with self.assertRaisesRegex(sqlite.OperationalError, regex):
                     self.cx.blobopen(*args, **kwds)
 
@@ -1376,7 +1376,7 @@ class BlobTests(unittest.TestCase):
     def test_blob_get_item_error(self):
         dataset = [len(self.blob), 105, -105]
         for idx in dataset:
-            with self.subTest(idx=idx):
+            with self.subTest(idx=):
                 with self.assertRaisesRegex(IndexError, "index out of range"):
                     self.blob[idx]
         with self.assertRaisesRegex(IndexError, "cannot fit 'int'"):
@@ -1543,7 +1543,7 @@ class ThreadTests(unittest.TestCase):
             fns.append(lambda: self.con.create_window_function("foo", 0, None))
 
         for fn in fns:
-            with self.subTest(fn=fn):
+            with self.subTest(fn=):
                 self._run_test(fn)
 
     def test_check_cursor_thread(self):
@@ -1554,7 +1554,7 @@ class ThreadTests(unittest.TestCase):
             lambda: self.cur.fetchone(),
         ]
         for fn in fns:
-            with self.subTest(fn=fn):
+            with self.subTest(fn=):
                 self._run_test(fn)
 
 

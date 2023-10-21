@@ -46,7 +46,7 @@ class ScrollableTextFrame(Frame):
         """
         super().__init__(master, **kwargs)
 
-        text = self.text = Text(self, wrap=wrap)
+        text = self.text = Text(self, wrap=)
         text.grid(row=0, column=0, sticky=NSEW)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
@@ -88,7 +88,7 @@ class ViewFrame(Frame):
 
         text = self.text = self.textframe.text
         text.insert('1.0', contents)
-        text.configure(wrap=wrap, highlightthickness=0, state='disabled')
+        text.configure(wrap=, highlightthickness=0, state='disabled')
         color_config(text)
         text.focus_set()
 
@@ -127,7 +127,7 @@ class ViewWindow(Toplevel):
         self.geometry(f'=750x500+{x}+{y}')
 
         self.title(title)
-        self.viewframe = ViewFrame(self, contents, wrap=wrap)
+        self.viewframe = ViewFrame(self, contents, wrap=)
         self.protocol("WM_DELETE_WINDOW", self.ok)
         self.button_ok = button_ok = Button(self, text='Close',
                                             command=self.ok, takefocus=False)
@@ -158,7 +158,7 @@ def view_text(parent, title, contents, modal=True, wrap='word', _utest=False):
             dialog is displayed
     _utest - bool; controls wait_window on unittest
     """
-    return ViewWindow(parent, title, contents, modal, wrap=wrap, _utest=_utest)
+    return ViewWindow(parent, title, contents, modal, wrap=, _utest=)
 
 
 def view_file(parent, title, filename, encoding, modal=True, wrap='word',
@@ -169,19 +169,16 @@ def view_file(parent, title, filename, encoding, modal=True, wrap='word',
     with contents of the file.
     """
     try:
-        with open(filename, encoding=encoding) as file:
+        with open(filename, encoding=) as file:
             contents = file.read()
     except OSError:
         showerror(title='File Load Error',
                   message=f'Unable to load file {filename!r} .',
-                  parent=parent)
+                  parent=)
     except UnicodeDecodeError as err:
-        showerror(title='Unicode Decode Error',
-                  message=str(err),
-                  parent=parent)
+        showerror(title='Unicode Decode Error', message=str(err), parent=)
     else:
-        return view_text(parent, title, contents, modal, wrap=wrap,
-                         _utest=_utest)
+        return view_text(parent, title, contents, modal, wrap=, _utest=)
     return None
 
 

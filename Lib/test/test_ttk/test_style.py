@@ -38,7 +38,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         # Single state
         for states in ['active'], [('active',)]:
-            with self.subTest(states=states):
+            with self.subTest(states=):
                 style.map('TButton', background=[(*states, 'white')])
                 expected = [('active', 'white')]
                 self.assertEqual(style.map('TButton', 'background'), expected)
@@ -48,7 +48,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         # Multiple states
         for states in ['pressed', '!disabled'], ['pressed !disabled'], [('pressed', '!disabled')]:
-            with self.subTest(states=states):
+            with self.subTest(states=):
                 style.map('TButton', background=[(*states, 'black')])
                 expected = [('pressed', '!disabled', 'black')]
                 self.assertEqual(style.map('TButton', 'background'), expected)
@@ -58,7 +58,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         # Default state
         for states in [], [''], [()]:
-            with self.subTest(states=states):
+            with self.subTest(states=):
                 style.map('TButton', background=[(*states, 'grey')])
                 expected = [('grey',)]
                 self.assertEqual(style.map('TButton', 'background'), expected)
@@ -134,7 +134,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 default = style.configure(name)
                 if not default:
                     continue
-                with self.subTest(theme=theme, name=name):
+                with self.subTest(theme=, name=):
                     if support.verbose >= 2:
                         print('configure', theme, name, default)
                     if (theme in ('vista', 'xpnative')
@@ -160,7 +160,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                 default = style.map(name)
                 if not default:
                     continue
-                with self.subTest(theme=theme, name=name):
+                with self.subTest(theme=, name=):
                     if support.verbose >= 2:
                         print('map', theme, name, default)
                     if (theme in ('vista', 'xpnative')

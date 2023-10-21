@@ -44,7 +44,7 @@ class BaseTests:
         fd, name = tempfile.mkstemp()
         self.addCleanup(os_helper.unlink, name)
         encoding = None if "b" in mode else "utf-8"
-        with open(fd, mode, encoding=encoding) as f:
+        with open(fd, mode, encoding=) as f:
             f.write(content)
         return name
 
@@ -231,9 +231,9 @@ class FileInputTests(BaseTests, unittest.TestCase):
 
     def test_invalid_opening_mode(self):
         for mode in ('w', 'rU', 'U'):
-            with self.subTest(mode=mode):
+            with self.subTest(mode=):
                 with self.assertRaises(ValueError):
-                    FileInput(mode=mode)
+                    FileInput(mode=)
 
     def test_stdin_binary_mode(self):
         with mock.patch('sys.stdin') as m_stdin:
@@ -614,8 +614,8 @@ class Test_fileinput_input(BaseFileInputGlobalMethodsTest):
         encoding = object()
 
         # call fileinput.input() with different values for each argument
-        result = fileinput.input(files=files, inplace=inplace, backup=backup,
-            mode=mode, openhook=openhook, encoding=encoding)
+        result = fileinput.input(files=, inplace=, backup=,
+            mode=, openhook=, encoding=)
 
         # ensure fileinput._state was set to the returned object
         self.assertIs(result, fileinput._state, "fileinput._state")
@@ -943,7 +943,7 @@ class Test_hook_encoded(unittest.TestCase):
     def test(self):
         encoding = object()
         errors = object()
-        result = fileinput.hook_encoded(encoding, errors=errors)
+        result = fileinput.hook_encoded(encoding, errors=)
 
         fake_open = InvocationRecorder()
         original_open = builtins.open
@@ -971,7 +971,7 @@ class Test_hook_encoded(unittest.TestCase):
 
         def check(errors, expected_lines):
             with FileInput(files=TESTFN, mode='r',
-                           openhook=hook_encoded('utf-8', errors=errors)) as fi:
+                           openhook=hook_encoded('utf-8', errors=)) as fi:
                 lines = list(fi)
             self.assertEqual(lines, expected_lines)
 
@@ -988,7 +988,7 @@ class Test_hook_encoded(unittest.TestCase):
         self.addCleanup(safe_unlink, TESTFN)
 
         def check(mode, expected_lines):
-            with FileInput(files=TESTFN, mode=mode,
+            with FileInput(files=TESTFN, mode=,
                            openhook=hook_encoded('utf-7')) as fi:
                 lines = list(fi)
             self.assertEqual(lines, expected_lines)

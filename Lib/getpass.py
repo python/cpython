@@ -73,7 +73,7 @@ def unix_getpass(prompt='Password: ', stream=None):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
-                    passwd = _raw_input(prompt, stream, input=input)
+                    passwd = _raw_input(prompt, stream, input=)
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208

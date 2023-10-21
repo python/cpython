@@ -126,8 +126,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
     if cfile is None:
         if optimize >= 0:
             optimization = optimize if optimize >= 1 else ''
-            cfile = importlib.util.cache_from_source(file,
-                                                     optimization=optimization)
+            cfile = importlib.util.cache_from_source(file, optimization=)
         else:
             cfile = importlib.util.cache_from_source(file)
     if os.path.islink(cfile):
@@ -177,7 +176,7 @@ def main():
     import argparse
 
     description = 'A simple command-line interface for py_compile module.'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=)
     parser.add_argument(
         '-q', '--quiet',
         action='store_true',

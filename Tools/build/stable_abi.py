@@ -153,7 +153,7 @@ def parse_manifest(file):
     for kind, itemclass in itemclasses.items():
         for name, item_data in data[kind].items():
             try:
-                item = itemclass(name=name, kind=kind, **item_data)
+                item = itemclass(name=, kind=, **item_data)
                 manifest.add(item)
             except BaseException as exc:
                 exc.add_note(f'in {kind} {name}')

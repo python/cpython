@@ -125,12 +125,7 @@ def make_cert_key(hostname, sign=False, extra_san='',
             tempnames.append(f.name)
     req_file, cert_file, key_file = tempnames
     try:
-        req = req_template.format(
-            hostname=hostname,
-            extra_san=extra_san,
-            startdate=startdate,
-            enddate=enddate
-        )
+        req = req_template.format(hostname=, extra_san=, startdate=, enddate=)
         with open(req_file, 'w') as f:
             f.write(req)
         args = ['req', '-new', '-nodes', '-days', '7000',
@@ -190,8 +185,8 @@ def make_ca():
         req = req_template.format(
             hostname='our-ca-server',
             extra_san='',
-            startdate=startdate,
-            enddate=enddate
+            startdate=,
+            enddate=
         )
         t.write(req)
         t.flush()

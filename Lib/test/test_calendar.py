@@ -1122,7 +1122,7 @@ class MiscTestCase(unittest.TestCase):
             'mdays', 'January', 'February', 'EPOCH',
             'different_locale', 'c', 'prweek', 'week', 'format',
             'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth'}
-        support.check__all__(self, calendar, not_exported=not_exported)
+        support.check__all__(self, calendar, not_exported=)
 
 
 class TestSubClassingCase(unittest.TestCase):

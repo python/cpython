@@ -379,7 +379,7 @@ def _get_command_stdout(command, *args):
         proc = subprocess.Popen(command,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.DEVNULL,
-                                env=env)
+                                env=)
         if not proc:
             return None
         stdout, stderr = proc.communicate()
@@ -685,7 +685,7 @@ def uuid1(node=None, clock_seq=None):
             is_safe = SafeUUID(safely_generated)
         except ValueError:
             is_safe = SafeUUID.unknown
-        return UUID(bytes=uuid_time, is_safe=is_safe)
+        return UUID(bytes=uuid_time, is_safe=)
 
     global _last_timestamp
     import time

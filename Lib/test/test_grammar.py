@@ -863,11 +863,11 @@ class GrammarTests(unittest.TestCase):
             custom_msg = "call to '{}'".format(keyword)
             for case in cases:
                 source = case.format(keyword)
-                with self.subTest(source=source):
+                with self.subTest(source=):
                     with self.assertRaisesRegex(SyntaxError, custom_msg):
                         exec(source)
                 source = source.replace("foo", "(foo.)")
-                with self.subTest(source=source):
+                with self.subTest(source=):
                     with self.assertRaisesRegex(SyntaxError, "invalid syntax"):
                         exec(source)
 

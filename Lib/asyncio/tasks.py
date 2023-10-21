@@ -97,7 +97,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
 
     def __init__(self, coro, *, loop=None, name=None, context=None,
                  eager_start=False):
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         if self._source_traceback:
             del self._source_traceback[-1]
         if not coroutines.iscoroutine(coro):
@@ -226,7 +226,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
         # if self._num_cancels_requested > 1:
         #     return False
         if self._fut_waiter is not None:
-            if self._fut_waiter.cancel(msg=msg):
+            if self._fut_waiter.cancel(msg=):
                 # Leave self._fut_waiter; it may be a Task that
                 # catches and ignores the cancellation so we may have
                 # to cancel it again later.
@@ -406,7 +406,7 @@ def create_task(coro, *, name=None, context=None):
         # Use legacy API if context is not needed
         task = loop.create_task(coro)
     else:
-        task = loop.create_task(coro, context=context)
+        task = loop.create_task(coro, context=)
 
     task.set_name(name)
     return task
@@ -591,7 +591,7 @@ def as_completed(fs, *, timeout=None):
     done = Queue()
 
     loop = events.get_event_loop()
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
+    todo = {ensure_future(f, loop=) for f in set(fs)}
     timeout_handle = None
 
     def _on_timeout():
@@ -697,7 +697,7 @@ class _GatheringFuture(futures.Future):
 
     def __init__(self, children, *, loop):
         assert loop is not None
-        super().__init__(loop=loop)
+        super().__init__(loop=)
         self._children = children
         self._cancel_requested = False
 
@@ -706,7 +706,7 @@ class _GatheringFuture(futures.Future):
             return False
         ret = False
         for child in self._children:
-            if child.cancel(msg=msg):
+            if child.cancel(msg=):
                 ret = True
         if ret:
             # If any child tasks were actually cancelled, we should
@@ -816,7 +816,7 @@ def gather(*coros_or_futures, return_exceptions=False):
     outer = None  # bpo-46672
     for arg in coros_or_futures:
         if arg not in arg_to_fut:
-            fut = ensure_future(arg, loop=loop)
+            fut = ensure_future(arg, loop=)
             if loop is None:
                 loop = futures._get_loop(fut)
             if fut is not arg:
@@ -839,7 +839,7 @@ def gather(*coros_or_futures, return_exceptions=False):
 
         children.append(fut)
 
-    outer = _GatheringFuture(children, loop=loop)
+    outer = _GatheringFuture(children, loop=)
     # Run done callbacks after GatheringFuture created so any post-processing
     # can be performed at this point
     # optimization: in the special case that *all* futures finished eagerly,
@@ -927,7 +927,7 @@ def run_coroutine_threadsafe(coro, loop):
 
     def callback():
         try:
-            futures._chain_future(ensure_future(coro, loop=loop), future)
+            futures._chain_future(ensure_future(coro, loop=), future)
         except (SystemExit, KeyboardInterrupt):
             raise
         except BaseException as exc:
@@ -960,7 +960,7 @@ def create_eager_task_factory(custom_task_constructor):
 
     def factory(loop, coro, *, name=None, context=None):
         return custom_task_constructor(
-            coro, loop=loop, name=name, context=context, eager_start=True)
+            coro, loop=, name=, context=, eager_start=True)
 
     return factory
 

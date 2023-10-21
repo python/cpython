@@ -146,8 +146,8 @@ def compile_c_extension(
     extension = Extension(
         extension_name,
         sources=[generated_source_path],
-        extra_compile_args=extra_compile_args,
-        extra_link_args=extra_link_args,
+        extra_compile_args=,
+        extra_link_args=,
     )
     dist = Distribution({"name": extension_name, "ext_modules": [extension]})
     cmd = dist.get_command_obj("build_ext")
@@ -286,7 +286,7 @@ def build_c_generator(
         all_tokens, exact_tok, non_exact_tok = generate_token_definitions(tok_file)
     with open(output_file, "w") as file:
         gen: ParserGenerator = CParserGenerator(
-            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=skip_actions
+            grammar, all_tokens, exact_tok, non_exact_tok, file, skip_actions=
         )
         gen.generate(grammar_file)
 
@@ -294,7 +294,7 @@ def build_c_generator(
         with tempfile.TemporaryDirectory() as build_dir:
             compile_c_extension(
                 output_file,
-                build_dir=build_dir,
+                build_dir=,
                 verbose=verbose_c_extension,
                 keep_asserts=keep_asserts_in_extension,
             )
@@ -351,7 +351,7 @@ def build_c_parser_and_generator(
         compile_extension,
         verbose_c_extension,
         keep_asserts_in_extension,
-        skip_actions=skip_actions,
+        skip_actions=,
     )
 
     return grammar, parser, tokenizer, gen
@@ -380,6 +380,6 @@ def build_python_parser_and_generator(
         grammar,
         grammar_file,
         output_file,
-        skip_actions=skip_actions,
+        skip_actions=,
     )
     return grammar, parser, tokenizer, gen

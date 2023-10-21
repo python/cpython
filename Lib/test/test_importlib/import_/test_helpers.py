@@ -174,7 +174,7 @@ class TestBlessMyLoader(unittest.TestCase):
         bar = ModuleType('bar')
         del bar.__loader__
         loader = object()
-        bar.__spec__ = SimpleNamespace(loader=loader)
+        bar.__spec__ = SimpleNamespace(loader=)
         self.assertEqual(
             _bootstrap_external._bless_my_loader(bar.__dict__),
             loader)

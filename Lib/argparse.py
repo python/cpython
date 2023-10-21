@@ -924,14 +924,14 @@ class BooleanOptionalAction(Action):
 
         super().__init__(
             option_strings=_option_strings,
-            dest=dest,
+            dest=,
             nargs=0,
-            default=default,
-            type=type,
-            choices=choices,
-            required=required,
-            help=help,
-            metavar=metavar)
+            default=,
+            type=,
+            choices=,
+            required=,
+            help=,
+            metavar=)
 
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -962,16 +962,16 @@ class _StoreAction(Action):
         if const is not None and nargs != OPTIONAL:
             raise ValueError('nargs must be %r to supply const' % OPTIONAL)
         super(_StoreAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            nargs=nargs,
-            const=const,
-            default=default,
-            type=type,
-            choices=choices,
-            required=required,
-            help=help,
-            metavar=metavar)
+            option_strings=,
+            dest=,
+            nargs=,
+            const=,
+            default=,
+            type=,
+            choices=,
+            required=,
+            help=,
+            metavar=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, values)
@@ -988,13 +988,13 @@ class _StoreConstAction(Action):
                  help=None,
                  metavar=None):
         super(_StoreConstAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             nargs=0,
-            const=const,
-            default=default,
-            required=required,
-            help=help)
+            const=,
+            default=,
+            required=,
+            help=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, self.const)
@@ -1009,12 +1009,12 @@ class _StoreTrueAction(_StoreConstAction):
                  required=False,
                  help=None):
         super(_StoreTrueAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             const=True,
-            default=default,
-            required=required,
-            help=help)
+            default=,
+            required=,
+            help=)
 
 
 class _StoreFalseAction(_StoreConstAction):
@@ -1026,12 +1026,12 @@ class _StoreFalseAction(_StoreConstAction):
                  required=False,
                  help=None):
         super(_StoreFalseAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             const=False,
-            default=default,
-            required=required,
-            help=help)
+            default=,
+            required=,
+            help=)
 
 
 class _AppendAction(Action):
@@ -1054,16 +1054,16 @@ class _AppendAction(Action):
         if const is not None and nargs != OPTIONAL:
             raise ValueError('nargs must be %r to supply const' % OPTIONAL)
         super(_AppendAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            nargs=nargs,
-            const=const,
-            default=default,
-            type=type,
-            choices=choices,
-            required=required,
-            help=help,
-            metavar=metavar)
+            option_strings=,
+            dest=,
+            nargs=,
+            const=,
+            default=,
+            type=,
+            choices=,
+            required=,
+            help=,
+            metavar=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
@@ -1083,14 +1083,14 @@ class _AppendConstAction(Action):
                  help=None,
                  metavar=None):
         super(_AppendConstAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             nargs=0,
-            const=const,
-            default=default,
-            required=required,
-            help=help,
-            metavar=metavar)
+            const=,
+            default=,
+            required=,
+            help=,
+            metavar=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         items = getattr(namespace, self.dest, None)
@@ -1108,12 +1108,12 @@ class _CountAction(Action):
                  required=False,
                  help=None):
         super(_CountAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             nargs=0,
-            default=default,
-            required=required,
-            help=help)
+            default=,
+            required=,
+            help=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         count = getattr(namespace, self.dest, None)
@@ -1130,11 +1130,11 @@ class _HelpAction(Action):
                  default=SUPPRESS,
                  help=None):
         super(_HelpAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            default=default,
+            option_strings=,
+            dest=,
+            default=,
             nargs=0,
-            help=help)
+            help=)
 
     def __call__(self, parser, namespace, values, option_string=None):
         parser.print_help()
@@ -1150,11 +1150,11 @@ class _VersionAction(Action):
                  default=SUPPRESS,
                  help="show program's version number and exit"):
         super(_VersionAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            default=default,
+            option_strings=,
+            dest=,
+            default=,
             nargs=0,
-            help=help)
+            help=)
         self.version = version
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -1176,8 +1176,7 @@ class _SubParsersAction(Action):
             if aliases:
                 metavar += ' (%s)' % ', '.join(aliases)
             sup = super(_SubParsersAction._ChoicesPseudoAction, self)
-            sup.__init__(option_strings=[], dest=dest, help=help,
-                         metavar=metavar)
+            sup.__init__(option_strings=[], dest=, help=, metavar=)
 
     def __init__(self,
                  option_strings,
@@ -1194,13 +1193,13 @@ class _SubParsersAction(Action):
         self._choices_actions = []
 
         super(_SubParsersAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
+            option_strings=,
+            dest=,
             nargs=PARSER,
             choices=self._name_parser_map,
-            required=required,
-            help=help,
-            metavar=metavar)
+            required=,
+            help=,
+            metavar=)
 
     def add_parser(self, name, **kwargs):
         # set prog from the existing prefix
@@ -1578,7 +1577,7 @@ class _ActionsContainer(object):
             kwargs['required'] = True
 
         # return the keyword arguments with no option strings
-        return dict(kwargs, dest=dest, option_strings=[])
+        return dict(kwargs, dest=, option_strings=[])
 
     def _get_optional_kwargs(self, *args, **kwargs):
         # determine short and long option strings
@@ -1612,7 +1611,7 @@ class _ActionsContainer(object):
             dest = dest.replace('-', '_')
 
         # return the updated keyword arguments
-        return dict(kwargs, dest=dest, option_strings=option_strings)
+        return dict(kwargs, dest=, option_strings=)
 
     def _pop_action_class(self, kwargs, default=None):
         action = kwargs.pop('action', default)
@@ -1674,7 +1673,7 @@ class _ArgumentGroup(_ActionsContainer):
         update('prefix_chars', container.prefix_chars)
         update('argument_default', container.argument_default)
         super_init = super(_ArgumentGroup, self).__init__
-        super_init(description=description, **kwargs)
+        super_init(description=, **kwargs)
 
         # group attributes
         self.title = title
@@ -1775,10 +1774,10 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  exit_on_error=True):
 
         superinit = super(ArgumentParser, self).__init__
-        superinit(description=description,
-                  prefix_chars=prefix_chars,
-                  argument_default=argument_default,
-                  conflict_handler=conflict_handler)
+        superinit(description=,
+                  prefix_chars=,
+                  argument_default=,
+                  conflict_handler=)
 
         # default setting for prog
         if prog is None:

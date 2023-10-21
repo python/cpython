@@ -2960,9 +2960,9 @@ class ContextAPItests:
                             # One module dumps
                             sys.modules['decimal'] = dumper
                             c = dumper.Context(
-                                  prec=prec, Emin=emin, Emax=emax,
+                                  prec=, Emin=emin, Emax=emax,
                                   rounding=RoundingModes[ri],
-                                  capitals=caps, clamp=clamp,
+                                  capitals=caps, clamp=,
                                   flags=OrderedSignals[dumper][:fi],
                                   traps=OrderedSignals[dumper][:ti]
                             )
@@ -5445,8 +5445,8 @@ class CWhitebox(unittest.TestCase):
                     clamp = random.randrange(0, 2)
                     caps = random.randrange(0, 2)
                     cr = random.randrange(0, 2)
-                    c = Context(prec=prec, rounding=round, Emin=emin, Emax=emax,
-                                capitals=caps, clamp=clamp, flags=list(flags),
+                    c = Context(prec=, rounding=round, Emin=emin, Emax=emax,
+                                capitals=caps, clamp=, flags=list(flags),
                                 traps=list(traps))
 
                     self.assertEqual(c.prec, prec)
@@ -5680,7 +5680,7 @@ class CWhitebox(unittest.TestCase):
             C.Context,
         )
         for tp in types:
-            with self.subTest(tp=tp):
+            with self.subTest(tp=):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = 1
 
@@ -5890,8 +5890,7 @@ def load_tests(loader, tests, pattern):
                 sys.modules['decimal'] = orig_sys_decimal
             optionflags = IGNORE_EXCEPTION_DETAIL if mod is C else 0
             sys.modules['decimal'] = mod
-            tests.addTest(DocTestSuite(mod, setUp=setUp, tearDown=tearDown,
-                                   optionflags=optionflags))
+            tests.addTest(DocTestSuite(mod, setUp=, tearDown=, optionflags=))
             sys.modules['decimal'] = orig_sys_decimal
     return tests
 

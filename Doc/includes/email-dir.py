@@ -60,10 +60,7 @@ must be running an SMTP server.
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
         with open(path, 'rb') as fp:
-            msg.add_attachment(fp.read(),
-                               maintype=maintype,
-                               subtype=subtype,
-                               filename=filename)
+            msg.add_attachment(fp.read(), maintype=, subtype=, filename=)
     # Now send or store the message
     if args.output:
         with open(args.output, 'wb') as fp:

@@ -172,7 +172,7 @@ class _SafeQueue(Queue):
         self.pending_work_items = pending_work_items
         self.shutdown_lock = shutdown_lock
         self.thread_wakeup = thread_wakeup
-        super().__init__(max_size, ctx=ctx)
+        super().__init__(max_size, ctx=)
 
     def _on_queue_feeder_error(self, e, obj):
         if isinstance(obj, _CallItem):
@@ -216,12 +216,10 @@ def _sendback_result(result_queue, work_id, result=None, exception=None,
                      exit_pid=None):
     """Safely send back the given result or exception"""
     try:
-        result_queue.put(_ResultItem(work_id, result=result,
-                                     exception=exception, exit_pid=exit_pid))
+        result_queue.put(_ResultItem(work_id, result=, exception=, exit_pid=))
     except BaseException as e:
         exc = _ExceptionWithTraceback(e, e.__traceback__)
-        result_queue.put(_ResultItem(work_id, exception=exc,
-                                     exit_pid=exit_pid))
+        result_queue.put(_ResultItem(work_id, exception=exc, exit_pid=))
 
 
 def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=None):
@@ -264,10 +262,10 @@ def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=N
         except BaseException as e:
             exc = _ExceptionWithTraceback(e, e.__traceback__)
             _sendback_result(result_queue, call_item.work_id, exception=exc,
-                             exit_pid=exit_pid)
+                             exit_pid=)
         else:
             _sendback_result(result_queue, call_item.work_id, result=r,
-                             exit_pid=exit_pid)
+                             exit_pid=)
             del r
 
         # Liberate the resource as soon as possible, to avoid holding onto
@@ -847,8 +845,8 @@ class ProcessPoolExecutor(_base.Executor):
             raise ValueError("chunksize must be >= 1.")
 
         results = super().map(partial(_process_chunk, fn),
-                              _get_chunks(*iterables, chunksize=chunksize),
-                              timeout=timeout)
+                              _get_chunks(*iterables, chunksize=),
+                              timeout=)
         return _chain_from_iterable_of_lists(results)
 
     def shutdown(self, wait=True, *, cancel_futures=False):

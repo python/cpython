@@ -23,11 +23,7 @@ def get_known(known, extracolumns=None, *,
               ):
     if isinstance(known, str):
         known = read_known(known, extracolumns, relroot)
-    return analyze_known(
-        known,
-        handle_unresolved=handle_unresolved,
-        analyze_resolved=analyze_resolved,
-    )
+    return analyze_known(known, handle_unresolved=, analyze_resolved=)
 
 
 def read_known(infile, extracolumns=None, relroot=fsutil.USE_CWD):
@@ -55,7 +51,7 @@ def analyze_known(known, *,
             knowntypespecs,
             types,
             knowntypes,
-            analyze_resolved=analyze_resolved,
+            analyze_resolved=,
         )
     _analyze.analyze_type_decls(types, analyze_decl, handle_unresolved)
     return types, typespecs
@@ -68,13 +64,7 @@ def write_known(rows, outfile, extracolumns=None, *,
     extracolumns = EXTRA_COLUMNS + (
         list(extracolumns) if extracolumns else []
     )
-    _parser.write_decls_tsv(
-        rows,
-        outfile,
-        extracolumns,
-        relroot=relroot,
-        backup=backup,
-    )
+    _parser.write_decls_tsv(rows, outfile, extracolumns, relroot=, backup=)
 
 
 #############################

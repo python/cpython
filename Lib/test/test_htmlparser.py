@@ -289,8 +289,8 @@ text
         for content in contents:
             for element in elements:
                 element_lower = element.lower()
-                s = '<{element}>{content}</{element}>'.format(element=element,
-                                                               content=content)
+                s = '<{element}>{content}</{element}>'.format(element=,
+                                                               content=)
                 self._run_check(s, [("starttag", element_lower, []),
                                     ("data", content),
                                     ("endtag", element_lower)])
@@ -310,8 +310,7 @@ text
         for element in [' script', 'script ', ' script ',
                         '\nscript', 'script\n', '\nscript\n']:
             element_lower = element.lower().strip()
-            s = '<script>{content}</{element}>'.format(element=element,
-                                                       content=content)
+            s = '<script>{content}</{element}>'.format(element=, content=)
             self._run_check(s, [("starttag", element_lower, []),
                                 ("data", content),
                                 ("endtag", element_lower)],

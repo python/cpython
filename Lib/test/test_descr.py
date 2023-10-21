@@ -5191,7 +5191,7 @@ class PicklingTests(unittest.TestCase):
         for name, value in state.items():
             setattr(obj, name, value)
         for proto in protocols:
-            self._check_reduce(proto, obj, args, state=state)
+            self._check_reduce(proto, obj, args, state=)
 
         class C2:
             def __getnewargs__(self):
@@ -5250,7 +5250,7 @@ class PicklingTests(unittest.TestCase):
                 return state
         obj = C11()
         for proto in protocols:
-            self._check_reduce(proto, obj, state=state)
+            self._check_reduce(proto, obj, state=)
 
         class C12:
             def __getstate__(self):
@@ -5310,7 +5310,7 @@ class PicklingTests(unittest.TestCase):
                 return None
         for protocol in protocols:
             state = {} if protocol >= 2 else None
-            self._check_reduce(protocol, Picky(), state=state)
+            self._check_reduce(protocol, Picky(), state=)
 
     def _assert_is_copy(self, obj, objcopy, msg=None):
         """Utility method to verify if two objects are copies of each others.
@@ -5324,19 +5324,19 @@ class PicklingTests(unittest.TestCase):
             # themselves.
             raise ValueError("object passed to _assert_is_copy must " +
                              "override the __repr__ method.")
-        self.assertIsNot(obj, objcopy, msg=msg)
-        self.assertIs(type(obj), type(objcopy), msg=msg)
+        self.assertIsNot(obj, objcopy, msg=)
+        self.assertIs(type(obj), type(objcopy), msg=)
         if hasattr(obj, '__dict__'):
-            self.assertDictEqual(obj.__dict__, objcopy.__dict__, msg=msg)
-            self.assertIsNot(obj.__dict__, objcopy.__dict__, msg=msg)
+            self.assertDictEqual(obj.__dict__, objcopy.__dict__, msg=)
+            self.assertIsNot(obj.__dict__, objcopy.__dict__, msg=)
         if hasattr(obj, '__slots__'):
-            self.assertListEqual(obj.__slots__, objcopy.__slots__, msg=msg)
+            self.assertListEqual(obj.__slots__, objcopy.__slots__, msg=)
             for slot in obj.__slots__:
                 self.assertEqual(
-                    hasattr(obj, slot), hasattr(objcopy, slot), msg=msg)
+                    hasattr(obj, slot), hasattr(objcopy, slot), msg=)
                 self.assertEqual(getattr(obj, slot, None),
-                                 getattr(objcopy, slot, None), msg=msg)
-        self.assertEqual(repr(obj), repr(objcopy), msg=msg)
+                                 getattr(objcopy, slot, None), msg=)
+        self.assertEqual(repr(obj), repr(objcopy), msg=)
 
     @staticmethod
     def _generate_pickle_copiers():
@@ -5409,7 +5409,7 @@ class PicklingTests(unittest.TestCase):
 
         # Now it should work
         for pickle_copier in self._generate_pickle_copiers():
-            with self.subTest(pickle_copier=pickle_copier):
+            with self.subTest(pickle_copier=):
                 x = C()
                 y = pickle_copier.copy(x)
                 self._assert_is_copy(x, y)
@@ -5523,7 +5523,7 @@ class PicklingTests(unittest.TestCase):
         # Testing copying through pickle
         pickle_copiers = self._generate_pickle_copiers()
         for cls, pickle_copier in itertools.product(test_classes, pickle_copiers):
-            with self.subTest(cls=cls, pickle_copier=pickle_copier):
+            with self.subTest(cls=, pickle_copier=):
                 kwargs = getattr(cls, 'KWARGS', {})
                 obj = cls(*cls.ARGS, **kwargs)
                 proto = pickle_copier.proto
@@ -5540,7 +5540,7 @@ class PicklingTests(unittest.TestCase):
 
         # Testing copying through copy.deepcopy()
         for cls in test_classes:
-            with self.subTest(cls=cls):
+            with self.subTest(cls=):
                 kwargs = getattr(cls, 'KWARGS', {})
                 obj = cls(*cls.ARGS, **kwargs)
                 objcopy = deepcopy(obj)

@@ -1639,7 +1639,7 @@ class BaseExceptionReportingTests:
 
     def test_exception_with_multiple_notes(self):
         for e in [ValueError(42), SyntaxError('bad syntax')]:
-            with self.subTest(e=e):
+            with self.subTest(e=):
                 vanilla = self.get_report(e)
 
                 e.add_note('Note 1')
@@ -1680,7 +1680,7 @@ class BaseExceptionReportingTests:
 
         for modulename in '__main__', 'builtins', 'some_module':
             X.__module__ = modulename
-            with self.subTest(modulename=modulename):
+            with self.subTest(modulename=):
                 err = self.get_report(X())
                 str_value = 'I am X'
                 if modulename in ['builtins', '__main__']:
@@ -3085,7 +3085,7 @@ class SuggestionFormattingTestBase:
             vvv = mom = w = id = pytho = None
 
         for name in ("b", "v", "m", "py"):
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 actual = self.get_suggestion(MyClass, name)
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
@@ -3275,7 +3275,7 @@ class SuggestionFormattingTestBase:
         code = "vvv = mom = w = id = pytho = None"
 
         for name in ("b", "v", "m", "py"):
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 actual = self.get_import_from_suggestion(code, name)
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv'", actual)
@@ -3387,7 +3387,7 @@ class SuggestionFormattingTestBase:
             py
 
         for name, func in (("b", f_b), ("v", f_v), ("m", f_m), ("py", f_py)):
-            with self.subTest(name=name):
+            with self.subTest(name=):
                 actual = self.get_suggestion(func)
                 self.assertNotIn("you mean", actual)
                 self.assertNotIn("vvv", actual)

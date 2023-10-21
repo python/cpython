@@ -91,7 +91,7 @@ class Generator:
         # inserted into a temporary buffer.
         policy = msg.policy if self.policy is None else self.policy
         if linesep is not None:
-            policy = policy.clone(linesep=linesep)
+            policy = policy.clone(linesep=)
         if self.maxheaderlen is not None:
             policy = policy.clone(max_line_length=self.maxheaderlen)
         self._NL = policy.linesep
@@ -473,8 +473,7 @@ class DecodedGenerator(Generator):
 
         [Non-text (%(type)s) part of message omitted, filename %(filename)s]
         """
-        Generator.__init__(self, outfp, mangle_from_, maxheaderlen,
-                           policy=policy)
+        Generator.__init__(self, outfp, mangle_from_, maxheaderlen, policy=)
         if fmt is None:
             self._fmt = _FMT
         else:

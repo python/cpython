@@ -207,7 +207,7 @@ def _grep_dialog(parent):  # htest #
 
     def show_grep_dialog():
         text.tag_add(SEL, "1.0", END)
-        grep(text, flist=flist)
+        grep(text, flist=)
         text.tag_remove(SEL, "1.0", END)
 
     button = Button(frame, text="Show GrepDialog", command=show_grep_dialog)

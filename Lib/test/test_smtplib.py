@@ -1203,7 +1203,7 @@ class SMTPSimTests(unittest.TestCase):
         for mechanism in supported:
             self.serv.add_feature("AUTH {}".format(mechanism))
         for mechanism in supported:
-            with self.subTest(mechanism=mechanism):
+            with self.subTest(mechanism=):
                 smtp = smtplib.SMTP(HOST, self.port,
                                     local_hostname='localhost',
                                     timeout=support.LOOPBACK_TIMEOUT)

@@ -191,7 +191,7 @@ class MiscTests(unittest.TestCase):
             type(root.iter()),
         )
         for tp in dataset:
-            with self.subTest(tp=tp):
+            with self.subTest(tp=):
                 with self.assertRaisesRegex(TypeError, "immutable"):
                     tp.foo = 1
 

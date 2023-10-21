@@ -130,7 +130,7 @@ class Timer:
             stmt = '_stmt()'
         else:
             raise ValueError("stmt is neither a string nor callable")
-        src = template.format(stmt=stmt, setup=setup, init=init)
+        src = template.format(stmt=, setup=, init=)
         self.src = src  # Save for traceback display
         code = compile(src, dummy_src_name, "exec")
         exec(code, global_ns, local_ns)
@@ -161,7 +161,7 @@ class Timer:
                                                dummy_src_name)
         # else the source is already stored somewhere else
 
-        traceback.print_exc(file=file)
+        traceback.print_exc(file=)
 
     def timeit(self, number=default_number):
         """Time 'number' executions of the main statement.

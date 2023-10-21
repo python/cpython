@@ -241,7 +241,7 @@ class Formatter:
                 format_spec, auto_arg_index = self._vformat(
                     format_spec, args, kwargs,
                     used_args, recursion_depth-1,
-                    auto_arg_index=auto_arg_index)
+                    auto_arg_index=)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))

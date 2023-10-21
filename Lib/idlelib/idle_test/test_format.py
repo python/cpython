@@ -232,7 +232,7 @@ class FormatClassTest(unittest.TestCase):
 
 class TextWrapper:
     def __init__(self, master):
-        self.text = Text(master=master)
+        self.text = Text(master=)
     def __getattr__(self, name):
         return getattr(self.text, name)
     def undo_block_start(self): pass
@@ -652,12 +652,12 @@ class RstripTest(unittest.TestCase):
     def test_rstrip_end(self):
         text = self.text
         for code in ('', '\n', '\n\n\n'):
-            with self.subTest(code=code):
+            with self.subTest(code=):
                 text.insert('1.0', code)
                 self.do_rstrip()
                 self.assertEqual(text.get('1.0','end-1c'), '')
         for code in ('a\n', 'a\n\n', 'a\n\n\n'):
-            with self.subTest(code=code):
+            with self.subTest(code=):
                 text.delete('1.0', 'end-1c')
                 text.insert('1.0', code)
                 self.do_rstrip()

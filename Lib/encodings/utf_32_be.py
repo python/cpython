@@ -28,8 +28,8 @@ class StreamReader(codecs.StreamReader):
 def getregentry():
     return codecs.CodecInfo(
         name='utf-32-be',
-        encode=encode,
-        decode=decode,
+        encode=,
+        decode=,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
         streamreader=StreamReader,

@@ -18,7 +18,7 @@ def match_storage(decl, expected):
         expected = _info.STORAGE
     else:
         expected = {v or default for v in expected}
-    storage = _info.get_effective_storage(decl, default=default)
+    storage = _info.get_effective_storage(decl, default=)
     return storage in expected
 
 

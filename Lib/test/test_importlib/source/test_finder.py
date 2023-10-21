@@ -187,7 +187,7 @@ class FinderTestsPEP451(FinderTests):
 
 (Frozen_FinderTestsPEP451,
  Source_FinderTestsPEP451
- ) = util.test_both(FinderTestsPEP451, machinery=machinery)
+ ) = util.test_both(FinderTestsPEP451, machinery=)
 
 
 class FinderTestsPEP420(FinderTests):
@@ -205,7 +205,7 @@ class FinderTestsPEP420(FinderTests):
 
 (Frozen_FinderTestsPEP420,
  Source_FinderTestsPEP420
- ) = util.test_both(FinderTestsPEP420, machinery=machinery)
+ ) = util.test_both(FinderTestsPEP420, machinery=)
 
 
 if __name__ == '__main__':

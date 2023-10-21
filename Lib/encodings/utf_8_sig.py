@@ -121,8 +121,8 @@ class StreamReader(codecs.StreamReader):
 def getregentry():
     return codecs.CodecInfo(
         name='utf-8-sig',
-        encode=encode,
-        decode=decode,
+        encode=,
+        decode=,
         incrementalencoder=IncrementalEncoder,
         incrementaldecoder=IncrementalDecoder,
         streamreader=StreamReader,

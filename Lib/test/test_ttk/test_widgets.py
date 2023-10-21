@@ -21,7 +21,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         errmsg='attempt to change read-only option'
         if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
-        self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
+        self.checkInvalidParam(widget, 'class', 'Foo', errmsg=)
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
 
@@ -44,8 +44,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         if hasattr(self, 'default_orient'):
             errmsg = ('Layout %s.Foo not found' %
                       getattr(self, 'default_orient').title())
-        self.checkInvalidParam(widget, 'style', 'Foo',
-                errmsg=errmsg)
+        self.checkInvalidParam(widget, 'style', 'Foo', errmsg=)
         widget2 = self.create(class_='Foo')
         self.assertEqual(widget2['class'], 'Foo')
         # XXX
@@ -171,7 +170,7 @@ class AbstractLabelTest(AbstractWidgetTest):
             f' {", ".join(options[:-1])}, or {options[-1]}'
             )
         widget = self.create()
-        self.checkEnumParam(widget, 'compound', *options, errmsg=errmsg)
+        self.checkEnumParam(widget, 'compound', *options, errmsg=)
 
     def test_configure_state(self):
         widget = self.create()
@@ -445,8 +444,8 @@ class ComboboxTest(EntryTest, unittest.TestCase):
         x, y = width - 5, 5
         if sys.platform != 'darwin':  # there's no down arrow on macOS
             self.assertRegex(self.combo.identify(x, y), r'.*downarrow\Z')
-        self.combo.event_generate('<ButtonPress-1>', x=x, y=y)
-        self.combo.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.combo.event_generate('<ButtonPress-1>', x=, y=)
+        self.combo.event_generate('<ButtonRelease-1>', x=, y=)
         self.combo.update_idletasks()
 
     def test_virtual_event(self):
@@ -562,8 +561,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         errmsg='attempt to change read-only option'
         if get_tk_patchlevel(self.root) < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
-        self.checkInvalidParam(widget, 'orient', 'horizontal',
-                errmsg=errmsg)
+        self.checkInvalidParam(widget, 'orient', 'horizontal', errmsg=)
         widget2 = self.create(orient='horizontal')
         self.assertEqual(str(widget2['orient']), 'horizontal')
 
@@ -1136,8 +1134,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         x = width - 5
         y = height//2 - 5
         self.assertRegex(self.spin.identify(x, y), r'.*uparrow\Z')
-        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
-        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonPress-1>', x=, y=)
+        self.spin.event_generate('<ButtonRelease-1>', x=, y=)
         self.spin.update_idletasks()
 
     def _click_decrement_arrow(self):
@@ -1146,8 +1144,8 @@ class SpinboxTest(EntryTest, unittest.TestCase):
         x = width - 5
         y = height//2 + 4
         self.assertRegex(self.spin.identify(x, y), r'.*downarrow\Z')
-        self.spin.event_generate('<ButtonPress-1>', x=x, y=y)
-        self.spin.event_generate('<ButtonRelease-1>', x=x, y=y)
+        self.spin.event_generate('<ButtonPress-1>', x=, y=)
+        self.spin.event_generate('<ButtonRelease-1>', x=, y=)
         self.spin.update_idletasks()
 
     def test_configure_command(self):

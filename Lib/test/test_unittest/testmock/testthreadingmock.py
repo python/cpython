@@ -32,7 +32,7 @@ class TestThreadingMock(unittest.TestCase):
 
     def run_async(self, func, /, *args, delay=0, **kwargs):
         self._executor.submit(
-            self._call_after_delay, func, *args, **kwargs, delay=delay
+            self._call_after_delay, func, *args, **kwargs, delay=
         )
 
     def _make_mock(self, *args, **kwargs):

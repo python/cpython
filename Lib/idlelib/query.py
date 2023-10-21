@@ -166,8 +166,7 @@ class SectionName(Query):
 
     def __init__(self, parent, title, message, used_names,
                  *, _htest=False, _utest=False):
-        super().__init__(parent, title, message, used_names=used_names,
-                         _htest=_htest, _utest=_utest)
+        super().__init__(parent, title, message, used_names=, _htest=, _utest=)
 
     def entry_ok(self):
         "Return sensible ConfigParser section name or None."
@@ -190,8 +189,7 @@ class ModuleName(Query):
 
     def __init__(self, parent, title, message, text0,
                  *, _htest=False, _utest=False):
-        super().__init__(parent, title, message, text0=text0,
-                       _htest=_htest, _utest=_utest)
+        super().__init__(parent, title, message, text0=, _htest=, _utest=)
 
     def entry_ok(self):
         "Return entered module name as file path or None."
@@ -257,7 +255,7 @@ class HelpSource(Query):
         message = 'Name for item on Help menu:'
         super().__init__(
                 parent, title, message, text0=menuitem,
-                used_names=used_names, _htest=_htest, _utest=_utest)
+                used_names=, _htest=, _utest=)
 
     def create_extra(self):
         "Add path widjets to rows 10-12."
@@ -283,7 +281,7 @@ class HelpSource(Query):
         # Extracted from browse_file so can mock for unittests.
         # Cannot unittest as cannot simulate button clicks.
         # Test by running htest, such as by running this file.
-        return filedialog.Open(parent=self, filetypes=filetypes)\
+        return filedialog.Open(parent=self, filetypes=)\
                .show(initialdir=initdir, initialfile=initfile)
 
     def browse_file(self):
@@ -352,7 +350,7 @@ class CustomRun(Query):
         message = 'Command Line Arguments for sys.argv:'
         super().__init__(
                 parent, title, message, text0=cli_args,
-                _htest=_htest, _utest=_utest)
+                _htest=, _utest=)
 
     def create_extra(self):
         "Add run mode on rows 10-12."

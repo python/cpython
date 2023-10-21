@@ -24,7 +24,7 @@ class NextafterTests(unittest.TestCase):
         steps=integers(min_value=0, max_value=2**16))
     def test_count(self, x, y, steps):
         assert_equal_float(via_reduce(x, y, steps),
-                           nextafter(x, y, steps=steps))
+                           nextafter(x, y, steps=))
 
     @requires_IEEE_754
     @hypothesis.given(

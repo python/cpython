@@ -61,7 +61,7 @@ class Parser:
         not.  The default is False, meaning it parses the entire contents of
         the file.
         """
-        return self.parse(StringIO(text), headersonly=headersonly)
+        return self.parse(StringIO(text), headersonly=)
 
 
 class HeaderParser(Parser):

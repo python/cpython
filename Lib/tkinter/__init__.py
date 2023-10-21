@@ -4698,7 +4698,7 @@ def _test():
     root = Tk()
     text = "This is Tcl/Tk version %s" % TclVersion
     text += "\nThis should be a cedilla: \xe7"
-    label = Label(root, text=text)
+    label = Label(root, text=)
     label.pack()
     test = Button(root, text="Click me!",
               command=lambda root=root: root.test.configure(

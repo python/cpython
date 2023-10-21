@@ -350,7 +350,7 @@ except ImportError:
 try:
     from _collections import _tuplegetter
 except ImportError:
-    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=doc)
+    _tuplegetter = lambda index, doc: property(_itemgetter(index), doc=)
 
 def namedtuple(typename, field_names, *, rename=False, defaults=None, module=None):
     """Returns a new subclass of tuple with named fields.

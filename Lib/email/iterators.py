@@ -35,7 +35,7 @@ def body_line_iterator(msg, decode=False):
     Optional decode (default False) is passed through to .get_payload().
     """
     for subpart in msg.walk():
-        payload = subpart.get_payload(decode=decode)
+        payload = subpart.get_payload(decode=)
         if isinstance(payload, str):
             yield from StringIO(payload)
 

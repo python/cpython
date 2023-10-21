@@ -328,7 +328,7 @@ class _FlowControlMixin(Transport):
         self._low_water = low
 
     def set_write_buffer_limits(self, high=None, low=None):
-        self._set_write_buffer_limits(high=high, low=low)
+        self._set_write_buffer_limits(high=, low=)
         self._maybe_pause_protocol()
 
     def get_write_buffer_size(self):

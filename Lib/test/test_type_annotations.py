@@ -109,7 +109,7 @@ class TestSetupAnnotations(unittest.TestCase):
     def check(self, code: str):
         code = textwrap.dedent(code)
         for scope in ("module", "class"):
-            with self.subTest(scope=scope):
+            with self.subTest(scope=):
                 if scope == "class":
                     code = f"class C:\n{textwrap.indent(code, '    ')}"
                 ns = run_code(code)

@@ -87,10 +87,10 @@ class BaseTaskTests:
     Future = None
 
     def new_task(self, loop, coro, name='TestTask', context=None):
-        return self.__class__.Task(coro, loop=loop, name=name, context=context)
+        return self.__class__.Task(coro, loop=, name=, context=)
 
     def new_future(self, loop):
-        return self.__class__.Future(loop=loop)
+        return self.__class__.Future(loop=)
 
     def setUp(self):
         super().setUp()
@@ -231,7 +231,7 @@ class BaseTaskTests:
         self.set_event_loop(loop)
 
         with self.assertRaises(ValueError):
-            f = asyncio.ensure_future(f_orig, loop=loop)
+            f = asyncio.ensure_future(f_orig, loop=)
 
         loop.close()
 
@@ -252,7 +252,7 @@ class BaseTaskTests:
         self.set_event_loop(loop)
 
         with self.assertRaises(ValueError):
-            t = asyncio.ensure_future(t_orig, loop=loop)
+            t = asyncio.ensure_future(t_orig, loop=)
 
         loop.close()
 
@@ -271,7 +271,7 @@ class BaseTaskTests:
 
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
-        fut = asyncio.ensure_future(Aw(coro()), loop=loop)
+        fut = asyncio.ensure_future(Aw(coro()), loop=)
         loop.run_until_complete(fut)
         self.assertEqual(fut.result(), 'ok')
 
@@ -282,7 +282,7 @@ class BaseTaskTests:
 
         loop = asyncio.new_event_loop()
         self.set_event_loop(loop)
-        task = asyncio.ensure_future(Aw(), loop=loop)
+        task = asyncio.ensure_future(Aw(), loop=)
         loop.run_until_complete(task)
         self.assertTrue(task.done())
         self.assertEqual(task.result(), 'ok')
@@ -299,7 +299,7 @@ class BaseTaskTests:
         with self.assertRaisesRegex(ValueError, 'The future belongs to a '
                                     'different loop than the one specified as '
                                     'the loop argument'):
-            asyncio.ensure_future(f, loop=loop)
+            asyncio.ensure_future(f, loop=)
         loop.close()
 
     def test_get_stack(self):
@@ -318,7 +318,7 @@ class BaseTaskTests:
 
             # test print_stack()
             file = io.StringIO()
-            T.print_stack(limit=1, file=file)
+            T.print_stack(limit=1, file=)
             file.seek(0)
             tb = file.read()
             self.assertRegex(tb, r'foo\(\) running')
@@ -714,7 +714,7 @@ class BaseTaskTests:
             ((5,), (5,)),
         ]
         for cancel_args, expected_args in cases:
-            with self.subTest(cancel_args=cancel_args):
+            with self.subTest(cancel_args=):
                 loop = asyncio.new_event_loop()
                 self.set_event_loop(loop)
 
@@ -748,7 +748,7 @@ class BaseTaskTests:
             ((5,), (5,)),
         ]
         for cancel_args, expected_args in cases:
-            with self.subTest(cancel_args=cancel_args):
+            with self.subTest(cancel_args=):
                 loop = asyncio.new_event_loop()
                 self.set_event_loop(loop)
 
@@ -2181,7 +2181,7 @@ class BaseTaskTests:
             ((5,), (5,)),
         ]
         for cancel_args, expected_args in cases:
-            with self.subTest(cancel_args=cancel_args):
+            with self.subTest(cancel_args=):
                 loop = asyncio.new_event_loop()
                 self.addCleanup(loop.close)
 
@@ -2498,7 +2498,7 @@ class BaseTaskTests:
         coro = coroutine_function()
         context = contextvars.copy_context()
         try:
-            task = self.new_task(loop, coro, context=context)
+            task = self.new_task(loop, coro, context=)
             loop.run_until_complete(task)
             self.assertIs(task.get_context(), context)
         finally:
@@ -3274,7 +3274,7 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
     def target(self, fail=False, cancel=False, timeout=None,
                advance_coro=False):
         """Run add coroutine in the event loop."""
-        coro = self.add(1, 2, fail=fail, cancel=cancel)
+        coro = self.add(1, 2, fail=, cancel=)
         future = asyncio.run_coroutine_threadsafe(coro, self.loop)
         if advance_coro:
             # this is for test_run_coroutine_threadsafe_task_factory_exception;

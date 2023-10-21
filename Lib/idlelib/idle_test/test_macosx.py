@@ -41,7 +41,7 @@ class InitTktypeTest(unittest.TestCase):
     def test_init_sets_tktype(self):
         "Test that _init_tk_type sets _tk_type according to platform."
         for platform, types in ('darwin', alltypes), ('other', nontypes):
-            with self.subTest(platform=platform):
+            with self.subTest(platform=):
                 macosx.platform = platform
                 macosx._tk_type = None
                 macosx._init_tk_type()
@@ -61,7 +61,7 @@ class IsTypeTkTest(unittest.TestCase):
         "Test that each isTypeTk calls _init_tk_type when _tk_type is None."
         macosx._tk_type = None
         for func, whentrue in self.isfuncs:
-            with self.subTest(func=func):
+            with self.subTest(func=):
                 func()
                 self.assertTrue(mockinit.called)
                 mockinit.reset_mock()
@@ -70,7 +70,7 @@ class IsTypeTkTest(unittest.TestCase):
         "Test that each isTypeTk return correct bool."
         for func, whentrue in self.isfuncs:
             for tktype in alltypes:
-                with self.subTest(func=func, whentrue=whentrue, tktype=tktype):
+                with self.subTest(func=, whentrue=, tktype=):
                     macosx._tk_type = tktype
                     (self.assertTrue if tktype in whentrue else self.assertFalse)\
                                      (func())
@@ -101,7 +101,7 @@ class SetupTest(unittest.TestCase):
         root = self.root
         flist = FileList(root)
         for tktype in alltypes:
-            with self.subTest(tktype=tktype):
+            with self.subTest(tktype=):
                 macosx._tk_type = tktype
                 macosx.setupApp(root, flist)
                 if tktype in ('carbon', 'cocoa'):

@@ -32,7 +32,7 @@ class Invoked(types.SimpleNamespace):
 
     @classmethod
     def wrap(cls, func):
-        return cls(func=func)
+        return cls(func=)
 
     @classmethod
     def eval(cls, cand):

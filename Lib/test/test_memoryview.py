@@ -635,7 +635,7 @@ class OtherTest(unittest.TestCase):
         self.assertEqual(ba[:8], b'\0'*8)
 
         for fmt in 'bhilqnBHILQN':
-            with self.subTest(fmt=fmt):
+            with self.subTest(fmt=):
                 ba = None
                 m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
                 with self.assertRaisesRegex(ValueError, "operation forbidden"):
@@ -643,7 +643,7 @@ class OtherTest(unittest.TestCase):
                 self.assertEqual(ba[:8], b'\0'*8)
 
         for fmt in 'fd':
-            with self.subTest(fmt=fmt):
+            with self.subTest(fmt=):
                 ba = None
                 m = memoryview(bytearray(b'\xff'*size)).cast(fmt)
                 with self.assertRaisesRegex(ValueError, "operation forbidden"):

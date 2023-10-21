@@ -235,14 +235,14 @@ class AbstractBuilder(object):
 
     def _subprocess_call(self, cmd, env=None, **kwargs):
         log.debug("Call '{}'".format(" ".join(cmd)))
-        return subprocess.check_call(cmd, env=env, **kwargs)
+        return subprocess.check_call(cmd, env=, **kwargs)
 
     def _subprocess_output(self, cmd, env=None, **kwargs):
         log.debug("Call '{}'".format(" ".join(cmd)))
         if env is None:
             env = os.environ.copy()
             env["LD_LIBRARY_PATH"] = self.lib_dir
-        out = subprocess.check_output(cmd, env=env, **kwargs)
+        out = subprocess.check_output(cmd, env=, **kwargs)
         return out.strip().decode("utf-8")
 
     def _download_src(self):
@@ -307,12 +307,12 @@ class AbstractBuilder(object):
         env["LD_RUN_PATH"] = self.lib_dir
         if self.system:
             env['SYSTEM'] = self.system
-        self._subprocess_call(cmd, cwd=cwd, env=env)
+        self._subprocess_call(cmd, cwd=, env=)
         if self.depend_target:
             self._subprocess_call(
-                ["make", "-j1", self.depend_target], cwd=cwd, env=env
+                ["make", "-j1", self.depend_target], cwd=, env=
             )
-        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=cwd, env=env)
+        self._subprocess_call(["make", f"-j{self.jobs}"], cwd=, env=)
 
     def _make_install(self):
         self._subprocess_call(
@@ -363,7 +363,7 @@ class AbstractBuilder(object):
 
         log.info("Rebuilding Python modules")
         cmd = ["make", "sharedmods", "checksharedmods"]
-        self._subprocess_call(cmd, env=env)
+        self._subprocess_call(cmd, env=)
         self.check_imports()
 
     def check_imports(self):

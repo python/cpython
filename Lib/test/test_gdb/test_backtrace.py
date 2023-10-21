@@ -128,7 +128,6 @@ id(42)
         cmds_after_breakpoint.append('py-bt')
 
         # Verify with "py-bt":
-        gdb_output = self.get_stack_trace(cmd,
-                                          cmds_after_breakpoint=cmds_after_breakpoint)
+        gdb_output = self.get_stack_trace(cmd, cmds_after_breakpoint=)
         self.assertRegex(gdb_output,
                          r"<method-wrapper u?'__init__' of MyList object at ")

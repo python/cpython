@@ -336,7 +336,7 @@ def get_pydoc_link(module):
     dirname = os.path.dirname
     basedir = dirname(dirname(abspath(__file__)))
     doc = pydoc.TextDoc()
-    loc = doc.getdocloc(module, basedir=basedir)
+    loc = doc.getdocloc(module, basedir=)
     return loc
 
 def get_pydoc_text(module):
@@ -709,7 +709,7 @@ class PydocDocTest(unittest.TestCase):
     def test_synopsis(self):
         self.addCleanup(unlink, TESTFN)
         for encoding in ('ISO-8859-1', 'UTF-8'):
-            with open(TESTFN, 'w', encoding=encoding) as script:
+            with open(TESTFN, 'w', encoding=) as script:
                 if encoding != 'UTF-8':
                     print('#coding: {}'.format(encoding), file=script)
                 print('"""line 1: h\xe9', file=script)
@@ -1002,7 +1002,7 @@ class PydocImportTest(PydocBaseTest):
         expected = num_header_lines + num_module_lines_min + num_footer_lines
 
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper('modules')
         result = output.getvalue().strip()
         num_lines = len(result.splitlines())
@@ -1015,7 +1015,7 @@ class PydocImportTest(PydocBaseTest):
         expected = 'pydoc - '
 
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         with captured_stdout() as help_io:
             helper('modules pydoc')
         result = help_io.getvalue()
@@ -1027,7 +1027,7 @@ class PydocImportTest(PydocBaseTest):
         expected = 'gc - '
 
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         with captured_stdout() as help_io:
             helper('modules garbage')
         result = help_io.getvalue()
@@ -1616,7 +1616,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         expected_text_data_docstrings = tuple('\n |      ' + s if s else ''
                                       for s in expected_data_docstrings)
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(DA)
         expected_text = expected_dynamicattribute_pattern % (
                 (__name__,) + expected_text_data_docstrings[:2])
@@ -1637,7 +1637,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         class Class(metaclass=Meta):
             pass
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(Class)
         expected_text = expected_virtualattribute_pattern1 % __name__
         result = output.getvalue().strip()
@@ -1675,13 +1675,13 @@ class PydocWithMetaClasses(unittest.TestCase):
         class Class2(Class1, metaclass=Meta3):
             pass
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(Class1)
         expected_text1 = expected_virtualattribute_pattern2 % __name__
         result1 = output.getvalue().strip()
         self.assertEqual(expected_text1, result1)
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(Class2)
         expected_text2 = expected_virtualattribute_pattern3 % __name__
         result2 = output.getvalue().strip()
@@ -1697,7 +1697,7 @@ class PydocWithMetaClasses(unittest.TestCase):
         class C(metaclass=M):
             here = 'present!'
         output = StringIO()
-        helper = pydoc.Helper(output=output)
+        helper = pydoc.Helper(output=)
         helper(C)
         expected_text = expected_missingattribute_pattern % __name__
         result = output.getvalue().strip()

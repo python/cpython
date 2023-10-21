@@ -86,7 +86,7 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
             data = f.read()
         image = tkinter.BitmapImage('::img::test', master=self.root,
                                     foreground='yellow', background='blue',
-                                    data=data)
+                                    data=)
         self.assertEqual(str(image), '::img::test')
         self.assertEqual(image.type(), 'bitmap')
         self.assertEqual(image.width(), 16)
@@ -105,7 +105,7 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['data'], '-data {} {} {} {}')
         with open(self.testfile, 'rb') as f:
             data = f.read()
-        image.configure(data=data)
+        image.configure(data=)
         self.assertEqualStrList(image['data'],
                                 ('-data', '', '', '', data.decode('ascii')))
         self.assertEqual(image.width(), 16)
@@ -189,8 +189,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         with open(testfile, 'rb') as f:
             data = f.read()
-        image = tkinter.PhotoImage('::img::test', master=self.root,
-                                   data=data)
+        image = tkinter.PhotoImage('::img::test', master=self.root, data=)
         self.assertEqual(str(image), '::img::test')
         self.assertEqual(image.type(), 'photo')
         self.assertEqual(image.width(), 16)
@@ -234,7 +233,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['data'], '')
         with open(self.testfile, 'rb') as f:
             data = f.read()
-        image.configure(data=data)
+        image.configure(data=)
         self.assertEqual(image['data'], data if self.wantobjects
                                         else data.decode('latin1'))
         self.assertEqual(image.width(), 16)

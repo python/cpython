@@ -214,7 +214,7 @@ class CompileallTestsBase:
         # make sure compiling with different optimization settings than the
         # interpreter's creates the correct file names
         optimize, opt = (1, 1) if __debug__ else (0, '')
-        compileall.compile_dir(self.directory, quiet=True, optimize=optimize)
+        compileall.compile_dir(self.directory, quiet=True, optimize=)
         cached = importlib.util.cache_from_source(self.source_path,
                                                   optimization=opt)
         self.assertTrue(os.path.isfile(cached))
@@ -311,7 +311,7 @@ class CompileallTestsBase:
         if parallel:
             self.addCleanup(multiprocessing_cleanup_tests)
         compileall.compile_dir(
-                self.directory, quiet=True, ddir=ddir,
+                self.directory, quiet=True, ddir=,
                 workers=2 if parallel else 1)
 
         self.assertTrue(mods)
@@ -350,7 +350,7 @@ class CompileallTestsBase:
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *fullpath[:2])
-        compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        compileall.compile_dir(path, quiet=True, stripdir=)
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_in = os.path.join(*fullpath[2:])
         self.assertIn(
@@ -369,7 +369,7 @@ class CompileallTestsBase:
         script = script_helper.make_script(path, "test", "1 / 0")
         bc = importlib.util.cache_from_source(script)
         prependdir = "/foo"
-        compileall.compile_dir(path, quiet=True, prependdir=prependdir)
+        compileall.compile_dir(path, quiet=True, prependdir=)
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_in = os.path.join(prependdir, self.directory, *fullpath)
         self.assertIn(
@@ -385,8 +385,7 @@ class CompileallTestsBase:
         bc = importlib.util.cache_from_source(script)
         stripdir = os.path.join(self.directory, *fullpath[:2])
         prependdir = "/foo"
-        compileall.compile_dir(path, quiet=True,
-                               stripdir=stripdir, prependdir=prependdir)
+        compileall.compile_dir(path, quiet=True, stripdir=, prependdir=)
         rc, out, err = script_helper.assert_python_failure(bc)
         expected_in = os.path.join(prependdir, *fullpath[2:])
         self.assertIn(
@@ -923,7 +922,7 @@ class CommandLineTestsBase:
         # inodes.
         for dedup in (True, False):
             with tempfile.TemporaryDirectory() as path:
-                with self.subTest(dedup=dedup):
+                with self.subTest(dedup=):
                     script = script_helper.make_script(path, "script", "a = 0")
                     pycs = get_pycs(script)
 
@@ -970,8 +969,8 @@ class HardlinkDedupTestsBase:
         return script_helper.make_script(self.path, name, code)
 
     def compile_dir(self, *, dedup=True, optimize=(0, 1, 2), force=False):
-        compileall.compile_dir(self.path, quiet=True, optimize=optimize,
-                               hardlink_dupes=dedup, force=force)
+        compileall.compile_dir(self.path, quiet=True, optimize=,
+                               hardlink_dupes=dedup, force=)
 
     def test_bad_args(self):
         # Bad arguments combination, hardlink deduplication make sense
@@ -999,13 +998,13 @@ class HardlinkDedupTestsBase:
     def iter_codes(self):
         for docstring in (False, True):
             for assertion in (False, True):
-                code = self.create_code(docstring=docstring, assertion=assertion)
+                code = self.create_code(docstring=, assertion=)
                 yield (code, docstring, assertion)
 
     def test_disabled(self):
         # Deduplication disabled, no hardlinks
         for code, docstring, assertion in self.iter_codes():
-            with self.subTest(docstring=docstring, assertion=assertion):
+            with self.subTest(docstring=, assertion=):
                 with self.temporary_directory():
                     script = self.make_script(code)
                     pycs = get_pycs(script)
@@ -1026,7 +1025,7 @@ class HardlinkDedupTestsBase:
     def test_hardlink(self):
         # Test deduplication on all combinations
         for code, docstring, assertion in self.iter_codes():
-            with self.subTest(docstring=docstring, assertion=assertion):
+            with self.subTest(docstring=, assertion=):
                 with self.temporary_directory():
                     script = self.make_script(code)
                     self.compile_dir()
@@ -1035,7 +1034,7 @@ class HardlinkDedupTestsBase:
     def test_only_two_levels(self):
         # Don't build the 3 optimization levels, but only 2
         for opts in ((0, 1), (1, 2), (0, 2)):
-            with self.subTest(opts=opts):
+            with self.subTest(opts=):
                 with self.temporary_directory():
                     # code with no dostring and no assertion:
                     # same bytecode for all optimization levels

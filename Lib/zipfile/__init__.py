@@ -1500,12 +1500,11 @@ class ZipFile:
 
     def printdir(self, file=None):
         """Print a table of contents for the zip file."""
-        print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"),
-              file=file)
+        print("%-46s %19s %12s" % ("File Name", "Modified    ", "Size"), file=)
         for zinfo in self.filelist:
             date = "%d-%02d-%02d %02d:%02d:%02d" % zinfo.date_time[:6]
             print("%-46s %s %12d" % (zinfo.filename, date, zinfo.file_size),
-                  file=file)
+                  file=)
 
     def testzip(self):
         """Read all the files and check the CRC.
@@ -1601,7 +1600,7 @@ class ZipFile:
             zinfo = self.getinfo(name)
 
         if mode == 'w':
-            return self._open_to_write(zinfo, force_zip64=force_zip64)
+            return self._open_to_write(zinfo, force_zip64=)
 
         if self._writing:
             raise ValueError("Can't read from the ZIP file while there "
@@ -1788,7 +1787,7 @@ class ZipFile:
                 os.mkdir(targetpath)
             return targetpath
 
-        with self.open(member, pwd=pwd) as source, \
+        with self.open(member, pwd=) as source, \
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
 
@@ -2058,8 +2057,7 @@ class PyZipFile(ZipFile):
 
     def __init__(self, file, mode="r", compression=ZIP_STORED,
                  allowZip64=True, optimize=-1):
-        ZipFile.__init__(self, file, mode=mode, compression=compression,
-                         allowZip64=allowZip64)
+        ZipFile.__init__(self, file, mode=, compression=, allowZip64=)
         self._optimize = optimize
 
     def writepy(self, pathname, basename="", filterfunc=None):
@@ -2107,7 +2105,7 @@ class PyZipFile(ZipFile):
                         if os.path.isfile(os.path.join(path, "__init__.py")):
                             # This is a package directory, add it
                             self.writepy(path, basename,
-                                         filterfunc=filterfunc)  # Recursive call
+                                         filterfunc=)  # Recursive call
                     elif ext == ".py":
                         if filterfunc and not filterfunc(path):
                             if self.debug:
@@ -2156,7 +2154,7 @@ class PyZipFile(ZipFile):
             if self.debug:
                 print("Compiling", file)
             try:
-                py_compile.compile(file, doraise=True, optimize=optimize)
+                py_compile.compile(file, doraise=True, optimize=)
             except py_compile.PyCompileError as err:
                 print(err.msg)
                 return False
