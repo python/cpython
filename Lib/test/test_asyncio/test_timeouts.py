@@ -279,14 +279,14 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout_not_entered(self):
         cm = asyncio.timeout(0.01)
-        with self.assertRaisesRegex(RuntimeError, "Cannot change state"):
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             cm.reschedule(0.02)
 
     async def test_timeout_without_task(self):
         cm = asyncio.timeout(0.01)
         with self.assertRaisesRegex(RuntimeError, "task"):
             await await_without_task(cm.__aenter__())
-        with self.assertRaisesRegex(RuntimeError, "Cannot change state"):
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
             cm.reschedule(0.02)
 
 

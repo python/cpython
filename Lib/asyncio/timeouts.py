@@ -50,6 +50,8 @@ class Timeout:
     def reschedule(self, when: Optional[float]) -> None:
         """Reschedule the timeout."""
         if self._state is not _State.ENTERED:
+            if self._state is _State.CREATED:
+                raise RuntimeError("Timeout has not been entered")
             raise RuntimeError(
                 f"Cannot change state of {self._state.value} Timeout",
             )
