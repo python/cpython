@@ -1289,15 +1289,15 @@ class TestSpecifics(unittest.TestCase):
             def f():
                 try:
                     pass
-                except:
+                %s Exception:
                     global a
                 else:
                     print(a)
         """)
 
         g, l = {'a': 5}, {}
-        exec(code, g, l);
-        compile(code, "<test>", "exec")
+        for kw in ("except", "except*"):
+            exec(code % kw, g, l);
 
 
 @requires_debug_ranges()
