@@ -192,34 +192,27 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
-    def test_ignore(self):
-        for opt in '-i', '--ignore':
-            with self.subTest(opt=opt):
-                ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.ignore_tests, ['pattern'])
-                self.checkError([opt], 'expected one argument')
-
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
-            print('matchfile1', file=fp)
-            print('matchfile2', file=fp)
-
-        filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--ignorefile', filename])
-        self.assertEqual(ns.ignore_tests,
-                         ['matchfile1', 'matchfile2'])
-
     def test_match(self):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, ['pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', True)])
                 self.checkError([opt], 'expected one argument')
 
-        ns = self.parse_args(['-m', 'pattern1',
-                                      '-m', 'pattern2'])
-        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, 'pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', False)])
+                self.checkError([opt], 'expected one argument')
+
+        ns = self.parse_args(['-m', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', True)])
+
+        ns = self.parse_args(['-m', 'pattern1', '-i', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', False)])
+
+        ns = self.parse_args(['-i', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', False), ('pattern2', True)])
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "w") as fp:
@@ -227,10 +220,13 @@ class ParseArgsTestCase(unittest.TestCase):
             print('matchfile2', file=fp)
 
         filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--matchfile', filename])
+        ns = self.parse_args(['-m', 'match', '--matchfile', filename])
         self.assertEqual(ns.match_tests,
-                         ['match', 'matchfile1', 'matchfile2'])
+                         [('match', True), ('matchfile1', True), ('matchfile2', True)])
+
+        ns = self.parse_args(['-i', 'match', '--ignorefile', filename])
+        self.assertEqual(ns.match_tests,
+                         [('match', False), ('matchfile1', False), ('matchfile2', False)])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':

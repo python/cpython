@@ -52,6 +52,7 @@ TestTuple = tuple[TestName, ...]
 TestList = list[TestName]
 # --match and --ignore options: list of patterns
 # ('*' joker character can be used)
+TestFilter = list[tuple[TestName, bool]]
 FilterTuple = tuple[TestName, ...]
 FilterDict = dict[TestName, FilterTuple]
 

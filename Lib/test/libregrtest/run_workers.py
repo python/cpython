@@ -261,7 +261,7 @@ class WorkerThread(threading.Thread):
 
         kwargs = {}
         if match_tests:
-            kwargs['match_tests'] = match_tests
+            kwargs['match_tests'] = [(test, True) for test in match_tests]
         if self.runtests.output_on_failure:
             kwargs['verbose'] = True
             kwargs['output_on_failure'] = False

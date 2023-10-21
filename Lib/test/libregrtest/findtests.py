@@ -5,7 +5,7 @@ import unittest
 from test import support
 
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    StrPath, TestName, TestTuple, TestList, TestFilter,
     abs_module_name, count, printlist)
 
 
@@ -83,11 +83,10 @@ def _list_cases(suite):
                 print(test.id())
 
 def list_cases(tests: TestTuple, *,
-               match_tests: FilterTuple | None = None,
-               ignore_tests: FilterTuple | None = None,
+               match_tests: TestFilter | None = None,
                test_dir: StrPath | None = None):
     support.verbose = False
-    support.set_match_tests(match_tests, ignore_tests)
+    support.set_match_tests(match_tests)
 
     skipped = []
     for test_name in tests:
