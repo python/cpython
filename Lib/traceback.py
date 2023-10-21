@@ -860,7 +860,7 @@ class TracebackException:
         several lines that (when printed)
         display detailed information about where the syntax error occurred.
         Following the message, generator also yields
-        all exception's ``__notes__``.
+        all the exception's ``__notes__``.
         """
 
         indent = 3 * _depth * ' '
