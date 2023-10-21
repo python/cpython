@@ -145,14 +145,11 @@ def format_exception_only(exc, /, value=_sentinel):
 
     The return value is a list of strings, each ending in a newline.
 
-    Normally, the list contains a single string; however, for
-    SyntaxError exceptions, it contains several lines that (when
-    printed) display detailed information about where the syntax
-    error occurred.
-
-    The message indicating which exception occurred is always the last
-    string in the list.
-
+    The list contains the exception's message, which is
+    normally a single string; however, for :exc:`SyntaxError` exceptions, it
+    contains several lines that (when printed) display detailed information
+    about where the syntax error occurred. Following the message, the list
+    contains the exception's ``__notes__``.
     """
     if value is _sentinel:
         value = exc
@@ -841,13 +838,13 @@ class TracebackException:
 
         The return value is a generator of strings, each ending in a newline.
 
-        Normally, the generator emits a single string; however, for
-        SyntaxError exceptions, it emits several lines that (when
-        printed) display detailed information about where the syntax
-        error occurred.
-
-        The message indicating which exception occurred is always the last
-        string in the output.
+        Generator yields the exception message.
+        For :exc:`SyntaxError` exceptions, it
+        also yields (before the exception message)
+        several lines that (when printed)
+        display detailed information about where the syntax error occurred.
+        Following the message, generator also yields
+        all the exception's ``__notes__``.
         """
         if self.exc_type is None:
             yield _format_final_exc_line(None, self._str)
