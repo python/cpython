@@ -784,7 +784,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
     async def test_taskgroup_already_entered(self):
         tg = taskgroups.TaskGroup()
         async with tg:
-            with self.assertRaisesRegex(RuntimeError, "already entered"):
+            with self.assertRaisesRegex(RuntimeError, "has already been entered"):
                 async with tg:
                     pass
 
@@ -792,7 +792,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         tg = taskgroups.TaskGroup()
         async with tg:
             pass
-        with self.assertRaisesRegex(RuntimeError, "already entered"):
+        with self.assertRaisesRegex(RuntimeError, "has already been entered"):
             async with tg:
                 pass
 
@@ -801,7 +801,7 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
         async with tg:
             pass
         coro = asyncio.sleep(0)
-        with self.assertRaisesRegex(RuntimeError, "finished"):
+        with self.assertRaisesRegex(RuntimeError, "is finished"):
             tg.create_task(coro)
         # We still have to await coro to avoid a warning
         await coro

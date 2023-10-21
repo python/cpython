@@ -260,14 +260,14 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout_already_entered(self):
         async with asyncio.timeout(0.01) as cm:
-            with self.assertRaisesRegex(RuntimeError, "already entered"):
+            with self.assertRaisesRegex(RuntimeError, "has already been entered"):
                 async with cm:
                     pass
 
     async def test_timeout_double_enter(self):
         async with asyncio.timeout(0.01) as cm:
             pass
-        with self.assertRaisesRegex(RuntimeError, "already entered"):
+        with self.assertRaisesRegex(RuntimeError, "has already been entered"):
             async with cm:
                 pass
 
