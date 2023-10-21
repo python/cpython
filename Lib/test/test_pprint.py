@@ -7,6 +7,7 @@ import io
 import itertools
 import pprint
 import random
+import re
 import test.support
 import test.test_set
 import types
@@ -533,13 +534,11 @@ AdvancedNamespace(the=0,
         self.assertEqual(formatted, "custom repr that doesn't fit within pprint width")
 
     def test_dataclass_no_repr(self):
-        import re
-
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
         self.assertRegex(
             formatted,
-            re.escape(f"<{__name__}.dataclass3 object at ") + r"\w+>",
+            fr"<{re.escape(__name__)}.dataclass3 object at \w+>",
         )
 
     def test_recursive_dataclass(self):
