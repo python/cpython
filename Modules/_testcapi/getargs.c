@@ -361,68 +361,83 @@ getargs_K(PyObject *self, PyObject *args)
 static PyObject *
 test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *tuple, *num;
-    unsigned long value;
-
-    tuple = PyTuple_New(1);
+    PyObject *tuple = PyTuple_New(1);
     if (tuple == NULL) {
         return NULL;
     }
 
     /* a number larger than ULONG_MAX even on 64-bit platforms */
-    num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+    PyObject *num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
     if (num == NULL) {
-        return NULL;
+        goto error;
     }
 
-    value = PyLong_AsUnsignedLongMask(num);
-    if (value != ULONG_MAX) {
+    unsigned long value = PyLong_AsUnsignedLongMask(num);
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_DECREF(num);
+        goto error;
+    }
+    else if (value != ULONG_MAX) {
+        Py_DECREF(num);
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: "
             "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = 0;
     if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
+        goto error;
     }
     if (value != ULONG_MAX) {
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: k code returned wrong value for long 0xFFF...FFF");
-        return NULL;
+        goto error;
     }
 
-    Py_DECREF(num);
+    Py_DECREF(tuple);  // also clears `num`
+    tuple = PyTuple_New(1);
+    if (tuple == NULL) {
+        return NULL;
+    }
     num = PyLong_FromString("-FFFFFFFF000000000000000042", NULL, 16);
     if (num == NULL) {
-        return NULL;
+        goto error;
     }
 
     value = PyLong_AsUnsignedLongMask(num);
-    if (value != (unsigned long)-0x42) {
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        Py_DECREF(num);
+        goto error;
+    }
+    else if (value != (unsigned long)-0x42) {
+        Py_DECREF(num);
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: "
             "PyLong_AsUnsignedLongMask() returned wrong value for long -0xFFF..000042");
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = 0;
     if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        return NULL;
+        goto error;
     }
     if (value != (unsigned long)-0x42) {
         PyErr_SetString(PyExc_AssertionError,
             "test_k_code: k code returned wrong value for long -0xFFF..000042");
-        return NULL;
+        goto error;
     }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 static PyObject *
@@ -760,51 +775,56 @@ getargs_et_hash(PyObject *self, PyObject *args)
 static PyObject *
 test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *tuple, *num;
-    long long value;
-
-    tuple = PyTuple_New(1);
+    PyObject *tuple = PyTuple_New(1);
     if (tuple == NULL) {
         return NULL;
     }
 
-    num = PyLong_FromLong(42);
+    PyObject *num = PyLong_FromLong(42);
     if (num == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
-    value = -1;
+    long long value = -1;
     if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
+        goto error;
     }
     if (value != 42) {
         PyErr_SetString(PyExc_AssertionError,
             "test_L_code: L code returned wrong value for long 42");
-        return NULL;
+        goto error;
     }
 
-    Py_DECREF(num);
+    Py_DECREF(tuple);  // also clears `num`
+    tuple = PyTuple_New(1);
+    if (tuple == NULL) {
+        return NULL;
+    }
     num = PyLong_FromLong(42);
     if (num == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
     value = -1;
     if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        return NULL;
+        goto error;
     }
     if (value != 42) {
         PyErr_SetString(PyExc_AssertionError,
             "test_L_code: L code returned wrong value for int 42");
-        return NULL;
+        goto error;
     }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 /* Test the s and z codes for PyArg_ParseTuple.
@@ -821,7 +841,7 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
                                      "latin-1", NULL);
     if (obj == NULL) {
-        return NULL;
+        goto error;
     }
 
     PyTuple_SET_ITEM(tuple, 0, obj);
@@ -831,15 +851,19 @@ test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
      */
     char *value;
     if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
-        return NULL;
+        goto error;
     }
 
     if (!PyArg_ParseTuple(tuple, "z:test_s_code2", &value)) {
-        return NULL;
+        goto error;
     }
 
     Py_DECREF(tuple);
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(tuple);
+    return NULL;
 }
 
 #undef PyArg_ParseTupleAndKeywords
