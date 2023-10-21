@@ -16,7 +16,6 @@ alabaster==0.7.13
 Babel==2.13.0
 certifi==2023.7.22
 charset-normalizer==3.3.0
-colorama==0.4.6
 docutils==0.17.1
 idna==3.4
 imagesize==1.4.1
@@ -33,4 +32,4 @@ sphinxcontrib-htmlhelp==2.0.1
 sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.3
 sphinxcontrib-serializinghtml==1.1.5
-urllib3==2.0.6
+urllib3==2.0.7

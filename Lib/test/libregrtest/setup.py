@@ -92,7 +92,7 @@ def setup_tests(runtests: RunTests):
     support.PGO = runtests.pgo
     support.PGO_EXTENDED = runtests.pgo_extended
 
-    support.set_match_tests(runtests.match_tests, runtests.ignore_tests)
+    support.set_match_tests(runtests.match_tests)
 
     if runtests.use_junit:
         support.junit_xml_list = []
@@ -111,6 +111,8 @@ def setup_tests(runtests: RunTests):
     timeout = runtests.timeout
     if timeout is not None:
         # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.LOOPBACK_TIMEOUT = max(support.LOOPBACK_TIMEOUT, timeout / 120)
+        # don't increase INTERNET_TIMEOUT
         support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, timeout / 40)
         support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, timeout / 4)
 

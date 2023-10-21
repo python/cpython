@@ -4284,6 +4284,15 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\(0-9\)$!.0\1!g' | tr -d '.'`
+
+printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+
+    fi
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
@@ -9259,10 +9268,15 @@ then :
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       as_fn_append CFLAGS " -target wasm32-wasi-threads -pthread"
       as_fn_append CFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -Wl,--import-memory"
+      as_fn_append LDFLAGS_NODIST " -Wl,--export-memory"
       as_fn_append LDFLAGS_NODIST " -Wl,--max-memory=10485760"
 
 fi
@@ -10708,6 +10722,12 @@ ac_fn_c_check_header_compile "$LINENO" "sys/times.h" "ac_cv_header_sys_times_h" 
 if test "x$ac_cv_header_sys_times_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SYS_TIMES_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "sys/timerfd.h" "ac_cv_header_sys_timerfd_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_timerfd_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_TIMERFD_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
@@ -18781,6 +18801,50 @@ fi
 
 
 
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for timerfd_create" >&5
+printf %s "checking for timerfd_create... " >&6; }
+if test ${ac_cv_func_timerfd_create+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#ifdef HAVE_SYS_TIMERFD_H
+#include <sys/timerfd.h>
+#endif
+
+int
+main (void)
+{
+void *x=timerfd_create
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ac_cv_func_timerfd_create=yes
+else $as_nop
+  ac_cv_func_timerfd_create=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_func_timerfd_create" >&5
+printf "%s\n" "$ac_cv_func_timerfd_create" >&6; }
+  if test "x$ac_cv_func_timerfd_create" = xyes
+then :
+
+printf "%s\n" "#define HAVE_TIMERFD_CREATE 1" >>confdefs.h
+
+fi
+
+
+
+
 # On some systems (eg. FreeBSD 5), we would find a definition of the
 # functions ctermid_r, setgroups in the library, but no prototype
 # (e.g. because we use _XOPEN_SOURCE). See whether we can take their
@@ -24618,6 +24682,25 @@ printf "%s\n" "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 
 fi
 
+    # in readline as well as newer editline (April 2023)
+    ac_fn_c_check_type "$LINENO" "rl_compdisp_func_t" "ac_cv_type_rl_compdisp_func_t" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
+"
+if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
+then :
+
+printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
+fi
+
+
 
 
 CFLAGS=$save_CFLAGS
@@ -26601,6 +26684,8 @@ SRCDIRS="\
   Modules/expat \
   Objects \
   Parser \
+  Parser/tokenizer \
+  Parser/lexer \
   Programs \
   Python \
   Python/frozen_modules \
