@@ -299,7 +299,7 @@ Data Types
          ...         print('today is %s' % cls(date.today().isoweekday()).name)
          ...
          >>> dir(Weekday.SATURDAY)
-         ['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
+         ['FRIDAY', 'MONDAY', 'SATURDAY', 'SUNDAY', 'THURSDAY', 'TUESDAY', 'WEDNESDAY', '__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'today', 'value']
 
    .. method:: Enum._generate_next_value_(name, start, count, last_values)
 
