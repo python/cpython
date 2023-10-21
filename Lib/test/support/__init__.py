@@ -6,8 +6,10 @@ if __name__ != 'test.support':
 import contextlib
 import dataclasses
 import functools
+import itertools
 import getpass
 import opcode
+import operator
 import os
 import re
 import stat
@@ -1194,18 +1196,17 @@ def _run_suite(suite):
 
 
 # By default, don't filter tests
-_match_test_func = None
-
-_accept_test_patterns = None
-_ignore_test_patterns = None
+_test_matchers = ()
+_test_patterns = ()
 
 
 def match_test(test):
     # Function used by support.run_unittest() and regrtest --list-cases
-    if _match_test_func is None:
-        return True
-    else:
-        return _match_test_func(test.id())
+    result = False
+    for matcher, result in reversed(_test_matchers):
+        if matcher(test.id()):
+            return result
+    return not result
 
 
 def _is_full_match_test(pattern):
@@ -1218,47 +1219,30 @@ def _is_full_match_test(pattern):
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(accept_patterns=None, ignore_patterns=None):
-    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
+def set_match_tests(patterns):
+    global _test_matchers, _test_patterns
 
-    if accept_patterns is None:
-        accept_patterns = ()
-    if ignore_patterns is None:
-        ignore_patterns = ()
-
-    accept_func = ignore_func = None
-
-    if accept_patterns != _accept_test_patterns:
-        accept_patterns, accept_func = _compile_match_function(accept_patterns)
-    if ignore_patterns != _ignore_test_patterns:
-        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
-
-    # Create a copy since patterns can be mutable and so modified later
-    _accept_test_patterns = tuple(accept_patterns)
-    _ignore_test_patterns = tuple(ignore_patterns)
-
-    if accept_func is not None or ignore_func is not None:
-        def match_function(test_id):
-            accept = True
-            ignore = False
-            if accept_func:
-                accept = accept_func(test_id)
-            if ignore_func:
-                ignore = ignore_func(test_id)
-            return accept and not ignore
-
-        _match_test_func = match_function
+    if not patterns:
+        _test_matchers = ()
+        _test_patterns = ()
+    else:
+        itemgetter = operator.itemgetter
+        patterns = tuple(patterns)
+        if patterns != _test_patterns:
+            _test_matchers = [
+                (_compile_match_function(map(itemgetter(0), it)), result)
+                for result, it in itertools.groupby(patterns, itemgetter(1))
+            ]
+            _test_patterns = patterns
 
 
 def _compile_match_function(patterns):
-    if not patterns:
-        func = None
-        # set_match_tests(None) behaves as set_match_tests(())
-        patterns = ()
-    elif all(map(_is_full_match_test, patterns)):
+    patterns = list(patterns)
+
+    if all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
         # The test.bisect_cmd utility only uses such full test identifiers.
-        func = set(patterns).__contains__
+        return set(patterns).__contains__
     else:
         import fnmatch
         regex = '|'.join(map(fnmatch.translate, patterns))
@@ -1266,7 +1250,7 @@ def _compile_match_function(patterns):
         # don't use flags=re.IGNORECASE
         regex_match = re.compile(regex).match
 
-        def match_test_regex(test_id):
+        def match_test_regex(test_id, regex_match=regex_match):
             if regex_match(test_id):
                 # The regex matches the whole identifier, for example
                 # 'test.test_os.FileTests.test_access'.
@@ -1277,9 +1261,7 @@ def _compile_match_function(patterns):
                 # into: 'test', 'test_os', 'FileTests' and 'test_access'.
                 return any(map(regex_match, test_id.split(".")))
 
-        func = match_test_regex
-
-    return patterns, func
+        return match_test_regex
 
 
 def run_unittest(*classes):

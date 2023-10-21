@@ -161,8 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = None
-        self.ignore_tests = None
+        self.match_tests = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -183,6 +182,20 @@ class _ArgParser(argparse.ArgumentParser):
         super().error(message + "\nPass -h or --help for complete help.")
 
 
+class FilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        items.append((value, self.const))
+
+
+class FromFileFilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        with open(value, encoding='utf-8') as fp:
+            for line in fp:
+                items.append((line.strip(), self.const))
+
+
 def _create_parser():
     # Set prog to prevent the uninformative "__main__.py" from displaying in
     # error messages when using "python -m test ...".
@@ -192,6 +205,7 @@ def _create_parser():
                         epilog=EPILOG,
                         add_help=False,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(match_tests=[])
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -251,17 +265,19 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=True,
                        help='match test cases and methods with glob pattern PAT')
     group.add_argument('-i', '--ignore', metavar='PAT',
-                       dest='ignore_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
-                       dest='match_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=True,
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
-                       dest='ignore_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=False,
                        help='similar to --matchfile but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
@@ -483,18 +499,6 @@ def _parse_args(args, **kwargs):
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks: see http://bugs.python.org/issue27103",
               file=sys.stderr)
-    if ns.match_filename:
-        if ns.match_tests is None:
-            ns.match_tests = []
-        with open(ns.match_filename) as fp:
-            for line in fp:
-                ns.match_tests.append(line.strip())
-    if ns.ignore_filename:
-        if ns.ignore_tests is None:
-            ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
-            for line in fp:
-                ns.ignore_tests.append(line.strip())
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True
