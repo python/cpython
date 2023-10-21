@@ -1,0 +1,2 @@
+Fix regrtest if the ``SOURCE_DATE_EPOCH`` environment variable is defined:
+use the variable value as the random seed. Patch by Victor Stinner.
