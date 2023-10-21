@@ -854,11 +854,12 @@ class TracebackException:
 
         The return value is a generator of strings, each ending in a newline.
 
-        Generator normally yields a single string;
-        however, for :exc:`SyntaxError` exceptions, it
-        contains several lines that (when printed) display detailed information
-        about where the syntax error occurred.
-        Following the message, generator also emits
+        Generator yields the exception message.
+        For :exc:`SyntaxError` exceptions, it
+        also yields (before the exception message)
+        several lines that (when printed)
+        display detailed information about where the syntax error occurred.
+        Following the message, generator also yields
         all exception's ``__notes__``.
         """
 
