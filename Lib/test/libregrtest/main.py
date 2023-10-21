@@ -129,14 +129,19 @@ class Regrtest:
 
         # Randomize
         self.randomize: bool = ns.randomize
-        self.random_seed: int | None =  (
-            ns.random_seed
-            if ns.random_seed is not None
-            else random.getrandbits(32)
-        )
-        if 'SOURCE_DATE_EPOCH' in os.environ:
+        if ('SOURCE_DATE_EPOCH' in os.environ
+            # don't use the variable if empty
+            and os.environ['SOURCE_DATE_EPOCH']
+        ):
             self.randomize = False
-            self.random_seed = None
+            # SOURCE_DATE_EPOCH should be an integer, but use a string to not
+            # fail if it's not integer. random.seed() accepts a string.
+            # https://reproducible-builds.org/docs/source-date-epoch/
+            self.random_seed: int | str = os.environ['SOURCE_DATE_EPOCH']
+        elif ns.random_seed is None:
+            self.random_seed = random.getrandbits(32)
+        else:
+            self.random_seed = ns.random_seed
 
         # tests
         self.first_runtests: RunTests | None = None
@@ -441,7 +446,7 @@ class Regrtest:
                    or tests or self.cmdline_args)):
             display_header(self.use_resources, self.python_cmd)
 
-        print("Using random seed", self.random_seed)
+        print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
