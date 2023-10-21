@@ -537,7 +537,10 @@ AdvancedNamespace(the=0,
 
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
-        self.assertRegex(formatted, re.escape(rf"<{__name__}.dataclass3 object at \w+>"))
+        self.assertRegex(
+            formatted,
+            re.escape(f"<{__name__}.dataclass3 object at ") + r"\w+>",
+        )
 
     def test_recursive_dataclass(self):
         dc = dataclass4(None)
