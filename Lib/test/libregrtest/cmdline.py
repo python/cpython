@@ -191,7 +191,7 @@ class FilterAction(argparse.Action):
 class FromFileFilterAction(argparse.Action):
     def __call__(self, parser, namespace, value, option_string=None):
         items = getattr(namespace, self.dest)
-        with open(value) as fp:
+        with open(value, encoding='utf-8') as fp:
             for line in fp:
                 items.append((line.strip(), self.const))
 
