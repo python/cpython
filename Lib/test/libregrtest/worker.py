@@ -10,7 +10,7 @@ from .setup import setup_process, setup_test_dir
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
-    StrPath, StrJSON, FilterTuple,
+    StrPath, StrJSON, TestFilter,
     get_temp_dir, get_work_dir, exit_timeout)
 
 
@@ -22,11 +22,15 @@ def create_worker_process(runtests: RunTests, output_fd: int,
     python_cmd = runtests.python_cmd
     worker_json = runtests.as_json()
 
+    python_opts = support.args_from_interpreter_flags()
     if python_cmd is not None:
         executable = python_cmd
+        # Remove -E option, since --python=COMMAND can set PYTHON environment
+        # variables, such as PYTHONPATH, in the worker process.
+        python_opts = [opt for opt in python_opts if opt != "-E"]
     else:
-        executable = [sys.executable]
-    cmd = [*executable, *support.args_from_interpreter_flags(),
+        executable = (sys.executable,)
+    cmd = [*executable, *python_opts,
            '-u',    # Unbuffered stdout and stderr
            '-m', 'test.libregrtest.worker',
            worker_json]
@@ -37,14 +41,15 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         env['TEMP'] = tmp_dir
         env['TMP'] = tmp_dir
 
+    # Running the child from the same working directory as regrtest's original
+    # invocation ensures that TEMPDIR for the child is the same when
+    # sysconfig.is_python_build() is true. See issue 15300.
+    #
     # Emscripten and WASI Python must start in the Python source code directory
     # to get 'python.js' or 'python.wasm' file. Then worker_process() changes
     # to a temporary directory created to run tests.
     work_dir = os_helper.SAVEDCWD
 
-    # Running the child from the same working directory as regrtest's original
-    # invocation ensures that TEMPDIR for the child is the same when
-    # sysconfig.is_python_build() is true. See issue 15300.
     kwargs: dict[str, Any] = dict(
         env=env,
         stdout=output_fd,
@@ -54,6 +59,8 @@ def create_worker_process(runtests: RunTests, output_fd: int,
         close_fds=True,
         cwd=work_dir,
     )
+    if USE_PROCESS_GROUP:
+        kwargs['start_new_session'] = True
 
     # Pass json_file to the worker process
     json_file = runtests.json_file
@@ -66,7 +73,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
-    match_tests: FilterTuple | None = runtests.match_tests
+    match_tests: TestFilter = runtests.match_tests
     json_file: JsonFile = runtests.json_file
 
     setup_test_dir(runtests.test_dir)
@@ -74,7 +81,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
     if runtests.rerun:
         if match_tests:
-            matching = "matching: " + ", ".join(match_tests)
+            matching = "matching: " + ", ".join(pattern for pattern, result in match_tests if result)
             print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
         else:
             print(f"Re-running {test_name} in verbose mode", flush=True)

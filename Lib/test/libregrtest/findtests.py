@@ -5,7 +5,7 @@ import unittest
 from test import support
 
 from .utils import (
-    StrPath, TestName, TestTuple, TestList, FilterTuple,
+    StrPath, TestName, TestTuple, TestList, TestFilter,
     abs_module_name, count, printlist)
 
 
@@ -18,6 +18,9 @@ from .utils import (
 SPLITTESTDIRS: set[TestName] = {
     "test_asyncio",
     "test_concurrent_futures",
+    "test_future_stmt",
+    "test_gdb",
+    "test_inspect",
     "test_multiprocessing_fork",
     "test_multiprocessing_forkserver",
     "test_multiprocessing_spawn",
@@ -80,11 +83,10 @@ def _list_cases(suite):
                 print(test.id())
 
 def list_cases(tests: TestTuple, *,
-               match_tests: FilterTuple | None = None,
-               ignore_tests: FilterTuple | None = None,
+               match_tests: TestFilter | None = None,
                test_dir: StrPath | None = None):
     support.verbose = False
-    support.set_match_tests(match_tests, ignore_tests)
+    support.set_match_tests(match_tests)
 
     skipped = []
     for test_name in tests:
