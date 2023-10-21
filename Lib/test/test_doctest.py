@@ -3323,6 +3323,39 @@ def test_syntax_error_with_note(cls, multiline=False):
     raise exc
 
 
+def test_syntax_error_with_incorrect_note():
+    """
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+    ...     >>> exc.add_note('note1')
+    ...     >>> exc.add_note('note2')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     SyntaxError: error
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        SyntaxError: error
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        SyntaxError: error
+        note1
+        note2
+    TestResults(failed=1, attempted=...)
+    """
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())
