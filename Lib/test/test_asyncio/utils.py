@@ -613,3 +613,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc
