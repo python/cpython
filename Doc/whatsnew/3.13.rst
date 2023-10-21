@@ -65,7 +65,12 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+* :pep:`602` ("Annual Release Cycle for Python") has been updated:
 
+  * Python 3.9 - 3.12 have one and a half years of full support,
+    followed by three and a half years of security fixes.
+  * Python 3.13 and later have two years of full support,
+    followed by three years of security fixes.
 
 New Features
 ============
@@ -100,6 +105,10 @@ Other Language Changes
 * :func:`os.path.realpath` now resolves MS-DOS style file names even if
   the file is not accessible.
   (Contributed by Moonsik Park in :gh:`82367`.)
+
+* Fixed a bug where a :keyword:`global` decleration in an :keyword:`except` block
+  is rejected when the global is used in the :keyword:`else` block.
+  (Contributed by Irit Katriel in :gh:`111123`.)
 
 New Modules
 ===========
@@ -932,8 +941,10 @@ Build Changes
 * Building CPython now requires a compiler with support for the C11 atomic
   library, GCC built-in atomic functions, or MSVC interlocked intrinsics.
 
-* The ``_stat`` C extension is now built with the :ref:`limited C API
-  <limited-c-api>`.
+* The ``errno``, ``md5``, ``resource``, ``winsound``, ``_ctypes_test``,
+  ``_multiprocessing.posixshmem``, ``_scproxy``, ``_stat``,
+  ``_testimportmultiple`` and ``_uuid`` C extensions are now built with the
+  :ref:`limited C API <limited-c-api>`.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
 
@@ -1053,6 +1064,19 @@ New Features
   parameter names.
   (Contributed by Serhiy Storchaka in :gh:`110815`.)
 
+* Add :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawCalloc`,
+  :c:func:`PyMem_RawRealloc` and :c:func:`PyMem_RawFree` to the limited C API
+  (version 3.13).
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PySys_Audit` and :c:func:`PySys_AuditTuple` functions to the
+  limited C API.
+  (Contributed by Victor Stinner in :gh:`85283`.)
+
+* Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
+  (Contributed by Victor Stinner in :gh:`111089`.)
+
+
 Porting to Python 3.13
 ----------------------
 
@@ -1091,6 +1115,12 @@ Porting to Python 3.13
   :c:macro:`!Py_BUILD_CORE_BUILTIN` and :c:macro:`!Py_BUILD_CORE_MODULE` macros
   are now undefined by ``<Python.h>``.
   (Contributed by Victor Stinner in :gh:`85283`.)
+
+* The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
+  contains embedded null characters. To accept embedded null characters and
+  truncate on purpose at the first null byte,
+  ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
+  (Contributed by Victor Stinner in :gh:`111089`.)
 
 Deprecated
 ----------

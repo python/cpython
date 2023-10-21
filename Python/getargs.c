@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_dict.h"          // _PyDict_HasOnlyStringKeys()
+#include "pycore_modsupport.h"    // export _PyArg_NoKeywords()
 #include "pycore_pylifecycle.h"   // _PyArg_Fini
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
@@ -2522,7 +2523,7 @@ _PyArg_UnpackKeywordsWithVararg(PyObject *const *args, Py_ssize_t nargs,
          *
          * Otherwise, we leave a place at `buf[vararg]` for vararg tuple
          * so the index is `i + 1`. */
-        if (nargs < vararg) {
+        if (nargs < vararg && i != vararg) {
             buf[i] = current_arg;
         }
         else {

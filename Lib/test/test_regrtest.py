@@ -143,18 +143,26 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(ns.header)
 
     def test_randomize(self):
-        for opt in '-r', '--randomize':
+        for opt in ('-r', '--randomize'):
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
         with os_helper.EnvironmentVarGuard() as env:
-            env['SOURCE_DATE_EPOCH'] = '1'
-
+            # with SOURCE_DATE_EPOCH
+            env['SOURCE_DATE_EPOCH'] = '1697839080'
             ns = self.parse_args(['--randomize'])
             regrtest = main.Regrtest(ns)
             self.assertFalse(regrtest.randomize)
-            self.assertIsNone(regrtest.random_seed)
+            self.assertIsInstance(regrtest.random_seed, str)
+            self.assertEqual(regrtest.random_seed, '1697839080')
+
+            # without SOURCE_DATE_EPOCH
+            del env['SOURCE_DATE_EPOCH']
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertTrue(regrtest.randomize)
+            self.assertIsInstance(regrtest.random_seed, int)
 
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
@@ -184,34 +192,27 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
-    def test_ignore(self):
-        for opt in '-i', '--ignore':
-            with self.subTest(opt=opt):
-                ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.ignore_tests, ['pattern'])
-                self.checkError([opt], 'expected one argument')
-
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
-            print('matchfile1', file=fp)
-            print('matchfile2', file=fp)
-
-        filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--ignorefile', filename])
-        self.assertEqual(ns.ignore_tests,
-                         ['matchfile1', 'matchfile2'])
-
     def test_match(self):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, ['pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', True)])
                 self.checkError([opt], 'expected one argument')
 
-        ns = self.parse_args(['-m', 'pattern1',
-                                      '-m', 'pattern2'])
-        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, 'pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', False)])
+                self.checkError([opt], 'expected one argument')
+
+        ns = self.parse_args(['-m', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', True)])
+
+        ns = self.parse_args(['-m', 'pattern1', '-i', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', False)])
+
+        ns = self.parse_args(['-i', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', False), ('pattern2', True)])
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "w") as fp:
@@ -219,10 +220,13 @@ class ParseArgsTestCase(unittest.TestCase):
             print('matchfile2', file=fp)
 
         filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--matchfile', filename])
+        ns = self.parse_args(['-m', 'match', '--matchfile', filename])
         self.assertEqual(ns.match_tests,
-                         ['match', 'matchfile1', 'matchfile2'])
+                         [('match', True), ('matchfile1', True), ('matchfile2', True)])
+
+        ns = self.parse_args(['-i', 'match', '--ignorefile', filename])
+        self.assertEqual(ns.match_tests,
+                         [('match', False), ('matchfile1', False), ('matchfile2', False)])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
@@ -388,7 +392,13 @@ class ParseArgsTestCase(unittest.TestCase):
 
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
-        regrtest = main.Regrtest(ns)
+        with os_helper.EnvironmentVarGuard() as env:
+            # Ignore SOURCE_DATE_EPOCH env var if it's set
+            if 'SOURCE_DATE_EPOCH' in env:
+                del env['SOURCE_DATE_EPOCH']
+
+            regrtest = main.Regrtest(ns)
+
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -415,9 +425,11 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertEqual(regrtest.python_cmd, ('python', '-X', 'dev'))
 
     def test_fast_ci_resource(self):
-        # it should be possible to override resources
-        args = ['--fast-ci', '-u', 'network']
-        use_resources = ['network']
+        # it should be possible to override resources individually
+        args = ['--fast-ci', '-u-network']
+        use_resources = sorted(cmdline.ALL_RESOURCES)
+        use_resources.remove('cpu')
+        use_resources.remove('network')
         self.check_ci_mode(args, use_resources)
 
     def test_slow_ci(self):
@@ -659,21 +671,26 @@ class BaseTestCase(unittest.TestCase):
             state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
-    def parse_random_seed(self, output):
-        match = self.regex_search(r'Using random seed ([0-9]+)', output)
-        randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed, randseed)
-        return randseed
+    def parse_random_seed(self, output: str) -> str:
+        match = self.regex_search(r'Using random seed: (.*)', output)
+        return match.group(1)
 
     def run_command(self, args, input=None, exitcode=0, **kw):
         if not input:
             input = ''
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.STDOUT
+
+        env = kw.pop('env', None)
+        if env is None:
+            env = dict(os.environ)
+            env.pop('SOURCE_DATE_EPOCH', None)
+
         proc = subprocess.run(args,
                               text=True,
                               input=input,
                               stdout=subprocess.PIPE,
+                              env=env,
                               **kw)
         if proc.returncode != exitcode:
             msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
@@ -749,7 +766,9 @@ class ProgramsTestCase(BaseTestCase):
             self.regrtest_args.append('-n')
 
     def check_output(self, output):
-        self.parse_random_seed(output)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
         self.check_executed_tests(output, self.tests,
                                   randomize=True, stats=len(self.tests))
 
@@ -940,7 +959,7 @@ class ArgsTestCase(BaseTestCase):
         test_random = int(match.group(1))
 
         # try to reproduce with the random seed
-        output = self.run_tests('-r', '--randseed=%s' % randseed, test,
+        output = self.run_tests('-r', f'--randseed={randseed}', test,
                                 exitcode=EXITCODE_NO_TESTS_RAN)
         randseed2 = self.parse_random_seed(output)
         self.assertEqual(randseed2, randseed)
@@ -951,7 +970,32 @@ class ArgsTestCase(BaseTestCase):
 
         # check that random.seed is used by default
         output = self.run_tests(test, exitcode=EXITCODE_NO_TESTS_RAN)
-        self.assertIsInstance(self.parse_random_seed(output), int)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
+        # check SOURCE_DATE_EPOCH (integer)
+        timestamp = '1697839080'
+        env = dict(os.environ, SOURCE_DATE_EPOCH=timestamp)
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, timestamp)
+        self.check_line(output, 'TESTRANDOM: 520')
+
+        # check SOURCE_DATE_EPOCH (string)
+        env = dict(os.environ, SOURCE_DATE_EPOCH='XYZ')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, 'XYZ')
+        self.check_line(output, 'TESTRANDOM: 22')
+
+        # check SOURCE_DATE_EPOCH (empty string): ignore the env var
+        env = dict(os.environ, SOURCE_DATE_EPOCH='')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
 
     def test_fromfile(self):
         # test --fromfile
