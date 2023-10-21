@@ -1,3 +1,0 @@
-Add :c:func:`PyWeakref_GetRef` function: similar to
-:c:func:`PyWeakref_GetObject` but returns a :term:`strong reference`, or
-``NULL`` if the referent is no longer live. Patch by Victor Stinner.

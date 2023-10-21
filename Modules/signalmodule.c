@@ -657,7 +657,7 @@ signal_strsignal_impl(PyObject *module, int signalnum)
         Py_RETURN_NONE;
 #endif
 
-    return Py_BuildValue("s", res);
+    return PyUnicode_FromString(res);
 }
 
 #ifdef HAVE_SIGINTERRUPT

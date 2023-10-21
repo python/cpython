@@ -1,2 +1,0 @@
-The ``_stat`` C extension is now built with the :ref:`limited C API
-<limited-c-api>`. Patch by Victor Stinner.
