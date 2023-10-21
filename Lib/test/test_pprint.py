@@ -533,9 +533,11 @@ AdvancedNamespace(the=0,
         self.assertEqual(formatted, "custom repr that doesn't fit within pprint width")
 
     def test_dataclass_no_repr(self):
+        import re
+
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
-        self.assertRegex(formatted, rf"<{__name__}.dataclass3 object at \w+>")
+        self.assertRegex(formatted, re.escape(rf"<{__name__}.dataclass3 object at \w+>"))
 
     def test_recursive_dataclass(self):
         dc = dataclass4(None)
