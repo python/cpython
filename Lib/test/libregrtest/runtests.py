@@ -90,7 +90,7 @@ class RunTests:
     use_resources: tuple[str, ...]
     python_cmd: tuple[str, ...] | None
     randomize: bool
-    random_seed: int | None
+    random_seed: int | str
     json_file: JsonFile | None
 
     def copy(self, **override):

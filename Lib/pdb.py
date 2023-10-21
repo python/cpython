@@ -138,6 +138,9 @@ class _ScriptTarget(str):
         if not os.path.exists(self):
             print('Error:', self.orig, 'does not exist')
             sys.exit(1)
+        if os.path.isdir(self):
+            print('Error:', self.orig, 'is a directory')
+            sys.exit(1)
 
         # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(self)
@@ -164,6 +167,9 @@ class _ModuleTarget(str):
     def check(self):
         try:
             self._details
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
         except Exception:
             traceback.print_exc()
             sys.exit(1)
@@ -1735,7 +1741,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns)
+        code.interact("*interactive*", local=ns, local_exit=True)
 
     def do_alias(self, arg):
         """alias [name [command]]
