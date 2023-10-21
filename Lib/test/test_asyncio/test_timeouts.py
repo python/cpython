@@ -277,6 +277,20 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "finished"):
             cm.reschedule(0.02)
 
+    async def test_timeout_expired(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01) as cm:
+                await asyncio.sleep(1)
+        with self.assertRaisesRegex(RuntimeError, "expired"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_expiring(self):
+        async with asyncio.timeout(0.01) as cm:
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.sleep(1)
+            with self.assertRaisesRegex(RuntimeError, "expiring"):
+                cm.reschedule(0.02)
+
     async def test_timeout_not_entered(self):
         cm = asyncio.timeout(0.01)
         with self.assertRaisesRegex(RuntimeError, "has not been entered"):
