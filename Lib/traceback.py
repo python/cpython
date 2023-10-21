@@ -156,7 +156,8 @@ def format_exception_only(exc, /, value=_sentinel):
     Normally, the list contains a single string; however, for
     SyntaxError exceptions, it contains several lines that (when
     printed) display detailed information about where the syntax
-    error occurred.
+    error occurred. Following the message, the list
+    contains the exception's ``__notes__``.
 
     The message indicating which exception occurred is always the last
     string in the list.
@@ -860,7 +861,8 @@ class TracebackException:
         Normally, the generator emits a single string; however, for
         SyntaxError exceptions, it emits several lines that (when
         printed) display detailed information about where the syntax
-        error occurred.
+        error occurred. Following the message, the list
+        contains the exception's ``__notes__``.
 
         The message indicating which exception occurred is always the last
         string in the output.
