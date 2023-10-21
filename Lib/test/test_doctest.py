@@ -3323,7 +3323,7 @@ def test_syntax_error_with_note(cls, multiline=False):
     raise exc
 
 
-def test_syntax_error_with_incorrect_note():
+def test_syntax_error_with_incorrect_expected_note():
     """
     >>> def f(x):
     ...     r'''
