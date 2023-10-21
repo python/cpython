@@ -560,100 +560,109 @@ class TestSupport(unittest.TestCase):
 
         test_access = Test('test.test_os.FileTests.test_access')
         test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+        test_copy = Test('test.test_shutil.TestCopy.test_copy')
 
         # Test acceptance
-        with support.swap_attr(support, '_match_test_func', None):
+        with support.swap_attr(support, '_test_matchers', ()):
             # match all
             support.set_match_tests([])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # match all using None
-            support.set_match_tests(None, None)
+            support.set_match_tests(None)
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # match the full test identifier
-            support.set_match_tests([test_access.id()], None)
+            support.set_match_tests([(test_access.id(), True)])
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
             # match the module name
-            support.set_match_tests(['test_os'], None)
+            support.set_match_tests([('test_os', True)])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
+            self.assertFalse(support.match_test(test_copy))
 
             # Test '*' pattern
-            support.set_match_tests(['test_*'], None)
+            support.set_match_tests([('test_*', True)])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # Test case sensitivity
-            support.set_match_tests(['filetests'], None)
+            support.set_match_tests([('filetests', True)])
             self.assertFalse(support.match_test(test_access))
-            support.set_match_tests(['FileTests'], None)
+            support.set_match_tests([('FileTests', True)])
             self.assertTrue(support.match_test(test_access))
 
             # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(['*test_os.*.test_*'], None)
+            support.set_match_tests([('*test_os.*.test_*', True)])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
+            self.assertFalse(support.match_test(test_copy))
 
             # Multiple patterns
-            support.set_match_tests([test_access.id(), test_chdir.id()], None)
+            support.set_match_tests([(test_access.id(), True), (test_chdir.id(), True)])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
+            self.assertFalse(support.match_test(test_copy))
 
-            support.set_match_tests(['test_access', 'DONTMATCH'], None)
+            support.set_match_tests([('test_access', True), ('DONTMATCH', True)])
             self.assertTrue(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
         # Test rejection
-        with support.swap_attr(support, '_match_test_func', None):
-            # match all
-            support.set_match_tests(ignore_patterns=[])
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
-            # match all using None
-            support.set_match_tests(None, None)
-            self.assertTrue(support.match_test(test_access))
-            self.assertTrue(support.match_test(test_chdir))
-
+        with support.swap_attr(support, '_test_matchers', ()):
             # match the full test identifier
-            support.set_match_tests(None, [test_access.id()])
+            support.set_match_tests([(test_access.id(), False)])
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
             # match the module name
-            support.set_match_tests(None, ['test_os'])
+            support.set_match_tests([('test_os', False)])
             self.assertFalse(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+            self.assertTrue(support.match_test(test_copy))
 
             # Test '*' pattern
-            support.set_match_tests(None, ['test_*'])
+            support.set_match_tests([('test_*', False)])
             self.assertFalse(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
 
             # Test case sensitivity
-            support.set_match_tests(None, ['filetests'])
+            support.set_match_tests([('filetests', False)])
             self.assertTrue(support.match_test(test_access))
-            support.set_match_tests(None, ['FileTests'])
+            support.set_match_tests([('FileTests', False)])
             self.assertFalse(support.match_test(test_access))
 
             # Test pattern containing '.' and a '*' metacharacter
-            support.set_match_tests(None, ['*test_os.*.test_*'])
+            support.set_match_tests([('*test_os.*.test_*', False)])
             self.assertFalse(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+            self.assertTrue(support.match_test(test_copy))
 
             # Multiple patterns
-            support.set_match_tests(None, [test_access.id(), test_chdir.id()])
+            support.set_match_tests([(test_access.id(), False), (test_chdir.id(), False)])
             self.assertFalse(support.match_test(test_access))
             self.assertFalse(support.match_test(test_chdir))
+            self.assertTrue(support.match_test(test_copy))
 
-            support.set_match_tests(None, ['test_access', 'DONTMATCH'])
+            support.set_match_tests([('test_access', False), ('DONTMATCH', False)])
             self.assertFalse(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
+
+        # Test mixed filters
+        with support.swap_attr(support, '_test_matchers', ()):
+            support.set_match_tests([('*test_os', False), ('test_access', True)])
+            self.assertTrue(support.match_test(test_access))
+            self.assertFalse(support.match_test(test_chdir))
+            self.assertTrue(support.match_test(test_copy))
+
+            support.set_match_tests([('*test_os', True), ('test_access', False)])
+            self.assertFalse(support.match_test(test_access))
+            self.assertTrue(support.match_test(test_chdir))
+            self.assertFalse(support.match_test(test_copy))
 
     @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
