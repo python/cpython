@@ -3212,6 +3212,65 @@ def test_run_doctestsuite_multiple_times():
     """
 
 
+def test_exception_with_note(note):
+    """
+    It was failing until https://github.com/python/cpython/issues/111159
+
+    >>> test_exception_with_note('Note')
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('Note')  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('''Note
+    ... multiline
+    ... example''')
+    Traceback (most recent call last):
+    ValueError: Text
+    Note
+    multiline
+    example
+
+    Different note will fail the test:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = ValueError('message')
+    ...     >>> exc.add_note('note')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     ValueError: message
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 5, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        ValueError: message
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        ValueError: message
+        note
+    TestResults(failed=1, attempted=...)
+    """
+    exc = ValueError('Text')
+    exc.add_note(note)
+    raise exc
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())

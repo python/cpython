@@ -1393,7 +1393,13 @@ class DocTestRunner:
 
             # The example raised an exception:  check if it was expected.
             else:
-                exc_msg = traceback.format_exception_only(*exception[:2])[-1]
+                formatted_ex = traceback.format_exception_only(*exception[:2])
+                if issubclass(exception[0], SyntaxError):
+                    # SyntaxError / IndentationError is special:
+                    # we don't care about the carets / suggestions / etc
+                    exc_msg = formatted_ex[-1]
+                else:
+                    exc_msg = "".join(formatted_ex)
                 if not quiet:
                     got += _exception_traceback(exception)
 
