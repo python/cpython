@@ -990,9 +990,13 @@
             PyObject *retval;
             // _SAVE_CURRENT_IP
             {
-                TIER_ONE_ONLY
+                #if TIER_ONE
                 assert(frame->next_instr_offset == 0);
                 frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->next_instr_offset = oparg;
+                #endif
             }
             // _POP_FRAME
             retval = stack_pointer[-1];
@@ -1051,9 +1055,13 @@
             }
             // _SAVE_CURRENT_IP
             {
-                TIER_ONE_ONLY
+                #if TIER_ONE
                 assert(frame->next_instr_offset == 0);
                 frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->next_instr_offset = oparg;
+                #endif
             }
             // _POP_FRAME
             retval = value;
@@ -3941,9 +3949,13 @@
             // _SAVE_CURRENT_IP
             next_instr += 3;
             {
-                TIER_ONE_ONLY
+                #if TIER_ONE
                 assert(frame->next_instr_offset == 0);
                 frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->next_instr_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -4014,9 +4026,13 @@
             // _SAVE_CURRENT_IP
             next_instr += 3;
             {
-                TIER_ONE_ONLY
+                #if TIER_ONE
                 assert(frame->next_instr_offset == 0);
                 frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->next_instr_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);

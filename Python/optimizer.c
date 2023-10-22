@@ -679,9 +679,13 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
+                            case OPARG_SET_IP:  // op=_SET_IP; oparg=next instr
                                 oparg = INSTR_IP(instr + offset, code);
-                                uop = _SET_IP;
+                                assert(uop == _SET_IP);
+                                break;
+                            case OPARG_SAVE_CURRENT_IP:  // op=_SAVE_CURRENT_IP; oparg=next_instr_offset
+                                oparg = offset;
+                                assert(uop == _SAVE_CURRENT_IP);
                                 break;
 
                             default:

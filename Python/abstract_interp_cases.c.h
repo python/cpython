@@ -920,6 +920,10 @@
             break;
         }
 
+        case _SAVE_CURRENT_IP: {
+            break;
+        }
+
         case _EXIT_TRACE: {
             break;
         }
