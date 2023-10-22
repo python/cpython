@@ -243,9 +243,9 @@ Scheduling callbacks
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-.. versionchanged:: 3.7
-   The *context* keyword-only parameter was added. See :pep:`567`
-   for more details.
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. _asyncio-pass-keywords:
 
@@ -1390,6 +1390,14 @@ Enabling debug mode
 
       The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
+
+.. attribute:: loop.slow_callback_duration
+
+   This attribute can be used to set the
+   minimum execution duration in seconds that is considered "slow".
+   When debug mode is enabled, "slow" callbacks are logged.
+
+   Default value is 100 milliseconds.
 
 .. seealso::
 
