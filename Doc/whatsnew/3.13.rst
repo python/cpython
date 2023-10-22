@@ -813,36 +813,79 @@ PEP 594: dead batteries
   * :mod:`!xdrlib`.
     (Contributed by Victor Stinner in :gh:`104773`.)
 
-* Remove support for the keyword-argument method of creating
-  :class:`typing.TypedDict` types, deprecated in Python 3.11.
-  (Contributed by Tomas Roun in :gh:`104786`.)
-
+2to3
+----
 
 * Remove the ``2to3`` program and the :mod:`!lib2to3` module,
   deprecated in Python 3.11.
   (Contributed by Victor Stinner in :gh:`104780`.)
 
-* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
-  are now removed. The items in those namespaces can be imported directly
-  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
-
-* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
-  deprecated in Python 3.11.
-  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
-  (Contributed by Hugo van Kemenade in :gh:`104804`.)
-
-* Remove support for using :class:`pathlib.Path` objects as context managers.
-  This functionality was deprecated and made a no-op in Python 3.9.
+configparser
+------------
 
 * Remove the undocumented :class:`!configparser.LegacyInterpolation` class,
   deprecated in the docstring since Python 3.2,
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
 
+locale
+------
+
+* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
+  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
+  (Contributed by Victor Stinner in :gh:`104783`.)
+
+logging
+-------
+
+* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
+  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
+  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
+  method, :meth:`!logging.LoggerAdapter.warning` method and
+  :func:`logging.warning` function.
+  (Contributed by Victor Stinner in :gh:`105376`.)
+
+pathlib
+-------
+
+* Remove support for using :class:`pathlib.Path` objects as context managers.
+  This functionality was deprecated and made a no-op in Python 3.9.
+
+re
+--
+
+* Remove undocumented, never working, and deprecated ``re.template`` function
+  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
+  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+
+tkinter
+-------
+
+* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
+  third-party Tix library which the module wrapped is unmaintained.
+  (Contributed by Zachary Ware in :gh:`75552`.)
+
+turtle
+------
+
 * Remove the :meth:`!turtle.RawTurtle.settiltangle` method,
   deprecated in docs since Python 3.1
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104876`.)
+
+typing
+------
+
+* Namespaces ``typing.io`` and ``typing.re``, deprecated in Python 3.8,
+  are now removed. The items in those namespaces can be imported directly
+  from :mod:`typing`. (Contributed by Sebastian Rittau in :gh:`92871`.)
+
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict` types, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
+
+unittest
+--------
 
 * Removed the following :mod:`unittest` functions, deprecated in Python 3.11:
 
@@ -862,26 +905,8 @@ PEP 594: dead batteries
   method, deprecated in Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104992`.)
 
-* Remove the :mod:`!tkinter.tix` module, deprecated in Python 3.6.  The
-  third-party Tix library which the module wrapped is unmaintained.
-  (Contributed by Zachary Ware in :gh:`75552`.)
-
-* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
-  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
-  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
-  added in Python 3.8 and the old macros were deprecated in Python 3.11.
-  (Contributed by Irit Katriel in :gh:`105111`.)
-
-* Remove ``locale.resetlocale()`` function deprecated in Python 3.11:
-  use ``locale.setlocale(locale.LC_ALL, "")`` instead.
-  (Contributed by Victor Stinner in :gh:`104783`.)
-
-* :mod:`logging`: Remove undocumented and untested ``Logger.warn()`` and
-  ``LoggerAdapter.warn()`` methods and ``logging.warn()`` function. Deprecated
-  since Python 3.3, they were aliases to the :meth:`logging.Logger.warning`
-  method, :meth:`!logging.LoggerAdapter.warning` method and
-  :func:`logging.warning` function.
-  (Contributed by Victor Stinner in :gh:`105376`.)
+urllib
+------
 
 * Remove *cafile*, *capath* and *cadefault* parameters of the
   :func:`urllib.request.urlopen` function, deprecated in Python 3.6: use the
@@ -891,15 +916,23 @@ PEP 594: dead batteries
   certificates for you.
   (Contributed by Victor Stinner in :gh:`105382`.)
 
+webbrowser
+----------
+
+* Remove the untested and undocumented :mod:`webbrowser` :class:`!MacOSX` class,
+  deprecated in Python 3.11.
+  Use the :class:`!MacOSXOSAScript` class (introduced in Python 3.2) instead.
+  (Contributed by Hugo van Kemenade in :gh:`104804`.)
+
 * Remove deprecated ``webbrowser.MacOSXOSAScript._name`` attribute.
   Use :attr:`webbrowser.MacOSXOSAScript.name <webbrowser.controller.name>`
   attribute instead.
   (Contributed by Nikita Sobolev in :gh:`105546`.)
 
-* Remove undocumented, never working, and deprecated ``re.template`` function
-  and ``re.TEMPLATE`` flag (and ``re.T`` alias).
-  (Contributed by Serhiy Storchaka and Nikita Sobolev in :gh:`105687`.)
+Others
+------
 
+* None yet
 
 Porting to Python 3.13
 ======================
@@ -907,34 +940,7 @@ Porting to Python 3.13
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
-  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
-  and ``Py_TRASHCAN_END``.
-
-  A tp_dealloc function that has the old macros, such as::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_SAFE_BEGIN(p);
-        ...
-        Py_TRASHCAN_SAFE_END
-    }
-
-  should migrate to the new macros as follows::
-
-    static void
-    mytype_dealloc(mytype *p)
-    {
-        PyObject_GC_UnTrack(p);
-        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
-        ...
-        Py_TRASHCAN_END
-    }
-
-  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
-  should be the deallocation function it is in.
+* None yet
 
 
 Build Changes
@@ -1130,6 +1136,35 @@ Porting to Python 3.13
   are now undefined by ``<Python.h>``.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* The old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and ``Py_TRASHCAN_SAFE_END``
+  were removed. They should be replaced by the new macros ``Py_TRASHCAN_BEGIN``
+  and ``Py_TRASHCAN_END``.
+
+  A tp_dealloc function that has the old macros, such as::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_SAFE_BEGIN(p);
+        ...
+        Py_TRASHCAN_SAFE_END
+    }
+
+  should migrate to the new macros as follows::
+
+    static void
+    mytype_dealloc(mytype *p)
+    {
+        PyObject_GC_UnTrack(p);
+        Py_TRASHCAN_BEGIN(p, mytype_dealloc)
+        ...
+        Py_TRASHCAN_END
+    }
+
+  Note that ``Py_TRASHCAN_BEGIN`` has a second argument which
+  should be the deallocation function it is in.
+
 * The :c:func:`PyUnicode_AsUTF8` function now raises an exception if the string
   contains embedded null characters. To accept embedded null characters and
   truncate on purpose at the first null byte,
@@ -1263,6 +1298,12 @@ Removed
   Use the new :c:type:`PyConfig` API of the :ref:`Python Initialization
   Configuration <init-config>` instead (:pep:`587`), added to Python 3.8.
   (Contributed by Victor Stinner in :gh:`105145`.)
+
+* Remove the old trashcan macros ``Py_TRASHCAN_SAFE_BEGIN`` and
+  ``Py_TRASHCAN_SAFE_END``.  They should be replaced by the new macros
+  ``Py_TRASHCAN_BEGIN`` and ``Py_TRASHCAN_END``.  The new macros were
+  added in Python 3.8 and the old macros were deprecated in Python 3.11.
+  (Contributed by Irit Katriel in :gh:`105111`.)
 
 * Remove ``PyEval_InitThreads()`` and ``PyEval_ThreadsInitialized()``
   functions, deprecated in Python 3.9. Since Python 3.7, ``Py_Initialize()``
