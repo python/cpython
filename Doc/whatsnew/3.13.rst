@@ -65,12 +65,22 @@ Summary -- Release highlights
 
 .. PEP-sized items next.
 
+Important deprecations, removals or restrictions:
+
+* :ref:`PEP 594 <whatsnew313-pep594>`: The remaining 19 "dead batteries"
+  have been removed from the standard library:
+  :mod:`!aifc`, :mod:`!audioop`, :mod:`!cgi`, :mod:`!cgitb`, :mod:`!chunk`,
+  :mod:`!crypt`, :mod:`!imghdr`, :mod:`!mailcap`, :mod:`!msilib`, :mod:`!nis`,
+  :mod:`!nntplib`, :mod:`!ossaudiodev`, :mod:`!pipes`, :mod:`!sndhdr`, :mod:`!spwd`,
+  :mod:`!sunau`, :mod:`!telnetlib`, :mod:`!uu` and :mod:`!xdrlib`.
+
 * :pep:`602` ("Annual Release Cycle for Python") has been updated:
 
   * Python 3.9 - 3.12 have one and a half years of full support,
     followed by three and a half years of security fixes.
   * Python 3.13 and later have two years of full support,
     followed by three years of security fixes.
+
 
 New Features
 ============
@@ -690,10 +700,123 @@ although there is currently no date scheduled for their removal.
 Removed
 =======
 
-* :pep:`594`: Remove the :mod:`!telnetlib` module, deprecated in Python 3.11:
-  use the projects `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
-  `Exscript <https://pypi.org/project/Exscript/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
+.. _whatsnew313-pep594:
+
+PEP 594: dead batteries
+-----------------------
+
+* :pep:`594` removed 19 modules from the standard library,
+  deprecated in Python 3.11:
+
+  * :mod:`!aifc`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!audioop`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!chunk`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!cgi` and :mod:`!cgitb`.
+
+    * ``cgi.FieldStorage`` can typically be replaced with
+      :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests,
+      and the :mod:`email.message` module or `multipart
+      <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
+      ``PUT``.
+
+    * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
+      directly on the desired query string, except for ``multipart/form-data``
+      input, which can be handled as described for ``cgi.parse_multipart()``.
+
+    * ``cgi.parse_header()`` can be replaced with the functionality in the
+      :mod:`email` package, which implements the same MIME RFCs. For example,
+      with :class:`email.message.EmailMessage`::
+
+          from email.message import EmailMessage
+          msg = EmailMessage()
+          msg['content-type'] = 'application/json; charset="utf8"'
+          main, params = msg.get_content_type(), msg['content-type'].params
+
+    * ``cgi.parse_multipart()`` can be replaced with the functionality in the
+      :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
+      :class:`email.message.Message`) which implements the same MIME RFCs, or
+      with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
+
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!crypt` module and its private :mod:`!_crypt` extension.
+    The :mod:`hashlib` module is a potential replacement for certain use cases.
+    Otherwise, the following PyPI projects can be used:
+
+    * `bcrypt <https://pypi.org/project/bcrypt/>`_:
+      Modern password hashing for your software and your servers.
+    * `passlib <https://pypi.org/project/passlib/>`_:
+      Comprehensive password hashing framework supporting over 30 schemes.
+    * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
+      The secure Argon2 password hashing algorithm.
+    * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
+      Wrapper to the POSIX crypt library call and associated functionality.
+
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!imghdr`: use the projects
+    `filetype <https://pypi.org/project/filetype/>`_,
+    `puremagic <https://pypi.org/project/puremagic/>`_,
+    or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!mailcap`.
+    The :mod:`mimetypes` module provides an alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!msilib`.
+    (Contributed by Zachary Ware in :gh:`104773`.)
+
+  * :mod:`!nis`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!nntplib`:
+    the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!ossaudiodev`: use the
+    `pygame project <https://www.pygame.org/>`_ for audio playback.
+    (Contributed by Victor Stinner in :gh:`104780`.)
+
+  * :mod:`!pipes`: use the :mod:`subprocess` module instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sndhdr`: use the projects
+    `filetype <https://pypi.org/project/filetype/>`_,
+    `puremagic <https://pypi.org/project/puremagic/>`_, or
+    `python-magic <https://pypi.org/project/python-magic/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!spwd`:
+    the `python-pam project <https://pypi.org/project/python-pam/>`_
+    can be used instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!sunau`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!telnetlib`, use the projects
+    `telnetlib3 <https://pypi.org/project/telnetlib3/>`_ or
+    `Exscript <https://pypi.org/project/Exscript/>`_ instead.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!uu`: the :mod:`base64` module is a modern alternative.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+  * :mod:`!xdrlib`.
+    (Contributed by Victor Stinner in :gh:`104773`.)
+
+* Remove support for the keyword-argument method of creating
+  :class:`typing.TypedDict` types, deprecated in Python 3.11.
+  (Contributed by Tomas Roun in :gh:`104786`.)
+
 
 * Remove the ``2to3`` program and the :mod:`!lib2to3` module,
   deprecated in Python 3.11.
@@ -734,115 +857,6 @@ Removed
   * :meth:`unittest.TestLoader.getTestCaseNames`
 
   (Contributed by Hugo van Kemenade in :gh:`104835`.)
-
-* :pep:`594`: Remove the :mod:`!cgi` and :mod:`!cgitb` modules,
-  deprecated in Python 3.11.
-
-  * ``cgi.FieldStorage`` can typically be replaced with
-    :func:`urllib.parse.parse_qsl` for ``GET`` and ``HEAD`` requests, and the
-    :mod:`email.message` module or `multipart
-    <https://pypi.org/project/multipart/>`__ PyPI project for ``POST`` and
-    ``PUT``.
-
-  * ``cgi.parse()`` can be replaced by calling :func:`urllib.parse.parse_qs`
-    directly on the desired query string, except for ``multipart/form-data``
-    input, which can be handled as described for ``cgi.parse_multipart()``.
-
-  * ``cgi.parse_multipart()`` can be replaced with the functionality in the
-    :mod:`email` package (e.g. :class:`email.message.EmailMessage` and
-    :class:`email.message.Message`) which implements the same MIME RFCs, or
-    with the `multipart <https://pypi.org/project/multipart/>`__ PyPI project.
-
-  * ``cgi.parse_header()`` can be replaced with the functionality in the
-    :mod:`email` package, which implements the same MIME RFCs. For example,
-    with :class:`email.message.EmailMessage`::
-
-        from email.message import EmailMessage
-        msg = EmailMessage()
-        msg['content-type'] = 'application/json; charset="utf8"'
-        main, params = msg.get_content_type(), msg['content-type'].params
-
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!sndhdr` module, deprecated in Python 3.11: use
-  the projects `filetype <https://pypi.org/project/filetype/>`_, `puremagic
-  <https://pypi.org/project/puremagic/>`_, or `python-magic
-  <https://pypi.org/project/python-magic/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!pipes` module, deprecated in Python 3.11:
-  use the :mod:`subprocess` module instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!ossaudiodev` module, deprecated in Python 3.11:
-  use the `pygame project <https://www.pygame.org/>`_ for audio playback.
-  (Contributed by Victor Stinner in :gh:`104780`.)
-
-* :pep:`594`: Remove the :mod:`!sunau` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!mailcap` module, deprecated in Python 3.11.
-  The :mod:`mimetypes` module provides an alternative.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!spwd` module, deprecated in Python 3.11:
-  the `python-pam project <https://pypi.org/project/python-pam/>`_ can be used
-  instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!nntplib` module, deprecated in Python 3.11:
-  the `PyPI nntplib project <https://pypi.org/project/nntplib/>`_ can be used
-  instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!nis` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!xdrlib` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!msilib` module, deprecated in Python 3.11.
-  (Contributed by Zachary Ware in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!crypt` module and its private :mod:`!_crypt`
-  extension, deprecated in Python 3.11.
-  The :mod:`hashlib` module is a potential replacement for certain use cases.
-  Otherwise, the following PyPI projects can be used:
-
-  * `bcrypt <https://pypi.org/project/bcrypt/>`_:
-    Modern password hashing for your software and your servers.
-  * `passlib <https://pypi.org/project/passlib/>`_:
-    Comprehensive password hashing framework supporting over 30 schemes.
-  * `argon2-cffi <https://pypi.org/project/argon2-cffi/>`_:
-    The secure Argon2 password hashing algorithm.
-  * `legacycrypt <https://pypi.org/project/legacycrypt/>`_:
-    Wrapper to the POSIX crypt library call and associated functionality.
-
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!uu` module, deprecated in Python 3.11:
-  the :mod:`base64` module is a modern alternative.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!aifc` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!audioop` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* :pep:`594`: Remove the :mod:`!chunk` module, deprecated in Python 3.11.
-  (Contributed by Victor Stinner in :gh:`104773`.)
-
-* Remove support for the keyword-argument method of creating
-  :class:`typing.TypedDict` types, deprecated in Python 3.11.
-  (Contributed by Tomas Roun in :gh:`104786`.)
-
-* :pep:`594`: Remove the :mod:`!imghdr` module, deprecated in Python 3.11:
-  use the projects
-  `filetype <https://pypi.org/project/filetype/>`_,
-  `puremagic <https://pypi.org/project/puremagic/>`_,
-  or `python-magic <https://pypi.org/project/python-magic/>`_ instead.
-  (Contributed by Victor Stinner in :gh:`104773`.)
 
 * Remove the untested and undocumented :meth:`!unittest.TestProgram.usageExit`
   method, deprecated in Python 3.11.
