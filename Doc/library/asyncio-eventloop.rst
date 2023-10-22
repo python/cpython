@@ -1393,7 +1393,7 @@ Enabling debug mode
 
 .. attribute:: loop.slow_callback_duration
 
-   When debug mode is enabled, this attribute can be used to set the
+   This attribute can be used to set the
    minimum execution duration in seconds that is considered "slow".
    "Slow" callbacks are logged.
 
