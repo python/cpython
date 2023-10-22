@@ -1,0 +1,6 @@
+fix = true
+extend-exclude = [
+    # Incomplete/unparseable example files
+    "includes/email-mime.py",
+    "includes/email-simple.py",
+]

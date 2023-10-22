@@ -1,15 +1,16 @@
 import sys
 from pathlib import Path
 
-CPYTHON_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.append(str(CPYTHON_ROOT / "Parser"))
-
 from pygments.lexer import RegexLexer, bygroups, include, words
 from pygments.token import (Comment, Keyword, Name, Operator,
                             Punctuation, Text)
-
-from asdl import builtin_types
 from sphinx.highlighting import lexers
+
+CPYTHON_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+sys.path.append(str(CPYTHON_ROOT / "Parser"))
+
+from asdl import builtin_types  # noqa: E402
+
 
 class ASDLLexer(RegexLexer):
     name = "ASDL"

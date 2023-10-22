@@ -37,7 +37,6 @@ REST_ROLE_MAP = {
     'var': 'data',
     'type': 'type',
     'macro': 'macro',
-    'type': 'type',
     'member': 'member',
 }
 
@@ -93,7 +92,6 @@ class Annotations:
         self.stable_abi_data = {}
         with open(stable_abi_file, 'r') as fp:
             for record in csv.DictReader(fp):
-                role = record['role']
                 name = record['name']
                 self.stable_abi_data[name] = record
 

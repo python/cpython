@@ -6,7 +6,9 @@
 # The contents of this file are pickled, so don't put values in the namespace
 # that aren't pickleable (module imports are okay, they're removed automatically).
 
-import sys, os, time
+import os
+import sys
+import time
 sys.path.append(os.path.abspath('tools/extensions'))
 sys.path.append(os.path.abspath('includes'))
 
@@ -26,7 +28,7 @@ extensions = [
 
 # Skip if downstream redistributors haven't installed it
 try:
-    import sphinxext.opengraph
+    import sphinxext.opengraph  # noqa: F401
 except ImportError:
     pass
 else:
@@ -53,7 +55,7 @@ copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
-import patchlevel
+import patchlevel  # noqa: E402
 version, release = patchlevel.get_version_info()
 
 # There are two options for replacing |today|: either, you set today to some
