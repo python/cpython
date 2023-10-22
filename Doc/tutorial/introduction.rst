@@ -428,7 +428,7 @@ type, i.e. it is possible to change their content::
     [1, 8, 27, 64, 125]
 
 You can also add new items at the end of the list, by using
-the :meth:`~list.append` *method* (we will see more about methods later)::
+the :meth:`!list.append` *method* (we will see more about methods later)::
 
    >>> cubes.append(216)  # add the cube of 6
    >>> cubes.append(7 ** 3)  # and the cube of 7
