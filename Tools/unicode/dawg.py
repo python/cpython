@@ -93,13 +93,13 @@ class Dawg:
         # value: word mapping
         self.inverse = {}
 
-    def insert(self, word, data):
+    def insert(self, word, value):
         if not all(0 <= ord(c) < 128 for c in word):
             raise ValueError("Use 7-bit ASCII characters only")
         if word <= self.previous_word:
             raise ValueError("Error: Words must be inserted in alphabetical order.")
-        if data in self.inverse:
-            raise ValueError(f"data {data} is duplicate, got it for word {self.inverse[data]} and now {word}")
+        if value in self.inverse:
+            raise ValueError(f"value {value} is duplicate, got it for word {self.inverse[value]} and now {word}")
 
         # find common prefix between word and previous word
         common_prefix = 0
@@ -113,8 +113,8 @@ class Dawg:
         # point.
         self._minimize(common_prefix)
 
-        self.data[word] = data
-        self.inverse[data] = word
+        self.data[word] = value
+        self.inverse[value] = word
 
         # add the suffix, starting from the correct node mid-way through the
         # graph
