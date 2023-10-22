@@ -172,8 +172,13 @@ share these common features:
   dictionary keys.
 - Objects of these types support efficient pickling via the :mod:`pickle` module.
 
+.. _determining-awareness:
+
 Determining if an Object is Aware or Naive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Date and time objects provide ``is_aware`` and ``is_naive`` attributes that may be used
+to determine if the object is timezone aware or naive respectively.
 
 Objects of the :class:`date` type are always naive.
 
@@ -590,6 +595,24 @@ Instance attributes (read-only):
 .. attribute:: date.day
 
    Between 1 and the number of days in the given month of the given year.
+
+
+.. attribute:: date.is_aware
+
+   Always False.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
+
+
+.. attribute:: date.is_naive
+
+   Always True.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
 
 
 Supported operations:
@@ -1145,6 +1168,24 @@ Instance attributes (read-only):
    time representation.
 
    .. versionadded:: 3.6
+
+
+.. attribute:: datetime.is_aware
+
+   Whether self is timezone aware.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
+
+
+.. attribute:: datetime.is_naive
+
+   Whether self is timezone naive.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
 
 Supported operations:
 
@@ -1752,6 +1793,24 @@ Instance attributes (read-only):
    time representation.
 
    .. versionadded:: 3.6
+
+
+.. attribute:: time.is_aware
+
+   Whether self is timezone aware.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
+
+
+.. attribute:: time.is_naive
+
+   Whether self is timezone naive.
+
+   See also :ref:`determining-awareness`
+
+   .. versionadded:: 3.13
 
 :class:`.time` objects support comparison of :class:`.time` to :class:`.time`,
 where *a* is considered less

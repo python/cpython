@@ -1224,6 +1224,28 @@ class date:
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
+    # Timezone awareness checks
+
+    @property
+    def is_aware(self):
+        """Returns False.
+
+        self is never timezone aware.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return False
+
+    @property
+    def is_naive(self):
+        """Returns True.
+
+        self is always timezone naive.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return True
+
 _date_class = date  # so functions w/ args named "date" can get at the class
 
 date.min = date(1, 1, 1)
@@ -1670,6 +1692,36 @@ class time:
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
+
+    # Timezone awareness checks
+
+    @property
+    def is_aware(self):
+        """Return whether self is timezone aware.
+
+        self is timezone aware if both of the following hold:
+        * self.tzinfo is not None
+        * self.tzinfo.utcoffset(self) does not return None
+
+        Otherwise, self is timezone naive.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return self._tzinfo is not None and self._tzinfo.utcoffset(None) is not None
+
+    @property
+    def is_naive(self):
+        """Return whether self is timezone naive.
+
+        self is timezone naive if any of the following hold:
+        * self.tzinfo is None
+        * self.tzinfo.utcoffset(self) returns None
+
+        Otherwise, self is timezone aware.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return self._tzinfo is None or self._tzinfo.utcoffset(None) is None
 
 _time_class = time  # so functions w/ args named "time" can get at the class
 
@@ -2308,6 +2360,36 @@ class datetime(date):
 
     def __reduce__(self):
         return self.__reduce_ex__(2)
+
+    # Timezone awareness checks
+
+    @property
+    def is_aware(self):
+        """Return whether self is timezone aware.
+
+        self is timezone aware if both of the following hold:
+        * self.tzinfo is not None
+        * self.tzinfo.utcoffset(self) does not return None
+
+        Otherwise, self is timezone naive.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return self._tzinfo is not None and self._tzinfo.utcoffset(self) is not None
+
+    @property
+    def is_naive(self):
+        """Return whether self is timezone naive.
+
+        self is timezone naive if any of the following hold:
+        * self.tzinfo is None
+        * self.tzinfo.utcoffset(self) returns None
+
+        Otherwise, self is timezone aware.
+
+        See https://docs.python.org/3/library/datetime.html#aware-and-naive-objects
+        """
+        return self._tzinfo is None or self._tzinfo.utcoffset(self) is None
 
 
 datetime.min = datetime(1, 1, 1)

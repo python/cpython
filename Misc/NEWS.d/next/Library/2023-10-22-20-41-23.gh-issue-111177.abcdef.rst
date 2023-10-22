@@ -1,0 +1,4 @@
+:mod:`datetime` adds timezone awareness checks via :attr:`datetime.date.is_aware`,
+:attr:`datetime.date.is_naive`, :attr:`datetime.datetime.is_aware`,
+:attr:`datetime.datetime.is_naive`, :attr:`datetime.time.is_aware`, and
+:attr:`datetime.time.is_naive`
