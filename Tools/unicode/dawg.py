@@ -80,12 +80,17 @@ class Dawg:
         # Here is a list of nodes that have not been checked for duplication.
         self.unchecked_nodes = []
 
-        # Here is a list of unique nodes that have been checked for
-        # duplication.
+        # To deduplicate, maintain a dictionary with
+        # minimized_nodes[canonical_node] is canonical_node.
+        # Based on __hash__ and __eq__, minimized_nodes[n] is the
+        # canonical node equal to n.
+        # In other words, self.minimized_nodes[x] == x for all nodes found in
+        # the dict.
         self.minimized_nodes = {}
 
-        # Here is the data associated with all the nodes
+        # word: value mapping
         self.data = {}
+        # value: word mapping
         self.inverse = {}
 
     def insert(self, word, data):
@@ -149,6 +154,8 @@ class Dawg:
             self.unchecked_nodes.pop()
 
     def _lookup(self, word):
+        """ Return an integer 0 <= k < number of strings in dawg
+        where word is the kth successful traversal of the dawg. """
         node = self.root
         skipped = 0  # keep track of number of final nodes that we skipped
         index = 0
