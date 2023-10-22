@@ -1,17 +1,30 @@
+import io
 import os
+import signal
+import sys
 import time
 
 from test.support import MS_WINDOWS
-from .results import TestResults
+from .cmdline import Namespace
+from .results import TestResults, State
 from .runtests import RunTests
-from .utils import print_warning
+from .single import PROGRESS_MIN_TIME
+from .utils import print_warning, format_duration
 
 if MS_WINDOWS:
     from .win_utils import WindowsLoadTracker
 
+STATE_OK = (State.PASSED,)
+STATE_WARNING = (State.SKIPPED, State.ENV_CHANGED, State.RESOURCE_DENIED)
 
 class Logger:
-    def __init__(self, results: TestResults, quiet: bool, pgo: bool):
+    ERROR_COLOR = '\033[1m\033[31m'
+    INFO_COLOR = '\033[33m'
+    GOOD_COLOR = '\033[1m\033[32m'
+    RESET_COLOR = '\033[0m'
+
+    def __init__(self, results: TestResults, quiet: bool, pgo: bool,
+                 color: bool):
         self.start_time = time.perf_counter()
         self.test_count_text = ''
         self.test_count_width = 3
@@ -19,14 +32,55 @@ class Logger:
         self._results: TestResults = results
         self._quiet: bool = quiet
         self._pgo: bool = pgo
+        if os.environ.get('NO_COLOR', '') not in ('', '0'):
+            color = False
+        self.color = color
+        self.load_threshold = os.process_cpu_count()
 
-    def log(self, line: str = '') -> None:
+    def error(self, s):
+        if not self.color:
+            return s
+        return f'{self.ERROR_COLOR}{s}{self.RESET_COLOR}'
+
+    def warning(self, s):
+        if not self.color:
+            return s
+        return f'{self.INFO_COLOR}{s}{self.RESET_COLOR}'
+
+    def good(self, s):
+        if not self.color:
+            return s
+        return f'{self.GOOD_COLOR}{s}{self.RESET_COLOR}'
+
+    def load_color(self, load_avg):
+        load = f"{load_avg:.2f}"
+        if load_avg < self.load_threshold:
+            load = self.good(load)
+        elif load_avg < self.load_threshold * 2:
+            load = self.warning(load)
+        else:
+            load = self.error(load)
+        return load
+
+    def state_color(self, text, state):
+        if state is None or not self.color:
+            return text
+        if state in STATE_OK:
+            return self.good(text)
+        elif state in STATE_WARNING:
+            return self.warning(text)
+        else:
+            return self.error(text)
+
+    def log(self, line: str = '') -> int:
         empty = not line
 
-        # add the system load prefix: "load avg: 1.80 "
+        # add the system load prefix: " 1.80 "
+
         load_avg = self.get_load_avg()
         if load_avg is not None:
-            line = f"load avg: {load_avg:.2f} {line}"
+            load = self.load_color(load_avg)
+            line = f"{load} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
         log_time = time.perf_counter() - self.start_time
@@ -38,7 +92,6 @@ class Logger:
         line = f"{formatted_log_time} {line}"
         if empty:
             line = line[:-1]
-
         print(line, flush=True)
 
     def get_load_avg(self) -> float | None:
@@ -51,17 +104,38 @@ class Logger:
             return self.win_load_tracker.getloadavg()
         return None
 
-    def display_progress(self, test_index: int, text: str) -> None:
+    def display_progress(self, test_index: int, text: str,
+                         state: State|None = None,
+                         info_text: str|None = None,
+                         error_text: str|None = None,
+                         running: list[tuple[str, str]]|None = None,
+                         stdout: str|None = None) -> None:
         if self._quiet:
             return
         results = self._results
+        text = self.state_color(text, state)
+        if info_text:
+            text = f"{text} ({self.warning(info_text)})"
+        if error_text:
+            text = f"{text} ({self.error(error_text)})"
+
+        # To avoid spamming the output, only report running tests if they
+        # are taking a long time.
+        if running:
+            running_tests = ', '.join(f'{test} {self.warning(format_duration(dt))}'
+                for dt, test in running if dt >= PROGRESS_MIN_TIME)
+            if running_tests:
+                text += f' -- running ({running_tests})'
 
         # "[ 51/405/1] test_tcl passed"
-        line = f"{test_index:{self.test_count_width}}{self.test_count_text}"
+        passed = self.good(f"{test_index:{self.test_count_width}}")
+        line = f"{passed}{self.test_count_text}"
         fails = len(results.bad) + len(results.env_changed)
         if fails and not self._pgo:
-            line = f"{line}/{fails}"
+            line = f"{line}/{self.error(fails)}"
         self.log(f"[{line}] {text}")
+        if stdout:
+            print(stdout, flush=True)
 
     def set_tests(self, runtests: RunTests) -> None:
         if runtests.forever:
@@ -87,3 +161,156 @@ class Logger:
             return
         self.win_load_tracker.close()
         self.win_load_tracker = None
+
+
+class StatusRemovingWrapper(io.TextIOWrapper):
+    # Set status_size here to avoid having to override __init__.
+    status_size = 0
+    def write(self, msg):
+        if self.status_size:
+            # Clear the last status report, by moving up the number of lines
+            # of the status report and clearing the screen below it. This
+            # will mess up if something wrote new lines to the screen since
+            # the last status report without going through here (e.g.
+            # writing directly to the underlying buffer, or the fd).
+            super().write(f'\033[{self.status_size}A' + '\033[0J')
+        self.status_size = 0
+        super().write(msg)
+
+
+def replace_stdout():
+    assert type(sys.stdout) is io.TextIOWrapper
+    old = sys.stdout
+    new = StatusRemovingWrapper(old.buffer, encoding=old.encoding,
+                                errors=old.errors,
+                                line_buffering=old.line_buffering,
+                                write_through=old.write_through)
+    sys.stdout = new
+
+
+class FancyLogger(Logger):
+    """A logger with more compact, colorized output."""
+    def __init__(self, results: TestResults, quiet: bool, pgo: bool,
+                 color: bool):
+        # If NO_COLOR is set to something other than '' or '0', don't use
+        # color (regardless of options).
+        if color is None:
+            color = True
+        self.setup_terminal()
+        # Import here to avoid circular import issues.
+        from . import run_workers
+        run_workers.PROGRESS_UPDATE = 5
+        super().__init__(results, quiet, pgo, color)
+
+    def setup_terminal(self):
+        import termios
+        def set_columns(unused_sig, unused_frame):
+            self.lines, self.columns = termios.tcgetwinsize(sys.stdout.fileno())
+        set_columns(None, None)
+        signal.signal(signal.SIGWINCH, set_columns)
+        replace_stdout()
+
+    def display_progress(self, test_index: int, text: str,
+                         state: State|None = None,
+                         info_text: str|None = None,
+                         error_text: str|None = None,
+                         running: list[tuple[str, str]]|None = None,
+                         stdout: str|None = None) -> None:
+        if self._quiet:
+            return
+
+        # If the test is skipped, extra info might be in the test output. We
+        # want to display just the skip reason, though, so that needs to be
+        # extracted.
+        if (state == State.SKIPPED and not info_text and
+            stdout and ' skipped -- ' in stdout):
+            _, _, new_info_text = stdout.partition(' skipped -- ')
+            stdout = None
+            if info_text:
+                info_text = f'{info_text}; {new_info_text}'
+            else:
+                info_text = new_info_text
+
+        # We don't want any of the text to wrap (or it'll mess up the
+        # in-place update logic), so if the log line is too long, emit it on
+        # its own line. The logging process probably adds no more than 30
+        # visible characters, and 4 characters when printed on its own.
+        linelen = len(text) + 4
+        text = self.state_color(text, state)
+        if info_text:
+            linelen += len(info_text) + 1
+            text = f'{text} ({self.warning(info_text)})'
+        if error_text:
+            linelen += len(error_text) + 1
+            text = f'{text} ({self.error(error_text)})'
+
+        # If the test does something other than pass uneventfully, or if
+        # there's test output we need to show, make sure we don't overwrite
+        # it on the next print. If it might wrap even on a line of its own,
+        # do the same thing.
+        if ((state is not None and state not in STATE_OK and
+             state != State.SKIPPED) or stdout or linelen > self.columns):
+            super().display_progress(test_index, text, stdout=stdout)
+            text = ''
+            linelen = 0
+
+        if linelen + 26 > self.columns:
+            lines = ['', f'     {text}']
+        else:
+            lines = [text]
+        if running:
+            # Don't fill more than half the screen with running tests (in
+            # case someone runs with `-j 100`). The list is already sorted
+            # (descending) by running time, so the longest running ones will
+            # be shown.
+            for dt, test in running[:self.lines // 2]:
+                duration = format_duration(dt)
+                visible_line = f" ... running: {test} ({duration})"
+                duration = self.warning(duration)
+                # Truncate the status lines in case very long test names
+                # don't fit, so we don't end up wrapping lines.
+                diff = len(visible_line) - self.columns
+                if diff > 1:
+                    if diff > 5:
+                        test = test[:-diff] + '[...]'
+                    line = f" ... r: {test} ({duration})"
+                else:
+                    line = f" ... running: {test} ({duration})"
+                lines.append(line)
+        report = '\n'.join(lines)
+        # Don't pass state, info_text, error_text or running since we've
+        # already incorporated them in 'text'.
+        super().display_progress(test_index, report, state=state)
+        sys.stdout.status_size = report.count('\n') + 1
+
+
+def detect_vt100_capability():
+    # Rough, "good enough" vt100 detection.
+    if not sys.stdout.isatty():
+        return False
+    try:
+        import termios
+    except ImportError:
+        return False
+    try:
+        termios.tcgetwinsize(sys.stdout.fileno())
+    except termios.error:
+        return False
+    term = os.environ.get('TERM')
+    if not term.startswith(('vt100', 'xterm', 'screen')):
+        # Should we parse terminfo capabilities? Or just add terminals to
+        # the list as they come up? We don't want too many dependencies.
+        return False
+    return True
+
+
+def create_logger(results: TestResults, ns: Namespace) -> Logger:
+    reporter = ns.progress_reporter
+    if (reporter == 'detect' and ns.use_mp is not None and
+        detect_vt100_capability()):
+        logger_class = FancyLogger
+    elif reporter == 'fancy':
+        logger_class = FancyLogger
+    else:
+        logger_class = Logger
+    return logger_class(results, ns.quiet, ns.pgo, ns.color)

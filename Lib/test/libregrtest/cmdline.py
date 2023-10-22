@@ -172,6 +172,8 @@ class Namespace(argparse.Namespace):
         self.threshold = None
         self.fail_rerun = False
         self.tempdir = None
+        self.progress_reporter = None
+        self.color = None
         self._add_python_opts = True
         self.xmlpath = None
         self.single_process = False
@@ -255,6 +257,10 @@ def _create_parser():
                        help='print the slowest 10 tests')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
+    group.add_argument('--progress_reporter',
+                       choices=['plain', 'fancy', 'detect'], default='detect')
+    group.add_argument('--color', action=argparse.BooleanOptionalAction,
+                       help='use color in the progress reports')
 
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
@@ -484,6 +490,8 @@ def _parse_args(args, **kwargs):
         parser.error("--pgo/-v don't go together!")
     if ns.pgo_extended:
         ns.pgo = True  # pgo_extended implies pgo
+    if ns.progress_reporter == 'fancy' and ns.use_mp is None:
+        ns.use_mp = 0
 
     if ns.nowindows:
         print("Warning: the --nowindows (-n) option is deprecated. "

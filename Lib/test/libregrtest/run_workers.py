@@ -453,12 +453,11 @@ def get_running(workers: list[WorkerThread]) -> str | None:
         if not test_name:
             continue
         dt = time.monotonic() - worker.start_time
-        if dt >= PROGRESS_MIN_TIME:
-            text = f'{test_name} ({format_duration(dt)})'
-            running.append(text)
+        running.append((dt, test_name))
     if not running:
         return None
-    return f"running ({len(running)}): {', '.join(running)}"
+    running.sort(reverse=True)
+    return running
 
 
 class RunWorkers:
@@ -543,23 +542,27 @@ class RunWorkers:
                 # display progress
                 running = get_running(self.workers)
                 if running:
-                    self.log(running)
+                    self.display_progress(
+                        self.test_index, '', running=running)
 
-    def display_result(self, mp_result: MultiprocessResult) -> None:
+    def display_result(self, mp_result: MultiprocessResult, stdout: str|None) -> None:
         result = mp_result.result
         pgo = self.runtests.pgo
 
         text = str(result)
+        info_text = error_text = None
         if mp_result.err_msg:
             # WORKER_BUG
-            text += ' (%s)' % mp_result.err_msg
+            error_text = mp_result.err_msg
         elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
-            text += ' (%s)' % format_duration(result.duration)
-        if not pgo:
+            info_text = format_duration(result.duration)
+        if pgo:
+            running = None
+        else:
             running = get_running(self.workers)
-            if running:
-                text += f' -- {running}'
-        self.display_progress(self.test_index, text)
+        self.display_progress(self.test_index, text, state=result.state,
+                              info_text=info_text, error_text=error_text,
+                              running=running, stdout=stdout)
 
     def _process_result(self, item: QueueOutput) -> TestResult:
         """Returns True if test runner must stop."""
@@ -575,7 +578,6 @@ class RunWorkers:
         mp_result = item[1]
         result = mp_result.result
         self.results.accumulate_result(result, self.runtests)
-        self.display_result(mp_result)
 
         # Display worker stdout
         if not self.runtests.output_on_failure:
@@ -585,9 +587,10 @@ class RunWorkers:
             show_stdout = (result.state != State.PASSED)
         if show_stdout:
             stdout = mp_result.worker_stdout
-            if stdout:
-                print(stdout, flush=True)
+        else:
+            stdout = None
 
+        self.display_result(mp_result, stdout=stdout)
         return result
 
     def run(self) -> None:
