@@ -45,11 +45,16 @@ class DawgNode:
         return "_".join(arr)
     __repr__ = __str__
 
+    def _as_tuple(self):
+        edges = sorted(self.edges.items())
+        edge_tuple = tuple((label, node.id) for label, node in edges)
+        return (self.final, edge_tuple)
+
     def __hash__(self):
-        return hash(str(self))
+        return hash(self._as_tuple())
 
     def __eq__(self, other):
-        return str(self) == str(other)
+        return self._as_tuple() == other._as_tuple()
 
     @cached_property
     def num_reachable_linear(self):
