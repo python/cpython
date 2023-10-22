@@ -14,8 +14,6 @@
 from collections import defaultdict
 from functools import cached_property
 
-DEBUG = False
-
 
 # This class represents a node in the directed acyclic word graph (DAWG). It
 # has a list of edges to other nodes. It has functions for testing whether it
@@ -478,9 +476,8 @@ def build_compression_dawg(ucdata):
         d.insert(name, value)
     packed, pos_to_code, reversedict = d.finish()
     print("size of dawg [KiB]", round(len(packed) / 1024, 2))
-    if DEBUG:
-        # check that lookup and inverse_lookup work correctly on the input data
-        for name, value in ucdata:
-            assert lookup(packed, pos_to_code, name.encode('ascii')) == value
-            assert inverse_lookup(packed, reversedict, value) == name.encode('ascii')
+    # check that lookup and inverse_lookup work correctly on the input data
+    for name, value in ucdata:
+        assert lookup(packed, pos_to_code, name.encode('ascii')) == value
+        assert inverse_lookup(packed, reversedict, value) == name.encode('ascii')
     return packed, pos_to_code
