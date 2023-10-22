@@ -1938,6 +1938,9 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return False
         return self._scope_id == getattr(other, '_scope_id', None)
 
+    def __reduce__(self):
+        return (self.__class__, (str(self),))
+
     @property
     def scope_id(self):
         """Identifier of a particular zone of the address's scope.
