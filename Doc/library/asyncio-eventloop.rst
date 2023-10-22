@@ -1395,7 +1395,7 @@ Enabling debug mode
 
    This attribute can be used to set the
    minimum execution duration in seconds that is considered "slow".
-   "Slow" callbacks are logged.
+   When debug mode is enabled, "slow" callbacks are logged.
 
    Default value is 100 milliseconds.
 
