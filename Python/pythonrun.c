@@ -1147,8 +1147,15 @@ PyRun_StringFlags(const char *str, int start, PyObject *globals,
     mod = _PyParser_ASTFromString(
             str, &_Py_STR(anon_string), start, flags, arena);
 
-    if (mod != NULL)
-        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, arena, NULL);
+    PyObject* source = PyUnicode_FromString(str);
+    if (!source) {
+        goto exit;
+    }
+    if (mod != NULL) {
+        ret = run_mod(mod, &_Py_STR(anon_string), globals, locals, flags, arena, source);
+    }
+    Py_DECREF(source);
+exit:
     _PyArena_Free(arena);
     return ret;
 }

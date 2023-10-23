@@ -683,6 +683,16 @@ class CmdLineTest(unittest.TestCase):
                         b'SyntaxError: source code cannot contain null bytes'
                     ]
                 )
+    
+    def test_source_lines_are_shown_when_running_source(self):
+        _, _, stderr = assert_python_failure("-c", "1/0")
+        expected_lines = [
+            b'Traceback (most recent call last):',
+            b'  File "<stdin>", line 1, in <module>',
+            b'    1/0',
+            b'    ~^~',
+            b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected_lines)
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
