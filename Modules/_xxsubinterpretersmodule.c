@@ -456,6 +456,84 @@ PyDoc_STRVAR(set___main___attrs_doc,
 \n\
 Bind the given attributes in the interpreter's __main__ module.");
 
+static PyObject *
+interp_get___main___attrs(PyObject *self, PyObject *args)
+{
+    PyObject *id, *names;
+    PyObject *dflt = Py_None;
+    if (!PyArg_ParseTuple(args, "OO|O:" MODULE_NAME ".get___main___attrs",
+                          &id, &names, &dflt))
+    {
+        return NULL;
+    }
+
+    // Look up the interpreter.
+    PyInterpreterState *interp = PyInterpreterID_LookUp(id);
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    // Prep the result.
+    PyObject *found = PyDict_New();
+    if (found == NULL) {
+        return NULL;
+    }
+
+    // Set up the shared ns.
+    _PyXI_namespace *shared = _PyXI_NamespaceFromNames(names);
+    if (shared == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_ValueError, "expected non-empty list of names");
+        }
+        Py_DECREF(found);
+        return NULL;
+    }
+
+    _PyXI_session session = {0};
+
+    // Prep and switch interpreters, including apply the updates.
+    if (_PyXI_Enter(&session, interp, NULL) < 0) {
+        Py_DECREF(found);
+        assert(!PyErr_Occurred());
+        _PyXI_ApplyCapturedException(&session, NULL);
+        assert(PyErr_Occurred());
+        return NULL;
+    }
+
+    // Extract the requested attrs from __main__.
+    int res = _PyXI_FillNamespaceFromDict(shared, session.main_ns, &session);
+
+    // Clean up and switch back.
+    _PyXI_Exit(&session);
+
+    if (res == 0) {
+        assert(!PyErr_Occurred());
+        // Copy the objects into the result dict.
+        if (_PyXI_ApplyNamespace(shared, found, dflt) < 0) {
+            Py_CLEAR(found);
+        }
+    }
+    else {
+        if (!PyErr_Occurred()) {
+            _PyXI_ApplyCapturedException(&session, NULL);
+            assert(PyErr_Occurred());
+        }
+        else {
+            assert(!_PyXI_HasCapturedException(&session));
+        }
+        Py_CLEAR(found);
+    }
+
+    _PyXI_FreeNamespace(shared);
+    return found;
+}
+
+PyDoc_STRVAR(get___main___attrs_doc,
+"get___main___attrs(id, names, default=None, /)\n\
+\n\
+Look up the given attributes in the interpreter's __main__ module.\n\
+Return the default if not found.");
+
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
                    const char *expected)
@@ -754,6 +832,8 @@ static PyMethodDef module_functions[] = {
 
     {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
      METH_VARARGS, set___main___attrs_doc},
+    {"get___main___attrs",        _PyCFunction_CAST(interp_get___main___attrs),
+     METH_VARARGS, get___main___attrs_doc},
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 

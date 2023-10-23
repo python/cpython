@@ -112,6 +112,16 @@ class Interpreter:
         ns = dict(ns, **kwargs) if ns is not None else kwargs
         _interpreters.set___main___attrs(self._id, ns)
 
+    # XXX getattr?
+    def get(self, name, default=None, /):
+        """Return the attr value from the interpreter's __main__.
+
+        The value must be shareable.
+        """
+        found = _interpreters.get___main___attrs(self._id, (name,), default)
+        assert len(found) == 1, found
+        return found[name]
+
     # XXX Rename "run" to "exec"?
     # XXX Do not allow init to overwrite (by default)?
     def run(self, src_str, /, *, init=None):

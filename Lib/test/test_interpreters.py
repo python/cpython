@@ -526,6 +526,36 @@ class TestInterpreterBind(TestBase):
             interp.run('print(spam)')
 
 
+class TestInterpreterGet(TestBase):
+
+    def test_empty(self):
+        interp = interpreters.create()
+        with self.assertRaises(TypeError):
+            interp.get()
+
+    def test_found(self):
+        interp = interpreters.create()
+        obj1 = interp.get('__name__')
+        interp.bind(spam=42)
+        obj2 = interp.get('spam')
+
+        self.assertEqual(obj1, '__main__')
+        self.assertEqual(obj2, 42)
+
+    def test_not_found(self):
+        interp = interpreters.create()
+        obj1 = interp.get('spam')
+        obj2 = interp.get('spam', 'eggs')
+
+        self.assertIs(obj1, None)
+        self.assertEqual(obj2, 'eggs')
+
+    def test_not_shareable(self):
+        interp = interpreters.create()
+        with self.assertRaises(ValueError):
+            interp.get('__builtins__')
+
+
 class TestInterpreterRun(TestBase):
 
     def test_success(self):
