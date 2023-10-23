@@ -572,6 +572,13 @@ can be overridden by the local file.
    namespace contains all the (global and local) names found in the current
    scope.
 
+   .. note::
+
+      Because interact creates a new global namespace with the current global and
+      local namespace, assignment to variables will not affect the original
+      namespaces. However, modification to the mutable objects will be reflected
+      in the original namespaces.
+
    .. versionadded:: 3.2
 
 .. _debugger-aliases:

@@ -754,6 +754,36 @@ def test_pdb_where_command():
     (Pdb) continue
     """
 
+def test_pdb_interact_command():
+    """Test interact command
+
+    >>> g = 0
+    >>> dict_g = {}
+
+    >>> def test_function():
+    ...     x = 1
+    ...     lst_local = []
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'interact',
+    ...     'x',
+    ...     'g',
+    ...     'x = 2',
+    ...     'g = 3',
+    ...     'dict_g["a"] = True',
+    ...     'lst_local.append(x)',
+    ...     'exit()',
+    ...     'p x',
+    ...     'p g',
+    ...     'p dict_g',
+    ...     'p lst_local',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    """
+
 def test_convenience_variables():
     """Test convenience variables
 
