@@ -1315,11 +1315,5 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
 
 
-class Test_testcapi(unittest.TestCase):
-    locals().update((name, getattr(_testcapi, name))
-                    for name in dir(_testcapi)
-                    if name.startswith('test_') and name.endswith('_code'))
-
-
 if __name__ == "__main__":
     unittest.main()
