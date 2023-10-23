@@ -103,6 +103,11 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
+    def bind(self, ns=None, /, **kwargs):
+        """Bind the given values into the interpreter's __main__."""
+        ns = dict(ns, **kwargs) if ns is not None else kwargs
+        _interpreters.bind(self._id, ns)
+
     # XXX Rename "run" to "exec"?
     # XXX Do not allow init to overwrite (by default)?
     def run(self, src_str, /, *, init=None):
