@@ -765,7 +765,7 @@ def test_pdb_interact_command():
     ...     lst_local = []
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
     ...     'interact',
     ...     'x',
     ...     'g',
@@ -782,6 +782,29 @@ def test_pdb_interact_command():
     ... ]):
     ...    test_function()
     --Return--
+    > <doctest test.test_pdb.test_pdb_interact_command[2]>(4)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) interact
+    *pdb interact start*
+    ... x
+    1
+    ... g
+    0
+    ... x = 2
+    ... g = 3
+    ... dict_g["a"] = True
+    ... lst_local.append(x)
+    ... exit()
+    *exit from pdb interact command*
+    (Pdb) p x
+    1
+    (Pdb) p g
+    0
+    (Pdb) p dict_g
+    {'a': True}
+    (Pdb) p lst_local
+    [2]
+    (Pdb) continue
     """
 
 def test_convenience_variables():
