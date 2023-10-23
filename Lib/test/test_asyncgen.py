@@ -1778,33 +1778,25 @@ class TestIssueGH74956(unittest.TestCase):
             async def consumer():
                 while True:
                     await asyncio.sleep(0)
-                    yield
+                    if (yield) is None:
+                        break
 
-            agenerator = consumer()
-            await agenerator.asend(None)
-            fa = asyncio.create_task(agenerator.asend("A"))
-            fb = asyncio.create_task(agenerator.asend("B"))
-            await fa
-            with self.assertRaises(RuntimeError) as err:
-                await fb
-            assert "already running" in str(err.exception)
-
-            agenerator = consumer()
-            await agenerator.asend(None)
-            fa = asyncio.create_task(agenerator.asend("A"))
-            fb = asyncio.create_task(agenerator.athrow(EOFError))
-            await fa
-            with self.assertRaises(RuntimeError) as err:
-                await fb
-            assert "already running" in str(err.exception)
-
-            await agenerator.asend(None)
-            fa = asyncio.create_task(agenerator.asend("A"))
-            fb = asyncio.create_task(agenerator.aclose())
-            await fa
-            with self.assertRaises(RuntimeError) as err:
-                await fb
-            assert "already running" in str(err.exception)
+            # try different combinations of asend, athrow, aclose
+            # which are clashing with an asend which is already running
+            # (and awaiting sleep(0))
+            for op, args in [("asend", ["A"]), ("athrow", [EOFError]), ("aclose", [])]:
+                agenerator = consumer()
+                await agenerator.asend(None) # start it
+                # fa will hit sleep and then fb will run
+                fa = asyncio.create_task(agenerator.asend("A"))
+                coro = getattr(agenerator, op)(*args)
+                fb = asyncio.create_task(coro)
+                await fa
+                with self.assertRaises(RuntimeError) as err:
+                    await fb
+                assert "already running" in str(err.exception)
+                with self.assertRaises(StopAsyncIteration):
+                    await agenerator.asend(None)  # close it
 
         self.loop.run_until_complete(run())
 
