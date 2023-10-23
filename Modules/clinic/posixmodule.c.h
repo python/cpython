@@ -7208,10 +7208,6 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     _return_value = os_write_impl(module, fd, &data);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -7808,10 +7804,6 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
@@ -10252,10 +10244,6 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (PyObject_GetBuffer(args[2], &value, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&value, 'C')) {
-        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
@@ -12415,4 +12403,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=274174066fff3256 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a05abdc48e3def44 input=a9049054013a1b77]*/
