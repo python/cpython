@@ -1002,29 +1002,21 @@ PyUnstable_Optimizer_NewUOpOptimizer(void)
 
 #define K 6
 
+#define SEED 20221211
+
 /* TO DO -- Use more modern hash functions with better distribution of bits */
-static uint32_t
-address_to_hash(void *ptr, uint32_t seed, uint32_t multiplier) {
+static uint64_t
+address_to_hash(void *ptr) {
     assert(ptr != NULL);
-    uint32_t uhash = seed;
+    uint64_t uhash = SEED;
     uintptr_t addr = (uintptr_t)ptr;
     for (int i = 0; i < SIZEOF_VOID_P; i++) {
         uhash ^= addr & 255;
-        uhash *= multiplier;
+        uhash *= (uint64_t)_PyHASH_MULTIPLIER;
         addr >>= 8;
     }
     return uhash;
 }
-
-static const uint32_t multipliers[2] = {
-    _PyHASH_MULTIPLIER,
-    110351524,
-};
-
-static const uint32_t seeds[2] = {
-    20221211,
-    2147483647,
-};
 
 void
 _Py_BloomFilter_Init(_PyBloomFilter *bloom)
@@ -1034,17 +1026,20 @@ _Py_BloomFilter_Init(_PyBloomFilter *bloom)
     }
 }
 
+/* We want K hash functions that each set 1 bit.
+ * A hash function that sets 1 bit in M bits can be trivially
+ * derived from a log2(M) bit hash function.
+ * So we extract 8 (log2(256)) bits at a time from
+ * the 64bit hash. */
 void
 _Py_BloomFilter_Add(_PyBloomFilter *bloom, void *ptr)
 {
-    /* Set k (6) bits */
-    for (int i = 0; i < 2; i++) {
-        uint32_t hash = address_to_hash(ptr, seeds[i], multipliers[i]);
-        for (int j = 0; j < (K/2); j++) {
-            uint8_t bits = hash & 255;
-            bloom->bits[bits >> 5] |= (1 << (bits&31));
-            hash >>= 8;
-        }
+    uint64_t hash = address_to_hash(ptr);
+    assert(K <= 8);
+    for (int i = 0; i < K; i++) {
+        uint8_t bits = hash & 255;
+        bloom->bits[bits >> 5] |= (1 << (bits&31));
+        hash >>= 8;
     }
 }
 
