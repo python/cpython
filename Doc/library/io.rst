@@ -733,7 +733,7 @@ than raw I/O does.
       Return bytes from the current position onwards without advancing the position.
       At least one byte of data is returned if not at EOF.
       Return an empty :class:`bytes` object at EOF.
-      If the size argument is less than one or larger than the number of available bytes,
+      If the size argument is negative or larger than the number of available bytes,
       a copy of the buffer from the current position until the end is returned.
 
       .. versionadded:: 3.13
