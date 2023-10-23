@@ -2089,7 +2089,7 @@ class JumpTestCase(unittest.TestCase):
         else:
             output.append(5)
 
-    @jump_test(6, 2, [5, 5, 6])
+    @jump_test(6, 5, [5, 5, 6])
     def test_jump_is_not_none_backwards(output):
         x = None
         if x is not None:
