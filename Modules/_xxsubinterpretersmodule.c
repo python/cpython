@@ -201,13 +201,64 @@ exceptions_init(PyObject *mod)
     return 0;
 }
 
-static int
-_run_script(PyInterpreterState *interp,
-            const char *codestr, Py_ssize_t codestrlen,
-            _PyXI_namespace *shared, _PyXI_exception_info *sharedexc, int flags)
+static PyThreadState *
+_enter_interpreter(PyInterpreterState *interp)
 {
-    PyObject *excval = NULL;
-    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    // Switch to interpreter.
+    PyThreadState *save_tstate = NULL;
+    PyThreadState *tstate = NULL;
+    if (interp != PyInterpreterState_Get()) {
+        tstate = PyThreadState_New(interp);
+        tstate->_whence = _PyThreadState_WHENCE_EXEC;
+        // XXX Possible GILState issues?
+        save_tstate = PyThreadState_Swap(tstate);
+    }
+    return save_tstate;
+}
+
+static int
+_exit_interpreter(PyInterpreterState *interp, PyThreadState *save_tstate,
+                  int errcode, _PyXI_exception_info *exc)
+{
+    int res = 0;
+    if (errcode != _PyXI_ERR_NO_ERROR) {
+        assert(exc != NULL);
+        PyObject *excval = PyErr_GetRaisedException();
+        *exc = (_PyXI_exception_info){ .interp = interp };
+        const char *failure = _PyXI_InitExceptionInfo(exc, excval, errcode);
+        if (failure != NULL) {
+            fprintf(stderr,
+                    "RunFailedError: script raised an uncaught exception (%s)",
+                    failure);
+        }
+        else {
+            res = -1;
+        }
+        if (excval != NULL) {
+            // XXX Instead, store the rendered traceback on sharedexc,
+            // attach it to the exception when applied,
+            // and teach PyErr_Display() to print it.
+            PyErr_Display(NULL, excval, NULL);
+            Py_DECREF(excval);
+        }
+        assert(!PyErr_Occurred());
+    }
+
+    // Switch back.
+    if (save_tstate != NULL) {
+        PyThreadState *tstate = PyThreadState_Get();
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(save_tstate);
+        PyThreadState_Delete(tstate);
+    }
+
+    return res;
+}
+
+static int
+_enter_interpreter_main(PyInterpreterState *interp, PyObject **p_ns)
+{
+    assert(PyInterpreterState_Get() == interp);
 
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
         assert(PyErr_Occurred());
@@ -215,30 +266,33 @@ _run_script(PyInterpreterState *interp,
         // be more efficient to leave the exception in place and return
         // immediately.  However, life is simpler if we don't.
         PyErr_Clear();
-        errcode = _PyXI_ERR_ALREADY_RUNNING;
-        goto error;
+        return _PyXI_ERR_ALREADY_RUNNING;
     }
 
     PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
-        goto error;
+        return _PyXI_ERR_UNCAUGHT_EXCEPTION;
     }
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL) {
-        goto error;
-    }
-    Py_INCREF(ns);
-
-    // Apply the cross-interpreter data.
-    if (shared != NULL) {
-        if (_PyXI_ApplyNamespace(shared, ns) != 0) {
-            Py_DECREF(ns);
-            goto error;
-        }
+        return _PyXI_ERR_UNCAUGHT_EXCEPTION;
     }
 
-    // Run the script/code/etc.
+    *p_ns = Py_NewRef(ns);
+    return _PyXI_ERR_NO_ERROR;
+}
+
+static void
+_exit_interpreter_main(PyInterpreterState *interp, PyObject *ns)
+{
+    Py_XDECREF(ns);
+    _PyInterpreterState_SetNotRunningMain(interp);
+}
+
+static int
+_run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
+{
     PyObject *result = NULL;
     if (flags & RUN_TEXT) {
         result = PyRun_StringFlags(codestr, Py_file_input, ns, ns, NULL);
@@ -253,46 +307,11 @@ _run_script(PyInterpreterState *interp,
     else {
         Py_UNREACHABLE();
     }
-    Py_DECREF(ns);
     if (result == NULL) {
-        goto error;
+        return -1;
     }
-    else {
-        Py_DECREF(result);  // We throw away the result.
-    }
-    _PyInterpreterState_SetNotRunningMain(interp);
-
-    *sharedexc = (_PyXI_exception_info){ NULL };
+    Py_DECREF(result);  // We throw away the result.
     return 0;
-
-error:
-    assert(errcode != _PyXI_ERR_NO_ERROR);
-    if (errcode == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        assert(PyErr_Occurred());
-        excval = PyErr_GetRaisedException();
-    }
-    else {
-        assert(!PyErr_Occurred());
-    }
-    const char *failure = _PyXI_InitExceptionInfo(sharedexc, excval, errcode);
-    if (failure != NULL) {
-        fprintf(stderr,
-                "RunFailedError: script raised an uncaught exception (%s)",
-                failure);
-    }
-    if (sharedexc->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        assert(excval != NULL);
-        // XXX Instead, store the rendered traceback on sharedexc,
-        // attach it to the exception when applied,
-        // and teach PyErr_Display() to print it.
-        PyErr_Display(NULL, excval, NULL);
-    }
-    Py_XDECREF(excval);
-    if (sharedexc->code != _PyXI_ERR_ALREADY_RUNNING) {
-        _PyInterpreterState_SetNotRunningMain(interp);
-    }
-    assert(!PyErr_Occurred());
-    return -1;
 }
 
 static int
@@ -300,47 +319,69 @@ _run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
                     PyObject *shareables, int flags)
 {
-    module_state *state = get_module_state(mod);
-    assert(state != NULL);
-
+    // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *shared = _PyXI_NamespaceFromDict(shareables);
     if (shared == NULL && PyErr_Occurred()) {
         return -1;
     }
+    _PyXI_exception_info exc;
 
     // Switch to interpreter.
-    PyThreadState *save_tstate = NULL;
-    PyThreadState *tstate = NULL;
-    if (interp != PyInterpreterState_Get()) {
-        tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
+    PyThreadState *save_tstate = _enter_interpreter(interp);
+    PyObject *ns = NULL;
+    _PyXI_errcode errcode = _enter_interpreter_main(interp, &ns);
+    if (errcode != _PyXI_ERR_NO_ERROR) {
+        goto error;
+    }
+    errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+
+    // Apply the cross-interpreter data.
+    if (shared != NULL) {
+        if (_PyXI_ApplyNamespace(shared, ns) < 0) {
+            goto error;
+        }
     }
 
     // Run the script.
-    _PyXI_exception_info exc = (_PyXI_exception_info){ .interp = interp };
-    int result = _run_script(interp, codestr, codestrlen, shared, &exc, flags);
+    errcode = _run_script(ns, codestr, codestrlen, flags);
+    if (errcode != _PyXI_ERR_NO_ERROR) {
+        goto error;
+    }
 
     // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState_Clear(tstate);
-        PyThreadState_Swap(save_tstate);
-        PyThreadState_Delete(tstate);
+    assert(!PyErr_Occurred());
+    assert(errcode == _PyXI_ERR_NO_ERROR);
+    _exit_interpreter_main(interp, ns);
+    (void)_exit_interpreter(interp, save_tstate, 0, NULL);
+
+    goto finally;
+
+error:
+    // Switch back.
+    assert(errcode != _PyXI_ERR_NO_ERROR);
+    if (errcode != _PyXI_ERR_ALREADY_RUNNING) {
+        _exit_interpreter_main(interp, ns);
     }
+    else {
+        assert(ns == NULL);
+    }
+    int res = _exit_interpreter(interp, save_tstate, errcode, &exc);
+    assert(res < 0);
 
     // Propagate any exception out to the caller.
-    if (result < 0) {
-        assert(!PyErr_Occurred());
-        _PyXI_ApplyExceptionInfo(&exc, state->RunFailedError);
-        assert(PyErr_Occurred());
-    }
+    assert(!PyErr_Occurred());
+    module_state *state = get_module_state(mod);
+    assert(state != NULL);
+    _PyXI_ApplyExceptionInfo(&exc, state->RunFailedError);
+    assert(PyErr_Occurred());
 
+finally:
+    // Clear the cross-interpreter attrs.
     if (shared != NULL) {
         _PyXI_FreeNamespace(shared);
     }
 
-    return result;
+    return (int)errcode;
 }
 
 
@@ -526,7 +567,6 @@ PyDoc_STRVAR(get_main_doc,
 \n\
 Return the ID of main interpreter.");
 
-
 static PyUnicodeObject *
 convert_script_arg(PyObject *arg, const char *fname, const char *displayname,
                    const char *expected)
@@ -627,7 +667,7 @@ _interp_exec(PyObject *self,
     int res = _run_in_interpreter(self, interp, codestr, codestrlen,
                                   shared_arg, flags);
     Py_XDECREF(bytes_obj);
-    if (res != 0) {
+    if (res < 0) {
         return -1;
     }
 
@@ -702,7 +742,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    int res = _interp_exec(self, id, (PyObject *)script, shared);
+    int res = _interp_exec(self, id, script, shared);
     Py_DECREF(script);
     if (res < 0) {
         return NULL;
