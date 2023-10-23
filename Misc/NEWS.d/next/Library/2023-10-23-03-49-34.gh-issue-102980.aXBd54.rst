@@ -1,0 +1,1 @@
+Redirect the output of ``interact`` command of :mod:`pdb` to the same channel as the debugger. Add tests and improve docs.
