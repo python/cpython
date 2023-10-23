@@ -640,6 +640,9 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If the passed object has a ``__signature__`` attribute, this function
+   returns it without further computations.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -759,6 +762,8 @@ function.
              pass
          sig = MySignature.from_callable(min)
          assert isinstance(sig, MySignature)
+
+       Its behavior is otherwise identical to that of :func:`signature`.
 
        .. versionadded:: 3.5
 
