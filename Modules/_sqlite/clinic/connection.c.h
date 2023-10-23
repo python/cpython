@@ -1557,10 +1557,6 @@ deserialize(pysqlite_Connection *self, PyObject *const *args, Py_ssize_t nargs, 
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&data, 'C')) {
-            _PyArg_BadArgument("deserialize", "argument 1", "contiguous buffer", args[0]);
-            goto exit;
-        }
     }
     if (!noptargs) {
         goto skip_optional_kwonly;
@@ -1822,4 +1818,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=b9c27a406e329587 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90b5b9c14261b8d7 input=a9049054013a1b77]*/
