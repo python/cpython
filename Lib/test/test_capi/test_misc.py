@@ -2427,7 +2427,7 @@ class TestExecutorInvalidation(unittest.TestCase):
 
         for f in funcs:
             f()
-        executors = [ get_first_executor(f) for f in funcs]
+        executors = [get_first_executor(f) for f in funcs]
         # Set things up so each executor depends on the objects
         # with an equal or lower index.
         for i, exe in enumerate(executors):

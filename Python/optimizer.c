@@ -1094,11 +1094,13 @@ unlink_executor(_PyExecutorObject *executor)
     if (next != NULL) {
         next->vm_data.links.previous = prev;
     }
-    else if (prev == NULL) {
-        // Both are NULL, so this must be the list head.
-        PyInterpreterState *interp = PyInterpreterState_Get();
-        assert(interp->executor_list_head == executor);
-        interp->executor_list_head = executor->vm_data.links.next;
+    else {
+        if (prev == NULL) {
+            // Both next and prev are NULL, so this must be the list head.
+            PyInterpreterState *interp = PyInterpreterState_Get();
+            assert(interp->executor_list_head == executor);
+            interp->executor_list_head = executor->vm_data.links.next;
+        }
     }
     if (prev != NULL) {
         prev->vm_data.links.next = next;
