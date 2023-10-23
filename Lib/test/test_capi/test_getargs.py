@@ -871,6 +871,15 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
         self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
 
+    def test_getargs_empty(self):
+        from _testcapi import getargs_empty
+        self.assertTrue(getargs_empty())
+        self.assertRaises(TypeError, getargs_empty, 1)
+        self.assertRaises(TypeError, getargs_empty, 1, 2, 3)
+        self.assertRaises(TypeError, getargs_empty, a=1)
+        self.assertRaises(TypeError, getargs_empty, a=1, b=2)
+        self.assertRaises(TypeError, getargs_empty, 'x', 'y', 'z', a=1, b=2)
+
 
 class String_TestCase(unittest.TestCase):
     def test_C(self):
