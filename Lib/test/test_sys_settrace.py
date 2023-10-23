@@ -2088,7 +2088,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(1)
         else:
             output.append(2)
-    
+
     @jump_test(2, 1, [2, 3])
     def test_jump_is_not_none_backwards(output):
         x = None
@@ -2097,7 +2097,7 @@ class JumpTestCase(unittest.TestCase):
         else:
             output.append(2)
         output.append(3)
-        
+
     @jump_test(3, 5, [2, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_out_of_block_forwards(output):
         for i in 1, 2:
