@@ -1588,7 +1588,7 @@ minimal file-like interface, including ``read()`` and ``readline()``.
 Functions defined by this module are used internally by the :mod:`urllib.request` module.
 The typical response object is a :class:`urllib.response.addinfourl` instance:
 
-.. class:: addinfourl
+.. class:: addinfourl(fp, headers, url, code=None)
 
    .. attribute:: url
 
