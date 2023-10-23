@@ -245,7 +245,7 @@ You can omit either *m* or *n*; in that case, a reasonable value is assumed for
 the missing value.  Omitting *m* is interpreted as a lower limit of 0, while
 omitting *n* results in an upper bound of infinity.
 
-The simplest case ``{m}`` matches the preceding item exactly **m** times.
+The simplest case ``{m}`` matches the preceding item exactly *m* times.
 For example, ``a/{2}b`` will only match ``'a//b'``.
 
 Readers of a reductionist bent may notice that the three other quantifiers can
