@@ -153,11 +153,7 @@ void* _PyObject_Realloc(void *ctx, void *ptr, size_t size);
 #  define PYMALLOC_ALLOC {NULL, _PyObject_Malloc, _PyObject_Calloc, _PyObject_Realloc, _PyObject_Free}
 #endif  // WITH_PYMALLOC
 
-#ifdef WITH_MIMALLOC
-#  define PYRAW_ALLOC MALLOC_ALLOC
-#  define PYMEM_ALLOC MIMALLOC_ALLOC
-#  define PYOBJ_ALLOC MIMALLOC_OBJALLOC
-#elif defined(WITH_PYMALLOC)
+#if defined(WITH_PYMALLOC)
 #  define PYRAW_ALLOC MALLOC_ALLOC
 #  define PYMEM_ALLOC PYMALLOC_ALLOC
 #  define PYOBJ_ALLOC PYMALLOC_ALLOC
