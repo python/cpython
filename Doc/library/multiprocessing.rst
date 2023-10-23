@@ -2571,7 +2571,7 @@ multiple connections at the same time.
    **Windows**: An item in *object_list* must either be an integer
    handle which is waitable (according to the definition used by the
    documentation of the Win32 function ``WaitForMultipleObjects()``)
-   or it can be an object with a :meth:`fileno` method which returns a
+   or it can be an object with a :meth:`~io.IOBase.fileno` method which returns a
    socket handle or pipe handle.  (Note that pipe handles and socket
    handles are **not** waitable handles.)
 

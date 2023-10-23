@@ -43,7 +43,6 @@ Doc/library/asyncio-task.rst
 Doc/library/audioop.rst
 Doc/library/bdb.rst
 Doc/library/bisect.rst
-Doc/library/bz2.rst
 Doc/library/calendar.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
@@ -112,7 +111,6 @@ Doc/library/reprlib.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
-Doc/library/selectors.rst
 Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
