@@ -659,7 +659,7 @@ class RunStringTests(TestBase):
         ]
         for obj in objects:
             with self.subTest(obj):
-                interpreters.bind(interp, dict(obj=obj))
+                interpreters.set___main___attrs(interp, dict(obj=obj))
                 interpreters.run_string(
                     interp,
                     f'assert(obj == {obj!r})',
@@ -790,7 +790,7 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.bind(self.id, shared)
+        interpreters.set___main___attrs(self.id, shared)
         interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
@@ -812,7 +812,7 @@ class RunStringTests(TestBase):
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
-        interpreters.bind(self.id, shared)
+        interpreters.set___main___attrs(self.id, shared)
         interpreters.run_string(self.id, script)
 
         r, w = os.pipe()
@@ -844,7 +844,7 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        interpreters.bind(self.id, shared)
+        interpreters.set___main___attrs(self.id, shared)
         interpreters.run_string(self.id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
@@ -951,7 +951,7 @@ class RunFuncTests(TestBase):
             with open(w, 'w', encoding="utf-8") as spipe:
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
-        interpreters.bind(self.id, dict(w=w))
+        interpreters.set___main___attrs(self.id, dict(w=w))
         interpreters.run_func(self.id, script)
 
         with open(r, encoding="utf-8") as outfile:
@@ -968,7 +968,7 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         def f():
-            interpreters.bind(self.id, dict(w=w))
+            interpreters.set___main___attrs(self.id, dict(w=w))
             interpreters.run_func(self.id, script)
         t = threading.Thread(target=f)
         t.start()
@@ -989,7 +989,7 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         code = script.__code__
-        interpreters.bind(self.id, dict(w=w))
+        interpreters.set___main___attrs(self.id, dict(w=w))
         interpreters.run_func(self.id, code)
 
         with open(r, encoding="utf-8") as outfile:
