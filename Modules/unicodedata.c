@@ -1136,7 +1136,7 @@ _dawg_node_child_count(unsigned int node_offset)
 //
 // the offset of the target node is computed as follows: the number in the
 // upper bits of the varint needs to be added to the offset of the target node
-// of the previous edge. For the first edge, where the is no previous target
+// of the previous edge. For the first edge, where there is no previous target
 // node, the offset of the first edge is used.
 // The intuition here is that edges going out from a node often lead to nodes
 // that are close by, leading to small offsets from the current node and thus
