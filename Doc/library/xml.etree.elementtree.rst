@@ -154,6 +154,7 @@ elements, call :meth:`XMLPullParser.read_events`.  Here is an example::
    ...     print(elem.tag, 'text=', elem.text)
    ...
    end
+   mytag text= sometext more text
 
 The obvious use case is applications that operate in a non-blocking fashion
 where the XML data is being received from a socket or read incrementally from
