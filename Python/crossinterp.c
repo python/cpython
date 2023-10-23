@@ -764,20 +764,31 @@ _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
 
 typedef struct _sharednsitem {
     const char *name;
+    int hasdata;
     _PyCrossInterpreterData data;
 } _PyXI_namespace_item;
 
 static void _sharednsitem_clear(_PyXI_namespace_item *);  // forward
 
 static int
-_sharednsitem_init(_PyXI_namespace_item *item, PyObject *key, PyObject *value)
+_sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
 {
     item->name = _copy_string_obj_raw(key);
     if (item->name == NULL) {
         return -1;
     }
+    item->hasdata = 0;
+    return 0;
+}
+
+static int
+_sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
+{
+    assert(item->name != NULL);
+    assert(!item->hasdata);
+    item->hasdata = 1;
     if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
-        _sharednsitem_clear(item);
+        item->hasdata = 0;
         return -1;
     }
     return 0;
@@ -790,7 +801,10 @@ _sharednsitem_clear(_PyXI_namespace_item *item)
         PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
-    (void)_release_xid_data(&item->data);
+    if (item->hasdata) {
+        item->hasdata = 0;
+        (void)_release_xid_data(&item->data);
+    }
 }
 
 static int
@@ -800,6 +814,7 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns)
     if (name == NULL) {
         return -1;
     }
+    assert(item->hasdata);
     PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
     if (value == NULL) {
         Py_DECREF(name);
@@ -888,6 +903,11 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
     if (nsobj == NULL || nsobj == Py_None) {
         return NULL;
     }
+    if (!PyDict_CheckExact(nsobj)) {
+        PyErr_SetString(PyExc_TypeError, "expected a dict");
+        return NULL;
+    }
+
     Py_ssize_t len = PyDict_Size(nsobj);
     if (len == 0) {
         return NULL;
@@ -902,10 +922,15 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *key, *value;
-        if (PyDict_Next(nsobj, &pos, &key, &value) == 0) {
+        if (!PyDict_Next(nsobj, &pos, &key, &value)) {
             break;
         }
-        if (_sharednsitem_init(&ns->items[i], key, value) != 0) {
+        _PyXI_namespace_item *item = &ns->items[i];
+        if (_sharednsitem_init(item, key) != 0) {
+            break;
+        }
+        if (_sharednsitem_set_value(item, value) < 0) {
+            _sharednsitem_clear(item);
             break;
         }
     }
