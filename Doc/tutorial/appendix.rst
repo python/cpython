@@ -86,14 +86,14 @@ If you want to read an additional start-up file from the current directory, you
 can program this in the global start-up file using code like ``if
 os.path.isfile('.pythonrc.py'): exec(open('.pythonrc.py').read())``.
 If you want to use the startup file in a script, you must do this explicitly
-in the script::
+in the script:
 
-   import os
-   filename = os.environ.get('PYTHONSTARTUP')
-   if filename and os.path.isfile(filename):
-       with open(filename) as fobj:
-           startup_file = fobj.read()
-       exec(startup_file)
+>>> import os
+>>> filename = os.environ.get('PYTHONSTARTUP')
+>>> if filename and os.path.isfile(filename):
+>>>     with open(filename) as fobj:
+>>>         startup_file = fobj.read()
+>>>     exec(startup_file)
 
 
 .. _tut-customize:
@@ -103,7 +103,7 @@ The Customization Modules
 
 Python provides two hooks to let you customize it: :index:`sitecustomize` and
 :index:`usercustomize`.  To see how it works, you need first to find the location
-of your user site-packages directory.  Start Python and run this code::
+of your user site-packages directory.  Start Python and run this code:
 
    >>> import site
    >>> site.getusersitepackages()
