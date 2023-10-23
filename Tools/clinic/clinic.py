@@ -4605,13 +4605,10 @@ class Py_buffer_converter(CConverter):
         return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        # PyBUF_SIMPLE guarantees that the format units of the buffers are C-contiguous.
         if self.format_unit == 'y*':
             return self.format_code("""
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
-                    goto exit;
-                }}}}
-                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    {bad_argument}
                     goto exit;
                 }}}}
                 """,
@@ -4632,10 +4629,6 @@ class Py_buffer_converter(CConverter):
                     if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_SIMPLE) != 0) {{{{
                         goto exit;
                     }}}}
-                    if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                        {bad_argument}
-                        goto exit;
-                    }}}}
                 }}}}
                 """,
                 argname=argname,
@@ -4645,10 +4638,6 @@ class Py_buffer_converter(CConverter):
             return self.format_code("""
                 if (PyObject_GetBuffer({argname}, &{paramname}, PyBUF_WRITABLE) < 0) {{{{
                     {bad_argument}
-                    goto exit;
-                }}}}
-                if (!PyBuffer_IsContiguous(&{paramname}, 'C')) {{{{
-                    {bad_argument2}
                     goto exit;
                 }}}}
                 """,
