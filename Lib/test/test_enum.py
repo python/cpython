@@ -5171,7 +5171,7 @@ def member_dir(member):
                     allowed.add(name)
                 else:
                     allowed.discard(name)
-            else:
+            elif name not in member._member_map_:
                 allowed.add(name)
     return sorted(allowed)
 

@@ -772,8 +772,8 @@ be combined with them (but may lose :class:`IntFlag` membership::
     >>> Perm.X | 4
     <Perm.R|X: 5>
 
-    >>> Perm.X | 8
-    <Perm.X|8: 9>
+    >>> Perm.X + 8
+    9
 
 .. note::
 
