@@ -3343,6 +3343,8 @@ class TestDateTime(TestDate):
         # Convert both naive instances to aware.
         adt0 = dt0.astimezone()
         adt1 = dt1.astimezone()
+        # Not really a tzinfo:
+        ndt0 = dt0.replace(tzinfo=FixedOffset(None, 'None'))
         # Check that is_aware and is_naive work as expected.
         assert dt0.is_aware is False
         assert dt0.is_naive is True
@@ -3352,6 +3354,8 @@ class TestDateTime(TestDate):
         assert adt0.is_naive is False
         assert adt1.is_aware is True
         assert adt1.is_naive is False
+        assert ndt0.is_aware is False
+        assert ndt0.is_naive is True
 
 
 class TestSubclassDateTime(TestDateTime):
@@ -3770,6 +3774,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         t0 = self.theclass(2, 1, 30)
         t1 = t0.replace(tzinfo=FixedOffset(44, "44"))
         t2 = t0.replace(fold=1)
+        t3 = t0.replace(tzinfo=FixedOffset(None, 'None'))
         # Check that is_aware and is_naive work as expected.
         assert t0.is_aware is False
         assert t0.is_naive is True
@@ -3777,6 +3782,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         assert t1.is_naive is False
         assert t2.is_aware is False
         assert t2.is_naive is True
+        assert t3.is_aware is False
+        assert t3.is_naive is True
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class attribute, and theclass(1, 1, 1, tzinfo=whatever)
