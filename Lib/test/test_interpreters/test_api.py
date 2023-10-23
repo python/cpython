@@ -452,6 +452,63 @@ class TestInterpreterClose(TestBase):
         self.assertEqual(os.read(r_interp, 1), FINISHED)
 
 
+class TestInterpreterBind(TestBase):
+
+    def test_empty(self):
+        interp = interpreters.create()
+        with self.assertRaises(ValueError):
+            interp.bind()
+
+    def test_dict(self):
+        values = {'spam': 42, 'eggs': 'ham'}
+        interp = interpreters.create()
+        interp.bind(values)
+        out = _run_output(interp, dedent("""
+            print(spam, eggs)
+            """))
+        self.assertEqual(out.strip(), '42 ham')
+
+    def test_tuple(self):
+        values = {'spam': 42, 'eggs': 'ham'}
+        values = tuple(values.items())
+        interp = interpreters.create()
+        interp.bind(values)
+        out = _run_output(interp, dedent("""
+            print(spam, eggs)
+            """))
+        self.assertEqual(out.strip(), '42 ham')
+
+    def test_kwargs(self):
+        values = {'spam': 42, 'eggs': 'ham'}
+        interp = interpreters.create()
+        interp.bind(**values)
+        out = _run_output(interp, dedent("""
+            print(spam, eggs)
+            """))
+        self.assertEqual(out.strip(), '42 ham')
+
+    def test_dict_and_kwargs(self):
+        values = {'spam': 42, 'eggs': 'ham'}
+        interp = interpreters.create()
+        interp.bind(values, foo='bar')
+        out = _run_output(interp, dedent("""
+            print(spam, eggs, foo)
+            """))
+        self.assertEqual(out.strip(), '42 ham bar')
+
+    def test_not_shareable(self):
+        interp = interpreters.create()
+        # XXX TypeError?
+        with self.assertRaises(ValueError):
+            interp.bind(spam={'spam': 'eggs', 'foo': 'bar'})
+
+        # Make sure neither was actually bound.
+        with self.assertRaises(interpreters.ExecFailure):
+            interp.exec_sync('print(foo)')
+        with self.assertRaises(interpreters.ExecFailure):
+            interp.exec_sync('print(spam)')
+
+
 class TestInterpreterExecSync(TestBase):
 
     def test_success(self):

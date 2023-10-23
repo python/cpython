@@ -130,6 +130,11 @@ class Interpreter:
         """
         return _interpreters.destroy(self._id)
 
+    def bind(self, ns=None, /, **kwargs):
+        """Bind the given values into the interpreter's __main__."""
+        ns = dict(ns, **kwargs) if ns is not None else kwargs
+        _interpreters.bind(self._id, ns)
+
     def exec_sync(self, code, /, channels=None):
         """Run the given source code in the interpreter.
 
