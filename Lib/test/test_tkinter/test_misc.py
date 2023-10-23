@@ -687,6 +687,7 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         t = tkinter.Toplevel(root)
         f = tkinter.Frame(t, class_='Test', width=150, height=100)
         f.pack()
+        root.wait_visibility()  # needed on Windows
         root.update_idletasks()
         self.addCleanup(root.unbind_class, 'Test', event)
         self.addCleanup(root.unbind_class, 'Toplevel', event)
