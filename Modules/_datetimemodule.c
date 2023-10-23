@@ -2866,10 +2866,24 @@ date_day(PyDateTime_Date *self, void *unused)
     return PyLong_FromLong(GET_DAY(self));
 }
 
+static PyObject *
+date_is_aware(PyDateTime_Date *self, void *unused)
+{
+    Py_RETURN_FALSE;
+}
+
+static PyObject *
+date_is_naive(PyDateTime_Date *self, void *unused)
+{
+    Py_RETURN_TRUE;
+}
+
 static PyGetSetDef date_getset[] = {
     {"year",        (getter)date_year},
     {"month",       (getter)date_month},
     {"day",         (getter)date_day},
+    {"is_aware",    (getter)date_is_aware},
+    {"is_naive",    (getter)date_is_naive},
     {NULL}
 };
 
@@ -4173,6 +4187,36 @@ time_fold(PyDateTime_Time *self, void *unused)
     return PyLong_FromLong(TIME_GET_FOLD(self));
 }
 
+static PyObject *
+time_is_aware(PyDateTime_Time *self, void *unused)
+{
+    if (!HASTZINFO(self)) {
+        Py_RETURN_FALSE;
+    }
+
+    PyObject *utcoffset = call_utcoffset(self->tzinfo, Py_None);
+    if (utcoffset == Py_None) {
+        Py_DECREF(utcoffset);
+        Py_RETURN_FALSE;
+    }
+
+    Py_DECREF(utcoffset);
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+time_is_naive(PyDateTime_Time *self, void *unused)
+{
+    PyObject *res = time_is_aware(self, NULL);
+    if (res == Py_True) {
+        Py_DECREF(res);
+        Py_RETURN_FALSE;
+    }
+
+    Py_DECREF(res);
+    Py_RETURN_TRUE;
+}
+
 static PyGetSetDef time_getset[] = {
     {"hour",        (getter)time_hour},
     {"minute",      (getter)time_minute},
@@ -4180,6 +4224,8 @@ static PyGetSetDef time_getset[] = {
     {"microsecond", (getter)time_microsecond},
     {"tzinfo",      (getter)time_tzinfo},
     {"fold",        (getter)time_fold},
+    {"is_aware",    (getter)time_is_aware},
+    {"is_naive",    (getter)time_is_naive},
     {NULL}
 };
 
@@ -4842,6 +4888,36 @@ datetime_fold(PyDateTime_DateTime *self, void *unused)
     return PyLong_FromLong(DATE_GET_FOLD(self));
 }
 
+static PyObject *
+datetime_is_aware(PyDateTime_DateTime *self, void *unused)
+{
+    if (!HASTZINFO(self)) {
+        Py_RETURN_FALSE;
+    }
+
+    PyObject *utcoffset = call_utcoffset(self->tzinfo, Py_None);
+    if (utcoffset == Py_None) {
+        Py_DECREF(utcoffset);
+        Py_RETURN_FALSE;
+    }
+
+    Py_DECREF(utcoffset);
+    Py_RETURN_TRUE;
+}
+
+static PyObject *
+datetime_is_naive(PyDateTime_DateTime *self, void *unused)
+{
+    PyObject *res = datetime_is_aware(self, NULL);
+    if (res == Py_True) {
+        Py_DECREF(res);
+        Py_RETURN_FALSE;
+    }
+
+    Py_DECREF(res);
+    Py_RETURN_TRUE;
+}
+
 static PyGetSetDef datetime_getset[] = {
     {"hour",        (getter)datetime_hour},
     {"minute",      (getter)datetime_minute},
@@ -4849,6 +4925,8 @@ static PyGetSetDef datetime_getset[] = {
     {"microsecond", (getter)datetime_microsecond},
     {"tzinfo",      (getter)datetime_tzinfo},
     {"fold",        (getter)datetime_fold},
+    {"is_aware",    (getter)datetime_is_aware},
+    {"is_naive",    (getter)datetime_is_naive},
     {NULL}
 };
 

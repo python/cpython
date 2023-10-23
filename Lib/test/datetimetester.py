@@ -1099,11 +1099,6 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
-    def test_awareness_checks(self):
-        dt = date(2000, 1, 2)
-        assert dt.is_aware is False
-        assert dt.is_naive is True
-
 class SubclassDate(date):
     sub_var = 1
 
@@ -2003,6 +1998,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.subTest(isocal=isocal):
                 with self.assertRaises(TypeError):
                     self.theclass.fromisocalendar(*isocal)
+
+    def test_awareness_checks(self):
+        dt = self.theclass(2000, 1, 2)
+        assert dt.is_aware is False
+        assert dt.is_naive is True
 
 
 #############################################################################
@@ -3338,7 +3338,7 @@ class TestDateTime(TestDate):
 
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_awareness_checks(self):
-        dt0 = datetime(2014, 11, 2, 1, 30)
+        dt0 = self.theclass(2014, 11, 2, 1, 30)
         dt1 = dt0.replace(fold=1)
         # Convert both naive instances to aware.
         adt0 = dt0.astimezone()
@@ -3767,21 +3767,16 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
     def test_awareness_checks(self):
-        dt = datetime(2014, 11, 2, 1, 30)
-        dt0 = dt.time()
-        dt1 = dt.replace(fold=1).time()
-        # Convert both naive instances to aware.
-        adt0 = dt.astimezone().time()
-        adt1 = dt.replace(fold=1).astimezone().time()
+        t0 = self.theclass(2, 1, 30)
+        t1 = t0.replace(tzinfo=FixedOffset(44, "44"))
+        t2 = t0.replace(fold=1)
         # Check that is_aware and is_naive work as expected.
-        assert dt0.is_aware is False
-        assert dt0.is_naive is True
-        assert dt1.is_aware is False
-        assert dt1.is_naive is True
-        assert adt0.is_aware is True
-        assert adt0.is_naive is False
-        assert adt1.is_aware is True
-        assert adt1.is_naive is False
+        assert t0.is_aware is False
+        assert t0.is_naive is True
+        assert t1.is_aware is True
+        assert t1.is_naive is False
+        assert t2.is_aware is False
+        assert t2.is_naive is True
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class attribute, and theclass(1, 1, 1, tzinfo=whatever)
