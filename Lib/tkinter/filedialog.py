@@ -311,6 +311,10 @@ class _Dialog(commondialog.Dialog):
             pass
 
     def _fixresult(self, widget, result):
+        # gh-103878: empty string from Tcl may have non-string type
+        if result in ((), b''):
+            result = ''
+
         if result:
             # keep directory and filename until next time
             # convert Tcl path objects to strings
@@ -335,6 +339,10 @@ class Open(_Dialog):
     command = "tk_getOpenFile"
 
     def _fixresult(self, widget, result):
+        # gh-103878: empty string from Tcl may have non-string type
+        if result in ((), b''):
+            result = ''
+
         if isinstance(result, tuple):
             # multiple results:
             result = tuple([getattr(r, "string", r) for r in result])
@@ -362,6 +370,10 @@ class Directory(commondialog.Dialog):
     command = "tk_chooseDirectory"
 
     def _fixresult(self, widget, result):
+        # gh-103878: empty string from Tcl may have non-string type
+        if result in ((), b''):
+            result = ''
+
         if result:
             # convert Tcl path objects to strings
             try:
