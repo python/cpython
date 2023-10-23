@@ -211,7 +211,7 @@ class _PdbInteractiveConsole(code.InteractiveConsole):
         super().__init__(locals=ns, local_exit=True)
 
     def write(self, data):
-        self._message(data)
+        self._message(data, end='')
 
 
 # Interaction prompt line will separate file and call info from code
@@ -669,8 +669,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
