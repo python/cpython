@@ -147,7 +147,7 @@ The module defines the following user-callable items:
 
    This class operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
-   until the file's :func:`fileno` method is called, at which point the
+   until the file's :func:`~io.IOBase.fileno` method is called, at which point the
    contents are written to disk and operation proceeds as with
    :func:`TemporaryFile`.
 

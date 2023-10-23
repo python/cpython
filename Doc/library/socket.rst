@@ -858,7 +858,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: fromfd(fd, family, type, proto=0)
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
+   :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
    family, socket type and protocol number are as for the :func:`.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.

@@ -19,7 +19,7 @@ the current file position, and :meth:`seek` through the file to different positi
 A memory-mapped file is created by the :class:`~mmap.mmap` constructor, which is
 different on Unix and on Windows.  In either case you must provide a file
 descriptor for a file opened for update. If you wish to map an existing Python
-file object, use its :meth:`fileno` method to obtain the correct value for the
+file object, use its :meth:`~io.IOBase.fileno` method to obtain the correct value for the
 *fileno* parameter.  Otherwise, you can open the file using the
 :func:`os.open` function, which returns a file descriptor directly (the file
 still needs to be closed when done).
