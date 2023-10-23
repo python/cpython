@@ -49,7 +49,6 @@ check_exports(bytesio *self)
     if (self->exports > 0) {
         PyErr_SetString(PyExc_BufferError,
                         "Existing exports of data: object cannot be re-sized");
-//         abort();
         return 1;
     }
     return 0;
