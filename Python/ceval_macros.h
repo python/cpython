@@ -290,8 +290,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
-/* 1 + the cache size of SEND/FOR_ITER_GEN (they must be same) */
-#define NEXT_INSTR_OFFSET_FOR_YIELD 2
 
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \

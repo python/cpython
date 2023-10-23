@@ -1330,7 +1330,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
+            /* We don't know which of these is relevant here, so keep them equal */
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
             goto resume_frame;
         }
 
@@ -1353,7 +1355,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            frame->next_instr_offset = NEXT_INSTR_OFFSET_FOR_YIELD;
+            /* We don't know which of these is relevant here, so keep them equal */
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
             goto resume_frame;
         }
 
@@ -4725,7 +4729,8 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                assert(next_instr - frame->instr_ptr == 1);
+                frame->next_instr_offset = 1;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4833,7 +4838,8 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                    assert(next_instr - frame->instr_ptr == 1);
+                    frame->next_instr_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
