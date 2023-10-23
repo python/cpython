@@ -339,12 +339,44 @@ That is, heap types should:
 - Define a traverse function using ``Py_tp_traverse``, which
   visits the type (e.g. using :c:expr:`Py_VISIT(Py_TYPE(self))`).
 
-Please refer to the :ref:`the documentation <type-structs>` of
+Please refer to the the documentation of
 :c:macro:`Py_TPFLAGS_HAVE_GC` and :c:member:`~PyTypeObject.tp_traverse`
 for additional considerations.
 
-If your traverse function delegates to the ``tp_traverse`` of its base class
-(or another type), ensure that ``Py_TYPE(self)`` is visited only once.
+The API for defining heap types grew organically, leaving it
+somewhat awkward to use in its current state.
+The following sections will guide you through common issues.
+
+
+``tp_traverse`` in Python 3.8 and lower
+.......................................
+
+The requirement to visit the type from ``tp_traverse`` was added in Python 3.9.
+If you support Python 3.8 and lower, the traverse function must *not*
+visit the type, so it must be more complicated::
+
+   static int my_traverse(PyObject *self, visitproc visit, void *arg)
+   {
+       if (Py_Version >= 0x03090000) {
+           Py_VISIT(Py_TYPE(self));
+       }
+       return 0;
+   }
+
+Unfortunately, :c:data:`Py_Version` was only added in Python 3.11.
+As a replacement, use:
+
+* :c:macro:`PY_VERSION_HEX`, if not using the stable ABI, or
+* :py:data:`sys.version_info` (via :c:func:`PySys_GetObject` and
+  :c:func:`PyArg_ParseTuple`).
+
+
+Delegating ``tp_traverse``
+..........................
+
+If your traverse function delegates to the :c:member:`~PyTypeObject.tp_traverse`
+of its base class (or another type), ensure that ``Py_TYPE(self)`` is visited
+only once.
 Note that only heap type are expected to visit the type in ``tp_traverse``.
 
 For example, if your traverse function includes::
@@ -356,11 +388,43 @@ For example, if your traverse function includes::
     if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         // a heap type's tp_traverse already visited Py_TYPE(self)
     } else {
-        Py_VISIT(Py_TYPE(self));
+        if (Py_Version >= 0x03090000) {
+            Py_VISIT(Py_TYPE(self));
+        }
     }
 
-It is not necessary to handle the type's reference count in ``tp_new``
-and ``tp_clear``.
+It is not necessary to handle the type's reference count in
+:c:member:`~PyTypeObject.tp_new` and :c:member:`~PyTypeObject.tp_clear`.
+
+
+Defining ``tp_dealloc``
+.......................
+
+If your type has a custom :c:member:`~PyTypeObject.tp_dealloc` function,
+it needs to decrement the reference count of the type.
+
+To keep the type valid while ``tp_free`` is called, this needs to be done
+*after* the instance is deallocated. For example::
+
+   static void my_dealloc(PyObject *self)
+   {
+       ...
+       PyTypeObject *type = Py_TYPE(self);
+       type->tp_free(self);
+       Py_DECREF(type);
+   }
+
+The default ``tp_dealloc`` function does this;
+If your type does *not* override
+``tp_dealloc`` you don't need to add it.
+
+
+Not overriding ``tp_free``
+..........................
+
+The :c:member:`~PyTypeObject.tp_free` slot of a heap type must be set to
+:c:func:`PyObject_GC_Del`.
+This is the default; avoid overriding it.
 
 
 Module State Access from Classes
