@@ -2157,6 +2157,10 @@ class TestThreadState(unittest.TestCase):
 
 
 class Test_testcapi(unittest.TestCase):
+    locals().update((name, getattr(_testcapi, name))
+                    for name in dir(_testcapi)
+                    if name.startswith('test_'))
+
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_widechar(self):
