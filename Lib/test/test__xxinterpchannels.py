@@ -586,7 +586,7 @@ class ChannelTests(TestBase):
         cid = channels.create()
         interp = interpreters.create()
 
-        interpreters.bind(interp, dict(cid=cid.send))
+        interpreters.set___main___attrs(interp, dict(cid=cid.send))
         out = _run_output(interp, dedent("""
             import _xxinterpchannels as _channels
             print(cid.end)

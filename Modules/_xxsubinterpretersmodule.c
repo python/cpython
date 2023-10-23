@@ -686,10 +686,12 @@ PyDoc_STRVAR(get_main_doc,
 Return the ID of main interpreter.");
 
 static PyObject *
-interp_bind(PyObject *self, PyObject *args)
+interp_set___main___attrs(PyObject *self, PyObject *args)
 {
     PyObject *id, *updates;
-    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME ".bind", &id, &updates)) {
+    if (!PyArg_ParseTuple(args, "OO:" MODULE_NAME ".set___main___attrs",
+                          &id, &updates))
+    {
         return NULL;
     }
 
@@ -732,8 +734,8 @@ interp_bind(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-PyDoc_STRVAR(bind_doc,
-"bind(id, ns)\n\
+PyDoc_STRVAR(set___main___attrs_doc,
+"set___main___attrs(id, ns)\n\
 \n\
 Bind the given attributes in the interpreter's __main__ module.");
 
@@ -1085,8 +1087,8 @@ static PyMethodDef module_functions[] = {
     {"run_func",                  _PyCFunction_CAST(interp_run_func),
      METH_VARARGS | METH_KEYWORDS, run_func_doc},
 
-    {"bind",                      _PyCFunction_CAST(interp_bind),
-     METH_VARARGS, bind_doc},
+    {"set___main___attrs",        _PyCFunction_CAST(interp_set___main___attrs),
+     METH_VARARGS, set___main___attrs_doc},
     {"is_shareable",              _PyCFunction_CAST(object_is_shareable),
      METH_VARARGS | METH_KEYWORDS, is_shareable_doc},
 
