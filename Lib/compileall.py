@@ -175,7 +175,8 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
 
         if stripdir_parts != fullname_parts[:len(stripdir_parts)]:
             if quiet < 2:
-                print("The stripdir path {!r} is not a valid prefix for source path {!r}; ignoring".format(stripdir, fullname))
+                print("The stripdir path {!r} is not a valid prefix for "
+                      "source path {!r}; ignoring".format(stripdir, fullname))
         else:
             dfile = os.path.join(*fullname_parts[len(stripdir_parts):])
 
