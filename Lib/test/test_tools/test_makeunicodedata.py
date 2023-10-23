@@ -57,6 +57,59 @@ class TestDawg(unittest.TestCase):
 
     @given(char_name_db())
     @example([("abc", "a"), ("abd", "b")])
+    @example(
+        [
+            ("bab", "1"),
+            ("a", ":"),
+            ("ad", "@"),
+            ("b", "<"),
+            ("aacc", "?"),
+            ("dab", "D"),
+            ("aa", "0"),
+            ("ab", "F"),
+            ("aaa", "7"),
+            ("cbd", "="),
+            ("abad", ";"),
+            ("ac", "B"),
+            ("abb", "4"),
+            ("bb", "2"),
+            ("aab", "9"),
+            ("caaaaba", "E"),
+            ("ca", ">"),
+            ("bbaaa", "5"),
+            ("d", "3"),
+            ("baac", "8"),
+            ("c", "6"),
+            ("ba", "A"),
+        ]
+    )
+    @example(
+        [
+            ("bcdac", "9"),
+            ("acc", "g"),
+            ("d", "d"),
+            ("daabdda", "0"),
+            ("aba", ";"),
+            ("c", "6"),
+            ("aa", "7"),
+            ("abbd", "c"),
+            ("badbd", "?"),
+            ("bbd", "f"),
+            ("cc", "@"),
+            ("bb", "8"),
+            ("daca", ">"),
+            ("ba", ":"),
+            ("baac", "3"),
+            ("dbdddac", "a"),
+            ("a", "2"),
+            ("cabd", "b"),
+            ("b", "="),
+            ("abd", "4"),
+            ("adcbd", "5"),
+            ("abc", "e"),
+            ("ab", "1"),
+        ]
+    )
     def test_dawg(self, data):
         # suppress debug prints
         with support.captured_stdout() as output:
