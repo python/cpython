@@ -1672,7 +1672,7 @@ Do not instantiate the :class:`Server` class directly.
 
    .. coroutinemethod:: wait_closed()
 
-      Wait until the :meth:`close` method completes.
+      Wait until all connections are closed after calling the :meth:`close` method.
 
    .. attribute:: sockets
 
