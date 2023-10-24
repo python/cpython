@@ -701,7 +701,9 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SET_IP:  // op==_SET_IP; oparg=next instr
+                            case OPARG_SET_IP:  // uop=_SET_IP; oparg=next_instr-1
+                                // The number of caches is smuggled in via offset:
+                                assert(offset == _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
                                 oparg = INSTR_IP(instr + offset, code);
                                 uop = _SET_IP;
                                 break;
@@ -850,11 +852,7 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
     bool need_ip = true;
     for (int pc = 0; pc < trace_length; pc++) {
         int opcode = trace[pc].opcode;
-        if (opcode == _SAVE_CURRENT_IP) {
-            // Special case: never remove preceding _SET_IP
-            last_set_ip = -1;
-        }
-        else if (opcode == _SET_IP) {
+        if (opcode == _SET_IP) {
             if (!need_ip && last_set_ip >= 0) {
                 trace[last_set_ip].opcode = NOP;
             }
@@ -866,8 +864,8 @@ remove_unneeded_uops(_PyUOpInstruction *trace, int trace_length)
             break;
         }
         else {
-            // If opcode has ERROR or DEOPT, set need_up to true
-            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG)) {
+            // If opcode has ERROR or DEOPT, set need_ip to true
+            if (_PyOpcode_opcode_metadata[opcode].flags & (HAS_ERROR_FLAG | HAS_DEOPT_FLAG) || opcode == _PUSH_FRAME) {
                 need_ip = true;
             }
         }
