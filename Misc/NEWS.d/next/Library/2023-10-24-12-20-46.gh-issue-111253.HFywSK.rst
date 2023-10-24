@@ -1,0 +1,1 @@
+Fix ``_socket`` module not checking for errors when initializing.
