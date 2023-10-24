@@ -5792,56 +5792,39 @@ sslmodule_init_constants(PyObject *m)
         return -1;
     }
 
-#define _PyModule_ADD_INT_CONST(MODULE, NAME, VALUE) \
+#define ADD_INT_CONST(NAME, VALUE) \
     do { \
-        if (PyModule_AddIntConstant(MODULE, NAME, VALUE) < 0) { \
+        if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) { \
             return -1; \
         } \
     } while (0)
 
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_ZERO_RETURN",
-                            PY_SSL_ERROR_ZERO_RETURN);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_WANT_READ",
-                            PY_SSL_ERROR_WANT_READ);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_WANT_WRITE",
-                            PY_SSL_ERROR_WANT_WRITE);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_WANT_X509_LOOKUP",
-                            PY_SSL_ERROR_WANT_X509_LOOKUP);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_SYSCALL",
-                            PY_SSL_ERROR_SYSCALL);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_SSL",
-                            PY_SSL_ERROR_SSL);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_WANT_CONNECT",
-                            PY_SSL_ERROR_WANT_CONNECT);
+    ADD_INT_CONST("SSL_ERROR_ZERO_RETURN", PY_SSL_ERROR_ZERO_RETURN);
+    ADD_INT_CONST("SSL_ERROR_WANT_READ", PY_SSL_ERROR_WANT_READ);
+    ADD_INT_CONST("SSL_ERROR_WANT_WRITE", PY_SSL_ERROR_WANT_WRITE);
+    ADD_INT_CONST("SSL_ERROR_WANT_X509_LOOKUP", PY_SSL_ERROR_WANT_X509_LOOKUP);
+    ADD_INT_CONST("SSL_ERROR_SYSCALL", PY_SSL_ERROR_SYSCALL);
+    ADD_INT_CONST("SSL_ERROR_SSL", PY_SSL_ERROR_SSL);
+    ADD_INT_CONST("SSL_ERROR_WANT_CONNECT", PY_SSL_ERROR_WANT_CONNECT);
     /* non ssl.h errorcodes */
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_EOF",
-                            PY_SSL_ERROR_EOF);
-    _PyModule_ADD_INT_CONST(m, "SSL_ERROR_INVALID_ERROR_CODE",
-                            PY_SSL_ERROR_INVALID_ERROR_CODE);
+    ADD_INT_CONST("SSL_ERROR_EOF", PY_SSL_ERROR_EOF);
+    ADD_INT_CONST("SSL_ERROR_INVALID_ERROR_CODE",
+                  PY_SSL_ERROR_INVALID_ERROR_CODE);
     /* cert requirements */
-    _PyModule_ADD_INT_CONST(m, "CERT_NONE",
-                            PY_SSL_CERT_NONE);
-    _PyModule_ADD_INT_CONST(m, "CERT_OPTIONAL",
-                            PY_SSL_CERT_OPTIONAL);
-    _PyModule_ADD_INT_CONST(m, "CERT_REQUIRED",
-                            PY_SSL_CERT_REQUIRED);
+    ADD_INT_CONST("CERT_NONE", PY_SSL_CERT_NONE);
+    ADD_INT_CONST("CERT_OPTIONAL", PY_SSL_CERT_OPTIONAL);
+    ADD_INT_CONST("CERT_REQUIRED", PY_SSL_CERT_REQUIRED);
     /* CRL verification for verification_flags */
-    _PyModule_ADD_INT_CONST(m, "VERIFY_DEFAULT",
-                            0);
-    _PyModule_ADD_INT_CONST(m, "VERIFY_CRL_CHECK_LEAF",
-                            X509_V_FLAG_CRL_CHECK);
-    _PyModule_ADD_INT_CONST(m, "VERIFY_CRL_CHECK_CHAIN",
-                            X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
-    _PyModule_ADD_INT_CONST(m, "VERIFY_X509_STRICT",
-                            X509_V_FLAG_X509_STRICT);
-    _PyModule_ADD_INT_CONST(m, "VERIFY_ALLOW_PROXY_CERTS",
-                            X509_V_FLAG_ALLOW_PROXY_CERTS);
-    _PyModule_ADD_INT_CONST(m, "VERIFY_X509_TRUSTED_FIRST",
-                            X509_V_FLAG_TRUSTED_FIRST);
+    ADD_INT_CONST("VERIFY_DEFAULT", 0);
+    ADD_INT_CONST("VERIFY_CRL_CHECK_LEAF", X509_V_FLAG_CRL_CHECK);
+    ADD_INT_CONST("VERIFY_CRL_CHECK_CHAIN",
+                  X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+    ADD_INT_CONST("VERIFY_X509_STRICT", X509_V_FLAG_X509_STRICT);
+    ADD_INT_CONST("VERIFY_ALLOW_PROXY_CERTS", X509_V_FLAG_ALLOW_PROXY_CERTS);
+    ADD_INT_CONST("VERIFY_X509_TRUSTED_FIRST", X509_V_FLAG_TRUSTED_FIRST);
 
 #ifdef X509_V_FLAG_PARTIAL_CHAIN
-    _PyModule_ADD_INT_CONST(m, "VERIFY_X509_PARTIAL_CHAIN",
-                            X509_V_FLAG_PARTIAL_CHAIN);
+    ADD_INT_CONST("VERIFY_X509_PARTIAL_CHAIN", X509_V_FLAG_PARTIAL_CHAIN);
 #endif
 
     /* Alert Descriptions from ssl.h */
@@ -5849,7 +5832,7 @@ sslmodule_init_constants(PyObject *m)
     /* http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6 */
 
 #define ADD_AD_CONSTANT(s) \
-    _PyModule_ADD_INT_CONST(m, "ALERT_DESCRIPTION_"#s, \
+    ADD_INT_CONST("ALERT_DESCRIPTION_"#s, \
                             SSL_AD_##s)
 
     ADD_AD_CONSTANT(CLOSE_NOTIFY);
@@ -5897,23 +5880,15 @@ sslmodule_init_constants(PyObject *m)
 
     /* protocol versions */
 #ifndef OPENSSL_NO_SSL3
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_SSLv3",
-                            PY_SSL_VERSION_SSL3);
+    ADD_INT_CONST("PROTOCOL_SSLv3", PY_SSL_VERSION_SSL3);
 #endif
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_SSLv23",
-                            PY_SSL_VERSION_TLS);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLS",
-                            PY_SSL_VERSION_TLS);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLS_CLIENT",
-                            PY_SSL_VERSION_TLS_CLIENT);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLS_SERVER",
-                            PY_SSL_VERSION_TLS_SERVER);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLSv1",
-                            PY_SSL_VERSION_TLS1);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLSv1_1",
-                            PY_SSL_VERSION_TLS1_1);
-    _PyModule_ADD_INT_CONST(m, "PROTOCOL_TLSv1_2",
-                            PY_SSL_VERSION_TLS1_2);
+    ADD_INT_CONST("PROTOCOL_SSLv23", PY_SSL_VERSION_TLS);
+    ADD_INT_CONST("PROTOCOL_TLS", PY_SSL_VERSION_TLS);
+    ADD_INT_CONST("PROTOCOL_TLS_CLIENT", PY_SSL_VERSION_TLS_CLIENT);
+    ADD_INT_CONST("PROTOCOL_TLS_SERVER", PY_SSL_VERSION_TLS_SERVER);
+    ADD_INT_CONST("PROTOCOL_TLSv1", PY_SSL_VERSION_TLS1);
+    ADD_INT_CONST("PROTOCOL_TLSv1_1", PY_SSL_VERSION_TLS1_1);
+    ADD_INT_CONST("PROTOCOL_TLSv1_2", PY_SSL_VERSION_TLS1_2);
 
 #define ADD_OPTION(NAME, VALUE) if (sslmodule_add_option(m, NAME, (VALUE)) < 0) return -1
 
@@ -5961,44 +5936,42 @@ sslmodule_init_constants(PyObject *m)
 #undef ADD_OPTION
 
 #ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_ALWAYS_CHECK_SUBJECT",
-                            X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
+    ADD_INT_CONST("HOSTFLAG_ALWAYS_CHECK_SUBJECT",
+                  X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT);
 #endif
 #ifdef X509_CHECK_FLAG_NEVER_CHECK_SUBJECT
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_NEVER_CHECK_SUBJECT",
-                            X509_CHECK_FLAG_NEVER_CHECK_SUBJECT);
+    ADD_INT_CONST("HOSTFLAG_NEVER_CHECK_SUBJECT",
+                  X509_CHECK_FLAG_NEVER_CHECK_SUBJECT);
 #endif
 #ifdef X509_CHECK_FLAG_NO_WILDCARDS
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_NO_WILDCARDS",
-                            X509_CHECK_FLAG_NO_WILDCARDS);
+    ADD_INT_CONST("HOSTFLAG_NO_WILDCARDS",
+                  X509_CHECK_FLAG_NO_WILDCARDS);
 #endif
 #ifdef X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_NO_PARTIAL_WILDCARDS",
-                            X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+    ADD_INT_CONST("HOSTFLAG_NO_PARTIAL_WILDCARDS",
+                  X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
 #endif
 #ifdef X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_MULTI_LABEL_WILDCARDS",
-                            X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
+    ADD_INT_CONST("HOSTFLAG_MULTI_LABEL_WILDCARDS",
+                  X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS);
 #endif
 #ifdef X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS
-    _PyModule_ADD_INT_CONST(m, "HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
-                            X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
+    ADD_INT_CONST("HOSTFLAG_SINGLE_LABEL_SUBDOMAINS",
+                  X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS);
 #endif
 
     /* file types */
-    _PyModule_ADD_INT_CONST(m, "ENCODING_PEM", PY_SSL_ENCODING_PEM);
-    _PyModule_ADD_INT_CONST(m, "ENCODING_DER", PY_SSL_ENCODING_DER);
+    ADD_INT_CONST("ENCODING_PEM", PY_SSL_ENCODING_PEM);
+    ADD_INT_CONST("ENCODING_DER", PY_SSL_ENCODING_DER);
 
     /* protocol versions */
-    _PyModule_ADD_INT_CONST(m, "PROTO_MINIMUM_SUPPORTED",
-                            PY_PROTO_MINIMUM_SUPPORTED);
-    _PyModule_ADD_INT_CONST(m, "PROTO_MAXIMUM_SUPPORTED",
-                            PY_PROTO_MAXIMUM_SUPPORTED);
-    _PyModule_ADD_INT_CONST(m, "PROTO_SSLv3", PY_PROTO_SSLv3);
-    _PyModule_ADD_INT_CONST(m, "PROTO_TLSv1", PY_PROTO_TLSv1);
-    _PyModule_ADD_INT_CONST(m, "PROTO_TLSv1_1", PY_PROTO_TLSv1_1);
-    _PyModule_ADD_INT_CONST(m, "PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
-    _PyModule_ADD_INT_CONST(m, "PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
+    ADD_INT_CONST("PROTO_MINIMUM_SUPPORTED", PY_PROTO_MINIMUM_SUPPORTED);
+    ADD_INT_CONST("PROTO_MAXIMUM_SUPPORTED", PY_PROTO_MAXIMUM_SUPPORTED);
+    ADD_INT_CONST("PROTO_SSLv3", PY_PROTO_SSLv3);
+    ADD_INT_CONST("PROTO_TLSv1", PY_PROTO_TLSv1);
+    ADD_INT_CONST("PROTO_TLSv1_1", PY_PROTO_TLSv1_1);
+    ADD_INT_CONST("PROTO_TLSv1_2", PY_PROTO_TLSv1_2);
+    ADD_INT_CONST("PROTO_TLSv1_3", PY_PROTO_TLSv1_3);
 
 #define addbool(m, key, value) \
     do { \
