@@ -386,7 +386,7 @@ Constants
 
    .. versionadded:: 3.2
 
-.. _unix-constants:
+.. _socket-unix-constants:
 
 .. data:: SO_*
           SOMAXCONN
