@@ -407,8 +407,8 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     >>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
     ...     fp.write(b'Hello world!')
     ...     fp.close()
-    # the file is closed, but not removed
-    # open the file again by using its name
+    ... # the file is closed, but not removed
+    ... # open the file again by using its name
     ...     with open(fp.name) as f:
     ...         f.read()
     b'Hello world!'
