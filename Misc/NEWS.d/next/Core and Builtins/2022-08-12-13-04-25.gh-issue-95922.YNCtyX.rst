@@ -1,2 +1,0 @@
-Fixed bug where the compiler's ``eliminate_empty_basic_blocks`` function
-ignores the last block of the code unit.

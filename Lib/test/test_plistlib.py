@@ -925,7 +925,7 @@ class TestBinaryPlistlib(unittest.TestCase):
         # Issue #26709: 32-bit timestamp out of range
         for ts in -2**31-1, 2**31:
             with self.subTest(ts=ts):
-                d = (datetime.datetime.utcfromtimestamp(0) +
+                d = (datetime.datetime(1970, 1, 1, 0, 0) +
                      datetime.timedelta(seconds=ts))
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)

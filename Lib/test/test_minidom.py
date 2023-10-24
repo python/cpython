@@ -6,7 +6,6 @@ import io
 from test import support
 import unittest
 
-import pyexpat
 import xml.dom.minidom
 
 from xml.dom.minidom import parse, Attr, Node, Document, parseString
@@ -505,6 +504,46 @@ class MinidomTest(unittest.TestCase):
         domstr = dom.toxml()
         dom.unlink()
         self.confirm(str == domstr)
+
+    def test_toxml_quote_text(self):
+        dom = Document()
+        elem = dom.appendChild(dom.createElement('elem'))
+        elem.appendChild(dom.createTextNode('&<>"'))
+        cr = elem.appendChild(dom.createElement('cr'))
+        cr.appendChild(dom.createTextNode('\r'))
+        crlf = elem.appendChild(dom.createElement('crlf'))
+        crlf.appendChild(dom.createTextNode('\r\n'))
+        lflf = elem.appendChild(dom.createElement('lflf'))
+        lflf.appendChild(dom.createTextNode('\n\n'))
+        ws = elem.appendChild(dom.createElement('ws'))
+        ws.appendChild(dom.createTextNode('\t\n\r '))
+        domstr = dom.toxml()
+        dom.unlink()
+        self.assertEqual(domstr, '<?xml version="1.0" ?>'
+                '<elem>&amp;&lt;&gt;"'
+                '<cr>\r</cr>'
+                '<crlf>\r\n</crlf>'
+                '<lflf>\n\n</lflf>'
+                '<ws>\t\n\r </ws></elem>')
+
+    def test_toxml_quote_attrib(self):
+        dom = Document()
+        elem = dom.appendChild(dom.createElement('elem'))
+        elem.setAttribute("a", '&<>"')
+        elem.setAttribute("cr", "\r")
+        elem.setAttribute("lf", "\n")
+        elem.setAttribute("crlf", "\r\n")
+        elem.setAttribute("lflf", "\n\n")
+        elem.setAttribute("ws", "\t\n\r ")
+        domstr = dom.toxml()
+        dom.unlink()
+        self.assertEqual(domstr, '<?xml version="1.0" ?>'
+                '<elem a="&amp;&lt;&gt;&quot;" '
+                'cr="&#13;" '
+                'lf="&#10;" '
+                'crlf="&#13;&#10;" '
+                'lflf="&#10;&#10;" '
+                'ws="&#9;&#10;&#13; "/>')
 
     def testAltNewline(self):
         str = '<?xml version="1.0" ?>\n<a b="c"/>\n'
@@ -1163,14 +1202,10 @@ class MinidomTest(unittest.TestCase):
 
         # Verify that character decoding errors raise exceptions instead
         # of crashing
-        if pyexpat.version_info >= (2, 4, 5):
-            self.assertRaises(ExpatError, parseString,
-                    b'<fran\xe7ais></fran\xe7ais>')
-            self.assertRaises(ExpatError, parseString,
-                    b'<franais>Comment \xe7a va ? Tr\xe8s bien ?</franais>')
-        else:
-            self.assertRaises(UnicodeDecodeError, parseString,
-                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>')
+        with self.assertRaises((UnicodeDecodeError, ExpatError)):
+            parseString(
+                b'<fran\xe7ais>Comment \xe7a va ? Tr\xe8s bien ?</fran\xe7ais>'
+            )
 
         doc.unlink()
 
@@ -1631,13 +1666,11 @@ class MinidomTest(unittest.TestCase):
         self.confirm(doc2.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
     def testExceptionOnSpacesInXMLNSValue(self):
-        if pyexpat.version_info >= (2, 4, 5):
-            context = self.assertRaisesRegex(ExpatError, 'syntax error')
-        else:
-            context = self.assertRaisesRegex(ValueError, 'Unsupported syntax')
-
-        with context:
-            parseString('<element xmlns:abc="http:abc.com/de f g/hi/j k"><abc:foo /></element>')
+        with self.assertRaises((ValueError, ExpatError)):
+            parseString(
+                '<element xmlns:abc="http:abc.com/de f g/hi/j k">' +
+                '<abc:foo /></element>'
+            )
 
     def testDocRemoveChild(self):
         doc = parse(tstfile)

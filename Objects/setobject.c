@@ -32,7 +32,12 @@
 */
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_dict.h"          // _PyDict_Contains_KnownHash()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_SetKeyError()
+#include "pycore_setobject.h"     // _PySet_NextEntry() definition
 #include <stddef.h>               // offsetof()
 
 /* Object used as dummy key to fill deleted entries */
@@ -588,8 +593,7 @@ set_merge(PySetObject *so, PyObject *otherset)
             key = other_entry->key;
             if (key != NULL) {
                 assert(so_entry->key == NULL);
-                Py_INCREF(key);
-                so_entry->key = key;
+                so_entry->key = Py_NewRef(key);
                 so_entry->hash = other_entry->hash;
             }
         }
@@ -607,8 +611,8 @@ set_merge(PySetObject *so, PyObject *otherset)
         for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
-                Py_INCREF(key);
-                set_insert_clean(newtable, newmask, key, other_entry->hash);
+                set_insert_clean(newtable, newmask, Py_NewRef(key),
+                                 other_entry->hash);
             }
         }
         return 0;
@@ -820,8 +824,7 @@ static PyObject *setiter_iternext(setiterobject *si)
         goto fail;
     si->len--;
     key = entry[i].key;
-    Py_INCREF(key);
-    return key;
+    return Py_NewRef(key);
 
 fail:
     si->si_set = NULL;
@@ -868,8 +871,7 @@ set_iter(PySetObject *so)
     setiterobject *si = PyObject_GC_New(setiterobject, &PySetIter_Type);
     if (si == NULL)
         return NULL;
-    Py_INCREF(so);
-    si->si_set = so;
+    si->si_set = (PySetObject*)Py_NewRef(so);
     si->si_used = so->used;
     si->si_pos = 0;
     si->len = so->used;
@@ -997,8 +999,7 @@ make_new_frozenset(PyTypeObject *type, PyObject *iterable)
 
     if (iterable != NULL && PyFrozenSet_CheckExact(iterable)) {
         /* frozenset(f) is idempotent */
-        Py_INCREF(iterable);
-        return iterable;
+        return Py_NewRef(iterable);
     }
     return make_new_set(type, iterable);
 }
@@ -1100,8 +1101,7 @@ static PyObject *
 frozenset_copy(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
     if (PyFrozenSet_CheckExact(so)) {
-        Py_INCREF(so);
-        return (PyObject *)so;
+        return Py_NewRef(so);
     }
     return set_copy(so, NULL);
 }
@@ -1173,8 +1173,7 @@ set_ior(PySetObject *so, PyObject *other)
 
     if (set_update_internal(so, other))
         return NULL;
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1264,12 +1263,11 @@ static PyObject *
 set_intersection_multi(PySetObject *so, PyObject *args)
 {
     Py_ssize_t i;
-    PyObject *result = (PyObject *)so;
 
     if (PyTuple_GET_SIZE(args) == 0)
         return set_copy(so, NULL);
 
-    Py_INCREF(so);
+    PyObject *result = Py_NewRef(so);
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
         PyObject *newresult = set_intersection((PySetObject *)result, other);
@@ -1277,8 +1275,7 @@ set_intersection_multi(PySetObject *so, PyObject *args)
             Py_DECREF(result);
             return NULL;
         }
-        Py_DECREF(result);
-        result = newresult;
+        Py_SETREF(result, newresult);
     }
     return result;
 }
@@ -1336,8 +1333,7 @@ set_iand(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1609,8 +1605,7 @@ set_isub(PySetObject *so, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     if (set_difference_update_internal(so, other))
         return NULL;
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1647,8 +1642,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
     }
 
     if (PyAnySet_Check(other)) {
-        Py_INCREF(other);
-        otherset = (PySetObject *)other;
+        otherset = (PySetObject *)Py_NewRef(other);
     } else {
         otherset = (PySetObject *)make_new_set_basetype(Py_TYPE(so), other);
         if (otherset == NULL)
@@ -1723,8 +1717,7 @@ set_ixor(PySetObject *so, PyObject *other)
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
-    Py_INCREF(so);
-    return (PyObject *)so;
+    return Py_NewRef(so);
 }
 
 static PyObject *
@@ -1969,12 +1962,11 @@ done:
 static PyObject *
 set_sizeof(PySetObject *so, PyObject *Py_UNUSED(ignored))
 {
-    Py_ssize_t res;
-
-    res = _PyObject_SIZE(Py_TYPE(so));
-    if (so->table != so->smalltable)
-        res = res + (so->mask + 1) * sizeof(setentry);
-    return PyLong_FromSsize_t(res);
+    size_t res = _PyObject_SIZE(Py_TYPE(so));
+    if (so->table != so->smalltable) {
+        res += ((size_t)so->mask + 1) * sizeof(setentry);
+    }
+    return PyLong_FromSize_t(res);
 }
 
 PyDoc_STRVAR(sizeof_doc, "S.__sizeof__() -> size of S in memory, in bytes");
@@ -2030,13 +2022,6 @@ static PySequenceMethods set_as_sequence = {
 
 /* set object ********************************************************/
 
-#ifdef Py_DEBUG
-static PyObject *test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored));
-
-PyDoc_STRVAR(test_c_api_doc, "Exercises C API.  Returns True.\n\
-All is well if assertions don't fail.");
-#endif
-
 static PyMethodDef set_methods[] = {
     {"add",             (PyCFunction)set_add,           METH_O,
      add_doc},
@@ -2074,10 +2059,6 @@ static PyMethodDef set_methods[] = {
      symmetric_difference_doc},
     {"symmetric_difference_update",(PyCFunction)set_symmetric_difference_update,        METH_O,
      symmetric_difference_update_doc},
-#ifdef Py_DEBUG
-    {"test_c_api",      (PyCFunction)test_c_api,        METH_NOARGS,
-     test_c_api_doc},
-#endif
     {"union",           (PyCFunction)set_union,         METH_VARARGS,
      union_doc},
     {"update",          (PyCFunction)set_update,        METH_VARARGS,
@@ -2376,148 +2357,6 @@ _PySet_Update(PyObject *set, PyObject *iterable)
 /* Exported for the gdb plugin's benefit. */
 PyObject *_PySet_Dummy = dummy;
 
-#ifdef Py_DEBUG
-
-/* Test code to be called with any three element set.
-   Returns True and original set is restored. */
-
-#define assertRaises(call_return_value, exception)              \
-    do {                                                        \
-        assert(call_return_value);                              \
-        assert(PyErr_ExceptionMatches(exception));              \
-        PyErr_Clear();                                          \
-    } while(0)
-
-static PyObject *
-test_c_api(PySetObject *so, PyObject *Py_UNUSED(ignored))
-{
-    Py_ssize_t count;
-    const char *s;
-    Py_ssize_t i;
-    PyObject *elem=NULL, *dup=NULL, *t, *f, *dup2, *x=NULL;
-    PyObject *ob = (PyObject *)so;
-    Py_hash_t hash;
-    PyObject *str;
-
-    /* Verify preconditions */
-    assert(PyAnySet_Check(ob));
-    assert(PyAnySet_CheckExact(ob));
-    assert(!PyFrozenSet_CheckExact(ob));
-
-    /* so.clear(); so |= set("abc"); */
-    str = PyUnicode_FromString("abc");
-    if (str == NULL)
-        return NULL;
-    set_clear_internal(so);
-    if (set_update_internal(so, str)) {
-        Py_DECREF(str);
-        return NULL;
-    }
-    Py_DECREF(str);
-
-    /* Exercise type/size checks */
-    assert(PySet_Size(ob) == 3);
-    assert(PySet_GET_SIZE(ob) == 3);
-
-    /* Raise TypeError for non-iterable constructor arguments */
-    assertRaises(PySet_New(Py_None) == NULL, PyExc_TypeError);
-    assertRaises(PyFrozenSet_New(Py_None) == NULL, PyExc_TypeError);
-
-    /* Raise TypeError for unhashable key */
-    dup = PySet_New(ob);
-    assertRaises(PySet_Discard(ob, dup) == -1, PyExc_TypeError);
-    assertRaises(PySet_Contains(ob, dup) == -1, PyExc_TypeError);
-    assertRaises(PySet_Add(ob, dup) == -1, PyExc_TypeError);
-
-    /* Exercise successful pop, contains, add, and discard */
-    elem = PySet_Pop(ob);
-    assert(PySet_Contains(ob, elem) == 0);
-    assert(PySet_GET_SIZE(ob) == 2);
-    assert(PySet_Add(ob, elem) == 0);
-    assert(PySet_Contains(ob, elem) == 1);
-    assert(PySet_GET_SIZE(ob) == 3);
-    assert(PySet_Discard(ob, elem) == 1);
-    assert(PySet_GET_SIZE(ob) == 2);
-    assert(PySet_Discard(ob, elem) == 0);
-    assert(PySet_GET_SIZE(ob) == 2);
-
-    /* Exercise clear */
-    dup2 = PySet_New(dup);
-    assert(PySet_Clear(dup2) == 0);
-    assert(PySet_Size(dup2) == 0);
-    Py_DECREF(dup2);
-
-    /* Raise SystemError on clear or update of frozen set */
-    f = PyFrozenSet_New(dup);
-    assertRaises(PySet_Clear(f) == -1, PyExc_SystemError);
-    assertRaises(_PySet_Update(f, dup) == -1, PyExc_SystemError);
-    assert(PySet_Add(f, elem) == 0);
-    Py_INCREF(f);
-    assertRaises(PySet_Add(f, elem) == -1, PyExc_SystemError);
-    Py_DECREF(f);
-    Py_DECREF(f);
-
-    /* Exercise direct iteration */
-    i = 0, count = 0;
-    while (_PySet_NextEntry((PyObject *)dup, &i, &x, &hash)) {
-        s = PyUnicode_AsUTF8(x);
-        assert(s && (s[0] == 'a' || s[0] == 'b' || s[0] == 'c'));
-        count++;
-    }
-    assert(count == 3);
-
-    /* Exercise updates */
-    dup2 = PySet_New(NULL);
-    assert(_PySet_Update(dup2, dup) == 0);
-    assert(PySet_Size(dup2) == 3);
-    assert(_PySet_Update(dup2, dup) == 0);
-    assert(PySet_Size(dup2) == 3);
-    Py_DECREF(dup2);
-
-    /* Raise SystemError when self argument is not a set or frozenset. */
-    t = PyTuple_New(0);
-    assertRaises(PySet_Size(t) == -1, PyExc_SystemError);
-    assertRaises(PySet_Contains(t, elem) == -1, PyExc_SystemError);
-    Py_DECREF(t);
-
-    /* Raise SystemError when self argument is not a set. */
-    f = PyFrozenSet_New(dup);
-    assert(PySet_Size(f) == 3);
-    assert(PyFrozenSet_CheckExact(f));
-    assertRaises(PySet_Discard(f, elem) == -1, PyExc_SystemError);
-    assertRaises(PySet_Pop(f) == NULL, PyExc_SystemError);
-    Py_DECREF(f);
-
-    /* Raise KeyError when popping from an empty set */
-    assert(PyNumber_InPlaceSubtract(ob, ob) == ob);
-    Py_DECREF(ob);
-    assert(PySet_GET_SIZE(ob) == 0);
-    assertRaises(PySet_Pop(ob) == NULL, PyExc_KeyError);
-
-    /* Restore the set from the copy using the PyNumber API */
-    assert(PyNumber_InPlaceOr(ob, dup) == ob);
-    Py_DECREF(ob);
-
-    /* Verify constructors accept NULL arguments */
-    f = PySet_New(NULL);
-    assert(f != NULL);
-    assert(PySet_GET_SIZE(f) == 0);
-    Py_DECREF(f);
-    f = PyFrozenSet_New(NULL);
-    assert(f != NULL);
-    assert(PyFrozenSet_CheckExact(f));
-    assert(PySet_GET_SIZE(f) == 0);
-    Py_DECREF(f);
-
-    Py_DECREF(elem);
-    Py_DECREF(dup);
-    Py_RETURN_TRUE;
-}
-
-#undef assertRaises
-
-#endif
-
 /***** Dummy Struct  *************************************************/
 
 static PyObject *
@@ -2556,6 +2395,6 @@ static PyTypeObject _PySetDummy_Type = {
 };
 
 static PyObject _dummy_struct = {
-  _PyObject_EXTRA_INIT
-  2, &_PySetDummy_Type
+    { _Py_IMMORTAL_REFCNT },
+    &_PySetDummy_Type
 };

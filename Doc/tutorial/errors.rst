@@ -154,13 +154,13 @@ exception type.
 The *except clause* may specify a variable after the exception name.  The
 variable is bound to the exception instance which typically has an ``args``
 attribute that stores the arguments. For convenience, builtin exception
-types define :meth:`__str__` to print all the arguments without explicitly
+types define :meth:`~object.__str__` to print all the arguments without explicitly
 accessing ``.args``.  ::
 
    >>> try:
    ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...     print(type(inst))    # the exception instance
+   ...     print(type(inst))    # the exception type
    ...     print(inst.args)     # arguments stored in .args
    ...     print(inst)          # __str__ allows args to be printed directly,
    ...                          # but may be overridden in exception subclasses
@@ -174,7 +174,7 @@ accessing ``.args``.  ::
    x = spam
    y = eggs
 
-The exception's :meth:`__str__` output is printed as the last part ('detail')
+The exception's :meth:`~object.__str__` output is printed as the last part ('detail')
 of the message for unhandled exceptions.
 
 :exc:`BaseException` is the common base class of all exceptions. One of its
@@ -496,7 +496,7 @@ Raising and Handling Multiple Unrelated Exceptions
 ==================================================
 
 There are situations where it is necessary to report several exceptions that
-have occurred. This it often the case in concurrency frameworks, when several
+have occurred. This is often the case in concurrency frameworks, when several
 tasks may have failed in parallel, but there are also other use cases where
 it is desirable to continue execution and collect multiple errors rather than
 raise the first exception.
@@ -535,11 +535,20 @@ of a certain type while letting all other exceptions propagate to
 other clauses and eventually to be reraised. ::
 
    >>> def f():
-   ...     raise ExceptionGroup("group1",
-   ...                          [OSError(1),
-   ...                           SystemError(2),
-   ...                           ExceptionGroup("group2",
-   ...                                          [OSError(3), RecursionError(4)])])
+   ...     raise ExceptionGroup(
+   ...         "group1",
+   ...         [
+   ...             OSError(1),
+   ...             SystemError(2),
+   ...             ExceptionGroup(
+   ...                 "group2",
+   ...                 [
+   ...                     OSError(3),
+   ...                     RecursionError(4)
+   ...                 ]
+   ...             )
+   ...         ]
+   ...     )
    ...
    >>> try:
    ...     f()
@@ -577,6 +586,8 @@ the following pattern::
    ...    raise ExceptionGroup("Test Failures", excs)
    ...
 
+
+.. _tut-exception-notes:
 
 Enriching Exceptions with Notes
 ===============================

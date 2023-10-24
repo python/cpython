@@ -1,2 +1,0 @@
-Allow parameters named ``module`` and ``self`` with custom C names in Argument
-Clinic. Patch by Erlend E. Aasland

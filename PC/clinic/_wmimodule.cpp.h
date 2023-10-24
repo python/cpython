@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_wmi_exec_query__doc__,
 "exec_query($module, /, query)\n"
@@ -63,13 +63,10 @@ _wmi_exec_query(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         _PyArg_BadArgument("exec_query", "argument 'query'", "str", args[0]);
         goto exit;
     }
-    if (PyUnicode_READY(args[0]) == -1) {
-        goto exit;
-    }
     query = args[0];
     return_value = _wmi_exec_query_impl(module, query);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7fdf0c0579ddb566 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba04920d127f3ceb input=a9049054013a1b77]*/

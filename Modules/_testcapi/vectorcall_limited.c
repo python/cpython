@@ -1,11 +1,13 @@
+/* Test Vectorcall in the limited API */
+
 #define Py_LIMITED_API 0x030c0000 // 3.12
 #include "parts.h"
+#include "clinic/vectorcall_limited.c.h"
 
-#ifdef LIMITED_API_AVAILABLE
-
-#include "structmember.h"         // PyMemberDef
-
-/* Test Vectorcall in the limited API */
+/*[clinic input]
+module _testcapi
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6361033e795369fc]*/
 
 static PyObject *
 LimitedVectorCallClass_tpcall(PyObject *self, PyObject *args, PyObject *kwargs) {
@@ -32,8 +34,123 @@ LimitedVectorCallClass_new(PyTypeObject *tp, PyTypeObject *a, PyTypeObject *kw)
     return self;
 }
 
+/*[clinic input]
+_testcapi.call_vectorcall
+
+    callable: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_call_vectorcall(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=bae81eec97fcaad7 input=55d88f92240957ee]*/
+{
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *kwname = NULL, *kwnames = NULL, *result = NULL;
+
+    args[1] = PyUnicode_FromString("foo");
+    if (!args[1]) {
+        goto leave;
+    }
+
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+    result = PyObject_Vectorcall(
+        callable,
+        args + 1,
+        1 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+leave:
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
+
+    return result;
+}
+
+/*[clinic input]
+_testcapi.call_vectorcall_method
+
+    callable: object
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_call_vectorcall_method(PyObject *module, PyObject *callable)
+/*[clinic end generated code: output=e661f48dda08b6fb input=5ba81c27511395b6]*/
+{
+    PyObject *args[3] = { NULL, NULL, NULL };
+    PyObject *name = NULL, *kwname = NULL,
+             *kwnames = NULL, *result = NULL;
+
+    name = PyUnicode_FromString("f");
+    if (!name) {
+        goto leave;
+    }
+
+    args[0] = callable;
+    args[1] = PyUnicode_FromString("foo");
+    if (!args[1]) {
+        goto leave;
+    }
+
+    args[2] = PyUnicode_FromString("bar");
+    if (!args[2]) {
+        goto leave;
+    }
+
+    kwname = PyUnicode_InternFromString("baz");
+    if (!kwname) {
+        goto leave;
+    }
+
+    kwnames = PyTuple_New(1);
+    if (!kwnames) {
+        goto leave;
+    }
+
+    if (PyTuple_SetItem(kwnames, 0, kwname)) {
+        goto leave;
+    }
+
+
+    result = PyObject_VectorcallMethod(
+        name,
+        args,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        kwnames
+    );
+
+leave:
+    Py_XDECREF(name);
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(kwnames);
+
+    return result;
+}
+
 static PyMemberDef LimitedVectorCallClass_members[] = {
-    {"__vectorcalloffset__", T_PYSSIZET, sizeof(PyObject), READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET, sizeof(PyObject), Py_READONLY},
     {NULL}
 };
 
@@ -54,10 +171,8 @@ static PyType_Spec LimitedVectorCallClass_spec = {
 };
 
 static PyMethodDef TestMethods[] = {
-    /* Add module methods here.
-     * (Empty list left here as template/example, since using
-     * PyModule_AddFunctions isn't very common.)
-     */
+    _TESTCAPI_CALL_VECTORCALL_METHODDEF
+    _TESTCAPI_CALL_VECTORCALL_METHOD_METHODDEF
     {NULL},
 };
 
@@ -78,5 +193,3 @@ _PyTestCapi_Init_VectorcallLimited(PyObject *m) {
 
     return 0;
 }
-
-#endif // LIMITED_API_AVAILABLE

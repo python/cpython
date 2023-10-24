@@ -1,2 +1,0 @@
-An undocumented ``python -m pprint`` benchmark is moved into ``pprint``
-suite of pyperformance. Patch by Oleg Iarygin.

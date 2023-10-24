@@ -1,2 +1,0 @@
-:class:`memoryview` now supports half-floats.
-Patch by Dong-hee Na and Antoine Pitrou.

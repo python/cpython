@@ -1,1 +1,0 @@
-``configure`` now detects and reports :pep:`11` support tiers.

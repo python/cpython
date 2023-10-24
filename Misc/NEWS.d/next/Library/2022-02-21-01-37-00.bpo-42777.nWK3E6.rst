@@ -1,1 +1,0 @@
-Implement :meth:`pathlib.Path.is_mount` for Windows paths.

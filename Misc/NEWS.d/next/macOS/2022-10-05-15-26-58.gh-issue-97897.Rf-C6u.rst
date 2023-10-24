@@ -1,6 +1,0 @@
-The macOS 13 SDK includes support for the ``mkfifoat`` and ``mknodat`` system calls.
-Using the ``dir_fd`` option with either :func:`os.mkfifo` or :func:`os.mknod` could result in a
-segfault if cpython is built with the macOS 13 SDK but run on an earlier
-version of macOS. Prevent this by adding runtime support for detection of
-these system calls ("weaklinking") as is done for other newer syscalls on
-macOS.

@@ -1,2 +1,0 @@
-Fixed ``_decimal`` module build issue on GCC when compiling with LTO and
-pydebug. Debug builds no longer force inlining of functions.

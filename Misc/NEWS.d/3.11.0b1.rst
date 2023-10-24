@@ -185,7 +185,7 @@ functions leave the current exception unchanged. Patch by Victor Stinner.
 .. section: Core and Builtins
 
 Fix a minor memory leak at exit: release the memory of the
-:class:`generic_alias_iterator` type. Patch by Dong-hee Na.
+:class:`generic_alias_iterator` type. Patch by Donghee Na.
 
 ..
 
@@ -796,7 +796,7 @@ Patch by Kabir Kwatra.
 .. nonce: roapI2
 .. section: Library
 
-The :mod:`mailcap` module is now deprecated and will be removed in Python
+The :mod:`!mailcap` module is now deprecated and will be removed in Python
 3.13. See :pep:`594` for the rationale and the :mod:`mimetypes` module for
 an alternative. Patch by Victor Stinner.
 
@@ -817,8 +817,8 @@ it is ever needed and document the existing mechanism for ``posix_spawn()``.
 .. nonce: HFtERN
 .. section: Library
 
-Fix :data:`signal.NSIG` value on FreeBSD to accept signal numbers greater
-than 32, like :data:`signal.SIGRTMIN` and :data:`signal.SIGRTMAX`. Patch by
+Fix :const:`signal.NSIG` value on FreeBSD to accept signal numbers greater
+than 32, like :const:`signal.SIGRTMIN` and :const:`signal.SIGRTMAX`. Patch by
 Victor Stinner.
 
 ..
@@ -1799,7 +1799,7 @@ The documentation now lists which members of C structs are part of the
 .. nonce: FIVe9I
 .. section: Documentation
 
-All docstrings in code snippets are now wrapped into :func:`PyDoc_STR` to
+All docstrings in code snippets are now wrapped into :c:macro:`PyDoc_STR` to
 follow the guideline of `PEP 7's Documentation Strings paragraph
 <https://www.python.org/dev/peps/pep-0007/#documentation-strings>`_. Patch
 by Oleg Iarygin.
@@ -2028,8 +2028,8 @@ https://gitlab.com/warsaw/pynche
 .. nonce: 3mQ54t
 .. section: C API
 
-Deprecate the C functions: :c:func:`PySys_SetArgv`,
-:c:func:`PySys_SetArgvEx`, :c:func:`PySys_SetPath`. Patch by Victor Stinner.
+Deprecate the C functions: :c:func:`!PySys_SetArgv`,
+:c:func:`!PySys_SetArgvEx`, :c:func:`!PySys_SetPath`. Patch by Victor Stinner.
 
 ..
 
@@ -2068,9 +2068,9 @@ casts when the Python C API is used in C++. Patch by Victor Stinner.
 .. nonce: Cx-95G
 .. section: C API
 
-Mark functions as deprecated by :pep:`623`: :c:func:`PyUnicode_AS_DATA`,
-:c:func:`PyUnicode_AS_UNICODE`, :c:func:`PyUnicode_GET_DATA_SIZE`,
-:c:func:`PyUnicode_GET_SIZE`. Patch by Victor Stinner.
+Mark functions as deprecated by :pep:`623`: :c:func:`!PyUnicode_AS_DATA`,
+:c:func:`!PyUnicode_AS_UNICODE`, :c:func:`!PyUnicode_GET_DATA_SIZE`,
+:c:func:`!PyUnicode_GET_SIZE`. Patch by Victor Stinner.
 
 ..
 

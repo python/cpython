@@ -1,11 +1,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_dict.h"          // _PyDict_Pop_KnownHash()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 #include "clinic/_functoolsmodule.c.h"
 /*[clinic input]
@@ -105,8 +106,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (pto == NULL)
         return NULL;
 
-    pto->fn = func;
-    Py_INCREF(func);
+    pto->fn = Py_NewRef(func);
 
     nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
     if (nargs == NULL) {
@@ -131,8 +131,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             pto->kw = PyDict_New();
         }
         else if (Py_REFCNT(kw) == 1) {
-            Py_INCREF(kw);
-            pto->kw = kw;
+            pto->kw = Py_NewRef(kw);
         }
         else {
             pto->kw = PyDict_Copy(kw);
@@ -277,7 +276,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (_PyVectorcall_Function(pto->fn) == NULL) {
+    if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -302,8 +301,7 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
     PyObject *kwargs2;
     if (PyDict_GET_SIZE(pto->kw) == 0) {
         /* kwargs can be NULL */
-        kwargs2 = kwargs;
-        Py_XINCREF(kwargs2);
+        kwargs2 = Py_XNewRef(kwargs);
     }
     else {
         /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
@@ -342,18 +340,18 @@ PyDoc_STRVAR(partial_doc,
 
 #define OFF(x) offsetof(partialobject, x)
 static PyMemberDef partial_memberlist[] = {
-    {"func",            T_OBJECT,       OFF(fn),        READONLY,
+    {"func",            _Py_T_OBJECT,       OFF(fn),        Py_READONLY,
      "function object to use in future partial calls"},
-    {"args",            T_OBJECT,       OFF(args),      READONLY,
+    {"args",            _Py_T_OBJECT,       OFF(args),      Py_READONLY,
      "tuple of arguments to future partial calls"},
-    {"keywords",        T_OBJECT,       OFF(kw),        READONLY,
+    {"keywords",        _Py_T_OBJECT,       OFF(kw),        Py_READONLY,
      "dictionary of keyword arguments to future partial calls"},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(partialobject, weakreflist), READONLY},
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(partialobject, dict), READONLY},
-    {"__vectorcalloffset__", T_PYSSIZET,
-     offsetof(partialobject, vectorcall), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, weakreflist), Py_READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, dict), Py_READONLY},
+    {"__vectorcalloffset__", Py_T_PYSSIZET,
+     offsetof(partialobject, vectorcall), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -463,8 +461,7 @@ partial_setstate(partialobject *pto, PyObject *state)
     else
         Py_INCREF(dict);
 
-    Py_INCREF(fn);
-    Py_SETREF(pto->fn, fn);
+    Py_SETREF(pto->fn, Py_NewRef(fn));
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
     Py_XSETREF(pto->dict, dict);
@@ -543,7 +540,7 @@ keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
 }
 
 static PyMemberDef keyobject_members[] = {
-    {"obj", T_OBJECT,
+    {"obj", _Py_T_OBJECT,
      offsetof(keyobject, object), 0,
      PyDoc_STR("Value wrapped by a key function.")},
     {NULL}
@@ -588,10 +585,8 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
     if (result == NULL) {
         return NULL;
     }
-    Py_INCREF(ko->cmp);
-    result->cmp = ko->cmp;
-    Py_INCREF(object);
-    result->object = object;
+    result->cmp = Py_NewRef(ko->cmp);
+    result->object = Py_NewRef(object);
     PyObject_GC_Track(result);
     return (PyObject *)result;
 }
@@ -599,21 +594,15 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 {
-    PyObject *res;
-    PyObject *x;
-    PyObject *y;
-    PyObject *compare;
-    PyObject *answer;
-    PyObject* stack[2];
-
     if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
-    compare = ((keyobject *) ko)->cmp;
+
+    PyObject *compare = ((keyobject *) ko)->cmp;
     assert(compare != NULL);
-    x = ((keyobject *) ko)->object;
-    y = ((keyobject *) other)->object;
+    PyObject *x = ((keyobject *) ko)->object;
+    PyObject *y = ((keyobject *) other)->object;
     if (!x || !y){
         PyErr_Format(PyExc_AttributeError, "object");
         return NULL;
@@ -622,14 +611,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     /* Call the user's comparison function and translate the 3-way
      * result into true or false (or error).
      */
-    stack[0] = x;
-    stack[1] = y;
-    res = _PyObject_FastCall(compare, stack, 2);
+    PyObject* args[2] = {x, y};
+    PyObject *res = PyObject_Vectorcall(compare, args, 2, NULL);
     if (res == NULL) {
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
+    PyObject *answer = PyObject_RichCompare(res, _PyLong_GetZero(), op);
     Py_DECREF(res);
     return answer;
 }
@@ -654,8 +642,7 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
     object = PyObject_GC_New(keyobject, state->keyobject_type);
     if (!object)
         return NULL;
-    Py_INCREF(mycmp);
-    object->cmp = mycmp;
+    object->cmp = Py_NewRef(mycmp);
     object->object = NULL;
     PyObject_GC_Track(object);
     return (PyObject *)object;
@@ -738,7 +725,7 @@ Fail:
 }
 
 PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial]) -> value\n\
+"reduce(function, iterable[, initial], /) -> value\n\
 \n\
 Apply a function of two arguments cumulatively to the items of a sequence\n\
 or iterable, from left to right, so as to reduce the iterable to a single\n\
@@ -837,12 +824,10 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
             if (PyUnicode_CheckExact(key) || PyLong_CheckExact(key)) {
                 /* For common scalar keys, save space by
                    dropping the enclosing args tuple  */
-                Py_INCREF(key);
-                return key;
+                return Py_NewRef(key);
             }
         }
-        Py_INCREF(args);
-        return args;
+        return Py_NewRef(args);
     }
 
     key_size = PyTuple_GET_SIZE(args);
@@ -858,31 +843,25 @@ lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
     key_pos = 0;
     for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
         PyObject *item = PyTuple_GET_ITEM(args, pos);
-        Py_INCREF(item);
-        PyTuple_SET_ITEM(key, key_pos++, item);
+        PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
     }
     if (kwds_size) {
-        Py_INCREF(kwd_mark);
-        PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
+        PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(kwd_mark));
         for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
-            Py_INCREF(keyword);
-            PyTuple_SET_ITEM(key, key_pos++, keyword);
-            Py_INCREF(value);
-            PyTuple_SET_ITEM(key, key_pos++, value);
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(keyword));
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(value));
         }
         assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
     }
     if (typed) {
         for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
             PyObject *item = (PyObject *)Py_TYPE(PyTuple_GET_ITEM(args, pos));
-            Py_INCREF(item);
-            PyTuple_SET_ITEM(key, key_pos++, item);
+            PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
         }
         if (kwds_size) {
             for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
                 PyObject *item = (PyObject *)Py_TYPE(value);
-                Py_INCREF(item);
-                PyTuple_SET_ITEM(key, key_pos++, item);
+                PyTuple_SET_ITEM(key, key_pos++, Py_NewRef(item));
             }
         }
     }
@@ -1084,8 +1063,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             return NULL;
         }
         lru_cache_append_link(self, link);
-        Py_INCREF(result); /* for return */
-        return result;
+        return Py_NewRef(result);
     }
     /* Since the cache is full, we need to evict an old key and add
        a new key.  Rather than free the old link and allocate a new
@@ -1230,16 +1208,12 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     obj->wrapper = wrapper;
     obj->typed = typed;
     obj->cache = cachedict;
-    Py_INCREF(func);
-    obj->func = func;
+    obj->func = Py_NewRef(func);
     obj->misses = obj->hits = 0;
     obj->maxsize = maxsize;
-    Py_INCREF(state->kwd_mark);
-    obj->kwd_mark = state->kwd_mark;
-    Py_INCREF(state->lru_list_elem_type);
-    obj->lru_list_elem_type = state->lru_list_elem_type;
-    Py_INCREF(cache_info_type);
-    obj->cache_info_type = cache_info_type;
+    obj->kwd_mark = Py_NewRef(state->kwd_mark);
+    obj->lru_list_elem_type = (PyTypeObject*)Py_NewRef(state->lru_list_elem_type);
+    obj->cache_info_type = Py_NewRef(cache_info_type);
     obj->dict = NULL;
     obj->weakreflist = NULL;
     return (PyObject *)obj;
@@ -1262,8 +1236,7 @@ lru_cache_clear_list(lru_list_elem *link)
 {
     while (link != NULL) {
         lru_list_elem *next = link->next;
-        Py_DECREF(link);
-        link = next;
+        Py_SETREF(link, next);
     }
 }
 
@@ -1306,8 +1279,7 @@ static PyObject *
 lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
     if (obj == Py_None || obj == NULL) {
-        Py_INCREF(self);
-        return self;
+        return Py_NewRef(self);
     }
     return PyMethod_New(self, obj);
 }
@@ -1360,15 +1332,13 @@ lru_cache_reduce(PyObject *self, PyObject *unused)
 static PyObject *
 lru_cache_copy(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static PyObject *
 lru_cache_deepcopy(PyObject *self, PyObject *unused)
 {
-    Py_INCREF(self);
-    return self;
+    return Py_NewRef(self);
 }
 
 static int
@@ -1424,10 +1394,10 @@ static PyGetSetDef lru_cache_getsetlist[] = {
 };
 
 static PyMemberDef lru_cache_memberlist[] = {
-    {"__dictoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, dict), READONLY},
-    {"__weaklistoffset__", T_PYSSIZET,
-     offsetof(lru_cache_object, weakreflist), READONLY},
+    {"__dictoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, dict), Py_READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET,
+     offsetof(lru_cache_object, weakreflist), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
@@ -1543,6 +1513,7 @@ _functools_free(void *module)
 
 static struct PyModuleDef_Slot _functools_slots[] = {
     {Py_mod_exec, _functools_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

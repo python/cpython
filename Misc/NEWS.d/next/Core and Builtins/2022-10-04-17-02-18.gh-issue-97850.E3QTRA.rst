@@ -1,1 +1,0 @@
-Long deprecated, ``module_repr()`` should now be completely eradicated.

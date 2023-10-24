@@ -71,8 +71,8 @@ An explanation of some terminology and conventions is in order.
 * On the other hand, the precision of :func:`.time` and :func:`sleep` is better
   than their Unix equivalents: times are expressed as floating point numbers,
   :func:`.time` returns the most accurate time available (using Unix
-  :c:func:`gettimeofday` where available), and :func:`sleep` will accept a time
-  with a nonzero fraction (Unix :c:func:`select` is used to implement this, where
+  :c:func:`!gettimeofday` where available), and :func:`sleep` will accept a time
+  with a nonzero fraction (Unix :c:func:`!select` is used to implement this, where
   available).
 
 * The time value as returned by :func:`gmtime`, :func:`localtime`, and
@@ -84,12 +84,14 @@ An explanation of some terminology and conventions is in order.
   See :class:`struct_time` for a description of these objects.
 
   .. versionchanged:: 3.3
-     The :class:`struct_time` type was extended to provide the :attr:`tm_gmtoff`
-     and :attr:`tm_zone` attributes when platform supports corresponding
+     The :class:`struct_time` type was extended to provide
+     the :attr:`~struct_time.tm_gmtoff` and :attr:`~struct_time.tm_zone`
+     attributes when platform supports corresponding
      ``struct tm`` members.
 
   .. versionchanged:: 3.6
-     The :class:`struct_time` attributes :attr:`tm_gmtoff` and :attr:`tm_zone`
+     The :class:`struct_time` attributes
+     :attr:`~struct_time.tm_gmtoff` and :attr:`~struct_time.tm_zone`
      are now available on all platforms.
 
 * Use the following functions to convert between time representations:
@@ -379,6 +381,8 @@ Functions
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
 
+   .. audit-event:: time.sleep secs
+
    .. versionchanged:: 3.11
       On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
       used if available. On Windows, a waitable timer is now used.
@@ -388,6 +392,9 @@ Functions
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+
+   .. versionchanged:: 3.13
+      Raises an auditing event.
 
 .. index::
    single: % (percent); datetime format
@@ -496,6 +503,8 @@ Functions
       When used with the :func:`strptime` function, the ``%p`` directive only affects
       the output hour field if the ``%I`` directive is used to parse the hour.
 
+   .. _leap-second:
+
    (2)
       The range really is ``0`` to ``61``; value ``60`` is valid in
       timestamps representing `leap seconds`_ and value ``61`` is supported
@@ -566,32 +575,55 @@ Functions
    tuple` interface: values can be accessed by index and by attribute name.  The
    following values are present:
 
-   +-------+-------------------+---------------------------------+
-   | Index | Attribute         | Values                          |
-   +=======+===================+=================================+
-   | 0     | :attr:`tm_year`   | (for example, 1993)             |
-   +-------+-------------------+---------------------------------+
-   | 1     | :attr:`tm_mon`    | range [1, 12]                   |
-   +-------+-------------------+---------------------------------+
-   | 2     | :attr:`tm_mday`   | range [1, 31]                   |
-   +-------+-------------------+---------------------------------+
-   | 3     | :attr:`tm_hour`   | range [0, 23]                   |
-   +-------+-------------------+---------------------------------+
-   | 4     | :attr:`tm_min`    | range [0, 59]                   |
-   +-------+-------------------+---------------------------------+
-   | 5     | :attr:`tm_sec`    | range [0, 61]; see **(2)** in   |
-   |       |                   | :func:`strftime` description    |
-   +-------+-------------------+---------------------------------+
-   | 6     | :attr:`tm_wday`   | range [0, 6], Monday is 0       |
-   +-------+-------------------+---------------------------------+
-   | 7     | :attr:`tm_yday`   | range [1, 366]                  |
-   +-------+-------------------+---------------------------------+
-   | 8     | :attr:`tm_isdst`  | 0, 1 or -1; see below           |
-   +-------+-------------------+---------------------------------+
-   | N/A   | :attr:`tm_zone`   | abbreviation of timezone name   |
-   +-------+-------------------+---------------------------------+
-   | N/A   | :attr:`tm_gmtoff` | offset east of UTC in seconds   |
-   +-------+-------------------+---------------------------------+
+   .. list-table::
+
+      * - Index
+        - Attribute
+        - Values
+
+      * - 0
+        - .. attribute:: tm_year
+        - (for example, 1993)
+
+      * - 1
+        - .. attribute:: tm_mon
+        - range [1, 12]
+
+      * - 2
+        - .. attribute:: tm_day
+        - range [1, 31]
+
+      * - 3
+        - .. attribute:: tm_hour
+        - range [0, 23]
+
+      * - 4
+        - .. attribute:: tm_min
+        - range [0, 59]
+
+      * - 5
+        - .. attribute:: tm_sec
+        - range [0, 61]; see :ref:`Note (2) <leap-second>` in :func:`strftime`
+
+      * - 6
+        - .. attribute:: tm_wday
+        - range [0, 6]; Monday is 0
+
+      * - 7
+        - .. attribute:: tm_yday
+        - range [1, 366]
+
+      * - 8
+        - .. attribute:: tm_isdst
+        - 0, 1 or -1; see below
+
+      * - N/A
+        - .. attribute:: tm_zone
+        - abbreviation of timezone name
+
+      * - N/A
+        - .. attribute:: tm_gmtoff
+        - offset east of UTC in seconds
 
    Note that unlike the C structure, the month value is a range of [1, 12], not
    [0, 11].
@@ -912,8 +944,8 @@ Timezone Constants
    For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
    and :data:`tzname`), the value is determined by the timezone rules in effect
    at module load time or the last time :func:`tzset` is called and may be incorrect
-   for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
-   :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
+   for times in the past.  It is recommended to use the :attr:`~struct_time.tm_gmtoff` and
+   :attr:`~struct_time.tm_zone` results from :func:`localtime` to obtain timezone information.
 
 
 .. seealso::

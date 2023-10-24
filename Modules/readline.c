@@ -4,14 +4,21 @@
  * recently, it was largely rewritten by Guido van Rossum.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 /* Standard definitions */
 #include "Python.h"
+#include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
-#include <errno.h>
-#include <signal.h>
-#include <stddef.h>
+#include <errno.h>                // errno
+#include <signal.h>               // SIGWINCH
 #include <stdlib.h>               // free()
-#include <sys/time.h>
+#include <string.h>               // strdup()
+#ifdef HAVE_SYS_SELECT_H
+#  include <sys/select.h>         // select()
+#endif
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -19,7 +26,7 @@
  * We must save and restore the locale around the rl_initialize() call.
  */
 #define SAVE_LOCALE
-#include <locale.h>
+#  include <locale.h>             // setlocale()
 #endif
 
 #ifdef SAVE_LOCALE
@@ -402,8 +409,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *function)
         Py_CLEAR(*hook_var);
     }
     else if (PyCallable_Check(function)) {
-        Py_INCREF(function);
-        Py_XSETREF(*hook_var, function);
+        Py_XSETREF(*hook_var, Py_NewRef(function));
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -440,7 +446,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
        default completion display. */
     rl_completion_display_matches_hook =
         readlinestate_global->completion_display_matches_hook ?
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(HAVE_RL_COMPDISP_FUNC_T)
         (rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
 #else
         (VFunction *)on_completion_display_matches_hook : 0;
@@ -524,8 +530,7 @@ static PyObject *
 readline_get_begidx_impl(PyObject *module)
 /*[clinic end generated code: output=362616ee8ed1b2b1 input=e083b81c8eb4bac3]*/
 {
-    Py_INCREF(readlinestate_global->begidx);
-    return readlinestate_global->begidx;
+    return Py_NewRef(readlinestate_global->begidx);
 }
 
 /* Get the ending index for the scope of the tab-completion */
@@ -540,8 +545,7 @@ static PyObject *
 readline_get_endidx_impl(PyObject *module)
 /*[clinic end generated code: output=7f763350b12d7517 input=d4c7e34a625fd770]*/
 {
-    Py_INCREF(readlinestate_global->endidx);
-    return readlinestate_global->endidx;
+    return Py_NewRef(readlinestate_global->endidx);
 }
 
 /* Set the tab-completion word-delimiters that readline uses */
@@ -784,8 +788,7 @@ readline_get_completer_impl(PyObject *module)
     if (readlinestate_global->completer == NULL) {
         Py_RETURN_NONE;
     }
-    Py_INCREF(readlinestate_global->completer);
-    return readlinestate_global->completer;
+    return Py_NewRef(readlinestate_global->completer);
 }
 
 /* Private function to get current length of history.  XXX It may be
@@ -997,7 +1000,7 @@ on_hook(PyObject *func)
         if (r == Py_None)
             result = 0;
         else {
-            result = _PyLong_AsInt(r);
+            result = PyLong_AsInt(r);
             if (result == -1 && PyErr_Occurred())
                 goto error;
         }
@@ -1015,8 +1018,10 @@ on_hook(PyObject *func)
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_startup_hook(void)
+#elif defined(WITH_APPLE_EDITLINE)
+on_startup_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_startup_hook()
+on_startup_hook(void)
 #endif
 {
     int r;
@@ -1030,8 +1035,10 @@ on_startup_hook()
 static int
 #if defined(_RL_FUNCTION_TYPEDEF)
 on_pre_input_hook(void)
+#elif defined(WITH_APPLE_EDITLINE)
+on_pre_input_hook(const char *Py_UNUSED(text), int Py_UNUSED(state))
 #else
-on_pre_input_hook()
+on_pre_input_hook(void)
 #endif
 {
     int r;
@@ -1258,9 +1265,9 @@ setup_readline(readlinestate *mod_state)
     rl_attempted_completion_function = flex_complete;
     /* Set Python word break characters */
     completer_word_break_characters =
-        rl_completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+    rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);
     mod_state->endidx = PyLong_FromLong(0L);
@@ -1309,6 +1316,9 @@ rlhandler(char *text)
 static char *
 readline_until_enter_or_signal(const char *prompt, int *signal)
 {
+    // Defined in Parser/myreadline.c
+    extern PyThreadState *_PyOS_ReadlineTState;
+
     char * not_done_reading = "";
     fd_set selectset;
 
@@ -1326,7 +1336,8 @@ readline_until_enter_or_signal(const char *prompt, int *signal)
         int has_input = 0, err = 0;
 
         while (!has_input)
-        {               struct timeval timeout = {0, 100000}; /* 0.1 seconds */
+        {
+            struct timeval timeout = {0, 100000};  // 100 ms (0.1 seconds)
 
             /* [Bug #1552726] Only limit the pause if an input hook has been
                defined.  */

@@ -1,1 +1,0 @@
-Avoid a crash in the C version of :meth:`asyncio.Future.remove_done_callback` when an evil argument is passed.

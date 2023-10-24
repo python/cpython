@@ -1,1 +1,0 @@
-Updated tests to use preferred location for ``importlib.resources`` ABCs.

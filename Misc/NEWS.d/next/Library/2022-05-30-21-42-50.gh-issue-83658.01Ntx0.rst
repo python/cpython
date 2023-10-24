@@ -1,1 +1,0 @@
-Make :class:`multiprocessing.Pool` raise an exception if ``maxtasksperchild`` is not ``None`` or a positive int.

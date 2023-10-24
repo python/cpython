@@ -7,12 +7,12 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
+#include "pycore_bytesobject.h"   // _PyBytesWriter
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
-#include <ctype.h>
+
+#include <stddef.h>               // offsetof()
 
 /*[clinic input]
 class Struct "PyStructObject *" "&PyStructType"
@@ -107,19 +107,22 @@ class cache_struct_converter(CConverter):
     type = 'PyStructObject *'
     converter = 'cache_struct_converter'
     c_default = "NULL"
+    broken_limited_capi = True
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        assert not limited_capi
+        return self.format_code("""
             if (!{converter}(module, {argname}, &{paramname})) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.name,
-                       converter=self.converter)
+            """,
+            argname=argname,
+            converter=self.converter)
 
     def cleanup(self):
         return "Py_XDECREF(%s);\n" % self.name
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=d6746621c2fb1a7d]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c33b27d6b06006c6]*/
 
 static int cache_struct_converter(PyObject *, PyObject *, PyStructObject **);
 
@@ -167,9 +170,6 @@ get_long(_structmodulestate *state, PyObject *v, long *p)
     x = PyLong_AsLong(v);
     Py_DECREF(v);
     if (x == (long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -191,9 +191,6 @@ get_ulong(_structmodulestate *state, PyObject *v, unsigned long *p)
     x = PyLong_AsUnsignedLong(v);
     Py_DECREF(v);
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -214,9 +211,6 @@ get_longlong(_structmodulestate *state, PyObject *v, long long *p)
     x = PyLong_AsLongLong(v);
     Py_DECREF(v);
     if (x == (long long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -237,9 +231,6 @@ get_ulonglong(_structmodulestate *state, PyObject *v, unsigned long long *p)
     x = PyLong_AsUnsignedLongLong(v);
     Py_DECREF(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -260,9 +251,6 @@ get_ssize_t(_structmodulestate *state, PyObject *v, Py_ssize_t *p)
     x = PyLong_AsSsize_t(v);
     Py_DECREF(v);
     if (x == (Py_ssize_t)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -283,9 +271,6 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
     x = PyLong_AsSize_t(v);
     Py_DECREF(v);
     if (x == (size_t)-1 && PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(state->StructError,
-                            "argument out of range");
         return -1;
     }
     *p = x;
@@ -293,7 +278,7 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
 }
 
 
-#define RANGE_ERROR(state, x, f, flag, mask) return _range_error(state, f, flag)
+#define RANGE_ERROR(state, f, flag) return _range_error(state, f, flag)
 
 
 /* Floating point helpers */
@@ -545,12 +530,14 @@ static int
 np_byte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     if (x < -128 || x > 127) {
-        PyErr_SetString(state->StructError,
-                        "byte format requires -128 <= number <= 127");
-        return -1;
+        RANGE_ERROR(state, f, 0);
     }
     *p = (char)x;
     return 0;
@@ -560,12 +547,14 @@ static int
 np_ubyte(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     if (x < 0 || x > 255) {
-        PyErr_SetString(state->StructError,
-                        "ubyte format requires 0 <= number <= 255");
-        return -1;
+        RANGE_ERROR(state, f, 1);
     }
     *(unsigned char *)p = (unsigned char)x;
     return 0;
@@ -588,13 +577,14 @@ np_short(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     short y;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     if (x < SHRT_MIN || x > SHRT_MAX) {
-        PyErr_Format(state->StructError,
-                     "short format requires %d <= number <= %d",
-                     (int)SHRT_MIN, (int)SHRT_MAX);
-        return -1;
+        RANGE_ERROR(state, f, 0);
     }
     y = (short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -606,13 +596,14 @@ np_ushort(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     unsigned short y;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     if (x < 0 || x > USHRT_MAX) {
-        PyErr_Format(state->StructError,
-                     "ushort format requires 0 <= number <= %u",
-                     (unsigned int)USHRT_MAX);
-        return -1;
+        RANGE_ERROR(state, f, 1);
     }
     y = (unsigned short)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -624,11 +615,15 @@ np_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
     int y;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
 #if (SIZEOF_LONG > SIZEOF_INT)
     if ((x < ((long)INT_MIN)) || (x > ((long)INT_MAX)))
-        RANGE_ERROR(state, x, f, 0, -1);
+        RANGE_ERROR(state, f, 0);
 #endif
     y = (int)x;
     memcpy(p, (char *)&y, sizeof y);
@@ -640,12 +635,16 @@ np_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
     unsigned int y;
-    if (get_ulong(state, v, &x) < 0)
+    if (get_ulong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     y = (unsigned int)x;
 #if (SIZEOF_LONG > SIZEOF_INT)
     if (x > ((unsigned long)UINT_MAX))
-        RANGE_ERROR(state, y, f, 1, -1);
+        RANGE_ERROR(state, f, 1);
 #endif
     memcpy(p, (char *)&y, sizeof y);
     return 0;
@@ -655,8 +654,12 @@ static int
 np_long(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long x;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -665,8 +668,12 @@ static int
 np_ulong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long x;
-    if (get_ulong(state, v, &x) < 0)
+    if (get_ulong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -675,8 +682,12 @@ static int
 np_ssize_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     Py_ssize_t x;
-    if (get_ssize_t(state, v, &x) < 0)
+    if (get_ssize_t(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -685,8 +696,12 @@ static int
 np_size_t(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     size_t x;
-    if (get_size_t(state, v, &x) < 0)
+    if (get_size_t(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -695,8 +710,16 @@ static int
 np_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     long long x;
-    if (get_longlong(state, v, &x) < 0)
+    if (get_longlong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(state->StructError,
+                         "'%c' format requires %lld <= number <= %lld",
+                         f->format,
+                         LLONG_MIN,
+                         LLONG_MAX);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -705,8 +728,15 @@ static int
 np_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
     unsigned long long x;
-    if (get_ulonglong(state, v, &x) < 0)
+    if (get_ulonglong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_Format(state->StructError,
+                         "'%c' format requires 0 <= number <= %llu",
+                         f->format,
+                         ULLONG_MAX);
+        }
         return -1;
+    }
     memcpy(p, (char *)&x, sizeof x);
     return 0;
 }
@@ -911,15 +941,19 @@ bp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         if ((i == 2) && (x < -32768 || x > 32767))
-            RANGE_ERROR(state, x, f, 0, 0xffffL);
+            RANGE_ERROR(state, f, 0);
 #if (SIZEOF_LONG != 4)
         else if ((i == 4) && (x < -2147483648L || x > 2147483647L))
-            RANGE_ERROR(state, x, f, 0, 0xffffffffL);
+            RANGE_ERROR(state, f, 0);
 #endif
     }
     do {
@@ -935,14 +969,18 @@ bp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_ulong(state, v, &x) < 0)
+    if (get_ulong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         unsigned long maxint = 1;
         maxint <<= (unsigned long)(i * 8);
         if (x >= maxint)
-            RANGE_ERROR(state, x, f, 1, maxint - 1);
+            RANGE_ERROR(state, f, 1);
     }
     do {
         q[--i] = (unsigned char)(x & 0xffUL);
@@ -964,6 +1002,14 @@ bp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               0, /* little_endian */
                               1  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "'%c' format requires %lld <= number <= %lld",
+                     f->format,
+                     LLONG_MIN,
+                     LLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -980,6 +1026,13 @@ bp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               0, /* little_endian */
                               0  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "'%c' format requires 0 <= number <= %llu",
+                     f->format,
+                     ULLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -1148,15 +1201,19 @@ lp_int(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_long(state, v, &x) < 0)
+    if (get_long(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 0);
+        }
         return -1;
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         if ((i == 2) && (x < -32768 || x > 32767))
-            RANGE_ERROR(state, x, f, 0, 0xffffL);
+            RANGE_ERROR(state, f, 0);
 #if (SIZEOF_LONG != 4)
         else if ((i == 4) && (x < -2147483648L || x > 2147483647L))
-            RANGE_ERROR(state, x, f, 0, 0xffffffffL);
+            RANGE_ERROR(state, f, 0);
 #endif
     }
     do {
@@ -1172,14 +1229,18 @@ lp_uint(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
     unsigned long x;
     Py_ssize_t i;
     unsigned char *q = (unsigned char *)p;
-    if (get_ulong(state, v, &x) < 0)
+    if (get_ulong(state, v, &x) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            RANGE_ERROR(state, f, 1);
+        }
         return -1;
+    }
     i = f->size;
     if (i != SIZEOF_LONG) {
         unsigned long maxint = 1;
         maxint <<= (unsigned long)(i * 8);
         if (x >= maxint)
-            RANGE_ERROR(state, x, f, 1, maxint - 1);
+            RANGE_ERROR(state, f, 1);
     }
     do {
         *q++ = (unsigned char)(x & 0xffUL);
@@ -1201,6 +1262,14 @@ lp_longlong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
                               1, /* little_endian */
                               1  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "'%c' format requires %lld <= number <= %lld",
+                     f->format,
+                     LLONG_MIN,
+                     LLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -1217,6 +1286,13 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
                               1, /* little_endian */
                               0  /* signed */);
     Py_DECREF(v);
+    if (res == -1 && PyErr_Occurred()) {
+        PyErr_Format(state->StructError,
+                     "'%c' format requires 0 <= number <= %llu",
+                     f->format,
+                     ULLONG_MAX);
+        return -1;
+    }
     return res;
 }
 
@@ -1759,11 +1835,6 @@ unpackiter_iternext(unpackiterobject *self)
     return result;
 }
 
-PyObject *unpackiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s objects", _PyType_Name(type));
-    return NULL;
-}
-
 static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_dealloc, unpackiter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
@@ -1771,7 +1842,6 @@ static PyType_Slot unpackiter_type_slots[] = {
     {Py_tp_iter, PyObject_SelfIter},
     {Py_tp_iternext, unpackiter_iternext},
     {Py_tp_methods, unpackiter_methods},
-    {Py_tp_new, unpackiter_new},
     {0, 0},
 };
 
@@ -1780,7 +1850,7 @@ static PyType_Spec unpackiter_type_spec = {
     sizeof(unpackiterobject),
     0,
     (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-     Py_TPFLAGS_IMMUTABLETYPE),
+     Py_TPFLAGS_IMMUTABLETYPE | Py_TPFLAGS_DISALLOW_INSTANTIATION),
     unpackiter_type_slots
 };
 
@@ -1829,8 +1899,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
         Py_DECREF(iter);
         return NULL;
     }
-    Py_INCREF(self);
-    iter->so = self;
+    iter->so = (PyStructObject*)Py_NewRef(self);
     iter->index = 0;
     return (PyObject *)iter;
 }
@@ -2091,13 +2160,24 @@ PyDoc_STRVAR(s_sizeof__doc__,
 static PyObject *
 s_sizeof(PyStructObject *self, void *unused)
 {
-    Py_ssize_t size;
-    formatcode *code;
-
-    size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
-    for (code = self->s_codes; code->fmtdef != NULL; code++)
+    size_t size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
+    for (formatcode *code = self->s_codes; code->fmtdef != NULL; code++) {
         size += sizeof(formatcode);
-    return PyLong_FromSsize_t(size);
+    }
+    return PyLong_FromSize_t(size);
+}
+
+static PyObject *
+s_repr(PyStructObject *self)
+{
+    PyObject* fmt = PyUnicode_FromStringAndSize(
+        PyBytes_AS_STRING(self->s_format), PyBytes_GET_SIZE(self->s_format));
+    if (fmt == NULL) {
+        return NULL;
+    }
+    PyObject* s = PyUnicode_FromFormat("%s(%R)", _PyType_Name(Py_TYPE(self)), fmt);
+    Py_DECREF(fmt);
+    return s;
 }
 
 /* List of functions */
@@ -2113,13 +2193,13 @@ static struct PyMethodDef s_methods[] = {
 };
 
 static PyMemberDef s_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(PyStructObject, weakreflist), Py_READONLY},
     {NULL}  /* sentinel */
 };
 
 static PyGetSetDef s_getsetlist[] = {
-    {"format", (getter)s_get_format, (setter)NULL, "struct format string", NULL},
-    {"size", (getter)s_get_size, (setter)NULL, "struct size in bytes", NULL},
+    {"format", (getter)s_get_format, (setter)NULL, PyDoc_STR("struct format string"), NULL},
+    {"size", (getter)s_get_size, (setter)NULL, PyDoc_STR("struct size in bytes"), NULL},
     {NULL} /* sentinel */
 };
 
@@ -2132,6 +2212,7 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_dealloc, s_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
     {Py_tp_setattro, PyObject_GenericSetAttr},
+    {Py_tp_repr, s_repr},
     {Py_tp_doc, (void*)s__doc__},
     {Py_tp_traverse, s_traverse},
     {Py_tp_clear, s_clear},
@@ -2165,8 +2246,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
     _structmodulestate *state = get_struct_state(module);
 
     if (fmt == NULL) {
-        Py_DECREF(*ptr);
-        *ptr = NULL;
+        Py_SETREF(*ptr, NULL);
         return 1;
     }
 
@@ -2178,8 +2258,7 @@ cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
 
     s_object = PyDict_GetItemWithError(state->cache, fmt);
     if (s_object != NULL) {
-        Py_INCREF(s_object);
-        *ptr = (PyStructObject *)s_object;
+        *ptr = (PyStructObject *)Py_NewRef(s_object);
         return Py_CLEANUP_SUPPORTED;
     }
     else if (PyErr_Occurred()) {
@@ -2504,6 +2583,7 @@ _structmodule_exec(PyObject *m)
 
 static PyModuleDef_Slot _structmodule_slots[] = {
     {Py_mod_exec, _structmodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

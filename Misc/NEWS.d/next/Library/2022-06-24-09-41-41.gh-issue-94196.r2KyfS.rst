@@ -1,4 +1,0 @@
-:mod:`gzip`: Remove the ``filename`` attribute of :class:`gzip.GzipFile`,
-deprecated since Python 2.6, use the :attr:`~gzip.GzipFile.name` attribute
-instead. In write mode, the ``filename`` attribute added ``'.gz'`` file
-extension if it was not present. Patch by Victor Stinner.

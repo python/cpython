@@ -1,4 +1,0 @@
-Fix handling compiler warnings (SyntaxWarning and DeprecationWarning) in
-:func:`codeop.compile_command` when checking for incomplete input.
-Previously it emitted warnings and raised a SyntaxError. Now it always
-returns ``None`` for incomplete input without emitting any warnings.

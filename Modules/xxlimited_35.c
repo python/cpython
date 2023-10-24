@@ -64,11 +64,9 @@ Xxo_demo(XxoObject *self, PyObject *args)
         return NULL;
     /* Test availability of fast type checks */
     if (o != NULL && PyUnicode_Check(o)) {
-        Py_INCREF(o);
-        return o;
+        return Py_NewRef(o);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 static PyMethodDef Xxo_methods[] = {
@@ -83,8 +81,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
-            Py_INCREF(v);
-            return v;
+            return Py_NewRef(v);
         }
         else if (PyErr_Occurred()) {
             return NULL;
@@ -176,8 +173,7 @@ xx_roj(PyObject *self, PyObject *args)
     long b;
     if (!PyArg_ParseTuple(args, "O#:roj", &a, &b))
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_NewRef(Py_None);
 }
 
 

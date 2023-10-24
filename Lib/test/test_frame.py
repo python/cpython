@@ -1,12 +1,19 @@
 import gc
+import operator
 import re
 import sys
 import textwrap
+import threading
 import types
 import unittest
 import weakref
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
 
 from test import support
+from test.support import threading_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -315,7 +322,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             sneaky_frame_object = None
             gc.enable()
             next(g)
-            # g.gi_frame should be the the frame object from the callback (the
+            # g.gi_frame should be the frame object from the callback (the
             # one that was *requested* second, but *created* first):
             self.assertIs(g.gi_frame, sneaky_frame_object)
         finally:
@@ -325,6 +332,112 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             if old_enabled:
                 gc.enable()
 
+    @support.cpython_only
+    @threading_helper.requires_working_threading()
+    def test_sneaky_frame_object_teardown(self):
+
+        class SneakyDel:
+            def __del__(self):
+                """
+                Stash a reference to the entire stack for walking later.
+
+                It may look crazy, but you'd be surprised how common this is
+                when using a test runner (like pytest). The typical recipe is:
+                ResourceWarning + -Werror + a custom sys.unraisablehook.
+                """
+                nonlocal sneaky_frame_object
+                sneaky_frame_object = sys._getframe()
+
+        class SneakyThread(threading.Thread):
+            """
+            A separate thread isn't needed to make this code crash, but it does
+            make crashes more consistent, since it means sneaky_frame_object is
+            backed by freed memory after the thread completes!
+            """
+
+            def run(self):
+                """Run SneakyDel.__del__ as this frame is popped."""
+                ref = SneakyDel()
+
+        sneaky_frame_object = None
+        t = SneakyThread()
+        t.start()
+        t.join()
+        # sneaky_frame_object can be anything, really, but it's crucial that
+        # SneakyThread.run's frame isn't anywhere on the stack while it's being
+        # torn down:
+        self.assertIsNotNone(sneaky_frame_object)
+        while sneaky_frame_object is not None:
+            self.assertIsNot(
+                sneaky_frame_object.f_code, SneakyThread.run.__code__
+            )
+            sneaky_frame_object = sneaky_frame_object.f_back
+
+    def test_entry_frames_are_invisible_during_teardown(self):
+        class C:
+            """A weakref'able class."""
+
+        def f():
+            """Try to find globals and locals as this frame is being cleared."""
+            ref = C()
+            # Ignore the fact that exec(C()) is a nonsense callback. We're only
+            # using exec here because it tries to access the current frame's
+            # globals and locals. If it's trying to get those from a shim frame,
+            # we'll crash before raising:
+            return weakref.ref(ref, exec)
+
+        with support.catch_unraisable_exception() as catcher:
+            # Call from C, so there is a shim frame directly above f:
+            weak = operator.call(f)  # BOOM!
+            # Cool, we didn't crash. Check that the callback actually happened:
+            self.assertIs(catcher.unraisable.exc_type, TypeError)
+        self.assertIsNone(weak())
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def getframe(self):
+        return sys._getframe()
+
+    def test_frame_getters(self):
+        frame = self.getframe()
+        self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
+        self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
+        self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
+        self.assertEqual(frame.f_lasti, _testcapi.frame_getlasti(frame))
+
+    def test_getvar(self):
+        current_frame = sys._getframe()
+        x = 1
+        self.assertEqual(_testcapi.frame_getvar(current_frame, "x"), 1)
+        self.assertEqual(_testcapi.frame_getvarstring(current_frame, b"x"), 1)
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvar(current_frame, "y")
+        with self.assertRaises(NameError):
+            _testcapi.frame_getvarstring(current_frame, b"y")
+
+        # wrong name type
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, b'x')
+        with self.assertRaises(TypeError):
+            _testcapi.frame_getvar(current_frame, 123)
+
+    def getgenframe(self):
+        yield sys._getframe()
+
+    def test_frame_get_generator(self):
+        gen = self.getgenframe()
+        frame = next(gen)
+        self.assertIs(gen, _testcapi.frame_getgenerator(frame))
+
+    def test_frame_fback_api(self):
+        """Test that accessing `f_back` does not cause a segmentation fault on
+        a frame created with `PyFrame_New` (GH-99110)."""
+        def dummy():
+            pass
+
+        frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
+        # The following line should not cause a segmentation fault.
+        self.assertIsNone(frame.f_back)
 
 if __name__ == "__main__":
     unittest.main()

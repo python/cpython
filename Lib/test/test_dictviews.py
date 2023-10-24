@@ -1,8 +1,8 @@
 import collections.abc
 import copy
 import pickle
-import sys
 import unittest
+from test.support import Py_C_RECURSION_LIMIT
 
 class DictSetTest(unittest.TestCase):
 
@@ -279,7 +279,7 @@ class DictSetTest(unittest.TestCase):
 
     def test_deeply_nested_repr(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(Py_C_RECURSION_LIMIT//2 + 100):
             d = {42: d.values()}
         self.assertRaises(RecursionError, repr, d)
 
@@ -338,6 +338,9 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.values(), collections.abc.ValuesView)
         self.assertIsInstance(d.values(), collections.abc.MappingView)
         self.assertIsInstance(d.values(), collections.abc.Sized)
+        self.assertIsInstance(d.values(), collections.abc.Collection)
+        self.assertIsInstance(d.values(), collections.abc.Iterable)
+        self.assertIsInstance(d.values(), collections.abc.Container)
 
         self.assertIsInstance(d.items(), collections.abc.ItemsView)
         self.assertIsInstance(d.items(), collections.abc.MappingView)

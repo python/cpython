@@ -1,4 +1,5 @@
-#include "pycore_interp.h"    // _PyInterpreterState.threads.stacksize
+#include "pycore_interp.h"        // _PyInterpreterState.threads.stacksize
+#include "pycore_pythread.h"      // _POSIX_SEMAPHORES
 
 /* Posix threads interface */
 
@@ -84,10 +85,10 @@
 /* On FreeBSD 4.x, _POSIX_SEMAPHORES is defined empty, so
    we need to add 0 to make it work there as well. */
 #if (_POSIX_SEMAPHORES+0) == -1
-#define HAVE_BROKEN_POSIX_SEMAPHORES
+#  define HAVE_BROKEN_POSIX_SEMAPHORES
 #else
-#include <semaphore.h>
-#include <errno.h>
+#  include <semaphore.h>
+#  include <errno.h>
 #endif
 #endif
 
@@ -119,24 +120,21 @@
  * pthread_cond support
  */
 
-#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
-// monotonic is supported statically.  It doesn't mean it works on runtime.
-#define CONDATTR_MONOTONIC
-#endif
-
-// NULL when pthread_condattr_setclock(CLOCK_MONOTONIC) is not supported.
-static pthread_condattr_t *condattr_monotonic = NULL;
+#define condattr_monotonic _PyRuntime.threads._condattr_monotonic.ptr
 
 static void
 init_condattr(void)
 {
 #ifdef CONDATTR_MONOTONIC
-    static pthread_condattr_t ca;
+# define ca _PyRuntime.threads._condattr_monotonic.val
+    // XXX We need to check the return code?
     pthread_condattr_init(&ca);
+    // XXX We need to run pthread_condattr_destroy() during runtime fini.
     if (pthread_condattr_setclock(&ca, CLOCK_MONOTONIC) == 0) {
         condattr_monotonic = &ca;  // Use monotonic clock
     }
-#endif
+# undef ca
+#endif  // CONDATTR_MONOTONIC
 }
 
 int
@@ -192,15 +190,21 @@ typedef struct {
     "%s: %s\n", name, strerror(status)); error = 1; }
 
 /*
- * Initialization.
+ * Initialization for the current runtime.
  */
 static void
 PyThread__init_thread(void)
 {
+    // The library is only initialized once in the process,
+    // regardless of how many times the Python runtime is initialized.
+    static int lib_initialized = 0;
+    if (!lib_initialized) {
+        lib_initialized = 1;
 #if defined(_AIX) && defined(__GNUC__)
-    extern void pthread_init(void);
-    pthread_init();
+        extern void pthread_init(void);
+        pthread_init();
 #endif
+    }
     init_condattr();
 }
 
@@ -353,7 +357,15 @@ PyThread_exit_thread(void)
 {
     if (!initialized)
         exit(0);
+#if defined(__wasi__)
+    /*
+     * wasi-threads doesn't have pthread_exit right now
+     * cf. https://github.com/WebAssembly/wasi-threads/issues/7
+     */
+    abort();
+#else
     pthread_exit(0);
+#endif
 }
 
 #ifdef USE_SEMAPHORES

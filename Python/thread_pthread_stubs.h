@@ -40,7 +40,7 @@ pthread_cond_init(pthread_cond_t *restrict cond,
     return 0;
 }
 
-PyAPI_FUNC(int)pthread_cond_destroy(pthread_cond_t *cond)
+PyAPI_FUNC(int) pthread_cond_destroy(pthread_cond_t *cond)
 {
     return 0;
 }
@@ -124,13 +124,10 @@ pthread_attr_destroy(pthread_attr_t *attr)
     return 0;
 }
 
-// pthread_key
-typedef struct {
-    bool in_use;
-    void *value;
-} py_tls_entry;
 
-static py_tls_entry py_tls_entries[PTHREAD_KEYS_MAX] = {0};
+typedef struct py_stub_tls_entry py_tls_entry;
+
+#define py_tls_entries (_PyRuntime.threads.stubs.tls_entries)
 
 int
 pthread_key_create(pthread_key_t *key, void (*destr_function)(void *))

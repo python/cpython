@@ -1,1 +1,0 @@
-Fix refleak in ``_io.TextIOWrapper.reconfigure``. Patch by Kumar Aditya.

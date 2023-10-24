@@ -1,4 +1,0 @@
-On macOS, fix a crash in :func:`syslog.syslog` in multi-threaded applications.
-On macOS, the libc ``syslog()`` function is not thread-safe, so
-:func:`syslog.syslog` no longer releases the GIL to call it. Patch by Victor
-Stinner.

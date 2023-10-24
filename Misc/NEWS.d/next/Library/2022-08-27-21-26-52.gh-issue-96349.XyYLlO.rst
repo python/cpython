@@ -1,1 +1,0 @@
-Fixed a minor performance regression in :func:`threading.Event.__init__`

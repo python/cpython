@@ -15,6 +15,26 @@ import sys
 import struct
 import threading
 import gc
+import warnings
+
+def pickle_deprecated(testfunc):
+    """ Run the test three times.
+    First, verify that a Deprecation Warning is raised.
+    Second, run normally but with DeprecationWarnings temporarily disabled.
+    Third, run with warnings promoted to errors.
+    """
+    def inner(self):
+        with self.assertWarns(DeprecationWarning):
+            testfunc(self)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            testfunc(self)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", category=DeprecationWarning)
+            with self.assertRaises((DeprecationWarning, AssertionError, SystemError)):
+                testfunc(self)
+
+    return inner
 
 maxsize = support.MAX_Py_ssize_t
 minsize = -maxsize-1
@@ -124,6 +144,7 @@ class TestBasicOps(unittest.TestCase):
             c = expand(compare[took:])
             self.assertEqual(a, c);
 
+    @pickle_deprecated
     def test_accumulate(self):
         self.assertEqual(list(accumulate(range(10))),               # one positional arg
                           [0, 1, 3, 6, 10, 15, 21, 28, 36, 45])
@@ -161,11 +182,11 @@ class TestBasicOps(unittest.TestCase):
 
     def test_batched(self):
         self.assertEqual(list(batched('ABCDEFG', 3)),
-                             [['A', 'B', 'C'], ['D', 'E', 'F'], ['G']])
+                             [('A', 'B', 'C'), ('D', 'E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 2)),
-                             [['A', 'B'], ['C', 'D'], ['E', 'F'], ['G']])
+                             [('A', 'B'), ('C', 'D'), ('E', 'F'), ('G',)])
         self.assertEqual(list(batched('ABCDEFG', 1)),
-                             [['A'], ['B'], ['C'], ['D'], ['E'], ['F'], ['G']])
+                            [('A',), ('B',), ('C',), ('D',), ('E',), ('F',), ('G',)])
 
         with self.assertRaises(TypeError):          # Too few arguments
             list(batched('ABCDEFG'))
@@ -188,8 +209,8 @@ class TestBasicOps(unittest.TestCase):
                 with self.subTest(s=s, n=n, batches=batches):
                     # Order is preserved and no data is lost
                     self.assertEqual(''.join(chain(*batches)), s)
-                    # Each batch is an exact list
-                    self.assertTrue(all(type(batch) is list for batch in batches))
+                    # Each batch is an exact tuple
+                    self.assertTrue(all(type(batch) is tuple for batch in batches))
                     # All but the last batch is of size n
                     if batches:
                         last_batch = batches.pop()
@@ -220,6 +241,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, list, chain.from_iterable([2, 3]))
         self.assertEqual(list(islice(chain.from_iterable(repeat(range(5))), 2)), [0, 1])
 
+    @pickle_deprecated
     def test_chain_reducible(self):
         for oper in [copy.deepcopy] + picklecopiers:
             it = chain('abc', 'def')
@@ -233,6 +255,7 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, chain('abc', 'def'), compare=list('abcdef'))
 
+    @pickle_deprecated
     def test_chain_setstate(self):
         self.assertRaises(TypeError, chain().__setstate__, ())
         self.assertRaises(TypeError, chain().__setstate__, [])
@@ -246,6 +269,7 @@ class TestBasicOps(unittest.TestCase):
         it.__setstate__((iter(['abc', 'def']), iter(['ghi'])))
         self.assertEqual(list(it), ['ghi', 'a', 'b', 'c', 'd', 'e', 'f'])
 
+    @pickle_deprecated
     def test_combinations(self):
         self.assertRaises(TypeError, combinations, 'abc')       # missing r argument
         self.assertRaises(TypeError, combinations, 'abc', 2, 1) # too many arguments
@@ -268,7 +292,6 @@ class TestBasicOps(unittest.TestCase):
             next(testIntermediate)
             self.assertEqual(list(op(testIntermediate)),
                              [(0,1,3), (0,2,3), (1,2,3)])
-
 
         def combinations1(iterable, r):
             'Pure python version shown in the docs'
@@ -337,6 +360,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, combinations('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(combinations('abcde', 3))))), 1)
 
+    @pickle_deprecated
     def test_combinations_with_replacement(self):
         cwr = combinations_with_replacement
         self.assertRaises(TypeError, cwr, 'abc')       # missing r argument
@@ -425,6 +449,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, cwr('abcde', 3)))), 1)
         self.assertNotEqual(len(set(map(id, list(cwr('abcde', 3))))), 1)
 
+    @pickle_deprecated
     def test_permutations(self):
         self.assertRaises(TypeError, permutations)              # too few arguments
         self.assertRaises(TypeError, permutations, 'abc', 2, 1) # too many arguments
@@ -531,6 +556,7 @@ class TestBasicOps(unittest.TestCase):
                 self.assertEqual(comb, list(filter(set(perm).__contains__, cwr)))     # comb: cwr that is a perm
                 self.assertEqual(comb, sorted(set(cwr) & set(perm)))            # comb: both a cwr and a perm
 
+    @pickle_deprecated
     def test_compress(self):
         self.assertEqual(list(compress(data='ABCDEF', selectors=[1,0,1,0,1,1])), list('ACEF'))
         self.assertEqual(list(compress('ABCDEF', [1,0,1,0,1,1])), list('ACEF'))
@@ -564,7 +590,7 @@ class TestBasicOps(unittest.TestCase):
                     next(testIntermediate)
                     self.assertEqual(list(op(testIntermediate)), list(result2))
 
-
+    @pickle_deprecated
     def test_count(self):
         self.assertEqual(lzip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(lzip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
@@ -613,6 +639,7 @@ class TestBasicOps(unittest.TestCase):
         #check proper internal error handling for large "step' sizes
         count(1, maxsize+5); sys.exc_info()
 
+    @pickle_deprecated
     def test_count_with_stride(self):
         self.assertEqual(lzip('abc',count(2,3)), [('a', 2), ('b', 5), ('c', 8)])
         self.assertEqual(lzip('abc',count(start=2,step=3)),
@@ -675,6 +702,8 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle, 5)
         self.assertEqual(list(islice(cycle(gen3()),10)), [0,1,2,0,1,2,0,1,2,0])
 
+    @pickle_deprecated
+    def test_cycle_copy_pickle(self):
         # check copy, deepcopy, pickle
         c = cycle('abc')
         self.assertEqual(next(c), 'a')
@@ -710,6 +739,39 @@ class TestBasicOps(unittest.TestCase):
             d = pickle.loads(p)                  # rebuild the cycle object
             self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
 
+    @pickle_deprecated
+    def test_cycle_unpickle_compat(self):
+        testcases = [
+            b'citertools\ncycle\n(c__builtin__\niter\n((lI1\naI2\naI3\natRI1\nbtR((lI1\naI0\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(](K\x01K\x02K\x03etRK\x01btR(]K\x01aK\x00tb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+            b'\x80\x04\x95=\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01aK\x00\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lp0\nI1\naI2\naI3\natRI1\nbtR(g0\nI1\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(]q\x00(K\x01K\x02K\x03etRK\x01btR(h\x00K\x01tb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+            b'\x80\x04\x95<\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93]\x94(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00K\x01\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lI1\naI2\naI3\natRI1\nbtR((lI1\naI00\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(](K\x01K\x02K\x03etRK\x01btR(]K\x01aI00\ntb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+            b'\x80\x04\x95<\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93](K\x01K\x02K\x03e\x85RK\x01b\x85R]K\x01a\x89\x86b.',
+
+            b'citertools\ncycle\n(c__builtin__\niter\n((lp0\nI1\naI2\naI3\natRI1\nbtR(g0\nI01\ntb.',
+            b'citertools\ncycle\n(c__builtin__\niter\n(]q\x00(K\x01K\x02K\x03etRK\x01btR(h\x00I01\ntb.',
+            b'\x80\x02citertools\ncycle\nc__builtin__\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+            b'\x80\x03citertools\ncycle\ncbuiltins\niter\n]q\x00(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+            b'\x80\x04\x95;\x00\x00\x00\x00\x00\x00\x00\x8c\titertools\x8c\x05cycle\x93\x8c\x08builtins\x8c\x04iter\x93]\x94(K\x01K\x02K\x03e\x85RK\x01b\x85Rh\x00\x88\x86b.',
+        ]
+        assert len(testcases) == 20
+        for t in testcases:
+            it = pickle.loads(t)
+            self.assertEqual(take(10, it), [2, 3, 1, 2, 3, 1, 2, 3, 1, 2])
+
+    @pickle_deprecated
     def test_cycle_setstate(self):
         # Verify both modes for restoring state
 
@@ -746,6 +808,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle('').__setstate__, ())
         self.assertRaises(TypeError, cycle('').__setstate__, ([],))
 
+    @pickle_deprecated
     def test_groupby(self):
         # Check whether it accepts arguments correctly
         self.assertEqual([], list(groupby([])))
@@ -903,6 +966,7 @@ class TestBasicOps(unittest.TestCase):
             c = filter(isEven, range(6))
             self.pickletest(proto, c)
 
+    @pickle_deprecated
     def test_filterfalse(self):
         self.assertEqual(list(filterfalse(isEven, range(6))), [1,3,5])
         self.assertEqual(list(filterfalse(None, [0,1,0,2,0])), [0,0,0])
@@ -933,6 +997,7 @@ class TestBasicOps(unittest.TestCase):
                          lzip('abc', 'def'))
 
     @support.impl_detail("tuple reuse is specific to CPython")
+    @pickle_deprecated
     def test_zip_tuple_reuse(self):
         ids = list(map(id, zip('abc', 'def')))
         self.assertEqual(min(ids), max(ids))
@@ -1008,6 +1073,7 @@ class TestBasicOps(unittest.TestCase):
         ids = list(map(id, list(zip_longest('abc', 'def'))))
         self.assertEqual(len(dict.fromkeys(ids)), len(ids))
 
+    @pickle_deprecated
     def test_zip_longest_pickling(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, zip_longest("abc", "def"))
@@ -1154,6 +1220,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(len(set(map(id, product('abc', 'def')))), 1)
         self.assertNotEqual(len(set(map(id, list(product('abc', 'def'))))), 1)
 
+    @pickle_deprecated
     def test_product_pickling(self):
         # check copy, deepcopy, pickle
         for args, result in [
@@ -1169,6 +1236,7 @@ class TestBasicOps(unittest.TestCase):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.pickletest(proto, product(*args))
 
+    @pickle_deprecated
     def test_product_issue_25021(self):
         # test that indices are properly clamped to the length of the tuples
         p = product((1, 2),(3,))
@@ -1179,6 +1247,7 @@ class TestBasicOps(unittest.TestCase):
         p.__setstate__((0, 0, 0x1000))  # will access tuple element 1 if not clamped
         self.assertRaises(StopIteration, next, p)
 
+    @pickle_deprecated
     def test_repeat(self):
         self.assertEqual(list(repeat(object='a', times=3)), ['a', 'a', 'a'])
         self.assertEqual(lzip(range(3),repeat('a')),
@@ -1211,6 +1280,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(repr(repeat('a', times=-1)), "repeat('a', 0)")
         self.assertEqual(repr(repeat('a', times=-2)), "repeat('a', 0)")
 
+    @pickle_deprecated
     def test_map(self):
         self.assertEqual(list(map(operator.pow, range(3), range(1,7))),
                          [0**1, 1**2, 2**3])
@@ -1241,6 +1311,7 @@ class TestBasicOps(unittest.TestCase):
             c = map(tupleize, 'abc', count())
             self.pickletest(proto, c)
 
+    @pickle_deprecated
     def test_starmap(self):
         self.assertEqual(list(starmap(operator.pow, zip(range(3), range(1,7)))),
                          [0**1, 1**2, 2**3])
@@ -1268,6 +1339,7 @@ class TestBasicOps(unittest.TestCase):
             c = starmap(operator.pow, zip(range(3), range(1,7)))
             self.pickletest(proto, c)
 
+    @pickle_deprecated
     def test_islice(self):
         for args in [          # islice(args) should agree with range(args)
                 (10, 20, 3),
@@ -1362,6 +1434,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(islice(range(100), IntLike(10), IntLike(50), IntLike(5))),
                          list(range(10,50,5)))
 
+    @pickle_deprecated
     def test_takewhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(takewhile(underten, data)), [1, 3, 5])
@@ -1382,6 +1455,7 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, takewhile(underten, data))
 
+    @pickle_deprecated
     def test_dropwhile(self):
         data = [1, 3, 5, 20, 2, 4, 6, 8]
         self.assertEqual(list(dropwhile(underten, data)), [20, 2, 4, 6, 8])
@@ -1399,6 +1473,7 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, dropwhile(underten, data))
 
+    @pickle_deprecated
     def test_tee(self):
         n = 200
 
@@ -1662,12 +1737,45 @@ class TestBasicOps(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
 
+    @support.cpython_only
+    def test_immutable_types(self):
+        from itertools import _grouper, _tee, _tee_dataobject
+        dataset = (
+            accumulate,
+            batched,
+            chain,
+            combinations,
+            combinations_with_replacement,
+            compress,
+            count,
+            cycle,
+            dropwhile,
+            filterfalse,
+            groupby,
+            _grouper,
+            islice,
+            pairwise,
+            permutations,
+            product,
+            repeat,
+            starmap,
+            takewhile,
+            _tee,
+            _tee_dataobject,
+            zip_longest,
+        )
+        for tp in dataset:
+            with self.subTest(tp=tp):
+                with self.assertRaisesRegex(TypeError, "immutable"):
+                    tp.foobar = 1
+
 
 class TestExamples(unittest.TestCase):
 
     def test_accumulate(self):
         self.assertEqual(list(accumulate([1,2,3,4,5])), [1, 3, 6, 10, 15])
 
+    @pickle_deprecated
     def test_accumulate_reducible(self):
         # check copy, deepcopy, pickle
         data = [1, 2, 3, 4, 5]
@@ -1683,6 +1791,7 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(copy.deepcopy(it)), accumulated[1:])
         self.assertEqual(list(copy.copy(it)), accumulated[1:])
 
+    @pickle_deprecated
     def test_accumulate_reducible_none(self):
         # Issue #25718: total is None
         it = accumulate([None, None, None], operator.is_)
@@ -1777,12 +1886,12 @@ class TestPurePythonRoughEquivalents(unittest.TestCase):
 
     def test_batched_recipe(self):
         def batched_recipe(iterable, n):
-            "Batch data into lists of length n. The last batch may be shorter."
+            "Batch data into tuples of length n. The last batch may be shorter."
             # batched('ABCDEFG', 3) --> ABC DEF G
             if n < 1:
                 raise ValueError('n must be at least one')
             it = iter(iterable)
-            while (batch := list(islice(it, n))):
+            while batch := tuple(islice(it, n)):
                 yield batch
 
         for iterable, n in product(
@@ -2012,6 +2121,20 @@ class E:
     def __next__(self):
         3 // 0
 
+class E2:
+    'Test propagation of exceptions after two iterations'
+    def __init__(self, seqn):
+        self.seqn = seqn
+        self.i = 0
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.i == 2:
+            raise ZeroDivisionError
+        v = self.seqn[self.i]
+        self.i += 1
+        return v
+
 class S:
     'Test immediate stop'
     def __init__(self, seqn):
@@ -2041,7 +2164,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_batched(self):
         s = 'abcde'
-        r = [['a', 'b'], ['c', 'd'], ['e']]
+        r = [('a', 'b'), ('c', 'd'), ('e',)]
         n = 2
         for g in (G, I, Ig, L, R):
             with self.subTest(g=g):
@@ -2050,6 +2173,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
         self.assertRaises(TypeError, batched, X(s), 2)
         self.assertRaises(TypeError, batched, N(s), 2)
         self.assertRaises(ZeroDivisionError, list, batched(E(s), 2))
+        self.assertRaises(ZeroDivisionError, list, batched(E2(s), 4))
 
     def test_chain(self):
         for s in ("123", "", range(1000), ('do', 1.2), range(2000,2200,5)):
@@ -2277,6 +2401,7 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(hist, [0,1])
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_long_chain_of_empty_iterables(self):
         # Make sure itertools.chain doesn't run into recursion limits when
         # dealing with long chains of empty iterables. Even with a high

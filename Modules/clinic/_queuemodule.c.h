@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
@@ -21,14 +21,13 @@ static PyObject *
 simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = simplequeue_get_state_by_type(type)->SimpleQueueType;
 
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType ||
-         type->tp_init == simplequeue_get_state_by_type(type)->SimpleQueueType->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("SimpleQueue", args)) {
         goto exit;
     }
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType ||
-         type->tp_init == simplequeue_get_state_by_type(type)->SimpleQueueType->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
         goto exit;
     }
@@ -332,4 +331,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=628e992d38f50aac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=457310b20cb61cf8 input=a9049054013a1b77]*/
