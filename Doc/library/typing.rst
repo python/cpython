@@ -290,7 +290,7 @@ a callable with any arbitrary parameter list would be acceptable:
    x = concat  # Also OK
 
 ``Callable`` cannot express complex signatures such as functions that take a
-variadic number of arguments, :func:`overloaded functions <overload>`, or
+variadic number of arguments, :ref:`overloaded functions <overload>`, or
 functions that have keyword-only parameters. However, these signatures can be
 expressed by defining a :class:`Protocol` class with a
 :meth:`~object.__call__` method:
@@ -1424,7 +1424,7 @@ These can be used as types in annotations. They all support subscription using
    Typing operator to conceptually mark an object as having been unpacked.
 
    For example, using the unpack operator ``*`` on a
-   :class:`type variable tuple <TypeVarTuple>` is equivalent to using ``Unpack``
+   :ref:`type variable tuple <typevartuple>` is equivalent to using ``Unpack``
    to mark the type variable tuple as having been unpacked::
 
       Ts = TypeVarTuple('Ts')
@@ -1478,6 +1478,8 @@ for creating generic types.
               return mapping[key]
           except KeyError:
               return default
+
+.. _typevar:
 
 .. class:: TypeVar(name, *constraints, bound=None, covariant=False, contravariant=False)
 
@@ -1573,9 +1575,11 @@ for creating generic types.
 
       A tuple containing the constraints of the type variable, if any.
 
+.. _typevartuple:
+
 .. class:: TypeVarTuple(name)
 
-   Type variable tuple. A specialized form of :class:`type variable <TypeVar>`
+   Type variable tuple. A specialized form of :ref:`type variable <typevar>`
    that enables *variadic* generics.
 
    Usage::
@@ -1686,7 +1690,7 @@ for creating generic types.
 .. class:: ParamSpec(name, *, bound=None, covariant=False, contravariant=False)
 
    Parameter specification variable.  A specialized version of
-   :class:`type variables <TypeVar>`.
+   :ref:`type variables <typevar>`.
 
    Usage::
 
@@ -2482,6 +2486,8 @@ Functions and decorators
    See :pep:`681` for more details.
 
    .. versionadded:: 3.11
+
+.. _overload:
 
 .. decorator:: overload
 
