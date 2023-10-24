@@ -404,12 +404,12 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
 
     # create a temporary file using a context manager
     # close the file, use the name to open the file again
-    >>> with tempfile.TemporaryFile(delete_on_close=False) as fp:
+    >>> with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
     ...    fp.write(b'Hello world!')
     ...    fp.close()
     # the file is closed, but not removed
     # open the file again by using its name
-    ...    with open(fp.name) as f
+    ...    with open(fp.name) as f:
     ...        f.read()
     b'Hello world!'
     >>>
