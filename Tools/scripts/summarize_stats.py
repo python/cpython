@@ -419,6 +419,8 @@ class Ratio:
         self.num = num
         self.den = den
         self.percentage = percentage
+        if den == 0 and num != 0:
+            raise ValueError("Invalid denominator")
 
     def __float__(self):
         if self.den == 0:
