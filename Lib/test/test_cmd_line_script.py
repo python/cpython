@@ -683,7 +683,7 @@ class CmdLineTest(unittest.TestCase):
                         b'SyntaxError: source code cannot contain null bytes'
                     ]
                 )
-    
+
     def test_source_lines_are_shown_when_running_source(self):
         _, _, stderr = assert_python_failure("-c", "1/0")
         expected_lines = [

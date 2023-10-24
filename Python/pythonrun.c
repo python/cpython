@@ -1171,7 +1171,7 @@ _PyRun_StringFlagsWithName(const char *str, PyObject* name, int start,
     } else {
         name = &_Py_STR(anon_string);
     }
- 
+
     mod = _PyParser_ASTFromString(str, name, start, flags, arena);
 
    if (mod != NULL) {
