@@ -1152,17 +1152,16 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, i, line_delta);
     assert(line >= 0);
-    if (prev != NULL) {
-        int prev_index = (int)(prev - _PyCode_CODE(code));
-        int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
-        if (prev_line == line) {
-            int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
-            /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
-             * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
-             */
-            if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
-                goto done;
-            }
+    assert(prev != NULL);
+    int prev_index = (int)(prev - _PyCode_CODE(code));
+    int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
+    if (prev_line == line) {
+        int prev_opcode = _PyCode_CODE(code)[prev_index].op.code;
+        /* RESUME and INSTRUMENTED_RESUME are needed for the operation of
+         * instrumentation, so must never be hidden by an INSTRUMENTED_LINE.
+         */
+        if (prev_opcode != RESUME && prev_opcode != INSTRUMENTED_RESUME) {
+            goto done;
         }
     }
     uint8_t tools = code->_co_monitoring->line_tools != NULL ?
