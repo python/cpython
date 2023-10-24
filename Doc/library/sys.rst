@@ -1778,7 +1778,7 @@ always available.
       However, if you are writing a library (and do not control in which
       context its code will be executed), be aware that the standard streams
       may be replaced with file-like objects like :class:`io.StringIO` which
-      do not support the :attr:!buffer` attribute.
+      do not support the :attr:`!buffer` attribute.
 
 
 .. data:: __stdin__
