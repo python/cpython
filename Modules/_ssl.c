@@ -5792,10 +5792,12 @@ sslmodule_init_constants(PyObject *m)
         return -1;
     }
 
-#define _PyModule_ADD_INT_CONST(module, name, value) \
-    if (PyModule_AddIntConstant(module, name, value) < 0) { \
-        return -1; \
-    }
+#define _PyModule_ADD_INT_CONST(MODULE, NAME, VALUE) \
+    do {
+        if (PyModule_AddIntConstant(MODULE, NAME, VALUE) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 
     _PyModule_ADD_INT_CONST(m, "SSL_ERROR_ZERO_RETURN",
                             PY_SSL_ERROR_ZERO_RETURN);
