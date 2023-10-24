@@ -6020,7 +6020,7 @@ sslmodule_init_constants(PyObject *m)
 #endif
 
 #undef addbool
-#undef _PyModule_ADD_INT_CONST
+#undef ADD_INT_CONST
 
     return 0;
 }
