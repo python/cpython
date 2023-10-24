@@ -692,6 +692,7 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
+            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
@@ -3275,7 +3276,6 @@
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
-            assert(frame->next_instr_offset == 0);
             frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
             #endif
             #if TIER_TWO

@@ -738,9 +738,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 
 /* Sets the above local variables from the frame */
 #define SET_LOCALS_FROM_FRAME() \
-    /* Jump back to the last instruction executed... */ \
-    next_instr = frame->instr_ptr + frame->next_instr_offset; \
-    frame->next_instr_offset = 0; \
+    next_instr = frame->instr_ptr; \
     stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
@@ -777,6 +775,7 @@ resume_frame:
 
 #include "generated_cases.c.h"
 
+    // TODO: update this comment
     /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
      * because it needs to capture frame->instr_ptr before it is updated,
      * as happens in the standard instruction prologue.
@@ -787,7 +786,7 @@ resume_frame:
         case INSTRUMENTED_LINE:
 #endif
     {
-        _Py_CODEUNIT *prev = frame->instr_ptr;
+        _Py_CODEUNIT *prev = frame->instr_ptr - frame->next_instr_offset;
         _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(

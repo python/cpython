@@ -70,6 +70,7 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
+ if (0) fprintf(stderr, "frame=%p op=%s frame->next_instr_offset = %d\n", frame, _PyOpcode_OpName[op], frame->next_instr_offset); \
         frame->instr_ptr = next_instr++; \
         frame->next_instr_offset = 0; \
     } while(0)
@@ -392,7 +393,8 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #if TIER_ONE
 
 #define LOAD_IP() do { \
-        next_instr = frame->instr_ptr + frame->next_instr_offset; \
+        if (0) assert(frame->next_instr_offset == 0); \
+        next_instr = frame->instr_ptr; \
     } while (0)
 
 #define STORE_SP() \

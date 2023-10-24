@@ -791,6 +791,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
+            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
@@ -820,6 +821,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
+            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -844,6 +846,7 @@ dummy_func(
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
+            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
             goto resume_frame;
         }
@@ -1045,6 +1048,7 @@ dummy_func(
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+            frame->instr_ptr += frame->next_instr_offset;
             goto resume_frame;
         }
 
@@ -1068,6 +1072,7 @@ dummy_func(
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
+            frame->instr_ptr += frame->next_instr_offset;
             goto resume_frame;
         }
 
@@ -3771,6 +3776,7 @@ dummy_func(
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
+            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             goto resume_frame;
         }
@@ -3968,7 +3974,6 @@ dummy_func(
 
         op(_SAVE_CURRENT_IP, (--)) {
             #if TIER_ONE
-            assert(frame->next_instr_offset == 0);
             frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
             #endif
             #if TIER_TWO
