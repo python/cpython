@@ -70,7 +70,6 @@
 #else
 #define INSTRUCTION_START(op) \
     do { \
- if (0) fprintf(stderr, "frame=%p op=%s frame->next_instr_offset = %d\n", frame, _PyOpcode_OpName[op], frame->next_instr_offset); \
         frame->instr_ptr = next_instr++; \
         frame->next_instr_offset = 0; \
     } while(0)
@@ -291,7 +290,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define CONSTS() _PyFrame_GetCode(frame)->co_consts
 #define NAMES() _PyFrame_GetCode(frame)->co_names
 
-
 #define DTRACE_FUNCTION_ENTRY()  \
     if (PyDTrace_FUNCTION_ENTRY_ENABLED()) { \
         dtrace_function_entry(frame); \
@@ -393,7 +391,6 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 #if TIER_ONE
 
 #define LOAD_IP() do { \
-        if (0) assert(frame->next_instr_offset == 0); \
         next_instr = frame->instr_ptr; \
     } while (0)
 
