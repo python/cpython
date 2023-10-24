@@ -644,6 +644,8 @@ Opening network connections
 Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _loop_create_server:
+
 .. coroutinemethod:: loop.create_server(protocol_factory, \
                         host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
@@ -1174,6 +1176,8 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
+.. _loop_add_signal_handler:
+
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
@@ -1392,6 +1396,8 @@ async/await code consider using the high-level
    subprocesses, whereas :class:`SelectorEventLoop` does not. See
    :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
    details.
+
+.. _loop_subprocess_exec:
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
