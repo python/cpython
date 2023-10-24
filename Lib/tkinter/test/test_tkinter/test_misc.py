@@ -371,6 +371,309 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertTrue(str(vi).startswith(f'{vi.major}.{vi.minor}'))
 
 
+class BindTest(AbstractTkTest, unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        root = self.root
+        self.frame = tkinter.Frame(self.root, class_='Test',
+                                   width=150, height=100)
+        self.frame.pack()
+
+    def assertCommandExist(self, funcid):
+        self.assertEqual(_info_commands(self.root, funcid), (funcid,))
+
+    def assertCommandNotExist(self, funcid):
+        self.assertEqual(_info_commands(self.root, funcid), ())
+
+    def test_bind(self):
+        event = '<Control-Alt-Key-a>'
+        f = self.frame
+        self.assertEqual(f.bind(), ())
+        self.assertEqual(f.bind(event), '')
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = f.bind(event, test1)
+        self.assertEqual(f.bind(), (event,))
+        script = f.bind(event)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+
+        funcid2 = f.bind(event, test2, add=True)
+        script = f.bind(event)
+        self.assertIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+    def test_unbind(self):
+        event = '<Control-Alt-Key-b>'
+        f = self.frame
+        self.assertEqual(f.bind(), ())
+        self.assertEqual(f.bind(event), '')
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = f.bind(event, test1)
+        funcid2 = f.bind(event, test2, add=True)
+
+        self.assertRaises(TypeError, f.unbind)
+        f.unbind(event)
+        self.assertEqual(f.bind(event), '')
+        self.assertEqual(f.bind(), ())
+
+    def test_unbind2(self):
+        f = self.frame
+        event = '<Control-Alt-Key-c>'
+        self.assertEqual(f.bind(), ())
+        self.assertEqual(f.bind(event), '')
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = f.bind(event, test1)
+        funcid2 = f.bind(event, test2, add=True)
+
+        f.unbind(event, funcid)
+        script = f.bind(event)
+        self.assertNotIn(funcid, script)
+        self.assertCommandNotExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        f.unbind(event, funcid2)
+        self.assertEqual(f.bind(event), '')
+        self.assertEqual(f.bind(), ())
+        self.assertCommandNotExist(funcid)
+        self.assertCommandNotExist(funcid2)
+
+        # non-idempotent
+        self.assertRaises(tkinter.TclError, f.unbind, event, funcid2)
+
+    def test_bind_rebind(self):
+        event = '<Control-Alt-Key-d>'
+        f = self.frame
+        self.assertEqual(f.bind(), ())
+        self.assertEqual(f.bind(event), '')
+        def test1(e): pass
+        def test2(e): pass
+        def test3(e): pass
+
+        funcid = f.bind(event, test1)
+        funcid2 = f.bind(event, test2, add=True)
+        script = f.bind(event)
+        self.assertIn(funcid2, script)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        funcid3 = f.bind(event, test3)
+        script = f.bind(event)
+        self.assertNotIn(funcid, script)
+        self.assertNotIn(funcid2, script)
+        self.assertIn(funcid3, script)
+        self.assertCommandExist(funcid3)
+
+    def test_bind_class(self):
+        event = '<Control-Alt-Key-e>'
+        bind_class = self.root.bind_class
+        unbind_class = self.root.unbind_class
+        self.assertRaises(TypeError, bind_class)
+        self.assertEqual(bind_class('Test'), ())
+        self.assertEqual(bind_class('Test', event), '')
+        self.addCleanup(unbind_class, 'Test', event)
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = bind_class('Test', event, test1)
+        self.assertEqual(bind_class('Test'), (event,))
+        script = bind_class('Test', event)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+
+        funcid2 = bind_class('Test', event, test2, add=True)
+        script = bind_class('Test', event)
+        self.assertIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+    def test_unbind_class(self):
+        event = '<Control-Alt-Key-f>'
+        bind_class = self.root.bind_class
+        unbind_class = self.root.unbind_class
+        self.assertEqual(bind_class('Test'), ())
+        self.assertEqual(bind_class('Test', event), '')
+        self.addCleanup(unbind_class, 'Test', event)
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = bind_class('Test', event, test1)
+        funcid2 = bind_class('Test', event, test2, add=True)
+
+        self.assertRaises(TypeError, unbind_class)
+        self.assertRaises(TypeError, unbind_class, 'Test')
+        unbind_class('Test', event)
+        self.assertEqual(bind_class('Test', event), '')
+        self.assertEqual(bind_class('Test'), ())
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        unbind_class('Test', event)  # idempotent
+
+    def test_bind_class_rebind(self):
+        event = '<Control-Alt-Key-g>'
+        bind_class = self.root.bind_class
+        unbind_class = self.root.unbind_class
+        self.assertEqual(bind_class('Test'), ())
+        self.assertEqual(bind_class('Test', event), '')
+        self.addCleanup(unbind_class, 'Test', event)
+        def test1(e): pass
+        def test2(e): pass
+        def test3(e): pass
+
+        funcid = bind_class('Test', event, test1)
+        funcid2 = bind_class('Test', event, test2, add=True)
+        script = bind_class('Test', event)
+        self.assertIn(funcid2, script)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        funcid3 = bind_class('Test', event, test3)
+        script = bind_class('Test', event)
+        self.assertNotIn(funcid, script)
+        self.assertNotIn(funcid2, script)
+        self.assertIn(funcid3, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+        self.assertCommandExist(funcid3)
+
+    def test_bind_all(self):
+        event = '<Control-Alt-Key-h>'
+        bind_all = self.root.bind_all
+        unbind_all = self.root.unbind_all
+        self.assertNotIn(event, bind_all())
+        self.assertEqual(bind_all(event), '')
+        self.addCleanup(unbind_all, event)
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = bind_all(event, test1)
+        self.assertIn(event, bind_all())
+        script = bind_all(event)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+
+        funcid2 = bind_all(event, test2, add=True)
+        script = bind_all(event)
+        self.assertIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+    def test_unbind_all(self):
+        event = '<Control-Alt-Key-i>'
+        bind_all = self.root.bind_all
+        unbind_all = self.root.unbind_all
+        self.assertNotIn(event, bind_all())
+        self.assertEqual(bind_all(event), '')
+        self.addCleanup(unbind_all, event)
+        def test1(e): pass
+        def test2(e): pass
+
+        funcid = bind_all(event, test1)
+        funcid2 = bind_all(event, test2, add=True)
+
+        unbind_all(event)
+        self.assertEqual(bind_all(event), '')
+        self.assertNotIn(event, bind_all())
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        unbind_all(event)  # idempotent
+
+    def test_bind_all_rebind(self):
+        event = '<Control-Alt-Key-j>'
+        bind_all = self.root.bind_all
+        unbind_all = self.root.unbind_all
+        self.assertNotIn(event, bind_all())
+        self.assertEqual(bind_all(event), '')
+        self.addCleanup(unbind_all, event)
+        def test1(e): pass
+        def test2(e): pass
+        def test3(e): pass
+
+        funcid = bind_all(event, test1)
+        funcid2 = bind_all(event, test2, add=True)
+        script = bind_all(event)
+        self.assertIn(funcid2, script)
+        self.assertIn(funcid, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+
+        funcid3 = bind_all(event, test3)
+        script = bind_all(event)
+        self.assertNotIn(funcid, script)
+        self.assertNotIn(funcid2, script)
+        self.assertIn(funcid3, script)
+        self.assertCommandExist(funcid)
+        self.assertCommandExist(funcid2)
+        self.assertCommandExist(funcid3)
+
+    def test_bindtags(self):
+        f = self.frame
+        self.assertEqual(self.root.bindtags(), ('.', 'Tk', 'all'))
+        self.assertEqual(f.bindtags(), (str(f), 'Test', '.', 'all'))
+        f.bindtags(('a', 'b c'))
+        self.assertEqual(f.bindtags(), ('a', 'b c'))
+
+    def test_bind_events(self):
+        event = '<Enter>'
+        root = self.root
+        t = tkinter.Toplevel(root)
+        f = tkinter.Frame(t, class_='Test', width=150, height=100)
+        f.pack()
+        root.wait_visibility()  # needed on Windows
+        root.update_idletasks()
+        self.addCleanup(root.unbind_class, 'Test', event)
+        self.addCleanup(root.unbind_class, 'Toplevel', event)
+        self.addCleanup(root.unbind_class, 'tag', event)
+        self.addCleanup(root.unbind_class, 'tag2', event)
+        self.addCleanup(root.unbind_all, event)
+        def test(what):
+            return lambda e: events.append((what, e.widget))
+
+        root.bind_all(event, test('all'))
+        root.bind_class('Test', event, test('frame class'))
+        root.bind_class('Toplevel', event, test('toplevel class'))
+        root.bind_class('tag', event, test('tag'))
+        root.bind_class('tag2', event, test('tag2'))
+        f.bind(event, test('frame'))
+        t.bind(event, test('toplevel'))
+
+        events = []
+        f.event_generate(event)
+        self.assertEqual(events, [
+            ('frame', f),
+            ('frame class', f),
+            ('toplevel', f),
+            ('all', f),
+        ])
+
+        events = []
+        t.event_generate(event)
+        self.assertEqual(events, [
+            ('toplevel', t),
+            ('toplevel class', t),
+            ('all', t),
+        ])
+
+        f.bindtags(('tag', 'tag3'))
+        events = []
+        f.event_generate(event)
+        self.assertEqual(events, [('tag', f)])
+
+
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
 
     def test_default_root(self):
@@ -424,6 +727,10 @@ class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
         root.destroy()
         tkinter.NoDefaultRoot()
         self.assertRaises(RuntimeError, tkinter.mainloop)
+
+
+def _info_commands(widget, pattern=None):
+    return widget.tk.splitlist(widget.tk.call('info', 'commands', pattern))
 
 
 if __name__ == "__main__":
