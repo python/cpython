@@ -5793,7 +5793,7 @@ sslmodule_init_constants(PyObject *m)
     }
 
 #define _PyModule_ADD_INT_CONST(MODULE, NAME, VALUE) \
-    do {
+    do { \
         if (PyModule_AddIntConstant(MODULE, NAME, VALUE) < 0) { \
             return -1; \
         } \
