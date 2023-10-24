@@ -2033,6 +2033,40 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         output.append(2)
 
+    @jump_test(1, 4, [5])
+    def test_jump_is_none_forwards(output):
+        x = None
+        if x is None:
+            output.append(3)
+        else:
+            output.append(5)
+
+    @jump_test(6, 5, [3, 5, 6])
+    def test_jump_is_none_backwards(output):
+        x = None
+        if x is None:
+            output.append(3)
+        else:
+            output.append(5)
+        output.append(6)
+
+    @jump_test(1, 4, [5])
+    def test_jump_is_not_none_forwards(output):
+        x = None
+        if x is not None:
+            output.append(3)
+        else:
+            output.append(5)
+
+    @jump_test(6, 5, [5, 5, 6])
+    def test_jump_is_not_none_backwards(output):
+        x = None
+        if x is not None:
+            output.append(3)
+        else:
+            output.append(5)
+        output.append(6)
+
     @jump_test(3, 5, [2, 5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_out_of_block_forwards(output):
         for i in 1, 2:

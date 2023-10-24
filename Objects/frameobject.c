@@ -328,6 +328,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
             switch (opcode) {
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
+                case POP_JUMP_IF_NONE:
+                case POP_JUMP_IF_NOT_NONE:
                 {
                     int64_t target_stack;
                     int j = next_i + oparg;
