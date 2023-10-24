@@ -117,21 +117,23 @@ _PyEval_SetOpcodeTrace(
 
     PyCodeObject *code = (PyCodeObject *)frame->f_frame->f_executable;
     _PyMonitoringEventSet events = 0;
-    if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) == 0) {
-        if (enable) {
-            if (events & (1 << PY_MONITORING_EVENT_INSTRUCTION)) {
-                return 0;
-            }
-            events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
-        } else {
-            if (!(events & (1 << PY_MONITORING_EVENT_INSTRUCTION))) {
-                return 0;
-            }
-            events &= (~(1 << PY_MONITORING_EVENT_INSTRUCTION));
-        }
-        return _PyMonitoring_SetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, events);
+
+    if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
+        return -1;
     }
-    return -1;
+
+    if (enable) {
+        if (events & (1 << PY_MONITORING_EVENT_INSTRUCTION)) {
+            return 0;
+        }
+        events |= (1 << PY_MONITORING_EVENT_INSTRUCTION);
+    } else {
+        if (!(events & (1 << PY_MONITORING_EVENT_INSTRUCTION))) {
+            return 0;
+        }
+        events &= (~(1 << PY_MONITORING_EVENT_INSTRUCTION));
+    }
+    return _PyMonitoring_SetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, events);
 }
 
 static PyObject *
