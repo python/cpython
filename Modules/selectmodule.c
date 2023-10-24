@@ -2444,10 +2444,12 @@ _select_exec(PyObject *m)
         return -1;
     }
 
-#define ADD_INT(val) \
-    if (PyModule_AddIntConstant((m), #val, (val)) < 0) { \
-        return -1; \
-    }
+#define ADD_INT(VAL) \
+    do { \
+        if (PyModule_AddIntConstant((m), #VAL, (VAL)) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 
 #ifdef PIPE_BUF
 #ifdef HAVE_BROKEN_PIPE_BUF
@@ -2561,10 +2563,12 @@ _select_exec(PyObject *m)
 
 #undef ADD_INT
 
-#define ADD_INT_CONST(name, val) \
-    if (PyModule_AddIntConstant(m, name, val) < 0) { \
-        return -1; \
-    }
+#define ADD_INT_CONST(NAME, VAL) \
+    do { \
+        if (PyModule_AddIntConstant(m, NAME, VAL) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 
 #ifdef HAVE_KQUEUE
     state->kqueue_event_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
