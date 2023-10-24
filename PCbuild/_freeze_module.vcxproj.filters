@@ -220,7 +220,7 @@
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\interp_utils.c">
+    <ClCompile Include="..\Python\crossinterp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">

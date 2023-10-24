@@ -494,7 +494,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-// This is defined in interp_utils.c.
+// This is defined in crossinterp.c (for now).
 void _xidregistry_clear(struct _xidregistry *);
 
 void

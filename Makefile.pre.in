@@ -428,7 +428,7 @@ PYTHON_OBJS=	\
 		Python/importdl.o \
 		Python/initconfig.o \
 		Python/instrumentation.o \
-		Python/interp_utils.o \
+		Python/crossinterp.o \
 		Python/intrinsics.o \
 		Python/legacy_tracing.o \
 		Python/lock.o \
@@ -1676,7 +1676,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/frameobject.h \
 		$(srcdir)/Include/import.h \
 		$(srcdir)/Include/interpreteridobject.h \
-		$(srcdir)/Include/interp_utils.h \
+		$(srcdir)/Include/crossinterp.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
@@ -1748,7 +1748,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
-		$(srcdir)/Include/cpython/interp_utils.h \
+		$(srcdir)/Include/cpython/crossinterp.h \
 		$(srcdir)/Include/cpython/listobject.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \

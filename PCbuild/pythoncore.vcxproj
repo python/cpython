@@ -152,7 +152,7 @@
     <ClInclude Include="..\Include\cpython\genobject.h" />
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
-    <ClInclude Include="..\Include\cpython\interp_utils.h" />
+    <ClInclude Include="..\Include\cpython\crossinterp.h" />
     <ClInclude Include="..\Include\cpython\interpreteridobject.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
@@ -293,7 +293,7 @@
     <ClInclude Include="..\Include\internal\pycore_uops.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
-    <ClInclude Include="..\Include\interp_utils.h" />
+    <ClInclude Include="..\Include\crossinterp.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
@@ -585,7 +585,7 @@
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
-    <ClCompile Include="..\Python\interp_utils.c" />
+    <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />

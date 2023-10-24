@@ -330,7 +330,7 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\interp_utils.h">
+    <ClInclude Include="..\Include\crossinterp.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\interpreteridobject.h">
@@ -492,7 +492,7 @@
     <ClInclude Include="..\Include\cpython\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\interp_utils.h">
+    <ClInclude Include="..\Include\cpython\crossinterp.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\interpreteridobject.h">
@@ -1352,7 +1352,7 @@
     <ClCompile Include="..\Python\instrumentation.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\interp_utils.c">
+    <ClCompile Include="..\Python\crossinterp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">

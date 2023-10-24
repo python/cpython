@@ -84,7 +84,7 @@
 #include "iterobject.h"
 #include "cpython/initconfig.h"
 #include "pystate.h"
-#include "interp_utils.h"
+#include "crossinterp.h"
 #include "cpython/genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
