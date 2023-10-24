@@ -2,7 +2,7 @@
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
 import _thread
-from collections import OrderedDict, deque
+from collections import deque
 import contextlib
 import importlib.machinery
 import importlib.util
@@ -297,6 +297,94 @@ class CAPITest(unittest.TestCase):
             # Python built with NDEBUG macro defined:
             # test _Py_CheckFunctionResult() instead.
             self.assertIn('returned a result with an exception set', err)
+
+    def test_buildvalue(self):
+        # Test Py_BuildValue() with object arguments
+        buildvalue = _testcapi.py_buildvalue
+        self.assertEqual(buildvalue(''), None)
+        self.assertEqual(buildvalue('()'), ())
+        self.assertEqual(buildvalue('[]'), [])
+        self.assertEqual(buildvalue('{}'), {})
+        self.assertEqual(buildvalue('()[]{}'), ((), [], {}))
+        self.assertEqual(buildvalue('O', 1), 1)
+        self.assertEqual(buildvalue('(O)', 1), (1,))
+        self.assertEqual(buildvalue('[O]', 1), [1])
+        self.assertRaises(SystemError, buildvalue, '{O}', 1)
+        self.assertEqual(buildvalue('OO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(OO)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[OO]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{OO}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{OOOO}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('((O))', 1), ((1,),))
+        self.assertEqual(buildvalue('((OO))', 1, 2), ((1, 2),))
+
+        self.assertEqual(buildvalue(' \t,:'), None)
+        self.assertEqual(buildvalue('O,', 1), 1)
+        self.assertEqual(buildvalue('   O   ', 1), 1)
+        self.assertEqual(buildvalue('\tO\t', 1), 1)
+        self.assertEqual(buildvalue('O,O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O, O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O,\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O O', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('O\tO', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O,O)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('(O, O,)', 1, 2), (1, 2))
+        self.assertEqual(buildvalue(' ( O O ) ', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('\t(\tO\tO\t)\t', 1, 2), (1, 2))
+        self.assertEqual(buildvalue('[O,O]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('[O, O,]', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [ O O ] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue(' [\tO\tO\t] ', 1, 2), [1, 2])
+        self.assertEqual(buildvalue('{O:O}', 1, 2), {1: 2})
+        self.assertEqual(buildvalue('{O:O,O:O}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('{O: O, O: O,}', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue(' { O O O O } ', 1, 2, 3, 4), {1: 2, 3: 4})
+        self.assertEqual(buildvalue('\t{\tO\tO\tO\tO\t}\t', 1, 2, 3, 4), {1: 2, 3: 4})
+
+        self.assertRaises(SystemError, buildvalue, 'O', NULL)
+        self.assertRaises(SystemError, buildvalue, '(O)', NULL)
+        self.assertRaises(SystemError, buildvalue, '[O]', NULL)
+        self.assertRaises(SystemError, buildvalue, '{O}', NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, 'OO', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '(OO)', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '(OO)', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '[OO]', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '[OO]', NULL, 2)
+        self.assertRaises(SystemError, buildvalue, '{OO}', 1, NULL)
+        self.assertRaises(SystemError, buildvalue, '{OO}', NULL, 2)
+
+    def test_buildvalue_ints(self):
+        # Test Py_BuildValue() with integer arguments
+        buildvalue = _testcapi.py_buildvalue_ints
+        from _testcapi import SHRT_MIN, SHRT_MAX, USHRT_MAX, INT_MIN, INT_MAX, UINT_MAX
+        self.assertEqual(buildvalue('i', INT_MAX), INT_MAX)
+        self.assertEqual(buildvalue('i', INT_MIN), INT_MIN)
+        self.assertEqual(buildvalue('I', UINT_MAX), UINT_MAX)
+
+        self.assertEqual(buildvalue('h', SHRT_MAX), SHRT_MAX)
+        self.assertEqual(buildvalue('h', SHRT_MIN), SHRT_MIN)
+        self.assertEqual(buildvalue('H', USHRT_MAX), USHRT_MAX)
+
+        self.assertEqual(buildvalue('b', 127), 127)
+        self.assertEqual(buildvalue('b', -128), -128)
+        self.assertEqual(buildvalue('B', 255), 255)
+
+        self.assertEqual(buildvalue('c', ord('A')), b'A')
+        self.assertEqual(buildvalue('c', 255), b'\xff')
+        self.assertEqual(buildvalue('c', 256), b'\x00')
+        self.assertEqual(buildvalue('c', -1), b'\xff')
+
+        self.assertEqual(buildvalue('C', 255), chr(255))
+        self.assertEqual(buildvalue('C', 256), chr(256))
+        self.assertEqual(buildvalue('C', sys.maxunicode), chr(sys.maxunicode))
+        self.assertRaises(ValueError, buildvalue, 'C', -1)
+        self.assertRaises(ValueError, buildvalue, 'C', sys.maxunicode+1)
+
+        # gh-84489
+        self.assertRaises(ValueError, buildvalue, '(C )i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '[C ]i', -1, 2)
+        self.assertRaises(ValueError, buildvalue, '{Ci }i', -1, 2, 3)
 
     def test_buildvalue_N(self):
         _testcapi.test_buildvalue_N()
@@ -2071,7 +2159,7 @@ class TestThreadState(unittest.TestCase):
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
-                    if name.startswith('test_') and not name.endswith('_code'))
+                    if name.startswith('test_'))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -2400,6 +2488,67 @@ def get_first_executor(func):
                 pass
     return None
 
+
+class TestExecutorInvalidation(unittest.TestCase):
+
+    def setUp(self):
+        self.old = _testinternalcapi.get_optimizer()
+        self.opt = _testinternalcapi.get_counter_optimizer()
+        _testinternalcapi.set_optimizer(self.opt)
+
+    def tearDown(self):
+        _testinternalcapi.set_optimizer(self.old)
+
+    def test_invalidate_object(self):
+        # Generate a new set of functions at each call
+        ns = {}
+        func_src = "\n".join(
+            f"""
+            def f{n}():
+                for _ in range(1000):
+                    pass
+            """ for n in range(5)
+        )
+        exec(textwrap.dedent(func_src), ns, ns)
+        funcs = [ ns[f'f{n}'] for n in range(5)]
+        objects = [object() for _ in range(5)]
+
+        for f in funcs:
+            f()
+        executors = [get_first_executor(f) for f in funcs]
+        # Set things up so each executor depends on the objects
+        # with an equal or lower index.
+        for i, exe in enumerate(executors):
+            self.assertTrue(exe.valid)
+            for obj in objects[:i+1]:
+                _testinternalcapi.add_executor_dependency(exe, obj)
+            self.assertTrue(exe.valid)
+        # Assert that the correct executors are invalidated
+        # and check that nothing crashes when we invalidate
+        # an executor mutliple times.
+        for i in (4,3,2,1,0):
+            _testinternalcapi.invalidate_executors(objects[i])
+            for exe in executors[i:]:
+                self.assertFalse(exe.valid)
+            for exe in executors[:i]:
+                self.assertTrue(exe.valid)
+
+    def test_uop_optimizer_invalidation(self):
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def f():
+                for i in range(1000):
+                    pass
+        """), ns, ns)
+        f = ns['f']
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertTrue(exe.valid)
+        _testinternalcapi.invalidate_executors(f.__code__)
+        self.assertFalse(exe.valid)
 
 class TestUops(unittest.TestCase):
 

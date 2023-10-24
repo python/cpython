@@ -10,6 +10,11 @@ module instead.
 
 #define MODULE_VERSION "1.0"
 
+// clinic/_csv.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include <stddef.h>               // offsetof()

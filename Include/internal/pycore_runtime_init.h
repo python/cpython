@@ -177,6 +177,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
                 .last_resort_memory_error = { \
                     _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
+                    .args = (PyObject*)&_Py_SINGLETON(tuple_empty) \
                 }, \
             }, \
         }, \
@@ -185,6 +186,7 @@ extern PyTypeObject _PyExc_MemoryError;
 
 #define _PyThreadState_INIT \
     { \
+        ._whence = _PyThreadState_WHENCE_NOTSET, \
         .py_recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
         .context_ver = 1, \
     }

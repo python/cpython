@@ -158,7 +158,6 @@
     <ClInclude Include="..\Include\cpython\longobject.h" />
     <ClInclude Include="..\Include\cpython\memoryobject.h" />
     <ClInclude Include="..\Include\cpython\methodobject.h" />
-    <ClInclude Include="..\Include\cpython\modsupport.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\odictobject.h" />
@@ -203,8 +202,6 @@
     <ClInclude Include="..\Include\internal\pycore_ast.h" />
     <ClInclude Include="..\Include\internal\pycore_ast_state.h" />
     <ClInclude Include="..\Include\internal\pycore_atexit.h" />
-    <ClInclude Include="..\Include\internal\pycore_atomic.h" />
-    <ClInclude Include="..\Include\internal\pycore_atomic_funcs.h" />
     <ClInclude Include="..\Include\internal\pycore_bitutils.h" />
     <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_bytesobject.h" />
@@ -241,6 +238,7 @@
     <ClInclude Include="..\Include\internal\pycore_hashtable.h" />
     <ClInclude Include="..\Include\internal\pycore_identifier.h" />
     <ClInclude Include="..\Include\internal\pycore_import.h" />
+    <ClInclude Include="..\Include\internal\pycore_importdl.h" />
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
@@ -362,13 +360,16 @@
     <ClInclude Include="..\Objects\stringlib\replace.h" />
     <ClInclude Include="..\Objects\stringlib\split.h" />
     <ClInclude Include="..\Objects\unicodetype_db.h" />
-    <ClInclude Include="..\Parser\tokenizer.h" />
+    <ClInclude Include="..\Parser\lexer\state.h" />
+    <ClInclude Include="..\Parser\lexer\lexer.h" />
+    <ClInclude Include="..\Parser\lexer\buffer.h" />
+    <ClInclude Include="..\Parser\tokenizer\helpers.h" />
+    <ClInclude Include="..\Parser\tokenizer\tokenizer.h" />
     <ClInclude Include="..\Parser\string_parser.h" />
     <ClInclude Include="..\Parser\pegen.h" />
     <ClInclude Include="..\PC\errmap.h" />
     <ClInclude Include="..\PC\pyconfig.h" />
     <ClInclude Include="..\Python\condvar.h" />
-    <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
   </ItemGroup>
@@ -439,6 +440,7 @@
     <ClCompile Include="..\Modules\signalmodule.c" />
     <ClCompile Include="..\Modules\_statisticsmodule.c" />
     <ClCompile Include="..\Modules\symtablemodule.c" />
+    <ClCompile Include="..\Modules\_sysconfig.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\_typingmodule.c" />
@@ -507,7 +509,14 @@
     <ClCompile Include="..\Objects\unionobject.c" />
     <ClCompile Include="..\Objects\weakrefobject.c" />
     <ClCompile Include="..\Parser\myreadline.c" />
-    <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\Parser\lexer\state.c" />
+    <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\lexer\buffer.c" />
+    <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\readline_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\Parser\token.c" />
     <ClCompile Include="..\Parser\pegen.c" />
     <ClCompile Include="..\Parser\pegen_errors.c" />
