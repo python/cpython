@@ -479,12 +479,13 @@ class StackSummary(list):
         gets called for every frame to be printed in the stack summary.
         """
         row = []
-        if frame_summary.filename.startswith("<python-input"):
-            row.append('  File "<stdin>", line {}, in {}\n'.format(
-                frame_summary.lineno, frame_summary.name))
-        else:
-            row.append('  File "{}", line {}, in {}\n'.format(
-                frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        filename = frame_summary.filename
+        if frame_summary.filename.startswith("<stdin>-"):
+            filename = "<stdin>"
+        elif frame_summary.filename.startswith("<string>-"):
+            filename = "<string>"
+        row.append('  File "{}", line {}, in {}\n'.format(
+            filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
             stripped_line = frame_summary.line.strip()
             row.append('    {}\n'.format(stripped_line))

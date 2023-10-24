@@ -313,6 +313,8 @@ class TracebackCases(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         expected = [b'Traceback (most recent call last):',
                     b'  File "<string>", line 8, in __init__',
+                    b'    x = 1 / 0',
+                    b'        ^^^^^', 
                     b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected)
 

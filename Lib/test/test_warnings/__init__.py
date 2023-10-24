@@ -1233,6 +1233,10 @@ class EnvironmentVariableTests(BaseTest):
         self.assertEqual(stderr.splitlines(),
             [b"Traceback (most recent call last):",
              b"  File \"<string>\", line 1, in <module>",
+             b'    import sys, warnings; sys.stdout.write(str(sys.warnoptions)); warnings.w'
+             b"arn('Message', DeprecationWarning)",
+             b'                                                                  ^^^^^^^^^^'
+             b'^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^',
              b"DeprecationWarning: Message"])
 
     def test_default_filter_configuration(self):
@@ -1353,7 +1357,7 @@ a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err.decode().rstrip(),
-                         '<string>:7: UserWarning: test')
+                         '<string>-0:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python
