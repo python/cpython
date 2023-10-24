@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :ref:`socket.TCP_NODELAY <unix-constants>` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :ref:`socket.SO_REUSEPORT <unix-constants>` constant is not
+     and some Unixes. If the :ref:`socket.SO_REUSEPORT <socket-unix-constants>` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -607,7 +607,7 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :ref:`socket.SO_REUSEADDR <unix-constants>`
+      :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
       poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
@@ -617,7 +617,7 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :ref:`socket.SO_REUSEPORT <unix-constants>`
+      :ref:`socket.SO_REUSEPORT <socket-unix-constants>`
       is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
@@ -758,7 +758,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :ref:`socket.TCP_NODELAY <unix-constants>` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
