@@ -7,12 +7,12 @@
 PYTHON       = python3
 VENVDIR      = ./venv
 SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
-SPHINXLINT   = PATH=$(VENVDIR)/bin:$$PATH sphinx-lint
 BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 JOBS         = auto
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
+REQUIREMENTS = requirements.txt
 SPHINXERRORHANDLING = -W
 
 # Internal variables.
@@ -154,8 +154,8 @@ venv:
 		echo "To recreate it, remove it first with \`make clean-venv'."; \
 	else \
 		$(PYTHON) -m venv $(VENVDIR); \
-		$(VENVDIR)/bin/python3 -m pip install -U pip setuptools; \
-		$(VENVDIR)/bin/python3 -m pip install -r requirements.txt; \
+		$(VENVDIR)/bin/python3 -m pip install --upgrade pip; \
+		$(VENVDIR)/bin/python3 -m pip install -r $(REQUIREMENTS); \
 		echo "The venv has been created in the $(VENVDIR) directory"; \
 	fi
 
@@ -215,11 +215,9 @@ dist:
 	rm dist/python-$(DISTVERSION)-docs-texinfo.tar
 
 .PHONY: check
-check:
-	# Check the docs and NEWS files with sphinx-lint.
-	# Ignore the tools and venv dirs and check that the default role is not used.
-	$(SPHINXLINT) -i tools -i $(VENVDIR) --enable default-role
-	$(SPHINXLINT) --enable default-role ../Misc/NEWS.d/next/
+check: venv
+	$(VENVDIR)/bin/python3 -m pre_commit --version > /dev/null || $(VENVDIR)/bin/python3 -m pip install pre-commit
+	$(VENVDIR)/bin/python3 -m pre_commit run --all-files
 
 .PHONY: serve
 serve:

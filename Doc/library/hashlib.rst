@@ -11,7 +11,7 @@
 
 .. index::
    single: message digest, MD5
-   single: secure hash algorithm, SHA1, SHA224, SHA256, SHA384, SHA512
+   single: secure hash algorithm, SHA1, SHA2, SHA224, SHA256, SHA384, SHA512, SHA3, Shake, Blake2
 
 .. testsetup::
 
@@ -22,7 +22,8 @@
 
 This module implements a common interface to many different secure hash and
 message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
-SHA224, SHA256, SHA384, and SHA512 (defined in FIPS 180-2) as well as RSA's MD5
+SHA224, SHA256, SHA384, SHA512, (defined in `the FIPS 180-4 standard`_),
+the SHA-3 series (defined in `the FIPS 202 standard`_) as well as RSA's MD5
 algorithm (defined in internet :rfc:`1321`).  The terms "secure hash" and
 "message digest" are interchangeable.  Older algorithms were called message
 digests.  The modern term is secure hash.
@@ -32,11 +33,6 @@ digests.  The modern term is secure hash.
    If you want the adler32 or crc32 hash functions, they are available in
    the :mod:`zlib` module.
 
-.. warning::
-
-   Some algorithms have known hash collision weaknesses, refer to the "See
-   also" section at the end.
-
 
 .. _hash-algorithms:
 
@@ -44,38 +40,43 @@ Hash algorithms
 ---------------
 
 There is one constructor method named for each type of :dfn:`hash`.  All return
-a hash object with the same simple interface. For example: use :func:`sha256` to
-create a SHA-256 hash object. You can now feed this object with :term:`bytes-like
-objects <bytes-like object>` (normally :class:`bytes`) using the :meth:`update` method.
-At any point you can ask it for the :dfn:`digest` of the
-concatenation of the data fed to it so far using the :meth:`digest` or
-:meth:`hexdigest` methods.
+a hash object with the same simple interface. For example: use :func:`sha256`
+to create a SHA-256 hash object. You can now feed this object with
+:term:`bytes-like objects <bytes-like object>` (normally :class:`bytes`) using
+the :meth:`update<hash.update>` method.  At any point you can ask it for the
+:dfn:`digest` of the concatenation of the data fed to it so far using the
+:meth:`digest()<hash.digest>` or :meth:`hexdigest()<hash.hexdigest>` methods.
 
-.. note::
+To allow multithreading, the Python :term:`GIL` is released while computing a
+hash supplied more than 2047 bytes of data at once in its constructor or
+:meth:`.update<hash.update>` method.
 
-   For better multithreading performance, the Python :term:`GIL` is released for
-   data larger than 2047 bytes at object creation or on update.
-
-.. note::
-
-   Feeding string objects into :meth:`update` is not supported, as hashes work
-   on bytes, not on characters.
 
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
-:func:`sha512`, :func:`blake2b`, and :func:`blake2s`.
-:func:`md5` is normally available as well, though it
-may be missing or blocked if you are using a rare "FIPS compliant" build of Python.
-Additional algorithms may also be available depending upon the OpenSSL
-library that Python uses on your platform. On most platforms the
+:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
 :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
-:func:`shake_128`, :func:`shake_256` are also available.
+:func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
+:func:`md5` is normally available as well, though it may be missing or blocked
+if you are using a rare "FIPS compliant" build of Python.
+These correspond to :data:`algorithms_guaranteed`.
+
+Additional algorithms may also be available if your Python distribution's
+:mod:`hashlib` was linked against a build of OpenSSL that provides others.
+Others *are not guaranteed available* on all installations and will only be
+accessible by name via :func:`new`.  See :data:`algorithms_available`.
+
+.. warning::
+
+   Some algorithms have known hash collision weaknesses (including MD5 and
+   SHA1). Refer to `Attacks on cryptographic hash algorithms`_ and the
+   `hashlib-seealso`_ section at the end of this document.
 
 .. versionadded:: 3.6
    SHA3 (Keccak) and SHAKE constructors :func:`sha3_224`, :func:`sha3_256`,
-   :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`.
+   :func:`sha3_384`, :func:`sha3_512`, :func:`shake_128`, :func:`shake_256`
+   were added.
 
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
@@ -89,10 +90,19 @@ library that Python uses on your platform. On most platforms the
    that the hashing algorithm is not used in a security context, e.g. as a
    non-cryptographic one-way compression function.
 
-   Hashlib now uses SHA3 and SHAKE from OpenSSL 1.1.1 and newer.
+.. versionchanged:: 3.9
+   Hashlib now uses SHA3 and SHAKE from OpenSSL if it provides it.
 
-For example, to obtain the digest of the byte string ``b"Nobody inspects the
-spammish repetition"``::
+.. versionchanged:: 3.12
+   For any of the MD5, SHA1, SHA2, or SHA3 algorithms that the linked
+   OpenSSL does not provide we fall back to a verified implementation from
+   the `HACL\* project`_.
+
+Usage
+-----
+
+To obtain the digest of the byte string ``b"Nobody inspects the spammish
+repetition"``::
 
    >>> import hashlib
    >>> m = hashlib.sha256()
@@ -108,22 +118,42 @@ More condensed:
    >>> hashlib.sha256(b"Nobody inspects the spammish repetition").hexdigest()
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
-.. function:: new(name[, data], *, usedforsecurity=True)
+Constructors
+------------
+
+.. function:: new(name[, data], \*, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
    above listed hashes as well as any other algorithms that your OpenSSL
-   library may offer.  The named constructors are much faster than :func:`new`
-   and should be preferred.
+   library may offer.
 
-Using :func:`new` with an algorithm provided by OpenSSL:
+Using :func:`new` with an algorithm name:
 
    >>> h = hashlib.new('sha256')
    >>> h.update(b"Nobody inspects the spammish repetition")
    >>> h.hexdigest()
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
-Hashlib provides the following constant attributes:
+
+.. function:: md5([, data], *, usedforsecurity=True)
+.. function:: sha1([, data], *, usedforsecurity=True)
+.. function:: sha224([, data], *, usedforsecurity=True)
+.. function:: sha256([, data], *, usedforsecurity=True)
+.. function:: sha384([, data], *, usedforsecurity=True)
+.. function:: sha512([, data], *, usedforsecurity=True)
+.. function:: sha3_224([, data], *, usedforsecurity=True)
+.. function:: sha3_256([, data], *, usedforsecurity=True)
+.. function:: sha3_384([, data], *, usedforsecurity=True)
+.. function:: sha3_512([, data], *, usedforsecurity=True)
+
+Named constructors such as these are faster than passing an algorithm name to
+:func:`new`.
+
+Attributes
+----------
+
+Hashlib provides the following constant module attributes:
 
 .. data:: algorithms_guaranteed
 
@@ -144,9 +174,11 @@ Hashlib provides the following constant attributes:
 
    .. versionadded:: 3.2
 
+Hash Objects
+------------
+
 The following values are provided as constant attributes of the hash objects
 returned by the constructors:
-
 
 .. data:: hash.digest_size
 
@@ -178,11 +210,6 @@ A hash object has the following methods:
    concatenation of all the arguments: ``m.update(a); m.update(b)`` is
    equivalent to ``m.update(a+b)``.
 
-   .. versionchanged:: 3.1
-      The Python GIL is released to allow other threads to run while hash
-      updates on data larger than 2047 bytes is taking place when using hash
-      algorithms supplied by OpenSSL.
-
 
 .. method:: hash.digest()
 
@@ -207,6 +234,9 @@ A hash object has the following methods:
 SHAKE variable length digests
 -----------------------------
 
+.. function:: shake_128([, data], *, usedforsecurity=True)
+.. function:: shake_256([, data], *, usedforsecurity=True)
+
 The :func:`shake_128` and :func:`shake_256` algorithms provide variable
 length digests with length_in_bits//2 up to 128 or 256 bits of security.
 As such, their digest methods require a length. Maximum length is not limited
@@ -214,7 +244,7 @@ by the SHAKE algorithm.
 
 .. method:: shake.digest(length)
 
-   Return the digest of the data passed to the :meth:`update` method so far.
+   Return the digest of the data passed to the :meth:`~hash.update` method so far.
    This is a bytes object of size *length* which may contain bytes in
    the whole range from 0 to 255.
 
@@ -223,8 +253,13 @@ by the SHAKE algorithm.
 
    Like :meth:`digest` except the digest is returned as a string object of
    double length, containing only hexadecimal digits.  This may be used to
-   exchange the value safely in email or other non-binary environments.
+   exchange the value in email or other non-binary environments.
 
+Example use:
+
+   >>> h = hashlib.shake_256(b'Nobody inspects the spammish repetition')
+   >>> h.hexdigest(20)
+   '44709d6fcb83d92a76dcb0b668c98e1b1d3dafe7'
 
 File hashing
 ------------
@@ -329,6 +364,8 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    .. versionadded:: 3.6
 
 
+.. _hashlib-blake2:
+
 BLAKE2
 ------
 
@@ -430,9 +467,10 @@ Constructor functions also accept the following tree hashing parameters:
 
 .. figure:: hashlib-blake2-tree.png
    :alt: Explanation of tree mode parameters.
+   :class: invert-in-dark-mode
 
 See section 2.10 in `BLAKE2 specification
-<https://blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
+<https://www.blake2.net/blake2_20130129.pdf>`_ for comprehensive review of tree
 hashing.
 
 
@@ -471,9 +509,9 @@ Simple hashing
 
 To calculate hash of some data, you should first construct a hash object by
 calling the appropriate constructor function (:func:`blake2b` or
-:func:`blake2s`), then update it with the data by calling :meth:`update` on the
+:func:`blake2s`), then update it with the data by calling :meth:`~hash.update` on the
 object, and, finally, get the digest out of the object by calling
-:meth:`digest` (or :meth:`hexdigest` for hex-encoded string).
+:meth:`~hash.digest` (or :meth:`~hash.hexdigest` for hex-encoded string).
 
     >>> from hashlib import blake2b
     >>> h = blake2b()
@@ -619,7 +657,7 @@ on the hash function used in digital signatures.
     by the signer.
 
     (`NIST SP-800-106 "Randomized Hashing for Digital Signatures"
-    <https://csrc.nist.gov/publications/detail/sp/800-106/final>`_)
+    <https://csrc.nist.gov/publications/detail/sp/800-106/archive/2009-02-25>`_)
 
 In BLAKE2 the salt is processed as a one-time input to the hash function during
 initialization, rather than as an input to each compression function.
@@ -628,7 +666,7 @@ initialization, rather than as an input to each compression function.
 
     *Salted hashing* (or just hashing) with BLAKE2 or any other general-purpose
     cryptographic hash function, such as SHA-256, is not suitable for hashing
-    passwords.  See `BLAKE2 FAQ <https://blake2.net/#qa>`_ for more
+    passwords.  See `BLAKE2 FAQ <https://www.blake2.net/#qa>`_ for more
     information.
 ..
 
@@ -764,15 +802,21 @@ Domain Dedication 1.0 Universal:
 
 * *Alexandr Sokolovskiy*
 
-.. _BLAKE2: https://blake2.net
+.. _BLAKE2: https://www.blake2.net
 .. _HMAC: https://en.wikipedia.org/wiki/Hash-based_message_authentication_code
-.. _BLAKE: https://131002.net/blake/
-.. _SHA-3: https://en.wikipedia.org/wiki/NIST_hash_function_competition
+.. _BLAKE: https://web.archive.org/web/20200918190133/https://131002.net/blake/
+.. _SHA-3: https://en.wikipedia.org/wiki/Secure_Hash_Algorithms
 .. _ChaCha: https://cr.yp.to/chacha.html
 .. _pyblake2: https://pythonhosted.org/pyblake2/
 .. _NIST-SP-800-132: https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-132.pdf
 .. _stackexchange pbkdf2 iterations question: https://security.stackexchange.com/questions/3959/recommended-of-iterations-when-using-pbkdf2-sha256/
+.. _Attacks on cryptographic hash algorithms: https://en.wikipedia.org/wiki/Cryptographic_hash_function#Attacks_on_cryptographic_hash_algorithms
+.. _the FIPS 180-4 standard: https://csrc.nist.gov/publications/detail/fips/180/4/final
+.. _the FIPS 202 standard: https://csrc.nist.gov/publications/detail/fips/202/final
+.. _HACL\* project: https://github.com/hacl-star/hacl-star
 
+
+.. _hashlib-seealso:
 
 .. seealso::
 
@@ -782,15 +826,18 @@ Domain Dedication 1.0 Universal:
    Module :mod:`base64`
       Another way to encode binary hashes for non-binary environments.
 
-   https://blake2.net
+   https://nvlpubs.nist.gov/nistpubs/fips/nist.fips.180-4.pdf
+      The FIPS 180-4 publication on Secure Hash Algorithms.
+
+   https://csrc.nist.gov/publications/detail/fips/202/final
+      The FIPS 202 publication on the SHA-3 Standard.
+
+   https://www.blake2.net/
       Official BLAKE2 website.
 
-   https://csrc.nist.gov/csrc/media/publications/fips/180/2/archive/2002-08-01/documents/fips180-2.pdf
-      The FIPS 180-2 publication on Secure Hash Algorithms.
-
-   https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms
-      Wikipedia article with information on which algorithms have known issues and
-      what that means regarding their use.
+   https://en.wikipedia.org/wiki/Cryptographic_hash_function
+      Wikipedia article with information on which algorithms have known issues
+      and what that means regarding their use.
 
    https://www.ietf.org/rfc/rfc8018.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.1

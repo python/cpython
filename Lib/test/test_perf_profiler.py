@@ -1,4 +1,5 @@
 import unittest
+import string
 import subprocess
 import sys
 import sysconfig
@@ -15,6 +16,11 @@ from test.support.os_helper import temp_dir
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
+
+if support.check_sanitizer(address=True, memory=True, ub=True):
+    # gh-109580: Skip the test because it does crash randomly if Python is
+    # built with ASAN.
+    raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
 
 
 def supports_trampoline_profiling():
@@ -70,9 +76,14 @@ class TestPerfTrampoline(unittest.TestCase):
         perf_file = pathlib.Path(f"/tmp/perf-{process.pid}.map")
         self.assertTrue(perf_file.exists())
         perf_file_contents = perf_file.read_text()
-        self.assertIn(f"py::foo:{script}", perf_file_contents)
-        self.assertIn(f"py::bar:{script}", perf_file_contents)
-        self.assertIn(f"py::baz:{script}", perf_file_contents)
+        perf_lines = perf_file_contents.splitlines();
+        expected_symbols = [f"py::foo:{script}", f"py::bar:{script}", f"py::baz:{script}"]
+        for expected_symbol in expected_symbols:
+            perf_line = next((line for line in perf_lines if expected_symbol in line), None)
+            self.assertIsNotNone(perf_line, f"Could not find {expected_symbol} in perf file")
+            perf_addr = perf_line.split(" ")[0]
+            self.assertFalse(perf_addr.startswith("0x"), "Address should not be prefixed with 0x")
+            self.assertTrue(set(perf_addr).issubset(string.hexdigits), "Address should contain only hex characters")
 
     def test_trampoline_works_with_forks(self):
         code = """if 1:
@@ -281,7 +292,6 @@ def run_perf(cwd, *args, **env_vars):
 
 @unittest.skipUnless(perf_command_works(), "perf command doesn't work")
 @unittest.skipUnless(is_unwinding_reliable(), "Unwinding is unreliable")
-@support.skip_if_sanitizer(address=True, memory=True, ub=True)
 class TestPerfProfiler(unittest.TestCase):
     def setUp(self):
         super().setUp()

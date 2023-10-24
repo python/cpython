@@ -18,6 +18,12 @@ from test.support.os_helper import TESTFN, unlink
 from test.support.warnings_helper import check_warnings
 from test import support
 
+try:
+    from _testcapi import INT_MAX
+except ImportError:
+    INT_MAX = 2**31 - 1
+
+
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -155,6 +161,7 @@ class ExceptionTests(unittest.TestCase):
 
         ckmsg(s, "'continue' not properly in loop")
         ckmsg("continue\n", "'continue' not properly in loop")
+        ckmsg("f'{6 0}'", "invalid syntax. Perhaps you forgot a comma?")
 
     def testSyntaxErrorMissingParens(self):
         def ckmsg(src, msg, exception=SyntaxError):
@@ -227,7 +234,7 @@ class ExceptionTests(unittest.TestCase):
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
         check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
               2, 19, encoding='cp1251')
-        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 10)
         check('x = "a', 1, 5)
         check('lambda x: x = 2', 1, 1)
         check('f{a + b + c}', 1, 2)
@@ -252,7 +259,7 @@ class ExceptionTests(unittest.TestCase):
         check('try:\n  pass\nexcept*:\n  pass', 3, 8)
         check('try:\n  pass\nexcept*:\n  pass\nexcept* ValueError:\n  pass', 3, 8)
 
-        # Errors thrown by tokenizer.c
+        # Errors thrown by the tokenizer
         check('(0x+1)', 1, 3)
         check('x = 0xI', 1, 6)
         check('0010 + 2', 1, 1)
@@ -316,6 +323,14 @@ class ExceptionTests(unittest.TestCase):
         check('for 1 in []: pass', 1, 5)
         check('(yield i) = 2', 1, 2)
         check('def f(*):\n  pass', 1, 7)
+
+    @unittest.skipIf(INT_MAX >= sys.maxsize, "Downcasting to int is safe for col_offset")
+    @support.requires_resource('cpu')
+    @support.bigmemtest(INT_MAX, memuse=2, dry_run=False)
+    def testMemoryErrorBigSource(self, size):
+        src = b"if True:\n%*s" % (size, b"pass")
+        with self.assertRaisesRegex(OverflowError, "Parser column offset overflow"):
+            compile(src, '<fragment>', 'exec')
 
     @cpython_only
     def testSettingException(self):
@@ -416,45 +431,45 @@ class ExceptionTests(unittest.TestCase):
         # test that exception attributes are happy
 
         exceptionList = [
-            (BaseException, (), {'args' : ()}),
-            (BaseException, (1, ), {'args' : (1,)}),
-            (BaseException, ('foo',),
+            (BaseException, (), {}, {'args' : ()}),
+            (BaseException, (1, ), {}, {'args' : (1,)}),
+            (BaseException, ('foo',), {},
                 {'args' : ('foo',)}),
-            (BaseException, ('foo', 1),
+            (BaseException, ('foo', 1), {},
                 {'args' : ('foo', 1)}),
-            (SystemExit, ('foo',),
+            (SystemExit, ('foo',), {},
                 {'args' : ('foo',), 'code' : 'foo'}),
-            (OSError, ('foo',),
+            (OSError, ('foo',), {},
                 {'args' : ('foo',), 'filename' : None, 'filename2' : None,
                  'errno' : None, 'strerror' : None}),
-            (OSError, ('foo', 'bar'),
+            (OSError, ('foo', 'bar'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : None, 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz'),
+            (OSError, ('foo', 'bar', 'baz'), {},
                 {'args' : ('foo', 'bar'),
                  'filename' : 'baz', 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
-            (OSError, ('foo', 'bar', 'baz', None, 'quux'),
+            (OSError, ('foo', 'bar', 'baz', None, 'quux'), {},
                 {'args' : ('foo', 'bar'), 'filename' : 'baz', 'filename2': 'quux'}),
-            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'),
+            (OSError, ('errnoStr', 'strErrorStr', 'filenameStr'), {},
                 {'args' : ('errnoStr', 'strErrorStr'),
                  'strerror' : 'strErrorStr', 'errno' : 'errnoStr',
                  'filename' : 'filenameStr'}),
-            (OSError, (1, 'strErrorStr', 'filenameStr'),
+            (OSError, (1, 'strErrorStr', 'filenameStr'), {},
                 {'args' : (1, 'strErrorStr'), 'errno' : 1,
                  'strerror' : 'strErrorStr',
                  'filename' : 'filenameStr', 'filename2' : None}),
-            (SyntaxError, (), {'msg' : None, 'text' : None,
+            (SyntaxError, (), {}, {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
                 'end_offset': None, 'print_file_and_line' : None}),
-            (SyntaxError, ('msgStr',),
+            (SyntaxError, ('msgStr',), {},
                 {'args' : ('msgStr',), 'text' : None,
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_offset': None}),
             (SyntaxError, ('msgStr', ('filenameStr', 'linenoStr', 'offsetStr',
-                           'textStr', 'endLinenoStr', 'endOffsetStr')),
+                           'textStr', 'endLinenoStr', 'endOffsetStr')), {},
                 {'offset' : 'offsetStr', 'text' : 'textStr',
                  'args' : ('msgStr', ('filenameStr', 'linenoStr',
                                       'offsetStr', 'textStr',
@@ -464,7 +479,7 @@ class ExceptionTests(unittest.TestCase):
                  'end_lineno': 'endLinenoStr', 'end_offset': 'endOffsetStr'}),
             (SyntaxError, ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
-                           'print_file_and_lineStr'),
+                           'print_file_and_lineStr'), {},
                 {'text' : None,
                  'args' : ('msgStr', 'filenameStr', 'linenoStr', 'offsetStr',
                            'textStr', 'endLinenoStr', 'endOffsetStr',
@@ -472,38 +487,40 @@ class ExceptionTests(unittest.TestCase):
                  'print_file_and_line' : None, 'msg' : 'msgStr',
                  'filename' : None, 'lineno' : None, 'offset' : None,
                  'end_lineno': None, 'end_offset': None}),
-            (UnicodeError, (), {'args' : (),}),
+            (UnicodeError, (), {}, {'args' : (),}),
             (UnicodeEncodeError, ('ascii', 'a', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', 'a', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : 'a',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', bytearray(b'\xff'), 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', bytearray(b'\xff'), 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
             (UnicodeDecodeError, ('ascii', b'\xff', 0, 1,
-                                  'ordinal not in range'),
+                                  'ordinal not in range'), {},
                 {'args' : ('ascii', b'\xff', 0, 1,
                                            'ordinal not in range'),
                  'encoding' : 'ascii', 'object' : b'\xff',
                  'start' : 0, 'reason' : 'ordinal not in range'}),
-            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"),
+            (UnicodeTranslateError, ("\u3042", 0, 1, "ouch"), {},
                 {'args' : ('\u3042', 0, 1, 'ouch'),
                  'object' : '\u3042', 'reason' : 'ouch',
                  'start' : 0, 'end' : 1}),
-            (NaiveException, ('foo',),
+            (NaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
-            (SlottedNaiveException, ('foo',),
+            (SlottedNaiveException, ('foo',), {},
                 {'args': ('foo',), 'x': 'foo'}),
+            (AttributeError, ('foo',), dict(name='name', obj='obj'),
+                dict(args=('foo',), name='name', obj='obj')),
         ]
         try:
             # More tests are in test_WindowsError
             exceptionList.append(
-                (WindowsError, (1, 'strErrorStr', 'filenameStr'),
+                (WindowsError, (1, 'strErrorStr', 'filenameStr'), {},
                     {'args' : (1, 'strErrorStr'),
                      'strerror' : 'strErrorStr', 'winerror' : None,
                      'errno' : 1,
@@ -512,11 +529,11 @@ class ExceptionTests(unittest.TestCase):
         except NameError:
             pass
 
-        for exc, args, expected in exceptionList:
+        for exc, args, kwargs, expected in exceptionList:
             try:
-                e = exc(*args)
+                e = exc(*args, **kwargs)
             except:
-                print("\nexc=%r, args=%r" % (exc, args), file=sys.stderr)
+                print(f"\nexc={exc!r}, args={args!r}", file=sys.stderr)
                 # raise
             else:
                 # Verify module name
@@ -539,7 +556,12 @@ class ExceptionTests(unittest.TestCase):
                         new = p.loads(s)
                         for checkArgName in expected:
                             got = repr(getattr(new, checkArgName))
-                            want = repr(expected[checkArgName])
+                            if exc == AttributeError and checkArgName == 'obj':
+                                # See GH-103352, we're not pickling
+                                # obj at this point. So verify it's None.
+                                want = repr(None)
+                            else:
+                                want = repr(expected[checkArgName])
                             self.assertEqual(got, want,
                                              'pickled "%r", attribute "%s' %
                                              (e, checkArgName))
@@ -1342,6 +1364,7 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
         # See bpo-33930
 
@@ -1476,6 +1499,9 @@ class ExceptionTests(unittest.TestCase):
 
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_recursion_normalizing_with_no_memory(self):
         # Issue #30697. Test that in the abort that occurs when there is no
         # memory left and the size of the Python frames stack is greater than
@@ -1644,6 +1670,9 @@ class ExceptionTests(unittest.TestCase):
                 self.assertTrue(report.endswith("\n"))
 
     @cpython_only
+    # Python built with Py_TRACE_REFS fail with a fatal error in
+    # _PyRefchain_Trace() on memory allocation error.
+    @unittest.skipIf(support.Py_TRACE_REFS, 'cannot test Py_TRACE_REFS build')
     def test_memory_error_in_PyErr_PrintEx(self):
         code = """if 1:
             import _testcapi
@@ -1761,6 +1790,20 @@ class ExceptionTests(unittest.TestCase):
                 pass
 
             gc_collect()
+
+    def test_memory_error_in_subinterp(self):
+        # gh-109894: subinterpreters shouldn't count on last resort memory error
+        # when MemoryError is raised through PyErr_NoMemory() call,
+        # and should preallocate memory errors as does the main interpreter.
+        # interp.static_objects.last_resort_memory_error.args
+        # should be initialized to empty tuple to avoid crash on attempt to print it.
+        code = f"""if 1:
+            import _testcapi
+            _testcapi.run_in_subinterp(\"[0]*{sys.maxsize}\")
+            exit(0)
+        """
+        rc, _, err = script_helper.assert_python_ok("-c", code)
+        self.assertIn(b'MemoryError', err)
 
 
 class NameErrorTests(unittest.TestCase):
@@ -1922,6 +1965,123 @@ class ImportErrorTests(unittest.TestCase):
                 self.assertEqual(exc.msg, 'test')
                 self.assertEqual(exc.name, orig.name)
                 self.assertEqual(exc.path, orig.path)
+
+
+class AssertionErrorTests(unittest.TestCase):
+    def tearDown(self):
+        unlink(TESTFN)
+
+    def write_source(self, source):
+        with open(TESTFN, 'w') as testfile:
+            testfile.write(dedent(source))
+        _rc, _out, err = script_helper.assert_python_failure('-Wd', '-X', 'utf8', TESTFN)
+        return err.decode('utf-8').splitlines()
+
+    def test_assertion_error_location(self):
+        cases = [
+            ('assert None',
+                [
+                    '    assert None',
+                    '           ^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 0',
+                [
+                    '    assert 0',
+                    '           ^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2',
+                [
+                    '    assert 1 > 2',
+                    '           ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2 and 3 > 2',
+                [
+                    '    assert 1 > 2 and 3 > 2',
+                    '           ^^^^^^^^^^^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ('assert 1 > 2, "message"',
+                [
+                    '    assert 1 > 2, "message"',
+                    '           ^^^^^',
+                    'AssertionError: message',
+                ],
+            ),
+
+            # Multiline:
+            ("""
+             assert (
+                 1 > 2)
+             """,
+                [
+                    '    1 > 2)',
+                    '    ^^^^^',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), "Message"
+             """,
+                [
+                    '    1 > 2), "Message"',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+            ("""
+             assert (
+                 1 > 2), \\
+                 "Message"
+             """,
+                [
+                    '    1 > 2), \\',
+                    '    ^^^^^',
+                    'AssertionError: Message',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-3:], expected)
+
+    def test_multiline_not_highlighted(self):
+        cases = [
+            ("""
+             assert (
+                 1 > 2
+             )
+             """,
+                [
+                    '    1 > 2',
+                    'AssertionError',
+                ],
+            ),
+            ("""
+             assert (
+                 1 < 2 and
+                 3 > 4
+             )
+             """,
+                [
+                    '    1 < 2 and',
+                    'AssertionError',
+                ],
+            ),
+        ]
+        for source, expected in cases:
+            with self.subTest(source):
+                result = self.write_source(source)
+                self.assertEqual(result[-2:], expected)
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def test_range_of_offsets(self):

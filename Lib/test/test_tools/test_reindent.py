@@ -25,7 +25,7 @@ class ReindentTests(unittest.TestCase):
         self.assertGreater(err, b'')
 
     def test_reindent_file_with_bad_encoding(self):
-        bad_coding_path = findfile('bad_coding.py')
+        bad_coding_path = findfile('bad_coding.py', subdir='tokenizedata')
         rc, out, err = assert_python_ok(self.script, '-r', bad_coding_path)
         self.assertEqual(out, b'')
         self.assertNotEqual(err, b'')

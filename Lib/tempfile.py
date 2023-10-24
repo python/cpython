@@ -376,7 +376,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
                 continue
             else:
                 raise
-        return file
+        return _os.path.abspath(file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")

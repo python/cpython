@@ -119,7 +119,8 @@ Module Contents
    :func:`~enum.property`
 
       Allows :class:`Enum` members to have attributes without conflicting with
-      member names.
+      member names.  The ``value`` and ``name`` attributes are implemented this
+      way.
 
    :func:`unique`
 
@@ -169,7 +170,7 @@ Data Types
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
 
-   .. method:: EnumType.__call__(cls, value, names=None, *, module=None, qualname=None, type=None, start=1, boundary=None)
+   .. method:: EnumType.__call__(cls, value, names=None, \*, module=None, qualname=None, type=None, start=1, boundary=None)
 
       This method is called in two different ways:
 
@@ -239,6 +240,10 @@ Data Types
 
         >>> list(reversed(Color))
         [<Color.BLUE: 3>, <Color.GREEN: 2>, <Color.RED: 1>]
+
+   .. versionadded:: 3.11
+
+      Before 3.11 ``enum`` used ``EnumMeta`` type, which is kept as an alias.
 
 
 .. class:: Enum
@@ -405,18 +410,18 @@ Data Types
    with an *IntEnum* member, the resulting value loses its enumeration status.
 
       >>> from enum import IntEnum
-      >>> class Numbers(IntEnum):
+      >>> class Number(IntEnum):
       ...     ONE = 1
       ...     TWO = 2
       ...     THREE = 3
       ...
-      >>> Numbers.THREE
-      <Numbers.THREE: 3>
-      >>> Numbers.ONE + Numbers.TWO
+      >>> Number.THREE
+      <Number.THREE: 3>
+      >>> Number.ONE + Number.TWO
       3
-      >>> Numbers.THREE + 5
+      >>> Number.THREE + 5
       8
-      >>> Numbers.THREE == 3
+      >>> Number.THREE == 3
       True
 
    .. note::
@@ -592,8 +597,8 @@ Data Types
 
    If a *Flag* operation is performed with an *IntFlag* member and:
 
-      * the result is a valid *IntFlag*: an *IntFlag* is returned
-      * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
+   * the result is a valid *IntFlag*: an *IntFlag* is returned
+   * the result is not a valid *IntFlag*: the result depends on the *FlagBoundary* setting
 
    The *repr()* of unnamed zero-valued flags has changed.  It is now:
 
@@ -620,8 +625,8 @@ Data Types
    :class:`!ReprEnum` uses the :meth:`repr() <Enum.__repr__>` of :class:`Enum`,
    but the :class:`str() <str>` of the mixed-in data type:
 
-      * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
-      * :meth:`!str.__str__` for :class:`StrEnum`
+   * :meth:`!int.__str__` for :class:`IntEnum` and :class:`IntFlag`
+   * :meth:`!str.__str__` for :class:`StrEnum`
 
    Inherit from :class:`!ReprEnum` to keep the :class:`str() <str>` / :func:`format`
    of the mixed-in data type instead of using the
@@ -784,13 +789,13 @@ Supported ``_sunder_`` names
 - ``_generate_next_value_`` -- used to get an appropriate value for an enum
   member; may be overridden
 
-   .. note::
+  .. note::
 
-       For standard :class:`Enum` classes the next value chosen is the last value seen
-       incremented by one.
+     For standard :class:`Enum` classes the next value chosen is the last value seen
+     incremented by one.
 
-       For :class:`Flag` classes the next value chosen will be the next highest
-       power-of-two, regardless of the last value seen.
+     For :class:`Flag` classes the next value chosen will be the next highest
+     power-of-two, regardless of the last value seen.
 
 .. versionadded:: 3.6 ``_missing_``, ``_order_``, ``_generate_next_value_``
 .. versionadded:: 3.7 ``_ignore_``
@@ -812,11 +817,11 @@ Utilities and Decorators
 
    *auto* instances are only resolved when at the top level of an assignment:
 
-      * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
-      * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
-         used to create the ``SECOND`` enum member;
-      * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
-        create the ``THREE`` enum member)
+   * ``FIRST = auto()`` will work (auto() is replaced with ``1``);
+   * ``SECOND = auto(), -2`` will work (auto is replaced with ``2``, so ``2, -2`` is
+      used to create the ``SECOND`` enum member;
+   * ``THREE = [auto(), -3]`` will *not* work (``<auto instance>, -3`` is used to
+     create the ``THREE`` enum member)
 
    .. versionchanged:: 3.11.1
 

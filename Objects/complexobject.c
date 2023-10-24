@@ -7,10 +7,11 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_complexobject.h" // _PyComplex_FormatAdvancedWriter()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
-#include "structmember.h"         // PyMemberDef
+
 
 
 /*[clinic input]
@@ -719,9 +720,9 @@ static PyMethodDef complex_methods[] = {
 };
 
 static PyMemberDef complex_members[] = {
-    {"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), READONLY,
+    {"real", Py_T_DOUBLE, offsetof(PyComplexObject, cval.real), Py_READONLY,
      "the real part of a complex number"},
-    {"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), READONLY,
+    {"imag", Py_T_DOUBLE, offsetof(PyComplexObject, cval.imag), Py_READONLY,
      "the imaginary part of a complex number"},
     {0},
 };

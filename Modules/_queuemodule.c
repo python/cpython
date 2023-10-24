@@ -3,8 +3,10 @@
 #endif
 
 #include "Python.h"
+#include "pycore_ceval.h"         // _PyEval_MakePendingCalls()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_time.h"          // _PyTime_t
+
 #include <stddef.h>               // offsetof()
 
 typedef struct {
@@ -210,6 +212,9 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
     PyObject *item;
     PyLockStatus r;
     PY_TIMEOUT_T microseconds;
+    PyThreadState *tstate = PyThreadState_Get();
+
+    // XXX Use PyThread_ParseTimeoutArg().
 
     if (block == 0) {
         /* Non-blocking */
@@ -253,7 +258,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
             Py_END_ALLOW_THREADS
         }
 
-        if (r == PY_LOCK_INTR && Py_MakePendingCalls() < 0) {
+        if (r == PY_LOCK_INTR && _PyEval_MakePendingCalls(tstate) < 0) {
             return NULL;
         }
         if (r == PY_LOCK_FAILURE) {
@@ -371,7 +376,7 @@ static PyMethodDef simplequeue_methods[] = {
 };
 
 static struct PyMemberDef simplequeue_members[] = {
-    {"__weaklistoffset__", T_PYSSIZET, offsetof(simplequeueobject, weakreflist), READONLY},
+    {"__weaklistoffset__", Py_T_PYSSIZET, offsetof(simplequeueobject, weakreflist), Py_READONLY},
     {NULL},
 };
 
@@ -431,6 +436,7 @@ queuemodule_exec(PyObject *module)
 
 static PyModuleDef_Slot queuemodule_slots[] = {
     {Py_mod_exec, queuemodule_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

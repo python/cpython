@@ -90,7 +90,10 @@ def dispatch(c, id, methodname, args=(), kwds={}):
     kind, result = c.recv()
     if kind == '#RETURN':
         return result
-    raise convert_to_error(kind, result)
+    try:
+        raise convert_to_error(kind, result)
+    finally:
+        del result  # break reference cycle
 
 def convert_to_error(kind, result):
     if kind == '#ERROR':
@@ -833,7 +836,10 @@ class BaseProxy(object):
             conn = self._Client(token.address, authkey=self._authkey)
             dispatch(conn, None, 'decref', (token.id,))
             return proxy
-        raise convert_to_error(kind, result)
+        try:
+            raise convert_to_error(kind, result)
+        finally:
+            del result   # break reference cycle
 
     def _getvalue(self):
         '''

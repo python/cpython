@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_long.h"          // _PyLong_UnsignedLong_Converter()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(py_blake2s_new__doc__,
 "blake2s(data=b\'\', /, *, digest_size=_blake2.blake2s.MAX_DIGEST_SIZE,\n"
@@ -85,7 +86,7 @@ skip_optional_posonly:
         goto skip_optional_kwonly;
     }
     if (fastargs[1]) {
-        digest_size = _PyLong_AsInt(fastargs[1]);
+        digest_size = PyLong_AsInt(fastargs[1]);
         if (digest_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -97,20 +98,12 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[2], &key, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&key, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'key'", "contiguous buffer", fastargs[2]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[3]) {
         if (PyObject_GetBuffer(fastargs[3], &salt, PyBUF_SIMPLE) != 0) {
-            goto exit;
-        }
-        if (!PyBuffer_IsContiguous(&salt, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'salt'", "contiguous buffer", fastargs[3]);
             goto exit;
         }
         if (!--noptargs) {
@@ -121,16 +114,12 @@ skip_optional_posonly:
         if (PyObject_GetBuffer(fastargs[4], &person, PyBUF_SIMPLE) != 0) {
             goto exit;
         }
-        if (!PyBuffer_IsContiguous(&person, 'C')) {
-            _PyArg_BadArgument("blake2s", "argument 'person'", "contiguous buffer", fastargs[4]);
-            goto exit;
-        }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
     if (fastargs[5]) {
-        fanout = _PyLong_AsInt(fastargs[5]);
+        fanout = PyLong_AsInt(fastargs[5]);
         if (fanout == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -139,7 +128,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[6]) {
-        depth = _PyLong_AsInt(fastargs[6]);
+        depth = PyLong_AsInt(fastargs[6]);
         if (depth == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -164,7 +153,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[9]) {
-        node_depth = _PyLong_AsInt(fastargs[9]);
+        node_depth = PyLong_AsInt(fastargs[9]);
         if (node_depth == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -173,7 +162,7 @@ skip_optional_posonly:
         }
     }
     if (fastargs[10]) {
-        inner_size = _PyLong_AsInt(fastargs[10]);
+        inner_size = PyLong_AsInt(fastargs[10]);
         if (inner_size == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -276,4 +265,4 @@ _blake2_blake2s_hexdigest(BLAKE2sObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2s_hexdigest_impl(self);
 }
-/*[clinic end generated code: output=bd0fb7639e450618 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=24690e4e2586cafd input=a9049054013a1b77]*/

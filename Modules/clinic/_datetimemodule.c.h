@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "fromtimestamp($type, timestamp, /)\n"
@@ -64,15 +64,15 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!fastargs) {
         goto exit;
     }
-    year = _PyLong_AsInt(fastargs[0]);
+    year = PyLong_AsInt(fastargs[0]);
     if (year == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    week = _PyLong_AsInt(fastargs[1]);
+    week = PyLong_AsInt(fastargs[1]);
     if (week == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    weekday = _PyLong_AsInt(fastargs[2]);
+    weekday = PyLong_AsInt(fastargs[2]);
     if (weekday == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -146,4 +146,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=42654669940e0e3a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=562813dd3e164794 input=a9049054013a1b77]*/

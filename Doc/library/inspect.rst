@@ -640,6 +640,9 @@ function.
    Accepts a wide range of Python callables, from plain functions and classes to
    :func:`functools.partial` objects.
 
+   If the passed object has a ``__signature__`` attribute, this function
+   returns it without further computations.
+
    For objects defined in modules using stringized annotations
    (``from __future__ import annotations``), :func:`signature` will
    attempt to automatically un-stringize the annotations using
@@ -689,8 +692,8 @@ function.
    The optional *return_annotation* argument, can be an arbitrary Python object,
    is the "return" annotation of the callable.
 
-   Signature objects are *immutable*.  Use :meth:`Signature.replace` to make a
-   modified copy.
+   Signature objects are *immutable*.  Use :meth:`Signature.replace` or
+   :func:`copy.replace` to make a modified copy.
 
    .. versionchanged:: 3.5
       Signature objects are picklable and :term:`hashable`.
@@ -730,7 +733,7 @@ function.
 
    .. method:: Signature.replace(*[, parameters][, return_annotation])
 
-      Create a new Signature instance based on the instance replace was invoked
+      Create a new Signature instance based on the instance :meth:`replace` was invoked
       on.  It is possible to pass different ``parameters`` and/or
       ``return_annotation`` to override the corresponding properties of the base
       signature.  To remove return_annotation from the copied Signature, pass in
@@ -746,6 +749,9 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
+      Signature objects are also supported by generic function
+      :func:`copy.replace`.
+
    .. classmethod:: Signature.from_callable(obj, *, follow_wrapped=True, globalns=None, localns=None)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
@@ -760,6 +766,8 @@ function.
          sig = MySignature.from_callable(min)
          assert isinstance(sig, MySignature)
 
+       Its behavior is otherwise identical to that of :func:`signature`.
+
        .. versionadded:: 3.5
 
        .. versionadded:: 3.10
@@ -769,7 +777,7 @@ function.
 .. class:: Parameter(name, kind, *, default=Parameter.empty, annotation=Parameter.empty)
 
    Parameter objects are *immutable*.  Instead of modifying a Parameter object,
-   you can use :meth:`Parameter.replace` to create a modified copy.
+   you can use :meth:`Parameter.replace` or :func:`copy.replace` to create a modified copy.
 
    .. versionchanged:: 3.5
       Parameter objects are picklable and :term:`hashable`.
@@ -891,6 +899,8 @@ function.
 
          >>> str(param.replace(default=Parameter.empty, annotation='spam'))
          "foo:'spam'"
+
+      Parameter objects are also supported by generic function :func:`copy.replace`.
 
    .. versionchanged:: 3.4
       In Python 3.3 Parameter objects were allowed to have ``name`` set
@@ -1458,10 +1468,11 @@ generator to be determined easily.
    Get current state of a generator-iterator.
 
    Possible states are:
-    * GEN_CREATED: Waiting to start execution.
-    * GEN_RUNNING: Currently being executed by the interpreter.
-    * GEN_SUSPENDED: Currently suspended at a yield expression.
-    * GEN_CLOSED: Execution has completed.
+
+   * GEN_CREATED: Waiting to start execution.
+   * GEN_RUNNING: Currently being executed by the interpreter.
+   * GEN_SUSPENDED: Currently suspended at a yield expression.
+   * GEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.2
 
@@ -1473,10 +1484,11 @@ generator to be determined easily.
    ``cr_frame`` attributes.
 
    Possible states are:
-    * CORO_CREATED: Waiting to start execution.
-    * CORO_RUNNING: Currently being executed by the interpreter.
-    * CORO_SUSPENDED: Currently suspended at an await expression.
-    * CORO_CLOSED: Execution has completed.
+
+   * CORO_CREATED: Waiting to start execution.
+   * CORO_RUNNING: Currently being executed by the interpreter.
+   * CORO_SUSPENDED: Currently suspended at an await expression.
+   * CORO_CLOSED: Execution has completed.
 
    .. versionadded:: 3.5
 
@@ -1489,10 +1501,11 @@ generator to be determined easily.
    ``ag_running`` and ``ag_frame`` attributes.
 
    Possible states are:
-    * AGEN_CREATED: Waiting to start execution.
-    * AGEN_RUNNING: Currently being executed by the interpreter.
-    * AGEN_SUSPENDED: Currently suspended at a yield expression.
-    * AGEN_CLOSED: Execution has completed.
+
+   * AGEN_CREATED: Waiting to start execution.
+   * AGEN_RUNNING: Currently being executed by the interpreter.
+   * AGEN_SUSPENDED: Currently suspended at a yield expression.
+   * AGEN_CLOSED: Execution has completed.
 
    .. versionadded:: 3.12
 
@@ -1603,6 +1616,39 @@ the following flags:
    for any introspection needs.
 
 
+Buffer flags
+------------
+
+.. class:: BufferFlags
+
+   This is an :class:`enum.IntFlag` that represents the flags that
+   can be passed to the :meth:`~object.__buffer__` method of objects
+   implementing the :ref:`buffer protocol <bufferobjects>`.
+
+   The meaning of the flags is explained at :ref:`buffer-request-types`.
+
+   .. attribute:: BufferFlags.SIMPLE
+   .. attribute:: BufferFlags.WRITABLE
+   .. attribute:: BufferFlags.FORMAT
+   .. attribute:: BufferFlags.ND
+   .. attribute:: BufferFlags.STRIDES
+   .. attribute:: BufferFlags.C_CONTIGUOUS
+   .. attribute:: BufferFlags.F_CONTIGUOUS
+   .. attribute:: BufferFlags.ANY_CONTIGUOUS
+   .. attribute:: BufferFlags.INDIRECT
+   .. attribute:: BufferFlags.CONTIG
+   .. attribute:: BufferFlags.CONTIG_RO
+   .. attribute:: BufferFlags.STRIDED
+   .. attribute:: BufferFlags.STRIDED_RO
+   .. attribute:: BufferFlags.RECORDS
+   .. attribute:: BufferFlags.RECORDS_RO
+   .. attribute:: BufferFlags.FULL
+   .. attribute:: BufferFlags.FULL_RO
+   .. attribute:: BufferFlags.READ
+   .. attribute:: BufferFlags.WRITE
+
+   .. versionadded:: 3.12
+
 .. _inspect-module-cli:
 
 Command Line Interface
@@ -1617,6 +1663,6 @@ By default, accepts the name of a module and prints the source of that
 module. A class or function within the module can be printed instead by
 appended a colon and the qualified name of the target object.
 
-.. cmdoption:: --details
+.. option:: --details
 
    Print information about the specified object rather than the source code

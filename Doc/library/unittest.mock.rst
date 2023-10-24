@@ -189,7 +189,7 @@ code if they are used incorrectly:
    >>> mock_function('wrong arguments')
    Traceback (most recent call last):
     ...
-   TypeError: <lambda>() takes exactly 3 arguments (1 given)
+   TypeError: missing a required argument: 'b'
 
 :func:`create_autospec` can also be used on classes, where it copies the signature of
 the ``__init__`` method, and on callable objects where it copies the signature of
@@ -205,8 +205,10 @@ The Mock Class
     import asyncio
     import inspect
     import unittest
+    import threading
     from unittest.mock import sentinel, DEFAULT, ANY
     from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
+    from unittest.mock import ThreadingMock
     from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
@@ -313,6 +315,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
             ...
             AssertionError: Expected 'method' to have been called once. Called 2 times.
+            Calls: [call(), call()].
 
         .. versionadded:: 3.6
 
@@ -340,7 +343,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'mock' to be called once. Called 2 times.
-
+            Calls: [call('foo', bar='baz'), call('other', bar='values')].
 
     .. method:: assert_any_call(*args, **kwargs)
 
@@ -390,6 +393,7 @@ the *new_callable* argument to :func:`patch`.
             Traceback (most recent call last):
               ...
             AssertionError: Expected 'hello' to not have been called. Called 1 times.
+            Calls: [call()].
 
         .. versionadded:: 3.5
 
@@ -814,8 +818,8 @@ This applies to :meth:`~Mock.assert_called_with`,
 :meth:`~Mock.assert_any_call`.  When :ref:`auto-speccing`, it will also
 apply to method calls on the mock object.
 
-   .. versionchanged:: 3.4
-      Added signature introspection on specced and autospecced mock objects.
+.. versionchanged:: 3.4
+   Added signature introspection on specced and autospecced mock objects.
 
 
 .. class:: PropertyMock(*args, **kwargs)
@@ -952,7 +956,7 @@ object::
         >>> asyncio.run(main())
         >>> mock.assert_awaited_once()
         >>> asyncio.run(main())
-        >>> mock.method.assert_awaited_once()
+        >>> mock.assert_awaited_once()
         Traceback (most recent call last):
         ...
         AssertionError: Expected mock to have been awaited once. Awaited 2 times.
@@ -970,7 +974,7 @@ object::
         >>> mock.assert_awaited_with('other')
         Traceback (most recent call last):
         ...
-        AssertionError: expected call not found.
+        AssertionError: expected await not found.
         Expected: mock('other')
         Actual: mock('foo', bar='bar')
 
@@ -1097,6 +1101,51 @@ object::
       >>> asyncio.run(main('bar'))
       >>> mock.await_args_list
       [call('foo'), call('bar')]
+
+
+.. class:: ThreadingMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, *, timeout=UNSET, **kwargs)
+
+  A version of :class:`MagicMock` for multithreading tests. The
+  :class:`ThreadingMock` object provides extra methods to wait for a call to
+  be invoked, rather than assert on it immediately.
+
+  The default timeout is specified by the ``timeout`` argument, or if unset by the
+  :attr:`ThreadingMock.DEFAULT_TIMEOUT` attribute, which defaults to blocking (``None``).
+
+  You can configure the global default timeout by setting :attr:`ThreadingMock.DEFAULT_TIMEOUT`.
+
+  .. method:: wait_until_called(*, timeout=UNSET)
+
+      Waits until the mock is called.
+
+      If a timeout was passed at the creation of the mock or if a timeout
+      argument is passed to this function, the function raises an
+      :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock)
+        >>> thread.start()
+        >>> mock.wait_until_called(timeout=1)
+        >>> thread.join()
+
+  .. method:: wait_until_any_call_with(*args, **kwargs)
+
+      Waits until the mock is called with the specified arguments.
+
+      If a timeout was passed at the creation of the mock
+      the function raises an :exc:`AssertionError` if the call is not performed in time.
+
+        >>> mock = ThreadingMock()
+        >>> thread = threading.Thread(target=mock, args=("arg1", "arg2",), kwargs={"arg": "thing"})
+        >>> thread.start()
+        >>> mock.wait_until_any_call_with("arg1", "arg2", arg="thing")
+        >>> thread.join()
+
+  .. attribute:: DEFAULT_TIMEOUT
+
+    Global default timeout in seconds to create instances of :class:`ThreadingMock`.
+
+  .. versionadded:: 3.13
 
 
 Calling
@@ -1388,9 +1437,9 @@ patch
 
     .. note::
 
-        .. versionchanged:: 3.5
-           If you are patching builtins in a module then you don't
-           need to pass ``create=True``, it will be added by default.
+       .. versionchanged:: 3.5
+          If you are patching builtins in a module then you don't
+          need to pass ``create=True``, it will be added by default.
 
     Patch can be used as a :class:`TestCase` class decorator. It works by
     decorating each test method in the class. This reduces the boilerplate
@@ -1658,7 +1707,7 @@ Keywords can be used in the :func:`patch.dict` call to set values in the diction
 :func:`patch.dict` can be used with dictionary like objects that aren't actually
 dictionaries. At the very minimum they must support item getting, setting,
 deleting and either iteration or membership test. This corresponds to the
-magic methods :meth:`__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
+magic methods :meth:`~object.__getitem__`, :meth:`__setitem__`, :meth:`__delitem__` and either
 :meth:`__iter__` or :meth:`__contains__`.
 
     >>> class Container:
@@ -2438,7 +2487,7 @@ behaviour you can switch it off by setting the module level switch
 
 Alternatively you can just use ``vars(my_mock)`` (instance members) and
 ``dir(type(my_mock))`` (type members) to bypass the filtering irrespective of
-:data:`mock.FILTER_DIR`.
+:const:`mock.FILTER_DIR`.
 
 
 mock_open
@@ -2482,8 +2531,8 @@ are closed properly and is becoming common::
         f.write('something')
 
 The issue is that even if you mock out the call to :func:`open` it is the
-*returned object* that is used as a context manager (and has :meth:`__enter__` and
-:meth:`__exit__` called).
+*returned object* that is used as a context manager (and has :meth:`~object.__enter__` and
+:meth:`~object.__exit__` called).
 
 Mocking context managers with a :class:`MagicMock` is common enough and fiddly
 enough that a helper function is useful. ::
