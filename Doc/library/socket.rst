@@ -354,10 +354,9 @@ Constants
 
 .. data:: AF_UNSPEC
 
-   The value :const:`AF_UNSPEC` indicates that
+   :const:`AF_UNSPEC` means that
    :func:`getaddrinfo` should return socket addresses for any
-   address family (either IPv4 or IPv6, for example) that can
-   be used with node and service.
+   address family (either IPv4, IPv6, or any other) that can be used.
 
 .. data:: SOCK_STREAM
           SOCK_DGRAM
