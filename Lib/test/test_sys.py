@@ -175,7 +175,8 @@ class ExceptHookTest(unittest.TestCase):
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
-            sys.excepthook(1, '1', 1)
+            with test.support.catch_unraisable_exception():
+                sys.excepthook(1, '1', 1)
         self.assertTrue("TypeError: print_exception(): Exception expected for " \
                          "value, str found" in stderr.getvalue())
 
@@ -510,7 +511,7 @@ class SysModuleTest(unittest.TestCase):
         # Spawn a thread that blocks at a known place.  Then the main
         # thread does sys._current_frames(), and verifies that the frames
         # returned make sense.
-        entered_g = threading.Event()
+        g_raised = threading.Event()
         leave_g = threading.Event()
         thread_info = []  # the thread's id
 
@@ -519,22 +520,19 @@ class SysModuleTest(unittest.TestCase):
 
         def g456():
             thread_info.append(threading.get_ident())
-            entered_g.set()
             while True:
                 try:
                     raise ValueError("oops")
                 except ValueError:
+                    g_raised.set()
                     if leave_g.wait(timeout=support.LONG_TIMEOUT):
                         break
 
         t = threading.Thread(target=f123)
         t.start()
-        entered_g.wait()
+        g_raised.wait(timeout=support.LONG_TIMEOUT)
 
         try:
-            # At this point, t has finished its entered_g.set(), although it's
-            # impossible to guess whether it's still on that line or has moved on
-            # to its leave_g.wait().
             self.assertEqual(len(thread_info), 1)
             thread_id = thread_info[0]
 

@@ -554,6 +554,12 @@ class TypeVarTests(BaseTestCase):
                     vals[x] = cls(str(x))
                 del vals
 
+    def test_constructor(self):
+        T = TypeVar(name="T")
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(T.__constraints__, ())
+        self.assertIs(T.__bound__, None)
+
 
 def template_replace(templates: list[str], replacements: dict[str, list[str]]) -> list[tuple[str]]:
     """Renders templates with possible combinations of replacements.
@@ -2005,13 +2011,13 @@ class BaseCallableTests:
         def f():
             pass
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], None])
+            isinstance(f, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertIsInstance(f, Callable[[], Any])
+            isinstance(f, Callable[[], Any])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], None])
+            isinstance(None, Callable[[], None])
         with self.assertRaises(TypeError):
-            self.assertNotIsInstance(None, Callable[[], Any])
+            isinstance(None, Callable[[], Any])
 
     def test_repr(self):
         Callable = self.Callable
@@ -3800,6 +3806,39 @@ class ProtocolTests(BaseTestCase):
                 x = 1
 
             self.assertIsInstance(E(), D)
+
+    def test_runtime_checkable_with_match_args(self):
+        @runtime_checkable
+        class P_regular(Protocol):
+            x: int
+            y: int
+
+        @runtime_checkable
+        class P_match(Protocol):
+            __match_args__ = ('x', 'y')
+            x: int
+            y: int
+
+        class Regular:
+            def __init__(self, x: int, y: int):
+                self.x = x
+                self.y = y
+
+        class WithMatch:
+            __match_args__ = ('x', 'y', 'z')
+            def __init__(self, x: int, y: int, z: int):
+                self.x = x
+                self.y = y
+                self.z = z
+
+        class Nope: ...
+
+        self.assertIsInstance(Regular(1, 2), P_regular)
+        self.assertIsInstance(Regular(1, 2), P_match)
+        self.assertIsInstance(WithMatch(1, 2, 3), P_regular)
+        self.assertIsInstance(WithMatch(1, 2, 3), P_match)
+        self.assertNotIsInstance(Nope(), P_regular)
+        self.assertNotIsInstance(Nope(), P_match)
 
     def test_supports_int(self):
         self.assertIsSubclass(int, typing.SupportsInt)

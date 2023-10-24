@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
@@ -102,10 +104,6 @@ _multiprocessing_send(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[1], &buf, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&buf, 'C')) {
-        _PyArg_BadArgument("send", "argument 2", "contiguous buffer", args[1]);
-        goto exit;
-    }
     return_value = _multiprocessing_send_impl(module, handle, &buf);
 
 exit:
@@ -166,4 +164,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=8b91c020d4353cc5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73b4cb8428d816da input=a9049054013a1b77]*/

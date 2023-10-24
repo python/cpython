@@ -658,7 +658,7 @@ class Generator(Analyzer):
         for part in parts:
             if isinstance(part, Component):
                 # All component instructions must be viable uops
-                if not part.instr.is_viable_uop():
+                if not part.instr.is_viable_uop() and part.instr.name != "_SAVE_CURRENT_IP":
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
                     # It is sometimes emitted for macros that have a
@@ -671,8 +671,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SET_IP":
-                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
+                    if part.instr.name == "_SAVE_CURRENT_IP":
+                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset - 1
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
