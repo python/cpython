@@ -589,7 +589,7 @@ Shielding From Cancellation
 
    is equivalent to::
 
-       res = await shield(something())
+       res = await something()
 
    *except* that if the coroutine containing it is cancelled, the
    Task running in ``something()`` is not cancelled.  From the point
