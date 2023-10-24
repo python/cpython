@@ -68,6 +68,30 @@ extern PyStatus _PyErr_InitTypes(PyInterpreterState *);
 extern void _PyErr_FiniTypes(PyInterpreterState *);
 
 
+/* exception snapshots */
+
+// Ultimately we'd like to preserve enough information about the
+// exception and traceback that we could re-constitute (or at least
+// simulate, a la traceback.TracebackException), and even chain, a copy
+// of the exception in the calling interpreter.
+
+typedef struct _excinfo {
+    const char *type;
+    const char *msg;
+} _Py_excinfo;
+
+PyAPI_FUNC(void) _Py_excinfo_Clear(_Py_excinfo *info);
+PyAPI_FUNC(int) _Py_excinfo_Copy(_Py_excinfo *dest, _Py_excinfo *src);
+PyAPI_FUNC(const char *) _Py_excinfo_InitFromException(
+    _Py_excinfo *info,
+    PyObject *exc);
+PyAPI_FUNC(void) _Py_excinfo_Apply(_Py_excinfo *info, PyObject *exctype);
+PyAPI_FUNC(const char *) _Py_excinfo_AsUTF8(
+    _Py_excinfo *info,
+    char *buf,
+    size_t bufsize);
+
+
 /* other API */
 
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)

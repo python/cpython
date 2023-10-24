@@ -7,6 +7,7 @@
 
 #include "Python.h"
 #include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -110,6 +111,85 @@ clear_module_state(module_state *state)
     Py_CLEAR(state->RunFailedError);
 
     return 0;
+}
+
+
+/* exception info ***********************************************************/
+
+#define ERR_NOT_SET 0
+#define ERR_UNCAUGHT_EXCEPTION 1
+#define ERR_NO_MEMORY 2
+#define ERR_ALREADY_RUNNING 3
+
+static const char *
+_excinfo_bind(PyObject *exc, _Py_excinfo *info, int *p_code)
+{
+    assert(exc != NULL);
+
+    const char *failure = _Py_excinfo_InitFromException(info, exc);
+    if (failure != NULL) {
+        PyErr_Clear();
+        *p_code = ERR_NO_MEMORY;
+        return failure;
+    }
+
+    assert(!PyErr_Occurred());
+    *p_code = ERR_UNCAUGHT_EXCEPTION;
+    return NULL;
+}
+
+typedef struct _sharedexception {
+    PyInterpreterState *interp;
+    int code;
+    _Py_excinfo uncaught;
+} _sharedexception;
+
+static const char *
+_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
+{
+    if (sharedexc->interp == NULL) {
+        sharedexc->interp = PyInterpreterState_Get();
+    }
+
+    const char *failure = NULL;
+    if (code == ERR_NOT_SET) {
+        failure = _excinfo_bind(exc, &sharedexc->uncaught, &sharedexc->code);
+        assert(sharedexc->code != ERR_NOT_SET);
+    }
+    else {
+        assert(exc == NULL);
+        assert(code != ERR_UNCAUGHT_EXCEPTION);
+        sharedexc->code = code;
+        _Py_excinfo_Clear(&sharedexc->uncaught);
+    }
+    return failure;
+}
+
+static void
+_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
+{
+    if (exc->code == ERR_UNCAUGHT_EXCEPTION) {
+        _Py_excinfo_Apply(&exc->uncaught, wrapperclass);
+    }
+    else {
+        assert(exc->code != ERR_NOT_SET);
+        if (exc->code == ERR_NO_MEMORY) {
+            PyErr_NoMemory();
+        }
+        else if (exc->code == ERR_ALREADY_RUNNING) {
+            assert(exc->interp != NULL);
+            assert(_PyInterpreterState_IsRunningMain(exc->interp));
+            _PyInterpreterState_FailIfRunningMain(exc->interp);
+        }
+        else {
+#ifdef Py_DEBUG
+            Py_UNREACHABLE();
+#else
+            PyErr_Format(PyExc_RuntimeError, "unsupported error code %d", code);
+#endif
+        }
+        assert(PyErr_Occurred());
+    }
 }
 
 
@@ -238,135 +318,6 @@ _sharedns_apply(_sharedns *shared, PyObject *ns)
         }
     }
     return 0;
-}
-
-// Ultimately we'd like to preserve enough information about the
-// exception and traceback that we could re-constitute (or at least
-// simulate, a la traceback.TracebackException), and even chain, a copy
-// of the exception in the calling interpreter.
-
-typedef struct _sharedexception {
-    PyInterpreterState *interp;
-#define ERR_NOT_SET 0
-#define ERR_NO_MEMORY 1
-#define ERR_ALREADY_RUNNING 2
-    int code;
-    const char *name;
-    const char *msg;
-} _sharedexception;
-
-static const struct _sharedexception no_exception = {
-    .name = NULL,
-    .msg = NULL,
-};
-
-static void
-_sharedexception_clear(_sharedexception *exc)
-{
-    if (exc->name != NULL) {
-        PyMem_RawFree((void *)exc->name);
-    }
-    if (exc->msg != NULL) {
-        PyMem_RawFree((void *)exc->msg);
-    }
-}
-
-static const char *
-_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
-{
-    if (sharedexc->interp == NULL) {
-        sharedexc->interp = PyInterpreterState_Get();
-    }
-
-    if (code != ERR_NOT_SET) {
-        assert(exc == NULL);
-        assert(code > 0);
-        sharedexc->code = code;
-        return NULL;
-    }
-
-    assert(exc != NULL);
-    const char *failure = NULL;
-
-    PyObject *nameobj = PyUnicode_FromString(Py_TYPE(exc)->tp_name);
-    if (nameobj == NULL) {
-        failure = "unable to format exception type name";
-        code = ERR_NO_MEMORY;
-        goto error;
-    }
-    sharedexc->name = _copy_raw_string(nameobj);
-    Py_DECREF(nameobj);
-    if (sharedexc->name == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-            failure = "out of memory copying exception type name";
-        } else {
-            failure = "unable to encode and copy exception type name";
-        }
-        code = ERR_NO_MEMORY;
-        goto error;
-    }
-
-    if (exc != NULL) {
-        PyObject *msgobj = PyUnicode_FromFormat("%S", exc);
-        if (msgobj == NULL) {
-            failure = "unable to format exception message";
-            code = ERR_NO_MEMORY;
-            goto error;
-        }
-        sharedexc->msg = _copy_raw_string(msgobj);
-        Py_DECREF(msgobj);
-        if (sharedexc->msg == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
-                failure = "out of memory copying exception message";
-            } else {
-                failure = "unable to encode and copy exception message";
-            }
-            code = ERR_NO_MEMORY;
-            goto error;
-        }
-    }
-
-    return NULL;
-
-error:
-    assert(failure != NULL);
-    PyErr_Clear();
-    _sharedexception_clear(sharedexc);
-    *sharedexc = (_sharedexception){
-        .interp = sharedexc->interp,
-        .code = code,
-    };
-    return failure;
-}
-
-static void
-_sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
-{
-    if (exc->name != NULL) {
-        assert(exc->code == ERR_NOT_SET);
-        if (exc->msg != NULL) {
-            PyErr_Format(wrapperclass, "%s: %s",  exc->name, exc->msg);
-        }
-        else {
-            PyErr_SetString(wrapperclass, exc->name);
-        }
-    }
-    else if (exc->msg != NULL) {
-        assert(exc->code == ERR_NOT_SET);
-        PyErr_SetString(wrapperclass, exc->msg);
-    }
-    else if (exc->code == ERR_NO_MEMORY) {
-        PyErr_NoMemory();
-    }
-    else if (exc->code == ERR_ALREADY_RUNNING) {
-        assert(exc->interp != NULL);
-        assert(_PyInterpreterState_IsRunningMain(exc->interp));
-        _PyInterpreterState_FailIfRunningMain(exc->interp);
-    }
-    else {
-        assert(exc->code == ERR_NOT_SET);
-        PyErr_SetNone(wrapperclass);
-    }
 }
 
 
@@ -549,7 +500,7 @@ _run_script(PyInterpreterState *interp,
     }
     _PyInterpreterState_SetNotRunningMain(interp);
 
-    *sharedexc = no_exception;
+    *sharedexc = (_sharedexception){0};
     return 0;
 
 error:
