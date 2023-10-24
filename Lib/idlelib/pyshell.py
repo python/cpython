@@ -728,13 +728,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
         offset = getattr(value, 'offset', '') or 0
 
         # special case to fix bpo-43600
-        if "f-string:" in msg:
+        if msg.startswith("f-string:"):
             line = text.get("iomark", "end-1c")
 
-            # we should find one of those cases (f["'])
-            f_string_offset = line.find('f"') + 2
-            if f_string_offset == -1:  # didn't find f"
-                f_string_offset = line.find("f'") + 2
+            # we should find one of those cases (f["""|"|'])
+            f_string_offset = line.find('f"""') + 4
+            if f_string_offset == 3:  # didn't find f"""
+                f_string_offset = line.find('f"') + 2
+                if f_string_offset == 1:  # didn't find f"
+                    f_string_offset = line.find("f'") + 2
+
             offset += f_string_offset
 
         if offset == 0:
