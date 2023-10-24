@@ -1,0 +1,1 @@
+Add a new C-API function PyDict_Pop to replace a previously removed underscore function.

@@ -2272,6 +2272,16 @@ _PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
     return _PyDict_Pop_KnownHash(dict, key, hash, deflt);
 }
 
+PyObject *
+PyDict_Pop(PyObject *dict, PyObject *key, PyObject *deflt)
+{
+    if (!PyDict_Check(dict)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    return _PyDict_Pop(dict, key, deflt);
+}
+
 /* Internal version of dict.from_keys().  It is subclass-friendly. */
 PyObject *
 _PyDict_FromKeys(PyObject *cls, PyObject *iterable, PyObject *value)
