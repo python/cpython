@@ -26,9 +26,8 @@ PyObject *PyExc_WindowsError = NULL;  // borrowed ref
 
 
 static struct _Py_exc_state*
-get_exc_state(void)
+get_exc_state(PyInterpreterState *interp)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     return &interp->exc_state;
 }
 
@@ -697,7 +696,8 @@ _PyBaseExceptionGroupObject_cast(PyObject *exc)
 static PyObject *
 BaseExceptionGroup_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    struct _Py_exc_state *state = get_exc_state();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_exc_state *state = get_exc_state(interp);
     PyTypeObject *PyExc_ExceptionGroup =
         (PyTypeObject*)state->PyExc_ExceptionGroup;
 
@@ -1491,7 +1491,8 @@ ComplexExtendsException(PyExc_BaseException, BaseExceptionGroup,
  */
 static PyObject*
 create_exception_group_class(void) {
-    struct _Py_exc_state *state = get_exc_state();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_exc_state *state = get_exc_state(interp);
 
     PyObject *bases = PyTuple_Pack(
         2, PyExc_BaseExceptionGroup, PyExc_Exception);
@@ -1858,7 +1859,8 @@ OSError_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             ))
             goto error;
 
-        struct _Py_exc_state *state = get_exc_state();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        struct _Py_exc_state *state = get_exc_state(interp);
         if (myerrno && PyLong_Check(myerrno) &&
             state->errnomap && (PyObject *) type == PyExc_OSError) {
             PyObject *newtype;
@@ -3283,7 +3285,8 @@ static PyObject *
 get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
     PyBaseExceptionObject *self;
-    struct _Py_exc_state *state = get_exc_state();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_exc_state *state = get_exc_state(interp);
     if (state->memerrors_freelist == NULL) {
         if (!allow_allocation) {
             PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -3352,7 +3355,8 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
         return;
     }
 
-    struct _Py_exc_state *state = get_exc_state();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    struct _Py_exc_state *state = get_exc_state(interp);
     if (state->memerrors_numfree >= MEMERRORS_SAVE) {
         Py_TYPE(self)->tp_free((PyObject *)self);
     }
@@ -3660,6 +3664,9 @@ static struct static_exception static_exceptions[] = {
 };
 
 
+static int
+_exc_snapshot_init_type(PyInterpreterState *interp);
+
 int
 _PyExc_InitTypes(PyInterpreterState *interp)
 {
@@ -3669,13 +3676,20 @@ _PyExc_InitTypes(PyInterpreterState *interp)
             return -1;
         }
     }
+    if (_exc_snapshot_init_type(interp) < 0) {
+        return -1;
+    }
     return 0;
 }
 
 
 static void
+_exc_snapshot_clear_type(PyInterpreterState *interp);
+
+static void
 _PyExc_FiniTypes(PyInterpreterState *interp)
 {
+    _exc_snapshot_clear_type(interp);
     for (Py_ssize_t i=Py_ARRAY_LENGTH(static_exceptions) - 1; i >= 0; i--) {
         PyTypeObject *exc = static_exceptions[i].exc;
         _PyStaticType_Dealloc(interp, exc);
@@ -3824,3 +3838,182 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     return res;
 }
 
+
+/* exception snapshots */
+
+typedef struct exc_snapshot {
+    PyObject_HEAD
+    _Py_excinfo info;
+} PyExceptionSnapshotObject;
+
+static void
+exc_snapshot_dealloc(PyExceptionSnapshotObject *self)
+{
+    PyTypeObject *tp = Py_TYPE(self);
+    _Py_excinfo_Clear(&self->info);
+    tp->tp_free(self);
+    /* "Instances of heap-allocated types hold a reference to their type."
+     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
+     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    */
+    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
+    // like we do for _abc._abc_data?
+    Py_DECREF(tp);
+}
+
+static PyObject *
+exc_snapshot_repr(PyExceptionSnapshotObject *self)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    const char *clsname = _PyType_Name(type);
+    return PyUnicode_FromFormat("%s(name='%s', msg='%s')",
+                                clsname, self->info.type, self->info.msg);
+}
+
+static PyObject *
+exc_snapshot_str(PyExceptionSnapshotObject *self)
+{
+    char buf[256];
+    const char *msg = _Py_excinfo_AsUTF8(&self->info, buf, 256);
+    if (msg == NULL) {
+        msg = "";
+    }
+    return PyUnicode_FromString(msg);
+}
+
+static Py_hash_t
+exc_snapshot_hash(PyExceptionSnapshotObject *self)
+{
+    PyObject *str = exc_snapshot_str(self);
+    if (str == NULL) {
+        return -1;
+    }
+    Py_hash_t hash = PyObject_Hash(str);
+    Py_DECREF(str);
+    return hash;
+}
+
+PyDoc_STRVAR(exc_snapshot_doc,
+"ExceptionSnapshot\n\
+\n\
+A minimal summary of a raised exception.");
+
+static PyMemberDef exc_snapshot_members[] = {
+#define OFFSET(field) \
+        (offsetof(PyExceptionSnapshotObject, info) + offsetof(_Py_excinfo, field))
+    {"type", Py_T_STRING, OFFSET(type), Py_READONLY,
+     PyDoc_STR("the name of the original exception type")},
+    {"msg", Py_T_STRING, OFFSET(msg), Py_READONLY,
+     PyDoc_STR("the message string of the original exception")},
+#undef OFFSET
+    {NULL}
+};
+
+static PyObject *
+exc_snapshot_apply(PyExceptionSnapshotObject *self,
+                   PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"exctype", NULL};
+    PyObject *exctype = NULL;
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                                     "|O:ExceptionSnapshot.apply" , kwlist,
+                                     &exctype)) {
+        return NULL;
+    }
+
+    if (exctype == NULL) {
+        exctype = PyExc_RuntimeError;
+    }
+
+    _Py_excinfo_Apply(&self->info, exctype);
+    return NULL;
+}
+
+PyDoc_STRVAR(exc_snapshot_apply_doc,
+"Raise an exception based on the snapshot.");
+
+static PyMethodDef exc_snapshot_methods[] = {
+    {"apply",                    _PyCFunction_CAST(exc_snapshot_apply),
+     METH_VARARGS | METH_KEYWORDS, exc_snapshot_apply_doc},
+    {NULL}
+};
+
+static PyType_Slot ExcSnapshotType_slots[] = {
+    {Py_tp_dealloc, (destructor)exc_snapshot_dealloc},
+    {Py_tp_doc, (void *)exc_snapshot_doc},
+    {Py_tp_repr, (reprfunc)exc_snapshot_repr},
+    {Py_tp_str, (reprfunc)exc_snapshot_str},
+    {Py_tp_hash, exc_snapshot_hash},
+    {Py_tp_members, exc_snapshot_members},
+    {Py_tp_methods, exc_snapshot_methods},
+    {0, NULL},
+};
+
+static PyType_Spec ExcSnapshotType_spec = {
+    // XXX Move it to builtins?
+    .name = "_interpreters.ExceptionSnapshot",
+    .basicsize = sizeof(PyExceptionSnapshotObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = ExcSnapshotType_slots,
+};
+
+static int
+_exc_snapshot_init_type(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = get_exc_state(interp);
+    assert(state->ExceptionSnapshotType == NULL);
+    PyTypeObject *cls = (PyTypeObject *)PyType_FromMetaclass(
+                NULL, NULL, &ExcSnapshotType_spec, NULL);
+    if (cls == NULL) {
+        return -1;
+    }
+    state->ExceptionSnapshotType = cls;
+    return 0;
+}
+
+static void
+_exc_snapshot_clear_type(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = get_exc_state(interp);
+    Py_CLEAR(state->ExceptionSnapshotType);
+}
+
+PyTypeObject *
+_PyExc_GetExceptionSnapshotType(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = get_exc_state(interp);
+    assert(state->ExceptionSnapshotType != NULL);
+    return (PyTypeObject *)Py_NewRef(state->ExceptionSnapshotType);
+}
+
+static PyExceptionSnapshotObject *
+new_exc_snapshot(PyInterpreterState *interp)
+{
+    struct _Py_exc_state *state = get_exc_state(interp);
+    assert(state->ExceptionSnapshotType != NULL);
+    PyTypeObject *cls = state->ExceptionSnapshotType;
+
+    PyExceptionSnapshotObject *self = \
+        (PyExceptionSnapshotObject *)PyObject_New(PyExceptionSnapshotObject, cls);
+    if (self == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    self->info = (_Py_excinfo){0};
+    return self;
+}
+
+PyObject *
+PyExceptionSnapshot_FromInfo(_Py_excinfo *info)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyExceptionSnapshotObject *self = new_exc_snapshot(interp);
+    if (self == NULL) {
+        return NULL;
+    }
+    if (_Py_excinfo_Copy(&self->info, info) < 0) {
+        Py_DECREF(self);
+    }
+    return (PyObject *)self;
+}
