@@ -1,3 +1,0 @@
-Add :mod:`tkinter` widget methods: :meth:`!tk_busy_hold`,
-:meth:`!tk_busy_configure`, :meth:`!tk_busy_cget`, :meth:`!tk_busy_forget`,
-:meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.

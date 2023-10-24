@@ -4133,7 +4133,8 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             if (PyObject_GetBuffer(cadata, &buf, PyBUF_SIMPLE)) {
                 goto error;
             }
-            if (!PyBuffer_IsContiguous(&buf, 'C') || buf.ndim > 1) {
+            assert(PyBuffer_IsContiguous(&buf, 'C'));
+            if (buf.ndim > 1) {
                 PyBuffer_Release(&buf);
                 PyErr_SetString(PyExc_TypeError,
                                 "cadata should be a contiguous buffer with "

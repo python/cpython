@@ -1,2 +1,0 @@
-Fix test_stress_modifying_handlers() of test_signal. Patch by Victor
-Stinner.

@@ -1,2 +1,0 @@
-Fix a bug in :class:`array.array` where an exception could end up being
-overwritten.
