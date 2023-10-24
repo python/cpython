@@ -10,6 +10,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.text = tkinter.Text(self.root)
+        self.text.pack()
 
     def test_debug(self):
         text = self.text
@@ -61,6 +62,7 @@ class TextTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(text.count('1.3', '1.5', 'lines'), 0)
         self.assertEqual(text.count('1.3', '1.3', 'lines'), 0)
         self.assertEqual(text.count('1.0', 'end'), 124)  # 'indices' by default
+        self.assertEqual(text.count('1.0', 'end', 'indices'), 124)
         self.assertRaises(tkinter.TclError, text.count, '1.0', 'end', 'spam')
         self.assertRaises(tkinter.TclError, text.count, '1.0', 'end', '-lines')
 
