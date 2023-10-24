@@ -241,10 +241,15 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
     def _hostinfo(self):
         netloc = self.netloc
         _, _, hostinfo = netloc.rpartition(b'@')
-        _, have_open_br, bracketed = hostinfo.partition(b'[')
+        bracket_prefix, have_open_br, bracketed = hostinfo.partition(b'[')
         if have_open_br:
+            if bracket_prefix:
+                raise ValueError('Invalid IPv6 URL')
             hostname, _, port = bracketed.partition(b']')
-            _, _, port = port.partition(b':')
+            _check_bracketed_host(hostname.decode(_implicit_encoding, _implicit_errors))
+            bracket_suffix, _, port = port.partition(b':')
+            if bracket_suffix:
+                raise ValueError('Invalid IPv6 URL')
         else:
             hostname, _, port = hostinfo.partition(b':')
         if not port:

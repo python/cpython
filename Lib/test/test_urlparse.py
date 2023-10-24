@@ -1425,6 +1425,11 @@ class UrlParseTestCase(unittest.TestCase):
                     urllib.parse.urlsplit(case).hostname
                 with self.assertRaises(ValueError):
                     urllib.parse.urlparse(case).hostname
+                bytes_case = case.encode('utf8')
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlsplit(bytes_case).hostname
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlparse(bytes_case).hostname
 
     def test_splitting_bracketed_hosts(self):
         p1 = urllib.parse.urlsplit('scheme://user@[v6a.ip]/path?query')
