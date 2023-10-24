@@ -871,6 +871,15 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
         self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
 
+    def test_getargs_empty(self):
+        from _testcapi import getargs_empty
+        self.assertTrue(getargs_empty())
+        self.assertRaises(TypeError, getargs_empty, 1)
+        self.assertRaises(TypeError, getargs_empty, 1, 2, 3)
+        self.assertRaises(TypeError, getargs_empty, a=1)
+        self.assertRaises(TypeError, getargs_empty, a=1, b=2)
+        self.assertRaises(TypeError, getargs_empty, 'x', 'y', 'z', a=1, b=2)
+
 
 class String_TestCase(unittest.TestCase):
     def test_C(self):
@@ -1304,12 +1313,6 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                     with self.assertRaisesRegex(TypeError,
                             f"'{name2}' is an invalid keyword argument"):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
-
-
-class Test_testcapi(unittest.TestCase):
-    locals().update((name, getattr(_testcapi, name))
-                    for name in dir(_testcapi)
-                    if name.startswith('test_') and name.endswith('_code'))
 
 
 if __name__ == "__main__":
