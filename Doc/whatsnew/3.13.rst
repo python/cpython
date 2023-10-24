@@ -940,7 +940,15 @@ Porting to Python 3.13
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* None yet
+Changes in the Python API
+-------------------------
+
+* :meth:`!tkinter.Text.count` now always returns an integer if one or less
+  counting options are specified.
+  Previously it could return a single count as a 1-tuple, an integer (only if
+  option ``"update"`` was specified) or ``None`` if no items found.
+  The result is now the same if ``wantobjects`` is set to ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 
 Build Changes
