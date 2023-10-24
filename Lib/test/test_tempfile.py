@@ -11,6 +11,8 @@ import contextlib
 import stat
 import types
 import weakref
+import gc
+import shutil
 from unittest import mock
 
 import unittest
@@ -285,19 +287,14 @@ class TestGetDefaultTempdir(BaseTestCase):
                 def raise_OSError(*args, **kwargs):
                     raise OSError()
 
-                with support.swap_attr(io, "open", raise_OSError):
-                    # test again with failing io.open()
+                with support.swap_attr(os, "open", raise_OSError):
+                    # test again with failing os.open()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
 
-                def bad_writer(*args, **kwargs):
-                    fp = orig_open(*args, **kwargs)
-                    fp.write = raise_OSError
-                    return fp
-
-                with support.swap_attr(io, "open", bad_writer) as orig_open:
-                    # test again with failing write()
+                with support.swap_attr(os, "write", raise_OSError):
+                    # test again with failing os.write()
                     with self.assertRaises(FileNotFoundError):
                         tempfile._get_default_tempdir()
                     self.assertEqual(os.listdir(our_temp_directory), [])
@@ -450,6 +447,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_file_mode(self):
         # _mkstemp_inner creates files with the proper mode
 
@@ -787,6 +785,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    @os_helper.skip_unless_working_chmod
     def test_mode(self):
         # mkdtemp creates directories with the proper mode
 
@@ -850,6 +849,15 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             self.assertIsInstance(path, str)
         finally:
             tempfile.tempdir = orig_tempdir
+
+    def test_path_is_absolute(self):
+        # Test that the path returned by mkdtemp with a relative `dir`
+        # argument is absolute
+        try:
+            path = tempfile.mkdtemp(dir=".")
+            self.assertTrue(os.path.isabs(path))
+        finally:
+            os.rmdir(path)
 
 
 class TestMktemp(BaseTestCase):
@@ -976,6 +984,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         try:
             with tempfile.NamedTemporaryFile(dir=dir) as f:
                 f.write(b'blat')
+            self.assertEqual(os.listdir(dir), [])
             self.assertFalse(os.path.exists(f.name),
                         "NamedTemporaryFile %s exists after close" % f.name)
         finally:
@@ -1015,18 +1024,101 @@ class TestNamedTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    def test_no_leak_fd(self):
-        # Issue #21058: don't leak file descriptor when io.open() fails
-        closed = []
-        os_close = os.close
-        def close(fd):
-            closed.append(fd)
-            os_close(fd)
+    def test_context_man_not_del_on_close_if_delete_on_close_false(self):
+        # Issue gh-58451: tempfile.NamedTemporaryFile is not particularly useful
+        # on Windows
+        # A NamedTemporaryFile is NOT deleted when closed if
+        # delete_on_close=False, but is deleted on context manager exit
+        dir = tempfile.mkdtemp()
+        try:
+            with tempfile.NamedTemporaryFile(dir=dir,
+                                             delete=True,
+                                             delete_on_close=False) as f:
+                f.write(b'blat')
+                f_name = f.name
+                f.close()
+                with self.subTest():
+                    # Testing that file is not deleted on close
+                    self.assertTrue(os.path.exists(f.name),
+                            f"NamedTemporaryFile {f.name!r} is incorrectly "
+                            f"deleted on closure when delete_on_close=False")
 
-        with mock.patch('os.close', side_effect=close):
-            with mock.patch('io.open', side_effect=ValueError):
-                self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
-                self.assertEqual(len(closed), 1)
+            with self.subTest():
+                # Testing that file is deleted on context manager exit
+                self.assertFalse(os.path.exists(f.name),
+                                 f"NamedTemporaryFile {f.name!r} exists "
+                                 f"after context manager exit")
+
+        finally:
+            os.rmdir(dir)
+
+    def test_context_man_ok_to_delete_manually(self):
+        # In the case of delete=True, a NamedTemporaryFile can be manually
+        # deleted in a with-statement context without causing an error.
+        dir = tempfile.mkdtemp()
+        try:
+            with tempfile.NamedTemporaryFile(dir=dir,
+                                             delete=True,
+                                             delete_on_close=False) as f:
+                f.write(b'blat')
+                f.close()
+                os.unlink(f.name)
+
+        finally:
+            os.rmdir(dir)
+
+    def test_context_man_not_del_if_delete_false(self):
+        # A NamedTemporaryFile is not deleted if delete = False
+        dir = tempfile.mkdtemp()
+        f_name = ""
+        try:
+            # Test that delete_on_close=True has no effect if delete=False.
+            with tempfile.NamedTemporaryFile(dir=dir, delete=False,
+                                             delete_on_close=True) as f:
+                f.write(b'blat')
+                f_name = f.name
+            self.assertTrue(os.path.exists(f.name),
+                        f"NamedTemporaryFile {f.name!r} exists after close")
+        finally:
+            os.unlink(f_name)
+            os.rmdir(dir)
+
+    def test_del_by_finalizer(self):
+        # A NamedTemporaryFile is deleted when finalized in the case of
+        # delete=True, delete_on_close=False, and no with-statement is used.
+        def my_func(dir):
+            f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
+                                            delete_on_close=False)
+            tmp_name = f.name
+            f.write(b'blat')
+            # Testing extreme case, where the file is not explicitly closed
+            # f.close()
+            return tmp_name
+        # Make sure that the garbage collector has finalized the file object.
+        gc.collect()
+        dir = tempfile.mkdtemp()
+        try:
+            tmp_name = my_func(dir)
+            self.assertFalse(os.path.exists(tmp_name),
+                        f"NamedTemporaryFile {tmp_name!r} "
+                        f"exists after finalizer ")
+        finally:
+            os.rmdir(dir)
+
+    def test_correct_finalizer_work_if_already_deleted(self):
+        # There should be no error in the case of delete=True,
+        # delete_on_close=False, no with-statement is used, and the file is
+        # deleted manually.
+        def my_func(dir)->str:
+            f = tempfile.NamedTemporaryFile(dir=dir, delete=True,
+                                            delete_on_close=False)
+            tmp_name = f.name
+            f.write(b'blat')
+            f.close()
+            os.unlink(tmp_name)
+            return tmp_name
+        # Make sure that the garbage collector has finalized the file object.
+        gc.collect()
 
     def test_bad_mode(self):
         dir = tempfile.mkdtemp()
@@ -1035,6 +1127,24 @@ class TestNamedTemporaryFile(BaseTestCase):
             tempfile.NamedTemporaryFile(mode='wr', dir=dir)
         with self.assertRaises(TypeError):
             tempfile.NamedTemporaryFile(mode=2, dir=dir)
+        self.assertEqual(os.listdir(dir), [])
+
+    def test_bad_encoding(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dir)
+        with self.assertRaises(LookupError):
+            tempfile.NamedTemporaryFile('w', encoding='bad-encoding', dir=dir)
+        self.assertEqual(os.listdir(dir), [])
+
+    def test_unexpected_error(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, dir)
+        with mock.patch('tempfile._TemporaryFileWrapper') as mock_ntf, \
+             mock.patch('io.open', mock.mock_open()) as mock_open:
+            mock_ntf.side_effect = KeyboardInterrupt()
+            with self.assertRaises(KeyboardInterrupt):
+                tempfile.NamedTemporaryFile(dir=dir)
+        mock_open().close.assert_called()
         self.assertEqual(os.listdir(dir), [])
 
     # How to test the mode and bufsize parameters?
@@ -1078,7 +1188,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         missing_attrs = iobase_attrs - spooledtempfile_attrs
         self.assertFalse(
             missing_attrs,
-            'SpooledTemporaryFile missing attributes from IOBase/BufferedIOBase/TextIOBase'
+            'SpooledTemporaryFile missing attributes from '
+            'IOBase/BufferedIOBase/TextIOBase'
         )
 
     def test_del_on_close(self):
@@ -1091,8 +1202,10 @@ class TestSpooledTemporaryFile(BaseTestCase):
             self.assertTrue(f._rolled)
             filename = f.name
             f.close()
-            self.assertFalse(isinstance(filename, str) and os.path.exists(filename),
-                        "SpooledTemporaryFile %s exists after close" % filename)
+            self.assertEqual(os.listdir(dir), [])
+            if not isinstance(filename, int):
+                self.assertFalse(os.path.exists(filename),
+                    "SpooledTemporaryFile %s exists after close" % filename)
         finally:
             os.rmdir(dir)
 
@@ -1409,19 +1522,34 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             roundtrip("\u039B", "w+", encoding="utf-16")
             roundtrip("foo\r\n", "w+", newline="")
 
-        def test_no_leak_fd(self):
-            # Issue #21058: don't leak file descriptor when io.open() fails
-            closed = []
-            os_close = os.close
-            def close(fd):
-                closed.append(fd)
-                os_close(fd)
+        def test_bad_mode(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with self.assertRaises(ValueError):
+                tempfile.TemporaryFile(mode='wr', dir=dir)
+            with self.assertRaises(TypeError):
+                tempfile.TemporaryFile(mode=2, dir=dir)
+            self.assertEqual(os.listdir(dir), [])
 
-            with mock.patch('os.close', side_effect=close):
-                with mock.patch('io.open', side_effect=ValueError):
-                    self.assertRaises(ValueError, tempfile.TemporaryFile)
-                    self.assertEqual(len(closed), 1)
+        def test_bad_encoding(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with self.assertRaises(LookupError):
+                tempfile.TemporaryFile('w', encoding='bad-encoding', dir=dir)
+            self.assertEqual(os.listdir(dir), [])
 
+        def test_unexpected_error(self):
+            dir = tempfile.mkdtemp()
+            self.addCleanup(os_helper.rmtree, dir)
+            with mock.patch('tempfile._O_TMPFILE_WORKS', False), \
+                 mock.patch('os.unlink') as mock_unlink, \
+                 mock.patch('os.open') as mock_open, \
+                 mock.patch('os.close') as mock_close:
+                mock_unlink.side_effect = KeyboardInterrupt()
+                with self.assertRaises(KeyboardInterrupt):
+                    tempfile.TemporaryFile(dir=dir)
+            mock_close.assert_called()
+            self.assertEqual(os.listdir(dir), [])
 
 
 # Helper for test_del_on_shutdown
@@ -1489,7 +1617,7 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    def test_explict_cleanup_ignore_errors(self):
+    def test_explicit_cleanup_ignore_errors(self):
         """Test that cleanup doesn't return an error when ignoring them."""
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(
@@ -1706,9 +1834,25 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
     def test_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+
+        # skip the test if these flags are not supported (ex: FreeBSD 13)
+        filename = os_helper.TESTFN
+        try:
+            open(filename, "w").close()
+            try:
+                os.chflags(filename, flags)
+            except OSError as exc:
+                # "OSError: [Errno 45] Operation not supported"
+                self.skipTest(f"chflags() doesn't support "
+                              f"UF_IMMUTABLE|UF_NOUNLINK: {exc}")
+            else:
+                os.chflags(filename, 0)
+        finally:
+            os_helper.unlink(filename)
+
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
             # Change files and directories flags recursively.
@@ -1719,6 +1863,11 @@ class TestTemporaryDirectory(BaseTestCase):
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
+    def test_delete_false(self):
+        with tempfile.TemporaryDirectory(delete=False) as working_dir:
+            pass
+        self.assertTrue(os.path.exists(working_dir))
+        shutil.rmtree(working_dir)
 
 if __name__ == "__main__":
     unittest.main()

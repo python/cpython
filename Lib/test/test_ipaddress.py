@@ -4,6 +4,7 @@
 """Unittest for ipaddress module."""
 
 
+import copy
 import unittest
 import re
 import contextlib
@@ -542,10 +543,16 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_pickle(self):
         self.pickle_test('2001:db8::')
+        self.pickle_test('2001:db8::%scope')
 
     def test_weakref(self):
         weakref.ref(self.factory('2001:db8::'))
         weakref.ref(self.factory('2001:db8::%scope'))
+
+    def test_copy(self):
+        addr = self.factory('2001:db8::%scope')
+        self.assertEqual(addr, copy.copy(addr))
+        self.assertEqual(addr, copy.deepcopy(addr))
 
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):
@@ -1321,6 +1328,17 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(str(self.ipv6_scoped_interface.ip),
                          '2001:658:22a:cafe:200::1')
 
+    def testIPv6IPv4MappedStringRepresentation(self):
+        long_prefix = '0000:0000:0000:0000:0000:ffff:'
+        short_prefix = '::ffff:'
+        ipv4 = '1.2.3.4'
+        ipv6_ipv4_str = short_prefix + ipv4
+        ipv6_ipv4_addr = ipaddress.IPv6Address(ipv6_ipv4_str)
+        ipv6_ipv4_iface = ipaddress.IPv6Interface(ipv6_ipv4_str)
+        self.assertEqual(str(ipv6_ipv4_addr), ipv6_ipv4_str)
+        self.assertEqual(ipv6_ipv4_addr.exploded, long_prefix + ipv4)
+        self.assertEqual(str(ipv6_ipv4_iface.ip), ipv6_ipv4_str)
+
     def testGetScopeId(self):
         self.assertEqual(self.ipv6_address.scope_id,
                          None)
@@ -1652,7 +1670,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertRaises(IndexError, self.ipv6_scoped_network.__getitem__, 1 << 64)
 
     def testGetitem(self):
-        # http://code.google.com/p/ipaddr-py/issues/detail?id=15
+        # https://code.google.com/p/ipaddr-py/issues/detail?id=15
         addr = ipaddress.IPv4Network('172.31.255.128/255.255.255.240')
         self.assertEqual(28, addr.prefixlen)
         addr_list = list(addr)
@@ -2276,6 +2294,39 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(True, ipaddress.ip_address('127.42.0.0').is_loopback)
         self.assertEqual(False, ipaddress.ip_address('128.0.0.0').is_loopback)
         self.assertEqual(True, ipaddress.ip_network('0.0.0.0').is_unspecified)
+
+    def testPrivateNetworks(self):
+        self.assertEqual(False, ipaddress.ip_network("0.0.0.0/0").is_private)
+        self.assertEqual(False, ipaddress.ip_network("1.0.0.0/8").is_private)
+
+        self.assertEqual(True, ipaddress.ip_network("0.0.0.0/8").is_private)
+        self.assertEqual(True, ipaddress.ip_network("10.0.0.0/8").is_private)
+        self.assertEqual(True, ipaddress.ip_network("127.0.0.0/8").is_private)
+        self.assertEqual(True, ipaddress.ip_network("169.254.0.0/16").is_private)
+        self.assertEqual(True, ipaddress.ip_network("172.16.0.0/12").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.0.0.0/29").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.0.0.170/31").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.0.2.0/24").is_private)
+        self.assertEqual(True, ipaddress.ip_network("192.168.0.0/16").is_private)
+        self.assertEqual(True, ipaddress.ip_network("198.18.0.0/15").is_private)
+        self.assertEqual(True, ipaddress.ip_network("198.51.100.0/24").is_private)
+        self.assertEqual(True, ipaddress.ip_network("203.0.113.0/24").is_private)
+        self.assertEqual(True, ipaddress.ip_network("240.0.0.0/4").is_private)
+        self.assertEqual(True, ipaddress.ip_network("255.255.255.255/32").is_private)
+
+        self.assertEqual(False, ipaddress.ip_network("::/0").is_private)
+        self.assertEqual(False, ipaddress.ip_network("::ff/128").is_private)
+
+        self.assertEqual(True, ipaddress.ip_network("::1/128").is_private)
+        self.assertEqual(True, ipaddress.ip_network("::/128").is_private)
+        self.assertEqual(True, ipaddress.ip_network("::ffff:0:0/96").is_private)
+        self.assertEqual(True, ipaddress.ip_network("100::/64").is_private)
+        self.assertEqual(True, ipaddress.ip_network("2001::/23").is_private)
+        self.assertEqual(True, ipaddress.ip_network("2001:2::/48").is_private)
+        self.assertEqual(True, ipaddress.ip_network("2001:db8::/32").is_private)
+        self.assertEqual(True, ipaddress.ip_network("2001:10::/28").is_private)
+        self.assertEqual(True, ipaddress.ip_network("fc00::/7").is_private)
+        self.assertEqual(True, ipaddress.ip_network("fe80::/10").is_private)
 
     def testReservedIpv6(self):
 

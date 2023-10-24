@@ -110,6 +110,7 @@
     <ClCompile Include="..\Modules\getpath_noop.c" />
     <ClCompile Include="..\Modules\posixmodule.c" />
     <ClCompile Include="..\Modules\signalmodule.c" />
+    <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
     <ClCompile Include="..\Modules\_io\_iomodule.c" />
     <ClCompile Include="..\Modules\_io\bufferedio.c" />
@@ -120,7 +121,6 @@
     <ClCompile Include="..\Modules\_io\textio.c" />
     <ClCompile Include="..\Modules\_io\winconsoleio.c" />
     <ClCompile Include="..\Objects\abstract.c" />
-    <ClCompile Include="..\Objects\accu.c" />
     <ClCompile Include="..\Objects\boolobject.c" />
     <ClCompile Include="..\Objects\bytearrayobject.c" />
     <ClCompile Include="..\Objects\bytes_methods.c" />
@@ -159,6 +159,7 @@
     <ClCompile Include="..\Objects\structseq.c" />
     <ClCompile Include="..\Objects\tupleobject.c" />
     <ClCompile Include="..\Objects\typeobject.c" />
+    <ClCompile Include="..\Objects\typevarobject.c" />
     <ClCompile Include="..\Objects\unicodectype.c" />
     <ClCompile Include="..\Objects\unicodeobject.c" />
     <ClCompile Include="..\Objects\unionobject.c" />
@@ -171,12 +172,20 @@
     <ClCompile Include="..\Parser\action_helpers.c" />
     <ClCompile Include="..\Parser\string_parser.c" />
     <ClCompile Include="..\Parser\token.c" />
-    <ClCompile Include="..\Parser\tokenizer.c" />
+    <ClCompile Include="..\Parser\lexer\buffer.c" />
+    <ClCompile Include="..\Parser\lexer\state.c" />
+    <ClCompile Include="..\Parser\lexer\lexer.c" />
+    <ClCompile Include="..\Parser\tokenizer\string_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\file_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\utf8_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\readline_tokenizer.c" />
+    <ClCompile Include="..\Parser\tokenizer\helpers.c" />
     <ClCompile Include="..\PC\invalid_parameter_handler.c" />
     <ClCompile Include="..\PC\msvcrtmodule.c" />
     <ClCompile Include="..\PC\winreg.c" />
     <ClCompile Include="..\Python\_warnings.c" />
     <ClCompile Include="..\Python\asdl.c" />
+    <ClCompile Include="..\Python\assemble.c" />
     <ClCompile Include="..\Python\ast.c" />
     <ClCompile Include="..\Python\ast_opt.c" />
     <ClCompile Include="..\Python\ast_unparse.c" />
@@ -190,7 +199,9 @@
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
+    <ClCompile Include="..\Python\executor.c" />
     <ClCompile Include="..\Python\fileutils.c" />
+    <ClCompile Include="..\Python\flowgraph.c" />
     <ClCompile Include="..\Python\formatter_unicode.c" />
     <ClCompile Include="..\Python\frame.c" />
     <ClCompile Include="..\Python\future.c" />
@@ -200,16 +211,23 @@
     <ClCompile Include="..\Python\getopt.c" />
     <ClCompile Include="..\Python\getplatform.c" />
     <ClCompile Include="..\Python\getversion.c" />
+    <ClCompile Include="..\Python\ceval_gil.c" />
     <ClCompile Include="..\Python\hamt.c" />
     <ClCompile Include="..\Python\hashtable.c" />
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
+    <ClCompile Include="..\Python\intrinsics.c" />
+    <ClCompile Include="..\Python\instrumentation.c" />
+    <ClCompile Include="..\Python\legacy_tracing.c" />
     <ClCompile Include="..\Python\marshal.c" />
     <ClCompile Include="..\Python\modsupport.c" />
     <ClCompile Include="..\Python\mysnprintf.c" />
     <ClCompile Include="..\Python\mystrtoul.c" />
+    <ClCompile Include="..\Python\optimizer.c" />
+    <ClCompile Include="..\Python\optimizer_analysis.c" />
     <ClCompile Include="..\Python\pathconfig.c" />
+    <ClCompile Include="..\Python\perf_trampoline.c" />
     <ClCompile Include="..\Python\preconfig.c" />
     <ClCompile Include="..\Python\pyarena.c" />
     <ClCompile Include="..\Python\pyctype.c" />
@@ -234,6 +252,7 @@
     </ClCompile>
     <ClCompile Include="..\Python\thread.c" />
     <ClCompile Include="..\Python\traceback.c" />
+    <ClCompile Include="..\Python\tracemalloc.c" />
   </ItemGroup>
   <ItemGroup>
     <!-- BEGIN frozen modules -->
@@ -394,7 +413,7 @@
           DependsOnTargets="FindPythonForBuild"
           Condition="$(Configuration) != 'PGUpdate'">
     <!-- BEGIN deepfreeze rule -->
-	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\scripts\deepfreeze.py" ^
+	<Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\deepfreeze.py" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap.h:importlib._bootstrap" ^
 		 "$(PySourcePath)Python\frozen_modules\importlib._bootstrap_external.h:importlib._bootstrap_external" ^
 		 "$(PySourcePath)Python\frozen_modules\zipimport.h:zipimport" ^
@@ -424,6 +443,10 @@
   <Target Name="_CleanFrozen" BeforeTargets="CoreClean" Condition="$(Configuration) != 'PGUpdate'">
     <ItemGroup>
       <Clean Include="%(None.IntFile)" />
+      <Clean Include="%(None.OutFile)" />
+      <Clean Include="%(GetPath.IntFile)" />
+      <Clean Include="%(GetPath.OutFile)" />
+      <Clean Include="$(PySourcePath)Python\deepfreeze\deepfreeze.c" />
     </ItemGroup>
   </Target>
 </Project>

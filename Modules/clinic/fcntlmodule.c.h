@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(fcntl_fcntl__doc__,
 "fcntl($module, fd, cmd, arg=0, /)\n"
 "--\n"
@@ -38,7 +41,7 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -158,7 +161,7 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -218,7 +221,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -233,7 +236,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[4]);
+    whence = PyLong_AsInt(args[4]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -243,4 +246,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b8cb14ab35de4c6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/

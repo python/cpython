@@ -1,43 +1,59 @@
 
+KINDS = [
+    'section-major',
+    'section-minor',
+    'section-group',
+    'row',
+]
+
+
 def iter_clean_lines(lines):
     lines = iter(lines)
-    for line in lines:
-        line = line.strip()
-        if line.startswith('# XXX'):
+    for rawline in lines:
+        line = rawline.strip()
+        if line.startswith('#') and not rawline.startswith('##'):
             continue
-        yield line
+        yield line, rawline
 
 
 def parse_table_lines(lines):
     lines = iter_clean_lines(lines)
 
-    for line in lines:
-        if line.startswith(('####', '#----')):
-            kind = 0 if line[1] == '#' else 1
-            try:
-                line = next(lines).strip()
-            except StopIteration:
-                line = ''
-            if not line.startswith('# '):
-                raise NotImplementedError(line)
-            yield kind, line[2:].lstrip()
-            continue
-
-        maybe = None
-        while line.startswith('#'):
-            if line != '#' and line[1] == ' ':
-                maybe = line[2:].lstrip()
-            try:
-                line = next(lines).strip()
-            except StopIteration:
-                return
-            if not line:
-                break
-        else:
-            if line:
-                if maybe:
-                    yield 2, maybe
-                yield 'row', line
+    group = None
+    prev = ''
+    for line, rawline in lines:
+        if line.startswith('## '):
+            assert not rawline.startswith(' '), (line, rawline)
+            if group:
+                assert prev, (line, rawline)
+                kind, after, _ = group
+                assert kind and kind != 'section-group', (group, line, rawline)
+                assert after is not None, (group, line, rawline)
+            else:
+                assert not prev, (prev, line, rawline)
+                kind, after = group = ('section-group', None)
+            title = line[3:].lstrip()
+            assert title, (line, rawline)
+            if after is not None:
+                try:
+                    line, rawline = next(lines)
+                except StopIteration:
+                    line = None
+                if line != after:
+                    raise NotImplementedError((group, line, rawline))
+            yield kind, title
+            group = None
+        elif group:
+            raise NotImplementedError((group, line, rawline))
+        elif line.startswith('##---'):
+            assert line.rstrip('-') == '##', (line, rawline)
+            group = ('section-minor', '', line)
+        elif line.startswith('#####'):
+            assert not line.strip('#'), (line, rawline)
+            group = ('section-major', '', line)
+        elif line:
+            yield 'row', line
+        prev = line
 
 
 def iter_sections(lines):
@@ -49,12 +65,13 @@ def iter_sections(lines):
                 if header is None:
                     header = value
                     continue
-                raise NotImplementedError(value)
+                raise NotImplementedError(repr(value))
             yield tuple(section), value
         else:
             if header is None:
                 header = False
-            section[kind:] = [value]
+            start = KINDS.index(kind)
+            section[start:] = [value]
 
 
 def collect_sections(lines):

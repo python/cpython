@@ -4,10 +4,11 @@ import os as _os
 import sys as _sys
 import _thread
 import functools
+import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
-from itertools import islice as _islice, count as _count
+from itertools import count as _count
 try:
     from _collections import deque as _deque
 except ImportError:
@@ -28,13 +29,16 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'Event', 'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread',
            'Barrier', 'BrokenBarrierError', 'Timer', 'ThreadError',
            'setprofile', 'settrace', 'local', 'stack_size',
-           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile']
+           'excepthook', 'ExceptHookArgs', 'gettrace', 'getprofile',
+           'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
 _start_new_thread = _thread.start_new_thread
+_daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -60,10 +64,19 @@ def setprofile(func):
 
     The func will be passed to sys.setprofile() for each thread, before its
     run() method is called.
-
     """
     global _profile_hook
     _profile_hook = func
+
+def setprofile_all_threads(func):
+    """Set a profile function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.setprofile() for each thread, before its
+    run() method is called.
+    """
+    setprofile(func)
+    _sys._setprofileallthreads(func)
 
 def getprofile():
     """Get the profiler function as set by threading.setprofile()."""
@@ -74,10 +87,19 @@ def settrace(func):
 
     The func will be passed to sys.settrace() for each thread, before its run()
     method is called.
-
     """
     global _trace_hook
     _trace_hook = func
+
+def settrace_all_threads(func):
+    """Set a trace function for all threads started from the threading module
+    and all Python threads that are currently executing.
+
+    The func will be passed to sys.settrace() for each thread, before its run()
+    method is called.
+    """
+    settrace(func)
+    _sys._settraceallthreads(func)
 
 def gettrace():
     """Get the trace function as set by threading.settrace()."""
@@ -96,6 +118,12 @@ def RLock(*args, **kwargs):
     acquired it.
 
     """
+    if args or kwargs:
+        warnings.warn(
+            'Passing arguments to RLock is deprecated and will be removed in 3.15',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     if _CRLock is None:
         return _PyRLock(*args, **kwargs)
     return _CRLock(*args, **kwargs)
@@ -218,6 +246,13 @@ class _RLock:
     def _is_owned(self):
         return self._owner == get_ident()
 
+    # Internal method used for reentrancy checks
+
+    def _recursion_count(self):
+        if self._owner != get_ident():
+            return 0
+        return self._count
+
 _PyRLock = _RLock
 
 
@@ -243,18 +278,12 @@ class Condition:
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().
-        try:
+        if hasattr(lock, '_release_save'):
             self._release_save = lock._release_save
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_acquire_restore'):
             self._acquire_restore = lock._acquire_restore
-        except AttributeError:
-            pass
-        try:
+        if hasattr(lock, '_is_owned'):
             self._is_owned = lock._is_owned
-        except AttributeError:
-            pass
         self._waiters = _deque()
 
     def _at_fork_reinit(self):
@@ -570,7 +599,7 @@ class Event:
     def isSet(self):
         """Return true if and only if the internal flag is true.
 
-        This method is deprecated, use notify_all() instead.
+        This method is deprecated, use is_set() instead.
 
         """
         import warnings
@@ -886,6 +915,8 @@ class Thread:
         self._args = args
         self._kwargs = kwargs
         if daemon is not None:
+            if daemon and not _daemon_threads_allowed():
+                raise RuntimeError('daemon threads are disabled in this (sub)interpreter')
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
@@ -1213,6 +1244,8 @@ class Thread:
     def daemon(self, daemonic):
         if not self._initialized:
             raise RuntimeError("Thread.__init__() not called")
+        if daemonic and not _daemon_threads_allowed():
+            raise RuntimeError('daemon threads are disabled in this interpreter')
         if self._started.is_set():
             raise RuntimeError("cannot set daemon status of active thread")
         self._daemonic = daemonic
@@ -1419,7 +1452,8 @@ class _MainThread(Thread):
 class _DummyThread(Thread):
 
     def __init__(self):
-        Thread.__init__(self, name=_newname("Dummy-%d"), daemon=True)
+        Thread.__init__(self, name=_newname("Dummy-%d"),
+                        daemon=_daemon_threads_allowed())
 
         self._started.set()
         self._set_ident()
@@ -1432,11 +1466,12 @@ class _DummyThread(Thread):
         pass
 
     def is_alive(self):
-        assert not self._is_stopped and self._started.is_set()
-        return True
+        if not self._is_stopped and self._started.is_set():
+            return True
+        raise RuntimeError("thread is not alive")
 
     def join(self, timeout=None):
-        assert False, "cannot join a dummy thread"
+        raise RuntimeError("cannot join a dummy thread")
 
 
 # Global API functions
@@ -1471,6 +1506,8 @@ def active_count():
     enumerate().
 
     """
+    # NOTE: if the logic in here ever changes, update Modules/posixmodule.c
+    # warn_about_fork_with_threads() to match.
     with _active_limbo_lock:
         return len(_active) + len(_limbo)
 
@@ -1538,7 +1575,7 @@ def _shutdown():
     # the main thread's tstate_lock - that won't happen until the interpreter
     # is nearly dead.  So we release it here.  Note that just calling _stop()
     # isn't enough:  other threads may already be waiting on _tstate_lock.
-    if _main_thread._is_stopped:
+    if _main_thread._is_stopped and _is_main_interpreter():
         # _shutdown() was already called
         return
 
@@ -1556,8 +1593,11 @@ def _shutdown():
         # The main thread isn't finished yet, so its thread state lock can't
         # have been released.
         assert tlock is not None
-        assert tlock.locked()
-        tlock.release()
+        if tlock.locked():
+            # It should have been released already by
+            # _PyInterpreterState_SetNotRunningMain(), but there may be
+            # embedders that aren't calling that yet.
+            tlock.release()
         _main_thread._stop()
     else:
         # bpo-1596321: _shutdown() must be called in the main thread.
@@ -1591,6 +1631,7 @@ def main_thread():
     In normal conditions, the main thread is the thread from which the
     Python interpreter was started.
     """
+    # XXX Figure this out for subinterpreters.  (See gh-75698.)
     return _main_thread
 
 # get thread-local implementation, either from the thread

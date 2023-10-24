@@ -4,12 +4,12 @@ import unittest
 import time
 
 import asyncio
-from asyncio import tasks
+
+from test.test_asyncio.utils import await_without_task
 
 
 def tearDownModule():
     asyncio.set_event_loop_policy(None)
-
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
@@ -47,7 +47,6 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(cm2.expired())
 
     async def test_waiter_cancelled(self):
-        loop = asyncio.get_running_loop()
         cancelled = False
         with self.assertRaises(TimeoutError):
             async with asyncio.timeout(0.01):
@@ -60,39 +59,26 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_timeout_not_called(self):
         loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout(10) as cm:
             await asyncio.sleep(0.01)
         t1 = loop.time()
 
         self.assertFalse(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertGreater(cm.when(), t1)
 
     async def test_timeout_disabled(self):
-        loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout(None) as cm:
             await asyncio.sleep(0.01)
-        t1 = loop.time()
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
 
     async def test_timeout_at_disabled(self):
-        loop = asyncio.get_running_loop()
-        t0 = loop.time()
         async with asyncio.timeout_at(None) as cm:
             await asyncio.sleep(0.01)
-        t1 = loop.time()
 
         self.assertFalse(cm.expired())
         self.assertIsNone(cm.when())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
 
     async def test_timeout_zero(self):
         loop = asyncio.get_running_loop()
@@ -102,9 +88,27 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                 await asyncio.sleep(10)
         t1 = loop.time()
         self.assertTrue(cm.expired())
-        # 2 sec for slow CI boxes
-        self.assertLess(t1-t0, 2)
         self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_zero_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        self.assertTrue(t0 <= cm.when() <= t1)
+
+    async def test_timeout_in_the_past_sleep_zero(self):
+        loop = asyncio.get_running_loop()
+        t0 = loop.time()
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(-11) as cm:
+                await asyncio.sleep(0)
+        t1 = loop.time()
+        self.assertTrue(cm.expired())
+        self.assertTrue(t0 >= cm.when() <= t1)
 
     async def test_foreign_exception_passed(self):
         with self.assertRaises(KeyError):
@@ -223,6 +227,81 @@ class TimeoutTests(unittest.IsolatedAsyncioTestCase):
                     with self.assertRaises(TimeoutError):
                         async with asyncio.timeout(0.01):
                             await asyncio.sleep(10)
+
+    async def test_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(TimeoutError):
+                async with asyncio.timeout(0.0):
+                    await asyncio.sleep(1)  # some cleanup
+
+    async def test_cancel_in_timeout_after_cancellation(self):
+        try:
+            asyncio.current_task().cancel()
+            await asyncio.sleep(1)  # work which will be cancelled
+        except asyncio.CancelledError:
+            pass
+        finally:
+            with self.assertRaises(asyncio.CancelledError):
+                async with asyncio.timeout(1.0):
+                    asyncio.current_task().cancel()
+                    await asyncio.sleep(2)  # some cleanup
+
+    async def test_timeout_exception_cause (self):
+        with self.assertRaises(asyncio.TimeoutError) as exc:
+            async with asyncio.timeout(0):
+                await asyncio.sleep(1)
+        cause = exc.exception.__cause__
+        assert isinstance(cause, asyncio.CancelledError)
+
+    async def test_timeout_already_entered(self):
+        async with asyncio.timeout(0.01) as cm:
+            with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+                async with cm:
+                    pass
+
+    async def test_timeout_double_enter(self):
+        async with asyncio.timeout(0.01) as cm:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+            async with cm:
+                pass
+
+    async def test_timeout_finished(self):
+        async with asyncio.timeout(0.01) as cm:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "finished"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_expired(self):
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(0.01) as cm:
+                await asyncio.sleep(1)
+        with self.assertRaisesRegex(RuntimeError, "expired"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_expiring(self):
+        async with asyncio.timeout(0.01) as cm:
+            with self.assertRaises(asyncio.CancelledError):
+                await asyncio.sleep(1)
+            with self.assertRaisesRegex(RuntimeError, "expiring"):
+                cm.reschedule(0.02)
+
+    async def test_timeout_not_entered(self):
+        cm = asyncio.timeout(0.01)
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            cm.reschedule(0.02)
+
+    async def test_timeout_without_task(self):
+        cm = asyncio.timeout(0.01)
+        with self.assertRaisesRegex(RuntimeError, "task"):
+            await await_without_task(cm.__aenter__())
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            cm.reschedule(0.02)
 
 
 if __name__ == '__main__':

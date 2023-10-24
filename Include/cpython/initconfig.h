@@ -142,6 +142,7 @@ typedef struct PyConfig {
     unsigned long hash_seed;
     int faulthandler;
     int tracemalloc;
+    int perf_profiling;
     int import_time;
     int code_debug_ranges;
     int show_ref_count;
@@ -177,6 +178,9 @@ typedef struct PyConfig {
     wchar_t *check_hash_pycs_mode;
     int use_frozen_modules;
     int safe_path;
+    int int_max_str_digits;
+
+    int cpu_count;
 
     /* --- Path configuration inputs ------------ */
     int pathconfig_warnings;
@@ -202,6 +206,9 @@ typedef struct PyConfig {
     wchar_t *run_module;
     wchar_t *run_filename;
 
+    /* --- Set by Py_Main() -------------------------- */
+    wchar_t *sys_path_0;
+
     /* --- Private fields ---------------------------- */
 
     // Install importlib? If equals to 0, importlib is not initialized at all.
@@ -211,12 +218,19 @@ typedef struct PyConfig {
     // If equal to 0, stop Python initialization before the "main" phase.
     int _init_main;
 
-    // If non-zero, disallow threads, subprocesses, and fork.
-    // Default: 0.
-    int _isolated_interpreter;
-
     // If non-zero, we believe we're running from a source tree.
     int _is_python_build;
+
+#ifdef Py_STATS
+    // If non-zero, turns on statistics gathering.
+    int _pystats;
+#endif
+
+#ifdef Py_DEBUG
+    // If not empty, import a non-__main__ module before site.py is executed.
+    // PYTHON_PRESITE=package.module or -X presite=package.module
+    wchar_t *run_presite;
+#endif
 } PyConfig;
 
 PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);

@@ -10,10 +10,9 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
-from test.support.os_helper import TESTFN, EnvironmentVarGuard, change_cwd
+from test.support.os_helper import TESTFN, EnvironmentVarGuard
 import ast
 import builtins
-import encodings
 import glob
 import io
 import os
@@ -206,7 +205,7 @@ class HelperFunctionsTests(unittest.TestCase):
             scheme = 'osx_framework_user'
         else:
             scheme = os.name + '_user'
-        self.assertEqual(site._get_path(site._getuserbase()),
+        self.assertEqual(os.path.normpath(site._get_path(site._getuserbase())),
                          sysconfig.get_path('purelib', scheme))
 
     @unittest.skipUnless(site.ENABLE_USER_SITE, "requires access to PEP 370 "
@@ -214,7 +213,7 @@ class HelperFunctionsTests(unittest.TestCase):
     @support.requires_subprocess()
     def test_s_option(self):
         # (ncoghlan) Change this to use script_helper...
-        usersite = site.USER_SITE
+        usersite = os.path.normpath(site.USER_SITE)
         self.assertIn(usersite, sys.path)
 
         env = os.environ.copy()
@@ -466,10 +465,48 @@ class ImportSideEffectTests(unittest.TestCase):
             else:
                 self.fail("sitecustomize not imported automatically")
 
-    @test.support.requires_resource('network')
-    @test.support.system_must_validate_cert
+    @support.requires_subprocess()
+    def test_customization_modules_on_startup(self):
+        mod_names = [
+            'sitecustomize'
+        ]
+
+        if site.ENABLE_USER_SITE:
+            mod_names.append('usercustomize')
+
+        temp_dir = tempfile.mkdtemp()
+        self.addCleanup(os_helper.rmtree, temp_dir)
+
+        with EnvironmentVarGuard() as environ:
+            environ['PYTHONPATH'] = temp_dir
+
+            for module_name in mod_names:
+                os_helper.rmtree(temp_dir)
+                os.mkdir(temp_dir)
+
+                customize_path = os.path.join(temp_dir, f'{module_name}.py')
+                eyecatcher = f'EXECUTED_{module_name}'
+
+                with open(customize_path, 'w') as f:
+                    f.write(f'print("{eyecatcher}")')
+
+                output = subprocess.check_output([sys.executable, '-c', '""'])
+                self.assertIn(eyecatcher, output.decode('utf-8'))
+
+                # -S blocks any site-packages
+                output = subprocess.check_output([sys.executable, '-S', '-c', '""'])
+                self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+                # -s blocks user site-packages
+                if 'usercustomize' == module_name:
+                    output = subprocess.check_output([sys.executable, '-s', '-c', '""'])
+                    self.assertNotIn(eyecatcher, output.decode('utf-8'))
+
+
     @unittest.skipUnless(hasattr(urllib.request, "HTTPSHandler"),
                          'need SSL support to download license')
+    @test.support.requires_resource('network')
+    @test.support.system_must_validate_cert
     def test_license_exists_at_url(self):
         # This test is a bit fragile since it depends on the format of the
         # string displayed by license in the absence of a LICENSE file.
@@ -571,11 +608,13 @@ class _pthFileTests(unittest.TestCase):
             dll_file = os.path.join(temp_dir, os.path.split(dll_src_file)[1])
             shutil.copy(sys.executable, exe_file)
             shutil.copy(dll_src_file, dll_file)
+            for fn in glob.glob(os.path.join(os.path.split(dll_src_file)[0], "vcruntime*.dll")):
+                shutil.copy(fn, os.path.join(temp_dir, os.path.split(fn)[1]))
             if exe_pth:
                 _pth_file = os.path.splitext(exe_file)[0] + '._pth'
             else:
                 _pth_file = os.path.splitext(dll_file)[0] + '._pth'
-            with open(_pth_file, 'w') as f:
+            with open(_pth_file, 'w', encoding='utf8') as f:
                 for line in lines:
                     print(line, file=f)
             return exe_file
@@ -612,7 +651,7 @@ class _pthFileTests(unittest.TestCase):
             os.path.dirname(exe_file),
             pth_lines)
 
-        output = subprocess.check_output([exe_file, '-c',
+        output = subprocess.check_output([exe_file, '-X', 'utf8', '-c',
             'import sys; print("\\n".join(sys.path) if sys.flags.no_site else "")'
         ], encoding='utf-8', errors='surrogateescape')
         actual_sys_path = output.rstrip().split('\n')

@@ -16,7 +16,7 @@ functionality. The POSIX locale mechanism allows programmers to deal with
 certain cultural issues in an application, without requiring the programmer to
 know all the specifics of each country where the software is executed.
 
-.. index:: module: _locale
+.. index:: pair: module; _locale
 
 The :mod:`locale` module is implemented on top of the :mod:`_locale` module,
 which in turn uses an ANSI C locale implementation if available.
@@ -147,12 +147,12 @@ The :mod:`locale` module defines the following exception and functions:
    | ``CHAR_MAX`` | Nothing is specified in this locale.    |
    +--------------+-----------------------------------------+
 
-   The function sets temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
+   The function temporarily sets the ``LC_CTYPE`` locale to the ``LC_NUMERIC``
    locale or the ``LC_MONETARY`` locale if locales are different and numeric or
    monetary strings are non-ASCII. This temporary change affects other threads.
 
    .. versionchanged:: 3.7
-      The function now sets temporarily the ``LC_CTYPE`` locale to the
+      The function now temporarily sets the ``LC_CTYPE`` locale to the
       ``LC_NUMERIC`` locale in some cases.
 
 
@@ -227,15 +227,17 @@ The :mod:`locale` module defines the following exception and functions:
       Get a regular expression that can be used with the regex function to
       recognize a positive response to a yes/no question.
 
-      .. note::
-
-         The expression is in the syntax suitable for the :c:func:`regex` function
-         from the C library, which might differ from the syntax used in :mod:`re`.
-
    .. data:: NOEXPR
 
       Get a regular expression that can be used with the regex(3) function to
       recognize a negative response to a yes/no question.
+
+      .. note::
+
+         The regular expressions for :const:`YESEXPR` and
+         :const:`NOEXPR` use syntax suitable for the
+         :c:func:`regex` function from the C library, which might
+         differ from the syntax used in :mod:`re`.
 
    .. data:: CRNCYSTR
 
@@ -301,7 +303,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.13
 
 
 .. function:: getlocale(category=LC_CTYPE)
@@ -368,14 +370,6 @@ The :mod:`locale` module defines the following exception and functions:
    encoding for the locale code just like :func:`setlocale`.
 
 
-.. function:: resetlocale(category=LC_ALL)
-
-   Sets the locale for *category* to the default setting.
-
-   The default setting is determined by calling :func:`getdefaultlocale`.
-   *category* defaults to :const:`LC_ALL`.
-
-
 .. function:: strcoll(string1, string2)
 
    Compares two strings according to the current :const:`LC_COLLATE` setting. As
@@ -397,7 +391,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is true,
+   values, the decimal point is modified if appropriate.  If *grouping* is ``True``,
    also takes the grouping into account.
 
    If *monetary* is true, the conversion uses monetary thousands separator and
@@ -410,29 +404,19 @@ The :mod:`locale` module defines the following exception and functions:
       The *monetary* keyword parameter was added.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
-
-   Please note that this function works like :meth:`format_string` but will
-   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
-   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
-
-   For whole format strings, use :func:`format_string`.
-
-   .. deprecated:: 3.7
-      Use :meth:`format_string` instead.
-
-
 .. function:: currency(val, symbol=True, grouping=False, international=False)
 
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 
    The returned string includes the currency symbol if *symbol* is true, which is
-   the default. If *grouping* is true (which is not the default), grouping is done
-   with the value. If *international* is true (which is not the default), the
+   the default. If *grouping* is ``True`` (which is not the default), grouping is done
+   with the value. If *international* is ``True`` (which is not the default), the
    international currency symbol is used.
 
-   Note that this function will not work with the 'C' locale, so you have to set a
-   locale via :func:`setlocale` first.
+   .. note::
+
+     This function will not work with the 'C' locale, so you have to set a
+     locale via :func:`setlocale` first.
 
 
 .. function:: str(float)
@@ -470,7 +454,7 @@ The :mod:`locale` module defines the following exception and functions:
 
 .. data:: LC_CTYPE
 
-   .. index:: module: string
+   .. index:: pair: module; string
 
    Locale category for the character type functions.  Depending on the settings of
    this category, the functions of module :mod:`string` dealing with case change
@@ -502,10 +486,13 @@ The :mod:`locale` module defines the following exception and functions:
    system, like those returned by :func:`os.strerror` might be affected by this
    category.
 
+   This value may not be available on operating systems not conforming to the
+   POSIX standard, most notably Windows.
+
 
 .. data:: LC_NUMERIC
 
-   Locale category for formatting numbers.  The functions :func:`.format`,
+   Locale category for formatting numbers.  The functions :func:`format_string`,
    :func:`atoi`, :func:`atof` and :func:`.str` of the :mod:`locale` module are
    affected by that category.  All other numeric formatting operations are not
    affected.
@@ -567,7 +554,7 @@ document that your module is not compatible with non-\ ``C`` locale settings.
 
 The only way to perform numeric operations according to the locale is to use the
 special functions defined by this module: :func:`atof`, :func:`atoi`,
-:func:`.format`, :func:`.str`.
+:func:`format_string`, :func:`.str`.
 
 There is no way to perform case conversions and character classifications
 according to the locale.  For (Unicode) text strings these are done according
@@ -619,4 +606,3 @@ applications that link with additional C libraries which internally invoke
 :c:func:`gettext` or :c:func:`dcgettext`.  For these applications, it may be
 necessary to bind the text domain, so that the libraries can properly locate
 their message catalogs.
-

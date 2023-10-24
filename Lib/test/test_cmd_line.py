@@ -18,9 +18,6 @@ from test.support.script_helper import (
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-# Debug build?
-Py_DEBUG = hasattr(sys, "gettotalrefcount")
-
 
 # XXX (ncoghlan): Move to script_helper and make consistent with run_python
 def _kill_python_and_exit_code(p):
@@ -28,16 +25,47 @@ def _kill_python_and_exit_code(p):
     returncode = p.wait()
     return data, returncode
 
+
 class CmdLineTest(unittest.TestCase):
     def test_directories(self):
         assert_python_failure('.')
         assert_python_failure('< .')
 
     def verify_valid_flag(self, cmd_line):
-        rc, out, err = assert_python_ok(*cmd_line)
+        rc, out, err = assert_python_ok(cmd_line)
         self.assertTrue(out == b'' or out.endswith(b'\n'))
         self.assertNotIn(b'Traceback', out)
         self.assertNotIn(b'Traceback', err)
+        return out
+
+    def test_help(self):
+        self.verify_valid_flag('-h')
+        self.verify_valid_flag('-?')
+        out = self.verify_valid_flag('--help')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertNotIn(b'PYTHONHOME', out)
+        self.assertNotIn(b'-X dev', out)
+        self.assertLess(len(lines), 50)
+
+    def test_help_env(self):
+        out = self.verify_valid_flag('--help-env')
+        self.assertIn(b'PYTHONHOME', out)
+
+    def test_help_xoptions(self):
+        out = self.verify_valid_flag('--help-xoptions')
+        self.assertIn(b'-X dev', out)
+
+    def test_help_all(self):
+        out = self.verify_valid_flag('--help-all')
+        lines = out.splitlines()
+        self.assertIn(b'usage', lines[0])
+        self.assertIn(b'PYTHONHOME', out)
+        self.assertIn(b'-X dev', out)
+
+        # The first line contains the program name,
+        # but the rest should be ASCII-only
+        b''.join(lines[1:]).decode('ascii')
 
     def test_optimize(self):
         self.verify_valid_flag('-O')
@@ -45,14 +73,6 @@ class CmdLineTest(unittest.TestCase):
 
     def test_site_flag(self):
         self.verify_valid_flag('-S')
-
-    def test_usage(self):
-        rc, out, err = assert_python_ok('-h')
-        lines = out.splitlines()
-        self.assertIn(b'usage', lines[0])
-        # The first line contains the program name,
-        # but the rest should be ASCII-only
-        b''.join(lines[1:]).decode('ascii')
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
@@ -85,17 +105,8 @@ class CmdLineTest(unittest.TestCase):
         opts = get_xoptions()
         self.assertEqual(opts, {})
 
-        opts = get_xoptions('-Xno_debug_ranges', '-Xdev=1234')
-        self.assertEqual(opts, {'no_debug_ranges': True, 'dev': '1234'})
-
-    @unittest.skipIf(interpreter_requires_environment(),
-                     'Cannot run -E tests when PYTHON env vars are required.')
-    def test_unknown_xoptions(self):
-        rc, out, err = assert_python_failure('-X', 'blech')
-        self.assertIn(b'Unknown value for option -X', err)
-        msg = b'Fatal Python error: Unknown value for option -X'
-        self.assertEqual(err.splitlines().count(msg), 1)
-        self.assertEqual(b'', out)
+        opts = get_xoptions('-Xa', '-Xb=c,d=e')
+        self.assertEqual(opts, {'a': True, 'b': 'c,d=e'})
 
     def test_showrefcount(self):
         def run_python(*args):
@@ -120,7 +131,7 @@ class CmdLineTest(unittest.TestCase):
         # "-X showrefcount" shows the refcount, but only in debug builds
         rc, out, err = run_python('-I', '-X', 'showrefcount', '-c', code)
         self.assertEqual(out.rstrip(), b"{'showrefcount': True}")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             # bpo-46417: Tolerate negative reference count which can occur
             # because of bugs in C extensions. This test is only about checking
             # the showrefcount feature.
@@ -137,7 +148,6 @@ class CmdLineTest(unittest.TestCase):
         }
         for raw, expected in tests:
             cmd = ['-X', f'frozen_modules{raw}',
-                   #'-c', 'import os; print(os.__spec__.loader.__name__, end="")']
                    '-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
                 res = assert_python_ok(*cmd)
@@ -170,7 +180,6 @@ class CmdLineTest(unittest.TestCase):
         # Test `python -m unittest` with a relative directory beginning with ./
         # Note: We have to switch to the project's top module's directory, as per
         # the python unittest wiki. We will switch back when we are done.
-        defaultwd = os.getcwd()
         projectlibpath = os.path.dirname(__file__).removesuffix("test")
         with os_helper.change_cwd(projectlibpath):
             # Testing with and without ./
@@ -250,7 +259,6 @@ class CmdLineTest(unittest.TestCase):
         #
         # Test with default config, in the C locale, in the Python UTF-8 Mode.
         code = 'import sys, os; s=os.fsencode(sys.argv[1]); print(ascii(s))'
-        base_cmd = [sys.executable, '-c', code]
 
         def run_default(arg):
             cmd = [sys.executable, '-c', code, arg]
@@ -685,7 +693,7 @@ class CmdLineTest(unittest.TestCase):
         code = ("import warnings; "
                 "print(' '.join('%s::%s' % (f[0], f[2].__name__) "
                                 "for f in warnings.filters))")
-        if Py_DEBUG:
+        if support.Py_DEBUG:
             expected_filters = "default::Warning"
         else:
             expected_filters = ("default::Warning "
@@ -709,11 +717,11 @@ class CmdLineTest(unittest.TestCase):
 
         # Memory allocator debug hooks
         try:
-            import _testcapi
+            import _testinternalcapi
         except ImportError:
             pass
         else:
-            code = "import _testcapi; print(_testcapi.pymem_getallocatorsname())"
+            code = "import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())"
             with support.SuppressCrashReport():
                 out = self.run_xdev("-c", code, check_exitcode=False)
             if support.with_pymalloc():
@@ -757,7 +765,7 @@ class CmdLineTest(unittest.TestCase):
         expected_filters = ("error::BytesWarning "
                             "once::UserWarning "
                             "always::UserWarning")
-        if not Py_DEBUG:
+        if not support.Py_DEBUG:
             expected_filters += (" "
                                  "default::DeprecationWarning "
                                  "ignore::DeprecationWarning "
@@ -775,7 +783,7 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(out, expected_filters)
 
     def check_pythonmalloc(self, env_var, name):
-        code = 'import _testcapi; print(_testcapi.pymem_getallocatorsname())'
+        code = 'import _testinternalcapi; print(_testinternalcapi.pymem_getallocatorsname())'
         env = dict(os.environ)
         env.pop('PYTHONDEVMODE', None)
         if env_var is not None:
@@ -791,14 +799,15 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(proc.stdout.rstrip(), name)
         self.assertEqual(proc.returncode, 0)
 
+    @support.cpython_only
     def test_pythonmalloc(self):
         # Test the PYTHONMALLOC environment variable
         pymalloc = support.with_pymalloc()
         if pymalloc:
-            default_name = 'pymalloc_debug' if Py_DEBUG else 'pymalloc'
+            default_name = 'pymalloc_debug' if support.Py_DEBUG else 'pymalloc'
             default_name_debug = 'pymalloc_debug'
         else:
-            default_name = 'malloc_debug' if Py_DEBUG else 'malloc'
+            default_name = 'malloc_debug' if support.Py_DEBUG else 'malloc'
             default_name_debug = 'malloc_debug'
 
         tests = [
@@ -857,6 +866,59 @@ class CmdLineTest(unittest.TestCase):
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
 
+    def test_int_max_str_digits(self):
+        code = "import sys; print(sys.flags.int_max_str_digits, sys.get_int_max_str_digits())"
+
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=foo', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits=100', '-c', code)
+        assert_python_failure('-X', 'int_max_str_digits', '-c', code,
+                              PYTHONINTMAXSTRDIGITS='4000')
+
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='foo')
+        assert_python_failure('-c', code, PYTHONINTMAXSTRDIGITS='100')
+
+        res = assert_python_ok('-c', code)
+        res2int = self.res2int
+        current_max = sys.get_int_max_str_digits()
+        self.assertEqual(res2int(res), (current_max, current_max))
+        res = assert_python_ok('-X', 'int_max_str_digits=0', '-c', code)
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-X', 'int_max_str_digits=4000', '-c', code)
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok('-X', 'int_max_str_digits=100000', '-c', code)
+        self.assertEqual(res2int(res), (100000, 100000))
+
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='0')
+        self.assertEqual(res2int(res), (0, 0))
+        res = assert_python_ok('-c', code, PYTHONINTMAXSTRDIGITS='4000')
+        self.assertEqual(res2int(res), (4000, 4000))
+        res = assert_python_ok(
+            '-X', 'int_max_str_digits=6000', '-c', code,
+            PYTHONINTMAXSTRDIGITS='4000'
+        )
+        self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cpu_count(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=4321', '-c', code)
+        self.assertEqual(self.res2int(res), (4321, 4321))
+        res = assert_python_ok('-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (1234, 1234))
+
+    def test_cpu_count_default(self):
+        code = "import os; print(os.cpu_count(), os.process_cpu_count())"
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code)
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        res = assert_python_ok('-X', 'cpu_count=default', '-c', code, PYTHON_CPU_COUNT='1234')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+        es = assert_python_ok('-c', code, PYTHON_CPU_COUNT='default')
+        self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
+
+    def res2int(self, res):
+        out = res.out.strip().decode("utf-8")
+        return tuple(int(i) for i in out.split())
+
 
 @unittest.skipIf(interpreter_requires_environment(),
                  'Cannot run -I tests when PYTHON env vars are required.')
@@ -894,6 +956,7 @@ class IgnoreEnvironmentTest(unittest.TestCase):
             PYTHONVERBOSE="1",
             PYTHONSAFEPATH="1",
         )
+
 
 class SyntaxErrorTests(unittest.TestCase):
     def check_string(self, code):

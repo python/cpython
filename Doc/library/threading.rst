@@ -9,10 +9,22 @@
 --------------
 
 This module constructs higher-level threading interfaces on top of the lower
-level :mod:`_thread` module.  See also the :mod:`queue` module.
+level :mod:`_thread` module.
 
 .. versionchanged:: 3.7
    This module used to be optional, it is now always available.
+
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
 
 .. note::
 
@@ -33,6 +45,7 @@ level :mod:`_thread` module.  See also the :mod:`queue` module.
    However, threading is still an appropriate model if you want to run
    multiple I/O-bound tasks simultaneously.
 
+.. include:: ../includes/wasm-notavail.rst
 
 This module defines the following functions:
 
@@ -114,7 +127,7 @@ This module defines the following functions:
    Its value may be used to uniquely identify this particular thread system-wide
    (until the thread terminates, after which the value may be recycled by the OS).
 
-   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX.
+   .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
    .. versionadded:: 3.8
 
@@ -145,6 +158,15 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.settrace` for each thread, before its
    :meth:`~Thread.run` method is called.
 
+.. function:: settrace_all_threads(func)
+
+   Set a trace function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.settrace` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
 
 .. function:: gettrace()
 
@@ -165,6 +187,15 @@ This module defines the following functions:
    The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
    :meth:`~Thread.run` method is called.
 
+.. function:: setprofile_all_threads(func)
+
+   Set a profile function for all threads started from the :mod:`threading` module
+   and all Python threads that are currently executing.
+
+   The *func* will be passed to  :func:`sys.setprofile` for each thread, before its
+   :meth:`~Thread.run` method is called.
+
+   .. versionadded:: 3.12
 
 .. function:: getprofile()
 
@@ -192,7 +223,9 @@ This module defines the following functions:
    information (4 KiB pages are common; using multiples of 4096 for the stack size is
    the suggested approach in the absence of more specific information).
 
-   .. availability:: Windows, systems with POSIX threads.
+   .. availability:: Windows, pthreads.
+
+      Unix platforms with POSIX threads support.
 
 
 This module also defines the following constant:
@@ -239,7 +272,7 @@ The instance's values will be different for separate threads.
    A class that represents thread-local data.
 
    For more details and extensive examples, see the documentation string of the
-   :mod:`_threading_local` module.
+   :mod:`!_threading_local` module: :source:`Lib/_threading_local.py`.
 
 
 .. _thread-objects:
@@ -252,7 +285,7 @@ thread of control.  There are two ways to specify the activity: by passing a
 callable object to the constructor, or by overriding the :meth:`~Thread.run`
 method in a subclass.  No other methods (except for the constructor) should be
 overridden in a subclass.  In other words, *only*  override the
-:meth:`~Thread.__init__` and :meth:`~Thread.run` methods of this class.
+``__init__()`` and :meth:`~Thread.run` methods of this class.
 
 Once a thread object is created, its activity must be started by calling the
 thread's :meth:`~Thread.start` method.  This invokes the :meth:`~Thread.run`
@@ -293,7 +326,7 @@ There is the possibility that "dummy thread objects" are created. These are
 thread objects corresponding to "alien threads", which are threads of control
 started outside the threading module, such as directly from C code.  Dummy
 thread objects have limited functionality; they are always considered alive and
-daemonic, and cannot be :meth:`~Thread.join`\ ed.  They are never deleted,
+daemonic, and cannot be :ref:`joined <meth-thread-join>`.  They are never deleted,
 since it is impossible to detect the termination of alien threads.
 
 
@@ -304,7 +337,7 @@ since it is impossible to detect the termination of alien threads.
    are:
 
    *group* should be ``None``; reserved for future extension when a
-   :class:`ThreadGroup` class is implemented.
+   :class:`!ThreadGroup` class is implemented.
 
    *target* is the callable object to be invoked by the :meth:`run` method.
    Defaults to ``None``, meaning nothing is called.
@@ -366,6 +399,8 @@ since it is impossible to detect the termination of alien threads.
          >>> t.run()
          1
 
+   .. _meth-thread-join:
+
    .. method:: join(timeout=None)
 
       Wait until the thread terminates. This blocks the calling thread until
@@ -383,7 +418,7 @@ since it is impossible to detect the termination of alien threads.
       When the *timeout* argument is not present or ``None``, the operation will
       block until the thread terminates.
 
-      A thread can be :meth:`~Thread.join`\ ed many times.
+      A thread can be joined many times.
 
       :meth:`~Thread.join` raises a :exc:`RuntimeError` if an attempt is made
       to join the current thread as that would cause a deadlock. It is also
@@ -427,7 +462,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Requires :func:`get_native_id` function.
+      .. availability:: Windows, FreeBSD, Linux, macOS, OpenBSD, NetBSD, AIX, DragonFlyBSD.
 
       .. versionadded:: 3.8
 
@@ -974,7 +1009,7 @@ This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
 and as such also functions as an example of creating custom threads.
 
-Timers are started, as with threads, by calling their :meth:`~Timer.start`
+Timers are started, as with threads, by calling their :meth:`Timer.start <Thread.start>`
 method.  The timer can be stopped (before its action has begun) by calling the
 :meth:`~Timer.cancel` method.  The interval the timer will wait before
 executing its action may not be exactly the same as the interval specified by
@@ -1112,10 +1147,10 @@ As an example, here is a simple way to synchronize a client and server thread::
 Using locks, conditions, and semaphores in the :keyword:`!with` statement
 -------------------------------------------------------------------------
 
-All of the objects provided by this module that have :meth:`acquire` and
-:meth:`release` methods can be used as context managers for a :keyword:`with`
-statement.  The :meth:`acquire` method will be called when the block is
-entered, and :meth:`release` will be called when the block is exited.  Hence,
+All of the objects provided by this module that have ``acquire`` and
+``release`` methods can be used as context managers for a :keyword:`with`
+statement.  The ``acquire`` method will be called when the block is
+entered, and ``release`` will be called when the block is exited.  Hence,
 the following snippet::
 
    with some_lock:

@@ -1,1 +1,0 @@
-Updates the error message for abstract class.

@@ -1,6 +1,0 @@
-Remove an unhandled error case in the C implementation of calls to
-:meth:`datetime.fromtimestamp <datetime.datetime.fromtimestamp>` with no time
-zone (i.e. getting a local time from an epoch timestamp). This should have no
-user-facing effect other than giving a possibly more accurate error message
-when called with timestamps that fall on 10000-01-01 in the local time. Patch
-by Paul Ganssle.

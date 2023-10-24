@@ -1,12 +1,15 @@
 /* Return the initial module search path. */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_abspath()
+#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_pathconfig.h"    // _PyPathConfig_ReadGlobal()
+#include "pycore_pyerrors.h"      // _PyErr_WriteUnraisableMsg()
+#include "pycore_pymem.h"         // _PyMem_RawWcsdup()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+
 #include "marshal.h"              // PyMarshal_ReadObjectFromString
 #include "osdefs.h"               // DELIM
-#include "pycore_initconfig.h"
-#include "pycore_fileutils.h"
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include <wchar.h>
 
 #ifdef MS_WINDOWS
@@ -82,27 +85,32 @@ getpath_abspath(PyObject *Py_UNUSED(self), PyObject *args)
 static PyObject *
 getpath_basename(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    return PyUnicode_FromString(name ? name + 1 : path);
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
+        return Py_NewRef(path);
+    }
+    return PyUnicode_Substring(path, pos + 1, end);
 }
 
 
 static PyObject *
 getpath_dirname(PyObject *Py_UNUSED(self), PyObject *args)
 {
-    const char *path;
-    if (!PyArg_ParseTuple(args, "s", &path)) {
+    PyObject *path;
+    if (!PyArg_ParseTuple(args, "U", &path)) {
         return NULL;
     }
-    const char *name = strrchr(path, SEP);
-    if (!name) {
+    Py_ssize_t end = PyUnicode_GET_LENGTH(path);
+    Py_ssize_t pos = PyUnicode_FindChar(path, SEP, 0, end, -1);
+    if (pos < 0) {
         return PyUnicode_FromStringAndSize(NULL, 0);
     }
-    return PyUnicode_FromStringAndSize(path, (name - path));
+    return PyUnicode_Substring(path, 0, pos);
 }
 
 
@@ -120,8 +128,7 @@ getpath_isabs(PyObject *Py_UNUSED(self), PyObject *args)
         r = _Py_isabs(path) ? Py_True : Py_False;
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -148,11 +155,10 @@ getpath_hassuffix(PyObject *Py_UNUSED(self), PyObject *args)
                 wcscmp(&path[len - suffixLen], suffix) != 0
 #endif
             ) {
-                r = Py_False;
+                r = Py_NewRef(Py_False);
             } else {
-                r = Py_True;
+                r = Py_NewRef(Py_True);
             }
-            Py_INCREF(r);
             PyMem_Free((void *)suffix);
         }
         PyMem_Free((void *)path);
@@ -182,8 +188,7 @@ getpath_isdir(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -208,8 +213,7 @@ getpath_isfile(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -226,12 +230,11 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
     path = PyUnicode_AsWideCharString(pathobj, &cchPath);
     if (path) {
 #ifdef MS_WINDOWS
-        const wchar_t *ext;
         DWORD attr = GetFileAttributesW(path);
         r = (attr != INVALID_FILE_ATTRIBUTES) &&
             !(attr & FILE_ATTRIBUTE_DIRECTORY) &&
-            SUCCEEDED(PathCchFindExtension(path, cchPath + 1, &ext)) &&
-            (CompareStringOrdinal(ext, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
+            (cchPath >= 4) &&
+            (CompareStringOrdinal(path + cchPath - 4, -1, L".exe", -1, 1 /* ignore case */) == CSTR_EQUAL)
             ? Py_True : Py_False;
 #else
         struct stat st;
@@ -242,8 +245,7 @@ getpath_isxfile(PyObject *Py_UNUSED(self), PyObject *args)
 #endif
         PyMem_Free((void *)path);
     }
-    Py_XINCREF(r);
-    return r;
+    return Py_XNewRef(r);
 }
 
 
@@ -256,7 +258,7 @@ getpath_joinpath(PyObject *Py_UNUSED(self), PyObject *args)
     }
     Py_ssize_t n = PyTuple_GET_SIZE(args);
     if (n == 0) {
-        return PyUnicode_FromString(NULL);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
     /* Convert all parts to wchar and accumulate max final length */
     wchar_t **parts = (wchar_t **)PyMem_Malloc(n * sizeof(wchar_t *));
@@ -342,11 +344,12 @@ getpath_readlines(PyObject *Py_UNUSED(self), PyObject *args)
         return NULL;
     }
     FILE *fp = _Py_wfopen(path, L"rb");
-    PyMem_Free((void *)path);
     if (!fp) {
         PyErr_SetFromErrno(PyExc_OSError);
+        PyMem_Free((void *)path);
         return NULL;
     }
+    PyMem_Free((void *)path);
 
     r = PyList_New(0);
     if (!r) {
@@ -447,7 +450,10 @@ getpath_realpath(PyObject *Py_UNUSED(self) , PyObject *args)
             if (s) {
                 *s = L'\0';
             }
-            path2 = _Py_normpath(_Py_join_relfile(path, resolved), -1);
+            path2 = _Py_join_relfile(path, resolved);
+            if (path2) {
+                path2 = _Py_normpath(path2, -1);
+            }
             PyMem_RawFree((void *)path);
             path = path2;
         }
@@ -483,8 +489,7 @@ done:
         goto done;
     }
     if (!S_ISLNK(st.st_mode)) {
-        Py_INCREF(pathobj);
-        r = pathobj;
+        r = Py_NewRef(pathobj);
         goto done;
     }
     wchar_t resolved[MAXPATHLEN+1];
@@ -499,8 +504,7 @@ done:
     return r;
 #endif
 
-    Py_INCREF(pathobj);
-    return pathobj;
+    return Py_NewRef(pathobj);
 }
 
 
@@ -586,8 +590,7 @@ wchar_to_dict(PyObject *dict, const char *key, const wchar_t *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_NewRef(Py_None);
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);
@@ -612,8 +615,7 @@ decode_to_dict(PyObject *dict, const char *key, const char *s)
             return 0;
         }
     } else {
-        u = Py_None;
-        Py_INCREF(u);
+        u = Py_NewRef(Py_None);
     }
     r = PyDict_SetItemString(dict, key, u) == 0;
     Py_DECREF(u);
@@ -750,10 +752,12 @@ static int
 library_to_dict(PyObject *dict, const char *key)
 {
 #ifdef MS_WINDOWS
+#ifdef Py_ENABLE_SHARED
     extern HMODULE PyWin_DLLhModule;
     if (PyWin_DLLhModule) {
         return winmodule_to_dict(dict, key, PyWin_DLLhModule);
     }
+#endif
 #elif defined(WITH_NEXT_FRAMEWORK)
     static char modPath[MAXPATHLEN + 1];
     static int modPathInitialized = -1;
@@ -818,7 +822,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    if (!_PyThreadState_UncheckedGet()) {
+    if (!_PyThreadState_GET()) {
         return PyStatus_Error("cannot calculate path configuration without GIL");
     }
 
@@ -921,23 +925,6 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     }
     Py_DECREF(r);
 
-#if 0
-    PyObject *it = PyObject_GetIter(configDict);
-    for (PyObject *k = PyIter_Next(it); k; k = PyIter_Next(it)) {
-        if (!strcmp("__builtins__", PyUnicode_AsUTF8(k))) {
-            Py_DECREF(k);
-            continue;
-        }
-        fprintf(stderr, "%s = ", PyUnicode_AsUTF8(k));
-        PyObject *o = PyDict_GetItem(configDict, k);
-        o = PyObject_Repr(o);
-        fprintf(stderr, "%s\n", PyUnicode_AsUTF8(o));
-        Py_DECREF(o);
-        Py_DECREF(k);
-    }
-    Py_DECREF(it);
-#endif
-
     if (_PyConfig_FromDict(config, configDict) < 0) {
         _PyErr_WriteUnraisableMsg("reading getpath results", NULL);
         Py_DECREF(dict);
@@ -948,4 +935,3 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     return _PyStatus_OK();
 }
-

@@ -23,7 +23,6 @@
 
 #ifndef PYSQLITE_STATEMENT_H
 #define PYSQLITE_STATEMENT_H
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include "connection.h"
@@ -33,7 +32,6 @@ typedef struct
 {
     PyObject_HEAD
     sqlite3_stmt* st;
-    int in_use;
     int is_dml;
 } pysqlite_Statement;
 

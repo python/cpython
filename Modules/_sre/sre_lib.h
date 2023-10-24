@@ -209,6 +209,7 @@ SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
     const SRE_CHAR* ptr = (const SRE_CHAR *)state->ptr;
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t i;
+    INIT_TRACE(state);
 
     /* adjust end */
     if (maxcount < end - ptr && maxcount != SRE_MAXREPEAT)
@@ -563,10 +564,11 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t ret = 0;
     int jump;
-    unsigned int sigcount=0;
+    unsigned int sigcount = state->sigcount;
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
+    INIT_TRACE(state);
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
@@ -589,8 +591,8 @@ entrance:
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
         if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
-            TRACE(("reject (got %zd chars, need %zd)\n",
-                   end - ptr, (Py_ssize_t) pattern[3]));
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             RETURN_FAILURE;
         }
         pattern += pattern[1] + 1;
@@ -1079,12 +1081,17 @@ dispatch:
                by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
             /* <REPEAT> <skip> <1=min> <2=max>
                <3=repeat_index> item <UNTIL> tail */
-            TRACE(("|%p|%p|REPEAT %d %d %d\n", pattern, ptr,
-                   pattern[1], pattern[2], pattern[3]));
+            TRACE(("|%p|%p|REPEAT %d %d\n", pattern, ptr,
+                   pattern[1], pattern[2]));
 
-            /* install repeat context */
-            ctx->u.rep = &state->repeats_array[pattern[3]];
-
+            /* install new repeat context */
+            /* TODO(https://github.com/python/cpython/issues/67877): Fix this
+             * potential memory leak. */
+            ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
+            if (!ctx->u.rep) {
+                PyErr_NoMemory();
+                RETURN_FAILURE;
+            }
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = pattern;
             ctx->u.rep->prev = state->repeat;
@@ -1094,6 +1101,7 @@ dispatch:
             state->ptr = ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
             state->repeat = ctx->u.rep->prev;
+            PyObject_Free(ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1103,8 +1111,7 @@ dispatch:
 
         TARGET(SRE_OP_MAX_UNTIL):
             /* maximizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max>
-               <3=repeat_index> item <MAX_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max> item <MAX_UNTIL> tail */
 
             /* FIXME: we probably need to deal with zero-width
                matches in here... */
@@ -1124,7 +1131,7 @@ dispatch:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MAX_UNTIL_1, jump_max_until_1,
-                        ctx->u.rep->pattern+4);
+                        ctx->u.rep->pattern+3);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1146,7 +1153,7 @@ dispatch:
                 DATA_PUSH(&ctx->u.rep->last_ptr);
                 ctx->u.rep->last_ptr = state->ptr;
                 DO_JUMP(JUMP_MAX_UNTIL_2, jump_max_until_2,
-                        ctx->u.rep->pattern+4);
+                        ctx->u.rep->pattern+3);
                 DATA_POP(&ctx->u.rep->last_ptr);
                 if (ret) {
                     MARK_POP_DISCARD(ctx->lastmark);
@@ -1171,8 +1178,7 @@ dispatch:
 
         TARGET(SRE_OP_MIN_UNTIL):
             /* minimizing repeat */
-            /* <REPEAT> <skip> <1=min> <2=max>
-               <3=repeat_index> item <MIN_UNTIL> tail */
+            /* <REPEAT> <skip> <1=min> <2=max> item <MIN_UNTIL> tail */
 
             ctx->u.rep = state->repeat;
             if (!ctx->u.rep)
@@ -1189,7 +1195,7 @@ dispatch:
                 /* not enough matches */
                 ctx->u.rep->count = ctx->count;
                 DO_JUMP(JUMP_MIN_UNTIL_1, jump_min_until_1,
-                        ctx->u.rep->pattern+4);
+                        ctx->u.rep->pattern+3);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
                     RETURN_SUCCESS;
@@ -1232,7 +1238,7 @@ dispatch:
             DATA_PUSH(&ctx->u.rep->last_ptr);
             ctx->u.rep->last_ptr = state->ptr;
             DO_JUMP(JUMP_MIN_UNTIL_3,jump_min_until_3,
-                    ctx->u.rep->pattern+4);
+                    ctx->u.rep->pattern+3);
             DATA_POP(&ctx->u.rep->last_ptr);
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1329,6 +1335,10 @@ dispatch:
                        state. */
                     MARK_POP(ctx->lastmark);
                     LASTMARK_RESTORE();
+
+                    /* Restore the global Input Stream pointer
+                       since it can change after jumps. */
+                    state->ptr = ptr;
 
                     /* We have sufficient matches, so exit loop. */
                     break;
@@ -1499,7 +1509,7 @@ dispatch:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)pattern[1])
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) < pattern[1])
                 RETURN_FAILURE;
             state->ptr = ptr - pattern[1];
             DO_JUMP0(JUMP_ASSERT, jump_assert, pattern+2);
@@ -1512,7 +1522,7 @@ dispatch:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)pattern[1]) {
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) >= pattern[1]) {
                 state->ptr = ptr - pattern[1];
                 LASTMARK_SAVE();
                 if (state->repeat)
@@ -1557,8 +1567,10 @@ exit:
     ctx_pos = ctx->last_ctx_pos;
     jump = ctx->jump;
     DATA_POP_DISCARD(ctx);
-    if (ctx_pos == -1)
+    if (ctx_pos == -1) {
+        state->sigcount = sigcount;
         return ret;
+    }
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1635,6 +1647,7 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
     int flags = 0;
+    INIT_TRACE(state);
 
     if (ptr > end)
         return 0;
@@ -1645,9 +1658,9 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
         flags = pattern[2];
 
-        if (pattern[3] && end - ptr < (Py_ssize_t)pattern[3]) {
-            TRACE(("reject (got %u chars, need %u)\n",
-                   (unsigned int)(end - ptr), pattern[3]));
+        if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             return 0;
         }
         if (pattern[3] > 1) {

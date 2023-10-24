@@ -1,8 +1,6 @@
 #ifndef Py_UNICODEOBJECT_H
 #define Py_UNICODEOBJECT_H
 
-#include <stdarg.h>               // va_list
-
 /*
 
 Unicode implementation based on original code by Fredrik Lundh,
@@ -55,8 +53,6 @@ Copyright (c) Corporation for National Research Initiatives.
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * -------------------------------------------------------------------- */
 
-#include <ctype.h>
-
 /* === Internal API ======================================================= */
 
 /* --- Internal Unicode Format -------------------------------------------- */
@@ -93,10 +89,6 @@ Copyright (c) Corporation for National Research Initiatives.
 # endif
 #endif
 
-#ifdef HAVE_WCHAR_H
-#  include <wchar.h>
-#endif
-
 /* Py_UCS4 and Py_UCS2 are typedefs for the respective
    unicode representations. */
 typedef uint32_t Py_UCS4;
@@ -113,7 +105,7 @@ PyAPI_DATA(PyTypeObject) PyUnicodeIter_Type;
 
 #define PyUnicode_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_UNICODE_SUBCLASS)
-#define PyUnicode_CheckExact(op) Py_IS_TYPE(op, &PyUnicode_Type)
+#define PyUnicode_CheckExact(op) Py_IS_TYPE((op), &PyUnicode_Type)
 
 /* --- Constants ---------------------------------------------------------- */
 
@@ -451,17 +443,25 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsUTF8String(
     PyObject *unicode           /* Unicode object */
     );
 
-/* Returns a pointer to the default encoding (UTF-8) of the
-   Unicode object unicode and the size of the encoded representation
-   in bytes stored in *size.
+// Returns a pointer to the UTF-8 encoding of the Unicode object unicode.
+//
+// Raise an exception if the string contains embedded null characters.
+// Use PyUnicode_AsUTF8AndSize() to accept embedded null characters.
+//
+// This function caches the UTF-8 encoded string in the Unicode object
+// and subsequent calls will return the same string. The memory is released
+// when the Unicode object is deallocated.
+PyAPI_FUNC(const char *) PyUnicode_AsUTF8(PyObject *unicode);
 
-   In case of an error, no *size is set.
-
-   This function caches the UTF-8 encoded string in the unicodeobject
-   and subsequent calls will return the same string.  The memory is released
-   when the unicodeobject is deallocated.
-*/
-
+// Returns a pointer to the UTF-8 encoding of the
+// Unicode object unicode and the size of the encoded representation
+// in bytes stored in `*size` (if size is not NULL).
+//
+// On error, `*size` is set to 0 (if size is not NULL).
+//
+// This function caches the UTF-8 encoded string in the Unicode object
+// and subsequent calls will return the same string. The memory is released
+// when the Unicode object is deallocated.
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
 PyAPI_FUNC(const char *) PyUnicode_AsUTF8AndSize(
     PyObject *unicode,
@@ -626,7 +626,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsLatin1String(
 
 /* --- ASCII Codecs -------------------------------------------------------
 
-   Only 7-bit ASCII data is excepted. All other codes generate errors.
+   Only 7-bit ASCII data is expected. All other codes generate errors.
 
 */
 
@@ -755,38 +755,22 @@ PyAPI_FUNC(int) PyUnicode_FSConverter(PyObject*, void*);
 
 PyAPI_FUNC(int) PyUnicode_FSDecoder(PyObject*, void*);
 
-/* Decode a null-terminated string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
+/* Decode a null-terminated string from the Python filesystem encoding
+   and error handler.
 
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-
-   Use PyUnicode_DecodeFSDefaultAndSize() if the string length is known.
-*/
-
+   If the string length is known, use PyUnicode_DecodeFSDefaultAndSize(). */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefault(
     const char *s               /* encoded string */
     );
 
-/* Decode a string using Py_FileSystemDefaultEncoding
-   and the "surrogateescape" error handler.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Decode a string from the Python filesystem encoding and error handler. */
 PyAPI_FUNC(PyObject*) PyUnicode_DecodeFSDefaultAndSize(
     const char *s,               /* encoded string */
     Py_ssize_t size              /* size */
     );
 
-/* Encode a Unicode object to Py_FileSystemDefaultEncoding with the
-   "surrogateescape" error handler, and return bytes.
-
-   If Py_FileSystemDefaultEncoding is not set, fall back to the locale
-   encoding.
-*/
-
+/* Encode a Unicode object to the Python filesystem encoding and error handler.
+   Return bytes. */
 PyAPI_FUNC(PyObject*) PyUnicode_EncodeFSDefault(
     PyObject *unicode
     );
@@ -980,6 +964,15 @@ PyAPI_FUNC(int) PyUnicode_CompareWithASCIIString(
     PyObject *left,
     const char *right           /* ASCII-encoded string */
     );
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+/* Compare a Unicode object with UTF-8 encoded C string.
+   Return 1 if they are equal, or 0 otherwise.
+   This function does not raise exceptions. */
+
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8(PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicode_EqualToUTF8AndSize(PyObject *, const char *, Py_ssize_t);
+#endif
 
 /* Rich compare two strings and return one of the following:
 

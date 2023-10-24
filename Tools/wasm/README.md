@@ -1,13 +1,24 @@
 # Python WebAssembly (WASM) build
 
-**WARNING: WASM support is highly experimental! Lots of features are not working yet.**
+**WARNING: WASM support is work-in-progress! Lots of features are not working yet.**
 
 This directory contains configuration and helpers to facilitate cross
-compilation of CPython to WebAssembly (WASM). For now we support
-*wasm32-emscripten* builds for modern browser and for *Node.js*. WASI
-(*wasm32-wasi*) is work-in-progress
+compilation of CPython to WebAssembly (WASM). Python supports Emscripten
+(*wasm32-emscripten*) and WASI (*wasm32-wasi*) targets. Emscripten builds
+run in modern browsers and JavaScript runtimes like *Node.js*. WASI builds
+use WASM runtimes such as *wasmtime*.
 
-## wasm32-emscripten build
+Users and developers are encouraged to use the script
+`Tools/wasm/wasm_build.py`. The tool automates the build process and provides
+assistance with installation of SDKs, running tests, etc.
+
+**NOTE**: If you are looking for information that is not directly related to
+building CPython for WebAssembly (or the resulting build), please see
+https://github.com/psf/webassembly for more information.
+
+## wasm32-emscripten
+
+### Build
 
 For now the build system has two target flavors. The ``Emscripten/browser``
 target (``--with-emscripten-target=browser``) is optimized for browsers.
@@ -17,21 +28,70 @@ access the file system directly.
 
 Cross compiling to the wasm32-emscripten platform needs the
 [Emscripten](https://emscripten.org/) SDK and a build Python interpreter.
-Emscripten 3.1.8 or newer are recommended. All commands below are relative
+Emscripten 3.1.19 or newer are recommended. All commands below are relative
 to a repository checkout.
+
+#### Toolchain
+
+##### Container image
 
 Christian Heimes maintains a container image with Emscripten SDK, Python
 build dependencies, WASI-SDK, wasmtime, and several additional tools.
 
+From within your local CPython repo clone, run one of the following commands:
+
 ```
 # Fedora, RHEL, CentOS
-podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z quay.io/tiran/cpythonbuild:emsdk3
+podman run --rm -ti -v $(pwd):/python-wasm/cpython:Z -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 
 # other
-docker run --rm -ti -v $(pwd):/python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
+docker run --rm -ti -v $(pwd):/python-wasm/cpython -w /python-wasm/cpython quay.io/tiran/cpythonbuild:emsdk3
 ```
 
-### Compile a build Python interpreter
+##### Manually
+
+###### Install [Emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html)
+
+**NOTE**: Follow the on-screen instructions how to add the SDK to ``PATH``.
+
+```shell
+git clone https://github.com/emscripten-core/emsdk.git /opt/emsdk
+/opt/emsdk/emsdk install latest
+/opt/emsdk/emsdk activate latest
+```
+
+###### Optionally: enable ccache for EMSDK
+
+The ``EM_COMPILER_WRAPPER`` must be set after the EMSDK environment is
+sourced. Otherwise the source script removes the environment variable.
+
+```
+. /opt/emsdk/emsdk_env.sh
+EM_COMPILER_WRAPPER=ccache
+```
+
+###### Optionally: pre-build and cache static libraries
+
+Emscripten SDK provides static builds of core libraries without PIC
+(position-independent code). Python builds with ``dlopen`` support require
+PIC. To populate the build cache, run:
+
+```shell
+. /opt/emsdk/emsdk_env.sh
+embuilder build zlib bzip2 MINIMAL_PIC
+embuilder --pic build zlib bzip2 MINIMAL_PIC
+```
+
+
+#### Compile a build Python interpreter
+
+From within the container, run the following command:
+
+```shell
+./Tools/wasm/wasm_build.py build
+```
+
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/build
@@ -41,13 +101,13 @@ make -j$(nproc)
 popd
 ```
 
-### Fetch and build additional emscripten ports
+#### Cross-compile to wasm32-emscripten for browser
 
 ```shell
-embuilder build zlib bzip2
+./Tools/wasm/wasm_build.py emscripten-browser
 ```
 
-### Cross compile to wasm32-emscripten for browser
+The command is roughly equivalent to:
 
 ```shell
 mkdir -p builddir/emscripten-browser
@@ -65,12 +125,9 @@ popd
 ```
 
 Serve `python.html` with a local webserver and open the file in a browser.
-
-```shell
-emrun builddir/emscripten-browser/python.html
-```
-
-or
+Python comes with a minimal web server script that sets necessary HTTP
+headers like COOP, COEP, and mimetypes. Run the script outside the container
+and from the root of the CPython checkout.
 
 ```shell
 ./Tools/wasm/wasm_webserver.py
@@ -80,17 +137,25 @@ and open http://localhost:8000/builddir/emscripten-browser/python.html . This
 directory structure enables the *C/C++ DevTools Support (DWARF)* to load C
 and header files with debug builds.
 
-### Cross compile to wasm32-emscripten for node
+
+#### Cross compile to wasm32-emscripten for node
 
 ```shell
-mkdir -p builddir/emscripten-node
-pushd builddir/emscripten-node
+./Tools/wasm/wasm_build.py emscripten-node-dl
+```
+
+The command is roughly equivalent to:
+
+```shell
+mkdir -p builddir/emscripten-node-dl
+pushd builddir/emscripten-node-dl
 
 CONFIG_SITE=../../Tools/wasm/config.site-wasm32-emscripten \
   emconfigure ../../configure -C \
     --host=wasm32-unknown-emscripten \
     --build=$(../../config.guess) \
     --with-emscripten-target=node \
+    --enable-wasm-dynamic-linking \
     --with-build-python=$(pwd)/../build/python
 
 emmake make -j$(nproc)
@@ -98,16 +163,18 @@ popd
 ```
 
 ```shell
-node --experimental-wasm-threads --experimental-wasm-bulk-memory builddir/emscripten-node/python.js
+node --experimental-wasm-threads --experimental-wasm-bulk-memory --experimental-wasm-bigint builddir/emscripten-node-dl/python.js
 ```
 
-# wasm32-emscripten limitations and issues
+(``--experimental-wasm-bigint`` is not needed with recent NodeJS versions)
+
+### Limitations and issues
 
 Emscripten before 3.1.8 has known bugs that can cause memory corruption and
 resource leaks. 3.1.8 contains several fixes for bugs in date and time
 functions.
 
-## Network stack
+#### Network stack
 
 - Python's socket module does not work with Emscripten's emulated POSIX
   sockets yet. Network modules like ``asyncio``, ``urllib``, ``selectors``,
@@ -121,7 +188,7 @@ functions.
 - The ``select`` module is limited. ``select.select()`` crashes the runtime
   due to lack of exectfd support.
 
-## processes, signals
+#### processes, signals
 
 - Processes are not supported. System calls like fork, popen, and subprocess
   fail with ``ENOSYS`` or ``ENOSUP``.
@@ -131,22 +198,22 @@ functions.
 - Resource-related functions like ``os.nice`` and most functions of the
   ``resource`` module are not available.
 
-## threading
+#### threading
 
 - Threading is disabled by default. The ``configure`` option
   ``--enable-wasm-pthreads`` adds compiler flag ``-pthread`` and
-  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``. 
+  linker flags ``-sUSE_PTHREADS -sPROXY_TO_PTHREAD``.
 - pthread support requires WASM threads and SharedArrayBuffer (bulk memory).
   The Node.JS runtime keeps a pool of web workers around. Each web worker
   uses several file descriptors (eventfd, epoll, pipe).
 - It's not advised to enable threading when building for browsers or with
   dynamic linking support; there are performance and stability issues.
 
-## file system
+#### file system
 
 - Most user, group, and permission related function and modules are not
   supported or don't work as expected, e.g.``pwd`` module, ``grp`` module,
-  ``os.setgroups``, ``os.chown``, and so on. ``lchown`` and `lchmod`` are
+  ``os.setgroups``, ``os.chown``, and so on. ``lchown`` and ``lchmod`` are
   not available.
 - ``umask`` is a no-op.
 - hard links (``os.link``) are not supported.
@@ -158,42 +225,53 @@ functions.
 - Large file support crashes the runtime and is disabled.
 - ``mmap`` module is unstable. flush (``msync``) can crash the runtime.
 
-## Misc
+#### Misc
 
 - Heap memory and stack size are limited. Recursion or extensive memory
   consumption can crash Python.
 - Most stdlib modules with a dependency on external libraries are missing,
-  e.g. ``ctypes``, ``readline``, ``sqlite3``, ``ssl``, and more.
+  e.g. ``ctypes``, ``readline``, ``ssl``, and more.
 - Shared extension modules are not implemented yet. All extension modules
   are statically linked into the main binary. The experimental configure
   option ``--enable-wasm-dynamic-linking`` enables dynamic extensions
   supports. It's currently known to crash in combination with threading.
 - glibc extensions for date and time formatting are not available.
 - ``locales`` module is affected by musl libc issues,
-  [bpo-46390](https://bugs.python.org/issue46390).
+  [gh-90548](https://github.com/python/cpython/issues/90548).
 - Python's object allocator ``obmalloc`` is disabled by default.
 - ``ensurepip`` is not available.
+- Some ``ctypes`` features like ``c_longlong`` and ``c_longdouble`` may need
+   NodeJS option ``--experimental-wasm-bigint``.
 
-## wasm32-emscripten in browsers
+#### In the browser
 
 - The interactive shell does not handle copy 'n paste and unicode support
   well.
 - The bundled stdlib is limited. Network-related modules,
-  distutils, multiprocessing, dbm, tests and similar modules
+  multiprocessing, dbm, tests and similar modules
   are not shipped. All other modules are bundled as pre-compiled
   ``pyc`` files.
 - In-memory file system (MEMFS) is not persistent and limited.
 - Test modules are disabled by default. Use ``--enable-test-modules`` build
   test modules like ``_testcapi``.
 
-## wasm32-emscripten in node
+### wasm32-emscripten in node
 
 Node builds use ``NODERAWFS``.
 
 - Node RawFS allows direct access to the host file system without need to
   perform ``FS.mount()`` call.
 
-# Hosting Python WASM builds
+### wasm64-emscripten
+
+- wasm64 requires recent NodeJS and ``--experimental-wasm-memory64``.
+- ``EM_JS`` functions must return ``BigInt()``.
+- ``Py_BuildValue()`` format strings must match size of types. Confusing 32
+  and 64 bits types leads to memory corruption, see
+  [gh-95876](https://github.com/python/cpython/issues/95876) and
+  [gh-95878](https://github.com/python/cpython/issues/95878).
+
+### Hosting Python WASM builds
 
 The simple REPL terminal uses SharedArrayBuffer. For security reasons
 browsers only provide the feature in secure environents with cross-origin
@@ -201,7 +279,7 @@ isolation. The webserver must send cross-origin headers and correct MIME types
 for the JavaScript and WASM files. Otherwise the terminal will fail to load
 with an error message like ``Browsers disable shared array buffer``.
 
-## Apache HTTP .htaccess
+#### Apache HTTP .htaccess
 
 Place a ``.htaccess`` file in the same directory as ``python.wasm``.
 
@@ -218,15 +296,106 @@ AddType application/wasm wasm
 </IfModule>
 ```
 
-# WASI (wasm32-wasi)
+## WASI (wasm32-wasi)
 
-WASI builds require [WASI SDK](https://github.com/WebAssembly/wasi-sdk) and
-currently [wasix](https://github.com/singlestore-labs/wasix) for POSIX
-compatibility stubs.
+WASI builds require the [WASI SDK](https://github.com/WebAssembly/wasi-sdk) 16.0+.
+See `.devcontainer/Dockerfile` for an example of how to download and
+install the WASI SDK.
 
-# Detect WebAssembly builds
+### Build
 
-## Python code
+The script ``wasi-env`` sets necessary compiler and linker flags as well as
+``pkg-config`` overrides. The script assumes that WASI-SDK is installed in
+``/opt/wasi-sdk`` or ``$WASI_SDK_PATH``.
+
+There are two scripts you can use to do a WASI build from a source checkout. You can either use:
+
+```shell
+./Tools/wasm/wasm_build.py wasi build
+```
+
+or:
+```shell
+./Tools/wasm/build_wasi.sh
+```
+
+The commands are equivalent to the following steps:
+
+- Make sure `Modules/Setup.local` exists
+- Make sure the necessary build tools are installed:
+  - [WASI SDK](https://github.com/WebAssembly/wasi-sdk) (which ships with `clang`)
+  - `make`
+  - `pkg-config` (on Linux)
+- Create the build Python
+  - `mkdir -p builddir/build`
+  - `pushd builddir/build`
+  - Get the build platform
+    - Python: `sysconfig.get_config_var("BUILD_GNU_TYPE")`
+    - Shell: `../../config.guess`
+  - `../../configure -C`
+  - `make all`
+  - ```PYTHON_VERSION=`./python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'` ```
+  - `popd`
+- Create the host/WASI Python
+  - `mkdir builddir/wasi`
+  - `pushd builddir/wasi`
+  - `../../Tools/wasm/wasi-env ../../configure -C --host=wasm32-unknown-wasi --build=$(../../config.guess) --with-build-python=../build/python`
+    - `CONFIG_SITE=../../Tools/wasm/config.site-wasm32-wasi`
+    - `HOSTRUNNER="wasmtime run --mapdir /::$(dirname $(dirname $(pwd))) --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION $(pwd)/python.wasm --"`
+      - Maps the source checkout to `/` in the WASI runtime
+      - Stdlib gets loaded from `/Lib`
+      - Gets `_sysconfigdata__wasi_wasm32-wasi.py` on to `sys.path` via `PYTHONPATH`
+    - Set by `wasi-env`
+      - `WASI_SDK_PATH`
+      - `WASI_SYSROOT`
+      - `CC`
+      - `CPP`
+      - `CXX`
+      - `LDSHARED`
+      - `AR`
+      - `RANLIB`
+      - `CFLAGS`
+      - `LDFLAGS`
+      - `PKG_CONFIG_PATH`
+      - `PKG_CONFIG_LIBDIR`
+      - `PKG_CONFIG_SYSROOT_DIR`
+      - `PATH`
+  - `make all`
+
+
+### Running
+
+If you followed the instructions above, you can run the interpreter via e.g., `wasmtime` from within the `Tools/wasi` directory (make sure to set/change `$PYTHON_VERSION` and do note the paths are relative to running in`builddir/wasi` for simplicity only):
+
+```shell
+wasmtime run --mapdir /::../.. --env PYTHONPATH=/builddir/wasi/build/lib.wasi-wasm32-$PYTHON_VERSION python.wasm -- <args>
+```
+
+There are also helpers provided by `Tools/wasm/wasm_build.py` as listed below. Also, if you used `Tools/wasm/build_wasi.sh`, a `run_wasi.sh` file will be created in `builddir/wasi` which will run the above command for you (it also uses absolute paths, so it can be executed from anywhere).
+
+#### REPL
+
+```shell
+./Tools/wasm/wasm_build.py wasi repl
+```
+
+#### Tests
+
+```shell
+./Tools/wasm/wasm_build.py wasi test
+```
+
+### Debugging
+
+* ``wasmtime run -g`` generates debugging symbols for gdb and lldb. The
+  feature is currently broken, see
+  https://github.com/bytecodealliance/wasmtime/issues/4669 .
+* The environment variable ``RUST_LOG=wasi_common`` enables debug and
+  trace logging.
+
+## Detect WebAssembly builds
+
+### Python code
 
 ```python
 import os, sys
@@ -247,43 +416,57 @@ if os.name == "posix":
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='Emscripten', nodename='emscripten', release='1.0', version='#1', machine='wasm32')
+posix.uname_result(
+    sysname='Emscripten',
+    nodename='emscripten',
+    release='3.1.19',
+    version='#1',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
 'emscripten'
 >>> sys._emscripten_info
 sys._emscripten_info(
-    emscripten_version=(3, 1, 8),
-    runtime='Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0',
+    emscripten_version=(3, 1, 10),
+    runtime='Mozilla/5.0 (X11; Linux x86_64; rv:104.0) Gecko/20100101 Firefox/104.0',
     pthreads=False,
     shared_memory=False
 )
+```
+
+```python
 >>> sys._emscripten_info
-sys._emscripten_info(emscripten_version=(3, 1, 8), runtime='Node.js v14.18.2', pthreads=True, shared_memory=True)
+sys._emscripten_info(
+    emscripten_version=(3, 1, 19),
+    runtime='Node.js v14.18.2',
+    pthreads=True,
+    shared_memory=True
+)
 ```
 
 ```python
 >>> import os, sys
 >>> os.uname()
-posix.uname_result(sysname='wasi', nodename='(none)', release='0.0.0', version='0.0.0', machine='wasm32')
+posix.uname_result(
+    sysname='wasi',
+    nodename='(none)',
+    release='0.0.0',
+    version='0.0.0',
+    machine='wasm32'
+)
 >>> os.name
 'posix'
 >>> sys.platform
 'wasi'
 ```
 
-## C code
+### C code
 
 Emscripten SDK and WASI SDK define several built-in macros. You can dump a
 full list of built-ins with ``emcc -dM -E - < /dev/null`` and
 ``/path/to/wasi-sdk/bin/clang -dM -E - < /dev/null``.
-
-```C
-#ifdef __EMSCRIPTEN__
-    // Python on Emscripten
-#endif
-```
 
 * WebAssembly ``__wasm__`` (also ``__wasm``)
 * wasm32 ``__wasm32__`` (also ``__wasm32``)
@@ -291,13 +474,3 @@ full list of built-ins with ``emcc -dM -E - < /dev/null`` and
 * Emscripten ``__EMSCRIPTEN__`` (also ``EMSCRIPTEN``)
 * Emscripten version ``__EMSCRIPTEN_major__``, ``__EMSCRIPTEN_minor__``, ``__EMSCRIPTEN_tiny__``
 * WASI ``__wasi__``
-
-Feature detection flags:
-
-* ``__EMSCRIPTEN_PTHREADS__``
-* ``__EMSCRIPTEN_SHARED_MEMORY__``
-* ``__wasm_simd128__``
-* ``__wasm_sign_ext__``
-* ``__wasm_bulk_memory__``
-* ``__wasm_atomics__``
-* ``__wasm_mutable_globals__``

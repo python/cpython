@@ -1,8 +1,9 @@
 """Tests for http/cookiejar.py."""
 
 import os
+import stat
+import sys
 import re
-import test.support
 from test.support import os_helper
 from test.support import warnings_helper
 import time
@@ -17,6 +18,7 @@ from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      reach, is_HDN, domain_match, user_domain_match, request_path,
      request_port, request_host)
 
+mswindows = (sys.platform == "win32")
 
 class DateTimeTests(unittest.TestCase):
 
@@ -364,9 +366,62 @@ class FileCookieJarTests(unittest.TestCase):
             c = LWPCookieJar()
             c.load(filename, ignore_discard=True)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
         self.assertEqual(c._cookies["www.acme.com"]["/"]["boo"].value, None)
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
+    def test_lwp_filepermissions(self):
+        # Cookie file should only be readable by the creator
+        filename = os_helper.TESTFN
+        c = LWPCookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'boo')
+        try:
+            c.save(filename, ignore_discard=True)
+            st = os.stat(filename)
+            self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
+        finally:
+            os_helper.unlink(filename)
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
+    def test_mozilla_filepermissions(self):
+        # Cookie file should only be readable by the creator
+        filename = os_helper.TESTFN
+        c = MozillaCookieJar()
+        interact_netscape(c, "http://www.acme.com/", 'boo')
+        try:
+            c.save(filename, ignore_discard=True)
+            st = os.stat(filename)
+            self.assertEqual(stat.S_IMODE(st.st_mode), 0o600)
+        finally:
+            os_helper.unlink(filename)
+
+    @unittest.skipIf(mswindows, "windows file permissions are incompatible with file modes")
+    @os_helper.skip_unless_working_chmod
+    def test_cookie_files_are_truncated(self):
+        filename = os_helper.TESTFN
+        for cookiejar_class in (LWPCookieJar, MozillaCookieJar):
+            c = cookiejar_class(filename)
+
+            req = urllib.request.Request("http://www.acme.com/")
+            headers = ["Set-Cookie: pll_lang=en; Max-Age=31536000; path=/"]
+            res = FakeResponse(headers, "http://www.acme.com/")
+            c.extract_cookies(res, req)
+            self.assertEqual(len(c), 1)
+
+            try:
+                # Save the first version with contents:
+                c.save()
+                # Now, clear cookies and re-save:
+                c.clear()
+                c.save()
+                # Check that file was truncated:
+                c.load()
+            finally:
+                os_helper.unlink(filename)
+
+            self.assertEqual(len(c), 0)
 
     def test_bad_magic(self):
         # OSErrors (eg. file doesn't exist) are allowed to propagate
@@ -391,8 +446,7 @@ class FileCookieJarTests(unittest.TestCase):
                     c = cookiejar_class()
                     self.assertRaises(LoadError, c.load, filename)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
 
 class CookieTests(unittest.TestCase):
     # XXX
@@ -496,7 +550,7 @@ class CookieTests(unittest.TestCase):
             c = MozillaCookieJar(filename)
             c.revert(ignore_expires=True, ignore_discard=True)
         finally:
-            os.unlink(c.filename)
+            os_helper.unlink(c.filename)
         # cookies unchanged apart from lost info re. whether path was specified
         self.assertEqual(
             repr(c),
@@ -1766,8 +1820,7 @@ class LWPCookieTests(unittest.TestCase):
             c = LWPCookieJar(policy=pol)
             c.load(filename, ignore_discard=True)
         finally:
-            try: os.unlink(filename)
-            except OSError: pass
+            os_helper.unlink(filename)
 
         self.assertEqual(old, repr(c))
 
@@ -1826,8 +1879,7 @@ class LWPCookieTests(unittest.TestCase):
                                          DefaultCookiePolicy(rfc2965=True))
                 new_c.load(ignore_discard=ignore_discard)
             finally:
-                try: os.unlink(filename)
-                except OSError: pass
+                os_helper.unlink(filename)
             return new_c
 
         new_c = save_and_restore(c, True)

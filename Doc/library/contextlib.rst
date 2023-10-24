@@ -45,7 +45,7 @@ Functions and classes provided:
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`with` statement context managers, without needing to
-   create a class or separate :meth:`__enter__` and :meth:`__exit__` methods.
+   create a class or separate :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
@@ -65,6 +65,8 @@ Functions and classes provided:
           finally:
               # Code to release resource, e.g.:
               release_resource(resource)
+
+   The function can then be used like this::
 
       >>> with managed_resource(timeout=3600) as resource:
       ...     # Resource is released at the end of this block,
@@ -140,9 +142,9 @@ Functions and classes provided:
          finally:
              print(f'it took {time.monotonic() - now}s to run')
 
-      @timeit()
-      async def main():
-          # ... async code ...
+     @timeit()
+     async def main():
+         # ... async code ...
 
    When used as a decorator, a new generator instance is implicitly created on
    each function call. This allows the otherwise "one-shot" context managers
@@ -249,15 +251,15 @@ Functions and classes provided:
    :ref:`asynchronous context managers <async-context-managers>`::
 
        async def send_http(session=None):
-          if not session:
-              # If no http session, create it with aiohttp
-              cm = aiohttp.ClientSession()
-          else:
-              # Caller is responsible for closing the session
-              cm = nullcontext(session)
+           if not session:
+               # If no http session, create it with aiohttp
+               cm = aiohttp.ClientSession()
+           else:
+               # Caller is responsible for closing the session
+               cm = nullcontext(session)
 
-          async with cm as session:
-              # Send http requests with session
+           async with cm as session:
+               # Send http requests with session
 
    .. versionadded:: 3.7
 
@@ -302,8 +304,15 @@ Functions and classes provided:
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
+   If the code within the :keyword:`!with` block raises an
+   :exc:`ExceptionGroup`, suppressed exceptions are removed from the
+   group.  If any exceptions in the group are not suppressed, a group containing them is re-raised.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.12
+      ``suppress`` now supports suppressing exceptions raised as
+      part of an :exc:`ExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
 
@@ -361,7 +370,7 @@ Functions and classes provided:
    As this changes a global state, the working directory, it is not suitable
    for use in most threaded or async contexts. It is also not suitable for most
    non-linear code execution, like generators, where the program execution is
-   temporarily relinquished -- unless explicitely desired, you should not yield
+   temporarily relinquished -- unless explicitly desired, you should not yield
    when this context manager is active.
 
    This is a simple wrapper around :func:`~os.chdir`, it changes the current
@@ -395,6 +404,8 @@ Functions and classes provided:
           def __exit__(self, *exc):
               print('Finishing')
               return False
+
+   The class can then be used like this::
 
       >>> @mycontext()
       ... def function():
@@ -466,6 +477,8 @@ Functions and classes provided:
               print('Finishing')
               return False
 
+   The class can then be used like this::
+
       >>> @mycontext()
       ... async def function():
       ...     print('The bit in the middle')
@@ -502,7 +515,7 @@ Functions and classes provided:
           # the with statement, even if attempts to open files later
           # in the list raise an exception
 
-   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
+   The :meth:`~object.__enter__` method returns the :class:`ExitStack` instance, and
    performs no additional operations.
 
    Each instance maintains a stack of registered callbacks that are called in
@@ -530,9 +543,9 @@ Functions and classes provided:
 
    .. method:: enter_context(cm)
 
-      Enters a new context manager and adds its :meth:`__exit__` method to
+      Enters a new context manager and adds its :meth:`~object.__exit__` method to
       the callback stack. The return value is the result of the context
-      manager's own :meth:`__enter__` method.
+      manager's own :meth:`~object.__enter__` method.
 
       These context managers may suppress exceptions just as they normally
       would if used directly as part of a :keyword:`with` statement.
@@ -543,18 +556,18 @@ Functions and classes provided:
 
    .. method:: push(exit)
 
-      Adds a context manager's :meth:`__exit__` method to the callback stack.
+      Adds a context manager's :meth:`~object.__exit__` method to the callback stack.
 
       As ``__enter__`` is *not* invoked, this method can be used to cover
-      part of an :meth:`__enter__` implementation with a context manager's own
-      :meth:`__exit__` method.
+      part of an :meth:`~object.__enter__` implementation with a context manager's own
+      :meth:`~object.__exit__` method.
 
       If passed an object that is not a context manager, this method assumes
       it is a callback with the same signature as a context manager's
-      :meth:`__exit__` method and adds it directly to the callback stack.
+      :meth:`~object.__exit__` method and adds it directly to the callback stack.
 
       By returning true values, these callbacks can suppress exceptions the
-      same way context manager :meth:`__exit__` methods can.
+      same way context manager :meth:`~object.__exit__` methods can.
 
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
@@ -701,7 +714,7 @@ Cleaning up in an ``__enter__`` implementation
 
 As noted in the documentation of :meth:`ExitStack.push`, this
 method can be useful in cleaning up an already allocated resource if later
-steps in the :meth:`__enter__` implementation fail.
+steps in the :meth:`~object.__enter__` implementation fail.
 
 Here's an example of doing this for a context manager that accepts resource
 acquisition and release functions, along with an optional validation function,
@@ -858,7 +871,7 @@ And also as a function decorator::
 
 Note that there is one additional limitation when using context managers
 as function decorators: there's no way to access the return value of
-:meth:`__enter__`. If that value is needed, then it is still necessary to use
+:meth:`~object.__enter__`. If that value is needed, then it is still necessary to use
 an explicit ``with`` statement.
 
 .. seealso::

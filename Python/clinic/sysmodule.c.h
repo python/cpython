@@ -2,6 +2,12 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
+#endif
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
+
 PyDoc_STRVAR(sys_addaudithook__doc__,
 "addaudithook($module, /, hook)\n"
 "--\n"
@@ -18,8 +24,31 @@ static PyObject *
 sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(hook), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"hook", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "addaudithook", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "addaudithook",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     PyObject *hook;
 
@@ -253,15 +282,24 @@ sys_intern(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("intern", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     s = arg;
     return_value = sys_intern_impl(module, s);
 
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(sys__settraceallthreads__doc__,
+"_settraceallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the global debug tracing function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call. See the debugger chapter\n"
+"in the library manual.");
+
+#define SYS__SETTRACEALLTHREADS_METHODDEF    \
+    {"_settraceallthreads", (PyCFunction)sys__settraceallthreads, METH_O, sys__settraceallthreads__doc__},
 
 PyDoc_STRVAR(sys_gettrace__doc__,
 "gettrace($module, /)\n"
@@ -282,6 +320,18 @@ sys_gettrace(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return sys_gettrace_impl(module);
 }
+
+PyDoc_STRVAR(sys__setprofileallthreads__doc__,
+"_setprofileallthreads($module, arg, /)\n"
+"--\n"
+"\n"
+"Set the profiling function in all running threads belonging to the current interpreter.\n"
+"\n"
+"It will be called on each function call and return.  See the profiler chapter\n"
+"in the library manual.");
+
+#define SYS__SETPROFILEALLTHREADS_METHODDEF    \
+    {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
 
 PyDoc_STRVAR(sys_getprofile__doc__,
 "getprofile($module, /)\n"
@@ -394,7 +444,7 @@ sys_setrecursionlimit(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_limit;
 
-    new_limit = _PyLong_AsInt(arg);
+    new_limit = PyLong_AsInt(arg);
     if (new_limit == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -425,8 +475,31 @@ static PyObject *
 sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
     static const char * const _keywords[] = {"depth", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "set_coroutine_origin_tracking_depth", 0};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_coroutine_origin_tracking_depth",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
     PyObject *argsbuf[1];
     int depth;
 
@@ -434,7 +507,7 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     if (!args) {
         goto exit;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -602,7 +675,7 @@ sys_setdlopenflags(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int new_val;
 
-    new_val = _PyLong_AsInt(arg);
+    new_val = PyLong_AsInt(arg);
     if (new_val == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -657,7 +730,7 @@ sys_mdebug(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int flag;
 
-    flag = _PyLong_AsInt(arg);
+    flag = PyLong_AsInt(arg);
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -668,6 +741,82 @@ exit:
 }
 
 #endif /* defined(USE_MALLOPT) */
+
+PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
+"get_int_max_str_digits($module, /)\n"
+"--\n"
+"\n"
+"Return the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
+
+static PyObject *
+sys_get_int_max_str_digits_impl(PyObject *module);
+
+static PyObject *
+sys_get_int_max_str_digits(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_get_int_max_str_digits_impl(module);
+}
+
+PyDoc_STRVAR(sys_set_int_max_str_digits__doc__,
+"set_int_max_str_digits($module, /, maxdigits)\n"
+"--\n"
+"\n"
+"Set the maximum string digits limit for non-binary int<->str conversions.");
+
+#define SYS_SET_INT_MAX_STR_DIGITS_METHODDEF    \
+    {"set_int_max_str_digits", _PyCFunction_CAST(sys_set_int_max_str_digits), METH_FASTCALL|METH_KEYWORDS, sys_set_int_max_str_digits__doc__},
+
+static PyObject *
+sys_set_int_max_str_digits_impl(PyObject *module, int maxdigits);
+
+static PyObject *
+sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(maxdigits), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"maxdigits", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "set_int_max_str_digits",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int maxdigits;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    maxdigits = PyLong_AsInt(args[0]);
+    if (maxdigits == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = sys_set_int_max_str_digits_impl(module, maxdigits);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(sys_getrefcount__doc__,
 "getrefcount($module, object, /)\n"
@@ -732,33 +881,6 @@ exit:
 
 #endif /* defined(Py_REF_DEBUG) */
 
-PyDoc_STRVAR(sys__getquickenedcount__doc__,
-"_getquickenedcount($module, /)\n"
-"--\n"
-"\n");
-
-#define SYS__GETQUICKENEDCOUNT_METHODDEF    \
-    {"_getquickenedcount", (PyCFunction)sys__getquickenedcount, METH_NOARGS, sys__getquickenedcount__doc__},
-
-static Py_ssize_t
-sys__getquickenedcount_impl(PyObject *module);
-
-static PyObject *
-sys__getquickenedcount(PyObject *module, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
-
-    _return_value = sys__getquickenedcount_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "getallocatedblocks($module, /)\n"
 "--\n"
@@ -778,6 +900,34 @@ sys_getallocatedblocks(PyObject *module, PyObject *Py_UNUSED(ignored))
     Py_ssize_t _return_value;
 
     _return_value = sys_getallocatedblocks_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_getunicodeinternedsize__doc__,
+"getunicodeinternedsize($module, /)\n"
+"--\n"
+"\n"
+"Return the number of elements of the unicode interned dictionary");
+
+#define SYS_GETUNICODEINTERNEDSIZE_METHODDEF    \
+    {"getunicodeinternedsize", (PyCFunction)sys_getunicodeinternedsize, METH_NOARGS, sys_getunicodeinternedsize__doc__},
+
+static Py_ssize_t
+sys_getunicodeinternedsize_impl(PyObject *module);
+
+static PyObject *
+sys_getunicodeinternedsize(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    Py_ssize_t _return_value;
+
+    _return_value = sys_getunicodeinternedsize_impl(module);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -819,7 +969,7 @@ sys__getframe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    depth = _PyLong_AsInt(args[0]);
+    depth = PyLong_AsInt(args[0]);
     if (depth == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -965,6 +1115,106 @@ sys_is_finalizing(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_finalizing_impl(module);
 }
 
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_on__doc__,
+"_stats_on($module, /)\n"
+"--\n"
+"\n"
+"Turns on stats gathering (stats gathering is off by default).");
+
+#define SYS__STATS_ON_METHODDEF    \
+    {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
+
+static PyObject *
+sys__stats_on_impl(PyObject *module);
+
+static PyObject *
+sys__stats_on(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_on_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_off__doc__,
+"_stats_off($module, /)\n"
+"--\n"
+"\n"
+"Turns off stats gathering (stats gathering is off by default).");
+
+#define SYS__STATS_OFF_METHODDEF    \
+    {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
+
+static PyObject *
+sys__stats_off_impl(PyObject *module);
+
+static PyObject *
+sys__stats_off(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_off_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_clear__doc__,
+"_stats_clear($module, /)\n"
+"--\n"
+"\n"
+"Clears the stats.");
+
+#define SYS__STATS_CLEAR_METHODDEF    \
+    {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
+
+static PyObject *
+sys__stats_clear_impl(PyObject *module);
+
+static PyObject *
+sys__stats_clear(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__stats_clear_impl(module);
+}
+
+#endif /* defined(Py_STATS) */
+
+#if defined(Py_STATS)
+
+PyDoc_STRVAR(sys__stats_dump__doc__,
+"_stats_dump($module, /)\n"
+"--\n"
+"\n"
+"Dump stats to file, and clears the stats.\n"
+"\n"
+"Return False if no statistics were not dumped because stats gathering was off.");
+
+#define SYS__STATS_DUMP_METHODDEF    \
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+
+static int
+sys__stats_dump_impl(PyObject *module);
+
+static PyObject *
+sys__stats_dump(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__stats_dump_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(Py_STATS) */
+
 #if defined(ANDROID_API_LEVEL)
 
 PyDoc_STRVAR(sys_getandroidapilevel__doc__,
@@ -986,6 +1236,178 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 }
 
 #endif /* defined(ANDROID_API_LEVEL) */
+
+PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
+"activate_stack_trampoline($module, backend, /)\n"
+"--\n"
+"\n"
+"Activate stack profiler trampoline *backend*.");
+
+#define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
+
+static PyObject *
+sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
+
+static PyObject *
+sys_activate_stack_trampoline(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *backend;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("activate_stack_trampoline", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t backend_length;
+    backend = PyUnicode_AsUTF8AndSize(arg, &backend_length);
+    if (backend == NULL) {
+        goto exit;
+    }
+    if (strlen(backend) != (size_t)backend_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = sys_activate_stack_trampoline_impl(module, backend);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
+"deactivate_stack_trampoline($module, /)\n"
+"--\n"
+"\n"
+"Deactivate the current stack profiler trampoline backend.\n"
+"\n"
+"If no stack profiler is activated, this function has no effect.");
+
+#define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
+    {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
+
+static PyObject *
+sys_deactivate_stack_trampoline_impl(PyObject *module);
+
+static PyObject *
+sys_deactivate_stack_trampoline(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_deactivate_stack_trampoline_impl(module);
+}
+
+PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
+"is_stack_trampoline_active($module, /)\n"
+"--\n"
+"\n"
+"Return *True* if a stack profiler trampoline is active.");
+
+#define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
+    {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
+
+static PyObject *
+sys_is_stack_trampoline_active_impl(PyObject *module);
+
+static PyObject *
+sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_is_stack_trampoline_active_impl(module);
+}
+
+PyDoc_STRVAR(sys__getframemodulename__doc__,
+"_getframemodulename($module, /, depth=0)\n"
+"--\n"
+"\n"
+"Return the name of the module for a calling frame.\n"
+"\n"
+"The default depth returns the module containing the call to this API.\n"
+"A more typical use in a library will pass a depth of 1 to get the user\'s\n"
+"module rather than the library module.\n"
+"\n"
+"If no frame, module, or name can be found, returns None.");
+
+#define SYS__GETFRAMEMODULENAME_METHODDEF    \
+    {"_getframemodulename", _PyCFunction_CAST(sys__getframemodulename), METH_FASTCALL|METH_KEYWORDS, sys__getframemodulename__doc__},
+
+static PyObject *
+sys__getframemodulename_impl(PyObject *module, int depth);
+
+static PyObject *
+sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(depth), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"depth", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "_getframemodulename",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int depth = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    depth = PyLong_AsInt(args[0]);
+    if (depth == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = sys__getframemodulename_impl(module, depth);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
+"_get_cpu_count_config($module, /)\n"
+"--\n"
+"\n"
+"Private function for getting PyConfig.cpu_count");
+
+#define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+
+static int
+sys__get_cpu_count_config_impl(PyObject *module);
+
+static PyObject *
+sys__get_cpu_count_config(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__get_cpu_count_config_impl(module);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
 
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
@@ -1011,7 +1433,23 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define SYS_GETTOTALREFCOUNT_METHODDEF
 #endif /* !defined(SYS_GETTOTALREFCOUNT_METHODDEF) */
 
+#ifndef SYS__STATS_ON_METHODDEF
+    #define SYS__STATS_ON_METHODDEF
+#endif /* !defined(SYS__STATS_ON_METHODDEF) */
+
+#ifndef SYS__STATS_OFF_METHODDEF
+    #define SYS__STATS_OFF_METHODDEF
+#endif /* !defined(SYS__STATS_OFF_METHODDEF) */
+
+#ifndef SYS__STATS_CLEAR_METHODDEF
+    #define SYS__STATS_CLEAR_METHODDEF
+#endif /* !defined(SYS__STATS_CLEAR_METHODDEF) */
+
+#ifndef SYS__STATS_DUMP_METHODDEF
+    #define SYS__STATS_DUMP_METHODDEF
+#endif /* !defined(SYS__STATS_DUMP_METHODDEF) */
+
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=98efd34fd9b9b6ab input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f36d45c829250775 input=a9049054013a1b77]*/

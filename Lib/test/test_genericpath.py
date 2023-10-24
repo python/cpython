@@ -460,6 +460,10 @@ class CommonTest(GenericTest):
         for path in ('', '.', '/', '\\', '///foo/.//bar//'):
             self.assertIsInstance(self.pathmodule.normpath(path), str)
 
+    def test_normpath_issue106242(self):
+        for path in ('\x00', 'foo\x00bar', '\x00\x00', '\x00foo', 'foo\x00'):
+            self.assertEqual(self.pathmodule.normpath(path), path)
+
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode
         # with both ASCII and non-ASCII cwds.
@@ -484,7 +488,7 @@ class CommonTest(GenericTest):
         # invalid UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
-        and sys.platform not in ('win32', 'darwin', 'emscripten')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os_helper.TESTFN_UNDECODABLE
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII

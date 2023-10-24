@@ -255,6 +255,25 @@ class ProfileHookTestCase(TestCaseBase):
                               (1, 'return', g_ident),
                               ])
 
+    def test_unfinished_generator(self):
+        def f():
+            for i in range(2):
+                yield i
+        def g(p):
+            next(f())
+
+        f_ident = ident(f)
+        g_ident = ident(g)
+        self.check_events(g, [(1, 'call', g_ident),
+                              (2, 'call', f_ident),
+                              (2, 'return', f_ident),
+                              # once more; the generator is being garbage collected
+                              # and it will do a PY_THROW
+                              (2, 'call', f_ident),
+                              (2, 'return', f_ident),
+                              (1, 'return', g_ident),
+                              ])
+
     def test_stop_iteration(self):
         def f():
             for i in range(2):
@@ -413,6 +432,51 @@ def capture_events(callable, p=None):
 def show_events(callable):
     import pprint
     pprint.pprint(capture_events(callable))
+
+
+class TestEdgeCases(unittest.TestCase):
+
+    def setUp(self):
+        self.addCleanup(sys.setprofile, sys.getprofile())
+        sys.setprofile(None)
+
+    def test_reentrancy(self):
+        def foo(*args):
+            ...
+
+        def bar(*args):
+            ...
+
+        class A:
+            def __call__(self, *args):
+                pass
+
+            def __del__(self):
+                sys.setprofile(bar)
+
+        sys.setprofile(A())
+        sys.setprofile(foo)
+        self.assertEqual(sys.getprofile(), bar)
+
+    def test_same_object(self):
+        def foo(*args):
+            ...
+
+        sys.setprofile(foo)
+        del foo
+        sys.setprofile(sys.getprofile())
+
+    def test_profile_after_trace_opcodes(self):
+        def f():
+            ...
+
+        sys._getframe().f_trace_opcodes = True
+        prev_trace = sys.gettrace()
+        sys.settrace(lambda *args: None)
+        f()
+        sys.settrace(prev_trace)
+        sys.setprofile(lambda *args: None)
+        f()
 
 
 if __name__ == "__main__":

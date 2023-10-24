@@ -1,10 +1,7 @@
 import unittest
-import locale
-import re
 import subprocess
 import sys
 import os
-import warnings
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -22,14 +19,6 @@ except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
 tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
-
-_tk_patchlevel = None
-def get_tk_patchlevel():
-    global _tk_patchlevel
-    if _tk_patchlevel is None:
-        tcl = Tcl()
-        _tk_patchlevel = tcl.info_patchlevel()
-    return _tk_patchlevel
 
 
 class TkinterTest(unittest.TestCase):
@@ -145,7 +134,10 @@ class TclTest(unittest.TestCase):
         for i in self.get_integers():
             self.assertEqual(tcl.getint(' %d ' % i), i)
             self.assertEqual(tcl.getint(' %#o ' % i), i)
-            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')), i)
+            # Numbers starting with 0 are parsed as decimal in Tcl 9.0
+            # and as octal in older versions.
+            self.assertEqual(tcl.getint((' %#o ' % i).replace('o', '')),
+                             i if tcl_version < (9, 0) else int('%o' % i))
             self.assertEqual(tcl.getint(' %#x ' % i), i)
         self.assertEqual(tcl.getint(42), 42)
         self.assertRaises(TypeError, tcl.getint)
@@ -571,7 +563,6 @@ class TclTest(unittest.TestCase):
                 (1, '2', (3.4,)) if self.wantobjects else
                 ('1', '2', '3.4')),
         ]
-        tk_patchlevel = get_tk_patchlevel()
         if not self.wantobjects:
             expected = ('12', '\u20ac', '\xe2\x82\xac', '3.4')
         else:
@@ -580,8 +571,8 @@ class TclTest(unittest.TestCase):
             (call('dict', 'create', 12, '\u20ac', b'\xe2\x82\xac', (3.4,)),
                 expected),
         ]
-        dbg_info = ('want objects? %s, Tcl version: %s, Tk patchlevel: %s'
-                    % (self.wantobjects, tcl_version, tk_patchlevel))
+        dbg_info = ('want objects? %s, Tcl version: %s, Tcl patchlevel: %s'
+                    % (self.wantobjects, tcl_version, self.interp.info_patchlevel()))
         for arg, res in testcases:
             self.assertEqual(splitlist(arg), res,
                              'arg=%a, %s' % (arg, dbg_info))

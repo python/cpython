@@ -28,6 +28,7 @@ socket.getdefaulttimeout() -- get the default timeout value
 socket.setdefaulttimeout() -- set the default timeout value
 create_connection() -- connects to an address, with an optional timeout and
                        optional source address.
+create_server() -- create a TCP socket and bind it to a specified address.
 
  [*] not available on all platforms!
 
@@ -122,7 +123,7 @@ if sys.platform.lower().startswith("win"):
     errorTab[10014] = "A fault occurred on the network??"  # WSAEFAULT
     errorTab[10022] = "An invalid operation was attempted."
     errorTab[10024] = "Too many open files."
-    errorTab[10035] = "The socket operation would block"
+    errorTab[10035] = "The socket operation would block."
     errorTab[10036] = "A blocking operation is already in progress."
     errorTab[10037] = "Operation already in progress."
     errorTab[10038] = "Socket operation on nonsocket."
@@ -254,17 +255,18 @@ class socket(_socket.socket):
                self.type,
                self.proto)
         if not closed:
+            # getsockname and getpeername may not be available on WASI.
             try:
                 laddr = self.getsockname()
                 if laddr:
                     s += ", laddr=%s" % str(laddr)
-            except error:
+            except (error, AttributeError):
                 pass
             try:
                 raddr = self.getpeername()
                 if raddr:
                     s += ", raddr=%s" % str(raddr)
-            except error:
+            except (error, AttributeError):
                 pass
         s += '>'
         return s
@@ -700,16 +702,15 @@ class SocketIO(io.RawIOBase):
         self._checkReadable()
         if self._timeout_occurred:
             raise OSError("cannot read from timed out object")
-        while True:
-            try:
-                return self._sock.recv_into(b)
-            except timeout:
-                self._timeout_occurred = True
-                raise
-            except error as e:
-                if e.errno in _blocking_errnos:
-                    return None
-                raise
+        try:
+            return self._sock.recv_into(b)
+        except timeout:
+            self._timeout_occurred = True
+            raise
+        except error as e:
+            if e.errno in _blocking_errnos:
+                return None
+            raise
 
     def write(self, b):
         """Write the given bytes or bytearray object *b* to the socket
@@ -783,11 +784,11 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases. In case no FQDN is available and `name`
-    was given, it is returned unchanged. If `name` was empty or '0.0.0.0',
+    was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',
     hostname from gethostname() is returned.
     """
     name = name.strip()
-    if not name or name == '0.0.0.0':
+    if not name or name in ('0.0.0.0', '::'):
         name = gethostname()
     try:
         hostname, aliases, ipaddrs = gethostbyaddr(name)
@@ -908,7 +909,7 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
         # address, effectively preventing this one from accepting
         # connections. Also, it may set the process in a state where
         # it'll no longer respond to any signals or graceful kills.
-        # See: msdn2.microsoft.com/en-us/library/ms740621(VS.85).aspx
+        # See: https://learn.microsoft.com/windows/win32/winsock/using-so-reuseaddr-and-so-exclusiveaddruse
         if os.name not in ('nt', 'cygwin') and \
                 hasattr(_socket, 'SO_REUSEADDR'):
             try:

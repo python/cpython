@@ -135,7 +135,7 @@ def updatecache(filename, module_globals=None):
     try:
         with tokenize.open(fullname) as fp:
             lines = fp.readlines()
-    except OSError:
+    except (OSError, UnicodeDecodeError, SyntaxError):
         return []
     if lines and not lines[-1].endswith('\n'):
         lines[-1] += '\n'
@@ -180,3 +180,10 @@ def lazycache(filename, module_globals):
             cache[filename] = (get_lines,)
             return True
     return False
+
+def _register_code(code, string, name):
+    cache[code] = (
+            len(string),
+            None,
+            [line + '\n' for line in string.splitlines()],
+            name)

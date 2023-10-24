@@ -203,6 +203,8 @@ class CmdLineTest(unittest.TestCase):
             stderr = p.stderr if separate_stderr else p.stdout
             self.assertIn(b'Traceback ', stderr.readline())
             self.assertIn(b'File "<stdin>"', stderr.readline())
+            self.assertIn(b'1/0', stderr.readline())
+            self.assertIn(b'    ~^~', stderr.readline())
             self.assertIn(b'ZeroDivisionError', stderr.readline())
 
     def test_repl_stdout_flush(self):
@@ -549,17 +551,18 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 6)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
-            self.assertTrue(text[4].startswith('NameError'))
+            self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
         # Mac OS X denies the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
+        # WASI does not permit invalid UTF-8 names.
         if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin')):
+        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
@@ -635,9 +638,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [
-                    b'    foo"""',
-                    b'          ^',
-                    b'SyntaxError: f-string: empty expression not allowed',
+                    b'    foo = f"""{}',
+                    b'               ^',
+                    b'SyntaxError: f-string: valid expression required before \'}\'',
                 ],
             )
 
@@ -655,6 +658,42 @@ class CmdLineTest(unittest.TestCase):
                     b'SyntaxError: invalid escape sequence \'\\q\''
                 ],
             )
+
+    def test_syntaxerror_null_bytes(self):
+        script = "x = '\0' nothing to see here\n';import os;os.system('echo pwnd')\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            self.assertEqual(
+                stderr.splitlines()[-2:],
+                [   b"    x = '",
+                    b'SyntaxError: source code cannot contain null bytes'
+                ],
+            )
+
+    def test_syntaxerror_null_bytes_in_multiline_string(self):
+        scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
+        with os_helper.temp_dir() as script_dir:
+            for script in scripts:
+                script_name = _make_test_script(script_dir, 'script', script)
+                _, _, stderr = assert_python_failure(script_name)
+                self.assertEqual(
+                    stderr.splitlines()[-2:],
+                    [   b"    multilinestring",
+                        b'SyntaxError: source code cannot contain null bytes'
+                    ]
+                )
+
+    def test_syntaxerror_does_not_crash(self):
+        script = "nonlocal x\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
+            # It used to crash in https://github.com/python/cpython/issues/111132
+            self.assertTrue(text.endswith(
+                'SyntaxError: nonlocal declaration not allowed at module level\n',
+            ), text)
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
@@ -738,6 +777,23 @@ class CmdLineTest(unittest.TestCase):
         out, err = proc.communicate()
         self.assertIn(": can't open file ", err)
         self.assertNotEqual(proc.returncode, 0)
+
+    @unittest.skipUnless(os.path.exists('/dev/fd/0'), 'requires /dev/fd platform')
+    @unittest.skipIf(sys.platform.startswith("freebsd") and
+                     os.stat("/dev").st_dev == os.stat("/dev/fd").st_dev,
+                     "Requires fdescfs mounted on /dev/fd on FreeBSD")
+    def test_script_as_dev_fd(self):
+        # GH-87235: On macOS passing a non-trivial script to /dev/fd/N can cause
+        # problems because all open /dev/fd/N file descriptors share the same
+        # offset.
+        script = 'print("12345678912345678912345")'
+        with os_helper.temp_dir() as work_dir:
+            script_name = _make_test_script(work_dir, 'script.py', script)
+            with open(script_name, "r") as fp:
+                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=True, pass_fds=(0,1,2,fp.fileno()))
+                out, err = p.communicate()
+                self.assertEqual(out, b"12345678912345678912345\n")
+
 
 
 def tearDownModule():

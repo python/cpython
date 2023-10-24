@@ -1,5 +1,10 @@
 #include "Python.h"
-#include "pycore_pymath.h"        // _Py_InIntegralTypeRange()
+#include "pycore_time.h"          // _PyTime_t
+
+#include <time.h>                 // gmtime_r()
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>           // gettimeofday()
+#endif
 #ifdef MS_WINDOWS
 #  include <winsock2.h>           // struct timeval
 #endif
@@ -39,6 +44,14 @@
 #  define PY_TIME_T_MIN LONG_MIN
 #else
 #  error "unsupported time_t size"
+#endif
+
+#if PY_TIME_T_MAX + PY_TIME_T_MIN != -1
+#  error "time_t is not a two's complement integer type"
+#endif
+
+#if _PyTime_MIN + _PyTime_MAX != -1
+#  error "_PyTime_t is not a two's complement integer type"
 #endif
 
 
@@ -294,7 +307,21 @@ pytime_double_to_denominator(double d, time_t *sec, long *numerator,
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
-    if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+    /*
+       Conversion of an out-of-range value to time_t gives undefined behaviour
+       (C99 §6.3.1.4p1), so we must guard against it. However, checking that
+       `intpart` is in range is delicate: the obvious expression `intpart <=
+       PY_TIME_T_MAX` will first convert the value `PY_TIME_T_MAX` to a double,
+       potentially changing its value and leading to us failing to catch some
+       UB-inducing values. The code below works correctly under the mild
+       assumption that time_t is a two's complement integer type with no trap
+       representation, and that `PY_TIME_T_MIN` is within the representable
+       range of a C double.
+
+       Note: we want the `if` condition below to be true for NaNs; therefore,
+       resist any temptation to simplify by applying De Morgan's laws.
+    */
+    if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
         pytime_time_t_overflow();
         return -1;
     }
@@ -349,7 +376,8 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         d = pytime_round(d, round);
         (void)modf(d, &intpart);
 
-        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+        /* See comments in pytime_double_to_denominator */
+        if (!((double)PY_TIME_T_MIN <= intpart && intpart < -(double)PY_TIME_T_MIN)) {
             pytime_time_t_overflow();
             return -1;
         }
@@ -406,6 +434,14 @@ _PyTime_FromNanoseconds(_PyTime_t ns)
 }
 
 
+_PyTime_t
+_PyTime_FromMicrosecondsClamp(_PyTime_t us)
+{
+    _PyTime_t ns = _PyTime_Mul(us, US_TO_NS);
+    return pytime_from_nanoseconds(ns);
+}
+
+
 int
 _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 {
@@ -434,7 +470,7 @@ _PyTime_FromNanosecondsObject(_PyTime_t *tp, PyObject *obj)
 
 #ifdef HAVE_CLOCK_GETTIME
 static int
-pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
+pytime_fromtimespec(_PyTime_t *tp, const struct timespec *ts, int raise_exc)
 {
     _PyTime_t t, tv_nsec;
 
@@ -457,7 +493,7 @@ pytime_fromtimespec(_PyTime_t *tp, struct timespec *ts, int raise_exc)
 }
 
 int
-_PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts)
+_PyTime_FromTimespec(_PyTime_t *tp, const struct timespec *ts)
 {
     return pytime_fromtimespec(tp, ts, 1);
 }
@@ -507,8 +543,9 @@ pytime_from_double(_PyTime_t *tp, double value, _PyTime_round_t round,
     d *= (double)unit_to_ns;
     d = pytime_round(d, round);
 
-    if (!_Py_InIntegralTypeRange(_PyTime_t, d)) {
-        pytime_overflow();
+    /* See comments in pytime_double_to_denominator */
+    if (!((double)_PyTime_MIN <= d && d < -(double)_PyTime_MIN)) {
+        pytime_time_t_overflow();
         return -1;
     }
     _PyTime_t ns = (_PyTime_t)d;
@@ -596,6 +633,16 @@ _PyTime_AsNanosecondsObject(_PyTime_t t)
     static_assert(sizeof(long long) >= sizeof(_PyTime_t),
                   "_PyTime_t is larger than long long");
     return PyLong_FromLongLong((long long)ns);
+}
+
+_PyTime_t
+_PyTime_FromSecondsDouble(double seconds, _PyTime_round_t round)
+{
+    _PyTime_t tp;
+    if(pytime_from_double(&tp, seconds, round, SEC_TO_NS) < 0) {
+        return -1;
+    }
+    return tp;
 }
 
 
@@ -902,7 +949,7 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
         info->monotonic = 0;
         info->adjustable = 1;
         if (clock_getres(CLOCK_REALTIME, &res) == 0) {
-            info->resolution = res.tv_sec + res.tv_nsec * 1e-9;
+            info->resolution = (double)res.tv_sec + (double)res.tv_nsec * 1e-9;
         }
         else {
             info->resolution = 1e-9;
@@ -938,7 +985,7 @@ py_get_system_clock(_PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     }
 
 #if defined(HAVE_CLOCK_GETTIME_RUNTIME) && defined(HAVE_CLOCK_GETTIME)
-    } /* end of availibity block */
+    } /* end of availability block */
 #endif
 
 #endif   /* !HAVE_CLOCK_GETTIME */

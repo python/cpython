@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_hamt.h"   /* PyHamtObject */
+#include "pycore_hamt.h"          // PyHamtObject
 
 
 extern PyTypeObject _PyContextTokenMissing_Type;
@@ -17,6 +17,10 @@ void _PyContext_Fini(PyInterpreterState *);
 
 
 /* other API */
+
+typedef struct {
+    PyObject_HEAD
+} _PyContextTokenMissing;
 
 #ifndef WITH_FREELISTS
 // without freelists
@@ -62,6 +66,11 @@ struct _pycontexttokenobject {
     PyObject *tok_oldval;
     int tok_used;
 };
+
+
+// _testinternalcapi.hamt() used by tests.
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyContext_NewHamtForTests(void);
 
 
 #endif /* !Py_INTERNAL_CONTEXT_H */

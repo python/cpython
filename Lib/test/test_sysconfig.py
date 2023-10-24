@@ -5,18 +5,22 @@ import subprocess
 import shutil
 from copy import copy
 
-from test.support import (captured_stdout, PythonSymlink, requires_subprocess)
+from test.support import (
+    captured_stdout, PythonSymlink, requires_subprocess, is_wasi
+)
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
-from test.support.warnings_helper import check_warnings
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes, _main)
+                       _expand_vars, _get_preferred_schemes)
+from sysconfig.__main__ import _main, _parse_makefile
+import _imp
 import _osx_support
+import _sysconfig
 
 
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
@@ -328,6 +332,7 @@ class TestSysConfig(unittest.TestCase):
 
         # XXX more platforms to tests here
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_get_config_h_filename(self):
         config_h = sysconfig.get_config_h_filename()
         self.assertTrue(os.path.isfile(config_h), config_h)
@@ -367,7 +372,7 @@ class TestSysConfig(unittest.TestCase):
                 base = base.replace(sys.base_prefix, sys.prefix)
             if HAS_USER_BASE:
                 user_path = get_path(name, 'posix_user')
-                expected = global_path.replace(base, user, 1)
+                expected = os.path.normpath(global_path.replace(base, user, 1))
                 # bpo-44860: platlib of posix_user doesn't use sys.platlibdir,
                 # whereas posix_prefix does.
                 if name == 'platlib':
@@ -391,6 +396,24 @@ class TestSysConfig(unittest.TestCase):
         ldshared = sysconfig.get_config_var('LDSHARED')
 
         self.assertIn(ldflags, ldshared)
+
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
+    def test_soabi(self):
+        soabi = sysconfig.get_config_var('SOABI')
+        self.assertIn(soabi, _imp.extension_suffixes()[0])
+
+    def test_library(self):
+        library = sysconfig.get_config_var('LIBRARY')
+        ldlibrary = sysconfig.get_config_var('LDLIBRARY')
+        major, minor = sys.version_info[:2]
+        if sys.platform == 'win32':
+            self.assertTrue(library.startswith(f'python{major}{minor}'))
+            self.assertTrue(library.endswith('.dll'))
+            self.assertEqual(library, ldlibrary)
+        else:
+            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
+            self.assertTrue(library.endswith('.a'))
+            self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
@@ -436,6 +459,7 @@ class TestSysConfig(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(my_platform, test_platform)
 
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_srcdir(self):
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
@@ -448,7 +472,11 @@ class TestSysConfig(unittest.TestCase):
             # should be a full source checkout.
             Python_h = os.path.join(srcdir, 'Include', 'Python.h')
             self.assertTrue(os.path.exists(Python_h), Python_h)
-            self.assertTrue(sysconfig._is_python_source_dir(srcdir))
+            # <srcdir>/PC/pyconfig.h always exists even if unused on POSIX.
+            pyconfig_h = os.path.join(srcdir, 'PC', 'pyconfig.h')
+            self.assertTrue(os.path.exists(pyconfig_h), pyconfig_h)
+            pyconfig_h_in = os.path.join(srcdir, 'pyconfig.h.in')
+            self.assertTrue(os.path.exists(pyconfig_h_in), pyconfig_h_in)
         elif os.name == 'posix':
             makefile_dir = os.path.dirname(sysconfig.get_makefile_filename())
             # Issue #19340: srcdir has been realpath'ed already
@@ -465,10 +493,8 @@ class TestSysConfig(unittest.TestCase):
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
                      'EXT_SUFFIX required for this test')
+    @unittest.skipIf(not _imp.extension_suffixes(), "stub loader has no suffixes")
     def test_EXT_SUFFIX_in_vars(self):
-        import _imp
-        if not _imp.extension_suffixes():
-            self.skipTest("stub loader has no suffixes")
         vars = sysconfig.get_config_vars()
         self.assertEqual(vars['EXT_SUFFIX'], _imp.extension_suffixes()[0])
 
@@ -499,6 +525,7 @@ class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
                      'Test is not Windows compatible')
+    @unittest.skipIf(is_wasi, "Incompatible with WASI mapdir and OOT builds")
     def test_get_makefile_filename(self):
         makefile = sysconfig.get_makefile_filename()
         self.assertTrue(os.path.isfile(makefile), makefile)
@@ -513,7 +540,7 @@ class MakefileTests(unittest.TestCase):
             print("var5=dollar$$5", file=makefile)
             print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
                   "-x86_64-linux-gnu", file=makefile)
-        vars = sysconfig._parse_makefile(TESTFN)
+        vars = _parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
             'VAR2': 'b42',

@@ -14,6 +14,7 @@
 .. testsetup:: *
 
    from statistics import *
+   import math
    __name__ = '<doctest>'
 
 --------------
@@ -22,7 +23,7 @@ This module provides functions for calculating mathematical statistics of
 numeric (:class:`~numbers.Real`-valued) data.
 
 The module is not intended to be a competitor to third-party libraries such
-as `NumPy <https://numpy.org>`_, `SciPy <https://www.scipy.org/>`_, or
+as `NumPy <https://numpy.org>`_, `SciPy <https://scipy.org/>`_, or
 proprietary full-featured statistics packages aimed at professional
 statisticians such as Minitab, SAS and Matlab. It is aimed at the level of
 graphing and scientific calculators.
@@ -34,6 +35,35 @@ currently unsupported.  Collections with a mix of types are also undefined
 and implementation-dependent.  If your input data consists of mixed types,
 you may be able to use :func:`map` to ensure a consistent result, for
 example: ``map(float, input_data)``.
+
+Some datasets use ``NaN`` (not a number) values to represent missing data.
+Since NaNs have unusual comparison semantics, they cause surprising or
+undefined behaviors in the statistics functions that sort data or that count
+occurrences.  The functions affected are ``median()``, ``median_low()``,
+``median_high()``, ``median_grouped()``, ``mode()``, ``multimode()``, and
+``quantiles()``.  The ``NaN`` values should be stripped before calling these
+functions::
+
+    >>> from statistics import median
+    >>> from math import isnan
+    >>> from itertools import filterfalse
+
+    >>> data = [20.7, float('NaN'),19.2, 18.3, float('NaN'), 14.4]
+    >>> sorted(data)  # This has surprising behavior
+    [20.7, nan, 14.4, 18.3, 19.2, nan]
+    >>> median(data)  # This result is unexpected
+    16.35
+
+    >>> sum(map(isnan, data))    # Number of missing values
+    2
+    >>> clean = list(filterfalse(isnan, data))  # Strip NaN values
+    >>> clean
+    [20.7, 19.2, 18.3, 14.4]
+    >>> sorted(clean)  # Sorting now works as expected
+    [14.4, 18.3, 19.2, 20.7]
+    >>> median(clean)       # This result is now well defined
+    18.75
+
 
 Averages and measures of central location
 -----------------------------------------
@@ -75,7 +105,7 @@ These functions calculate statistics regarding relations between two inputs.
 
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
-:func:`correlation`        Pearson's correlation coefficient for two variables.
+:func:`correlation`        Pearson and Spearman's correlation coefficients.
 :func:`linear_regression`  Slope and intercept for simple linear regression.
 =========================  =====================================================
 
@@ -555,7 +585,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    The *data* can be any iterable containing sample data.  For meaningful
    results, the number of data points in *data* should be larger than *n*.
-   Raises :exc:`StatisticsError` if there are not at least two data points.
+   Raises :exc:`StatisticsError` if there is not at least one data point.
 
    The cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
@@ -595,6 +625,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.13
+      No longer raises an exception for an input with only a single data point.
+      This allows quantile estimates to be built up one sample point
+      at a time becoming gradually more refined with each new data point.
+
 .. function:: covariance(x, y, /)
 
    Return the sample covariance of two inputs *x* and *y*. Covariance
@@ -619,30 +654,56 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    .. versionadded:: 3.10
 
-.. function:: correlation(x, y, /)
+.. function:: correlation(x, y, /, *, method='linear')
 
    Return the `Pearson's correlation coefficient
    <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
    for two inputs. Pearson's correlation coefficient *r* takes values
-   between -1 and +1. It measures the strength and direction of the linear
-   relationship, where +1 means very strong, positive linear relationship,
-   -1 very strong, negative linear relationship, and 0 no linear relationship.
+   between -1 and +1. It measures the strength and direction of a linear
+   relationship.
+
+   If *method* is "ranked", computes `Spearman's rank correlation coefficient
+   <https://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient>`_
+   for two inputs. The data is replaced by ranks.  Ties are averaged so that
+   equal values receive the same rank.  The resulting coefficient measures the
+   strength of a monotonic relationship.
+
+   Spearman's correlation coefficient is appropriate for ordinal data or for
+   continuous data that doesn't meet the linear proportion requirement for
+   Pearson's correlation coefficient.
 
    Both inputs must be of the same length (no less than two), and need
    not to be constant, otherwise :exc:`StatisticsError` is raised.
 
-   Examples:
+   Example with `Kepler's laws of planetary motion
+   <https://en.wikipedia.org/wiki/Kepler's_laws_of_planetary_motion>`_:
 
    .. doctest::
 
-      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-      >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-      >>> correlation(x, x)
+      >>> # Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, and  Neptune
+      >>> orbital_period = [88, 225, 365, 687, 4331, 10_756, 30_687, 60_190]    # days
+      >>> dist_from_sun = [58, 108, 150, 228, 778, 1_400, 2_900, 4_500] # million km
+
+      >>> # Show that a perfect monotonic relationship exists
+      >>> correlation(orbital_period, dist_from_sun, method='ranked')
       1.0
-      >>> correlation(x, y)
-      -1.0
+
+      >>> # Observe that a linear relationship is imperfect
+      >>> round(correlation(orbital_period, dist_from_sun), 4)
+      0.9882
+
+      >>> # Demonstrate Kepler's third law: There is a linear correlation
+      >>> # between the square of the orbital period and the cube of the
+      >>> # distance from the sun.
+      >>> period_squared = [p * p for p in orbital_period]
+      >>> dist_cubed = [d * d * d for d in dist_from_sun]
+      >>> round(correlation(period_squared, dist_cubed), 4)
+      1.0
 
    .. versionadded:: 3.10
+
+   .. versionchanged:: 3.12
+      Added support for Spearman's rank correlation coefficient.
 
 .. function:: linear_regression(x, y, /, *, proportional=False)
 
@@ -685,6 +746,24 @@ However, for reading convenience, most of the examples show sorted sequences.
    function simplifies to:
 
       *y = slope \* x + noise*
+
+   Continuing the example from :func:`correlation`, we look to see
+   how well a model based on major planets can predict the orbital
+   distances for dwarf planets:
+
+   .. doctest::
+
+      >>> model = linear_regression(period_squared, dist_cubed, proportional=True)
+      >>> slope = model.slope
+
+      >>> # Dwarf planets:   Pluto,  Eris,    Makemake, Haumea, Ceres
+      >>> orbital_periods = [90_560, 204_199, 111_845, 103_410, 1_680]  # days
+      >>> predicted_dist = [math.cbrt(slope * (p * p)) for p in orbital_periods]
+      >>> list(map(round, predicted_dist))
+      [5912, 10166, 6806, 6459, 414]
+
+      >>> [5_906, 10_152, 6_796, 6_450, 414]  # actual distance in million km
+      [5906, 10152, 6796, 6450, 414]
 
    .. versionadded:: 3.10
 
@@ -773,6 +852,11 @@ of applications in statistics.
        number generator.  This is useful for creating reproducible results,
        even in a multi-threading context.
 
+       .. versionchanged:: 3.13
+
+       Switched to a faster algorithm.  To reproduce samples from previous
+       versions, use :func:`random.seed` and :func:`random.gauss`.
+
     .. method:: NormalDist.pdf(x)
 
        Using a `probability density function (pdf)
@@ -784,7 +868,7 @@ of applications in statistics.
        The relative likelihood is computed as the probability of a sample
        occurring in a narrow range divided by the width of the range (hence
        the word "density").  Since the likelihood is relative to other points,
-       its value can be greater than `1.0`.
+       its value can be greater than ``1.0``.
 
     .. method:: NormalDist.cdf(x)
 
@@ -798,7 +882,7 @@ of applications in statistics.
        Compute the inverse cumulative distribution function, also known as the
        `quantile function <https://en.wikipedia.org/wiki/Quantile_function>`_
        or the `percent-point
-       <https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
+       <https://web.archive.org/web/20190203145224/https://www.statisticshowto.datasciencecentral.com/inverse-distribution-function/>`_
        function.  Mathematically, it is written ``x : P(X <= x) = p``.
 
        Finds the value *x* of the random variable *X* such that the
@@ -867,6 +951,10 @@ of applications in statistics.
 :class:`NormalDist` Examples and Recipes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Classic probability problems
+****************************
+
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
@@ -892,6 +980,10 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
     >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
+
+Monte Carlo inputs for simulations
+**********************************
+
 To estimate the distribution for a model than isn't easy to solve
 analytically, :class:`NormalDist` can generate input samples for a `Monte
 Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
@@ -908,8 +1000,11 @@ Carlo simulation <https://en.wikipedia.org/wiki/Monte_Carlo_method>`_:
     >>> quantiles(map(model, X, Y, Z))       # doctest: +SKIP
     [1.4591308524824727, 1.8035946855390597, 2.175091447274739]
 
+Approximating binomial distributions
+************************************
+
 Normal distributions can be used to approximate `Binomial
-distributions <http://mathworld.wolfram.com/BinomialDistribution.html>`_
+distributions <https://mathworld.wolfram.com/BinomialDistribution.html>`_
 when the sample size is large and when the probability of a successful
 trial is near 50%.
 
@@ -941,13 +1036,18 @@ probability that the Python room will stay within its capacity limits?
     >>> seed(8675309)
     >>> def trial():
     ...     return choices(('Python', 'Ruby'), (p, q), k=n).count('Python')
+    ...
     >>> mean(trial() <= k for i in range(10_000))
     0.8398
+
+
+Naive bayesian classifier
+*************************
 
 Normal distributions commonly arise in machine learning problems.
 
 Wikipedia has a `nice example of a Naive Bayesian Classifier
-<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Sex_classification>`_.
+<https://en.wikipedia.org/wiki/Naive_Bayes_classifier#Person_classification>`_.
 The challenge is to predict a person's gender from measurements of normally
 distributed features including height, weight, and foot size.
 
@@ -997,6 +1097,48 @@ The final prediction goes to the largest posterior. This is known as the
   >>> 'male' if posterior_male > posterior_female else 'female'
   'female'
 
+
+Kernel density estimation
+*************************
+
+It is possible to estimate a continuous probability density function
+from a fixed number of discrete samples.
+
+The basic idea is to smooth the data using `a kernel function such as a
+normal distribution, triangular distribution, or uniform distribution
+<https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use>`_.
+The degree of smoothing is controlled by a single
+parameter, ``h``, representing the variance of the kernel function.
+
+.. testcode::
+
+   import math
+
+   def kde_normal(sample, h):
+       "Create a continuous probability density function from a sample."
+       # Smooth the sample with a normal distribution of variance h.
+       kernel_h = NormalDist(0.0, math.sqrt(h)).pdf
+       n = len(sample)
+       def pdf(x):
+           return sum(kernel_h(x - x_i) for x_i in sample) / n
+       return pdf
+
+`Wikipedia has an example
+<https://en.wikipedia.org/wiki/Kernel_density_estimation#Example>`_
+where we can use the ``kde_normal()`` recipe to generate and plot
+a probability density function estimated from a small sample:
+
+.. doctest::
+
+   >>> sample = [-2.1, -1.3, -0.4, 1.9, 5.1, 6.2]
+   >>> f_hat = kde_normal(sample, h=2.25)
+   >>> xarr = [i/100 for i in range(-750, 1100)]
+   >>> yarr = [f_hat(x) for x in xarr]
+
+The points in ``xarr`` and ``yarr`` can be used to make a PDF plot:
+
+.. image:: kde_example.png
+   :alt: Scatter plot of the estimated probability density function.
 
 ..
    # This modelines must appear within the last ten lines of the file.

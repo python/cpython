@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(readline_parse_and_bind__doc__,
 "parse_and_bind($module, string, /)\n"
 "--\n"
@@ -140,7 +142,7 @@ readline_append_history_file(PyObject *module, PyObject *const *args, Py_ssize_t
     if (!_PyArg_CheckPositional("append_history_file", nargs, 1, 2)) {
         goto exit;
     }
-    nelements = _PyLong_AsInt(args[0]);
+    nelements = PyLong_AsInt(args[0]);
     if (nelements == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -177,7 +179,7 @@ readline_set_history_length(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int length;
 
-    length = _PyLong_AsInt(arg);
+    length = PyLong_AsInt(arg);
     if (length == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -398,7 +400,7 @@ readline_remove_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int entry_number;
 
-    entry_number = _PyLong_AsInt(arg);
+    entry_number = PyLong_AsInt(arg);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -433,15 +435,12 @@ readline_replace_history_item(PyObject *module, PyObject *const *args, Py_ssize_
     if (!_PyArg_CheckPositional("replace_history_item", nargs, 2, 2)) {
         goto exit;
     }
-    entry_number = _PyLong_AsInt(args[0]);
+    entry_number = PyLong_AsInt(args[0]);
     if (entry_number == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (!PyUnicode_Check(args[1])) {
         _PyArg_BadArgument("replace_history_item", "argument 2", "str", args[1]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[1]) == -1) {
         goto exit;
     }
     line = args[1];
@@ -579,7 +578,7 @@ readline_get_history_item(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int idx;
 
-    idx = _PyLong_AsInt(arg);
+    idx = PyLong_AsInt(arg);
     if (idx == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -685,4 +684,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=1fd4c04c2e7ba475 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=358ab465285c7949 input=a9049054013a1b77]*/

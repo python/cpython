@@ -106,7 +106,7 @@
  * if this code is included and compiled as C++; related GCC warning is:
  * warning: use of C++11 long long integer constant [-Wlong-long]
  */
-#define _SIP_ULL(high, low) (((uint64_t)high << 32) | low)
+#define _SIP_ULL(high, low) ((((uint64_t)high) << 32) | (low))
 
 #define SIP_ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b))))
 

@@ -38,7 +38,7 @@ details that are unchanged.
 
 .. seealso::
 
-   * `TkDocs <http://tkdocs.com/>`_
+   * `TkDocs <https://tkdocs.com/>`_
       Extensive tutorial on creating user interfaces with Tkinter.  Explains key concepts,
       and illustrates recommended approaches using the modern API.
 
@@ -61,7 +61,7 @@ details that are unchanged.
    * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
       By Alan Moore. (ISBN 978-1788835886)
 
-   * `Programming Python <http://learning-python.com/about-pp4e.html>`_
+   * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
 
    * `Tcl and the Tk Toolkit (2nd edition)  <https://www.amazon.com/exec/obidos/ASIN/032133633X>`_
@@ -90,7 +90,7 @@ Tcl
    (see `Threading model`_ for details).
 
 Tk
-   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   Tk is a `Tcl package <https://wiki.tcl-lang.org/37432>`_ implemented in C
    that adds custom commands to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
@@ -163,7 +163,7 @@ the modern themed widget set and API::
    interpreter and calls :func:`exec` on the contents of
    :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
    profile files is the :envvar:`HOME` environment variable or, if that
-   isn't defined, then :attr:`os.curdir`.
+   isn't defined, then :data:`os.curdir`.
 
    .. attribute:: tk
 
@@ -251,10 +251,6 @@ Additional modules:
 :mod:`tkinter.dnd`
    (experimental) Drag-and-drop support for :mod:`tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
-
-:mod:`tkinter.tix`
-   (deprecated) An older third-party Tcl/Tk package that adds several new
-   widgets. Better alternatives for most can be found in :mod:`tkinter.ttk`.
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -352,7 +348,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find
@@ -533,24 +529,24 @@ interpreter will fail.
 
 A number of special cases exist:
 
-  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-    :mod:`tkinter` calls the library from the originating Python thread, even
-    if this is different than the thread that created the Tcl interpreter. A global
-    lock ensures only one call occurs at a time.
+* Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+  :mod:`tkinter` calls the library from the originating Python thread, even
+  if this is different than the thread that created the Tcl interpreter. A global
+  lock ensures only one call occurs at a time.
 
-  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with its own interpreter), all interpreters that are part of the same
-    thread share a common event queue, which gets ugly fast. In practice, don't create
-    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+  object (with its own interpreter), all interpreters that are part of the same
+  thread share a common event queue, which gets ugly fast. In practice, don't create
+  more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
 
-  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
-    reentering the event loop. It is even possible to run multiple nested event loops
-    or abandon the event loop entirely. If you're doing anything tricky when it comes
-    to events or threads, be aware of these possibilities.
+* Blocking event handlers are not the only way to prevent the Tcl interpreter from
+  reentering the event loop. It is even possible to run multiple nested event loops
+  or abandon the event loop entirely. If you're doing anything tricky when it comes
+  to events or threads, be aware of these possibilities.
 
-  * There are a few select :mod:`tkinter` functions that presently work only when
-    called from the thread that created the Tcl interpreter.
+* There are a few select :mod:`tkinter` functions that presently work only when
+  called from the thread that created the Tcl interpreter.
 
 
 Handy Reference
@@ -877,8 +873,9 @@ of the bind method is::
 where:
 
 sequence
-   is a string that denotes the target kind of event.  (See the bind man page and
-   page 201 of John Ousterhout's book for details).
+   is a string that denotes the target kind of event.  (See the
+   :manpage:`bind(3tk)` man page, and page 201 of John Ousterhout's book,
+   :title-reference:`Tcl and the Tk Toolkit (2nd edition)`, for details).
 
 func
    is a Python function, taking one argument, to be invoked when the event occurs.
@@ -987,7 +984,7 @@ wherever the image was used.
 
 .. seealso::
 
-    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:
