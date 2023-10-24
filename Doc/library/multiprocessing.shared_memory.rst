@@ -71,7 +71,7 @@ copying of data.
    Python processes created from a common ancestor using :mod:`multiprocessing`
    facilities share a single resource tracker process, and the lifetime of
    shared memory segments is handled automatically among these processes.
-   Python processes created in any other way will receive their own own
+   Python processes created in any other way will receive their own
    resource tracker when accessing shared memory with *track* enabled.
    This will cause the shared memory to be deleted by the resource tracker
    of the first process that terminates.
