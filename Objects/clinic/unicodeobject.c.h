@@ -1078,7 +1078,7 @@ PyDoc_STRVAR(unicode_rsplit__doc__,
 "    character (including \\n \\r \\t \\f and spaces) and will discard\n"
 "    empty strings from the result.\n"
 "  maxsplit\n"
-"    Maximum number of splits (starting from the left).\n"
+"    Maximum number of splits (starting from the right).\n"
 "    -1 (the default value) means no limit.\n"
 "\n"
 "Splitting starts at the end of the string and works to the front.");
