@@ -409,6 +409,7 @@ PYTHON_OBJS=	\
 		Python/codecs.o \
 		Python/compile.o \
 		Python/context.o \
+		Python/crossinterp.o \
 		Python/dynamic_annotations.o \
 		Python/errors.o \
 		Python/executor.o \
@@ -428,7 +429,6 @@ PYTHON_OBJS=	\
 		Python/importdl.o \
 		Python/initconfig.o \
 		Python/instrumentation.o \
-		Python/crossinterp.o \
 		Python/intrinsics.o \
 		Python/legacy_tracing.o \
 		Python/lock.o \
@@ -1665,6 +1665,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/crossinterp.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dynamic_annotations.h \
@@ -1676,7 +1677,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/frameobject.h \
 		$(srcdir)/Include/import.h \
 		$(srcdir)/Include/interpreteridobject.h \
-		$(srcdir)/Include/crossinterp.h \
 		$(srcdir)/Include/intrcheck.h \
 		$(srcdir)/Include/iterobject.h \
 		$(srcdir)/Include/listobject.h \
@@ -1737,6 +1737,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/compile.h \
 		$(srcdir)/Include/cpython/complexobject.h \
 		$(srcdir)/Include/cpython/context.h \
+		$(srcdir)/Include/cpython/crossinterp.h \
 		$(srcdir)/Include/cpython/descrobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
@@ -1748,7 +1749,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
-		$(srcdir)/Include/cpython/crossinterp.h \
 		$(srcdir)/Include/cpython/listobject.h \
 		$(srcdir)/Include/cpython/longintrepr.h \
 		$(srcdir)/Include/cpython/longobject.h \
@@ -1803,6 +1803,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_complexobject.h \
 		$(srcdir)/Include/internal/pycore_condvar.h \
 		$(srcdir)/Include/internal/pycore_context.h \
+		$(srcdir)/Include/internal/pycore_crossinterp.h \
 		$(srcdir)/Include/internal/pycore_dict.h \
 		$(srcdir)/Include/internal/pycore_dict_state.h \
 		$(srcdir)/Include/internal/pycore_descrobject.h \

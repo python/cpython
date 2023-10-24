@@ -103,6 +103,9 @@
     <ClCompile Include="..\Python\context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Objects\descrobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -218,9 +221,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instrumentation.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\crossinterp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">

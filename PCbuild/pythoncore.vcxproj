@@ -142,6 +142,7 @@
     <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
+    <ClInclude Include="..\Include\cpython\crossinterp.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
@@ -152,7 +153,6 @@
     <ClInclude Include="..\Include\cpython\genobject.h" />
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
-    <ClInclude Include="..\Include\cpython\crossinterp.h" />
     <ClInclude Include="..\Include\cpython\interpreteridobject.h" />
     <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\longintrepr.h" />
@@ -187,6 +187,7 @@
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\cpython\warnings.h" />
     <ClInclude Include="..\Include\cpython\weakrefobject.h" />
+    <ClInclude Include="..\Include\crossinterp.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
@@ -217,6 +218,7 @@
     <ClInclude Include="..\Include\internal\pycore_complexobject.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
@@ -293,7 +295,6 @@
     <ClInclude Include="..\Include\internal\pycore_uops.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
     <ClInclude Include="..\Include\internal\pycore_weakref.h" />
-    <ClInclude Include="..\Include\crossinterp.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
@@ -563,6 +564,7 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />
@@ -585,7 +587,6 @@
     <ClCompile Include="..\Python\import.c" />
     <ClCompile Include="..\Python\importdl.c" />
     <ClCompile Include="..\Python\initconfig.c" />
-    <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\intrinsics.c" />
     <ClCompile Include="..\Python\instrumentation.c" />
     <ClCompile Include="..\Python\legacy_tracing.c" />

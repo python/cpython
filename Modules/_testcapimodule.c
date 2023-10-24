@@ -1452,7 +1452,7 @@ _xid_capsule_destructor(PyObject *capsule)
             (_PyCrossInterpreterData *)PyCapsule_GetPointer(capsule, NULL);
     if (data != NULL) {
         assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
+        _PyCrossInterpreterData_Free(data);
     }
 }
 
@@ -1464,19 +1464,18 @@ get_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
+    _PyCrossInterpreterData *data = _PyCrossInterpreterData_New();
     if (data == NULL) {
-        PyErr_NoMemory();
         return NULL;
     }
     if (_PyObject_GetCrossInterpreterData(obj, data) != 0) {
-        PyMem_Free(data);
+        _PyCrossInterpreterData_Free(data);
         return NULL;
     }
     PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
         assert(_PyCrossInterpreterData_Release(data) == 0);
-        PyMem_Free(data);
+        _PyCrossInterpreterData_Free(data);
     }
     return capsule;
 }

@@ -1,8 +1,9 @@
 
-/* API for managing interpreters */
+/* API for managing interactions between isolated interpreters */
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_simple_func
+#include "pycore_crossinterp.h"   // struct _xid
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
@@ -39,6 +40,25 @@ _xidata_clear(_PyCrossInterpreterData *data)
         data->data = NULL;
     }
     Py_CLEAR(data->obj);
+}
+
+_PyCrossInterpreterData *
+_PyCrossInterpreterData_New(void)
+{
+    _PyCrossInterpreterData *xid = PyMem_RawMalloc(
+                                            sizeof(_PyCrossInterpreterData));
+    if (xid == NULL) {
+        PyErr_NoMemory();
+    }
+    return xid;
+}
+
+void
+_PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyCrossInterpreterData_Clear(interp, xid);
+    PyMem_RawFree(xid);
 }
 
 void
@@ -88,7 +108,9 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
 {
     assert(data != NULL);
     // This must be called in the owning interpreter.
-    assert(interp == NULL || data->interpid == interp->id);
+    assert(interp == NULL
+           || data->interpid == -1
+           || data->interpid == interp->id);
     _xidata_clear(data);
 }
 

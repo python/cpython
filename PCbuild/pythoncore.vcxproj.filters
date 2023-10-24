@@ -72,6 +72,9 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\crossinterp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -330,9 +333,6 @@
     <ClInclude Include="..\Include\pyhash.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\crossinterp.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\interpreteridobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -376,6 +376,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\context.h">
+      <Filter>Include\cpython</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\crossinterp.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\descrobject.h">
@@ -492,9 +495,6 @@
     <ClInclude Include="..\Include\cpython\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cpython\crossinterp.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\cpython\interpreteridobject.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
@@ -583,6 +583,9 @@
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_context.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_crossinterp.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_descrobject.h">
@@ -1286,6 +1289,9 @@
     <ClCompile Include="..\Python\compile.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\crossinterp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\dynamic_annotations.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -1350,9 +1356,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\instrumentation.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Python\crossinterp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\legacy_tracing.c">
