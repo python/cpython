@@ -210,6 +210,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
 }
 
 #else
+// TODO: implement Py_DECREF specializations for Py_NOGIL build
 static inline void
 _Py_DECREF_SPECIALIZED(PyObject *op, const destructor destruct)
 {

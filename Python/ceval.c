@@ -52,6 +52,7 @@
 // the limit of PGO, and that limit cannot be configured.
 // Define them as macros to make sure that they are always inlined by the
 // preprocessor.
+// TODO: implement Py_DECREF macro for Py_NOGIL
 
 #undef Py_DECREF
 #define Py_DECREF(arg) \
