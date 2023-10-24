@@ -4443,24 +4443,28 @@ class _TestSharedMemory(BaseTestCase):
     @unittest.skipIf(os.name != "posix", "resource_tracker is posix only")
     def test_shared_memory_untracking(self):
         # gh-82300: When a separate Python process accesses shared memory
-        # with track=False, it must not register with the resource tracker.
+        # with track=False, it must not cause the memory to be deleted
+        # when terminating.
         cmd = '''if 1:
             import sys
-            from unittest.mock import Mock
-            from multiprocessing import resource_tracker
             from multiprocessing.shared_memory import SharedMemory
-            resource_tracker.register = Mock(side_effect=AssertionError)
             mem = SharedMemory(create=False, name=sys.argv[1], track=False)
             mem.close()
         '''
         mem = shared_memory.SharedMemory(create=True, size=10)
+        rc, out, err = script_helper.assert_python_ok("-c", cmd, mem.name)
+        # The resource tracker shares pipes with the subprocess, and so
+        # err existing means that the tracker process has terminated now.
         try:
-            *_, err = test.support.script_helper.assert_python_ok("-c", cmd,
-                                                                  mem.name)
-            self.assertEqual(err, b'')
+            self.assertEqual(rc, 0)
+            mem2 = shared_memory.SharedMemory(create=False, name=mem.name)
+            mem2.close()
         finally:
             mem.close()
-            mem.unlink()
+            try:
+                mem.unlink()
+            except OSError:
+                pass
 
 #
 # Test to verify that `Finalize` works.
