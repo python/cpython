@@ -1,0 +1,1 @@
+Update Windows builds to zlib v1.3. Zlib v1.2.1.3 has CVE-2023-45853.

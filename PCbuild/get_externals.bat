@@ -58,7 +58,7 @@ set libraries=%libraries%                                       sqlite-3.43.1.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.13.0
 if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.13.0
 set libraries=%libraries%                                       xz-5.2.5
-set libraries=%libraries%                                       zlib-1.2.13
+set libraries=%libraries%                                       zlib-1.3
 
 for %%e in (%libraries%) do (
     if exist "%EXTERNALS_DIR%\%%e" (
