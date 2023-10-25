@@ -241,7 +241,7 @@ Events can be controlled globally by modifying the set of events being monitored
 
    Returns the ``int`` representing all the active events.
 
-.. function:: set_events(tool_id: int, event_set: int, /)
+.. function:: set_events(tool_id: int, event_set: int, /) -> None
 
    Activates all events which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
@@ -257,7 +257,7 @@ Events can also be controlled on a per code object basis.
 
    Returns all the local events for *code*
 
-.. function:: set_local_events(tool_id: int, code: CodeType, event_set: int, /)
+.. function:: set_local_events(tool_id: int, code: CodeType, event_set: int, /) -> None
 
    Activates all the local events for *code* which are set in *event_set*.
    Raises a :exc:`ValueError` if *tool_id* is not in use.
@@ -284,7 +284,7 @@ performance monitoring. For example, a program can be run under a
 debugger with no overhead if the debugger disables all monitoring
 except for a few breakpoints.
 
-.. function:: restart_events()
+.. function:: restart_events() -> None
 
    Enable all the events that were disabled by :data:`sys.monitoring.DISABLE`
    for all tools.
