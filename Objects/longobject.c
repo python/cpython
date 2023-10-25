@@ -3372,13 +3372,12 @@ x_add(PyLongObject *a, PyLongObject *b)
        we allocate exactly the right number of digits, but in the (relatively
        rare) case where the sum of the topmost digits is exactly PyLong_MASK,
        we'll sometimes end up overallocating by a single digit. */
-    digit top_sum = a->long_value.ob_digit[size_a-1]
-        + (size_b == size_a ? b->long_value.ob_digit[size_b-1] : (digit)0);
+    digit top_sum = a->long_value.ob_digit[size_a - 1]
+        + (size_b == size_a ? b->long_value.ob_digit[size_b - 1] : (digit)0);
     int extra_digit = top_sum >= PyLong_MASK;
-    z = _PyLong_New(size_a+extra_digit);
+    z = _PyLong_New(size_a + extra_digit);
     if (z == NULL)
         return NULL;
-
     for (i = 0; i < size_b; ++i) {
         carry += a->long_value.ob_digit[i] + b->long_value.ob_digit[i];
         z->long_value.ob_digit[i] = carry & PyLong_MASK;
