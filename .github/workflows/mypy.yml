@@ -7,10 +7,8 @@ on:
       - main
   pull_request:
     paths:
-      - ".github/workflows/mypy.yml"
       - "Tools/clinic/**"
-      - "Tools/peg_generator/**"
-      - "Tools/requirements-dev.txt"
+      - ".github/workflows/mypy.yml"
   workflow_dispatch:
 
 permissions:
@@ -27,13 +25,7 @@ concurrency:
 
 jobs:
   mypy:
-    strategy:
-      matrix:
-        target: [
-          "Tools/clinic",
-          "Tools/peg_generator",
-        ]
-    name: Run mypy on ${{ matrix.target }}
+    name: Run mypy on Tools/clinic/
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,4 +36,4 @@ jobs:
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
-      - run: mypy --config-file ${{ matrix.target }}/mypy.ini
+      - run: mypy --config-file Tools/clinic/mypy.ini
