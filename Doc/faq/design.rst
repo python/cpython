@@ -259,36 +259,15 @@ is evaluated in all cases.
 Why isn't there a switch or case statement in Python?
 -----------------------------------------------------
 
-You can do this easily enough with a sequence of ``if... elif... elif... else``.
-For literal values, or constants within a namespace, you can also use a
-``match ... case`` statement.
+Python 3.10 introduced Structural Pattern Matching 
+(`PEP 634 <https://www.python.org/dev/peps/pep-0634/>`), you can now 
+use ``match... case... case...`` structures.
 
-For cases where you need to choose from a very large number of possibilities,
-you can create a dictionary mapping case values to functions to call.  For
-example::
+A lot of features as default case, multiple cases or comparing dict are 
+available.
 
-   functions = {'a': function_1,
-                'b': function_2,
-                'c': self.method_1}
-
-   func = functions[value]
-   func()
-
-For calling methods on objects, you can simplify yet further by using the
-:func:`getattr` built-in to retrieve methods with a particular name::
-
-   class MyVisitor:
-       def visit_a(self):
-           ...
-
-       def dispatch(self, value):
-           method_name = 'visit_' + str(value)
-           method = getattr(self, method_name)
-           method()
-
-It's suggested that you use a prefix for the method names, such as ``visit_`` in
-this example.  Without such a prefix, if values are coming from an untrusted
-source, an attacker would be able to call any method on your object.
+Previously, this page recommended to use a sequence of ``if... elif... elif... else``. 
+that may be a counter-productive pattern.
 
 
 Can't you emulate threads in the interpreter instead of relying on an OS-specific thread implementation?
