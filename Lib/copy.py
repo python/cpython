@@ -101,13 +101,11 @@ _copy_dispatch = d = {}
 
 def _copy_immutable(x):
     return x
-for t in (type(None), int, float, bool, complex, str, tuple,
+for t in (types.NoneType, int, float, bool, complex, str, tuple,
           bytes, frozenset, type, range, slice, property,
-          types.BuiltinFunctionType, type(Ellipsis), type(NotImplemented),
-          types.FunctionType, weakref.ref):
-    d[t] = _copy_immutable
-t = getattr(types, "CodeType", None)
-if t is not None:
+          types.BuiltinFunctionType, types.EllipsisType,
+          types.NotImplementedType, types.FunctionType, types.CodeType,
+          weakref.ref):
     d[t] = _copy_immutable
 
 d[list] = list.copy
@@ -123,13 +121,13 @@ def deepcopy(x, memo=None, _nil=[]):
     See the module's __doc__ string for more info.
     """
 
+    d = id(x)
     if memo is None:
         memo = {}
-
-    d = id(x)
-    y = memo.get(d, _nil)
-    if y is not _nil:
-        return y
+    else:
+        y = memo.get(d, _nil)
+        if y is not _nil:
+            return y
 
     cls = type(x)
 
@@ -173,9 +171,9 @@ _deepcopy_dispatch = d = {}
 
 def _deepcopy_atomic(x, memo):
     return x
-d[type(None)] = _deepcopy_atomic
-d[type(Ellipsis)] = _deepcopy_atomic
-d[type(NotImplemented)] = _deepcopy_atomic
+d[types.NoneType] = _deepcopy_atomic
+d[types.EllipsisType] = _deepcopy_atomic
+d[types.NotImplementedType] = _deepcopy_atomic
 d[int] = _deepcopy_atomic
 d[float] = _deepcopy_atomic
 d[bool] = _deepcopy_atomic
@@ -292,3 +290,16 @@ def _reconstruct(x, memo, func, args,
     return y
 
 del types, weakref
+
+
+def replace(obj, /, **changes):
+    """Return a new object replacing specified fields with new values.
+
+    This is especially useful for immutable objects, like named tuples or
+    frozen dataclasses.
+    """
+    cls = obj.__class__
+    func = getattr(cls, '__replace__', None)
+    if func is None:
+        raise TypeError(f"replace() does not support {cls.__name__} objects")
+    return func(obj, **changes)

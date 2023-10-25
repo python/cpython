@@ -1,5 +1,0 @@
-A :exc:`DeprecationWarning` may be raised when :func:`os.fork()` or
-:func:`os.forkpty()` is called from multi-threaded processes.  Forking
-with threads is unsafe and can cause deadlocks, crashes and subtle
-problems. Lack of a warning does not indicate that the fork call was
-actually safe, as Python may not be aware of all threads.

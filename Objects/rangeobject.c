@@ -2,10 +2,12 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_range.h"
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_range.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
+
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -33,7 +35,7 @@ validate_step(PyObject *step)
         return PyLong_FromLong(1);
 
     step = PyNumber_Index(step);
-    if (step && _PyLong_Sign(step) == 0) {
+    if (step && _PyLong_IsZero((PyLongObject *)step)) {
         PyErr_SetString(PyExc_ValueError,
                         "range() arg 3 must not be zero");
         Py_CLEAR(step);
@@ -105,8 +107,8 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             if (!stop) {
                 return NULL;
             }
-            start = Py_NewRef(_PyLong_GetZero());
-            step = Py_NewRef(_PyLong_GetOne());
+            start = _PyLong_GetZero();
+            step = _PyLong_GetOne();
             break;
         case 0:
             PyErr_SetString(PyExc_TypeError,
@@ -171,6 +173,49 @@ range_dealloc(rangeobject *r)
     PyObject_Free(r);
 }
 
+static unsigned long
+get_len_of_range(long lo, long hi, long step);
+
+/* Return the length as a long, -2 for an overflow and -1 for any other type of error
+ *
+ * In case of an overflow no error is set
+ */
+static long compute_range_length_long(PyObject *start,
+                PyObject *stop, PyObject *step) {
+    int overflow = 0;
+
+    long long_start = PyLong_AsLongAndOverflow(start, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_start == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    long long_stop = PyLong_AsLongAndOverflow(stop, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_stop == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+    long long_step = PyLong_AsLongAndOverflow(step, &overflow);
+    if (overflow) {
+        return -2;
+    }
+    if (long_step == -1 && PyErr_Occurred()) {
+        return -1;
+    }
+
+    unsigned long ulen = get_len_of_range(long_start, long_stop, long_step);
+    if (ulen > (unsigned long)LONG_MAX) {
+        /* length too large for a long */
+        return -2;
+    }
+    else {
+        return (long)ulen;
+    }
+}
+
 /* Return number of items in range (lo, hi, step) as a PyLong object,
  * when arguments are PyLong objects.  Arguments MUST return 1 with
  * PyLong_Check().  Return NULL when there is an error.
@@ -190,6 +235,21 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
 
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     PyObject *one = _PyLong_GetOne();  // borrowed reference
+
+    assert(PyLong_Check(start));
+    assert(PyLong_Check(stop));
+    assert(PyLong_Check(step));
+
+    /* fast path when all arguments fit into a long integer */
+    long len = compute_range_length_long(start, stop, step);
+    if (len >= 0) {
+        return PyLong_FromLong(len);
+    }
+    else if (len == -1) {
+        /* unexpected error from compute_range_length_long, we propagate to the caller */
+        return NULL;
+    }
+    assert(len == -2);
 
     cmp_result = PyObject_RichCompareBool(step, zero, Py_GT);
     if (cmp_result == -1)
@@ -698,9 +758,9 @@ static PyMethodDef range_methods[] = {
 };
 
 static PyMemberDef range_members[] = {
-    {"start",   T_OBJECT_EX,    offsetof(rangeobject, start),   READONLY},
-    {"stop",    T_OBJECT_EX,    offsetof(rangeobject, stop),    READONLY},
-    {"step",    T_OBJECT_EX,    offsetof(rangeobject, step),    READONLY},
+    {"start",   Py_T_OBJECT_EX,    offsetof(rangeobject, start),   Py_READONLY},
+    {"stop",    Py_T_OBJECT_EX,    offsetof(rangeobject, stop),    Py_READONLY},
+    {"step",    Py_T_OBJECT_EX,    offsetof(rangeobject, step),    Py_READONLY},
     {0}
 };
 

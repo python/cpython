@@ -1,5 +1,5 @@
 import unittest
-from test.support import cpython_only, requires_limited_api
+from test.support import cpython_only, requires_limited_api, skip_on_s390x
 try:
     import _testcapi
 except ImportError:
@@ -10,6 +10,7 @@ import itertools
 import gc
 import contextlib
 import sys
+import types
 
 
 class BadStr(str):
@@ -64,7 +65,8 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, int.from_bytes, b'a', 'little', False)
 
     def test_varargs1min(self):
-        msg = r"get expected at least 1 argument, got 0"
+        msg = (r"get\(\) takes at least 1 argument \(0 given\)|"
+               r"get expected at least 1 argument, got 0")
         self.assertRaisesRegex(TypeError, msg, {}.get)
 
         msg = r"expected 1 argument, got 0"
@@ -75,11 +77,13 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, getattr)
 
     def test_varargs1max(self):
-        msg = r"input expected at most 1 argument, got 2"
+        msg = (r"input\(\) takes at most 1 argument \(2 given\)|"
+               r"input expected at most 1 argument, got 2")
         self.assertRaisesRegex(TypeError, msg, input, 1, 2)
 
     def test_varargs2max(self):
-        msg = r"get expected at most 2 arguments, got 3"
+        msg = (r"get\(\) takes at most 2 arguments \(3 given\)|"
+               r"get expected at most 2 arguments, got 3")
         self.assertRaisesRegex(TypeError, msg, {}.get, 1, 2, 3)
 
     def test_varargs1_kw(self):
@@ -95,7 +99,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^list[.]index\(\) takes no keyword arguments$"
+        msg = r"^(list[.])?index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -202,6 +206,37 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         msg = r"count\(\) takes no keyword arguments"
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
+    def test_object_not_callable(self):
+        msg = r"^'object' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, object())
+
+    def test_module_not_callable_no_suggestion_0(self):
+        msg = r"^'module' object is not callable$"
+        self.assertRaisesRegex(TypeError, msg, types.ModuleType("mod"))
+
+    def test_module_not_callable_no_suggestion_1(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.mod = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_2(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        del mod.__name__
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_no_suggestion_3(self):
+        msg = r"^'module' object is not callable$"
+        mod = types.ModuleType("mod")
+        mod.__name__ = 42
+        self.assertRaisesRegex(TypeError, msg, mod)
+
+    def test_module_not_callable_suggestion(self):
+        msg = r"^'module' object is not callable\. Did you mean: 'mod\.mod\(\.\.\.\)'\?$"
+        mod = types.ModuleType("mod")
+        mod.mod = lambda: ...
+        self.assertRaisesRegex(TypeError, msg, mod)
 
 
 class TestCallingConventions(unittest.TestCase):
@@ -486,19 +521,6 @@ class FastCallTests(unittest.TestCase):
             if result[-1] in ({}, None):
                 expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
-
-    def test_fastcall(self):
-        # Test _PyObject_FastCall()
-
-        for func, args, expected in self.CALLS_POSARGS:
-            with self.subTest(func=func, args=args):
-                result = _testcapi.pyobject_fastcall(func, args)
-                self.check_result(result, expected)
-
-                if not args:
-                    # args=NULL, nargs=0
-                    result = _testcapi.pyobject_fastcall(func, None)
-                    self.check_result(result, expected)
 
     def test_vectorcall_dict(self):
         # Test PyObject_VectorcallDict()
@@ -897,8 +919,77 @@ class TestErrorMessagesUseQualifiedName(unittest.TestCase):
             A().method_two_args("x", "y", x="oops")
 
 @cpython_only
+class TestErrorMessagesSuggestions(unittest.TestCase):
+    @contextlib.contextmanager
+    def check_suggestion_includes(self, message):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertIn(f"Did you mean '{message}'?", str(cm.exception))
+
+    @contextlib.contextmanager
+    def check_suggestion_not_pressent(self):
+        with self.assertRaises(TypeError) as cm:
+            yield
+        self.assertNotIn("Did you mean", str(cm.exception))
+
+    def test_unexpected_keyword_suggestion_valid_positions(self):
+        def foo(blech=None, /, aaa=None, *args, late1=None):
+            pass
+
+        cases = [
+            ("blach", None),
+            ("aa", "aaa"),
+            ("orgs", None),
+            ("late11", "late1"),
+        ]
+
+        for keyword, suggestion in cases:
+            with self.subTest(keyword):
+                ctx = self.check_suggestion_includes(suggestion) if suggestion else self.check_suggestion_not_pressent()
+                with ctx:
+                    foo(**{keyword:None})
+
+    def test_unexpected_keyword_suggestion_kinds(self):
+
+        def substitution(noise=None, more_noise=None, a = None, blech = None):
+            pass
+
+        def elimination(noise = None, more_noise = None, a = None, blch = None):
+            pass
+
+        def addition(noise = None, more_noise = None, a = None, bluchin = None):
+            pass
+
+        def substitution_over_elimination(blach = None, bluc = None):
+            pass
+
+        def substitution_over_addition(blach = None, bluchi = None):
+            pass
+
+        def elimination_over_addition(bluc = None, blucha = None):
+            pass
+
+        def case_change_over_substitution(BLuch=None, Luch = None, fluch = None):
+            pass
+
+        for func, suggestion in [
+            (addition, "bluchin"),
+            (substitution, "blech"),
+            (elimination, "blch"),
+            (addition, "bluchin"),
+            (substitution_over_elimination, "blach"),
+            (substitution_over_addition, "blach"),
+            (elimination_over_addition, "bluc"),
+            (case_change_over_substitution, "BLuch"),
+        ]:
+            with self.subTest(suggestion):
+                with self.check_suggestion_includes(suggestion):
+                    func(bluch=None)
+
+@cpython_only
 class TestRecursion(unittest.TestCase):
 
+    @skip_on_s390x
     def test_super_deep(self):
 
         def recurse(n):
@@ -913,11 +1004,11 @@ class TestRecursion(unittest.TestCase):
 
         def c_recurse(n):
             if n:
-                _testcapi.pyobject_fastcall(c_recurse, (n-1,))
+                _testcapi.pyobject_vectorcall(c_recurse, (n-1,), ())
 
         def c_py_recurse(m):
             if m:
-                _testcapi.pyobject_fastcall(py_recurse, (1000, m))
+                _testcapi.pyobject_vectorcall(py_recurse, (1000, m), ())
 
         depth = sys.getrecursionlimit()
         sys.setrecursionlimit(100_000)
@@ -933,6 +1024,36 @@ class TestRecursion(unittest.TestCase):
                 c_py_recurse(100_000)
         finally:
             sys.setrecursionlimit(depth)
+
+
+class TestFunctionWithManyArgs(unittest.TestCase):
+    def test_function_with_many_args(self):
+        for N in (10, 500, 1000):
+            with self.subTest(N=N):
+                args = ",".join([f"a{i}" for i in range(N)])
+                src = f"def f({args}) : return a{N//2}"
+                l = {}
+                exec(src, {}, l)
+                self.assertEqual(l['f'](*range(N)), N//2)
+
+
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    def test_cfunction_call(self):
+        def func(*args, **kwargs):
+            return (args, kwargs)
+
+        # PyCFunction_Call() was removed in Python 3.13 API, but was kept in
+        # the stable ABI.
+        def PyCFunction_Call(func, *args, **kwargs):
+            if kwargs:
+                return _testcapi.pycfunction_call(func, args, kwargs)
+            else:
+                return _testcapi.pycfunction_call(func, args)
+
+        self.assertEqual(PyCFunction_Call(func), ((), {}))
+        self.assertEqual(PyCFunction_Call(func, 1, 2, 3), ((1, 2, 3), {}))
+        self.assertEqual(PyCFunction_Call(func, "arg", num=5), (("arg",), {'num': 5}))
 
 
 if __name__ == "__main__":

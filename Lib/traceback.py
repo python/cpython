@@ -125,6 +125,14 @@ def print_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     te.print(file=file, chain=chain)
 
 
+BUILTIN_EXCEPTION_LIMIT = object()
+
+
+def _print_exception_bltin(exc, /):
+    file = sys.stderr if sys.stderr is not None else sys.__stderr__
+    return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file)
+
+
 def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
                      chain=True):
     """Format a stack trace and the exception information.
@@ -145,14 +153,11 @@ def format_exception_only(exc, /, value=_sentinel):
 
     The return value is a list of strings, each ending in a newline.
 
-    Normally, the list contains a single string; however, for
-    SyntaxError exceptions, it contains several lines that (when
-    printed) display detailed information about where the syntax
-    error occurred.
-
-    The message indicating which exception occurred is always the last
-    string in the list.
-
+    The list contains the exception's message, which is
+    normally a single string; however, for :exc:`SyntaxError` exceptions, it
+    contains several lines that (when printed) display detailed information
+    about where the syntax error occurred. Following the message, the list
+    contains the exception's ``__notes__``.
     """
     if value is _sentinel:
         value = exc
@@ -179,20 +184,24 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(*sys.exc_info(), limit, file)'."""
-    print_exception(*sys.exc_info(), limit=limit, file=file, chain=chain)
+    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
     """Like print_exc() but return a string."""
-    return "".join(format_exception(*sys.exc_info(), limit=limit, chain=chain))
+    return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_type,
-    sys.last_value, sys.last_traceback, limit, file)'."""
-    if not hasattr(sys, "last_type"):
+    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
-    print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                    limit, file, chain)
+
+    if hasattr(sys, "last_exc"):
+        print_exception(sys.last_exc, limit, file, chain)
+    else:
+        print_exception(sys.last_type, sys.last_value, sys.last_traceback,
+                        limit, file, chain)
+
 
 #
 # Printing and Extracting Stacks.
@@ -402,12 +411,16 @@ class StackSummary(list):
         # (frame, (lineno, end_lineno, colno, end_colno)) in the stack.
         # Only lineno is required, the remaining fields can be None if the
         # information is not available.
-        if limit is None:
+        builtin_limit = limit is BUILTIN_EXCEPTION_LIMIT
+        if limit is None or builtin_limit:
             limit = getattr(sys, 'tracebacklimit', None)
             if limit is not None and limit < 0:
                 limit = 0
         if limit is not None:
-            if limit >= 0:
+            if builtin_limit:
+                frame_gen = tuple(frame_gen)
+                frame_gen = frame_gen[len(frame_gen) - limit:]
+            elif limit >= 0:
                 frame_gen = itertools.islice(frame_gen, limit)
             else:
                 frame_gen = collections.deque(frame_gen, maxlen=-limit)
@@ -418,7 +431,6 @@ class StackSummary(list):
             co = f.f_code
             filename = co.co_filename
             name = co.co_name
-
             fnames.add(filename)
             linecache.lazycache(filename, f.f_globals)
             # Must defer line lookups until we have called checkcache.
@@ -431,6 +443,7 @@ class StackSummary(list):
                 end_lineno=end_lineno, colno=colno, end_colno=end_colno))
         for filename in fnames:
             linecache.checkcache(filename)
+
         # If immediate lookup was desired, trigger lookups now.
         if lookup_lines:
             for f in result:
@@ -463,8 +476,12 @@ class StackSummary(list):
         gets called for every frame to be printed in the stack summary.
         """
         row = []
-        row.append('  File "{}", line {}, in {}\n'.format(
-            frame_summary.filename, frame_summary.lineno, frame_summary.name))
+        if frame_summary.filename.startswith("<python-input"):
+            row.append('  File "<stdin>", line {}, in {}\n'.format(
+                frame_summary.lineno, frame_summary.name))
+        else:
+            row.append('  File "{}", line {}, in {}\n'.format(
+                frame_summary.filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:
             stripped_line = frame_summary.line.strip()
             row.append('    {}\n'.format(stripped_line))
@@ -604,11 +621,21 @@ def _extract_caret_anchors_from_line_segment(segment):
                         and not operator_str[operator_offset + 1].isspace()
                     ):
                         right_anchor += 1
+
+                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch in ")#"):
+                        left_anchor += 1
+                        right_anchor += 1
                     return _Anchors(normalize(left_anchor), normalize(right_anchor))
                 case ast.Subscript():
-                    subscript_start = normalize(expr.value.end_col_offset)
-                    subscript_end = normalize(expr.slice.end_col_offset + 1)
-                    return _Anchors(subscript_start, subscript_end)
+                    left_anchor = normalize(expr.value.end_col_offset)
+                    right_anchor = normalize(expr.slice.end_col_offset + 1)
+                    while left_anchor < len(segment) and ((ch := segment[left_anchor]).isspace() or ch != "["):
+                        left_anchor += 1
+                    while right_anchor < len(segment) and ((ch := segment[right_anchor]).isspace() or ch != "]"):
+                        right_anchor += 1
+                    if right_anchor < len(segment):
+                        right_anchor += 1
+                    return _Anchors(left_anchor, right_anchor)
 
     return None
 
@@ -654,6 +681,8 @@ class TracebackException:
 
     - :attr:`__cause__` A TracebackException of the original *__cause__*.
     - :attr:`__context__` A TracebackException of the original *__context__*.
+    - :attr:`exceptions` For exception groups - a list of TracebackException
+      instances for the nested *exceptions*.  ``None`` for other exceptions.
     - :attr:`__suppress_context__` The *__suppress_context__* value from the
       original exception.
     - :attr:`stack` A `StackSummary` representing the traceback.
@@ -668,8 +697,8 @@ class TracebackException:
       occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
       error occurred.
-    - :attr:`end_offset` For syntax errors - the offset into the text where the
-      error occurred. Can be `None` if not present.
+    - :attr:`end_offset` For syntax errors - the end offset into the text where
+      the error occurred. Can be `None` if not present.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 
@@ -725,9 +754,9 @@ class TracebackException:
                 wrong_name = getattr(exc_value, "name", None)
                 if wrong_name is not None and wrong_name in sys.stdlib_module_names:
                     if suggestion:
-                        self._str += f" Or did you forget to import '{wrong_name}'"
+                        self._str += f" Or did you forget to import '{wrong_name}'?"
                     else:
-                        self._str += f". Did you forget to import '{wrong_name}'"
+                        self._str += f". Did you forget to import '{wrong_name}'?"
         if lookup_lines:
             self._load_lines()
         self.__suppress_context__ = \
@@ -820,21 +849,23 @@ class TracebackException:
     def __str__(self):
         return self._str
 
-    def format_exception_only(self):
+    def format_exception_only(self, *, show_group=False, _depth=0):
         """Format the exception part of the traceback.
 
         The return value is a generator of strings, each ending in a newline.
 
-        Normally, the generator emits a single string; however, for
-        SyntaxError exceptions, it emits several lines that (when
-        printed) display detailed information about where the syntax
-        error occurred.
-
-        The message indicating which exception occurred is always the last
-        string in the output.
+        Generator yields the exception message.
+        For :exc:`SyntaxError` exceptions, it
+        also yields (before the exception message)
+        several lines that (when printed)
+        display detailed information about where the syntax error occurred.
+        Following the message, generator also yields
+        all the exception's ``__notes__``.
         """
+
+        indent = 3 * _depth * ' '
         if self.exc_type is None:
-            yield _format_final_exc_line(None, self._str)
+            yield indent + _format_final_exc_line(None, self._str)
             return
 
         stype = self.exc_type.__qualname__
@@ -845,15 +876,23 @@ class TracebackException:
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
-            yield _format_final_exc_line(stype, self._str)
+            yield indent + _format_final_exc_line(stype, self._str)
         else:
-            yield from self._format_syntax_error(stype)
-        if isinstance(self.__notes__, collections.abc.Sequence):
+            yield from [indent + l for l in self._format_syntax_error(stype)]
+
+        if (
+            isinstance(self.__notes__, collections.abc.Sequence)
+            and not isinstance(self.__notes__, (str, bytes))
+        ):
             for note in self.__notes__:
                 note = _safe_string(note, 'note')
-                yield from [l + '\n' for l in note.split('\n')]
+                yield from [indent + l + '\n' for l in note.split('\n')]
         elif self.__notes__ is not None:
-            yield _safe_string(self.__notes__, '__notes__', func=repr)
+            yield indent + "{}\n".format(_safe_string(self.__notes__, '__notes__', func=repr))
+
+        if self.exceptions and show_group:
+            for ex in self.exceptions:
+                yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1)
 
     def _format_syntax_error(self, stype):
         """Format SyntaxError exceptions (internal helper)."""
@@ -878,7 +917,11 @@ class TracebackException:
             if self.offset is not None:
                 offset = self.offset
                 end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
-                if offset == end_offset or end_offset == -1:
+                if self.text and offset > len(self.text):
+                    offset = len(self.text) + 1
+                if self.text and end_offset > len(self.text):
+                    end_offset = len(self.text) + 1
+                if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 
                 # Convert 1-based column offset to 0-based index into stripped text

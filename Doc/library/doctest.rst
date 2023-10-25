@@ -277,13 +277,34 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
-In addition, if ``M.__test__`` exists and "is true", it must be a dict, and each
+In addition, there are cases when you want tests to be part of a module but not part
+of the help text, which requires that the tests not be included in the docstring.
+Doctest looks for a module-level variable called ``__test__`` and uses it to locate other
+tests. If ``M.__test__`` exists and is truthy, it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
-``M.__test__`` appears with name ::
+``M.__test__`` appears with name ``M.__test__.K``.
 
-   <name of M>.__test__.K
+For example, place this block of code at the top of :file:`example.py`:
+
+.. code-block:: python
+
+   __test__ = {
+       'numbers': """
+   >>> factorial(6)
+   720
+
+   >>> [factorial(n) for n in range(6)]
+   [1, 1, 2, 6, 24, 120]
+   """
+   }
+
+The value of ``example.__test__["numbers"]`` will be treated as a
+docstring and all the tests inside it will be run. It is
+important to note that the value can be mapped to a function,
+class object, or module; if so, :mod:`!doctest`
+searches them recursively for docstrings, which are then scanned for tests.
 
 Any classes found are recursively searched similarly, to test docstrings in
 their contained methods and nested classes.
@@ -409,10 +430,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: list.remove(x): x not in list
+   ValueError: 42 is not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
-x not in list`` detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
+detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -1409,6 +1430,27 @@ DocTestParser objects
       identifying this string, and is only used for error messages.
 
 
+TestResults objects
+^^^^^^^^^^^^^^^^^^^
+
+
+.. class:: TestResults(failed, attempted)
+
+   .. attribute:: failed
+
+      Number of failed tests.
+
+   .. attribute:: attempted
+
+      Number of attempted tests.
+
+   .. attribute:: skipped
+
+      Number of skipped tests.
+
+      .. versionadded:: 3.13
+
+
 .. _doctest-doctestrunner:
 
 DocTestRunner objects
@@ -1427,7 +1469,7 @@ DocTestRunner objects
    passing a subclass of :class:`OutputChecker` to the constructor.
 
    The test runner's display output can be controlled in two ways. First, an output
-   function can be passed to :meth:`TestRunner.run`; this function will be called
+   function can be passed to :meth:`run`; this function will be called
    with strings that should be displayed.  It defaults to ``sys.stdout.write``.  If
    capturing the output is not sufficient, then the display output can be also
    customized by subclassing DocTestRunner, and overriding the methods
@@ -1448,6 +1490,10 @@ DocTestRunner objects
    runner compares expected output to actual output, and how it displays failures.
    For more information, see section :ref:`doctest-options`.
 
+   The test runner accumulates statistics. The aggregated number of attempted,
+   failed and skipped examples is also available via the :attr:`tries`,
+   :attr:`failures` and :attr:`skips` attributes. The :meth:`run` and
+   :meth:`summarize` methods return a :class:`TestResults` instance.
 
    :class:`DocTestParser` defines the following methods:
 
@@ -1500,7 +1546,8 @@ DocTestRunner objects
    .. method:: run(test, compileflags=None, out=None, clear_globs=True)
 
       Run the examples in *test* (a :class:`DocTest` object), and display the
-      results using the writer function *out*.
+      results using the writer function *out*. Return a :class:`TestResults`
+      instance.
 
       The examples are run in the namespace ``test.globs``.  If *clear_globs* is
       true (the default), then this namespace will be cleared after the test runs,
@@ -1519,11 +1566,28 @@ DocTestRunner objects
    .. method:: summarize(verbose=None)
 
       Print a summary of all the test cases that have been run by this DocTestRunner,
-      and return a :term:`named tuple` ``TestResults(failed, attempted)``.
+      and return a :class:`TestResults` instance.
 
       The optional *verbose* argument controls how detailed the summary is.  If the
       verbosity is not specified, then the :class:`DocTestRunner`'s verbosity is
       used.
+
+   :class:`DocTestParser` has the following attributes:
+
+   .. attribute:: tries
+
+      Number of attempted examples.
+
+   .. attribute:: failures
+
+      Number of failed examples.
+
+   .. attribute:: skips
+
+      Number of skipped examples.
+
+      .. versionadded:: 3.13
+
 
 .. _doctest-outputchecker:
 

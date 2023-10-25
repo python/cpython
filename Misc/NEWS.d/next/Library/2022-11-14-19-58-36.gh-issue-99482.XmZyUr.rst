@@ -1,1 +1,0 @@
-Remove ``Jython`` partial compatibility code from several stdlib modules.

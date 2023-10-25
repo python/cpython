@@ -1,4 +1,5 @@
 import gc
+import operator
 import re
 import sys
 import textwrap
@@ -321,7 +322,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             sneaky_frame_object = None
             gc.enable()
             next(g)
-            # g.gi_frame should be the the frame object from the callback (the
+            # g.gi_frame should be the frame object from the callback (the
             # one that was *requested* second, but *created* first):
             self.assertIs(g.gi_frame, sneaky_frame_object)
         finally:
@@ -371,6 +372,26 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
                 sneaky_frame_object.f_code, SneakyThread.run.__code__
             )
             sneaky_frame_object = sneaky_frame_object.f_back
+
+    def test_entry_frames_are_invisible_during_teardown(self):
+        class C:
+            """A weakref'able class."""
+
+        def f():
+            """Try to find globals and locals as this frame is being cleared."""
+            ref = C()
+            # Ignore the fact that exec(C()) is a nonsense callback. We're only
+            # using exec here because it tries to access the current frame's
+            # globals and locals. If it's trying to get those from a shim frame,
+            # we'll crash before raising:
+            return weakref.ref(ref, exec)
+
+        with support.catch_unraisable_exception() as catcher:
+            # Call from C, so there is a shim frame directly above f:
+            weak = operator.call(f)  # BOOM!
+            # Cool, we didn't crash. Check that the callback actually happened:
+            self.assertIs(catcher.unraisable.exc_type, TypeError)
+        self.assertIsNone(weak())
 
 @unittest.skipIf(_testcapi is None, 'need _testcapi')
 class TestCAPI(unittest.TestCase):

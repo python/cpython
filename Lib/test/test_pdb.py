@@ -240,9 +240,11 @@ def test_pdb_breakpoint_commands():
 
     >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'break 3',
+    ...     'break 4, +',
     ...     'disable 1',
     ...     'ignore 1 10',
     ...     'condition 1 1 < 2',
+    ...     'condition 1 1 <',
     ...     'break 4',
     ...     'break 4',
     ...     'break',
@@ -264,6 +266,8 @@ def test_pdb_breakpoint_commands():
     ...     'commands 10',  # out of range
     ...     'commands a',   # display help
     ...     'commands 4',   # already deleted
+    ...     'break 6, undefined', # condition causing `NameError` during evaluation
+    ...     'continue', # will stop, ignoring runtime error
     ...     'continue',
     ... ]):
     ...    test_function()
@@ -271,12 +275,16 @@ def test_pdb_breakpoint_commands():
     -> print(1)
     (Pdb) break 3
     Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
+    (Pdb) break 4, +
+    *** Invalid condition +: SyntaxError: invalid syntax
     (Pdb) disable 1
     Disabled breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:3
     (Pdb) ignore 1 10
     Will ignore next 10 crossings of breakpoint 1.
     (Pdb) condition 1 1 < 2
     New condition set for breakpoint 1.
+    (Pdb) condition 1 1 <
+    *** Invalid condition 1 <: SyntaxError: invalid syntax
     (Pdb) break 4
     Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:4
     (Pdb) break 4
@@ -326,13 +334,20 @@ def test_pdb_breakpoint_commands():
     (Pdb) commands 10
     *** cannot set commands: Breakpoint number 10 out of range
     (Pdb) commands a
-    *** Usage: commands [bnum]
-            ...
-            end
+    *** Invalid argument: a
+          Usage: (Pdb) commands [bpnumber]
+                 (com) ...
+                 (com) end
+                 (Pdb)
     (Pdb) commands 4
     *** cannot set commands: Breakpoint 4 already deleted
+    (Pdb) break 6, undefined
+    Breakpoint 5 at <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>:6
     (Pdb) continue
     3
+    > <doctest test.test_pdb.test_pdb_breakpoint_commands[0]>(6)test_function()
+    -> print(4)
+    (Pdb) continue
     4
     """
 
@@ -374,7 +389,7 @@ def test_pdb_breakpoints_preserved_across_interactive_sessions():
     1   breakpoint   keep yes   at ...test_pdb.py:...
     2   breakpoint   keep yes   at ...test_pdb.py:...
     (Pdb) break pdb.find_function
-    Breakpoint 3 at ...pdb.py:97
+    Breakpoint 3 at ...pdb.py:...
     (Pdb) break
     Num Type         Disp Enb   Where
     1   breakpoint   keep yes   at ...test_pdb.py:...
@@ -574,6 +589,657 @@ def test_pdb_whatis_command():
     (Pdb) continue
     """
 
+def test_pdb_display_command():
+    """Test display command
+
+    >>> def test_function():
+    ...     a = 0
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    ...     a = 2
+    ...     a = 3
+    ...     a = 4
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'display +',
+    ...     'display',
+    ...     'display a',
+    ...     'n',
+    ...     'display',
+    ...     'undisplay a',
+    ...     'n',
+    ...     'display a',
+    ...     'undisplay',
+    ...     'display a < 1',
+    ...     'n',
+    ...     'display undefined',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(4)test_function()
+    -> a = 1
+    (Pdb) display +
+    *** Unable to display +: SyntaxError: invalid syntax
+    (Pdb) display
+    No expression is being displayed
+    (Pdb) display a
+    display a: 0
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(5)test_function()
+    -> a = 2
+    display a: 1  [old: 0]
+    (Pdb) display
+    Currently displaying:
+    a: 1
+    (Pdb) undisplay a
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(6)test_function()
+    -> a = 3
+    (Pdb) display a
+    display a: 2
+    (Pdb) undisplay
+    (Pdb) display a < 1
+    display a < 1: False
+    (Pdb) n
+    > <doctest test.test_pdb.test_pdb_display_command[0]>(7)test_function()
+    -> a = 4
+    (Pdb) display undefined
+    display undefined: ** raised NameError: name 'undefined' is not defined **
+    (Pdb) continue
+    """
+
+def test_pdb_alias_command():
+    """Test alias command
+
+    >>> class A:
+    ...     def __init__(self):
+    ...         self.attr1 = 10
+    ...         self.attr2 = 'str'
+    ...     def method(self):
+    ...         pass
+
+    >>> def test_function():
+    ...     o = A()
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     o.method()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'alias pi',
+    ...     'alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")',
+    ...     'alias ps pi self',
+    ...     'alias ps',
+    ...     'pi o',
+    ...     's',
+    ...     'ps',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_alias_command[1]>(4)test_function()
+    -> o.method()
+    (Pdb) alias pi
+    *** Unknown alias 'pi'
+    (Pdb) alias pi for k in %1.__dict__.keys(): print(f"%1.{k} = {%1.__dict__[k]}")
+    (Pdb) alias ps pi self
+    (Pdb) alias ps
+    ps = pi self
+    (Pdb) pi o
+    o.attr1 = 10
+    o.attr2 = str
+    (Pdb) s
+    --Call--
+    > <doctest test.test_pdb.test_pdb_alias_command[0]>(5)method()
+    -> def method(self):
+    (Pdb) ps
+    self.attr1 = 10
+    self.attr2 = str
+    (Pdb) continue
+    """
+
+def test_pdb_where_command():
+    """Test where command
+
+    >>> def g():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> def f():
+    ...     g();
+
+    >>> def test_function():
+    ...     f()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS
+    ...     'w',
+    ...     'where',
+    ...     'u',
+    ...     'w',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) where
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+      <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    > <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) u
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+    (Pdb) w
+    ...
+      <doctest test.test_pdb.test_pdb_where_command[3]>(8)<module>()
+    -> test_function()
+      <doctest test.test_pdb.test_pdb_where_command[2]>(2)test_function()
+    -> f()
+    > <doctest test.test_pdb.test_pdb_where_command[1]>(2)f()
+    -> g();
+      <doctest test.test_pdb.test_pdb_where_command[0]>(2)g()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) continue
+    """
+
+def test_convenience_variables():
+    """Test convenience variables
+
+    >>> def util_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     try:
+    ...         raise Exception('test')
+    ...     except:
+    ...         pass
+    ...     return 1
+
+    >>> def test_function():
+    ...     util_function()
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     '$_frame.f_lineno', # Check frame convenience variable
+    ...     '$a = 10',          # Set a convenience variable
+    ...     '$a',               # Print its value
+    ...     'p $a + 2',         # Do some calculation
+    ...     'u',                # Switch frame
+    ...     '$_frame.f_lineno', # Make sure the frame changed
+    ...     '$a',               # Make sure the value persists
+    ...     'd',                # Go back to the original frame
+    ...     'next',
+    ...     '$a',               # The value should be gone
+    ...     'next',
+    ...     '$_exception',      # Check exception convenience variable
+    ...     'next',
+    ...     '$_exception',      # Exception should be gone
+    ...     'return',
+    ...     '$_retval',         # Check return convenience variable
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) $_frame.f_lineno
+    3
+    (Pdb) $a = 10
+    (Pdb) $a
+    10
+    (Pdb) p $a + 2
+    12
+    (Pdb) u
+    > <doctest test.test_pdb.test_convenience_variables[1]>(2)test_function()
+    -> util_function()
+    (Pdb) $_frame.f_lineno
+    2
+    (Pdb) $a
+    10
+    (Pdb) d
+    > <doctest test.test_pdb.test_convenience_variables[0]>(3)util_function()
+    -> try:
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $a
+    *** KeyError: 'a'
+    (Pdb) next
+    Exception: test
+    > <doctest test.test_pdb.test_convenience_variables[0]>(4)util_function()
+    -> raise Exception('test')
+    (Pdb) $_exception
+    Exception('test')
+    (Pdb) next
+    > <doctest test.test_pdb.test_convenience_variables[0]>(5)util_function()
+    -> except:
+    (Pdb) $_exception
+    *** KeyError: '_exception'
+    (Pdb) return
+    --Return--
+    > <doctest test.test_pdb.test_convenience_variables[0]>(7)util_function()->1
+    -> return 1
+    (Pdb) $_retval
+    1
+    (Pdb) continue
+    """
+
+
+def test_post_mortem_chained():
+    """Test post mortem traceback debugging of chained exception
+
+    >>> def test_function_2():
+    ...     try:
+    ...         1/0
+    ...     finally:
+    ...         print('Exception!')
+
+    >>> def test_function_reraise():
+    ...     try:
+    ...         test_function_2()
+    ...     except ZeroDivisionError as e:
+    ...         raise ZeroDivisionError('reraised') from e
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         test_function_reraise()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'exceptions',
+    ...     'exceptions 0',
+    ...     '$_exception',
+    ...     'up',
+    ...     'down',
+    ...     'exceptions 1',
+    ...     '$_exception',
+    ...     'up',
+    ...     'down',
+    ...     'exceptions -1',
+    ...     'exceptions 3',
+    ...     'up',
+    ...     'exit',
+    ... ]):
+    ...    try:
+    ...        test_function()
+    ...    except ZeroDivisionError:
+    ...        print('Correctly reraised.')
+    Exception!
+    > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
+    -> raise ZeroDivisionError('reraised') from e
+    (Pdb) exceptions
+      0 ZeroDivisionError('division by zero')
+    > 1 ZeroDivisionError('reraised')
+    (Pdb) exceptions 0
+    > <doctest test.test_pdb.test_post_mortem_chained[0]>(3)test_function_2()
+    -> 1/0
+    (Pdb) $_exception
+    ZeroDivisionError('division by zero')
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_chained[1]>(3)test_function_reraise()
+    -> test_function_2()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_chained[0]>(3)test_function_2()
+    -> 1/0
+    (Pdb) exceptions 1
+    > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
+    -> raise ZeroDivisionError('reraised') from e
+    (Pdb) $_exception
+    ZeroDivisionError('reraised')
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_chained[2]>(5)test_function()
+    -> test_function_reraise()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_chained[1]>(5)test_function_reraise()
+    -> raise ZeroDivisionError('reraised') from e
+    (Pdb) exceptions -1
+    *** No exception with that number
+    (Pdb) exceptions 3
+    *** No exception with that number
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_chained[2]>(5)test_function()
+    -> test_function_reraise()
+    (Pdb) exit
+    """
+
+
+def test_post_mortem_cause_no_context():
+    """Test post mortem traceback debugging of chained exception
+
+    >>> def make_exc_with_stack(type_, *content, from_=None):
+    ...     try:
+    ...         raise type_(*content) from from_
+    ...     except Exception as out:
+    ...         return out
+    ...
+
+    >>> def main():
+    ...     try:
+    ...         raise ValueError('Context Not Shown')
+    ...     except Exception as e1:
+    ...         raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'exceptions',
+    ...     'exceptions 0',
+    ...     'exceptions 1',
+    ...     'up',
+    ...     'down',
+    ...     'exit',
+    ... ]):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Ok.')
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
+    (Pdb) exceptions
+        0 TypeError('The Cause')
+    >   1 ValueError('With Cause')
+    (Pdb) exceptions 0
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[0]>(3)make_exc_with_stack()
+    -> raise type_(*content) from from_
+    (Pdb) exceptions 1
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[2]>(5)test_function()
+    -> main()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_cause_no_context[1]>(5)main()
+    -> raise ValueError("With Cause") from make_exc_with_stack(TypeError,'The Cause')
+    (Pdb) exit"""
+
+
+def test_post_mortem_context_of_the_cause():
+    """Test post mortem traceback debugging of chained exception
+
+
+    >>> def main():
+    ...     try:
+    ...         raise TypeError('Context of the cause')
+    ...     except Exception as e1:
+    ...         try:
+    ...             raise ValueError('Root Cause')
+    ...         except Exception as e2:
+    ...             ex = e2
+    ...         raise ValueError("With Cause, and cause has context") from ex
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'exceptions',
+    ...     'exceptions 2',
+    ...     'up',
+    ...     'down',
+    ...     'exceptions 3',
+    ...     'up',
+    ...     'down',
+    ...     'exceptions 4',
+    ...     'up',
+    ...     'down',
+    ...     'exit',
+    ... ]):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Correctly reraised.')
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[0]>(9)main()
+    -> raise ValueError("With Cause, and cause has context") from ex
+    (Pdb) exceptions
+      0 TypeError('Context of the cause')
+      1 ValueError('Root Cause')
+    > 2 ValueError('With Cause, and cause has context')
+    (Pdb) exceptions 2
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[0]>(9)main()
+    -> raise ValueError("With Cause, and cause has context") from ex
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[1]>(5)test_function()
+    -> main()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[0]>(9)main()
+    -> raise ValueError("With Cause, and cause has context") from ex
+    (Pdb) exceptions 3
+    *** No exception with that number
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[1]>(5)test_function()
+    -> main()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[0]>(9)main()
+    -> raise ValueError("With Cause, and cause has context") from ex
+    (Pdb) exceptions 4
+    *** No exception with that number
+    (Pdb) up
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[1]>(5)test_function()
+    -> main()
+    (Pdb) down
+    > <doctest test.test_pdb.test_post_mortem_context_of_the_cause[0]>(9)main()
+    -> raise ValueError("With Cause, and cause has context") from ex
+    (Pdb) exit
+    """
+
+
+def test_post_mortem_from_none():
+    """Test post mortem traceback debugging of chained exception
+
+    In particular that cause from None (which sets __supress_context__ to True)
+    does not show context.
+
+
+    >>> def main():
+    ...     try:
+    ...         raise TypeError('Context of the cause')
+    ...     except Exception as e1:
+    ...         raise ValueError("With Cause, and cause has context") from None
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     'exceptions',
+    ...     'exit',
+    ... ]):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Correctly reraised.')
+    > <doctest test.test_pdb.test_post_mortem_from_none[0]>(5)main()
+    -> raise ValueError("With Cause, and cause has context") from None
+    (Pdb) exceptions
+    > 0 ValueError('With Cause, and cause has context')
+    (Pdb) exit
+    """
+
+
+def test_post_mortem_from_no_stack():
+    """Test post mortem traceback debugging of chained exception
+
+    especially when one exception has no stack.
+
+    >>> def main():
+    ...     raise Exception() from Exception()
+
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     ["exceptions",
+    ...      "exceptions 0",
+    ...     "exit"],
+    ... ):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Correctly reraised.')
+    > <doctest test.test_pdb.test_post_mortem_from_no_stack[0]>(2)main()
+    -> raise Exception() from Exception()
+    (Pdb) exceptions
+        - Exception()
+    >   1 Exception()
+    (Pdb) exceptions 0
+    *** This exception does not have a traceback, cannot jump to it
+    (Pdb) exit
+    """
+
+
+def test_post_mortem_single_no_stack():
+    """Test post mortem called when origin exception has no stack
+
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     import sys
+    ...     sys.last_exc = Exception()
+    ...     pdb._post_mortem(sys.last_exc, instance)
+
+    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     []
+    ... ):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError as e:
+    ...        print(e)
+    A valid traceback must be passed if no exception is being handled
+    """
+
+def test_post_mortem_complex():
+    """Test post mortem traceback debugging of chained exception
+
+    Test with simple and complex cycles, exception groups,...
+
+    >>> def make_ex_with_stack(type_, *content, from_=None):
+    ...     try:
+    ...         raise type_(*content) from from_
+    ...     except Exception as out:
+    ...         return out
+    ...
+
+    >>> def cycle():
+    ...     try:
+    ...         raise ValueError("Cycle Leaf")
+    ...     except Exception as e:
+    ...         raise e from e
+    ...
+
+    >>> def tri_cycle():
+    ...     a = make_ex_with_stack(ValueError, "Cycle1")
+    ...     b = make_ex_with_stack(ValueError, "Cycle2")
+    ...     c = make_ex_with_stack(ValueError, "Cycle3")
+    ...
+    ...     a.__cause__ = b
+    ...     b.__cause__ = c
+    ...
+    ...     raise c from a
+    ...
+
+    >>> def cause():
+    ...     try:
+    ...         raise ValueError("Cause Leaf")
+    ...     except Exception as e:
+    ...         raise e
+    ...
+
+    >>> def context(n=10):
+    ...     try:
+    ...         raise ValueError(f"Context Leaf {n}")
+    ...     except Exception as e:
+    ...         if n == 0:
+    ...             raise ValueError(f"With Context {n}") from e
+    ...         else:
+    ...             context(n - 1)
+    ...
+
+    >>> def main():
+    ...     try:
+    ...         cycle()
+    ...     except Exception as e1:
+    ...         try:
+    ...             tri_cycle()
+    ...         except Exception as e2:
+    ...             ex = e2
+    ...         raise ValueError("With Context and With Cause") from ex
+
+
+    >>> def test_function():
+    ...     import pdb;
+    ...     instance = pdb.Pdb(nosigint=True, readrc=False)
+    ...     try:
+    ...         main()
+    ...     except Exception as e:
+    ...         pdb._post_mortem(e, instance)
+
+    >>> with PdbTestInput(  # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
+    ...     ["exceptions",
+    ...     "exceptions 0",
+    ...     "exceptions 1",
+    ...     "exceptions 2",
+    ...     "exceptions 3",
+    ...     "exit"],
+    ... ):
+    ...    try:
+    ...        test_function()
+    ...    except ValueError:
+    ...        print('Correctly reraised.')
+        > <doctest test.test_pdb.test_post_mortem_complex[5]>(9)main()
+    -> raise ValueError("With Context and With Cause") from ex
+    (Pdb) exceptions
+        0 ValueError('Cycle2')
+        1 ValueError('Cycle1')
+        2 ValueError('Cycle3')
+    >   3 ValueError('With Context and With Cause')
+    (Pdb) exceptions 0
+    > <doctest test.test_pdb.test_post_mortem_complex[0]>(3)make_ex_with_stack()
+    -> raise type_(*content) from from_
+    (Pdb) exceptions 1
+    > <doctest test.test_pdb.test_post_mortem_complex[0]>(3)make_ex_with_stack()
+    -> raise type_(*content) from from_
+    (Pdb) exceptions 2
+    > <doctest test.test_pdb.test_post_mortem_complex[0]>(3)make_ex_with_stack()
+    -> raise type_(*content) from from_
+    (Pdb) exceptions 3
+    > <doctest test.test_pdb.test_post_mortem_complex[5]>(9)main()
+    -> raise ValueError("With Context and With Cause") from ex
+    (Pdb) exit
+    """
+
+
 def test_post_mortem():
     """Test post mortem traceback debugging.
 
@@ -655,6 +1321,34 @@ def test_pdb_skip_modules():
     --Return--
     > <doctest test.test_pdb.test_pdb_skip_modules[0]>(4)skip_module()->None
     -> string.capwords('FOO')
+    (Pdb) continue
+    """
+
+def test_pdb_invalid_arg():
+    """This tests pdb commands that have invalid arguments
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([
+    ...     'a = 3',
+    ...     'll 4',
+    ...     'step 1',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_invalid_arg[0]>(3)test_function()
+    -> pass
+    (Pdb) a = 3
+    *** Invalid argument: = 3
+          Usage: a(rgs)
+    (Pdb) ll 4
+    *** Invalid argument: 4
+          Usage: ll | longlist
+    (Pdb) step 1
+    *** Invalid argument: 1
+          Usage: s(tep)
     (Pdb) continue
     """
 
@@ -1309,6 +2003,72 @@ def test_pdb_next_command_subiterator():
     (Pdb) continue
     """
 
+def test_pdb_multiline_statement():
+    """Test for multiline statement
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'def f(x):',
+    ...     '  return x * 2',
+    ...     '',
+    ...     'f(2)',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_multiline_statement[0]>(3)test_function()
+    -> pass
+    (Pdb) def f(x):
+    ...     return x * 2
+    ...
+    (Pdb) f(2)
+    4
+    (Pdb) c
+    """
+
+def test_pdb_show_attribute_and_item():
+    """Test for multiline statement
+
+    >>> def test_function():
+    ...     n = lambda x: x
+    ...     c = {"a": 1}
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     pass
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'c["a"]',
+    ...     'c.get("a")',
+    ...     'n(1)',
+    ...     'j=1',
+    ...     'j+1',
+    ...     'r"a"',
+    ...     'next(iter([1]))',
+    ...     'list((0, 1))',
+    ...     'c'
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_show_attribute_and_item[0]>(5)test_function()
+    -> pass
+    (Pdb) c["a"]
+    1
+    (Pdb) c.get("a")
+    1
+    (Pdb) n(1)
+    1
+    (Pdb) j=1
+    (Pdb) j+1
+    2
+    (Pdb) r"a"
+    'a'
+    (Pdb) next(iter([1]))
+    1
+    (Pdb) list((0, 1))
+    [0, 1]
+    (Pdb) c
+    """
+
 def test_pdb_issue_20766():
     """Test for reference leaks when the SIGINT handler is set.
 
@@ -1471,6 +2231,169 @@ def test_pdb_issue_gh_94215():
     (Pdb) jump 3
     > <doctest test.test_pdb.test_pdb_issue_gh_94215[0]>(3)func()
     -> def inner(v): pass
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_101673():
+    """See GH-101673
+
+    Make sure ll won't revert local variable assignment
+
+    >>> def test_function():
+    ...    a = 1
+    ...    import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     '!a = 2',
+    ...     'll',
+    ...     'p a',
+    ...     'continue'
+    ... ]):
+    ...     test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101673[0]>(3)test_function()->None
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) !a = 2
+    (Pdb) ll
+      1         def test_function():
+      2            a = 1
+      3  ->        import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) p a
+    2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_103225():
+    """See GH-103225
+
+    Make sure longlist uses 1-based line numbers in frames that correspond to a module
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'longlist',
+    ...     'continue'
+    ... ]):
+    ...     a = 1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     b = 2
+    > <doctest test.test_pdb.test_pdb_issue_gh_103225[0]>(7)<module>()
+    -> b = 2
+    (Pdb) longlist
+      1     with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+      2         'longlist',
+      3         'continue'
+      4     ]):
+      5         a = 1
+      6         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+      7  ->     b = 2
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_101517():
+    """See GH-101517
+
+    Make sure pdb doesn't crash when the exception is caught in a try/except* block
+
+    >>> def test_function():
+    ...     try:
+    ...         raise KeyError
+    ...     except* Exception as e:
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_101517[0]>(None)test_function()->None
+    -> Warning: lineno is None
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_108976():
+    """See GH-108976
+    Make sure setting f_trace_opcodes = True won't crash pdb
+    >>> def test_function():
+    ...     import sys
+    ...     sys._getframe().f_trace_opcodes = True
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     a = 1
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'continue'
+    ... ]):
+    ...    test_function()
+    bdb.Bdb.dispatch: unknown debugging event: 'opcode'
+    > <doctest test.test_pdb.test_pdb_issue_gh_108976[0]>(5)test_function()
+    -> a = 1
+    (Pdb) continue
+    """
+
+def test_pdb_ambiguous_statements():
+    """See GH-104301
+
+    Make sure that ambiguous statements prefixed by '!' are properly disambiguated
+
+    >>> with PdbTestInput([
+    ...     '! n = 42',  # disambiguated statement: reassign the name n
+    ...     'n',         # advance the debugger into the print()
+    ...     'continue'
+    ... ]):
+    ...     n = -1
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     print(f"The value of n is {n}")
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(8)<module>()
+    -> print(f"The value of n is {n}")
+    (Pdb) ! n = 42
+    (Pdb) n
+    The value of n is 42
+    > <doctest test.test_pdb.test_pdb_ambiguous_statements[0]>(1)<module>()
+    -> with PdbTestInput([
+    (Pdb) continue
+    """
+
+def test_pdb_issue_gh_65052():
+    """See GH-65052
+
+    args, retval and display should not crash if the object is not displayable
+    >>> class A:
+    ...     def __new__(cls):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         return object.__new__(cls)
+    ...     def __init__(self):
+    ...         import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...         self.a = 1
+    ...     def __repr__(self):
+    ...         return self.a
+
+    >>> def test_function():
+    ...     A()
+    >>> with PdbTestInput([  # doctest: +ELLIPSIS +NORMALIZE_WHITESPACE
+    ...     's',
+    ...     'retval',
+    ...     'continue',
+    ...     'args',
+    ...     'display self',
+    ...     'display',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()
+    -> return object.__new__(cls)
+    (Pdb) s
+    --Return--
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(4)__new__()-><A instance at ...>
+    -> return object.__new__(cls)
+    (Pdb) retval
+    *** repr(retval) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_issue_gh_65052[0]>(7)__init__()
+    -> self.a = 1
+    (Pdb) args
+    self = *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display self
+    display self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
+    (Pdb) display
+    Currently displaying:
+    self: *** repr(self) failed: AttributeError: 'A' object has no attribute 'a' ***
     (Pdb) continue
     """
 
@@ -1715,12 +2638,27 @@ def bœr():
         commands = ''
         expected = "SyntaxError:"
         stdout, stderr = self.run_pdb_script(
-            script, commands, expected_returncode=1
+            script, commands
         )
         self.assertIn(expected, stdout,
             '\n\nExpected:\n{}\nGot:\n{}\n'
             'Fail to handle a syntax error in the debuggee.'
             .format(expected, stdout))
+
+    def test_issue84583(self):
+        # A syntax error from ast.literal_eval should not make pdb exit.
+        script = "import ast; ast.literal_eval('')\n"
+        commands = """
+            continue
+            where
+            quit
+        """
+        stdout, stderr = self.run_pdb_script(script, commands)
+        # The code should appear 3 times in the stdout:
+        # 1. when pdb starts
+        # 2. when the exception is raised, in trackback
+        # 3. in where command
+        self.assertEqual(stdout.count("ast.literal_eval('')"), 3)
 
     def test_issue26053(self):
         # run command of pdb prompt echoes the correct args
@@ -1882,8 +2820,7 @@ def bœr():
         stdout, stderr = self._run_pdb(
             ['-m', module_name], "", expected_returncode=1
         )
-        self.assertIn("ImportError: No module named t_main.__main__",
-                      stdout.splitlines())
+        self.assertIn("ImportError: No module named t_main.__main__;", stdout)
 
     def test_package_without_a_main(self):
         pkg_name = 't_pkg'
@@ -1900,6 +2837,22 @@ def bœr():
         self.assertIn(
             "'t_pkg.t_main' is a package and cannot be directly executed",
             stdout)
+
+    def test_nonexistent_module(self):
+        assert not os.path.exists(os_helper.TESTFN)
+        stdout, stderr = self._run_pdb(["-m", os_helper.TESTFN], "", expected_returncode=1)
+        self.assertIn(f"ImportError: No module named {os_helper.TESTFN}", stdout)
+
+    def test_dir_as_script(self):
+        with os_helper.temp_dir() as temp_dir:
+            stdout, stderr = self._run_pdb([temp_dir], "", expected_returncode=1)
+            self.assertIn(f"Error: {temp_dir} is a directory", stdout)
+
+    def test_invalid_cmd_line_options(self):
+        stdout, stderr = self._run_pdb(["-c"], "", expected_returncode=2)
+        self.assertIn(f"pdb: error: argument -c/--command: expected one argument", stdout.split('\n')[1])
+        stdout, stderr = self._run_pdb(["--spam", "-m", "pdb"], "", expected_returncode=2)
+        self.assertIn(f"pdb: error: unrecognized arguments: --spam", stdout.split('\n')[1])
 
     def test_blocks_at_first_code_line(self):
         script = """
@@ -1984,7 +2937,7 @@ def bœr():
 
     def test_errors_in_command(self):
         commands = "\n".join([
-            'print(',
+            'print(]',
             'debug print(',
             'debug doesnotexist',
             'c',
@@ -1993,7 +2946,8 @@ def bœr():
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
-            '(Pdb) *** SyntaxError: \'(\' was never closed',
+            "(Pdb) *** SyntaxError: closing parenthesis ']' does not match opening "
+            "parenthesis '('",
 
             '(Pdb) ENTERING RECURSIVE DEBUGGER',
             '*** SyntaxError: \'(\' was never closed',
@@ -2149,6 +3103,12 @@ def bœr():
         stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
         # verify that pdb found the source of the "frozen" function
         self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+    def test_non_utf8_encoding(self):
+        script_dir = os.path.join(os.path.dirname(__file__), 'encoded_modules')
+        for filename in os.listdir(script_dir):
+            if filename.endswith(".py"):
+                self._run_pdb([os.path.join(script_dir, filename)], 'q')
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):

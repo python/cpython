@@ -5,6 +5,7 @@ __all__ = (
 import collections
 import socket
 import sys
+import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -66,9 +67,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     positional host and port, with various optional keyword arguments
     following.  The return value is the same as loop.create_server().
 
-    Additional optional keyword arguments are loop (to set the event loop
-    instance to use) and limit (to set the buffer limit passed to the
-    StreamReader).
+    Additional optional keyword argument is limit (to set the buffer
+    limit passed to the StreamReader).
 
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
@@ -378,7 +378,8 @@ class StreamWriter:
 
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade an existing stream-based connection to TLS."""
         server_side = self._protocol._client_connected_cb is not None
         protocol = self._protocol
@@ -386,9 +387,15 @@ class StreamWriter:
         new_transport = await self._loop.start_tls(  # type: ignore
             self._transport, protocol, sslcontext,
             server_side=server_side, server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
         self._transport = new_transport
         protocol._replace_writer(self)
+
+    def __del__(self, warnings=warnings):
+        if not self._transport.is_closing():
+            self.close()
+            warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 
 class StreamReader:
@@ -647,16 +654,17 @@ class StreamReader:
     async def read(self, n=-1):
         """Read up to `n` bytes from the stream.
 
-        If n is not provided, or set to -1, read until EOF and return all read
-        bytes. If the EOF was received and the internal buffer is empty, return
-        an empty bytes object.
+        If `n` is not provided or set to -1,
+        read until EOF, then return all read bytes.
+        If EOF was received and the internal buffer is empty,
+        return an empty bytes object.
 
-        If n is zero, return empty bytes object immediately.
+        If `n` is 0, return an empty bytes object immediately.
 
-        If n is positive, this function try to read `n` bytes, and may return
-        less or equal bytes than requested, but at least one byte. If EOF was
-        received before any byte is read, this function returns empty byte
-        object.
+        If `n` is positive, return at most `n` available bytes
+        as soon as at least 1 byte is available in the internal buffer.
+        If EOF is received before any byte is read, return an empty
+        bytes object.
 
         Returned value is not limited with limit, configured at stream
         creation.

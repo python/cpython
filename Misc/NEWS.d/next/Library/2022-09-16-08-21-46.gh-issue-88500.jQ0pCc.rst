@@ -1,2 +1,0 @@
-Reduced the memory usage of :func:`urllib.parse.unquote` and
-:func:`urllib.parse.unquote_to_bytes` on large values.

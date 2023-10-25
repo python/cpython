@@ -3,8 +3,28 @@ import re
 
 from . import common as _common
 
+# The following C files must not built with Py_BUILD_CORE.
+FILES_WITHOUT_INTERNAL_CAPI = frozenset((
+    # Modules/
+    '_testcapimodule.c',
+    '_testclinic_limited.c',
+    'xxlimited.c',
+    'xxlimited_35.c',
+))
+
+# C files in the fhe following directories must not be built with
+# Py_BUILD_CORE.
+DIRS_WITHOUT_INTERNAL_CAPI = frozenset((
+    # Modules/_testcapi/
+    '_testcapi',
+))
 
 TOOL = 'gcc'
+
+META_FILES = {
+    '<built-in>',
+    '<command-line>',
+}
 
 # https://gcc.gnu.org/onlinedocs/cpp/Preprocessor-Output.html
 # flags:
@@ -29,7 +49,7 @@ COMPILER_DIRECTIVE_RE = re.compile(r'''
             [^()]*
          )*
      )  # <args>
-    ( [)] [)] )?  # <closed>
+    ( [)] [)] )  # <closed>
 ''', re.VERBOSE)
 
 POST_ARGS = (
@@ -55,6 +75,14 @@ def preprocess(filename,
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
     filename = _normpath(filename, cwd)
+
+    postargs = POST_ARGS
+    basename = os.path.basename(filename)
+    dirname = os.path.basename(os.path.dirname(filename))
+    if (basename not in FILES_WITHOUT_INTERNAL_CAPI
+       and dirname not in DIRS_WITHOUT_INTERNAL_CAPI):
+        postargs += ('-DPy_BUILD_CORE=1',)
+
     text = _common.preprocess(
         TOOL,
         filename,
@@ -62,7 +90,7 @@ def preprocess(filename,
         includes=includes,
         macros=macros,
         #preargs=PRE_ARGS,
-        postargs=POST_ARGS,
+        postargs=postargs,
         executable=['gcc'],
         compiler='unix',
         cwd=cwd,
@@ -75,11 +103,15 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
 
     # The first line is special.
     # The next two lines are consistent.
-    for expected in [
-        f'# 1 "{reqfile}"',
-        '# 1 "<built-in>"',
-        '# 1 "<command-line>"',
-    ]:
+    firstlines = [
+        f'# 0 "{reqfile}"',
+        '# 0 "<built-in>"',
+        '# 0 "<command-line>"',
+    ]
+    if text.startswith('# 1 '):
+        # Some preprocessors emit a lineno of 1 for line-less entries.
+        firstlines = [l.replace('# 0 ', '# 1 ') for l in firstlines]
+    for expected in firstlines:
         line = next(lines)
         if line != expected:
             raise NotImplementedError((line, expected))
@@ -121,7 +153,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1
     for line in lines:
-        if line == '# 1 "<command-line>" 2':
+        if line == '# 0 "<command-line>" 2' or line == '# 1 "<command-line>" 2':
             # We're done with this top-level include.
             return
 
@@ -144,9 +176,13 @@ def _iter_top_include_lines(lines, topfile, cwd,
                 # XXX How can a file return to line 1?
                 #assert lno > 1, (line, lno)
             else:
-                # It's the next line from the file.
-                assert included == files[-1], (line, files)
-                assert lno > 1, (line, lno)
+                if included == files[-1]:
+                    # It's the next line from the file.
+                    assert lno > 1, (line, lno)
+                else:
+                    # We ran into a user-added #LINE directive,
+                    # which we promptly ignore.
+                    pass
         elif not files:
             raise NotImplementedError((line,))
         elif filter_reqfile(files[-1]):
@@ -156,6 +192,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
                 if name != 'pragma':
                     raise Exception(line)
             else:
+                line = re.sub(r'__inline__', 'inline', line)
                 if not raw:
                     line, partial = _strip_directives(line, partial=partial)
                 yield _common.SourceLine(
@@ -173,8 +210,8 @@ def _parse_marker_line(line, reqfile=None):
         return None, None, None
     lno, origfile, flags = m.groups()
     lno = int(lno)
+    assert origfile not in META_FILES, (line,)
     assert lno > 0, (line, lno)
-    assert origfile not in ('<built-in>', '<command-line>'), (line,)
     flags = set(int(f) for f in flags.split()) if flags else ()
 
     if 1 in flags:
@@ -205,6 +242,7 @@ def _strip_directives(line, partial=0):
         line = line[m.end():]
 
     line = re.sub(r'__extension__', '', line)
+    line = re.sub(r'__thread\b', '_Thread_local', line)
 
     while (m := COMPILER_DIRECTIVE_RE.match(line)):
         before, _, _, closed = m.groups()

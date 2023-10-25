@@ -1,2 +1,0 @@
-Add :func:`inspect.markcoroutinefunction` decorator which manually marks
-a function as a coroutine for the benefit of :func:`iscoroutinefunction`.

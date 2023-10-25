@@ -1,5 +1,0 @@
-Add :ref:`enum-dataclass-support` to the
-:class:`~enum.Enum` :meth:`~enum.Enum.__repr__`.
-When inheriting from a :class:`~dataclasses.dataclass`,
-only show the field names in the value section of the member :func:`repr`,
-and not the dataclass' class name.

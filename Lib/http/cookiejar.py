@@ -104,9 +104,9 @@ def time2isoz(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%04d-%02d-%02d %02d:%02d:%02dZ" % (
         dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -122,9 +122,9 @@ def time2netscape(t=None):
 
     """
     if t is None:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(t)
+        dt = datetime.datetime.fromtimestamp(t, tz=datetime.UTC)
     return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
         dt.year, dt.hour, dt.minute, dt.second)

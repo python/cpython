@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(type___instancecheck____doc__,
 "__instancecheck__($self, instance, /)\n"
@@ -190,7 +186,7 @@ object___reduce_ex__(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int protocol;
 
-    protocol = _PyLong_AsInt(arg);
+    protocol = PyLong_AsInt(arg);
     if (protocol == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -222,9 +218,6 @@ object___format__(PyObject *self, PyObject *arg)
 
     if (!PyUnicode_Check(arg)) {
         _PyArg_BadArgument("__format__", "argument", "str", arg);
-        goto exit;
-    }
-    if (PyUnicode_READY(arg) == -1) {
         goto exit;
     }
     format_spec = arg;
@@ -269,4 +262,4 @@ object___dir__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return object___dir___impl(self);
 }
-/*[clinic end generated code: output=d2fc52440a89f2fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b56c87f9cace1921 input=a9049054013a1b77]*/
