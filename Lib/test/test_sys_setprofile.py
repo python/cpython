@@ -272,10 +272,6 @@ class ProfileHookTestCase(TestCaseBase):
         self.check_events(g, [(1, 'call', g_ident, None),
                               (2, 'call', f_ident, None),
                               (2, 'return', f_ident, 0),
-                              # once more; the generator is being garbage collected
-                              # and it will do a PY_THROW
-                              (2, 'call', f_ident, None),
-                              (2, 'return', f_ident, None),
                               (1, 'return', g_ident, None),
                               ], check_args=True)
 
