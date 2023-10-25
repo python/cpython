@@ -500,6 +500,13 @@ Pending Removal in Python 3.15
   rarely used.  No direct replacement exists.  *Anything* is better than CGI
   to interface a web server with a request handler.
 
+* :class:`locale`: :func:`locale.getdefaultlocale` was deprecated in Python 3.11
+  and originally planned for removal in Python 3.13 (:gh:`90817`),
+  but removal has been postponed to Python 3.15.
+  Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
+  :func:`locale.getlocale()` instead.
+  (Contributed by Hugo van Kemenade in :gh:`111187`.)
+
 * :class:`typing.NamedTuple`:
 
   * The undocumented keyword argument syntax for creating NamedTuple classes
@@ -611,10 +618,6 @@ although there is currently no date scheduled for their removal.
   Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
   <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
   for migration advice.
-
-* :func:`locale.getdefaultlocale`: use :func:`locale.setlocale()`,
-  :func:`locale.getencoding()` and :func:`locale.getlocale()` instead
-  (:gh:`90817`)
 
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
