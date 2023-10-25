@@ -696,6 +696,8 @@
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
+            frame->instr_ptr -= frame->next_instr_offset;
+            frame->next_instr_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {

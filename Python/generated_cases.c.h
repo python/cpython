@@ -1015,6 +1015,8 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
+                frame->instr_ptr -= frame->next_instr_offset;
+                frame->next_instr_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1041,8 +1043,10 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP();
+            SKIP_OVER(frame->next_instr_offset);
+            frame->next_instr_offset = 0;
             goto resume_frame;
         }
 
@@ -1080,6 +1084,8 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP();
+                frame->instr_ptr -= frame->next_instr_offset;
+                frame->next_instr_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1105,8 +1111,10 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP();
+            SKIP_OVER(frame->next_instr_offset);
+            frame->next_instr_offset = 0;
             goto resume_frame;
         }
 
@@ -1332,9 +1340,11 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP();
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+            SKIP_OVER(1 + INLINE_CACHE_ENTRIES_SEND);
+            frame->next_instr_offset = 0;
             goto resume_frame;
         }
 
@@ -1357,9 +1367,11 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP();
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
+            SKIP_OVER(1 + INLINE_CACHE_ENTRIES_SEND);
+            frame->next_instr_offset = 0;
             goto resume_frame;
         }
 
@@ -4930,8 +4942,10 @@
             _PyInterpreterFrame *prev = frame->previous;
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
-            frame->instr_ptr += frame->next_instr_offset;
             _PyFrame_StackPush(frame, (PyObject *)gen);
+            LOAD_IP();
+            SKIP_OVER(frame->next_instr_offset);
+            frame->next_instr_offset = 0;
             goto resume_frame;
         }
 
