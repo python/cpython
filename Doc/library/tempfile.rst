@@ -34,17 +34,19 @@ The module defines the following user-callable items:
 .. function:: TemporaryFile(mode='w+b', buffering=-1, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
-   The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
-   as it is closed (including an implicit close when the object is garbage
-   collected).  Under Unix, the directory entry for the file is either not created at all or is removed
-   immediately after the file is created.  Other platforms do not support
+   The file is created securely, using the same rules as :func:`mkstemp`.
+   Under Unix, the directory entry for the file is either not created at all or is
+   removed immediately after the file is created.  Other platforms do not support
    this; your code should not rely on a temporary file created using this
    function having or not having a visible name in the file system.
 
-   The resulting object can be used as a context manager (see
-   :ref:`tempfile-examples`).  On completion of the context or
-   destruction of the file object the temporary file will be removed
-   from the filesystem.
+   The temporary file will be removed from the filesystem when the returned
+   file-like object:
+
+   - is closed
+   - or, is garbage collected (and is implicitly closed)
+   - or, at the completion of the context if used as a context manager (see
+     :ref:`tempfile-examples`)
 
    The *mode* parameter defaults to ``'w+b'`` so that the file created can
    be read and written without being closed.  Binary mode is used so that it
