@@ -429,7 +429,9 @@ class Ratio:
             return self.num / self.den
 
     def markdown(self) -> str:
-        if self.den == 0 or self.den is None:
+        if self.den is None:
+            return ""
+        elif self.den == 0:
             if self.num != 0:
                 return f"{self.num:,} / 0 !!"
             return ""
