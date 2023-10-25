@@ -49,6 +49,7 @@ int _PyTestCapi_Init_PyAtomic(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *mod);
+int _PyTestCapi_Init_Sys(PyObject *);
 
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);
 int _PyTestCapi_Init_HeaptypeRelative(PyObject *module);
