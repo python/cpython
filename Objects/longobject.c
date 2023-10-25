@@ -3420,6 +3420,7 @@ x_add(PyLongObject *a, PyLongObject *b)
         z->ob_digit[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
     }
+    assert(carry==0 || extra_digit);
     if (extra_digit) {
         if (carry) {
             z->ob_digit[i] = carry;
