@@ -1,0 +1,2 @@
+Add :attr:`ipaddress.IPv4Address.ipv6_mapped` to mirror
+:attr:`ipaddress.IPv6Address.ipv4_mapped`.
