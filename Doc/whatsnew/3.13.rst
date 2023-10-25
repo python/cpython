@@ -116,7 +116,7 @@ Other Language Changes
   the file is not accessible.
   (Contributed by Moonsik Park in :gh:`82367`.)
 
-* Fixed a bug where a :keyword:`global` decleration in an :keyword:`except` block
+* Fixed a bug where a :keyword:`global` declaration in an :keyword:`except` block
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
@@ -500,6 +500,13 @@ Pending Removal in Python 3.15
   rarely used.  No direct replacement exists.  *Anything* is better than CGI
   to interface a web server with a request handler.
 
+* :class:`locale`: :func:`locale.getdefaultlocale` was deprecated in Python 3.11
+  and originally planned for removal in Python 3.13 (:gh:`90817`),
+  but removal has been postponed to Python 3.15.
+  Use :func:`locale.setlocale()`, :func:`locale.getencoding()` and
+  :func:`locale.getlocale()` instead.
+  (Contributed by Hugo van Kemenade in :gh:`111187`.)
+
 * :class:`typing.NamedTuple`:
 
   * The undocumented keyword argument syntax for creating NamedTuple classes
@@ -611,10 +618,6 @@ although there is currently no date scheduled for their removal.
   Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
   <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
   for migration advice.
-
-* :func:`locale.getdefaultlocale`: use :func:`locale.setlocale()`,
-  :func:`locale.getencoding()` and :func:`locale.getlocale()` instead
-  (:gh:`90817`)
 
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
@@ -940,7 +943,15 @@ Porting to Python 3.13
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
 
-* None yet
+Changes in the Python API
+-------------------------
+
+* :meth:`!tkinter.Text.count` now always returns an integer if one or less
+  counting options are specified.
+  Previously it could return a single count as a 1-tuple, an integer (only if
+  option ``"update"`` was specified) or ``None`` if no items found.
+  The result is now the same if ``wantobjects`` is set to ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`97928`.)
 
 
 Build Changes
