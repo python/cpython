@@ -71,7 +71,7 @@
 #endif
 
 #include "Python.h"
-#include "pycore_long.h"          // _PyLong_AsByteArray()
+#include "pycore_long.h"          // _PyLong_NumBits()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
