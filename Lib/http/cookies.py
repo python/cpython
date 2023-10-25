@@ -522,21 +522,21 @@ class BaseCookie(dict):
             result.append(value.js_output(attrs))
         return _nulljoin(result)
 
-    def load(self, rawdata):
+    def load(self, rawdata, *, ignore_errors=False):
         """Load cookies from a string (presumably HTTP_COOKIE) or
         from a dictionary.  Loading cookies from a dictionary 'd'
         is equivalent to calling:
             map(Cookie.__setitem__, d.keys(), d.values())
         """
         if isinstance(rawdata, str):
-            self.__parse_string(rawdata)
+            self.__parse_string(rawdata, ignore_errors)
         else:
             # self.update() wouldn't call our custom __setitem__
             for key, value in rawdata.items():
                 self[key] = value
         return
 
-    def __parse_string(self, str, patt=_CookiePattern):
+    def __parse_string(self, str, ignore_errors, patt=_CookiePattern):
         i = 0                 # Our starting point
         n = len(str)          # Length of string
         parsed_items = []     # Parsed (type, key, value) triples
@@ -593,8 +593,12 @@ class BaseCookie(dict):
             else:
                 assert tp == TYPE_KEYVALUE
                 rval, cval = value
-                self.__set(key, rval, cval)
-                M = self[key]
+                try:
+                    self.__set(key, rval, cval)
+                    M = self[key]
+                except CookieError:
+                    if not ignore_errors:
+                        raise
 
 
 class SimpleCookie(BaseCookie):
