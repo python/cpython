@@ -378,7 +378,6 @@ static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
-    PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
     if (gen->gi_frame_state == FRAME_CREATED) {
@@ -388,6 +387,7 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
         Py_RETURN_NONE;
     }
+    PyObject *yf = _PyGen_yf(gen);
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
@@ -403,12 +403,13 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (err == 0 && is_yield(frame->instr_ptr - 1)) {
         _Py_CODEUNIT *yield_instr = frame->instr_ptr - 1;
         assert(is_resume(frame->instr_ptr));
-        int exception_handler_depth = yield_instr->op.code;
+        int exception_handler_depth = yield_instr->op.arg;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
          * as it automatically generated to handle
          * StopIteration. */
         if (exception_handler_depth == 1) {
+            gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
     }

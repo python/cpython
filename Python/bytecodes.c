@@ -806,7 +806,6 @@ dummy_func(
         }
 
         macro(RETURN_VALUE) =
-            _SAVE_CURRENT_IP +  // Sets frame->return_offset
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
@@ -832,7 +831,6 @@ dummy_func(
 
         macro(RETURN_CONST) =
             LOAD_CONST +
-            _SAVE_CURRENT_IP +  // Sets frame->return_offset
             _POP_FRAME;
 
         inst(INSTRUMENTED_RETURN_CONST, (--)) {

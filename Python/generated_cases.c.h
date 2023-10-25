@@ -988,42 +988,30 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // _SAVE_CURRENT_IP
-            {
-                #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
-                #endif
-                #if TIER_TWO
-                frame->return_offset = oparg;
-                #endif
-            }
-            // _POP_FRAME
             retval = stack_pointer[-1];
             STACK_SHRINK(1);
-            {
-                assert(EMPTY());
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                STORE_SP();
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                frame->instr_ptr += frame->return_offset;
-                _PyFrame_StackPush(frame, retval);
-                LOAD_SP();
-                LOAD_IP();
-                frame->instr_ptr -= frame->return_offset;
-                frame->return_offset = 0;
-    #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-    #endif
+            assert(EMPTY());
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            STORE_SP();
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            frame->instr_ptr += frame->return_offset;
+            _PyFrame_StackPush(frame, retval);
+            LOAD_SP();
+            LOAD_IP();
+            frame->instr_ptr -= frame->return_offset;
+            frame->return_offset = 0;
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
             }
+#endif
             DISPATCH();
         }
 
@@ -1057,15 +1045,6 @@
             {
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
-            }
-            // _SAVE_CURRENT_IP
-            {
-                #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
-                #endif
-                #if TIER_TWO
-                frame->return_offset = oparg;
-                #endif
             }
             // _POP_FRAME
             retval = value;
