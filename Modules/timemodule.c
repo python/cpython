@@ -1740,12 +1740,11 @@ get_gmtoff(time_t t, struct tm *p)
 static int
 init_timezone(PyObject *m)
 {
-#define ADD_INT(NAME, VALUE) \
-    do { \
-        if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) { \
-            return -1; \
-        } \
-    } while (0)
+#define ADD_INT(NAME, VALUE) do {                       \
+    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
+        return -1;                                      \
+    }                                                   \
+while (0)
 
     assert(!PyErr_Occurred());
 
