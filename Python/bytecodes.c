@@ -3995,7 +3995,7 @@ dummy_func(
 
         op(_EXIT_TRACE, (--)) {
             TIER_TWO_ONLY
-            frame->return_offset = 0;  // Dispatch to frame->instr_ptr
+            assert(frame->return_offset == 0);  // Dispatch to frame->instr_ptr
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
