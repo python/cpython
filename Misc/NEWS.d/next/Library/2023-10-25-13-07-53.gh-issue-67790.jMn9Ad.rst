@@ -1,0 +1,2 @@
+Implement basic formatting support (minimum width, alignment, fill) for
+:class:`fractions.Fraction`.
