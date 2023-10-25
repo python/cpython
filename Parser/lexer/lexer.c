@@ -972,6 +972,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
         int end_quote_size = 0;
+        int has_escaped_quote = 0;
 
         /* Nodes of type STRING, especially multi line strings
            must be handled differently in order to get both
@@ -1037,8 +1038,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
                 else {
-                    _PyTokenizer_syntaxerror(tok, "unterminated string literal (detected at"
-                                     " line %d)", start);
+                    if (has_escaped_quote) {
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "unterminated string literal (detected at line %d); "
+                            "perhaps you escaped the end quote?",
+                            start
+                        );
+                    } else {
+                        _PyTokenizer_syntaxerror(
+                            tok, "unterminated string literal (detected at line %d)", start
+                        );
+                    }
                     if (c != '\n') {
                         tok->done = E_EOLS;
                     }
@@ -1052,6 +1063,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 end_quote_size = 0;
                 if (c == '\\') {
                     c = tok_nextc(tok);  /* skip escaped char */
+                    if (c == quote) {  /* but record whether the escaped char was a quote */
+                        has_escaped_quote = 1;
+                    }
                     if (c == '\r') {
                         c = tok_nextc(tok);
                     }

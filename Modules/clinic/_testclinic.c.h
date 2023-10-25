@@ -7,6 +7,7 @@ preserve
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(test_empty_function__doc__,
@@ -3140,4 +3141,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=aea5f282f24761aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90743ac900d60f9f input=a9049054013a1b77]*/
