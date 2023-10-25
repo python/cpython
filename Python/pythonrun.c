@@ -1031,6 +1031,7 @@ error:
 void
 _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
 {
+    assert(value != NULL);
     assert(file != NULL && file != Py_None);
     if (PyExceptionInstance_Check(value)
         && tb != NULL && PyTraceBack_Check(tb)) {
@@ -1046,10 +1047,6 @@ _PyErr_Display(PyObject *file, PyObject *unused, PyObject *value, PyObject *tb)
     }
 
     int unhandled_keyboard_interrupt = _PyRuntime.signals.unhandled_keyboard_interrupt;
-
-    if (!value || PyErr_GivenExceptionMatches(value, PyExc_MemoryError)) {
-        goto fallback;
-    }
 
     // Try first with the stdlib traceback module
     PyObject *traceback_module = PyImport_ImportModule("traceback");
@@ -1280,7 +1277,9 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
     PyCodeObject *co = _PyAST_Compile(mod, interactive_filename, flags, -1, arena);
     if (co == NULL) {
-        Py_DECREF(interactive_filename);
+        if (interactive_src) {
+            Py_DECREF(interactive_filename);
+        }
         return NULL;
     }
 

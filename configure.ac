@@ -2162,10 +2162,15 @@ AS_CASE([$ac_sys_system],
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--export-memory"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
@@ -7051,7 +7056,8 @@ int main()
 ])
 
 AS_VAR_IF([ac_cv_libatomic_needed], [yes],
-          [LIBS="${LIBS} -latomic"])
+          [LIBS="${LIBS} -latomic"
+           LIBATOMIC=${LIBATOMIC-"-latomic"}])
 _RESTORE_VAR([CPPFLAGS])
 
 
@@ -7323,7 +7329,10 @@ PY_STDLIB_MOD([_hashlib], [], [test "$ac_cv_working_openssl_hashlib" = yes],
   [$OPENSSL_INCLUDES], [$OPENSSL_LDFLAGS $OPENSSL_LDFLAGS_RPATH $LIBCRYPTO_LIBS])
 
 dnl test modules
-PY_STDLIB_MOD([_testcapi], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_testcapi],
+    [test "$TEST_MODULES" = yes],
+    dnl Modules/_testcapi needs -latomic for 32bit AIX build
+    [], [], [$LIBATOMIC])
 PY_STDLIB_MOD([_testclinic], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testclinic_limited], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testinternalcapi], [test "$TEST_MODULES" = yes])
