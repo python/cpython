@@ -2246,6 +2246,22 @@ class OtherTests(unittest.TestCase):
                 fp.seek(0, os.SEEK_SET)
                 self.assertEqual(fp.tell(), 0)
 
+    def test_read_after_seek(self):
+        # Issue 102956: Make sure seek(x, os.SEEK_CUR) doesn't break read()
+        txt = b"Charge men!"
+        bloc = txt.find(b"men")
+        with zipfile.ZipFile(TESTFN, "w") as zipf:
+            zipf.writestr("foo.txt", txt)
+        with zipfile.ZipFile(TESTFN, mode="r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.seek(bloc, os.SEEK_CUR)
+                self.assertEqual(fp.read(-1), b'men!')
+        with zipfile.ZipFile(TESTFN, mode="r") as zipf:
+            with zipf.open("foo.txt", "r") as fp:
+                fp.read(6)
+                fp.seek(1, os.SEEK_CUR)
+                self.assertEqual(fp.read(-1), b'men!')
+
     @requires_bz2()
     def test_decompress_without_3rd_party_library(self):
         data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
