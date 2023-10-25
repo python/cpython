@@ -3015,11 +3015,14 @@
             frame->return_offset = 0;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
-            /* TODO: set next_instr */
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
+            /* set next_instr. TODO: optimize this */
+            LOAD_IP();
+            SKIP_OVER(1 + _PyOpcode_Caches[frame->instr_ptr[0].op.code]);
+            next_instr = frame->instr_ptr;
             goto resume_frame;
         }
 
