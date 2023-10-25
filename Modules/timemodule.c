@@ -1744,7 +1744,7 @@ init_timezone(PyObject *m)
     if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
         return -1;                                      \
     }                                                   \
-while (0)
+} while (0)
 
     assert(!PyErr_Occurred());
 
