@@ -165,7 +165,7 @@ Data Types
    to subclass *EnumType* -- see :ref:`Subclassing EnumType <enumtype-examples>`
    for details.
 
-   :class:`EnumType` is responsible for setting the correct :meth:`!__repr__`,
+   ``EnumType`` is responsible for setting the correct :meth:`!__repr__`,
    :meth:`!__str__`, :meth:`!__format__`, and :meth:`!__reduce__` methods on the
    final *enum*, as well as creating the enum members, properly handling
    duplicates, providing iteration over the enum class, etc.
@@ -437,7 +437,7 @@ Data Types
 
 .. class:: StrEnum
 
-   *StrEnum* is the same as :class:`Enum`, but its members are also strings and can be used
+   ``StrEnum`` is the same as :class:`Enum`, but its members are also strings and can be used
    in most of the same places that a string can be used.  The result of any string
    operation performed on or with a *StrEnum* member is not part of the enumeration.
 
@@ -576,7 +576,7 @@ Data Types
 
 .. class:: IntFlag
 
-   *IntFlag* is the same as :class:`Flag`, but its members are also integers and can be
+   ``IntFlag`` is the same as :class:`Flag`, but its members are also integers and can be
    used anywhere that an integer can be used.
 
       >>> from enum import IntFlag, auto
@@ -697,7 +697,7 @@ Data Types
 
 .. class:: FlagBoundary
 
-   *FlagBoundary* controls how out-of-range values are handled in :class:`Flag` and its
+   ``FlagBoundary`` controls how out-of-range values are handled in :class:`Flag` and its
    subclasses.
 
    .. attribute:: STRICT
