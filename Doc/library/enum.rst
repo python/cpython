@@ -198,11 +198,12 @@ Data Types
         >>> some_var = Color.RED
         >>> some_var in Color
         True
+        >>> Color.RED.value in Color
+        True
 
-      .. note::
+   .. versionchanged:: 3.12
 
-         In Python 3.12 it will be possible to check for member values and not
-         just members; until then, a ``TypeError`` will be raised if a
+         Before Python 3.12, a ``TypeError`` is raised if a
          non-Enum-member is used in a containment check.
 
    .. method:: EnumType.__dir__(cls)
@@ -322,7 +323,7 @@ Data Types
          >>> PowersOfThree.SECOND.value
          9
 
-   .. method:: Enum.__init_subclass__(cls, \**kwds)
+   .. method:: Enum.__init_subclass__(cls, **kwds)
 
       A *classmethod* that is used to further configure subsequent subclasses.
       By default, does nothing.

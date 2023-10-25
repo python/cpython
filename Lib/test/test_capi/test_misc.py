@@ -2159,7 +2159,7 @@ class TestThreadState(unittest.TestCase):
 class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
-                    if name.startswith('test_') and not name.endswith('_code'))
+                    if name.startswith('test_'))
 
     # Suppress warning from PyUnicode_FromUnicode().
     @warnings_helper.ignore_warnings(category=DeprecationWarning)
@@ -2488,6 +2488,67 @@ def get_first_executor(func):
                 pass
     return None
 
+
+class TestExecutorInvalidation(unittest.TestCase):
+
+    def setUp(self):
+        self.old = _testinternalcapi.get_optimizer()
+        self.opt = _testinternalcapi.get_counter_optimizer()
+        _testinternalcapi.set_optimizer(self.opt)
+
+    def tearDown(self):
+        _testinternalcapi.set_optimizer(self.old)
+
+    def test_invalidate_object(self):
+        # Generate a new set of functions at each call
+        ns = {}
+        func_src = "\n".join(
+            f"""
+            def f{n}():
+                for _ in range(1000):
+                    pass
+            """ for n in range(5)
+        )
+        exec(textwrap.dedent(func_src), ns, ns)
+        funcs = [ ns[f'f{n}'] for n in range(5)]
+        objects = [object() for _ in range(5)]
+
+        for f in funcs:
+            f()
+        executors = [get_first_executor(f) for f in funcs]
+        # Set things up so each executor depends on the objects
+        # with an equal or lower index.
+        for i, exe in enumerate(executors):
+            self.assertTrue(exe.valid)
+            for obj in objects[:i+1]:
+                _testinternalcapi.add_executor_dependency(exe, obj)
+            self.assertTrue(exe.valid)
+        # Assert that the correct executors are invalidated
+        # and check that nothing crashes when we invalidate
+        # an executor mutliple times.
+        for i in (4,3,2,1,0):
+            _testinternalcapi.invalidate_executors(objects[i])
+            for exe in executors[i:]:
+                self.assertFalse(exe.valid)
+            for exe in executors[:i]:
+                self.assertTrue(exe.valid)
+
+    def test_uop_optimizer_invalidation(self):
+        # Generate a new function at each call
+        ns = {}
+        exec(textwrap.dedent("""
+            def f():
+                for i in range(1000):
+                    pass
+        """), ns, ns)
+        f = ns['f']
+        opt = _testinternalcapi.get_uop_optimizer()
+        with temporary_optimizer(opt):
+            f()
+        exe = get_first_executor(f)
+        self.assertTrue(exe.valid)
+        _testinternalcapi.invalidate_executors(f.__code__)
+        self.assertFalse(exe.valid)
 
 class TestUops(unittest.TestCase):
 
