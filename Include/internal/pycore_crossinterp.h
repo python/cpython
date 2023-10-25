@@ -9,6 +9,17 @@ extern "C" {
 #endif
 
 
+/**************************/
+/* cross-interpreter data */
+/**************************/
+
+typedef struct _xid _PyCrossInterpreterData;
+typedef PyObject *(*xid_newobjectfunc)(_PyCrossInterpreterData *);
+typedef void (*xid_freefunc)(void *);
+
+// _PyCrossInterpreterData is similar to Py_buffer as an effectively
+// opaque struct that holds data outside the object machinery.  This
+// is necessary to pass safely between interpreters in the same process.
 struct _xid {
     // data is the cross-interpreter-safe derivation of a Python object
     // (see _PyObject_GetCrossInterpreterData).  It will be NULL if the
@@ -47,6 +58,58 @@ struct _xid {
     // The call will happen with the original interpreter activated.
     xid_freefunc free;
 };
+
+PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
+PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
+
+PyAPI_FUNC(void) _PyCrossInterpreterData_Init(
+        _PyCrossInterpreterData *data,
+        PyInterpreterState *interp, void *shared, PyObject *obj,
+        xid_newobjectfunc new_object);
+PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
+        _PyCrossInterpreterData *,
+        PyInterpreterState *interp, const size_t, PyObject *,
+        xid_newobjectfunc);
+PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
+        PyInterpreterState *, _PyCrossInterpreterData *);
+
+PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
+PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
+
+PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
+
+/* cross-interpreter data registry */
+
+// For now we use a global registry of shareable classes.  An
+// alternative would be to add a tp_* slot for a class's
+// crossinterpdatafunc. It would be simpler and more efficient.
+
+typedef int (*crossinterpdatafunc)(PyThreadState *tstate, PyObject *,
+                                   _PyCrossInterpreterData *);
+
+struct _xidregitem;
+
+struct _xidregitem {
+    struct _xidregitem *prev;
+    struct _xidregitem *next;
+    /* This can be a dangling pointer, but only if weakref is set. */
+    PyTypeObject *cls;
+    /* This is NULL for builtin types. */
+    PyObject *weakref;
+    size_t refcount;
+    crossinterpdatafunc getdata;
+};
+
+struct _xidregistry {
+    PyThread_type_lock mutex;
+    struct _xidregitem *head;
+};
+
+PyAPI_FUNC(int) _PyCrossInterpreterData_RegisterClass(PyTypeObject *, crossinterpdatafunc);
+PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
+PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 
 #ifdef __cplusplus

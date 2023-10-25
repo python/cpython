@@ -72,9 +72,6 @@
     <ClInclude Include="..\Include\complexobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\crossinterp.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\datetime.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -376,9 +373,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\context.h">
-      <Filter>Include\cpython</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\cpython\crossinterp.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\descrobject.h">

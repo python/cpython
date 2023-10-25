@@ -142,7 +142,6 @@
     <ClInclude Include="..\Include\cpython\compile.h" />
     <ClInclude Include="..\Include\cpython\complexobject.h" />
     <ClInclude Include="..\Include\cpython\context.h" />
-    <ClInclude Include="..\Include\cpython\crossinterp.h" />
     <ClInclude Include="..\Include\cpython\descrobject.h" />
     <ClInclude Include="..\Include\cpython\dictobject.h" />
     <ClInclude Include="..\Include\cpython\fileobject.h" />
@@ -187,7 +186,6 @@
     <ClInclude Include="..\Include\cpython\unicodeobject.h" />
     <ClInclude Include="..\Include\cpython\warnings.h" />
     <ClInclude Include="..\Include\cpython\weakrefobject.h" />
-    <ClInclude Include="..\Include\crossinterp.h" />
     <ClInclude Include="..\Include\datetime.h" />
     <ClInclude Include="..\Include\descrobject.h" />
     <ClInclude Include="..\Include\dictobject.h" />
