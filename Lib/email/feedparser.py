@@ -21,12 +21,16 @@ object's .defects attribute.
 
 __all__ = ['FeedParser', 'BytesFeedParser']
 
+import abc
+import base64
+import quopri
 import re
 
 from email import errors
 from email._policybase import compat32
 from collections import deque
 from io import StringIO
+from email.base64mime import Base64FeedDecoder
 
 NLCRE = re.compile(r'\r\n|\r|\n')
 NLCRE_bol = re.compile(r'(\r\n|\r|\n)')
@@ -292,6 +296,34 @@ class FeedParser:
                 # Not at EOF so this is a line we're going to need.
                 self._input.unreadline(line)
             return
+        if self._cur.get_content_type() == 'message/global':
+            # Support for message/global parts that can have non-identity
+            # content-transfer-encodings as outlined in RFC 6532
+            # (s. 1, p. 3; s 3.5; "Encoding considerations," s. 3.7).
+            decoding_parser_factory = _decoding_parser_factory_map.get(
+                self._cur['Content-Transfer-Encoding']
+            )
+            if decoding_parser_factory is not None:
+                # This block only executes if the subpart needs to be decoded as
+                # it's parsed.  Unspecified and identity
+                # Content-Transfer-Encodings are implicitly handled in a
+                # subsequent block.
+                decoding_parser = decoding_parser_factory(
+                    policy=self.policy,
+                    _factory=self._factory
+                )
+                # Decode current part's body and parse as another part:
+                for line in self._input:
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+                    if line == '':
+                        break
+                    decoding_parser.feed(line)
+                # Retrieve new part and attach (i.e. make a subpart):
+                subpart = decoding_parser.close()
+                self._cur.attach(subpart)
+                return
         if self._cur.get_content_maintype() == 'message':
             # The message claims to be a message/* type, then what follows is
             # another RFC 2822 message.
@@ -535,3 +567,108 @@ class BytesFeedParser(FeedParser):
 
     def feed(self, data):
         super().feed(data.decode('ascii', 'surrogateescape'))
+
+
+class EncodedFeedParser(abc.ABC):
+    """
+    This is an abstract base class; only its subclasses should be instantiated
+     directly.
+
+    Instances of this class work like FeedParser except that the concrete
+     implementations of feed(), prior to parsing the input, transparently decode
+     the input consistent with RFC 2045, s. 6.2.  Each subclass reverses one of
+     the non-identity Content-Transfer-Encoding transformations described there.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self._bytes_feed_parser = BytesFeedParser(*args, **kwargs)
+
+    @abc.abstractmethod
+    def feed(self, text):
+        pass
+
+    def close(self):
+        return self._bytes_feed_parser.close()
+
+
+class Base64EncodedFeedParser(EncodedFeedParser):
+    """
+    FeedParser that supports base64-encoded message parts (i.e. the combination
+     of RFC 2045, s. 6.8; and RFC 6532, particularly s. 3.5).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # This buffer, when non-empty between calls to feed(), represents an
+        # incomplete base64 block that can't be decoded or parsed yet:
+        self._decoder = Base64FeedDecoder(self._bytes_feed_parser.feed)
+        self._errors = []
+
+    def feed(self, text):
+        encoded_bytes = text.encode('ascii')
+        try:
+            self._decoder.feed(encoded_bytes)
+        except Exception as e:
+            self._errors.append(e)
+
+    def close(self):
+        message_part = self._bytes_feed_parser.close()
+        # Attempt to close the decoder in case any further errors occur:
+        try:
+            self._decoder.close()
+        except Exception as e:
+            self._errors.append(e)
+        # Include the decoding-related errors in the message:
+        for error in self._errors:
+            self.policy.handle_defect(message_part, error)
+        return message_part
+
+
+class QuotedPrintableFeedParser(EncodedFeedParser):
+    """
+    FeedParser that supports quoted-printable message parts (i.e. the
+     combination of RFC 2045, s. 6.7; and RFC 6532, particularly s. 3.5).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._encoded_buffer = bytearray()
+
+    def feed(self, text):
+        self._encoded_buffer.extend(text.encode('ascii'))
+        if len(text) < 1 or len(self._encoded_buffer) < 1:
+            # Buffer either hasn't changed since last call or still has nothing
+            # that can be parsed.
+            return
+        index_of_last_equal_sign = self._encoded_buffer.rfind(b'=')
+        if (index_of_last_equal_sign < 0
+                or index_of_last_equal_sign < len(self._encoded_buffer) - 2):
+            # The buffer either contains no 3-char-sequence, octets/soft line
+            # breaks; or it contains all three chars of its last octet/soft line
+            # break; so the whole buffer can be decoded and parsed.
+            last_decodable_index = len(self._encoded_buffer) - 1
+        else:
+            # The buffer doesn't yet have all three chars of its last octet/soft
+            # line break, so only the chars leading up to its last equal sign
+            # can be decoded.
+            last_decodable_index = index_of_last_equal_sign - 1
+        encoded_bytes = self._encoded_buffer[:last_decodable_index + 1]
+        self._encoded_buffer = self._encoded_buffer[last_decodable_index + 1:]
+        if len(encoded_bytes) >= 1:
+            decoded_bytes = quopri.decodestring(encoded_bytes)
+            self._bytes_feed_parser.feed(decoded_bytes)
+
+    def close(self):
+        if len(self._encoded_buffer) >= 1:
+            # TODO: Add a defect to the message object.
+            pass
+        return self._bytes_feed_parser.close()
+
+
+# Map of EncodedFeedParser "factory" functions keyed by
+# Content-Transfer-Encodings.  Note that the semantics of "decoding" in this
+# context exclude identity transformations (i.e. where no decoding is required):
+_decoding_parser_factory_map = {
+    'quoted-printable': QuotedPrintableFeedParser,
+    'base64': Base64EncodedFeedParser
+}
