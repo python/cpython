@@ -626,6 +626,42 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     }
 }
 
+/*************************/
+/* convenience utilities */
+/*************************/
+
+static const char *
+_copy_string_obj_raw(PyObject *strobj)
+{
+    const char *str = PyUnicode_AsUTF8(strobj);
+    if (str == NULL) {
+        return NULL;
+    }
+
+    char *copied = PyMem_RawMalloc(strlen(str)+1);
+    if (copied == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    strcpy(copied, str);
+    return copied;
+}
+
+static int
+_release_xid_data(_PyCrossInterpreterData *data)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    int res = _PyCrossInterpreterData_Release(data);
+    if (res < 0) {
+        /* The owning interpreter is already destroyed. */
+        _PyCrossInterpreterData_Clear(NULL, data);
+        // XXX Emit a warning?
+        PyErr_Clear();
+    }
+    PyErr_SetRaisedException(exc);
+    return res;
+}
+
 
 /***************************/
 /* short-term data sharing */
@@ -722,4 +758,131 @@ _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
         (void)_PyXI_ApplyErrorCode(info->code, info->interp);
     }
     assert(PyErr_Occurred());
+}
+
+/* shared namespaces */
+
+typedef struct _sharednsitem {
+    const char *name;
+    _PyCrossInterpreterData data;
+} _PyXI_namespace_item;
+
+static void _sharednsitem_clear(_PyXI_namespace_item *);  // forward
+
+static int
+_sharednsitem_init(_PyXI_namespace_item *item, PyObject *key, PyObject *value)
+{
+    item->name = _copy_string_obj_raw(key);
+    if (item->name == NULL) {
+        return -1;
+    }
+    if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
+        _sharednsitem_clear(item);
+        return -1;
+    }
+    return 0;
+}
+
+static void
+_sharednsitem_clear(_PyXI_namespace_item *item)
+{
+    if (item->name != NULL) {
+        PyMem_RawFree((void *)item->name);
+        item->name = NULL;
+    }
+    (void)_release_xid_data(&item->data);
+}
+
+static int
+_sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns)
+{
+    PyObject *name = PyUnicode_FromString(item->name);
+    if (name == NULL) {
+        return -1;
+    }
+    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
+    if (value == NULL) {
+        Py_DECREF(name);
+        return -1;
+    }
+    int res = PyDict_SetItem(ns, name, value);
+    Py_DECREF(name);
+    Py_DECREF(value);
+    return res;
+}
+
+struct _sharedns {
+    Py_ssize_t len;
+    _PyXI_namespace_item *items;
+};
+
+static _PyXI_namespace *
+_sharedns_new(Py_ssize_t len)
+{
+    _PyXI_namespace *shared = PyMem_RawCalloc(sizeof(_PyXI_namespace), 1);
+    if (shared == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    shared->len = len;
+    shared->items = PyMem_RawCalloc(sizeof(struct _sharednsitem), len);
+    if (shared->items == NULL) {
+        PyErr_NoMemory();
+        PyMem_RawFree(shared);
+        return NULL;
+    }
+    return shared;
+}
+
+void
+_PyXI_FreeNamespace(_PyXI_namespace *ns)
+{
+    for (Py_ssize_t i=0; i < ns->len; i++) {
+        _sharednsitem_clear(&ns->items[i]);
+    }
+    PyMem_RawFree(ns->items);
+    PyMem_RawFree(ns);
+}
+
+_PyXI_namespace *
+_PyXI_NamespaceFromDict(PyObject *nsobj)
+{
+    if (nsobj == NULL || nsobj == Py_None) {
+        return NULL;
+    }
+    Py_ssize_t len = PyDict_Size(nsobj);
+    if (len == 0) {
+        return NULL;
+    }
+
+    _PyXI_namespace *ns = _sharedns_new(len);
+    if (ns == NULL) {
+        return NULL;
+    }
+    Py_ssize_t pos = 0;
+    for (Py_ssize_t i=0; i < len; i++) {
+        PyObject *key, *value;
+        if (PyDict_Next(nsobj, &pos, &key, &value) == 0) {
+            break;
+        }
+        if (_sharednsitem_init(&ns->items[i], key, value) != 0) {
+            break;
+        }
+    }
+    if (PyErr_Occurred()) {
+        _PyXI_FreeNamespace(ns);
+        return NULL;
+    }
+    return ns;
+}
+
+int
+_PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj)
+{
+    for (Py_ssize_t i=0; i < ns->len; i++) {
+        if (_sharednsitem_apply(&ns->items[i], nsobj) != 0) {
+            return -1;
+        }
+    }
+    return 0;
 }

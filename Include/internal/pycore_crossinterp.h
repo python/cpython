@@ -175,6 +175,13 @@ PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
     PyObject *exctype);
 
 
+typedef struct _sharedns _PyXI_namespace;
+
+PyAPI_FUNC(void) _PyXI_FreeNamespace(_PyXI_namespace *ns);
+PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromDict(PyObject *nsobj);
+PyAPI_FUNC(int) _PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj);
+
+
 #ifdef __cplusplus
 }
 #endif
