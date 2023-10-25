@@ -695,7 +695,6 @@
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-            frame->return_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -2593,7 +2592,6 @@
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
-            assert(frame->return_offset == 0);
             LOAD_SP();
             LOAD_IP(0);
 #if LLTRACE && TIER_ONE
@@ -3287,7 +3285,6 @@
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            assert(frame->return_offset == 0);  // Dispatch to frame->instr_ptr
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);

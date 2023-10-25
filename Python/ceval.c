@@ -907,7 +907,6 @@ exception_unwind:
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
-            assert(frame->return_offset == 0);
 
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;

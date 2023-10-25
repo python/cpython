@@ -1003,7 +1003,6 @@
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP(frame->return_offset);
-            frame->return_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -1031,7 +1030,6 @@
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             LOAD_IP(frame->return_offset);
-            frame->return_offset = 0;
             goto resume_frame;
         }
 
@@ -1059,7 +1057,6 @@
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
                 LOAD_IP(frame->return_offset);
-                frame->return_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1087,7 +1084,6 @@
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
             LOAD_IP(frame->return_offset);
-            frame->return_offset = 0;
             goto resume_frame;
         }
 
@@ -1316,7 +1312,6 @@
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            frame->return_offset = 0;
             goto resume_frame;
         }
 
@@ -1342,7 +1337,6 @@
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            frame->return_offset = 0;
             goto resume_frame;
         }
 
@@ -3004,7 +2998,6 @@
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
-            frame->return_offset = 0;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -3958,7 +3951,6 @@
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
-                assert(frame->return_offset == 0);
                 LOAD_SP();
                 LOAD_IP(0);
     #if LLTRACE && TIER_ONE
@@ -4035,7 +4027,6 @@
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
-                assert(frame->return_offset == 0);
                 LOAD_SP();
                 LOAD_IP(0);
     #if LLTRACE && TIER_ONE
@@ -4918,7 +4909,6 @@
             frame = tstate->current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);
             LOAD_IP(frame->return_offset);
-            frame->return_offset = 0;
             goto resume_frame;
         }
 

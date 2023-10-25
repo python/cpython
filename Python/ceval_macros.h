@@ -71,7 +71,6 @@
 #define INSTRUCTION_START(op) \
     do { \
         frame->instr_ptr = next_instr++; \
-        assert(frame->return_offset == 0); \
     } while(0)
 #endif
 
