@@ -988,7 +988,7 @@ dummy_func(
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
                 assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
-                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1027,7 +1027,7 @@ dummy_func(
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
             assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_SEND + oparg;
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 

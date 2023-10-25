@@ -736,11 +736,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     PyObject **stack_pointer;
 
 
-/* Sets the above local variables from the frame */
-#define SET_LOCALS_FROM_FRAME() \
-    next_instr = frame->instr_ptr; \
-    stack_pointer = _PyFrame_GetStackPointer(frame);
-
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
         goto exit_unwind;
@@ -911,7 +906,9 @@ exception_unwind:
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
-            JUMPTO(handler);
+            next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
+            assert(frame->return_offset == 0);
+
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
             }
@@ -942,7 +939,8 @@ exit_unwind:
     }
 
 resume_with_error:
-    SET_LOCALS_FROM_FRAME();
+    next_instr = frame->instr_ptr; \
+    stack_pointer = _PyFrame_GetStackPointer(frame);
     goto error;
 
 }
