@@ -106,6 +106,10 @@ another rational number, or from a string.
       presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
       and ``"%""``.
 
+   .. versionchanged:: 3.13
+      :class:`Fraction` instances now support integer-style formatting, with
+      presentation type ``"d"`` or missing presentation type.
+
    .. attribute:: numerator
 
       Numerator of the Fraction in lowest term.
@@ -204,10 +208,14 @@ another rational number, or from a string.
       Provides support for float-style formatting of :class:`Fraction`
       instances via the :meth:`str.format` method, the :func:`format` built-in
       function, or :ref:`Formatted string literals <f-strings>`. The
-      presentation types ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"``
-      and ``"%"`` are supported. For these presentation types, formatting for a
-      :class:`Fraction` object ``x`` follows the rules outlined for
-      the :class:`float` type in the :ref:`formatspec` section.
+      presentation types ``"d"``, ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``,
+      ``"G"`` and ``"%"`` are supported. For presentation types other than
+      ``"d"``, formatting for a :class:`Fraction` object follows the
+      rules outlined for the :class:`float` type in the :ref:`formatspec`
+      section. For presentation type ``"d"``, formatting follows the rules for
+      the :class:`int` type, except that the zero-fill flag is not supported.
+      If no presentation type is given, the rules are identical to those for
+      presentation type ``"d"``.
 
       Here are some examples::
 
@@ -221,7 +229,10 @@ another rational number, or from a string.
          >>> old_price, new_price = 499, 672
          >>> "{:.2%} price increase".format(Fraction(new_price, old_price) - 1)
          '34.67% price increase'
-
+         >>> format(Fraction(103993, 33102), '_d')
+         '103_993/33_102'
+         >>> format(Fraction(1, 7), '.^+10')
+         '...+1/7...'
 
 .. seealso::
 
