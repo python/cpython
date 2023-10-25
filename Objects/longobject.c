@@ -3389,15 +3389,11 @@ x_add(PyLongObject *a, PyLongObject *b)
         z->long_value.ob_digit[i] = carry & PyLong_MASK;
         carry >>= PyLong_SHIFT;
     }
-    assert(carry==0 || extra_digit);
+    assert(carry == 0 || extra_digit);
     if (extra_digit) {
         z->long_value.ob_digit[i] = carry;
-        if (!carry) {
-            /* rare case: we didn't need the extra digit after all */
-            Py_SET_SIZE(z, size_a);
-        }
     }
-    return z;
+    return long_normalize(z);
 }
 
 /* Subtract the absolute values of two integers. */
