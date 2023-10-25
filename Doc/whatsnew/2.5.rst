@@ -1347,7 +1347,7 @@ complete list of changes, or look through the SVN logs for all the details.
   :func:`input` function to allow opening files in binary or :term:`universal
   newlines` mode.  Another new parameter, *openhook*, lets you use a function
   other than :func:`open`  to open the input files.  Once you're iterating over
-  the set of files, the :class:`FileInput` object's new :meth:`fileno` returns
+  the set of files, the :class:`FileInput` object's new :meth:`~fileinput.fileno` returns
   the file descriptor for the currently opened file. (Contributed by Georg
   Brandl.)
 

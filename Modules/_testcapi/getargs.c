@@ -138,32 +138,25 @@ getargs_w_star(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_empty_argparse(PyObject *self, PyObject *Py_UNUSED(ignored))
+getargs_empty(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     /* Test that formats can begin with '|'. See issue #4720. */
-    PyObject *dict = NULL;
-    static char *kwlist[] = {NULL};
-    PyObject *tuple = PyTuple_New(0);
-    if (!tuple) {
-        return NULL;
-    }
+    assert(PyTuple_CheckExact(args));
+    assert(kwargs == NULL || PyDict_CheckExact(kwargs));
+
     int result;
-    if (!(result = PyArg_ParseTuple(tuple, "|:test_empty_argparse"))) {
-        goto done;
+    if (kwargs != NULL && PyDict_GET_SIZE(kwargs) > 0) {
+        static char *kwlist[] = {NULL};
+        result = PyArg_ParseTupleAndKeywords(args, kwargs, "|:getargs_empty",
+                                             kwlist);
     }
-    dict = PyDict_New();
-    if (!dict) {
-        goto done;
+    else {
+        result = PyArg_ParseTuple(args, "|:getargs_empty");
     }
-    result = PyArg_ParseTupleAndKeywords(tuple, dict, "|:test_empty_argparse",
-                                         kwlist);
-  done:
-    Py_DECREF(tuple);
-    Py_XDECREF(dict);
     if (!result) {
         return NULL;
     }
-    Py_RETURN_NONE;
+    return PyLong_FromLong(result);
 }
 
 /* Test tuple argument processing */
@@ -352,90 +345,6 @@ getargs_K(PyObject *self, PyObject *args)
         return NULL;
     }
     return PyLong_FromUnsignedLongLong(value);
-}
-
-/* This function not only tests the 'k' getargs code, but also the
-   PyLong_AsUnsignedLongMask() function. */
-static PyObject *
-test_k_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    /* a number larger than ULONG_MAX even on 64-bit platforms */
-    PyObject *num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
-    if (num == NULL) {
-        goto error;
-    }
-
-    unsigned long value = PyLong_AsUnsignedLongMask(num);
-    if (value == (unsigned long)-1 && PyErr_Occurred()) {
-        Py_DECREF(num);
-        goto error;
-    }
-    else if (value != ULONG_MAX) {
-        Py_DECREF(num);
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: "
-            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        goto error;
-    }
-    if (value != ULONG_MAX) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: k code returned wrong value for long 0xFFF...FFF");
-        goto error;
-    }
-
-    Py_DECREF(tuple);  // also clears `num`
-    tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-    num = PyLong_FromString("-FFFFFFFF000000000000000042", NULL, 16);
-    if (num == NULL) {
-        goto error;
-    }
-
-    value = PyLong_AsUnsignedLongMask(num);
-    if (value == (unsigned long)-1 && PyErr_Occurred()) {
-        Py_DECREF(num);
-        goto error;
-    }
-    else if (value != (unsigned long)-0x42) {
-        Py_DECREF(num);
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: "
-            "PyLong_AsUnsignedLongMask() returned wrong value for long -0xFFF..000042");
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = 0;
-    if (!PyArg_ParseTuple(tuple, "k:test_k_code", &value)) {
-        goto error;
-    }
-    if (value != (unsigned long)-0x42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_k_code: k code returned wrong value for long -0xFFF..000042");
-        goto error;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-
-error:
-    Py_DECREF(tuple);
-    return NULL;
 }
 
 static PyObject *
@@ -718,104 +627,6 @@ getargs_et_hash(PyObject *self, PyObject *args)
     return result;
 }
 
-/* Test the L code for PyArg_ParseTuple.  This should deliver a long long
-   for both long and int arguments.  The test may leak a little memory if
-   it fails.
-*/
-static PyObject *
-test_L_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    PyObject *num = PyLong_FromLong(42);
-    if (num == NULL) {
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    long long value = -1;
-    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        goto error;
-    }
-    if (value != 42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_L_code: L code returned wrong value for long 42");
-        goto error;
-    }
-
-    Py_DECREF(tuple);  // also clears `num`
-    tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-    num = PyLong_FromLong(42);
-    if (num == NULL) {
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, num);
-
-    value = -1;
-    if (!PyArg_ParseTuple(tuple, "L:test_L_code", &value)) {
-        goto error;
-    }
-    if (value != 42) {
-        PyErr_SetString(PyExc_AssertionError,
-            "test_L_code: L code returned wrong value for int 42");
-        goto error;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-
-error:
-    Py_DECREF(tuple);
-    return NULL;
-}
-
-/* Test the s and z codes for PyArg_ParseTuple.
-*/
-static PyObject *
-test_s_code(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    /* Unicode strings should be accepted */
-    PyObject *tuple = PyTuple_New(1);
-    if (tuple == NULL) {
-        return NULL;
-    }
-
-    PyObject *obj = PyUnicode_Decode("t\xeate", strlen("t\xeate"),
-                                     "latin-1", NULL);
-    if (obj == NULL) {
-        goto error;
-    }
-
-    PyTuple_SET_ITEM(tuple, 0, obj);
-
-    /* These two blocks used to raise a TypeError:
-     * "argument must be string without null bytes, not str"
-     */
-    char *value;
-    if (!PyArg_ParseTuple(tuple, "s:test_s_code1", &value)) {
-        goto error;
-    }
-
-    if (!PyArg_ParseTuple(tuple, "z:test_s_code2", &value)) {
-        goto error;
-    }
-
-    Py_DECREF(tuple);
-    Py_RETURN_NONE;
-
-error:
-    Py_DECREF(tuple);
-    return NULL;
-}
-
 static PyObject *
 gh_99240_clear_args(PyObject *self, PyObject *args)
 {
@@ -869,6 +680,7 @@ static PyMethodDef test_methods[] = {
     {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
+    {"getargs_empty",           _PyCFunction_CAST(getargs_empty), METH_VARARGS|METH_KEYWORDS},
     {"getargs_y",               getargs_y,                       METH_VARARGS},
     {"getargs_y_hash",          getargs_y_hash,                  METH_VARARGS},
     {"getargs_y_star",          getargs_y_star,                  METH_VARARGS},
@@ -876,10 +688,6 @@ static PyMethodDef test_methods[] = {
     {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
     {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
     {"parse_tuple_and_keywords", parse_tuple_and_keywords,       METH_VARARGS},
-    {"test_L_code",             test_L_code,                     METH_NOARGS},
-    {"test_empty_argparse",     test_empty_argparse,             METH_NOARGS},
-    {"test_k_code",             test_k_code,                     METH_NOARGS},
-    {"test_s_code",             test_s_code,                     METH_NOARGS},
     {"gh_99240_clear_args",     gh_99240_clear_args,             METH_VARARGS},
     {NULL},
 };
