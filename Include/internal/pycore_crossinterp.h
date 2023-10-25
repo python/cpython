@@ -8,6 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_pyerrors.h"
+
+
+/**************************/
+/* cross-interpreter data */
+/**************************/
 
 /***************************/
 /* cross-interpreter calls */
@@ -148,6 +154,25 @@ typedef enum error_code {
 PyAPI_FUNC(int) _PyXI_ApplyErrorCode(
     _PyXI_errcode code,
     PyInterpreterState *interp);
+
+
+typedef struct _sharedexception {
+    // The originating interpreter.
+    PyInterpreterState *interp;
+    // The kind of error to propagate.
+    _PyXI_errcode code;
+    // The exception information to propagate, if applicable.
+    // This is populated only for _PyXI_ERR_UNCAUGHT_EXCEPTION.
+    _Py_excinfo uncaught;
+} _PyXI_exception_info;
+
+PyAPI_FUNC(const char *) _PyXI_InitExceptionInfo(
+    _PyXI_exception_info *info,
+    PyObject *exc,
+    _PyXI_errcode code);
+PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
+    _PyXI_exception_info *info,
+    PyObject *exctype);
 
 
 #ifdef __cplusplus

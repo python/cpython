@@ -667,3 +667,59 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
     assert(PyErr_Occurred());
     return -1;
 }
+
+/* shared exceptions */
+
+const char *
+_PyXI_InitExceptionInfo(_PyXI_exception_info *info,
+                        PyObject *excobj, _PyXI_errcode code)
+{
+    if (info->interp == NULL) {
+        info->interp = PyInterpreterState_Get();
+    }
+
+    const char *failure = NULL;
+    if (code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        // There is an unhandled exception we need to propagate.
+        failure = _Py_excinfo_InitFromException(&info->uncaught, excobj);
+        if (failure != NULL) {
+            // We failed to initialize info->uncaught.
+            // XXX Print the excobj/traceback?  Emit a warning?
+            // XXX Print the current exception/traceback?
+            if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+                info->code = _PyXI_ERR_NO_MEMORY;
+            }
+            else {
+                info->code = _PyXI_ERR_OTHER;
+            }
+            PyErr_Clear();
+        }
+        else {
+            info->code = code;
+        }
+        assert(info->code != _PyXI_ERR_NO_ERROR);
+    }
+    else {
+        // There is an error code we need to propagate.
+        assert(excobj == NULL);
+        assert(code != _PyXI_ERR_NO_ERROR);
+        info->code = code;
+        _Py_excinfo_Clear(&info->uncaught);
+    }
+    return failure;
+}
+
+void
+_PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
+{
+    if (info->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        // Raise an exception that proxies the propagated exception.
+        _Py_excinfo_Apply(&info->uncaught, exctype);
+    }
+    else {
+        // Raise an exception corresponding to the code.
+        assert(info->code != _PyXI_ERR_NO_ERROR);
+        (void)_PyXI_ApplyErrorCode(info->code, info->interp);
+    }
+    assert(PyErr_Occurred());
+}
