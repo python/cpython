@@ -124,11 +124,12 @@ unshare_buffer(bytesio *self, size_t size)
 static int
 resize_buffer(bytesio *self, size_t size)
 {
+    assert(self->buf != NULL);
+    assert(self->exports == 0);
+
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = PyBytes_GET_SIZE(self->buf);
-
-    assert(self->buf != NULL);
 
     /* For simplicity, stay in the range of the signed type. Anyway, Python
        doesn't allow strings to be longer than this. */
@@ -1072,7 +1073,7 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
             "bytesiobuf_getbuffer: view==NULL argument is obsolete");
         return -1;
     }
-    if (SHARED_BUF(b)) {
+    if (b->exports == 0 && SHARED_BUF(b)) {
         if (unshare_buffer(b, b->string_size) < 0)
             return -1;
     }
