@@ -4,7 +4,7 @@ import os
 import sys
 import sysconfig
 from test.support import (
-    run_unittest, missing_compiler_executable, requires_subprocess
+    missing_compiler_executable, requires_subprocess
 )
 
 from distutils.command.config import dump_file, config
@@ -96,8 +96,5 @@ class ConfigTestCase(support.LoggingSilencer,
         for f in (f1, f2):
             self.assertFalse(os.path.exists(f))
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(ConfigTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

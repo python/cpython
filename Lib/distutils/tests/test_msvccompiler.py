@@ -5,7 +5,6 @@ import os
 
 from distutils.errors import DistutilsPlatformError
 from distutils.tests import support
-from test.support import run_unittest
 
 
 SKIP_MESSAGE = (None if sys.platform == "win32" else
@@ -74,8 +73,5 @@ class msvccompilerTestCase(support.TempdirManager,
         else:
             raise unittest.SkipTest("VS 2015 is not installed")
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(msvccompilerTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

@@ -11,7 +11,7 @@ from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
 
 from distutils import log
 from distutils.tests import support
-from test.support import run_unittest, is_emscripten, is_wasi
+from test.support import is_emscripten, is_wasi
 
 
 class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
@@ -136,8 +136,5 @@ class DirUtilTestCase(support.TempdirManager, unittest.TestCase):
             dir_util.copy_tree(src, None)
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(DirUtilTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

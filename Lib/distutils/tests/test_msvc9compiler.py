@@ -5,7 +5,6 @@ import os
 
 from distutils.errors import DistutilsPlatformError
 from distutils.tests import support
-from test.support import run_unittest
 
 # A manifest with the only assembly reference being the msvcrt assembly, so
 # should have the assembly completely stripped.  Note that although the
@@ -177,8 +176,5 @@ class msvc9compilerTestCase(support.TempdirManager,
         self.assertIsNone(got)
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(msvc9compilerTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

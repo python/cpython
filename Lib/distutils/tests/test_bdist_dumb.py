@@ -4,7 +4,6 @@ import os
 import sys
 import zipfile
 import unittest
-from test.support import run_unittest
 
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
@@ -90,8 +89,5 @@ class BuildDumbTestCase(support.TempdirManager,
             wanted.append('foo.%s.pyc' % sys.implementation.cache_tag)
         self.assertEqual(contents, sorted(wanted))
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(BuildDumbTestCase)
-
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    unittest.main()

@@ -13,7 +13,7 @@ from distutils.archive_util import (check_archive_formats, make_tarball,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
 from distutils.tests import support
-from test.support import run_unittest, patch
+from test.support import patch
 from test.support.os_helper import change_cwd
 from test.support.warnings_helper import check_warnings
 
@@ -389,8 +389,5 @@ class ArchiveUtilTestCase(support.TempdirManager,
         finally:
             archive.close()
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(ArchiveUtilTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

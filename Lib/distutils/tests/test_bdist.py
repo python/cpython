@@ -1,7 +1,6 @@
 """Tests for distutils.command.bdist."""
 import os
 import unittest
-from test.support import run_unittest
 
 import warnings
 with warnings.catch_warnings():
@@ -44,9 +43,5 @@ class BuildTestCase(support.TempdirManager,
                             '%s should take --skip-build from bdist' % name)
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(BuildTestCase)
-
-
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    unittest.main()

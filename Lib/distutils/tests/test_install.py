@@ -5,7 +5,7 @@ import sys
 import unittest
 import site
 
-from test.support import captured_stdout, run_unittest, requires_subprocess
+from test.support import captured_stdout, requires_subprocess
 
 from distutils import sysconfig
 from distutils.command.install import install, HAS_USER_SITE
@@ -254,8 +254,5 @@ class InstallTestCase(support.TempdirManager,
         self.assertGreater(len(self.logs), old_logs_len)
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(InstallTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

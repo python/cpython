@@ -4,7 +4,6 @@ import unittest
 import unittest.mock as mock
 from urllib.error import HTTPError
 
-from test.support import run_unittest
 
 from distutils.command import upload as upload_mod
 from distutils.command.upload import upload
@@ -216,8 +215,5 @@ class uploadTestCase(BasePyPIRCCommandTestCase):
                     self.clear_logs()
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(uploadTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()
