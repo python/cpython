@@ -7703,10 +7703,10 @@ socket_exec(PyObject *m)
 
 /* FreeBSD divert(4) */
 #ifdef PF_DIVERT
-    PyModule_AddIntMacro(m, PF_DIVERT);
+    ADD_INT_MACRO(m, PF_DIVERT);
 #endif
 #ifdef AF_DIVERT
-    PyModule_AddIntMacro(m, AF_DIVERT);
+    ADD_INT_MACRO(m, AF_DIVERT);
 #endif
 
 #ifdef AF_PACKET
