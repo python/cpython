@@ -1,1 +1,1 @@
-Fix ``_socket`` module not checking for errors when initializing.
+Add error checking during :mod:`!_socket` module init.
