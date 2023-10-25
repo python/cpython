@@ -242,7 +242,7 @@ class HTMLParser(_markupbase.ParserBase):
             else:
                 assert 0, "interesting.search() lied"
         # end while
-        if end and i < n and not self.cdata_elem:
+        if end and i < n:
             if self.convert_charrefs and not self.cdata_elem:
                 self.handle_data(unescape(rawdata[i:n]))
             else:
