@@ -315,19 +315,27 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 case POP_JUMP_BACKWARD_IF_FALSE:
                 case POP_JUMP_FORWARD_IF_TRUE:
                 case POP_JUMP_BACKWARD_IF_TRUE:
+                case POP_JUMP_FORWARD_IF_NONE:
+                case POP_JUMP_BACKWARD_IF_NONE:
+                case POP_JUMP_FORWARD_IF_NOT_NONE:
+                case POP_JUMP_BACKWARD_IF_NOT_NONE:
                 {
                     int64_t target_stack;
                     int j = get_arg(code, i);
                     if (opcode == POP_JUMP_FORWARD_IF_FALSE ||
                         opcode == POP_JUMP_FORWARD_IF_TRUE ||
                         opcode == JUMP_IF_FALSE_OR_POP ||
-                        opcode == JUMP_IF_TRUE_OR_POP)
+                        opcode == JUMP_IF_TRUE_OR_POP ||
+                        opcode == POP_JUMP_FORWARD_IF_NONE ||
+                        opcode == POP_JUMP_FORWARD_IF_NOT_NONE)
                     {
                         j += i + 1;
                     }
                     else {
                         assert(opcode == POP_JUMP_BACKWARD_IF_FALSE ||
-                               opcode == POP_JUMP_BACKWARD_IF_TRUE);
+                               opcode == POP_JUMP_BACKWARD_IF_TRUE  ||
+                               opcode == POP_JUMP_BACKWARD_IF_NONE ||
+                               opcode == POP_JUMP_BACKWARD_IF_NOT_NONE);
                         j = i + 1 - j;
                     }
                     assert(j < len);
