@@ -568,13 +568,15 @@ class BaseCookie(dict):
             elif key.lower() in Morsel._reserved:
                 if not morsel_seen:
                     # Invalid cookie string
-                    return
+                    raise CookieError('Cookie begins with Morsel reserved'
+                                      'attribute %r' % (key,))
                 if value is None:
                     if key.lower() in Morsel._flags:
                         parsed_items.append((TYPE_ATTRIBUTE, key, True))
                     else:
                         # Invalid cookie string
-                        return
+                        raise CookieError('Morsel reserved attribute %r must '
+                                          'have a value.' % (key,))
                 else:
                     parsed_items.append((TYPE_ATTRIBUTE, key, _unquote(value)))
             elif value is not None:
@@ -582,7 +584,14 @@ class BaseCookie(dict):
                 morsel_seen = True
             else:
                 # Invalid cookie string
-                return
+                raise CookieError('No value found for key %r' % (key,))
+
+        # Invalid tailing data, make sure it's not whitespace.
+        if i < n:
+            tail = str[i:].rstrip()
+            if tail:
+                raise CookieError('Invalid tailing data %r' % (tail,))
+
 
         # The cookie string is valid, apply it.
         M = None         # current morsel

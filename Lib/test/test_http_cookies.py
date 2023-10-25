@@ -192,14 +192,16 @@ class CookieTests(unittest.TestCase):
 
     def test_invalid_cookies(self):
         # Accepting these could be a security issue
+        # Issue 40002: Error inconsistency, changed to raise CookieError.
         C = cookies.SimpleCookie()
         for s in (']foo=x', '[foo=x', 'blah]foo=x', 'blah[foo=x',
                   'Set-Cookie: foo=bar', 'Set-Cookie: foo',
                   'foo=bar; baz', 'baz; foo=bar',
-                  'secure;foo=bar', 'Version=1;foo=bar'):
-            C.load(s)
-            self.assertEqual(dict(C), {})
-            self.assertEqual(C.output(), '')
+                  'secure;foo=bar', 'Version=1;foo=bar',
+                  'invalid\x00=cookie', 'Path=/acme;',
+                  'foo=bar;Version;'):
+            with self.assertRaises(cookies.CookieError):
+                C.load(s)
 
     def test_pickle(self):
         rawdata = 'Customer="WILE_E_COYOTE"; Path=/acme; Version=1'
