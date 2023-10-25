@@ -625,3 +625,45 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
         Py_FatalError("could not register str for cross-interpreter sharing");
     }
 }
+
+
+/***************************/
+/* short-term data sharing */
+/***************************/
+
+/* error codes */
+
+int
+_PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
+{
+    assert(!PyErr_Occurred());
+    switch (code) {
+    case _PyXI_ERR_NO_ERROR:  // fall through
+    case _PyXI_ERR_UNCAUGHT_EXCEPTION:
+        // There is nothing to apply.
+#ifdef Py_DEBUG
+        Py_UNREACHABLE();
+#endif
+        return 0;
+    case _PyXI_ERR_OTHER:
+        // XXX msg?
+        PyErr_SetNone(PyExc_RuntimeError);
+        break;
+    case _PyXI_ERR_NO_MEMORY:
+        PyErr_NoMemory();
+        break;
+    case _PyXI_ERR_ALREADY_RUNNING:
+        assert(interp != NULL);
+        assert(_PyInterpreterState_IsRunningMain(interp));
+        _PyInterpreterState_FailIfRunningMain(interp);
+        break;
+    default:
+#ifdef Py_DEBUG
+        Py_UNREACHABLE();
+#else
+        PyErr_Format(PyExc_RuntimeError, "unsupported error code %d", code);
+#endif
+    }
+    assert(PyErr_Occurred());
+    return -1;
+}

@@ -116,49 +116,52 @@ clear_module_state(module_state *state)
 
 /* exception info ***********************************************************/
 
-#define ERR_NOT_SET 0
-#define ERR_UNCAUGHT_EXCEPTION 1
-#define ERR_NO_MEMORY 2
-#define ERR_ALREADY_RUNNING 3
-
 static const char *
-_excinfo_bind(PyObject *exc, _Py_excinfo *info, int *p_code)
+_excinfo_bind(PyObject *exc, _Py_excinfo *info, _PyXI_errcode *p_code)
 {
     assert(exc != NULL);
 
     const char *failure = _Py_excinfo_InitFromException(info, exc);
     if (failure != NULL) {
+        // We failed to initialize info->uncaught.
+        // XXX Print the excobj/traceback?  Emit a warning?
+        // XXX Print the current exception/traceback?
+        if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
+            *p_code = _PyXI_ERR_NO_MEMORY;
+        }
+        else {
+            *p_code = _PyXI_ERR_OTHER;
+        }
         PyErr_Clear();
-        *p_code = ERR_NO_MEMORY;
-        return failure;
     }
-
-    assert(!PyErr_Occurred());
-    *p_code = ERR_UNCAUGHT_EXCEPTION;
-    return NULL;
+    else {
+        assert(!PyErr_Occurred());
+        *p_code = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    }
+    return failure;
 }
 
 typedef struct _sharedexception {
     PyInterpreterState *interp;
-    int code;
+    _PyXI_errcode code;
     _Py_excinfo uncaught;
 } _sharedexception;
 
 static const char *
-_sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
+_sharedexception_bind(PyObject *exc, _PyXI_errcode code, _sharedexception *sharedexc)
 {
     if (sharedexc->interp == NULL) {
         sharedexc->interp = PyInterpreterState_Get();
     }
 
     const char *failure = NULL;
-    if (code == ERR_NOT_SET) {
+    if (code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         failure = _excinfo_bind(exc, &sharedexc->uncaught, &sharedexc->code);
-        assert(sharedexc->code != ERR_NOT_SET);
+        assert(sharedexc->code != _PyXI_ERR_NO_ERROR);
     }
     else {
         assert(exc == NULL);
-        assert(code != ERR_UNCAUGHT_EXCEPTION);
+        assert(code != _PyXI_ERR_NO_ERROR);
         sharedexc->code = code;
         _Py_excinfo_Clear(&sharedexc->uncaught);
     }
@@ -168,26 +171,12 @@ _sharedexception_bind(PyObject *exc, int code, _sharedexception *sharedexc)
 static void
 _sharedexception_apply(_sharedexception *exc, PyObject *wrapperclass)
 {
-    if (exc->code == ERR_UNCAUGHT_EXCEPTION) {
+    if (exc->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         _Py_excinfo_Apply(&exc->uncaught, wrapperclass);
     }
     else {
-        assert(exc->code != ERR_NOT_SET);
-        if (exc->code == ERR_NO_MEMORY) {
-            PyErr_NoMemory();
-        }
-        else if (exc->code == ERR_ALREADY_RUNNING) {
-            assert(exc->interp != NULL);
-            assert(_PyInterpreterState_IsRunningMain(exc->interp));
-            _PyInterpreterState_FailIfRunningMain(exc->interp);
-        }
-        else {
-#ifdef Py_DEBUG
-            Py_UNREACHABLE();
-#else
-            PyErr_Format(PyExc_RuntimeError, "unsupported error code %d", code);
-#endif
-        }
+        assert(exc->code != _PyXI_ERR_NO_ERROR);
+        (void)_PyXI_ApplyErrorCode(exc->code, exc->interp);
         assert(PyErr_Occurred());
     }
 }
@@ -444,7 +433,8 @@ _run_script(PyInterpreterState *interp,
             const char *codestr, Py_ssize_t codestrlen,
             _sharedns *shared, _sharedexception *sharedexc, int flags)
 {
-    int errcode = ERR_NOT_SET;
+    PyObject *excval = NULL;
+    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
 
     if (_PyInterpreterState_SetRunningMain(interp) < 0) {
         assert(PyErr_Occurred());
@@ -452,11 +442,10 @@ _run_script(PyInterpreterState *interp,
         // be more efficient to leave the exception in place and return
         // immediately.  However, life is simpler if we don't.
         PyErr_Clear();
-        errcode = ERR_ALREADY_RUNNING;
+        errcode = _PyXI_ERR_ALREADY_RUNNING;
         goto error;
     }
 
-    PyObject *excval = NULL;
     PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
         goto error;
@@ -504,7 +493,14 @@ _run_script(PyInterpreterState *interp,
     return 0;
 
 error:
-    excval = PyErr_GetRaisedException();
+    assert(errcode != _PyXI_ERR_NO_ERROR);
+    if (errcode == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        assert(PyErr_Occurred());
+        excval = PyErr_GetRaisedException();
+    }
+    else {
+        assert(!PyErr_Occurred());
+    }
     const char *failure = _sharedexception_bind(excval, errcode, sharedexc);
     if (failure != NULL) {
         fprintf(stderr,
@@ -518,7 +514,7 @@ error:
         PyErr_Display(NULL, excval, NULL);
         Py_DECREF(excval);
     }
-    if (errcode != ERR_ALREADY_RUNNING) {
+    if (errcode != _PyXI_ERR_ALREADY_RUNNING) {
         _PyInterpreterState_SetNotRunningMain(interp);
     }
     assert(!PyErr_Occurred());

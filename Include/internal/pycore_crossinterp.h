@@ -133,6 +133,23 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 
+/***************************/
+/* short-term data sharing */
+/***************************/
+
+typedef enum error_code {
+    _PyXI_ERR_NO_ERROR = 0,
+    _PyXI_ERR_UNCAUGHT_EXCEPTION = -1,
+    _PyXI_ERR_OTHER = -2,
+    _PyXI_ERR_NO_MEMORY = -3,
+    _PyXI_ERR_ALREADY_RUNNING = -4,
+} _PyXI_errcode;
+
+PyAPI_FUNC(int) _PyXI_ApplyErrorCode(
+    _PyXI_errcode code,
+    PyInterpreterState *interp);
+
+
 #ifdef __cplusplus
 }
 #endif
