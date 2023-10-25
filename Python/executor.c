@@ -131,7 +131,7 @@ error:
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    frame->next_instr_offset = 0;  // Don't leave this random
+    frame->return_offset = 0;  // Don't leave this random
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return NULL;
@@ -141,7 +141,7 @@ deoptimize:
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
     OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    frame->next_instr_offset = 0;  // Dispatch to frame->instr_ptr
+    frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
     return frame;

@@ -692,12 +692,12 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->next_instr_offset;
+            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
             LOAD_IP();
-            frame->instr_ptr -= frame->next_instr_offset;
-            frame->next_instr_offset = 0;
+            frame->instr_ptr -= frame->return_offset;
+            frame->return_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3278,17 +3278,17 @@
 
         case _SAVE_CURRENT_IP: {
             #if TIER_ONE
-            frame->next_instr_offset = (uint16_t)(next_instr - frame->instr_ptr);
+            frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
             #endif
             #if TIER_TWO
-            frame->next_instr_offset = oparg;
+            frame->return_offset = oparg;
             #endif
             break;
         }
 
         case _EXIT_TRACE: {
             TIER_TWO_ONLY
-            frame->next_instr_offset = 0;  // Dispatch to frame->instr_ptr
+            frame->return_offset = 0;  // Dispatch to frame->instr_ptr
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);

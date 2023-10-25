@@ -71,7 +71,7 @@
 #define INSTRUCTION_START(op) \
     do { \
         frame->instr_ptr = next_instr++; \
-        assert(frame->next_instr_offset == 0); \
+        assert(frame->return_offset == 0); \
     } while(0)
 #endif
 
@@ -151,7 +151,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
     } while (0)
 #define JUMPTO(x)       do { \
                             next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x); \
-                            frame->next_instr_offset = 0; \
+                            frame->return_offset = 0; \
                         } while(0)
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
@@ -346,7 +346,7 @@ do { \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    frame->next_instr_offset = 0; \
+    frame->return_offset = 0; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (next_instr == NULL) { \
         next_instr = (dest)+1; \

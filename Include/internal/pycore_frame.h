@@ -58,14 +58,20 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    /* The instruction that is currently executing (possibly not started yet). */
+    /* When a frame is executing, instr_ptr points to the instruction currently executing.
+     * During a call, it points to the call instruction.
+     * In a suspended frame, it points to the instruction that would execute
+     * if the frame were to resume.
+     */
     _Py_CODEUNIT *instr_ptr;
     int stacktop;  /* Offset of TOS from localsplus  */
-    /* The next_instr_offset determines where the next instruction is relative
-     * to instr_ptr. It enables us to keep instr_ptr pointing to the current
-     * instruction until it is time to begin executing the next one, which is
-     * necessary for tracebacks and tracing. */
-    uint16_t next_instr_offset;
+    /* The return_offset determines where a `RETURN` should go in the caller,
+     * relative to `instr_ptr`.
+     * It is only meaningful to the callee,
+     * so it needs to be set in any CALL (to a Python function)
+     * or SEND (to a coroutine or generator).
+     * If there is no callee, then it is meaningless. */
+    uint16_t return_offset;
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
@@ -130,7 +136,7 @@ _PyFrame_Initialize(
     frame->stacktop = code->co_nlocalsplus;
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
-    frame->next_instr_offset = 0;
+    frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
@@ -294,7 +300,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     frame->frame_obj = NULL;
     frame->instr_ptr = _PyCode_CODE(code);
     frame->owner = FRAME_OWNED_BY_THREAD;
-    frame->next_instr_offset = 0;
+    frame->return_offset = 0;
     return frame;
 }
 
