@@ -5788,16 +5788,16 @@ static int
 sslmodule_init_constants(PyObject *m)
 {
     if (PyModule_AddStringConstant(m, "_DEFAULT_CIPHERS",
-                                   PY_SSL_DEFAULT_CIPHER_STRING) < 0) {
+                                   PY_SSL_DEFAULT_CIPHER_STRING) < 0)
+    {
         return -1;
     }
 
-#define ADD_INT_CONST(NAME, VALUE) \
-    do { \
-        if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) { \
-            return -1; \
-        } \
-    } while (0)
+#define ADD_INT_CONST(NAME, VALUE) do {                 \
+    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
+        return -1;                                      \
+    }                                                   \
+} while (0)
 
     ADD_INT_CONST("SSL_ERROR_ZERO_RETURN", PY_SSL_ERROR_ZERO_RETURN);
     ADD_INT_CONST("SSL_ERROR_WANT_READ", PY_SSL_ERROR_WANT_READ);
