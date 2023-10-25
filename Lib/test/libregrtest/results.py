@@ -1,8 +1,7 @@
 import sys
-from test.support import TestStats
 
 from .runtests import RunTests
-from .result import State, TestResult
+from .result import State, TestResult, TestStats
 from .utils import (
     StrPath, TestName, TestTuple, TestList, FilterDict,
     printlist, count, format_duration)

@@ -508,34 +508,6 @@ The :mod:`test.support` module defines the following functions:
    Define match patterns on test filenames and test method names for filtering tests.
 
 
-.. function:: run_unittest(*classes)
-
-   Execute :class:`unittest.TestCase` subclasses passed to the function. The
-   function scans the classes for methods starting with the prefix ``test_``
-   and executes the tests individually.
-
-   It is also legal to pass strings as parameters; these should be keys in
-   ``sys.modules``. Each associated module will be scanned by
-   ``unittest.TestLoader.loadTestsFromModule()``. This is usually seen in the
-   following :func:`test_main` function::
-
-      def test_main():
-          support.run_unittest(__name__)
-
-   This will run all tests defined in the named module.
-
-
-.. function:: run_doctest(module, verbosity=None, optionflags=0)
-
-   Run :func:`doctest.testmod` on the given *module*.  Return
-   ``(failure_count, test_count)``.
-
-   If *verbosity* is ``None``, :func:`doctest.testmod` is run with verbosity
-   set to :data:`verbose`.  Otherwise, it is run with verbosity set to
-   ``None``.  *optionflags* is passed as ``optionflags`` to
-   :func:`doctest.testmod`.
-
-
 .. function:: get_pagesize()
 
    Get size of a page in bytes.
