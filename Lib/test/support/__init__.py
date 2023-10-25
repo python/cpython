@@ -6,10 +6,8 @@ if __name__ != 'test.support':
 import contextlib
 import dataclasses
 import functools
-import itertools
 import getpass
 import opcode
-import operator
 import os
 import re
 import stat
@@ -20,8 +18,6 @@ import time
 import types
 import unittest
 import warnings
-
-from .testresult import get_test_runner
 
 
 __all__ = [
@@ -36,7 +32,6 @@ __all__ = [
     "is_resource_enabled", "requires", "requires_freebsd_version",
     "requires_linux_version", "requires_mac_ver",
     "check_syntax_error",
-    "run_unittest", "run_doctest",
     "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "requires_zlib",
@@ -1132,155 +1127,6 @@ def requires_specialization(test):
     return unittest.skipUnless(
         opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
 
-def _filter_suite(suite, pred):
-    """Recursively filter test cases in a suite based on a predicate."""
-    newtests = []
-    for test in suite._tests:
-        if isinstance(test, unittest.TestSuite):
-            _filter_suite(test, pred)
-            newtests.append(test)
-        else:
-            if pred(test):
-                newtests.append(test)
-    suite._tests = newtests
-
-@dataclasses.dataclass(slots=True)
-class TestStats:
-    tests_run: int = 0
-    failures: int = 0
-    skipped: int = 0
-
-    @staticmethod
-    def from_unittest(result):
-        return TestStats(result.testsRun,
-                         len(result.failures),
-                         len(result.skipped))
-
-    @staticmethod
-    def from_doctest(results):
-        return TestStats(results.attempted,
-                         results.failed)
-
-    def accumulate(self, stats):
-        self.tests_run += stats.tests_run
-        self.failures += stats.failures
-        self.skipped += stats.skipped
-
-
-def _run_suite(suite):
-    """Run tests from a unittest.TestSuite-derived class."""
-    runner = get_test_runner(sys.stdout,
-                             verbosity=verbose,
-                             capture_output=(junit_xml_list is not None))
-
-    result = runner.run(suite)
-
-    if junit_xml_list is not None:
-        junit_xml_list.append(result.get_xml_element())
-
-    if not result.testsRun and not result.skipped and not result.errors:
-        raise TestDidNotRun
-    if not result.wasSuccessful():
-        stats = TestStats.from_unittest(result)
-        if len(result.errors) == 1 and not result.failures:
-            err = result.errors[0][1]
-        elif len(result.failures) == 1 and not result.errors:
-            err = result.failures[0][1]
-        else:
-            err = "multiple errors occurred"
-            if not verbose: err += "; run in verbose mode for details"
-        errors = [(str(tc), exc_str) for tc, exc_str in result.errors]
-        failures = [(str(tc), exc_str) for tc, exc_str in result.failures]
-        raise TestFailedWithDetails(err, errors, failures, stats=stats)
-    return result
-
-
-# By default, don't filter tests
-_test_matchers = ()
-_test_patterns = ()
-
-
-def match_test(test):
-    # Function used by support.run_unittest() and regrtest --list-cases
-    result = False
-    for matcher, result in reversed(_test_matchers):
-        if matcher(test.id()):
-            return result
-    return not result
-
-
-def _is_full_match_test(pattern):
-    # If a pattern contains at least one dot, it's considered
-    # as a full test identifier.
-    # Example: 'test.test_os.FileTests.test_access'.
-    #
-    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, ignore 'test_access*'.
-    return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
-
-
-def set_match_tests(patterns):
-    global _test_matchers, _test_patterns
-
-    if not patterns:
-        _test_matchers = ()
-        _test_patterns = ()
-    else:
-        itemgetter = operator.itemgetter
-        patterns = tuple(patterns)
-        if patterns != _test_patterns:
-            _test_matchers = [
-                (_compile_match_function(map(itemgetter(0), it)), result)
-                for result, it in itertools.groupby(patterns, itemgetter(1))
-            ]
-            _test_patterns = patterns
-
-
-def _compile_match_function(patterns):
-    patterns = list(patterns)
-
-    if all(map(_is_full_match_test, patterns)):
-        # Simple case: all patterns are full test identifier.
-        # The test.bisect_cmd utility only uses such full test identifiers.
-        return set(patterns).__contains__
-    else:
-        import fnmatch
-        regex = '|'.join(map(fnmatch.translate, patterns))
-        # The search *is* case sensitive on purpose:
-        # don't use flags=re.IGNORECASE
-        regex_match = re.compile(regex).match
-
-        def match_test_regex(test_id, regex_match=regex_match):
-            if regex_match(test_id):
-                # The regex matches the whole identifier, for example
-                # 'test.test_os.FileTests.test_access'.
-                return True
-            else:
-                # Try to match parts of the test identifier.
-                # For example, split 'test.test_os.FileTests.test_access'
-                # into: 'test', 'test_os', 'FileTests' and 'test_access'.
-                return any(map(regex_match, test_id.split(".")))
-
-        return match_test_regex
-
-
-def run_unittest(*classes):
-    """Run tests from unittest.TestCase-derived classes."""
-    valid_types = (unittest.TestSuite, unittest.TestCase)
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    for cls in classes:
-        if isinstance(cls, str):
-            if cls in sys.modules:
-                suite.addTest(loader.loadTestsFromModule(sys.modules[cls]))
-            else:
-                raise ValueError("str arguments must be keys in sys.modules")
-        elif isinstance(cls, valid_types):
-            suite.addTest(cls)
-        else:
-            suite.addTest(loader.loadTestsFromTestCase(cls))
-    _filter_suite(suite, match_test)
-    return _run_suite(suite)
 
 #=======================================================================
 # Check for the presence of docstrings.
@@ -1300,38 +1146,6 @@ HAVE_DOCSTRINGS = (_check_docstrings.__doc__ is not None and
 
 requires_docstrings = unittest.skipUnless(HAVE_DOCSTRINGS,
                                           "test requires docstrings")
-
-
-#=======================================================================
-# doctest driver.
-
-def run_doctest(module, verbosity=None, optionflags=0):
-    """Run doctest on the given module.  Return (#failures, #tests).
-
-    If optional argument verbosity is not specified (or is None), pass
-    support's belief about verbosity on to doctest.  Else doctest's
-    usual behavior is used (it searches sys.argv for -v).
-    """
-
-    import doctest
-
-    if verbosity is None:
-        verbosity = verbose
-    else:
-        verbosity = None
-
-    results = doctest.testmod(module,
-                             verbose=verbosity,
-                             optionflags=optionflags)
-    if results.failed:
-        stats = TestStats.from_doctest(results)
-        raise TestFailed(f"{results.failed} of {results.attempted} "
-                         f"doctests failed",
-                         stats=stats)
-    if verbose:
-        print('doctest (%s) ... %d tests with zero failures' %
-              (module.__name__, results.attempted))
-    return results
 
 
 #=======================================================================
