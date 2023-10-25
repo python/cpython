@@ -1,7 +1,6 @@
 /* Module definition and import implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"          // _PyDict_Pop()
 #include "pycore_hashtable.h"     // _Py_hashtable_new_full()
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
