@@ -1334,8 +1334,7 @@
             _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-            frame->instr_ptr += frame->next_instr_offset;
+            frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
             goto resume_frame;
         }
 
@@ -1360,8 +1359,7 @@
             _PyFrame_StackPush(frame, retval);
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            frame->next_instr_offset = 1 + INLINE_CACHE_ENTRIES_SEND;
-            frame->instr_ptr += frame->next_instr_offset;
+            frame->instr_ptr += 1 + INLINE_CACHE_ENTRIES_SEND;
             goto resume_frame;
         }
 
