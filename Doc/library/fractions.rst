@@ -210,11 +210,11 @@ another rational number, or from a string.
       :ref:`Formatted string literals <f-strings>`. The presentation types
       ``"d"``, ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"`` and ``"%"``
       are supported. For presentation types other than ``"d"``, formatting for
-      a :class:`Fraction` object follows the rules outlined for the
-      :class:`float` type in the :ref:`formatspec` section. For presentation
-      type ``"d"``, formatting follows the rules for the :class:`int` type,
-      except that the zero-fill flag is not supported. If no presentation type
-      is given, the rules are identical to those for presentation type ``"d"``.
+      :class:`Fraction` follows the rules outlined for the :class:`float` type
+      in the :ref:`formatspec` section. For presentation type ``"d"``,
+      formatting follows the rules for the :class:`int` type, except that the
+      zero-fill flag is not supported. If no presentation type is given, the
+      rules are identical to those for presentation type ``"d"``.
 
       Here are some examples::
 
