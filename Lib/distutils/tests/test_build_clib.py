@@ -5,7 +5,7 @@ import sys
 import sysconfig
 
 from test.support import (
-    run_unittest, missing_compiler_executable, requires_subprocess
+    missing_compiler_executable, requires_subprocess
 )
 
 from distutils.command.build_clib import build_clib
@@ -140,8 +140,5 @@ class BuildCLibTestCase(support.TempdirManager,
         # let's check the result
         self.assertIn('libfoo.a', os.listdir(build_temp))
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(BuildCLibTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()

@@ -3,7 +3,6 @@ import unittest
 import sys
 import os
 from io import BytesIO
-from test.support import run_unittest
 
 from distutils import cygwinccompiler
 from distutils.cygwinccompiler import (check_config_h,
@@ -147,8 +146,5 @@ class CygwinCCompilerTestCase(support.TempdirManager,
                        '[MSC v.1999 32 bits (Intel)]')
         self.assertRaises(ValueError, get_msvcr)
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(CygwinCCompilerTestCase)
-
 if __name__ == '__main__':
-    run_unittest(test_suite())
+    unittest.main()
