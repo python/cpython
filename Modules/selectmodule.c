@@ -2444,12 +2444,11 @@ _select_exec(PyObject *m)
         return -1;
     }
 
-#define ADD_INT(VAL) \
-    do { \
-        if (PyModule_AddIntConstant((m), #VAL, (VAL)) < 0) { \
-            return -1; \
-        } \
-    } while (0)
+#define ADD_INT(VAL) do {                                 \
+    if (PyModule_AddIntConstant((m), #VAL, (VAL)) < 0) {  \
+        return -1;                                        \
+    }                                                     \
+} while (0)
 
 #ifdef PIPE_BUF
 #ifdef HAVE_BROKEN_PIPE_BUF
