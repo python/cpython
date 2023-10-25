@@ -491,6 +491,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         f.unbind(event, funcid)
         script = f.bind(event)
         self.assertNotIn(funcid, script)
+        self.assertIn(funcid2, script)
+        self.assertEqual(f.bind(), (event,))
         self.assertCommandNotExist(funcid)
         self.assertCommandExist(funcid2)
 
