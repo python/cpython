@@ -1123,6 +1123,10 @@ Connection objects
                  f.write('%s\n' % line)
          con.close()
 
+      .. seealso::
+
+         :ref:`sqlite3-howto-encoding`
+
 
    .. method:: backup(target, *, pages=-1, progress=None, name="main", sleep=0.250)
 
@@ -1188,6 +1192,10 @@ Connection objects
          src.backup(dst)
 
       .. versionadded:: 3.7
+
+      .. seealso::
+
+         :ref:`sqlite3-howto-encoding`
 
    .. method:: getlimit(category, /)
 
@@ -1410,39 +1418,8 @@ Connection objects
       and returns a text representation of it.
       The callable is invoked for SQLite values with the ``TEXT`` data type.
       By default, this attribute is set to :class:`str`.
-      If you want to return ``bytes`` instead, set *text_factory* to ``bytes``.
 
-      Example:
-
-      .. testcode::
-
-         con = sqlite3.connect(":memory:")
-         cur = con.cursor()
-
-         AUSTRIA = "Österreich"
-
-         # by default, rows are returned as str
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert row[0] == AUSTRIA
-
-         # but we can make sqlite3 always return bytestrings ...
-         con.text_factory = bytes
-         cur.execute("SELECT ?", (AUSTRIA,))
-         row = cur.fetchone()
-         assert type(row[0]) is bytes
-         # the bytestrings will be encoded in UTF-8, unless you stored garbage in the
-         # database ...
-         assert row[0] == AUSTRIA.encode("utf-8")
-
-         # we can also implement a custom text_factory ...
-         # here we implement one that appends "foo" to all strings
-         con.text_factory = lambda x: x.decode("utf-8") + "foo"
-         cur.execute("SELECT ?", ("bar",))
-         row = cur.fetchone()
-         assert row[0] == "barfoo"
-
-         con.close()
+      See :ref:`sqlite3-howto-encoding` for more details.
 
    .. attribute:: total_changes
 
@@ -1600,7 +1577,6 @@ Cursor objects
              CREATE TABLE publisher(name, address);
              COMMIT;
          """)
-
 
    .. method:: fetchone()
 
@@ -2578,6 +2554,47 @@ The following row factory returns a :term:`named tuple`:
 With some adjustments, the above recipe can be adapted to use a
 :class:`~dataclasses.dataclass`, or any other custom class,
 instead of a :class:`~collections.namedtuple`.
+
+
+.. _sqlite3-howto-encoding:
+
+How to handle non-UTF-8 text encodings
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, :mod:`!sqlite3` uses :class:`str` to adapt SQLite values
+with the ``TEXT`` data type.
+This works well for UTF-8 encoded text, but it might fail for other encodings
+and invalid UTF-8.
+You can use a custom :attr:`~Connection.text_factory` to handle such cases.
+
+Because of SQLite's `flexible typing`_, it is not uncommon to encounter table
+columns with the ``TEXT`` data type containing non-UTF-8 encodings,
+or even arbitrary data.
+To demonstrate, let's assume we have a database with ISO-8859-2 (Latin-2)
+encoded text, for example a table of Czech-English dictionary entries.
+Assuming we now have a :class:`Connection` instance :py:data:`!con`
+connected to this database,
+we can decode the Latin-2 encoded text using this :attr:`~Connection.text_factory`:
+
+.. testcode::
+
+   con.text_factory = lambda data: str(data, encoding="latin2")
+
+For invalid UTF-8 or arbitrary data in stored in ``TEXT`` table columns,
+you can use the following technique, borrowed from the :ref:`unicode-howto`:
+
+.. testcode::
+
+   con.text_factory = lambda data: str(data, errors="surrogateescape")
+
+.. note::
+
+   The :mod:`!sqlite3` module API does not support strings
+   containing surrogates.
+
+.. seealso::
+
+   :ref:`unicode-howto`
 
 
 .. _sqlite3-explanation:
