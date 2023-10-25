@@ -701,12 +701,6 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SET_IP:  // uop=_SET_IP; oparg=next_instr-1
-                                // The number of caches is smuggled in via offset:
-                                assert(offset == _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
-                                oparg = INSTR_IP(instr + offset, code);
-                                assert(uop == _SET_IP);
-                                break;
                             case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
                                 oparg = offset;
                                 assert(uop == _SAVE_RETURN_OFFSET);
