@@ -1,0 +1,1 @@
+urllib2 digest algorithm selection is now case insensitive
