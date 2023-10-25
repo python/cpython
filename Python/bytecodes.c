@@ -3124,7 +3124,7 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            _SAVE_CURRENT_IP +  // Sets frame->return_offset
+            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         macro(CALL_PY_EXACT_ARGS) =
@@ -3133,7 +3133,7 @@ dummy_func(
             _CHECK_FUNCTION_EXACT_ARGS +
             _CHECK_STACK_SPACE +
             _INIT_CALL_PY_EXACT_ARGS +
-            _SAVE_CURRENT_IP +  // Sets frame->return_offset
+            _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
         inst(CALL_PY_WITH_DEFAULTS, (unused/1, func_version/2, callable, self_or_null, args[oparg] -- unused)) {
@@ -3984,7 +3984,7 @@ dummy_func(
             frame->instr_ptr = ip_offset + oparg;
         }
 
-        op(_SAVE_CURRENT_IP, (--)) {
+        op(_SAVE_RETURN_OFFSET, (--)) {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
             #endif

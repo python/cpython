@@ -372,8 +372,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "_SAVE_CURRENT_IP":
-                        # _SAVE_CURRENT_IP's oparg does not transfer
+                    if instr.name != "_SAVE_RETURN_OFFSET":
+                        # _SAVE_RETURN_OFFSET's oparg does not transfer
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)

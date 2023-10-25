@@ -707,9 +707,9 @@ pop_jump_if_bool:
                                 oparg = INSTR_IP(instr + offset, code);
                                 assert(uop == _SET_IP);
                                 break;
-                            case OPARG_SAVE_CURRENT_IP:  // op=_SAVE_CURRENT_IP; oparg=next_instr_offset
+                            case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
                                 oparg = offset;
-                                assert(uop == _SAVE_CURRENT_IP);
+                                assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
 
                             default:

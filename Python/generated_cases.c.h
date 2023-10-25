@@ -3947,7 +3947,7 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // _SAVE_CURRENT_IP
+            // _SAVE_RETURN_OFFSET
             next_instr += 3;
             {
                 #if TIER_ONE
@@ -4023,7 +4023,7 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // _SAVE_CURRENT_IP
+            // _SAVE_RETURN_OFFSET
             next_instr += 3;
             {
                 #if TIER_ONE

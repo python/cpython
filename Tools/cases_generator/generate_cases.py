@@ -68,7 +68,7 @@ OPARG_SIZES = {
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
     "OPARG_SET_IP": 7,
-    "OPARG_SAVE_CURRENT_IP": 8,
+    "OPARG_SAVE_RETURN_OFFSET": 8,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -672,8 +672,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SAVE_CURRENT_IP":
-                        size, offset = OPARG_SIZES["OPARG_SAVE_CURRENT_IP"], cache_offset
+                    if part.instr.name == "_SAVE_RETURN_OFFSET":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:

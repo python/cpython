@@ -3276,7 +3276,7 @@
             break;
         }
 
-        case _SAVE_CURRENT_IP: {
+        case _SAVE_RETURN_OFFSET: {
             #if TIER_ONE
             frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
             #endif
