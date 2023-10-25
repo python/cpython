@@ -688,7 +688,7 @@ class CmdLineTest(unittest.TestCase):
         _, _, stderr = assert_python_failure("-c", "1/0")
         expected_lines = [
             b'Traceback (most recent call last):',
-            b'  File "<stdin>", line 1, in <module>',
+            b'  File "<string>", line 1, in <module>',
             b'    1/0',
             b'    ~^~',
             b'ZeroDivisionError: division by zero']

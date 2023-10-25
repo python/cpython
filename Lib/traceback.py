@@ -482,8 +482,6 @@ class StackSummary(list):
         filename = frame_summary.filename
         if frame_summary.filename.startswith("<stdin>-"):
             filename = "<stdin>"
-        elif frame_summary.filename.startswith("<string>-"):
-            filename = "<string>"
         row.append('  File "{}", line {}, in {}\n'.format(
             filename, frame_summary.lineno, frame_summary.name))
         if frame_summary.line:

@@ -4398,9 +4398,9 @@ class MiscIOTest(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(len(warnings), 4)
         self.assertTrue(
-            warnings[0].startswith(b"<string>-0:5: EncodingWarning: "))
+            warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[2].startswith(b"<string>-0:8: EncodingWarning: "))
+            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"

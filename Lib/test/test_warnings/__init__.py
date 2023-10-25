@@ -1357,7 +1357,7 @@ a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err.decode().rstrip(),
-                         '<string>-0:7: UserWarning: test')
+                         '<string>:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

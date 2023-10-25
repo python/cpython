@@ -25,8 +25,8 @@ TIMEOUT = 0.5
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
-    regex += '  File "<string>-0", line %s in func\n' % lineno1
-    regex += '  File "<string>-0", line %s in <module>' % lineno2
+    regex += '  File "<string>", line %s in func\n' % lineno1
+    regex += '  File "<string>", line %s in <module>' % lineno2
     if 1 < min_count:
         return '^' + (regex + '\n') * (min_count - 1) + regex
     else:
@@ -114,7 +114,7 @@ class FaultHandlerTests(unittest.TestCase):
         regex.append(fr'{header} \(most recent call first\):')
         if garbage_collecting:
             regex.append('  Garbage-collecting')
-        regex.append(fr'  File "<string>-0", line {lineno} in {function}')
+        regex.append(fr'  File "<string>", line {lineno} in {function}')
         regex = '\n'.join(regex)
 
         if other_regex:
@@ -485,9 +485,9 @@ class FaultHandlerTests(unittest.TestCase):
             lineno = 14
         expected = [
             'Stack (most recent call first):',
-            '  File "<string>-0", line %s in funcB' % lineno,
-            '  File "<string>-0", line 17 in funcA',
-            '  File "<string>-0", line 19 in <module>'
+            '  File "<string>", line %s in funcB' % lineno,
+            '  File "<string>", line 17 in funcA',
+            '  File "<string>", line 19 in <module>'
         ]
         trace, exitcode = self.get_output(code, filename, fd)
         self.assertEqual(trace, expected)
@@ -523,8 +523,8 @@ class FaultHandlerTests(unittest.TestCase):
         )
         expected = [
             'Stack (most recent call first):',
-            '  File "<string>-0", line 4 in %s' % truncated,
-            '  File "<string>-0", line 6 in <module>'
+            '  File "<string>", line 4 in %s' % truncated,
+            '  File "<string>", line 6 in <module>'
         ]
         trace, exitcode = self.get_output(code)
         self.assertEqual(trace, expected)
@@ -577,13 +577,13 @@ class FaultHandlerTests(unittest.TestCase):
         regex = r"""
             ^Thread 0x[0-9a-f]+ \(most recent call first\):
             (?:  File ".*threading.py", line [0-9]+ in [_a-z]+
-            ){{1,3}}  File "<string>-0", line 23 in run
+            ){{1,3}}  File "<string>", line 23 in run
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
             Current thread 0x[0-9a-f]+ \(most recent call first\):
-              File "<string>-0", line {lineno} in dump
-              File "<string>-0", line 28 in <module>$
+              File "<string>", line {lineno} in dump
+              File "<string>", line 28 in <module>$
             """
         regex = dedent(regex.format(lineno=lineno)).strip()
         self.assertRegex(output, regex)

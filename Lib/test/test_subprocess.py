@@ -1770,8 +1770,8 @@ class RunFuncTestCase(BaseTestCase):
                             capture_output=True)
         lines = cp.stderr.splitlines()
         self.assertEqual(len(lines), 4, lines)
-        self.assertTrue(lines[0].startswith(b"<string>-0:2: EncodingWarning: "))
-        self.assertTrue(lines[2].startswith(b"<string>-0:3: EncodingWarning: "))
+        self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
+        self.assertTrue(lines[2].startswith(b"<string>:3: EncodingWarning: "))
 
 
 def _get_test_grp_name():
