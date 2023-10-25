@@ -239,7 +239,7 @@ PyDoc_STRVAR(_io_BytesIO_peek__doc__,
 "\n"
 "Return bytes from the stream without advancing the position.\n"
 "\n"
-"If the size argument is zero or negative, read until EOF is reached.\n"
+"If the size argument is negative, read until EOF is reached.\n"
 "Return an empty bytes object at EOF.");
 
 #define _IO_BYTESIO_PEEK_METHODDEF    \
@@ -376,10 +376,6 @@ _io_BytesIO_readinto(bytesio *self, PyObject *arg)
 
     if (PyObject_GetBuffer(arg, &buffer, PyBUF_WRITABLE) < 0) {
         _PyArg_BadArgument("readinto", "argument", "read-write bytes-like object", arg);
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("readinto", "argument", "contiguous buffer", arg);
         goto exit;
     }
     return_value = _io_BytesIO_readinto_impl(self, &buffer);
@@ -584,4 +580,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d197843003949f01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d678d2262d107c8f input=a9049054013a1b77]*/

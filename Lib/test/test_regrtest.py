@@ -22,11 +22,13 @@ import tempfile
 import textwrap
 import unittest
 from test import support
-from test.support import os_helper, TestStats, without_optimizer
+from test.support import os_helper, without_optimizer
 from test.libregrtest import cmdline
 from test.libregrtest import main
 from test.libregrtest import setup
 from test.libregrtest import utils
+from test.libregrtest.filter import set_match_tests, match_test
+from test.libregrtest.result import TestStats
 from test.libregrtest.utils import normalize_test_name
 
 if not support.has_subprocess_support:
@@ -143,18 +145,26 @@ class ParseArgsTestCase(unittest.TestCase):
         self.assertTrue(ns.header)
 
     def test_randomize(self):
-        for opt in '-r', '--randomize':
+        for opt in ('-r', '--randomize'):
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt])
                 self.assertTrue(ns.randomize)
 
         with os_helper.EnvironmentVarGuard() as env:
-            env['SOURCE_DATE_EPOCH'] = '1'
-
+            # with SOURCE_DATE_EPOCH
+            env['SOURCE_DATE_EPOCH'] = '1697839080'
             ns = self.parse_args(['--randomize'])
             regrtest = main.Regrtest(ns)
             self.assertFalse(regrtest.randomize)
-            self.assertIsNone(regrtest.random_seed)
+            self.assertIsInstance(regrtest.random_seed, str)
+            self.assertEqual(regrtest.random_seed, '1697839080')
+
+            # without SOURCE_DATE_EPOCH
+            del env['SOURCE_DATE_EPOCH']
+            ns = self.parse_args(['--randomize'])
+            regrtest = main.Regrtest(ns)
+            self.assertTrue(regrtest.randomize)
+            self.assertIsInstance(regrtest.random_seed, int)
 
     def test_randseed(self):
         ns = self.parse_args(['--randseed', '12345'])
@@ -184,34 +194,27 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
-    def test_ignore(self):
-        for opt in '-i', '--ignore':
-            with self.subTest(opt=opt):
-                ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.ignore_tests, ['pattern'])
-                self.checkError([opt], 'expected one argument')
-
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "w") as fp:
-            print('matchfile1', file=fp)
-            print('matchfile2', file=fp)
-
-        filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--ignorefile', filename])
-        self.assertEqual(ns.ignore_tests,
-                         ['matchfile1', 'matchfile2'])
-
     def test_match(self):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
                 ns = self.parse_args([opt, 'pattern'])
-                self.assertEqual(ns.match_tests, ['pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', True)])
                 self.checkError([opt], 'expected one argument')
 
-        ns = self.parse_args(['-m', 'pattern1',
-                                      '-m', 'pattern2'])
-        self.assertEqual(ns.match_tests, ['pattern1', 'pattern2'])
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = self.parse_args([opt, 'pattern'])
+                self.assertEqual(ns.match_tests, [('pattern', False)])
+                self.checkError([opt], 'expected one argument')
+
+        ns = self.parse_args(['-m', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', True)])
+
+        ns = self.parse_args(['-m', 'pattern1', '-i', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', True), ('pattern2', False)])
+
+        ns = self.parse_args(['-i', 'pattern1', '-m', 'pattern2'])
+        self.assertEqual(ns.match_tests, [('pattern1', False), ('pattern2', True)])
 
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, "w") as fp:
@@ -219,10 +222,13 @@ class ParseArgsTestCase(unittest.TestCase):
             print('matchfile2', file=fp)
 
         filename = os.path.abspath(os_helper.TESTFN)
-        ns = self.parse_args(['-m', 'match',
-                                      '--matchfile', filename])
+        ns = self.parse_args(['-m', 'match', '--matchfile', filename])
         self.assertEqual(ns.match_tests,
-                         ['match', 'matchfile1', 'matchfile2'])
+                         [('match', True), ('matchfile1', True), ('matchfile2', True)])
+
+        ns = self.parse_args(['-i', 'match', '--ignorefile', filename])
+        self.assertEqual(ns.match_tests,
+                         [('match', False), ('matchfile1', False), ('matchfile2', False)])
 
     def test_failfast(self):
         for opt in '-G', '--failfast':
@@ -388,7 +394,13 @@ class ParseArgsTestCase(unittest.TestCase):
 
         # Check Regrtest attributes which are more reliable than Namespace
         # which has an unclear API
-        regrtest = main.Regrtest(ns)
+        with os_helper.EnvironmentVarGuard() as env:
+            # Ignore SOURCE_DATE_EPOCH env var if it's set
+            if 'SOURCE_DATE_EPOCH' in env:
+                del env['SOURCE_DATE_EPOCH']
+
+            regrtest = main.Regrtest(ns)
+
         self.assertEqual(regrtest.num_workers, -1)
         self.assertEqual(regrtest.want_rerun, rerun)
         self.assertTrue(regrtest.randomize)
@@ -661,21 +673,26 @@ class BaseTestCase(unittest.TestCase):
             state = f'{state} then {new_state}'
         self.check_line(output, f'Result: {state}', full=True)
 
-    def parse_random_seed(self, output):
-        match = self.regex_search(r'Using random seed ([0-9]+)', output)
-        randseed = int(match.group(1))
-        self.assertTrue(0 <= randseed, randseed)
-        return randseed
+    def parse_random_seed(self, output: str) -> str:
+        match = self.regex_search(r'Using random seed: (.*)', output)
+        return match.group(1)
 
     def run_command(self, args, input=None, exitcode=0, **kw):
         if not input:
             input = ''
         if 'stderr' not in kw:
             kw['stderr'] = subprocess.STDOUT
+
+        env = kw.pop('env', None)
+        if env is None:
+            env = dict(os.environ)
+            env.pop('SOURCE_DATE_EPOCH', None)
+
         proc = subprocess.run(args,
                               text=True,
                               input=input,
                               stdout=subprocess.PIPE,
+                              env=env,
                               **kw)
         if proc.returncode != exitcode:
             msg = ("Command %s failed with exit code %s, but exit code %s expected!\n"
@@ -751,7 +768,9 @@ class ProgramsTestCase(BaseTestCase):
             self.regrtest_args.append('-n')
 
     def check_output(self, output):
-        self.parse_random_seed(output)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
         self.check_executed_tests(output, self.tests,
                                   randomize=True, stats=len(self.tests))
 
@@ -942,7 +961,7 @@ class ArgsTestCase(BaseTestCase):
         test_random = int(match.group(1))
 
         # try to reproduce with the random seed
-        output = self.run_tests('-r', '--randseed=%s' % randseed, test,
+        output = self.run_tests('-r', f'--randseed={randseed}', test,
                                 exitcode=EXITCODE_NO_TESTS_RAN)
         randseed2 = self.parse_random_seed(output)
         self.assertEqual(randseed2, randseed)
@@ -953,7 +972,32 @@ class ArgsTestCase(BaseTestCase):
 
         # check that random.seed is used by default
         output = self.run_tests(test, exitcode=EXITCODE_NO_TESTS_RAN)
-        self.assertIsInstance(self.parse_random_seed(output), int)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
+
+        # check SOURCE_DATE_EPOCH (integer)
+        timestamp = '1697839080'
+        env = dict(os.environ, SOURCE_DATE_EPOCH=timestamp)
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, timestamp)
+        self.check_line(output, 'TESTRANDOM: 520')
+
+        # check SOURCE_DATE_EPOCH (string)
+        env = dict(os.environ, SOURCE_DATE_EPOCH='XYZ')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertEqual(randseed, 'XYZ')
+        self.check_line(output, 'TESTRANDOM: 22')
+
+        # check SOURCE_DATE_EPOCH (empty string): ignore the env var
+        env = dict(os.environ, SOURCE_DATE_EPOCH='')
+        output = self.run_tests('-r', test, exitcode=EXITCODE_NO_TESTS_RAN,
+                                env=env)
+        randseed = self.parse_random_seed(output)
+        self.assertTrue(randseed.isdigit(), randseed)
 
     def test_fromfile(self):
         # test --fromfile
@@ -2139,6 +2183,120 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             format_resources((*ALL_RESOURCES, "tzdata")),
             'resources: all,tzdata')
+
+    def test_match_test(self):
+        class Test:
+            def __init__(self, test_id):
+                self.test_id = test_id
+
+            def id(self):
+                return self.test_id
+
+        test_access = Test('test.test_os.FileTests.test_access')
+        test_chdir = Test('test.test_os.Win32ErrorTests.test_chdir')
+        test_copy = Test('test.test_shutil.TestCopy.test_copy')
+
+        # Test acceptance
+        with support.swap_attr(support, '_test_matchers', ()):
+            # match all
+            set_match_tests([])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match all using None
+            set_match_tests(None)
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match the full test identifier
+            set_match_tests([(test_access.id(), True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+            # match the module name
+            set_match_tests([('test_os', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            # Test '*' pattern
+            set_match_tests([('test_*', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # Test case sensitivity
+            set_match_tests([('filetests', True)])
+            self.assertFalse(match_test(test_access))
+            set_match_tests([('FileTests', True)])
+            self.assertTrue(match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            set_match_tests([('*test_os.*.test_*', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            # Multiple patterns
+            set_match_tests([(test_access.id(), True), (test_chdir.id(), True)])
+            self.assertTrue(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
+
+            set_match_tests([('test_access', True), ('DONTMATCH', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+        # Test rejection
+        with support.swap_attr(support, '_test_matchers', ()):
+            # match the full test identifier
+            set_match_tests([(test_access.id(), False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+            # match the module name
+            set_match_tests([('test_os', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            # Test '*' pattern
+            set_match_tests([('test_*', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+
+            # Test case sensitivity
+            set_match_tests([('filetests', False)])
+            self.assertTrue(match_test(test_access))
+            set_match_tests([('FileTests', False)])
+            self.assertFalse(match_test(test_access))
+
+            # Test pattern containing '.' and a '*' metacharacter
+            set_match_tests([('*test_os.*.test_*', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            # Multiple patterns
+            set_match_tests([(test_access.id(), False), (test_chdir.id(), False)])
+            self.assertFalse(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            set_match_tests([('test_access', False), ('DONTMATCH', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+
+        # Test mixed filters
+        with support.swap_attr(support, '_test_matchers', ()):
+            set_match_tests([('*test_os', False), ('test_access', True)])
+            self.assertTrue(match_test(test_access))
+            self.assertFalse(match_test(test_chdir))
+            self.assertTrue(match_test(test_copy))
+
+            set_match_tests([('*test_os', True), ('test_access', False)])
+            self.assertFalse(match_test(test_access))
+            self.assertTrue(match_test(test_chdir))
+            self.assertFalse(match_test(test_copy))
 
 
 if __name__ == '__main__':

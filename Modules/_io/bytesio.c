@@ -126,11 +126,12 @@ unshare_buffer(bytesio *self, size_t size)
 static int
 resize_buffer(bytesio *self, size_t size)
 {
+    assert(self->buf != NULL);
+    assert(self->exports == 0);
+
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = PyBytes_GET_SIZE(self->buf);
-
-    assert(self->buf != NULL);
 
     /* For simplicity, stay in the range of the signed type. Anyway, Python
        doesn't allow strings to be longer than this. */
@@ -485,7 +486,7 @@ Return an empty bytes object at EOF.
 
 static PyObject *
 _io_BytesIO_peek_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=fa4d8ce28b35db9b input=cb06614a3ed0496e]*/
+/*[clinic end generated code: output=fa4d8ce28b35db9b input=1510f0fcf77c0048]*/
 {
     CHECK_CLOSED(self);
 
@@ -1116,7 +1117,7 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
             "bytesiobuf_getbuffer: view==NULL argument is obsolete");
         return -1;
     }
-    if (SHARED_BUF(b)) {
+    if (b->exports == 0 && SHARED_BUF(b)) {
         if (unshare_buffer(b, b->string_size) < 0)
             return -1;
     }
