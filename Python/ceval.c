@@ -939,7 +939,7 @@ exit_unwind:
     }
 
 resume_with_error:
-    next_instr = frame->instr_ptr; \
+    next_instr = frame->instr_ptr;
     stack_pointer = _PyFrame_GetStackPointer(frame);
     goto error;
 

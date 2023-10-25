@@ -1000,11 +1000,9 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
-            LOAD_IP();
-            frame->instr_ptr -= frame->return_offset;
+            LOAD_IP(frame->return_offset);
             frame->return_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -1032,8 +1030,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
-            LOAD_IP();
-            SKIP_OVER(frame->return_offset);
+            LOAD_IP(frame->return_offset);
             frame->return_offset = 0;
             goto resume_frame;
         }
@@ -1059,11 +1056,9 @@
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-                frame->instr_ptr += frame->return_offset;
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
-                LOAD_IP();
-                frame->instr_ptr -= frame->return_offset;
+                LOAD_IP(frame->return_offset);
                 frame->return_offset = 0;
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -1091,8 +1086,7 @@
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
             _PyFrame_StackPush(frame, retval);
-            LOAD_IP();
-            SKIP_OVER(frame->return_offset);
+            LOAD_IP(frame->return_offset);
             frame->return_offset = 0;
             goto resume_frame;
         }
@@ -1319,10 +1313,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            LOAD_IP();
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            SKIP_OVER(1 + INLINE_CACHE_ENTRIES_SEND);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             frame->return_offset = 0;
             goto resume_frame;
         }
@@ -1346,10 +1339,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
-            LOAD_IP();
             /* We don't know which of these is relevant here, so keep them equal */
             assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
-            SKIP_OVER(1 + INLINE_CACHE_ENTRIES_SEND);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             frame->return_offset = 0;
             goto resume_frame;
         }
@@ -3019,9 +3011,6 @@
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
-            /* set next_instr. TODO: optimize this */
-            LOAD_IP();
-            SKIP_OVER(1 + _PyOpcode_Caches[frame->instr_ptr[0].op.code]);
             next_instr = frame->instr_ptr;
             goto resume_frame;
         }
@@ -3969,8 +3958,9 @@
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
+                assert(frame->return_offset == 0);
                 LOAD_SP();
-                LOAD_IP();
+                LOAD_IP(0);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -4045,8 +4035,9 @@
                 CALL_STAT_INC(inlined_py_calls);
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
+                assert(frame->return_offset == 0);
                 LOAD_SP();
-                LOAD_IP();
+                LOAD_IP(0);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -4926,8 +4917,7 @@
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);
-            LOAD_IP();
-            SKIP_OVER(frame->return_offset);
+            LOAD_IP(frame->return_offset);
             frame->return_offset = 0;
             goto resume_frame;
         }

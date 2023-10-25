@@ -384,8 +384,8 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 #if TIER_ONE
 
-#define LOAD_IP() do { \
-        next_instr = frame->instr_ptr; \
+#define LOAD_IP(OFFSET) do { \
+        next_instr = frame->instr_ptr + (OFFSET); \
     } while (0)
 
 #define STORE_SP() \
@@ -399,7 +399,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #if TIER_TWO
 
-#define LOAD_IP() \
+#define LOAD_IP(UNUSED) \
 do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
 
 #define STORE_SP() \

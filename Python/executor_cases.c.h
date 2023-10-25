@@ -692,11 +692,9 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->instr_ptr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
-            LOAD_IP();
-            frame->instr_ptr -= frame->return_offset;
+            LOAD_IP(frame->return_offset);
             frame->return_offset = 0;
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -2595,8 +2593,9 @@
             CALL_STAT_INC(inlined_py_calls);
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
+            assert(frame->return_offset == 0);
             LOAD_SP();
-            LOAD_IP();
+            LOAD_IP(0);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
