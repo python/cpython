@@ -152,6 +152,10 @@ extern PyTypeObject _PyExc_MemoryError;
         }, \
         .gc = { \
             .enabled = 1, \
+            .last_call_time = 0, \
+            .num_calls = 0, \
+            .running_average_time = 0, \
+            .running_average_since_last_call_time = 0, \
             .generations = { \
                 /* .head is set in _PyGC_InitState(). */ \
                 { .threshold = 700, }, \
