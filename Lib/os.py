@@ -682,7 +682,7 @@ class _Environ(MutableMapping):
             value = self._data[self.encodekey(key)]
         except KeyError:
             # raise KeyError with the original key value
-            raise KeyError(key) from None
+            raise KeyError(f"Environment variable '{repr(key)}' requested but not provided.") from None
         return self.decodevalue(value)
 
     def __setitem__(self, key, value):
