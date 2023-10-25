@@ -15,7 +15,6 @@ class CAPITest(unittest.TestCase):
     # TODO: Test the following functions:
     #
     #   PySys_Audit()
-    #   PySys_AuditTuple()
 
     maxDiff = None
 
