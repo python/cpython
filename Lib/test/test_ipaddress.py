@@ -4,6 +4,7 @@
 """Unittest for ipaddress module."""
 
 
+import copy
 import unittest
 import re
 import contextlib
@@ -542,10 +543,16 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_pickle(self):
         self.pickle_test('2001:db8::')
+        self.pickle_test('2001:db8::%scope')
 
     def test_weakref(self):
         weakref.ref(self.factory('2001:db8::'))
         weakref.ref(self.factory('2001:db8::%scope'))
+
+    def test_copy(self):
+        addr = self.factory('2001:db8::%scope')
+        self.assertEqual(addr, copy.copy(addr))
+        self.assertEqual(addr, copy.deepcopy(addr))
 
 
 class NetmaskTestMixin_v4(CommonTestMixin_v4):

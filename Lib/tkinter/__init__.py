@@ -3715,25 +3715,28 @@ class Text(Widget, XView, YView):
         return self.tk.getboolean(self.tk.call(
             self._w, 'compare', index1, op, index2))
 
-    def count(self, index1, index2, *args): # new in Tk 8.5
+    def count(self, index1, index2, *options): # new in Tk 8.5
         """Counts the number of relevant things between the two indices.
-        If index1 is after index2, the result will be a negative number
+
+        If INDEX1 is after INDEX2, the result will be a negative number
         (and this holds for each of the possible options).
 
-        The actual items which are counted depends on the options given by
-        args. The result is a list of integers, one for the result of each
-        counting option given. Valid counting options are "chars",
+        The actual items which are counted depends on the options given.
+        The result is a tuple of integers, one for the result of each
+        counting option given, if more than one option is specified,
+        otherwise it is an integer. Valid counting options are "chars",
         "displaychars", "displayindices", "displaylines", "indices",
-        "lines", "xpixels" and "ypixels". There is an additional possible
+        "lines", "xpixels" and "ypixels". The default value, if no
+        option is specified, is "indices". There is an additional possible
         option "update", which if given then all subsequent options ensure
         that any possible out of date information is recalculated."""
-        args = ['-%s' % arg for arg in args]
-        args += [index1, index2]
-        res = self.tk.call(self._w, 'count', *args) or None
-        if res is not None and len(args) <= 3:
-            return (res, )
-        else:
-            return res
+        options = ['-%s' % arg for arg in options]
+        res = self.tk.call(self._w, 'count', *options, index1, index2)
+        if not isinstance(res, int):
+            res = self._getints(res)
+            if len(res) == 1:
+                res, = res
+        return res
 
     def debug(self, boolean=None):
         """Turn on the internal consistency checks of the B-Tree inside the text

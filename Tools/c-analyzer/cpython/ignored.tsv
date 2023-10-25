@@ -530,7 +530,7 @@ Modules/_testcapimodule.c	make_exception_with_doc	kwlist	-
 Modules/_testcapimodule.c	raise_SIGINT_then_send_None	PyId_send	-
 Modules/_testcapimodule.c	slot_tp_del	PyId___tp_del__	-
 Modules/_testcapimodule.c	test_capsule	buffer	-
-Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
+Modules/_testcapimodule.c	getargs_empty	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
 Modules/_testcapimodule.c	-	g_dict_watch_events	-
