@@ -3499,11 +3499,6 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     Py_BEGIN_ALLOW_THREADS
     res = connect(s->sock_fd, addr, addrlen);
     Py_END_ALLOW_THREADS
-    if (s->sock_timeout > 0) {
-        if (internal_setblocking(s, 1) < 0) {
-            return -1;
-        }
-    }
 
     if (!res) {
         /* connect() succeeded, the socket is connected */
@@ -3514,6 +3509,13 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
     /* save error, PyErr_CheckSignals() can replace it */
     err = GET_SOCK_ERROR;
+
+    if (s->sock_timeout > 0) {
+        if (internal_setblocking(s, 1) < 0) {
+            return -1;
+        }
+    }
+
     if (CHECK_ERRNO(EINTR)) {
         if (PyErr_CheckSignals())
             return -1;
