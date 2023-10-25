@@ -3391,10 +3391,8 @@ x_add(PyLongObject *a, PyLongObject *b)
     }
     assert(carry==0 || extra_digit);
     if (extra_digit) {
-        if (carry) {
-            z->long_value.ob_digit[i] = carry;
-        }
-        else {
+        z->long_value.ob_digit[i] = carry;
+        if (!carry) {
             /* rare case: we didn't need the extra digit after all */
             Py_SET_SIZE(z, size_a);
         }
