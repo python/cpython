@@ -45,6 +45,7 @@ int _PyTestCapi_Init_Buffer(PyObject *module);
 int _PyTestCapi_Init_PyOS(PyObject *module);
 int _PyTestCapi_Init_Immortal(PyObject *module);
 int _PyTestCapi_Init_GC(PyObject *mod);
+int _PyTestCapi_Init_Sys(PyObject *);
 
 #ifdef LIMITED_API_AVAILABLE
 int _PyTestCapi_Init_VectorcallLimited(PyObject *module);

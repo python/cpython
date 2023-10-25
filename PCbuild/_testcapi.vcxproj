@@ -115,6 +115,7 @@
     <ClCompile Include="..\Modules\_testcapi\code.c" />
     <ClCompile Include="..\Modules\_testcapi\buffer.c" />
     <ClCompile Include="..\Modules\_testcapi\pyos.c" />
+    <ClCompile Include="..\Modules\_testcapi\sys.c" />
     <ClCompile Include="..\Modules\_testcapi\immortal.c" />
     <ClCompile Include="..\Modules\_testcapi\gc.c" />
   </ItemGroup>
