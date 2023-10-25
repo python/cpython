@@ -234,6 +234,7 @@ another rational number, or from a string.
          >>> format(Fraction(1, 7), '.^+10')
          '...+1/7...'
 
+
 .. seealso::
 
    Module :mod:`numbers`
