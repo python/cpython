@@ -34,6 +34,6 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
-          cache-dependency-path: Tools/clinic/requirements-dev.txt
-      - run: pip install -r Tools/clinic/requirements-dev.txt
+          cache-dependency-path: Tools/requirements-dev.txt
+      - run: pip install -r Tools/requirements-dev.txt
       - run: mypy --config-file Tools/clinic/mypy.ini
