@@ -462,6 +462,8 @@ for these, set $PYTHONHOME to ${prefix}:${exec_prefix}.
 Augments the default search path for module files.
 The format is the same as the shell's $PATH: one or more directory
 pathnames separated by colons.
+Unlike POSIX $PATH, an unset or empty value will not add the current
+working directory to the search path.
 Non-existent directories are silently ignored.
 The default search path is installation dependent, but generally
 begins with ${prefix}/lib/python<version> (see PYTHONHOME above).
