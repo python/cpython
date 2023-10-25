@@ -205,17 +205,16 @@ another rational number, or from a string.
 
    .. method:: __format__(format_spec, /)
 
-      Provides support for float-style formatting of :class:`Fraction`
-      instances via the :meth:`str.format` method, the :func:`format` built-in
-      function, or :ref:`Formatted string literals <f-strings>`. The
-      presentation types ``"d"``, ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``,
-      ``"G"`` and ``"%"`` are supported. For presentation types other than
-      ``"d"``, formatting for a :class:`Fraction` object follows the
-      rules outlined for the :class:`float` type in the :ref:`formatspec`
-      section. For presentation type ``"d"``, formatting follows the rules for
-      the :class:`int` type, except that the zero-fill flag is not supported.
-      If no presentation type is given, the rules are identical to those for
-      presentation type ``"d"``.
+      Provides support for formatting of :class:`Fraction` instances via the
+      :meth:`str.format` method, the :func:`format` built-in function, or
+      :ref:`Formatted string literals <f-strings>`. The presentation types
+      ``"d"``, ``"e"``, ``"E"``, ``"f"``, ``"F"``, ``"g"``, ``"G"`` and ``"%"``
+      are supported. For presentation types other than ``"d"``, formatting for
+      a :class:`Fraction` object follows the rules outlined for the
+      :class:`float` type in the :ref:`formatspec` section. For presentation
+      type ``"d"``, formatting follows the rules for the :class:`int` type,
+      except that the zero-fill flag is not supported. If no presentation type
+      is given, the rules are identical to those for presentation type ``"d"``.
 
       Here are some examples::
 
