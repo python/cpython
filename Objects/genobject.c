@@ -10,6 +10,7 @@
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AFTER_YIELD_FROM
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -363,7 +364,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_PyCode_CODE(_PyGen_GetCode(gen))[0].op.code != SEND);
             return NULL;
         }
-        if (!is_resume(frame->instr_ptr) || frame->instr_ptr->op.arg < 2)
+        if (!is_resume(frame->instr_ptr) || frame->instr_ptr->op.arg < RESUME_AFTER_YIELD_FROM)
         {
             /* Not in a yield from */
             return NULL;
