@@ -58,20 +58,9 @@ typedef struct _PyInterpreterFrame {
     PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
     PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    /* When a frame is executing, instr_ptr points to the instruction currently executing.
-     * During a call, it points to the call instruction.
-     * In a suspended frame, it points to the instruction that would execute
-     * if the frame were to resume.
-     */
-    _Py_CODEUNIT *instr_ptr;
+    _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     int stacktop;  /* Offset of TOS from localsplus  */
-    /* The return_offset determines where a `RETURN` should go in the caller,
-     * relative to `instr_ptr`.
-     * It is only meaningful to the callee, so it needs to be set in any
-     * instruction that implements a call (to a Python function), including CALL,
-     * SEND and BINARY_SUBSCR_GETITEM, among others.
-     * If there is no callee, then return_offset is meaningless. */
-    uint16_t return_offset;
+    uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
     /* Locals and stack */
     PyObject *localsplus[1];
