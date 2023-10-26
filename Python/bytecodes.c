@@ -147,7 +147,7 @@ dummy_func(
                 next_instr--;
             }
             else {
-                if (oparg < 2) {
+                if (oparg < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 next_instr[-1].op.code = RESUME_CHECK;
