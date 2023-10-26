@@ -561,6 +561,10 @@ class TestCase(unittest.TestCase):
                     # Wait for subprocess to finish, but not forever
                     for thread in list(watcher._threads.values()):
                         thread.join(timeout=support.SHORT_TIMEOUT)
+                        if thread.is_alive():
+                            raise RuntimeError(f"thread {thread} still alive: "
+                                               "subprocess still running")
+
 
     def set_event_loop(self, loop, *, cleanup=True):
         if loop is None:
