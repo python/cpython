@@ -251,7 +251,8 @@ class OpcodeStats:
 
     def get_specialized_total_counts(self) -> tuple[int, int, int]:
         basic = 0
-        specialized = 0
+        specialized_hits = 0
+        specialized_misses = 0
         not_specialized = 0
         for opcode, opcode_stat in self._data.items():
             if "execution_count" not in opcode_stat:
@@ -261,16 +262,17 @@ class OpcodeStats:
                 not_specialized += count
             elif opcode in self._specialized_instructions:
                 miss = opcode_stat.get("specialization.miss", 0)
-                not_specialized += miss
-                specialized += count - miss
+                specialized_hits += count - miss
+                specialized_misses += miss
             else:
                 basic += count
-        return basic, specialized, not_specialized
+        return basic, specialized_hits, specialized_misses, not_specialized
 
     def get_deferred_counts(self) -> dict[str, int]:
         return {
             opcode: opcode_stat.get("specialization.deferred", 0)
             for opcode, opcode_stat in self._data.items()
+            if opcode != "RESUME"
         }
 
     def get_misses_counts(self) -> dict[str, int]:
@@ -799,7 +801,8 @@ def specialization_effectiveness_section() -> Section:
 
         (
             basic,
-            specialized,
+            specialized_hits,
+            specialized_misses,
             not_specialized,
         ) = opcode_stats.get_specialized_total_counts()
 
@@ -810,7 +813,16 @@ def specialization_effectiveness_section() -> Section:
                 Count(not_specialized),
                 Ratio(not_specialized, total),
             ),
-            ("Specialized", Count(specialized), Ratio(specialized, total)),
+            (
+                "Specialized hits",
+                Count(specialized_hits),
+                Ratio(specialized_hits, total),
+            ),
+            (
+                "Specialized misses",
+                Count(specialized_misses),
+                Ratio(specialized_misses, total),
+            ),
         ]
 
     def calc_deferred_by_table(stats: Stats) -> Rows:
