@@ -900,8 +900,39 @@ tb_displayline(PyTracebackObject* tb, PyObject *f, PyObject *filename, int linen
         goto done;
     }
 
-    if (print_error_location_carets(f, truncation, start_offset, end_offset,
-                                    right_start_offset, left_end_offset,
+    // Convert all offsets to display offsets (e.g. the space they would take up if printed
+    // on the screen).
+    Py_ssize_t dp_start = _PyPegen_calculate_display_width(source_line, start_offset);
+    if (dp_start < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
+    Py_ssize_t dp_end = _PyPegen_calculate_display_width(source_line, end_offset);
+    if (dp_end < 0) {
+        err = ignore_source_errors() < 0;
+        goto done;
+    }
+
+    Py_ssize_t dp_left_end = -1;
+    Py_ssize_t dp_right_start = -1;
+    if (has_secondary_ranges) {
+        dp_left_end = _PyPegen_calculate_display_width(source_line, left_end_offset);
+        if (dp_left_end < 0) {
+            err = ignore_source_errors() < 0;
+            goto done;
+        }
+
+        dp_right_start = _PyPegen_calculate_display_width(source_line, right_start_offset);
+        if (dp_right_start < 0) {
+            err = ignore_source_errors() < 0;
+            goto done;
+        }
+    }
+
+
+    if (print_error_location_carets(f, truncation, dp_start, dp_end,
+                                    dp_right_start, dp_left_end,
                                     primary_error_char, secondary_error_char) < 0) {
         err = -1;
         goto done;
