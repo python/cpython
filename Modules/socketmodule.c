@@ -3115,8 +3115,9 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                 .tv_sec = 0,
                 .tv_usec = 0,
             };
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &zero,
-                           sizeof(struct timeval)) != 0) {
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
+                           sizeof(struct timeval)) != 0)
+            {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
@@ -3124,8 +3125,9 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &zero,
-                       sizeof(struct timeval)) != 0) {
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&zero,
+                           sizeof(struct timeval)) != 0)
+            {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
@@ -3138,8 +3140,9 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
 
             struct timeval timeout_tv;
             _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, &timeout_tv,
-                           sizeof(struct timeval)) != 0) {
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
+                           (char *)&timeout_tv, sizeof(struct timeval)) != 0)
+            {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
@@ -3147,8 +3150,9 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_tv,
-                       sizeof(struct timeval)) != 0) {
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
+                           (char *)&timeout_tv, sizeof(struct timeval)) != 0)
+            {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
                 if (!CHECK_ERRNO(EINVAL)) {
