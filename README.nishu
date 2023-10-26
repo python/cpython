@@ -1,0 +1,12 @@
+dos2unix everything:
+- `find . -type f -print0 | xargs -0 dos2unix`
+
+Build and install as `pythonnishu`:
+```
+./configure --prefix=/usr/local/pythonnishu
+make
+sudo make install
+```
+
+Make runnable as `pythonnishu`:
+`alias pythonnishu="/usr/local/pythonnishu/bin/python3"` in `~/.zshrc`
