@@ -2446,6 +2446,12 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.match("(?>(?:ab?c){1,3})", "aca").span(), (0, 2))
         self.assertEqual(re.match("(?:ab?c){1,3}+", "aca").span(), (0, 2))
 
+    def test_bug_gh101955(self):
+        # Possessive quantifier with nested alternative with capture groups
+        self.assertEqual(re.match('((x)|y|z)*+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3}+', 'xyz').groups(), ('z', 'x'))
+        self.assertEqual(re.match('((x)|y|z){3,}+', 'xyz').groups(), ('z', 'x'))
+
     @unittest.skipIf(multiprocessing is None, 'test requires multiprocessing')
     def test_regression_gh94675(self):
         pattern = re.compile(r'(?<=[({}])(((//[^\n]*)?[\n])([\000-\040])*)*'

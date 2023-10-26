@@ -1,0 +1,2 @@
+Fix SystemError when match regular expression pattern containing some
+combination of possessive quantifier, alternative and capture group.
