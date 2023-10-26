@@ -821,7 +821,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
     }
     /* Finally set the new lasti and return OK. */
     f->f_lineno = 0;
-    f->f_frame->prev_instr = _PyCode_CODE(code) + best_addr;
+    f->f_frame->instr_ptr = _PyCode_CODE(code) + best_addr;
     return 0;
 }
 
@@ -1079,7 +1079,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code,
     f->f_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     // This frame needs to be "complete", so pretend that the first RESUME ran:
-    f->f_frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+    f->f_frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
     assert(!_PyFrame_IsIncomplete(f->f_frame));
     Py_DECREF(func);
     _PyObject_GC_TRACK(f);
@@ -1093,7 +1093,7 @@ _PyFrame_OpAlreadyRan(_PyInterpreterFrame *frame, int opcode, int oparg)
     assert(_PyOpcode_Deopt[opcode] == opcode);
     int check_oparg = 0;
     for (_Py_CODEUNIT *instruction = _PyCode_CODE(_PyFrame_GetCode(frame));
-         instruction < frame->prev_instr; instruction++)
+         instruction < frame->instr_ptr; instruction++)
     {
         int check_opcode = _PyOpcode_Deopt[instruction->op.code];
         check_oparg |= instruction->op.arg;
@@ -1135,7 +1135,7 @@ frame_init_get_vars(_PyInterpreterFrame *frame)
         frame->localsplus[offset + i] = Py_NewRef(o);
     }
     // COPY_FREE_VARS doesn't have inline CACHEs, either:
-    frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame));
+    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame));
 }
 
 

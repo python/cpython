@@ -67,7 +67,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SET_IP": 7,
+    "OPARG_SAVE_RETURN_OFFSET": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -658,7 +658,7 @@ class Generator(Analyzer):
         for part in parts:
             if isinstance(part, Component):
                 # All component instructions must be viable uops
-                if not part.instr.is_viable_uop() and part.instr.name != "_SAVE_CURRENT_IP":
+                if not part.instr.is_viable_uop():
                     # This note just reminds us about macros that cannot
                     # be expanded to Tier 2 uops. It is not an error.
                     # It is sometimes emitted for macros that have a
@@ -671,8 +671,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SAVE_CURRENT_IP":
-                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset - 1
+                    if part.instr.name == "_SAVE_RETURN_OFFSET":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:

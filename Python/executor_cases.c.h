@@ -692,10 +692,9 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
             LOAD_SP();
-            LOAD_IP();
+            LOAD_IP(frame->return_offset);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -2587,7 +2586,6 @@
             STACK_SHRINK(1);
             // Write it out explicitly because it's subtly different.
             // Eventually this should be the only occurrence of this code.
-            frame->return_offset = 0;
             assert(tstate->interp->eval_frame == NULL);
             STORE_SP();
             new_frame->previous = frame;
@@ -2595,7 +2593,7 @@
             frame = tstate->current_frame = new_frame;
             tstate->py_recursion_remaining--;
             LOAD_SP();
-            LOAD_IP();
+            LOAD_IP(0);
 #if LLTRACE && TIER_ONE
             lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
             if (lltrace < 0) {
@@ -3271,12 +3269,22 @@
 
         case _SET_IP: {
             TIER_TWO_ONLY
-            frame->prev_instr = ip_offset + oparg;
+            frame->instr_ptr = ip_offset + oparg;
+            break;
+        }
+
+        case _SAVE_RETURN_OFFSET: {
+            #if TIER_ONE
+            frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+            #endif
+            #if TIER_TWO
+            frame->return_offset = oparg;
+            #endif
             break;
         }
 
         case _EXIT_TRACE: {
-            frame->prev_instr--;  // Back up to just before destination
+            TIER_TWO_ONLY
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
