@@ -1114,14 +1114,18 @@ class SysModuleTest(unittest.TestCase):
         traceback = [
             b'Traceback (most recent call last):',
             b'  File "<string>", line 8, in <module>',
+            b'    f2()',
             b'  File "<string>", line 6, in f2',
+            b'    f1()',
             b'  File "<string>", line 4, in f1',
+            b'    1 / 0',
+            b'    ~~^~~',
             b'ZeroDivisionError: division by zero'
         ]
         check(10, traceback)
         check(3, traceback)
-        check(2, traceback[:1] + traceback[2:])
-        check(1, traceback[:1] + traceback[3:])
+        check(2, traceback[:1] + traceback[3:])
+        check(1, traceback[:1] + traceback[5:])
         check(0, [traceback[-1]])
         check(-1, [traceback[-1]])
         check(1<<1000, traceback)
