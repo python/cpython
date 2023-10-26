@@ -879,9 +879,6 @@ label_exception_targets(basicblock *entryblock) {
                 }
             }
             else {
-                if (instr->i_opcode == YIELD_VALUE) {
-                    instr->i_oparg = except_stack->depth;
-                }
                 if (instr->i_opcode == RESUME &&
                     instr->i_oparg == RESUME_AFTER_YIELD &&
                     except_stack->depth == 1)
