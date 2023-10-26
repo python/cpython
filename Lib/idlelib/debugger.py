@@ -13,6 +13,7 @@ class Idb(bdb.Bdb):
 
     def __init__(self, gui):
         self.gui = gui  # An instance of Debugger or proxy of remote.
+        self._interrupt = False
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
@@ -31,6 +32,28 @@ class Idb(bdb.Bdb):
             return
         message = self.__frame2message(frame)
         self.gui.interaction(message, frame, info)
+
+    def user_interrupt(self, value):
+        # Clear sys.settrace to prevent debugger trace in Idb
+        sys.settrace(None)
+
+        old_value = self._interrupt
+        self._interrupt = value
+        return old_value
+
+    def break_here(self, frame):
+        if self._interrupt:
+            self._interrupt = False
+            return True
+        return bdb.Bdb.break_here(self, frame)
+
+    def set_continue(self):
+        bdb.Bdb.set_continue(self)
+        # The code in bdb will clear sys.settrace
+        # if there are no breakpoints. This resets
+        # it so that Ctrl-C still works.
+        if sys.gettrace() is None:
+            sys.settrace(self.trace_dispatch)
 
     def in_rpc_code(self, frame):
         if frame.f_code.co_filename.count('rpc.py'):
@@ -266,22 +289,27 @@ class Debugger:
         return filename, lineno
 
     def cont(self):
+        self.idb.user_interrupt(False)
         self.idb.set_continue()
         self.abort_loop()
 
     def step(self):
+        self.idb.user_interrupt(False)
         self.idb.set_step()
         self.abort_loop()
 
     def next(self):
+        self.idb.user_interrupt(False)
         self.idb.set_next(self.frame)
         self.abort_loop()
 
     def ret(self):
+        self.idb.user_interrupt(False)
         self.idb.set_return(self.frame)
         self.abort_loop()
 
     def quit(self):
+        self.idb.user_interrupt(False)
         self.idb.set_quit()
         self.abort_loop()
 

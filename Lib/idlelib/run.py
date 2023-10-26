@@ -564,6 +564,7 @@ class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
+        self.idb = None
         if idlelib.testing is False:
             self.locals = __main__.__dict__
             self.calltip = calltip.Calltip()
@@ -607,13 +608,18 @@ class Executive:
     def interrupt_the_server(self):
         if interruptable:
             thread.interrupt_main()
+        elif self.idb:
+            self.idb.user_interrupt(True)
 
     def start_the_debugger(self, gui_adap_oid):
-        return debugger_r.start_debugger(self.rpchandler, gui_adap_oid)
+        oid, idb = debugger_r.start_debugger(self.rpchandler, gui_adap_oid)
+        self.idb = idb
+        return oid
 
     def stop_the_debugger(self, idb_adap_oid):
         "Unregister the Idb Adapter.  Link objects and Idb then subject to GC"
         self.rpchandler.unregister(idb_adap_oid)
+        self.idb = None
 
     def get_the_calltip(self, name):
         return self.calltip.fetch_tip(name)
