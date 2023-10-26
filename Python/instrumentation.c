@@ -1073,7 +1073,7 @@ _Py_call_instrumentation_jump(
 {
     assert(event == PY_MONITORING_EVENT_JUMP ||
            event == PY_MONITORING_EVENT_BRANCH);
-    assert(frame->prev_instr == instr);
+    assert(frame->instr_ptr == instr);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     int to = (int)(target - _PyCode_CODE(code));
     PyObject *to_obj = PyLong_FromLong(to * (int)sizeof(_Py_CODEUNIT));
@@ -1086,9 +1086,9 @@ _Py_call_instrumentation_jump(
     if (err) {
         return NULL;
     }
-    if (frame->prev_instr != instr) {
+    if (frame->instr_ptr != instr) {
         /* The callback has caused a jump (by setting the line number) */
-        return frame->prev_instr;
+        return frame->instr_ptr;
     }
     return target;
 }
@@ -1138,7 +1138,6 @@ _Py_Instrumentation_GetLine(PyCodeObject *code, int index)
 int
 _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr, _Py_CODEUNIT *prev)
 {
-    assert(frame->prev_instr == instr);
     PyCodeObject *code = _PyFrame_GetCode(frame);
     assert(is_version_up_to_date(code, tstate->interp));
     assert(instrumentation_cross_checks(tstate->interp, code));
@@ -1153,6 +1152,7 @@ _Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
     int8_t line_delta = line_data->line_delta;
     int line = compute_line(code, i, line_delta);
     assert(line >= 0);
+    assert(prev != NULL);
     int prev_index = (int)(prev - _PyCode_CODE(code));
     int prev_line = _Py_Instrumentation_GetLine(code, prev_index);
     if (prev_line == line) {

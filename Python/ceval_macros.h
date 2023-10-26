@@ -62,13 +62,16 @@
 #ifdef Py_STATS
 #define INSTRUCTION_START(op) \
     do { \
-        frame->prev_instr = next_instr++; \
+        frame->instr_ptr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) (frame->prev_instr = next_instr++)
+#define INSTRUCTION_START(op) \
+    do { \
+        frame->instr_ptr = next_instr++; \
+    } while(0)
 #endif
 
 #if USE_COMPUTED_GOTOS
@@ -107,7 +110,6 @@
     do {                                                \
         assert(tstate->interp->eval_frame == NULL);     \
         _PyFrame_SetStackPointer(frame, stack_pointer); \
-        frame->prev_instr = next_instr - 1;             \
         (NEW_FRAME)->previous = frame;                  \
         frame = tstate->current_frame = (NEW_FRAME);     \
         CALL_STAT_INC(inlined_py_calls);                \
@@ -146,7 +148,6 @@ GETITEM(PyObject *v, Py_ssize_t i) {
         opcode = word.op.code; \
         oparg = word.op.arg; \
     } while (0)
-#define JUMPTO(x)       (next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + (x))
 
 /* JUMPBY makes the generator identify the instruction as a jump. SKIP_OVER is
  * for advancing to the next instruction, taking into account cache entries
@@ -381,8 +382,9 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 #if TIER_ONE
 
-#define LOAD_IP() \
-do { next_instr = frame->prev_instr+1; } while (0)
+#define LOAD_IP(OFFSET) do { \
+        next_instr = frame->instr_ptr + (OFFSET); \
+    } while (0)
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
@@ -395,7 +397,7 @@ stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #if TIER_TWO
 
-#define LOAD_IP() \
+#define LOAD_IP(UNUSED) \
 do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
 
 #define STORE_SP() \
