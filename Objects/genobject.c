@@ -343,12 +343,6 @@ is_resume(_Py_CODEUNIT *instr)
     );
 }
 
-static inline bool
-is_yield(_Py_CODEUNIT *instr)
-{
-    return instr->op.code == YIELD_VALUE || instr->op.code == INSTRUMENTED_YIELD_VALUE;
-}
-
 PyObject *
 _PyGen_yf(PyGenObject *gen)
 {
@@ -397,19 +391,11 @@ gen_close(PyGenObject *gen, PyObject *args)
         Py_DECREF(yf);
     }
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
-    /* It is possible for the previous instruction to not be a
-     * YIELD_VALUE if the debugger has changed the lineno. */
-    assert(_PyOpcode_Caches[YIELD_VALUE] == 0);
-    assert(_PyOpcode_Caches[INSTRUMENTED_YIELD_VALUE] == 0);
-    if (err == 0 && is_yield(frame->instr_ptr - 1)) {
-        _Py_CODEUNIT *yield_instr = frame->instr_ptr - 1;
-        assert(is_resume(frame->instr_ptr));
-        int exception_handler_depth = yield_instr->op.arg;
-        assert(exception_handler_depth > 0);
+    if (is_resume(frame->instr_ptr)) {
         /* We can safely ignore the outermost try block
-         * as it automatically generated to handle
+         * as it is automatically generated to handle
          * StopIteration. */
-        if (exception_handler_depth == 1) {
+        if (frame->instr_ptr->op.arg == RESUME_AFTER_YIELD_EXC_DEPTH_1) {
             gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
