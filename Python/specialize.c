@@ -10,6 +10,7 @@
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
 
@@ -2541,6 +2542,6 @@ const struct _PyCode_DEF(8) _Py_InitCleanup = {
     .co_code_adaptive = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
-        RESUME, 0,
+        RESUME, RESUME_AT_FUNC_START,
     }
 };
