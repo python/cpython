@@ -9,6 +9,7 @@ from functools import wraps
 import asyncio
 from test.support import import_helper
 import contextlib
+import warnings
 
 support.requires_working_socket(module=True)
 
@@ -2001,6 +2002,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
+            else:
+                stack.enter_context(warnings.catch_warnings())
+                warnings.filterwarnings('error') 
             func(output)
 
         sys.settrace(None)
