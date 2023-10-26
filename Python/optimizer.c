@@ -251,7 +251,7 @@ counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->prev_instr = ((_PyCounterExecutorObject *)self)->next_instr - 1;
+    frame->instr_ptr = ((_PyCounterExecutorObject *)self)->next_instr;
     Py_DECREF(self);
     return frame;
 }
@@ -701,11 +701,9 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SET_IP:  // uop=_SET_IP; oparg=next_instr-1
-                                // The number of caches is smuggled in via offset:
-                                assert(offset == _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
-                                oparg = INSTR_IP(instr + offset, code);
-                                uop = _SET_IP;
+                            case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
+                                oparg = offset;
+                                assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
 
                             default:
