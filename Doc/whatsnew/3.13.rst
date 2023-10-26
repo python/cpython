@@ -937,6 +937,15 @@ Others
 
 * None yet
 
+CPython bytecode changes
+========================
+
+* ``YIELD_VALUE`` no longer has an oparg. The set of possible values
+  for the oparg of ``RESUME`` was changed to add a new value which
+  identifies a ``RESUME`` that follows a ``YIELD_VALUE`` which is at
+  except-depth of 1. (This is needed to optimize closing of generators.)
+  (Contributed by Irit Katriel in :gh:`111354`.)
+
 Porting to Python 3.13
 ======================
 
