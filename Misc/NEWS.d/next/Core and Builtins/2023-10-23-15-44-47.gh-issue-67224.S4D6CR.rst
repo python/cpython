@@ -1,0 +1,2 @@
+Show source lines in tracebacks when using the ``-c`` option when running
+Python. Patch by Pablo Galindo
