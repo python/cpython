@@ -37,9 +37,9 @@ from test.support import threading_helper
 
 
 # Use the maximum known clock resolution (gh-75191, gh-110088): Windows
-# GetTickCount64() has a resolution of 15.6 ms.  Use 20 ms to tolerate rounding
+# GetTickCount64() has a resolution of 15.6 ms. Use 50 ms to tolerate rounding
 # issues.
-CLOCK_RES = 0.020
+CLOCK_RES = 0.050
 
 
 def data_file(*filename):
@@ -613,3 +613,18 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+async def await_without_task(coro):
+    exc = None
+    def func():
+        try:
+            for _ in coro.__await__():
+                pass
+        except BaseException as err:
+            nonlocal exc
+            exc = err
+    asyncio.get_running_loop().call_soon(func)
+    await asyncio.sleep(0)
+    if exc is not None:
+        raise exc

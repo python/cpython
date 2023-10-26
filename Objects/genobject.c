@@ -7,6 +7,7 @@
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -377,7 +378,6 @@ static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
-    PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
     if (gen->gi_frame_state == FRAME_CREATED) {
@@ -387,6 +387,7 @@ gen_close(PyGenObject *gen, PyObject *args)
     if (gen->gi_frame_state >= FRAME_COMPLETED) {
         Py_RETURN_NONE;
     }
+    PyObject *yf = _PyGen_yf(gen);
     if (yf) {
         PyFrameState state = gen->gi_frame_state;
         gen->gi_frame_state = FRAME_EXECUTING;
@@ -399,12 +400,13 @@ gen_close(PyGenObject *gen, PyObject *args)
      * YIELD_VALUE if the debugger has changed the lineno. */
     if (err == 0 && is_yield(frame->prev_instr)) {
         assert(is_resume(frame->prev_instr + 1));
-        int exception_handler_depth = frame->prev_instr[0].op.code;
+        int exception_handler_depth = frame->prev_instr[0].op.arg;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
          * as it automatically generated to handle
          * StopIteration. */
         if (exception_handler_depth == 1) {
+            gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
     }

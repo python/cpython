@@ -3820,24 +3820,37 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        if (psize) {
+            *psize = -1;
+        }
         return NULL;
     }
 
     if (PyUnicode_UTF8(unicode) == NULL) {
         if (unicode_fill_utf8(unicode) == -1) {
+            if (psize) {
+                *psize = -1;
+            }
             return NULL;
         }
     }
 
-    if (psize)
+    if (psize) {
         *psize = PyUnicode_UTF8_LENGTH(unicode);
+    }
     return PyUnicode_UTF8(unicode);
 }
 
 const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
-    return PyUnicode_AsUTF8AndSize(unicode, NULL);
+    Py_ssize_t size;
+    const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return utf8;
 }
 
 /*
