@@ -122,7 +122,6 @@
         } \
     }
 
-
 /* Tuple access macros */
 
 #ifndef Py_DEBUG
