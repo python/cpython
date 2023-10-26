@@ -339,7 +339,6 @@ do { \
 do { \
     _PyFrame_SetStackPointer(frame, stack_pointer); \
     next_instr = _Py_call_instrumentation_jump(tstate, event, frame, src, dest); \
-    frame->return_offset = 0; \
     stack_pointer = _PyFrame_GetStackPointer(frame); \
     if (next_instr == NULL) { \
         next_instr = (dest)+1; \
