@@ -1064,8 +1064,8 @@ class EditorWindow:
     def set_saved(self, flag):
         self.undo.set_saved(flag)
 
-    def reset_undo(self):
-        self.undo.reset_undo()
+    def reset_undo(self, set_saved_flag=True):
+        self.undo.reset_undo(set_saved_flag)
 
     def short_title(self):
         filename = self.io.filename

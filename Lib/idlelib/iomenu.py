@@ -52,8 +52,8 @@ class IOBinding:
     def set_saved(self, flag):
         self.editwin.set_saved(flag)
 
-    def reset_undo(self):
-        self.editwin.reset_undo()
+    def reset_undo(self, set_saved_flag=True):
+        self.editwin.reset_undo(set_saved_flag)
 
     filename_change_hook = None
 

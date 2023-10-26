@@ -86,6 +86,38 @@ class UndoDelegatorTest(unittest.TestCase):
         text.event_generate('<<undo>>')
         self.assertTupleEqual((d.pointer, d.can_merge), (2, False))
 
+    def test_reset_undo(self):
+        eq = self.assertEqual
+        d = self.delegator
+        orig_sch = d.saved_change_hook
+        d.saved_change_hook = Mock()
+
+        def set_text():
+            self.text.insert('insert', 'spam')
+            self.text.insert('insert', '\n')
+            self.text.insert('insert', 'this is the second line')
+
+        set_text()
+        eq(d.pointer, len(d.undolist))
+        self.assertNotEqual(d.pointer, d.saved)
+
+        # Default to set_saved_flag to True.
+        d.reset_undo()
+        eq(d.pointer, 0)
+        eq(d.undolist, [])
+        eq(d.undoblock, 0)
+        eq(d.saved, d.pointer)
+
+        # Don't mark as saved upon reset.
+        set_text()
+        d.reset_undo(False)
+        eq(d.pointer, 0)
+        eq(d.undolist, [])
+        eq(d.undoblock, 0)
+        eq(d.saved, -1)
+
+        d.saved_change_hook = orig_sch
+
     def test_get_set_saved(self):
         # test the getter method get_saved
         # test the setter method set_saved
