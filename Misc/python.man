@@ -276,7 +276,7 @@ the remaining fields.
 
 The
 .I message
-field must match the whole printed warning message; this match is
+field must match the start of the warning message; this match is
 case-insensitive.
 
 The
