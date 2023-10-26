@@ -2541,6 +2541,6 @@ const struct _PyCode_DEF(8) _Py_InitCleanup = {
     .co_code_adaptive = {
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
-        RESUME, 0,
+        RESUME, RESUME_AT_FUNC_START,
     }
 };
