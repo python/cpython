@@ -3219,7 +3219,4 @@ def load_tests(loader, tests, pattern):
 
 
 if __name__ == '__main__':
-    raise RuntimeError(
-        "Running `test_doctest` via cmdline is not supported, "
-        "use `-m test test_doctest` instead"
-    )
+    unittest.main(module='test.test_doctest')
