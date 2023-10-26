@@ -124,13 +124,13 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
         elif part == '*':
             part = r'.+'
         elif part == '**\n':
-            # '**/' component: we use '[\s\S]' rather than '.' so that path
+            # '**/' component: we use '(?s:.)' rather than '.' so that path
             # separators (i.e. newlines) are matched. The trailing '^' ensures
             # we terminate after a path separator (i.e. on a new line).
-            part = r'[\s\S]*^'
+            part = r'(?s:.)*^'
         elif part == '**':
             # '**' component.
-            part = r'[\s\S]*'
+            part = r'(?s:.)*'
         elif '**' in part:
             raise ValueError("Invalid pattern: '**' can only be an entire path component")
         else:
