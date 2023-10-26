@@ -2064,7 +2064,7 @@ class JumpTestCase(unittest.TestCase):
         output.append(1)
         output.append(2)
 
-    @jump_test(1, 4, [5])
+    @jump_test(1, 4, [5], warning=(RuntimeWarning, unbound_locals))
     def test_jump_is_none_forwards(output):
         x = None
         if x is None:
@@ -2081,7 +2081,7 @@ class JumpTestCase(unittest.TestCase):
             output.append(5)
         output.append(6)
 
-    @jump_test(1, 4, [5])
+    @jump_test(2, 4, [5])
     def test_jump_is_not_none_forwards(output):
         x = None
         if x is not None:
