@@ -2479,19 +2479,19 @@ class TestExecutorInvalidation(unittest.TestCase):
         # Set things up so each executor depends on the objects
         # with an equal or lower index.
         for i, exe in enumerate(executors):
-            self.assertTrue(exe.valid)
+            self.assertTrue(exe.is_valid())
             for obj in objects[:i+1]:
                 _testinternalcapi.add_executor_dependency(exe, obj)
-            self.assertTrue(exe.valid)
+            self.assertTrue(exe.is_valid())
         # Assert that the correct executors are invalidated
         # and check that nothing crashes when we invalidate
         # an executor mutliple times.
         for i in (4,3,2,1,0):
             _testinternalcapi.invalidate_executors(objects[i])
             for exe in executors[i:]:
-                self.assertFalse(exe.valid)
+                self.assertFalse(exe.is_valid())
             for exe in executors[:i]:
-                self.assertTrue(exe.valid)
+                self.assertTrue(exe.is_valid())
 
     def test_uop_optimizer_invalidation(self):
         # Generate a new function at each call
@@ -2506,9 +2506,9 @@ class TestExecutorInvalidation(unittest.TestCase):
         with temporary_optimizer(opt):
             f()
         exe = get_first_executor(f)
-        self.assertTrue(exe.valid)
+        self.assertTrue(exe.is_valid())
         _testinternalcapi.invalidate_executors(f.__code__)
-        self.assertFalse(exe.valid)
+        self.assertFalse(exe.is_valid())
 
 class TestUops(unittest.TestCase):
 
