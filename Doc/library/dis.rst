@@ -823,6 +823,8 @@ iterations of the loop.
    .. versionchanged:: 3.12
       oparg set to be the exception block depth, for efficient closing of generators.
 
+   .. versionchanged:: 3.13
+      this opcode no longer has an oparg
 
 .. opcode:: SETUP_ANNOTATIONS
 
@@ -1633,11 +1635,15 @@ iterations of the loop.
 
    * ``0`` The start of a function, which is neither a generator, coroutine
      nor an async generator
-   * ``1`` After a ``yield`` expression
-   * ``2`` After a ``yield from`` expression
-   * ``3`` After an ``await`` expression
+   * ``1`` After a ``yield`` expression, with except-depth > 1
+   * ``2`` After a ``yield`` expression, with except-depth 1
+   * ``3`` After a ``yield from`` expression
+   * ``4`` After an ``await`` expression
 
    .. versionadded:: 3.11
+
+   .. versionchanged:: 3.13
+      new oparg value for ``RESUME`` after ``YIELD_VALUE`` with except-depth of 1
 
 
 .. opcode:: RETURN_GENERATOR

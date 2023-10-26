@@ -459,7 +459,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.13a1 3561 (Add cache entry to branch instructions)
 #     Python 3.13a1 3562 (Assign opcode IDs for internal ops in separate range)
 #     Python 3.13a1 3563 (Add CALL_KW and remove KW_NAMES)
-#     Python 3.13a1 3564 (Shifted some of the oparg values of RESUME to add a new one)
+#     Python 3.13a1 3564 (Removed oparg from YIELD_VALUE, changed oparg values of RESUME)
 
 #     Python 3.14 will start with 3600
 
