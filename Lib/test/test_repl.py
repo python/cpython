@@ -184,7 +184,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<python-input-1>'])
+        print(linecache.cache['<stdin>-1'])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
