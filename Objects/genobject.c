@@ -9,6 +9,7 @@
 #include "pycore_genobject.h"     // struct _Py_async_gen_state
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 
@@ -362,8 +363,7 @@ _PyGen_yf(PyGenObject *gen)
             assert(_PyCode_CODE(_PyGen_GetCode(gen))[0].op.code != SEND);
             return NULL;
         }
-        _Py_CODEUNIT next = frame->prev_instr[1];
-        if (!is_resume(&next) || next.op.arg < 2)
+        if (!is_resume(frame->instr_ptr) || frame->instr_ptr->op.arg < 2)
         {
             /* Not in a yield from */
             return NULL;
@@ -398,9 +398,12 @@ gen_close(PyGenObject *gen, PyObject *args)
     _PyInterpreterFrame *frame = (_PyInterpreterFrame *)gen->gi_iframe;
     /* It is possible for the previous instruction to not be a
      * YIELD_VALUE if the debugger has changed the lineno. */
-    if (err == 0 && is_yield(frame->prev_instr)) {
-        assert(is_resume(frame->prev_instr + 1));
-        int exception_handler_depth = frame->prev_instr[0].op.arg;
+    assert(_PyOpcode_Caches[YIELD_VALUE] == 0);
+    assert(_PyOpcode_Caches[INSTRUMENTED_YIELD_VALUE] == 0);
+    if (err == 0 && is_yield(frame->instr_ptr - 1)) {
+        _Py_CODEUNIT *yield_instr = frame->instr_ptr - 1;
+        assert(is_resume(frame->instr_ptr));
+        int exception_handler_depth = yield_instr->op.arg;
         assert(exception_handler_depth > 0);
         /* We can safely ignore the outermost try block
          * as it automatically generated to handle
