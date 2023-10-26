@@ -2130,14 +2130,14 @@ containing the populated namespace and the list of remaining argument strings.
 :meth:`~ArgumentParser.parse_intermixed_args` raises an error if there are any
 remaining unparsed argument strings.
 
+.. versionadded:: 3.7
+
 Exceptions
 ^^^^^^^^^^
 
 .. exception:: ArgumentTypeError
 
     An error from trying to convert a command line string to a type
-
-.. versionadded:: 3.7
 
 .. _upgrading-optparse-code:
 
