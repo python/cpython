@@ -1,0 +1,100 @@
+import pygame
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Constants
+SCREEN_WIDTH = 640
+SCREEN_HEIGHT = 480
+BALL_SPEED = 5
+PADDLE_SPEED = 5
+
+# Colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+PADDLE_COLOR = (200, 200, 200)
+SCORE_COLOR = (255, 255, 255)
+
+# Create the screen
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption(Pong)
+
+# Initialize paddles and ball
+paddle_left = pygame.Rect(50, SCREEN_HEIGHT  2 - 50, 10, 100)
+paddle_right = pygame.Rect(SCREEN_WIDTH - 60, SCREEN_HEIGHT  2 - 50, 10, 100)
+ball = pygame.Rect(SCREEN_WIDTH  2 - 15, SCREEN_HEIGHT  2 - 15, 30, 30)
+ball_speed = [BALL_SPEED, BALL_SPEED]
+
+def change_ball_color()
+    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+ball_color = change_ball_color()
+
+# Initialize player scores
+score_left = 0
+score_right = 0
+font = pygame.font.Font(None, 36)
+
+clock = pygame.time.Clock()
+
+running = True
+while running
+    for event in pygame.event.get()
+        if event.type == pygame.QUIT
+            running = False
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_UP] and paddle_right.top  0
+        paddle_right.y -= PADDLE_SPEED
+    if keys[pygame.K_DOWN] and paddle_right.bottom  SCREEN_HEIGHT
+        paddle_right.y += PADDLE_SPEED
+    if keys[pygame.K_w] and paddle_left.top  0
+        paddle_left.y -= PADDLE_SPEED
+    if keys[pygame.K_s] and paddle_left.bottom  SCREEN_HEIGHT
+        paddle_left.y += PADDLE_SPEED
+
+    ball.x += ball_speed[0]
+    ball.y += ball_speed[1]
+
+    # Ball collision with top and bottom walls
+    if ball.top = 0 or ball.bottom = SCREEN_HEIGHT
+        ball_speed[1] = -ball_speed[1]
+
+    # Ball collision with paddles
+    if ball.colliderect(paddle_left) or ball.colliderect(paddle_right)
+        ball_speed[0] = -ball_speed[0]
+        ball_color = change_ball_color()
+
+    # Ball out of bounds
+    if ball.left = 0
+        ball.x = SCREEN_WIDTH  2 - 15
+        ball.y = SCREEN_HEIGHT  2 - 15
+        ball_speed[0] = random.choice([BALL_SPEED, -BALL_SPEED])
+        ball_speed[1] = random.choice([BALL_SPEED, -BALL_SPEED])
+        ball_color = change_ball_color()
+        score_right += 1
+    if ball.right = SCREEN_WIDTH
+        ball.x = SCREEN_WIDTH  2 - 15
+        ball.y = SCREEN_HEIGHT  2 - 15
+        ball_speed[0] = random.choice([BALL_SPEED, -BALL_SPEED])
+        ball_speed[1] = random.choice([BALL_SPEED, -BALL_SPEED])
+        ball_color = change_ball_color()
+        score_left += 1
+
+    # Clear the screen
+    screen.fill(BLACK)
+
+    # Draw paddles and ball
+    pygame.draw.rect(screen, PADDLE_COLOR, paddle_left)
+    pygame.draw.rect(screen, PADDLE_COLOR, paddle_right)
+    pygame.draw.ellipse(screen, ball_color, ball)
+
+    # Draw player scores
+    score_text = font.render(f{score_left} - {score_right}, True, SCORE_COLOR)
+    screen.blit(score_text, (SCREEN_WIDTH  2 - score_text.get_width()  2, 10))
+
+    pygame.display.flip()
+    clock.tick(60)
+
+pygame.quit()
