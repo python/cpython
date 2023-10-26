@@ -2004,7 +2004,7 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertWarnsRegex(*warning))
             else:
                 stack.enter_context(warnings.catch_warnings())
-                warnings.simplefilter('error') 
+                warnings.simplefilter('error')
             func(output)
 
         sys.settrace(None)
