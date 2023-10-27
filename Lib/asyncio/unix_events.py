@@ -285,7 +285,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
             ssl_shutdown_timeout=None,
-            start_serving=True):
+            start_serving=True, cleanup_socket=True):
         if isinstance(ssl, bool):
             raise TypeError('ssl argument must be an SSLContext or None')
 
@@ -341,13 +341,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
-        path = sock.getsockname()
-        # Check for abstract socket. `str` and `bytes` paths are supported.
-        if path[0] not in (0, '\x00'):
-            try:
-                self._unix_server_sockets[sock] = os.stat(path).st_ino
-            except FileNotFoundError:
-                pass
+        if cleanup_socket:
+            path = sock.getsockname()
+            # Check for abstract socket. `str` and `bytes` paths are supported.
+            if path[0] not in (0, '\x00'):
+                try:
+                    self._unix_server_sockets[sock] = os.stat(path).st_ino
+                except FileNotFoundError:
+                    pass
 
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,

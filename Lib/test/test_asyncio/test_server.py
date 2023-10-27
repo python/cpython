@@ -205,6 +205,17 @@ class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
             srv.close()
             self.assertTrue(os.path.exists(addr))
 
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_cleanup_prevented(self):
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            srv = await asyncio.start_unix_server(serve, addr, cleanup_socket=False)
+
+            srv.close()
+            self.assertTrue(os.path.exists(addr))
+
 
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
 class ProactorStartServerTests(BaseStartServer, unittest.TestCase):
