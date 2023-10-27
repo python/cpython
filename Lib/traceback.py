@@ -171,12 +171,13 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
 
 # -- not official API but folk probably use these two functions.
 
-def _format_final_exc_line(etype, value):
+def _format_final_exc_line(etype, value, *, insert_final_newline=True):
     valuestr = _safe_string(value, 'exception')
+    end_char = "\n" if insert_final_newline else ""
     if value is None or not valuestr:
-        line = "%s\n" % etype
+        line = f"{etype}{end_char}"
     else:
-        line = "%s: %s\n" % (etype, valuestr)
+        line = f"{etype}: {valuestr}{end_char}"
     return line
 
 def _safe_string(value, what, func=str):
@@ -914,10 +915,12 @@ class TracebackException:
         if not issubclass(self.exc_type, SyntaxError):
             if _depth > 0:
                 # Nested exceptions needs correct handling of multiline messages.
+                formatted = _format_final_exc_line(
+                    stype, self._str, insert_final_newline=False,
+                ).split('\n')
                 yield from [
                     indent + l + '\n'
-                    for l in _format_final_exc_line(stype, self._str).split('\n')
-                    if l
+                    for l in formatted
                 ]
             else:
                 yield _format_final_exc_line(stype, self._str)

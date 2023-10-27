@@ -273,6 +273,24 @@ class TracebackCases(unittest.TestCase):
             '   2\n',
         ])
 
+    def test_format_exception_group_multiline2_messages(self):
+        exc = ValueError('B\n\n2\n')
+        exc.add_note('\nC\n\n3')
+        eg = ExceptionGroup('A\n\n1\n', [exc, IndexError('D')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n\n1\n (2 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   \n',
+            '   2\n',
+            '   \n',
+            '   \n',  # first char of `note`
+            '   C\n',
+            '   \n',
+            '   3\n', # note ends
+            '   IndexError: D\n',
+        ])
+
     def test_format_exception_group_syntax_error(self):
         exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
         eg = ExceptionGroup('A\n1', [exc])
