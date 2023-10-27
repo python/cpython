@@ -326,6 +326,22 @@ class InternalFunctionsTest(unittest.TestCase):
             "ttk::style element create thing image {name {state1 state2} val} "
             "-opt {3 2m}")
 
+        vsapi = {'pin': {'element create':
+            ['vsapi', 'EXPLORERBAR', 3,
+             ('pressed', '!selected', 3),
+             ('active', '!selected', 2),
+             ('pressed', 'selected', 6),
+             ('active', 'selected', 5),
+             ('selected', 4),
+             ('', 1)]}}
+        self.assertEqual(ttk._script_from_settings(vsapi),
+            "ttk::style element create pin vsapi EXPLORERBAR 3 {"
+            "{pressed !selected} 3 "
+            "{active !selected} 2 "
+            "{pressed selected} 6 "
+            "{active selected} 5 "
+            "selected 4 "
+            "{} 1} ")
 
     def test_tclobj_to_py(self):
         self.assertEqual(
