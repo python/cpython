@@ -11,6 +11,11 @@
 static int
 warn_invalid_escape_sequence(Parser *p, const char *first_invalid_escape, Token *t)
 {
+    if (p->call_invalid_rules) {
+        // Do not report warnings if we are in the second pass of the parser
+        // to avoid showing the warning twice.
+        return 0;
+    }
     unsigned char c = *first_invalid_escape;
     int octal = ('4' <= c && c <= '7');
     PyObject *msg =
