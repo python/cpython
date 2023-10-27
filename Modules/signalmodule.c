@@ -21,6 +21,7 @@
 #  include "socketmodule.h"       // SOCKET_T
 #endif
 
+#include <unistd.h>               // alarm()
 #ifdef MS_WINDOWS
 #  ifdef HAVE_PROCESS_H
 #    include <process.h>
