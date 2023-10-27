@@ -854,22 +854,24 @@ class PyBuildExt(build_ext):
                                depends=['socketmodule.h'],
                                libraries=math_libs) )
         # Detect SSL support for the socket module (via _ssl)
-        search_for_ssl_incs_in = [
-                              '/usr/local/ssl/include',
-                              '/usr/contrib/ssl/include/'
-                             ]
-        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
-                             search_for_ssl_incs_in
-                             )
+        if 'AS_DEPENDENCIES_DIR' in os.environ:
+            ssl_path = os.getenv('AS_DEPENDENCIES_DIR', '')
+            search_for_ssl_incs_in = [os.path.join(ssl_path, "usr", "include")]
+            search_for_ssl_libs_in = [os.path.join(ssl_path, "usr","lib")]
+        else:
+            search_for_ssl_incs_in = []
+            search_for_ssl_libs_in = []
+            
+        ssl_incs = find_file('openssl/ssl.h', [], search_for_ssl_incs_in)
+        ssl_libs = find_library_file(self.compiler, 'ssl', [],
+                                     search_for_ssl_libs_in)
+
+
         if ssl_incs is not None:
             krb5_h = find_file('krb5.h', inc_dirs,
                                ['/usr/kerberos/include'])
             if krb5_h:
                 ssl_incs += krb5_h
-        ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
-                                     ['/usr/local/ssl/lib',
-                                      '/usr/contrib/ssl/lib/'
-                                     ] )
 
         if (ssl_incs is not None and
             ssl_libs is not None):
@@ -881,46 +883,17 @@ class PyBuildExt(build_ext):
         else:
             missing.append('_ssl')
 
-        # find out which version of OpenSSL we have
-        openssl_ver = 0
-        openssl_ver_re = re.compile(
-            '^\s*#\s*define\s+OPENSSL_VERSION_NUMBER\s+(0x[0-9a-fA-F]+)' )
-
-        # look for the openssl version header on the compiler search path.
-        opensslv_h = find_file('openssl/opensslv.h', [],
-                inc_dirs + search_for_ssl_incs_in)
-        if opensslv_h:
-            name = os.path.join(opensslv_h[0], 'openssl/opensslv.h')
-            if host_platform == 'darwin' and is_macosx_sdk_path(name):
-                name = os.path.join(macosx_sdk_root(), name[1:])
-            try:
-                incfile = open(name, 'r')
-                for line in incfile:
-                    m = openssl_ver_re.match(line)
-                    if m:
-                        openssl_ver = eval(m.group(1))
-            except IOError, msg:
-                print "IOError while reading opensshv.h:", msg
-                pass
-
-        min_openssl_ver = 0x00907000
         have_any_openssl = ssl_incs is not None and ssl_libs is not None
-        have_usable_openssl = (have_any_openssl and
-                               openssl_ver >= min_openssl_ver)
 
         if have_any_openssl:
-            if have_usable_openssl:
-                # The _hashlib module wraps optimized implementations
-                # of hash functions from the OpenSSL library.
-                exts.append( Extension('_hashlib', ['_hashopenssl.c'],
-                                       include_dirs = ssl_incs,
-                                       library_dirs = ssl_libs,
-                                       libraries = ['ssl', 'crypto']) )
-            else:
-                print ("warning: openssl 0x%08x is too old for _hashlib" %
-                       openssl_ver)
-                missing.append('_hashlib')
-        if COMPILED_WITH_PYDEBUG or not have_usable_openssl:
+            exts.append( Extension('_hashlib', ['_hashopenssl.c'],
+                                    include_dirs = ssl_incs,
+                                    library_dirs = ssl_libs,
+                                    libraries = ['ssl', 'crypto']) )
+        else:
+            print ("Warning - no suitable openssl found for hashlib - omitting..")
+            missing.append('_hashlib')
+        if COMPILED_WITH_PYDEBUG or not have_any_openssl:
             # The _sha module implements the SHA1 hash algorithm.
             exts.append( Extension('_sha', ['shamodule.c']) )
             # The _md5 module implements the RSA Data Security, Inc. MD5
@@ -930,8 +903,7 @@ class PyBuildExt(build_ext):
                             sources = ['md5module.c', 'md5.c'],
                             depends = ['md5.h']) )
 
-        min_sha2_openssl_ver = 0x00908000
-        if COMPILED_WITH_PYDEBUG or openssl_ver < min_sha2_openssl_ver:
+        if COMPILED_WITH_PYDEBUG:
             # OpenSSL doesn't do these until 0.9.8 so we'll bring our own hash
             exts.append( Extension('_sha256', ['sha256module.c']) )
             exts.append( Extension('_sha512', ['sha512module.c']) )
