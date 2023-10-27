@@ -215,6 +215,155 @@ class TracebackCases(unittest.TestCase):
             str_name = '.'.join([X.__module__, X.__qualname__])
         self.assertEqual(err[0], "%s: %s\n" % (str_name, str_value))
 
+    def test_format_exception_group_without_show_group(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(eg)
+        self.assertEqual(err, ['ExceptionGroup: A (1 sub-exception)\n'])
+
+    def test_format_exception_group(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+        ])
+
+    def test_format_base_exception_group(self):
+        eg = BaseExceptionGroup('A', [BaseException('B')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'BaseExceptionGroup: A (1 sub-exception)\n',
+            '   BaseException: B\n',
+        ])
+
+    def test_format_exception_group_with_note(self):
+        exc = ValueError('B')
+        exc.add_note('Note')
+        eg = ExceptionGroup('A', [exc])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+            '   Note\n',
+        ])
+
+    def test_format_exception_group_explicit_class(self):
+        eg = ExceptionGroup('A', [ValueError('B')])
+        err = traceback.format_exception_only(ExceptionGroup, eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: B\n',
+        ])
+
+    def test_format_exception_group_multiple_exceptions(self):
+        eg = ExceptionGroup('A', [ValueError('B'), TypeError('C')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (2 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   TypeError: C\n',
+        ])
+
+    def test_format_exception_group_multiline_messages(self):
+        eg = ExceptionGroup('A\n1', [ValueError('B\n2')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n1 (1 sub-exception)\n',
+            '   ValueError: B\n',
+            '   2\n',
+        ])
+
+    def test_format_exception_group_multiline2_messages(self):
+        exc = ValueError('B\n\n2\n')
+        exc.add_note('\nC\n\n3')
+        eg = ExceptionGroup('A\n\n1\n', [exc, IndexError('D')])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n\n1\n (2 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   \n',
+            '   2\n',
+            '   \n',
+            '   \n',  # first char of `note`
+            '   C\n',
+            '   \n',
+            '   3\n', # note ends
+            '   IndexError: D\n',
+        ])
+
+    def test_format_exception_group_syntax_error(self):
+        exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+        eg = ExceptionGroup('A\n1', [exc])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A\n1 (1 sub-exception)\n',
+            '     File "x.py", line 23\n',
+            '       bad syntax\n',
+            '   SyntaxError: error\n',
+        ])
+
+    def test_format_exception_group_nested_with_notes(self):
+        exc = IndexError('D')
+        exc.add_note('Note\nmultiline')
+        eg = ExceptionGroup('A', [
+            ValueError('B'),
+            ExceptionGroup('C', [exc, LookupError('E')]),
+            TypeError('F'),
+        ])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (3 sub-exceptions)\n',
+            '   ValueError: B\n',
+            '   ExceptionGroup: C (2 sub-exceptions)\n',
+            '      IndexError: D\n',
+            '      Note\n',
+            '      multiline\n',
+            '      LookupError: E\n',
+            '   TypeError: F\n',
+        ])
+
+    def test_format_exception_group_with_tracebacks(self):
+        def f():
+            try:
+                1 / 0
+            except ZeroDivisionError as e:
+                return e
+
+        def g():
+            try:
+                raise TypeError('g')
+            except TypeError as e:
+                return e
+
+        eg = ExceptionGroup('A', [
+            f(),
+            ExceptionGroup('B', [g()]),
+        ])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (2 sub-exceptions)\n',
+            '   ZeroDivisionError: division by zero\n',
+            '   ExceptionGroup: B (1 sub-exception)\n',
+            '      TypeError: g\n',
+        ])
+
+    def test_format_exception_group_with_cause(self):
+        def f():
+            try:
+                try:
+                    1 / 0
+                except ZeroDivisionError:
+                    raise ValueError(0)
+            except Exception as e:
+                return e
+
+        eg = ExceptionGroup('A', [f()])
+        err = traceback.format_exception_only(eg, show_group=True)
+        self.assertEqual(err, [
+            'ExceptionGroup: A (1 sub-exception)\n',
+            '   ValueError: 0\n',
+        ])
+
     @requires_subprocess()
     def test_encoded_file(self):
         # Test that tracebacks are correctly printed for encoded source files:
@@ -381,7 +530,7 @@ class TracebackCases(unittest.TestCase):
 
         self.assertEqual(
             str(inspect.signature(traceback.format_exception_only)),
-            '(exc, /, value=<implicit>)')
+            '(exc, /, value=<implicit>, *, show_group=False)')
 
 
 class PurePythonExceptionFormattingMixin:
