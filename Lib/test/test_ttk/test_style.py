@@ -123,7 +123,6 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         self.style.theme_use(curr_theme)
 
-
     def test_configure_custom_copy(self):
         style = self.style
 
@@ -258,7 +257,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                              ('', 1))
         style.layout('CloseButton',
                      [('CloseButton.smallclose', {'sticky': 'news'})])
-        b = ttk.Button(style='CloseButton')
+        b = ttk.Button(self.root, style='CloseButton')
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 13)
         self.assertEqual(b.winfo_reqheight(), 13)
@@ -276,7 +275,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                              ('', 1))
         style.layout('Explorer.Pin',
                      [('Explorer.Pin.pin', {'sticky': 'news'})])
-        pin = ttk.Checkbutton(style='Explorer.Pin')
+        pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
         pin.pack(expand=True, fill='both')
         self.assertEqual(pin.winfo_reqwidth(), 16)
         self.assertEqual(pin.winfo_reqheight(), 16)
@@ -291,7 +290,7 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                              ('', 1))
         style.layout('Explorer.CloseButton',
                      [('Explorer.CloseButton.headerclose', {'sticky': 'news'})])
-        b = ttk.Button(style='Explorer.CloseButton')
+        b = ttk.Button(self.root, style='Explorer.CloseButton')
         b.pack(expand=True, fill='both')
         self.assertEqual(b.winfo_reqwidth(), 16)
         self.assertEqual(b.winfo_reqheight(), 16)
