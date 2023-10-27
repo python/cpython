@@ -1101,7 +1101,7 @@ conflict.
    Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
    frozen modules are always used, even if this flag is set to "off".
 
-   See also the :option:`-X frozen_modules` command-line option.
+   See also the :option:`-X frozen_modules <-X>` command-line option.
 
    .. versionadded:: 3.13
 
