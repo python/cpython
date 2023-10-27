@@ -541,6 +541,11 @@ class TestMailbox(TestBase):
             self.assertIn(self._box.get_string(key), contents)
         oldbox.close()
 
+    def test_use_context_manager(self):
+        # Mailboxes are usable as a context manager
+        with self._factory(self._path) as box:
+            self.assertIsInstance(box, self._box.__class__)
+
     def test_dump_message(self):
         # Write message representations to disk
         for input in (email.message_from_string(_sample_message),

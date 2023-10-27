@@ -76,6 +76,14 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       message.  Failing to lock the mailbox runs the risk of losing messages or
       corrupting the entire mailbox.
 
+   The :class:`Mailbox` class supports the :keyword:`with` statement.  When used
+   like this, the Mailbox acquires a lock when the :keyword:`with` statement
+   enters and releases it and :meth:`close` when the :keyword:`with` statement
+   exits.
+
+   .. versionchanged:: 3.9
+      Support for the :keyword:`with` statement was added.
+
    :class:`Mailbox` instances have the following methods:
 
 
