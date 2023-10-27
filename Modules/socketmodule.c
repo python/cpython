@@ -3111,12 +3111,18 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
         } else if (timeout < 0) {
             block = 1;
 
+            #ifdef MS_WINDOWS
+            DWORD zero = 0;
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
+                           sizeof(DWORD)) != 0)
+            #else
             struct timeval zero = {
                 .tv_sec = 0,
                 .tv_usec = 0,
             };
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&zero,
                            sizeof(struct timeval)) != 0)
+            #endif
             {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
@@ -3125,8 +3131,13 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
+            #ifdef MS_WINDOWS
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&zero,
+                           sizeof(int)) != 0)
+            #else
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&zero,
                            sizeof(struct timeval)) != 0)
+            #endif
             {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
@@ -3138,10 +3149,16 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
         } else {
             block = 1;
 
+            #ifdef MS_WINDOWS
+            DWORD timeout_ms = timeout / 1000000;
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
+                           (char *)&timeout_ms, sizeof(DWORD)) != 0)
+            #else
             struct timeval timeout_tv;
             _PyTime_AsTimeval(timeout, &timeout_tv, _PyTime_ROUND_TIMEOUT);
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
                            (char *)&timeout_tv, sizeof(struct timeval)) != 0)
+            #endif
             {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
@@ -3150,8 +3167,13 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                     return -1;
                 }
             }
+            #ifdef MS_WINDOWS
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
+                           (char *)&timeout_ms, sizeof(int)) != 0)
+            #else
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
                            (char *)&timeout_tv, sizeof(struct timeval)) != 0)
+            #endif
             {
                 // EINVAL means emote closed the socket fd or shutdown has been
                 // called.
