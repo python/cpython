@@ -21,11 +21,13 @@
 #define TIER_TWO 2
 #include "ceval_macros.h"
 
+#undef GOTO_ERROR
+#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
-        goto deoptimize;         \
+        goto deoptimize_tier_two;\
     }
 
 #ifdef Py_STATS
@@ -111,22 +113,22 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
         }
     }
 
-unbound_local_error:
+unbound_local_error_tier_two:
     _PyEval_FormatExcCheckArg(tstate, PyExc_UnboundLocalError,
         UNBOUNDLOCAL_ERROR_MSG,
         PyTuple_GetItem(_PyFrame_GetCode(frame)->co_localsplusnames, oparg)
     );
-    goto error;
+    goto error_tier_two;
 
-pop_4_error:
+pop_4_error_tier_two:
     STACK_SHRINK(1);
-pop_3_error:
+pop_3_error_tier_two:
     STACK_SHRINK(1);
-pop_2_error:
+pop_2_error_tier_two:
     STACK_SHRINK(1);
-pop_1_error:
+pop_1_error_tier_two:
     STACK_SHRINK(1);
-error:
+error_tier_two:
     // On ERROR_IF we return NULL as the frame.
     // The caller recovers the frame from tstate->current_frame.
     DPRINTF(2, "Error: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);
@@ -136,7 +138,7 @@ error:
     Py_DECREF(self);
     return NULL;
 
-deoptimize:
+deoptimize_tier_two:
     // On DEOPT_IF we just repeat the last instruction.
     // This presumes nothing was popped from the stack (nor pushed).
     DPRINTF(2, "DEOPT: [Opcode %d, operand %" PRIu64 "]\n", opcode, operand);

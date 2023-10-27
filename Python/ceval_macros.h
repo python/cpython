@@ -116,11 +116,14 @@
         goto start_frame;                               \
     } while (0)
 
+// Use this instead of 'goto error' so Tier 2 can go to a different label
+#define GOTO_ERROR(LABEL) goto LABEL
+
 #define CHECK_EVAL_BREAKER() \
     _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY(); \
     if (_Py_atomic_load_uintptr_relaxed(&tstate->interp->ceval.eval_breaker) & _PY_EVAL_EVENTS_MASK) { \
         if (_Py_HandlePending(tstate) != 0) { \
-            goto error; \
+            GOTO_ERROR(error); \
         } \
     }
 
@@ -326,7 +329,7 @@ do { \
     }\
     else { \
         result = PyFloat_FromDouble(dval); \
-        if ((result) == NULL) goto error; \
+        if ((result) == NULL) GOTO_ERROR(error); \
         _Py_DECREF_NO_DEALLOC(left); \
         _Py_DECREF_NO_DEALLOC(right); \
     } \

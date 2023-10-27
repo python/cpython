@@ -202,6 +202,8 @@ class Instruction:
                 ninputs, symbolic = list_effect_size(ieffs)
                 if ninputs:
                     label = f"pop_{ninputs}_{label}"
+                if tier == TIER_TWO:
+                    label = label + "_tier_two"
                 if symbolic:
                     out.write_raw(
                         f"{space}if ({cond}) {{ STACK_SHRINK({symbolic}); goto {label}; }}\n"
