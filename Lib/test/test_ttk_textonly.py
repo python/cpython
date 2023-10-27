@@ -179,7 +179,7 @@ class InternalFunctionsTest(unittest.TestCase):
         # don't format returned values as a tcl script
         # minimum acceptable for image type
         self.assertEqual(ttk._format_elemcreate('image', False, 'test'),
-            ("test ", ()))
+            ("test", ()))
         # specifying a state spec
         self.assertEqual(ttk._format_elemcreate('image', False, 'test',
             ('', 'a')), ("test {} a", ()))
@@ -203,17 +203,17 @@ class InternalFunctionsTest(unittest.TestCase):
         # don't format returned values as a tcl script
         # minimum acceptable for vsapi
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b'),
-            ("a b ", ()))
+            ('a', 'b', (), ()))
         # now with a state spec with multiple states
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
-            ('a', 'b', 'c')), ("a b {a b} c", ()))
+            ('a', 'b', 'c')), ('a', 'b', ('a b', 'c'), ()))
         # state spec and option
         self.assertEqual(ttk._format_elemcreate('vsapi', False, 'a', 'b',
-            ('a', 'b'), opt='x'), ("a b a b", ("-opt", "x")))
+            ('a', 'b'), opt='x'), ('a', 'b', ('a', 'b'), ("-opt", "x")))
         # format returned values as a tcl script
         # state spec with a multivalue and an option
         self.assertEqual(ttk._format_elemcreate('vsapi', True, 'a', 'b',
-            ('a', 'b', [1, 2]), opt='x'), ("{a b {a b} {1 2}}", "-opt x"))
+            ('a', 'b', [1, 2]), opt='x'), ("a b {{a b} {1 2}}", "-opt x"))
 
         # Testing type = from
         # from type expects at least a type name
@@ -222,9 +222,9 @@ class InternalFunctionsTest(unittest.TestCase):
         self.assertEqual(ttk._format_elemcreate('from', False, 'a'),
             ('a', ()))
         self.assertEqual(ttk._format_elemcreate('from', False, 'a', 'b'),
-            ('a', ('b', )))
+            ('a', ('b',)))
         self.assertEqual(ttk._format_elemcreate('from', True, 'a', 'b'),
-            ('{a}', 'b'))
+            ('a', 'b'))
 
 
     def test_format_layoutlist(self):

@@ -2,6 +2,7 @@ import unittest
 import sys
 import tkinter
 from tkinter import ttk
+from tkinter import TclError
 from test import support
 from test.support import requires
 from test.test_tkinter.support import AbstractTkTest, get_tk_patchlevel
@@ -175,6 +176,125 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
                     self.assertEqual(style.map(newname), default)
                     for key, value in default.items():
                         self.assertEqual(style.map(newname, key), value)
+
+    def test_element_options(self):
+        style = self.style
+        element_names = style.element_names()
+        self.assertNotIsInstance(element_names, str)
+        for name in element_names:
+            self.assertIsInstance(name, str)
+            element_options = style.element_options(name)
+            self.assertNotIsInstance(element_options, str)
+            for optname in element_options:
+                self.assertIsInstance(optname, str)
+
+    def test_element_create_errors(self):
+        style = self.style
+        with self.assertRaises(TypeError):
+            style.element_create('plain.newelem')
+        with self.assertRaisesRegex(TclError, 'No such element type spam'):
+            style.element_create('plain.newelem', 'spam')
+
+    def test_element_create_from(self):
+        style = self.style
+        style.element_create('plain.background', 'from', 'default')
+        self.assertIn('plain.background', style.element_names())
+        style.element_create('plain.arrow', 'from', 'default', 'rightarrow')
+        self.assertIn('plain.arrow', style.element_names())
+
+    def test_element_create_from_errors(self):
+        style = self.style
+        with self.assertRaises(IndexError):
+            style.element_create('plain.newelem', 'from')
+        with self.assertRaisesRegex(TclError, 'theme "spam" doesn\'t exist'):
+            style.element_create('plain.newelem', 'from', 'spam')
+
+    def test_element_create_image(self):
+        style = self.style
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        style.element_create('block', 'image', image)
+        self.assertIn('block', style.element_names())
+
+        imgfile = support.findfile('python.xbm', subdir='tkinterdata')
+        img1 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='yellow', background='blue')
+        img2 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='blue', background='yellow')
+        img3 = tkinter.BitmapImage(master=self.root, file=imgfile,
+                                   foreground='white', background='black')
+        style.element_create('Button.button', 'image',
+                             img1, ('pressed', img2), ('active', img3),
+                             border=(2, 4), sticky='we')
+        self.assertIn('Button.button', style.element_names())
+
+    def test_element_create_image_errors(self):
+        style = self.style
+        image = tkinter.PhotoImage(master=self.root, width=10, height=10)
+        with self.assertRaises(IndexError):
+            style.element_create('block2', 'image')
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, 1)
+        with self.assertRaises(ValueError):
+            style.element_create('block2', 'image', image, ())
+        with self.assertRaisesRegex(TclError, 'Invalid state name'):
+            style.element_create('block2', 'image', image, ('spam', image))
+        with self.assertRaisesRegex(TclError, 'Invalid state name'):
+            style.element_create('block2', 'image', image, (1, image))
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, ('pressed', 1, image))
+        with self.assertRaises(TypeError):
+            style.element_create('block2', 'image', image, (1, 'selected', image))
+        with self.assertRaisesRegex(TclError, 'bad option'):
+            style.element_create('block2', 'image', image, spam=1)
+
+    def test_element_create_vsapi_1(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('smallclose', 'vsapi', 'WINDOW', 19,
+                             ('disabled', 4),
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1))
+        style.layout('CloseButton',
+                     [('CloseButton.smallclose', {'sticky': 'news'})])
+        b = ttk.Button(style='CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 13)
+        self.assertEqual(b.winfo_reqheight(), 13)
+
+    def test_element_create_vsapi_2(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3,
+                             ('pressed', '!selected', 3),
+                             ('active', '!selected', 2),
+                             ('pressed', 'selected', 6),
+                             ('active', 'selected', 5),
+                             ('selected', 4),
+                             ('', 1))
+        style.layout('Explorer.Pin',
+                     [('Explorer.Pin.pin', {'sticky': 'news'})])
+        pin = ttk.Checkbutton(style='Explorer.Pin')
+        pin.pack(expand=True, fill='both')
+        self.assertEqual(pin.winfo_reqwidth(), 16)
+        self.assertEqual(pin.winfo_reqheight(), 16)
+
+    def test_element_create_vsapi_3(self):
+        style = self.style
+        if 'xpnative' not in style.theme_names():
+            self.skipTest("requires 'xpnative' theme")
+        style.element_create('headerclose', 'vsapi', 'EXPLORERBAR', 2,
+                             ('pressed', 3),
+                             ('active', 2),
+                             ('', 1))
+        style.layout('Explorer.CloseButton',
+                     [('Explorer.CloseButton.headerclose', {'sticky': 'news'})])
+        b = ttk.Button(style='Explorer.CloseButton')
+        b.pack(expand=True, fill='both')
+        self.assertEqual(b.winfo_reqwidth(), 16)
+        self.assertEqual(b.winfo_reqheight(), 16)
 
 
 if __name__ == "__main__":
