@@ -41,7 +41,7 @@ operator can be mapped across two vectors to form an efficient dot-product:
 ==================  =================       =================================================               =========================================
 Iterator            Arguments               Results                                                         Example
 ==================  =================       =================================================               =========================================
-:func:`count`       start, [step]           start, start+step, start+2*step, ...                            ``count(10) --> 10 11 12 13 14 ...``
+:func:`count`       [start[, step]]         start, start+step, start+2*step, ...                            ``count(10) --> 10 11 12 13 14 ...``
 :func:`cycle`       p                       p0, p1, ... plast, p0, p1, ...                                  ``cycle('ABCD') --> A B C D A B C D ...``
 :func:`repeat`      elem [,n]               elem, elem, elem, ... endlessly or up to n times                ``repeat(10, 3) --> 10 10 10``
 ==================  =================       =================================================               =========================================
