@@ -157,7 +157,7 @@ class CmdLineTest(unittest.TestCase):
         tests = {
             ('on', 'FrozenImporter'),
             ('off', 'SourceFileLoader'),
-            ('', 'FrozenImporter'),
+            ('', 'SourceFileLoader'),
         }
         for raw, expected in tests:
             cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']

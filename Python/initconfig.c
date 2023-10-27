@@ -2143,10 +2143,6 @@ config_init_import(PyConfig *config, int compute_path_config)
     }
     else if (strcmp(env, "off") == 0) {
         config->use_frozen_modules = 0;
-    }
-    else if (strlen(env) == 0) {
-        // "PYTHONFROZENMODULES=" implies "on".
-        config->use_frozen_modules = 1;
     } else {
         return PyStatus_Error("bad value for PYTHONFROZENMODULES "
                               "(expected \"on\" or \"off\")");
