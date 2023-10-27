@@ -259,6 +259,12 @@ tkinter
   :meth:`!tk_busy_current`, and :meth:`!tk_busy_status`.
   (Contributed by Miguel, klappnase and Serhiy Storchaka in :gh:`72684`.)
 
+* The :mod:`tkinter` widget method :meth:`!wm_attributes` now accepts
+  the attribute name without the minus prefix to get window attributes,
+  e.g. ``w.wm_attributes('alpha')`` and allows to specify attributes and
+  values to set as keyword arguments, e.g. ``w.wm_attributes(alpha=0.5)``.
+  (Contributed by Serhiy Storchaka in :gh:`43457`.)
+
 traceback
 ---------
 
@@ -952,6 +958,12 @@ Changes in the Python API
   option ``"update"`` was specified) or ``None`` if no items found.
   The result is now the same if ``wantobjects`` is set to ``0``.
   (Contributed by Serhiy Storchaka in :gh:`97928`.)
+
+* The :mod:`tkinter` widget method :meth:`!wm_attributes` called without
+  arguments now returns a dict instead of a tuple or a str.
+  E.g. ``{'alpha': 1.0, 'topmost': 0, 'zoomed': 0, 'fullscreen': 0, 'type': ''}``
+  instead of ``('-alpha', 1.0, '-topmost', 0, '-zoomed', 0, '-fullscreen', 0, '-type', '')``.
+  (Contributed by Serhiy Storchaka in :gh:`43457`.)
 
 
 Build Changes

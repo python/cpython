@@ -1,0 +1,4 @@
+Fix the :mod:`tkinter` widget method :meth:`!wm_attributes`. When called
+without arguments, it now returns a dict instead of a tuple or a str. It now
+accepts the attribute name without the minus prefix to get window attributes
+and allows to specify attributes and values to set as keyword arguments.
