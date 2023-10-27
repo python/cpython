@@ -15,6 +15,7 @@ if MS_WINDOWS:
     from .win_utils import WindowsLoadTracker
 
 STATE_OK = (State.PASSED,)
+STATE_SKIP = (State.SKIPPED, State.RESOURCE_DENIED)
 STATE_WARNING = (State.SKIPPED, State.ENV_CHANGED, State.RESOURCE_DENIED)
 
 class Logger:
@@ -222,7 +223,7 @@ class FancyLogger(Logger):
         # If the test is skipped, extra info might be in the test output. We
         # want to display just the skip reason, though, so that needs to be
         # extracted.
-        if (state == State.SKIPPED and not info_text and
+        if (state in STATE_SKIP and not info_text and
             stdout and ' skipped -- ' in stdout):
             _, _, new_info_text = stdout.partition(' skipped -- ')
             stdout = None
