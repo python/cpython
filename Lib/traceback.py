@@ -148,7 +148,7 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     return list(te.format(chain=chain))
 
 
-def format_exception_only(exc, /, value=_sentinel):
+def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
     """Format the exception part of a traceback.
 
     The return value is a list of strings, each ending in a newline.
@@ -158,21 +158,26 @@ def format_exception_only(exc, /, value=_sentinel):
     contains several lines that (when printed) display detailed information
     about where the syntax error occurred. Following the message, the list
     contains the exception's ``__notes__``.
+
+    When *show_group* is ``True``, and the exception is an instance of
+    :exc:`BaseExceptionGroup`, the nested exceptions are included as
+    well, recursively, with indentation relative to their nesting depth.
     """
     if value is _sentinel:
         value = exc
     te = TracebackException(type(value), value, None, compact=True)
-    return list(te.format_exception_only())
+    return list(te.format_exception_only(show_group=show_group))
 
 
 # -- not official API but folk probably use these two functions.
 
-def _format_final_exc_line(etype, value):
+def _format_final_exc_line(etype, value, *, insert_final_newline=True):
     valuestr = _safe_string(value, 'exception')
+    end_char = "\n" if insert_final_newline else ""
     if value is None or not valuestr:
-        line = "%s\n" % etype
+        line = f"{etype}{end_char}"
     else:
-        line = "%s: %s\n" % (etype, valuestr)
+        line = f"{etype}: {valuestr}{end_char}"
     return line
 
 def _safe_string(value, what, func=str):
@@ -889,6 +894,10 @@ class TracebackException:
         display detailed information about where the syntax error occurred.
         Following the message, generator also yields
         all the exception's ``__notes__``.
+
+        When *show_group* is ``True``, and the exception is an instance of
+        :exc:`BaseExceptionGroup`, the nested exceptions are included as
+        well, recursively, with indentation relative to their nesting depth.
         """
 
         indent = 3 * _depth * ' '
@@ -904,7 +913,17 @@ class TracebackException:
             stype = smod + '.' + stype
 
         if not issubclass(self.exc_type, SyntaxError):
-            yield indent + _format_final_exc_line(stype, self._str)
+            if _depth > 0:
+                # Nested exceptions needs correct handling of multiline messages.
+                formatted = _format_final_exc_line(
+                    stype, self._str, insert_final_newline=False,
+                ).split('\n')
+                yield from [
+                    indent + l + '\n'
+                    for l in formatted
+                ]
+            else:
+                yield _format_final_exc_line(stype, self._str)
         else:
             yield from [indent + l for l in self._format_syntax_error(stype)]
 
