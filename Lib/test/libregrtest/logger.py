@@ -6,6 +6,7 @@ import time
 
 from test.support import MS_WINDOWS
 from .cmdline import Namespace
+from .result import TestResult
 from .results import TestResults, State
 from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
@@ -106,17 +107,33 @@ class Logger:
         return None
 
     def display_progress(self, test_index: int, text: str,
-                         state: State|None = None,
-                         info_text: str|None = None,
+                         stdout: str|None = None) -> None:
+        results = self._results
+        # "[ 51/405/1] test_tcl passed"
+        passed = self.good(f"{test_index:{self.test_count_width}}")
+        line = f"{passed}{self.test_count_text}"
+        fails = len(results.bad) + len(results.env_changed)
+        if fails and not self._pgo:
+            line = f"{line}/{self.error(fails)}"
+        self.log(f"[{line}] {text}")
+        if stdout:
+            print(stdout, flush=True)
+
+    def update_progress(self, test_index: int, result: TestResult|None,
                          error_text: str|None = None,
                          running: list[tuple[str, str]]|None = None,
                          stdout: str|None = None) -> None:
         if self._quiet:
             return
-        results = self._results
+        text = ''
+        state = None
+        if result is not None:
+            text = str(result)
+            state = result.state
         text = self.state_color(text, state)
-        if info_text:
-            text = f"{text} ({self.warning(info_text)})"
+        if (result is not None and not self._pgo and
+            result.duration >= PROGRESS_MIN_TIME):
+            text = f"{text} ({format_duration(result.duration)})"
         if error_text:
             text = f"{text} ({self.error(error_text)})"
 
@@ -127,16 +144,7 @@ class Logger:
                 for dt, test in running if dt >= PROGRESS_MIN_TIME)
             if running_tests:
                 text += f' -- running ({running_tests})'
-
-        # "[ 51/405/1] test_tcl passed"
-        passed = self.good(f"{test_index:{self.test_count_width}}")
-        line = f"{passed}{self.test_count_text}"
-        fails = len(results.bad) + len(results.env_changed)
-        if fails and not self._pgo:
-            line = f"{line}/{self.error(fails)}"
-        self.log(f"[{line}] {text}")
-        if stdout:
-            print(stdout, flush=True)
+        self.display_progress(test_index, text, stdout)
 
     def set_tests(self, runtests: RunTests) -> None:
         if runtests.forever:
@@ -211,47 +219,49 @@ class FancyLogger(Logger):
         signal.signal(signal.SIGWINCH, set_columns)
         replace_stdout()
 
-    def display_progress(self, test_index: int, text: str,
-                         state: State|None = None,
-                         info_text: str|None = None,
-                         error_text: str|None = None,
-                         running: list[tuple[str, str]]|None = None,
-                         stdout: str|None = None) -> None:
+    def update_progress(self, test_index: int, result: TestResult|None,
+                        error_text: str|None = None,
+                        running: list[tuple[str, str]]|None = None,
+                        stdout: str|None = None) -> None:
         if self._quiet:
             return
 
-        # If the test is skipped, extra info might be in the test output. We
-        # want to display just the skip reason, though, so that needs to be
-        # extracted.
-        if (state in STATE_SKIP and not info_text and
-            stdout and ' skipped -- ' in stdout):
-            _, _, new_info_text = stdout.partition(' skipped -- ')
-            stdout = None
-            if info_text:
-                info_text = f'{info_text}; {new_info_text}'
-            else:
-                info_text = new_info_text
-
+        text = ''
+        state = None
+        if result is not None:
+            text = str(result)
+            state = result.state
         # We don't want any of the text to wrap (or it'll mess up the
         # in-place update logic), so if the log line is too long, emit it on
         # its own line. The logging process probably adds no more than 30
-        # visible characters, and 4 characters when printed on its own.
+        # visible characters, or just 4 characters of indentation when
+        # printed on its own.
         linelen = len(text) + 4
         text = self.state_color(text, state)
-        if info_text:
-            linelen += len(info_text) + 1
-            text = f'{text} ({self.warning(info_text)})'
+        # If the test is skipped, extra info might be in the test output. We
+        # want to display just the skip reason, though, so that needs to be
+        # extracted.
+        if (state in STATE_SKIP and stdout and ' skipped -- ' in stdout and
+            stdout.count('\n') <= 1):
+            _, _, extra_text = stdout.partition(' skipped -- ')
+            linelen += len(extra_text) + 3
+            text = f'{text} ({self.warning(extra_text)})'
+            stdout = None
+        elif state is not None and state not in STATE_SKIP:
+            duration = format_duration(result.duration)
+            linelen += len(duration) + 3
+            text = f'{text} ({self.warning(duration)})'
         if error_text:
-            linelen += len(error_text) + 1
+            linelen += len(error_text) + 3
             text = f'{text} ({self.error(error_text)})'
 
         # If the test does something other than pass uneventfully, or if
         # there's test output we need to show, make sure we don't overwrite
         # it on the next print. If it might wrap even on a line of its own,
         # do the same thing.
-        if ((state is not None and state not in STATE_OK and
-             state != State.SKIPPED) or stdout or linelen > self.columns):
-            super().display_progress(test_index, text, stdout=stdout)
+        if ((state is not None and state not in STATE_OK + STATE_SKIP) or
+            stdout or linelen > self.columns):
+            self.display_progress(test_index, text, stdout=stdout)
             text = ''
             linelen = 0
 
@@ -279,9 +289,7 @@ class FancyLogger(Logger):
                     line = f" ... running: {test} ({duration})"
                 lines.append(line)
         report = '\n'.join(lines)
-        # Don't pass state, info_text, error_text or running since we've
-        # already incorporated them in 'text'.
-        super().display_progress(test_index, report, state=state)
+        self.display_progress(test_index, report)
         sys.stdout.status_size = report.count('\n') + 1
 
 

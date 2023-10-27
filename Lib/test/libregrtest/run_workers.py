@@ -466,7 +466,7 @@ class RunWorkers:
         self.num_workers = num_workers
         self.runtests = runtests
         self.log = logger.log
-        self.display_progress = logger.display_progress
+        self.update_progress = logger.update_progress
         self.results: TestResults = results
         self.live_worker_count = 0
 
@@ -542,27 +542,24 @@ class RunWorkers:
                 # display progress
                 running = get_running(self.workers)
                 if running:
-                    self.display_progress(
-                        self.test_index, '', running=running)
+                    self.update_progress(
+                        self.test_index, None, running=running)
 
     def display_result(self, mp_result: MultiprocessResult, stdout: str|None) -> None:
         result = mp_result.result
         pgo = self.runtests.pgo
 
-        text = str(result)
-        info_text = error_text = None
+        error_text = None
         if mp_result.err_msg:
             # WORKER_BUG
             error_text = mp_result.err_msg
-        elif (result.duration >= PROGRESS_MIN_TIME and not pgo):
-            info_text = format_duration(result.duration)
         if pgo:
             running = None
         else:
             running = get_running(self.workers)
-        self.display_progress(self.test_index, text, state=result.state,
-                              info_text=info_text, error_text=error_text,
-                              running=running, stdout=stdout)
+        self.update_progress(self.test_index, result,
+                             error_text=error_text,
+                             running=running, stdout=stdout)
 
     def _process_result(self, item: QueueOutput) -> TestResult:
         """Returns True if test runner must stop."""
