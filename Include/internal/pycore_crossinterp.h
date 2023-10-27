@@ -182,6 +182,61 @@ PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromDict(PyObject *nsobj);
 PyAPI_FUNC(int) _PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj);
 
 
+// A cross-interpreter session involves entering an interpreter
+// (_PyXI_Enter()), doing some work with it, and finally exiting
+// that interpreter (_PyXI_Exit()).
+//
+// At the boundaries of the session, both entering and exiting,
+// data may be exchanged between the previous interpreter and the
+// target one in a thread-safe way that does not violate the
+// isolation between interpreters.  This includes setting objects
+// in the target's __main__ module on the way in, and capturing
+// uncaught exceptions on the way out.
+typedef struct xi_session {
+    // Once a session has been entered, this is the tstate that was
+    // current before the session.  If it is different from cur_tstate
+    // then we must have switched interpreters.  Either way, this will
+    // be the current tstate once we exit the session.
+    PyThreadState *prev_tstate;
+    // Once a session has been entered, this is the current tstate.
+    // It must be current when the session exits.
+    PyThreadState *init_tstate;
+    // This is true if init_tstate needs cleanup during exit.
+    int own_init_tstate;
+
+    // This is true if, while entering the session, init_thread took
+    // "ownership" of the interpreter's __main__ module.  This means
+    // it is the only thread that is allowed to run code there.
+    // (Caveat: for now, users may still run exec() against the
+    // __main__ module's dict, though that isn't advisable.)
+    int running;
+    // This is a cached reference to the __dict__ of the entered
+    // interpreter's __main__ module.  It is looked up when at the
+    // beginning of the session as a convenience.
+    PyObject *main_ns;
+
+    // This is set if the interpreter is entered and raised an exception
+    // that needs to be handled in some special way during exit.
+    _PyXI_errcode *exc_override;
+    // This is set if exit captured an exception to propagate.
+    _PyXI_exception_info *exc;
+
+    // -- pre-allocated memory --
+    _PyXI_exception_info _exc;
+} _PyXI_session;
+
+PyAPI_FUNC(int) _PyXI_Enter(
+    PyInterpreterState *interp,
+    PyObject *nsupdates,
+    _PyXI_session *session);
+PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
+
+PyAPI_FUNC(void) _PyXI_ApplyCapturedException(
+    _PyXI_session *session,
+    PyObject *excwrapper);
+PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
+
+
 #ifdef __cplusplus
 }
 #endif

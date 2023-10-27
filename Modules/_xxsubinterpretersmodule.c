@@ -201,95 +201,6 @@ exceptions_init(PyObject *mod)
     return 0;
 }
 
-static PyThreadState *
-_enter_interpreter(PyInterpreterState *interp)
-{
-    // Switch to interpreter.
-    PyThreadState *save_tstate = NULL;
-    PyThreadState *tstate = NULL;
-    if (interp != PyInterpreterState_Get()) {
-        tstate = PyThreadState_New(interp);
-        tstate->_whence = _PyThreadState_WHENCE_EXEC;
-        // XXX Possible GILState issues?
-        save_tstate = PyThreadState_Swap(tstate);
-    }
-    return save_tstate;
-}
-
-static int
-_exit_interpreter(PyInterpreterState *interp, PyThreadState *save_tstate,
-                  int errcode, _PyXI_exception_info *exc)
-{
-    int res = 0;
-    if (errcode != _PyXI_ERR_NO_ERROR) {
-        assert(exc != NULL);
-        PyObject *excval = PyErr_GetRaisedException();
-        *exc = (_PyXI_exception_info){ .interp = interp };
-        const char *failure = _PyXI_InitExceptionInfo(exc, excval, errcode);
-        if (failure != NULL) {
-            fprintf(stderr,
-                    "RunFailedError: script raised an uncaught exception (%s)",
-                    failure);
-        }
-        else {
-            res = -1;
-        }
-        if (excval != NULL) {
-            // XXX Instead, store the rendered traceback on sharedexc,
-            // attach it to the exception when applied,
-            // and teach PyErr_Display() to print it.
-            PyErr_Display(NULL, excval, NULL);
-            Py_DECREF(excval);
-        }
-        assert(!PyErr_Occurred());
-    }
-
-    // Switch back.
-    if (save_tstate != NULL) {
-        PyThreadState *tstate = PyThreadState_Get();
-        PyThreadState_Clear(tstate);
-        PyThreadState_Swap(save_tstate);
-        PyThreadState_Delete(tstate);
-    }
-
-    return res;
-}
-
-static int
-_enter_interpreter_main(PyInterpreterState *interp, PyObject **p_ns)
-{
-    assert(PyInterpreterState_Get() == interp);
-
-    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
-        assert(PyErr_Occurred());
-        // In the case where we didn't switch interpreters, it would
-        // be more efficient to leave the exception in place and return
-        // immediately.  However, life is simpler if we don't.
-        PyErr_Clear();
-        return _PyXI_ERR_ALREADY_RUNNING;
-    }
-
-    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
-    if (main_mod == NULL) {
-        return _PyXI_ERR_UNCAUGHT_EXCEPTION;
-    }
-    PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
-    Py_DECREF(main_mod);
-    if (ns == NULL) {
-        return _PyXI_ERR_UNCAUGHT_EXCEPTION;
-    }
-
-    *p_ns = Py_NewRef(ns);
-    return _PyXI_ERR_NO_ERROR;
-}
-
-static void
-_exit_interpreter_main(PyInterpreterState *interp, PyObject *ns)
-{
-    Py_XDECREF(ns);
-    _PyInterpreterState_SetNotRunningMain(interp);
-}
-
 static int
 _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 {
@@ -315,73 +226,38 @@ _run_script(PyObject *ns, const char *codestr, Py_ssize_t codestrlen, int flags)
 }
 
 static int
-_run_in_interpreter(PyObject *mod, PyInterpreterState *interp,
+_run_in_interpreter(PyInterpreterState *interp,
                     const char *codestr, Py_ssize_t codestrlen,
-                    PyObject *shareables, int flags)
+                    PyObject *shareables, int flags,
+                    PyObject *excwrapper)
 {
-    // Convert the attrs for cross-interpreter use.
-    _PyXI_namespace *shared = _PyXI_NamespaceFromDict(shareables);
-    if (shared == NULL && PyErr_Occurred()) {
+    assert(!PyErr_Occurred());
+    _PyXI_session session = {0};
+
+    // Prep and switch interpreters.
+    if (_PyXI_Enter(interp, shareables, &session) < 0) {
+        assert(!PyErr_Occurred());
+        _PyXI_ApplyExceptionInfo(session.exc, excwrapper);
+        assert(PyErr_Occurred());
         return -1;
-    }
-    _PyXI_exception_info exc;
-
-    // Switch to interpreter.
-    PyThreadState *save_tstate = _enter_interpreter(interp);
-    PyObject *ns = NULL;
-    _PyXI_errcode errcode = _enter_interpreter_main(interp, &ns);
-    if (errcode != _PyXI_ERR_NO_ERROR) {
-        goto error;
-    }
-    errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
-
-    // Apply the cross-interpreter data.
-    if (shared != NULL) {
-        if (_PyXI_ApplyNamespace(shared, ns) < 0) {
-            goto error;
-        }
     }
 
     // Run the script.
-    errcode = _run_script(ns, codestr, codestrlen, flags);
-    if (errcode != _PyXI_ERR_NO_ERROR) {
-        goto error;
-    }
+    int res = _run_script(session.main_ns, codestr, codestrlen, flags);
 
-    // Switch back.
-    assert(!PyErr_Occurred());
-    assert(errcode == _PyXI_ERR_NO_ERROR);
-    _exit_interpreter_main(interp, ns);
-    (void)_exit_interpreter(interp, save_tstate, 0, NULL);
-
-    goto finally;
-
-error:
-    // Switch back.
-    assert(errcode != _PyXI_ERR_NO_ERROR);
-    if (errcode != _PyXI_ERR_ALREADY_RUNNING) {
-        _exit_interpreter_main(interp, ns);
-    }
-    else {
-        assert(ns == NULL);
-    }
-    int res = _exit_interpreter(interp, save_tstate, errcode, &exc);
-    assert(res < 0);
+    // Clean up and switch back.
+    _PyXI_Exit(&session);
 
     // Propagate any exception out to the caller.
     assert(!PyErr_Occurred());
-    module_state *state = get_module_state(mod);
-    assert(state != NULL);
-    _PyXI_ApplyExceptionInfo(&exc, state->RunFailedError);
-    assert(PyErr_Occurred());
-
-finally:
-    // Clear the cross-interpreter attrs.
-    if (shared != NULL) {
-        _PyXI_FreeNamespace(shared);
+    if (res < 0) {
+        _PyXI_ApplyCapturedException(&session, excwrapper);
+    }
+    else {
+        assert(!_PyXI_HasCapturedException(&session));
     }
 
-    return (int)errcode;
+    return res;
 }
 
 
@@ -664,8 +540,10 @@ _interp_exec(PyObject *self,
     }
 
     // Run the code in the interpreter.
-    int res = _run_in_interpreter(self, interp, codestr, codestrlen,
-                                  shared_arg, flags);
+    module_state *state = get_module_state(self);
+    assert(state != NULL);
+    int res = _run_in_interpreter(interp, codestr, codestrlen,
+                                  shared_arg, flags, state->RunFailedError);
     Py_XDECREF(bytes_obj);
     if (res < 0) {
         return -1;

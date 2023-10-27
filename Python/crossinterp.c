@@ -812,6 +812,7 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns)
 }
 
 struct _sharedns {
+    PyInterpreterState *interp;
     Py_ssize_t len;
     _PyXI_namespace_item *items;
 };
@@ -834,14 +835,51 @@ _sharedns_new(Py_ssize_t len)
     return shared;
 }
 
-void
-_PyXI_FreeNamespace(_PyXI_namespace *ns)
+static void
+_free_xi_namespace(_PyXI_namespace *ns)
 {
     for (Py_ssize_t i=0; i < ns->len; i++) {
         _sharednsitem_clear(&ns->items[i]);
     }
     PyMem_RawFree(ns->items);
     PyMem_RawFree(ns);
+}
+
+static int
+_pending_free_xi_namespace(void *arg)
+{
+    _PyXI_namespace *ns = (_PyXI_namespace *)arg;
+    _free_xi_namespace(ns);
+    return 0;
+}
+
+void
+_PyXI_FreeNamespace(_PyXI_namespace *ns)
+{
+    if (ns->len == 0) {
+        return;
+    }
+    PyInterpreterState *interp = ns->interp;
+    if (interp == NULL) {
+        assert(ns->items[0].name == NULL);
+        // No data was actually set, so we can free the items
+        // without clearing each item's XI data.
+        PyMem_RawFree(ns->items);
+        PyMem_RawFree(ns);
+    }
+    else {
+        // We can assume the first item represents all items.
+        assert(ns->items[0].data.interpid == interp->id);
+        if (interp == PyInterpreterState_Get()) {
+            // We can avoid pending calls.
+            _free_xi_namespace(ns);
+        }
+        else {
+            // We have to use a pending call due to data in another interpreter.
+            // XXX Make sure the pending call was added?
+            _PyEval_AddPendingCall(interp, _pending_free_xi_namespace, ns, 0);
+        }
+    }
 }
 
 _PyXI_namespace *
@@ -859,6 +897,8 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
     if (ns == NULL) {
         return NULL;
     }
+    ns->interp = PyInterpreterState_Get();
+
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *key, *value;
@@ -885,4 +925,224 @@ _PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj)
         }
     }
     return 0;
+}
+
+
+/**********************/
+/* high-level helpers */
+/**********************/
+
+/* enter/exit a cross-interpreter session */
+
+static void
+_enter_session(_PyXI_session *session, PyInterpreterState *interp)
+{
+    // Set here and cleared in _exit_session().
+    assert(!session->own_init_tstate);
+    assert(session->init_tstate == NULL);
+    assert(session->prev_tstate == NULL);
+    // Set elsewhere and cleared in _exit_session().
+    assert(!session->running);
+    assert(session->main_ns == NULL);
+    // Set elsewhere and cleared in _capture_current_exception().
+    assert(session->exc_override == NULL);
+    // Set elsewhere and cleared in _PyXI_ApplyCapturedException().
+    assert(session->exc == NULL);
+
+    // Switch to interpreter.
+    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *prev = tstate;
+    if (interp != tstate->interp) {
+        tstate = PyThreadState_New(interp);
+        tstate->_whence = _PyThreadState_WHENCE_EXEC;
+        // XXX Possible GILState issues?
+        session->prev_tstate = PyThreadState_Swap(tstate);
+        assert(session->prev_tstate == prev);
+        session->own_init_tstate = 1;
+    }
+    session->init_tstate = tstate;
+    session->prev_tstate = prev;
+}
+
+static void
+_exit_session(_PyXI_session *session)
+{
+    PyThreadState *tstate = session->init_tstate;
+    assert(tstate != NULL);
+    assert(PyThreadState_Get() == tstate);
+
+    // Release any of the entered interpreters resources.
+    if (session->main_ns != NULL) {
+        Py_CLEAR(session->main_ns);
+    }
+
+    // Ensure this thread no longer owns __main__.
+    if (session->running) {
+        _PyInterpreterState_SetNotRunningMain(tstate->interp);
+        assert(!PyErr_Occurred());
+        session->running = 0;
+    }
+
+    // Switch back.
+    assert(session->prev_tstate != NULL);
+    if (session->prev_tstate != session->init_tstate) {
+        assert(session->own_init_tstate);
+        session->own_init_tstate = 0;
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(session->prev_tstate);
+        PyThreadState_Delete(tstate);
+    }
+    else {
+        assert(!session->own_init_tstate);
+    }
+    session->prev_tstate = NULL;
+    session->init_tstate = NULL;
+}
+
+static void
+_capture_current_exception(_PyXI_session *session)
+{
+    assert(session->exc == NULL);
+    if (!PyErr_Occurred()) {
+        assert(session->exc_override == NULL);
+        return;
+    }
+
+    // Handle the exception override.
+    _PyXI_errcode errcode = session->exc_override != NULL
+        ? *session->exc_override
+        : _PyXI_ERR_UNCAUGHT_EXCEPTION;
+    session->exc_override = NULL;
+
+    // Pop the exception object.
+    PyObject *excval = NULL;
+    if (errcode == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        // We want to actually capture the current exception.
+        excval = PyErr_GetRaisedException();
+    }
+    else {
+        // We could do a variety of things here, depending on errcode.
+        // However, for now we simply ignore the exception and rely
+        // strictly on errcode.
+        PyErr_Clear();
+    }
+
+    // Capture the exception.
+    _PyXI_exception_info *exc = &session->_exc;
+    *exc = (_PyXI_exception_info){
+        .interp = session->init_tstate->interp,
+    };
+    const char *failure = _PyXI_InitExceptionInfo(exc, excval, errcode);
+
+    // Handle capture failure.
+    if (failure != NULL) {
+        // XXX Make this error message more generic.
+        fprintf(stderr,
+                "RunFailedError: script raised an uncaught exception (%s)",
+                failure);
+        exc = NULL;
+    }
+
+    // a temporary hack  (famous last words)
+    if (excval != NULL) {
+        // XXX Store the traceback info (or rendered traceback) on
+        // _PyXI_excinfo, attach it to the exception when applied,
+        // and teach PyErr_Display() to print it.
+#ifdef Py_DEBUG
+        // XXX Drop this once _Py_excinfo picks up the slack.
+        PyErr_Display(NULL, excval, NULL);
+#endif
+        Py_DECREF(excval);
+    }
+
+    // Finished!
+    assert(!PyErr_Occurred());
+    session->exc = exc;
+}
+
+void
+_PyXI_ApplyCapturedException(_PyXI_session *session, PyObject *excwrapper)
+{
+    assert(!PyErr_Occurred());
+    assert(session->exc != NULL);
+    _PyXI_ApplyExceptionInfo(session->exc, excwrapper);
+    assert(PyErr_Occurred());
+    session->exc = NULL;
+}
+
+int
+_PyXI_HasCapturedException(_PyXI_session *session)
+{
+    return session->exc != NULL;
+}
+
+int
+_PyXI_Enter(PyInterpreterState *interp, PyObject *nsupdates,
+            _PyXI_session *session)
+{
+    // Convert the attrs for cross-interpreter use.
+    _PyXI_namespace *sharedns = NULL;
+    if (nsupdates != NULL) {
+        sharedns = _PyXI_NamespaceFromDict(nsupdates);
+        if (sharedns == NULL && PyErr_Occurred()) {
+            assert(session->exc == NULL);
+            return -1;
+        }
+    }
+
+    // Switch to the requested interpreter (if necessary).
+    _enter_session(session, interp);
+    _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
+
+    // Ensure this thread owns __main__.
+    if (_PyInterpreterState_SetRunningMain(interp) < 0) {
+        // In the case where we didn't switch interpreters, it would
+        // be more efficient to leave the exception in place and return
+        // immediately.  However, life is simpler if we don't.
+        errcode = _PyXI_ERR_ALREADY_RUNNING;
+        goto error;
+    }
+    session->running = 1;
+
+    // Cache __main__.__dict__.
+    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
+    if (main_mod == NULL) {
+        goto error;
+    }
+    PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
+    Py_DECREF(main_mod);
+    if (ns == NULL) {
+        goto error;
+    }
+    session->main_ns = Py_NewRef(ns);
+
+    // Apply the cross-interpreter data.
+    if (sharedns != NULL) {
+        if (_PyXI_ApplyNamespace(sharedns, ns) < 0) {
+            goto error;
+        }
+        _PyXI_FreeNamespace(sharedns);
+    }
+
+    errcode = _PyXI_ERR_NO_ERROR;
+    return 0;
+
+error:
+    assert(PyErr_Occurred());
+    if (errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        session->exc_override = &errcode;
+    }
+    _capture_current_exception(session);
+    _exit_session(session);
+    if (sharedns != NULL) {
+        _PyXI_FreeNamespace(sharedns);
+    }
+    return -1;
+}
+
+void
+_PyXI_Exit(_PyXI_session *session)
+{
+    _capture_current_exception(session);
+    _exit_session(session);
 }
