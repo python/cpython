@@ -1423,7 +1423,7 @@ option. If you don't know the class name of a widget, use the method
          img1 = tkinter.PhotoImage(master=root, file='button.png')
          img1 = tkinter.PhotoImage(master=root, file='button-pressed.png')
          img1 = tkinter.PhotoImage(master=root, file='button-active.png')
-         style = ttk.Style()
+         style = ttk.Style(root)
          style.element_create('Button.button', 'image',
                               img1, ('pressed', img2), ('active', img3),
                               border=(2, 4), sticky='we')
@@ -1437,7 +1437,7 @@ option. If you don't know the class name of a widget, use the method
 
       Example::
 
-         style = ttk.Style()
+         style = ttk.Style(root)
          style.element_create('plain.background', 'from', 'default')
 
       If "vsapi" is used as the value of *etype*, :meth:`element_create`
@@ -1481,7 +1481,7 @@ option. If you don't know the class name of a widget, use the method
 
       Example::
 
-         style = ttk.Style()
+         style = ttk.Style(root)
          style.element_create('pin', 'vsapi', 'EXPLORERBAR', 3,
                               ('pressed', '!selected', 3),
                               ('active', '!selected', 2),
