@@ -144,7 +144,7 @@ dummy_func(
             if (code_version != global_version) {
                 int err = _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
                 ERROR_IF(err, error);
-                next_instr--;
+                next_instr = frame->instr_ptr;
             }
             else {
                 if (oparg < RESUME_AFTER_YIELD_FROM) {
@@ -172,18 +172,19 @@ dummy_func(
                 if (_Py_Instrument(_PyFrame_GetCode(frame), tstate->interp)) {
                     goto error;
                 }
-                next_instr--;
+                next_instr = frame->instr_ptr;
             }
             else {
+                _Py_CODEUNIT *here = frame->instr_ptr;
                 if (oparg < 2) {
                     CHECK_EVAL_BREAKER();
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
-                        tstate, oparg > 0, frame, next_instr-1);
+                        tstate, oparg > 0, frame, frame->instr_ptr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 ERROR_IF(err, error);
-                if (frame->instr_ptr != next_instr-1) {
+                if (frame->instr_ptr != here) {
                     /* Instrumentation has jumped */
                     next_instr = frame->instr_ptr;
                     DISPATCH();
@@ -261,11 +262,12 @@ dummy_func(
         macro(END_FOR) = POP_TOP + POP_TOP;
 
         inst(INSTRUMENTED_END_FOR, (receiver, value --)) {
+            TIER_ONE_ONLY
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                if (monitor_stop_iteration(tstate, frame, frame->instr_ptr)) {
                     goto error;
                 }
                 PyErr_SetRaisedException(NULL);
@@ -278,9 +280,10 @@ dummy_func(
         }
 
         inst(INSTRUMENTED_END_SEND, (receiver, value -- value)) {
+            TIER_ONE_ONLY
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, next_instr-1)) {
+                if (monitor_stop_iteration(tstate, frame, frame->instr_ptr)) {
                     goto error;
                 }
                 PyErr_SetRaisedException(NULL);
@@ -312,7 +315,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_ToBool(value, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -532,7 +535,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -681,7 +684,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -754,7 +757,7 @@ dummy_func(
             case 0:
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
-                    monitor_reraise(tstate, frame, next_instr-1);
+                    monitor_reraise(tstate, frame, frame->instr_ptr);
                     goto exception_unwind;
                 }
                 break;
@@ -808,7 +811,7 @@ dummy_func(
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, next_instr-1, retval);
+                    frame, frame->instr_ptr, retval);
             if (err) goto error;
             STACK_SHRINK(1);
             assert(EMPTY());
@@ -832,7 +835,7 @@ dummy_func(
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, next_instr-1, retval);
+                    frame, frame->instr_ptr, retval);
             if (err) goto error;
             Py_INCREF(retval);
             assert(EMPTY());
@@ -960,7 +963,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PySendCache *cache = (_PySendCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_Send(receiver, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -993,7 +996,7 @@ dummy_func(
             if (retval == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, next_instr-1);
+                    monitor_raise(tstate, frame, frame->instr_ptr);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                     assert(retval != NULL);
@@ -1027,13 +1030,14 @@ dummy_func(
         inst(INSTRUMENTED_YIELD_VALUE, (retval -- unused)) {
             assert(frame != &entry_frame);
             assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+            _Py_CODEUNIT *here = frame->instr_ptr;
             frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_YIELD,
-                    frame, next_instr-1, retval);
+                    frame, here, retval);
             if (err) goto error;
             tstate->exc_info = gen->gi_exc_state.previous_item;
             gen->gi_exc_state.previous_item = NULL;
@@ -1077,6 +1081,7 @@ dummy_func(
         }
 
         inst(RERAISE, (values[oparg], exc -- values[oparg])) {
+            _Py_CODEUNIT *here = frame->instr_ptr;
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1093,7 +1098,7 @@ dummy_func(
             assert(exc && PyExceptionInstance_Check(exc));
             Py_INCREF(exc);
             _PyErr_SetRaisedException(tstate, exc);
-            monitor_reraise(tstate, frame, next_instr-1);
+            monitor_reraise(tstate, frame, here);
             goto exception_unwind;
         }
 
@@ -1105,7 +1110,7 @@ dummy_func(
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
-                monitor_reraise(tstate, frame, next_instr-1);
+                monitor_reraise(tstate, frame, frame->instr_ptr);
                 goto exception_unwind;
             }
         }
@@ -1120,7 +1125,7 @@ dummy_func(
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
-                monitor_reraise(tstate, frame, next_instr-1);
+                monitor_reraise(tstate, frame, frame->instr_ptr);
                 goto exception_unwind;
             }
         }
@@ -1186,7 +1191,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -1250,7 +1255,7 @@ dummy_func(
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1372,7 +1377,7 @@ dummy_func(
             _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1711,7 +1716,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_LoadSuperAttr(global_super, class, next_instr, load_method);
                 DISPATCH_SAME_OPARG();
             }
@@ -1723,7 +1728,7 @@ dummy_func(
                 PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_CALL,
-                        frame, next_instr-1, global_super, arg);
+                        frame, frame->instr_ptr, global_super, arg);
                 ERROR_IF(err, error);
             }
 
@@ -1736,12 +1741,12 @@ dummy_func(
                 if (super == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, global_super, arg);
+                        frame, frame->instr_ptr, global_super, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, global_super, arg);
+                        frame, frame->instr_ptr, global_super, arg);
                     if (err < 0) {
                         Py_CLEAR(super);
                     }
@@ -1822,7 +1827,7 @@ dummy_func(
             _PyAttrCache *cache = (_PyAttrCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -2144,7 +2149,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2277,7 +2282,7 @@ dummy_func(
 
         inst(JUMP_BACKWARD, (--)) {
             CHECK_EVAL_BREAKER();
-            _Py_CODEUNIT *here = next_instr - 1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             assert(oparg <= INSTR_OFFSET());
             JUMPBY(1-oparg);
             #if ENABLE_SPECIALIZATION
@@ -2328,19 +2333,21 @@ dummy_func(
         }
 
         inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
+            _Py_CODEUNIT *here = frame->instr_ptr;
             assert(PyBool_Check(cond));
             int flag = Py_IsFalse(cond);
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | flag;
+            here[1].cache = (here[1].cache << 1) | flag;
             #endif
             JUMPBY(oparg * flag);
         }
 
         inst(POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
+            _Py_CODEUNIT *here = frame->instr_ptr;
             assert(PyBool_Check(cond));
             int flag = Py_IsTrue(cond);
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | flag;
+            here[1].cache = (here[1].cache << 1) | flag;
             #endif
             JUMPBY(oparg * flag);
         }
@@ -2458,7 +2465,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyForIterCache *cache = (_PyForIterCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -2472,7 +2479,7 @@ dummy_func(
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, next_instr-1);
+                    monitor_raise(tstate, frame, frame->instr_ptr);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -2920,7 +2927,7 @@ dummy_func(
                 &_PyInstrumentation_MISSING : PEEK(total_args);
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
-                    frame, next_instr-1, function, arg);
+                    frame, frame->instr_ptr, function, arg);
             ERROR_IF(err, error);
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             INCREMENT_ADAPTIVE_COUNTER(cache->counter);
@@ -2961,7 +2968,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyCallCache *cache = (_PyCallCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_Call(callable, next_instr, total_args);
                 DISPATCH_SAME_OPARG();
             }
@@ -3012,12 +3019,12 @@ dummy_func(
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, callable, arg);
+                        frame, frame->instr_ptr, callable, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, callable, arg);
+                        frame, frame->instr_ptr, callable, arg);
                     if (err < 0) {
                         Py_CLEAR(res);
                     }
@@ -3615,12 +3622,12 @@ dummy_func(
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, callable, arg);
+                        frame, frame->instr_ptr, callable, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, callable, arg);
+                        frame, frame->instr_ptr, callable, arg);
                     if (err < 0) {
                         Py_CLEAR(res);
                     }
@@ -3663,18 +3670,18 @@ dummy_func(
                     PyTuple_GET_ITEM(callargs, 0) : Py_None;
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
-                    frame, next_instr-1, func, arg);
+                    frame, frame->instr_ptr, func, arg);
                 if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, func, arg);
+                        frame, frame->instr_ptr, func, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, func, arg);
+                        frame, frame->instr_ptr, func, arg);
                     if (err < 0) {
                         Py_CLEAR(result);
                     }
@@ -3820,7 +3827,7 @@ dummy_func(
             #if ENABLE_SPECIALIZATION
             _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
             if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr--;
+                next_instr = frame->instr_ptr;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
@@ -3842,9 +3849,9 @@ dummy_func(
 
         inst(INSTRUMENTED_INSTRUCTION, ( -- )) {
             int next_opcode = _Py_call_instrumentation_instruction(
-                tstate, frame, next_instr-1);
+                tstate, frame, frame->instr_ptr);
             ERROR_IF(next_opcode < 0, error);
-            next_instr--;
+            next_instr = frame->instr_ptr;
             if (_PyOpcode_Caches[next_opcode]) {
                 _PyBinaryOpCache *cache = (_PyBinaryOpCache *)(next_instr+1);
                 INCREMENT_ADAPTIVE_COUNTER(cache->counter);
@@ -3872,7 +3879,7 @@ dummy_func(
             int flag = Py_IsTrue(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | flag;
+            here[1].cache = (here[1].cache << 1) | flag;
             #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -3884,7 +3891,7 @@ dummy_func(
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | flag;
+            here[1].cache = (here[1].cache << 1) | flag;
             #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -3902,7 +3909,7 @@ dummy_func(
                 offset = 0;
             }
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | flag;
+            here[1].cache = (here[1].cache << 1) | flag;
             #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }
@@ -3920,7 +3927,7 @@ dummy_func(
                 offset = oparg;
             }
             #if ENABLE_SPECIALIZATION
-            next_instr->cache = (next_instr->cache << 1) | !nflag;
+            here[1].cache = (here[1].cache << 1) | !nflag;
             #endif
             INSTRUMENTED_JUMP(here, next_instr + offset, PY_MONITORING_EVENT_BRANCH);
         }

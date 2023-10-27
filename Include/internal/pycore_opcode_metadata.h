@@ -1687,6 +1687,7 @@ const struct opcode_macro_expansion _PyOpcode_macro_expansion[OPCODE_MACRO_EXPAN
     [DICT_UPDATE] = { .nuops = 1, .uops = { { DICT_UPDATE, 0, 0 } } },
     [DICT_MERGE] = { .nuops = 1, .uops = { { DICT_MERGE, 0, 0 } } },
     [MAP_ADD] = { .nuops = 1, .uops = { { MAP_ADD, 0, 0 } } },
+    [LOAD_SUPER_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_ATTR, 0, 0 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { LOAD_SUPER_ATTR_METHOD, 0, 0 } } },
     [LOAD_ATTR] = { .nuops = 1, .uops = { { LOAD_ATTR, 0, 0 } } },
