@@ -1120,7 +1120,8 @@ Porting to Python 3.13
 * ``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
   needed, it should now be included explicitly. For example, it provides the
   functions: ``read()``, ``write()``, ``close()``, ``isatty()``, ``lseek()``,
-  ``getpid()``, ``getcwd()``, ``sysconf()`` and ``getpagesize()``.
+  ``getpid()``, ``getcwd()``, ``sysconf()``, ``getpagesize()``, ``alarm()`` and
+  ``pause()``.
   As a consequence, ``_POSIX_SEMAPHORES`` and ``_POSIX_THREADS`` macros are no
   longer defined by ``Python.h``. The ``HAVE_UNISTD_H`` and ``HAVE_PTHREAD_H``
   macros defined by ``Python.h`` can be used to decide if ``<unistd.h>`` and
