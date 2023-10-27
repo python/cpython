@@ -460,6 +460,27 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     self.remove_writer(fd)
         fut.add_done_callback(cb)
 
+    def _stop_serving(self, sock):
+        # Is this a unix socket that needs cleanup?
+        if sock.family == socket.AF_UNIX:
+            path = sock.getsockname()
+            if path == '':
+                path = None
+            # Check for abstract socket. `str` and `bytes` paths are supported.
+            elif path[0] in (0, '\x00'):
+                path = None
+        else:
+            path = None
+
+        super()._stop_serving(sock)
+
+        if path is not None:
+            try:
+                os.unlink(path)
+            except OSError as err:
+                logger.error('Unable to clean up listening UNIX socket '
+                             '%r: %r', path, err)
+
 
 class _UnixReadPipeTransport(transports.ReadTransport):
 

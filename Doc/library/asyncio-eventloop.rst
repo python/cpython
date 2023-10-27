@@ -800,6 +800,11 @@ Creating network servers
 
       Added the *ssl_shutdown_timeout* parameter.
 
+   .. versionchanged:: 3.13
+
+      The Unix socket will automatically be removed from the filesystem
+      when the server is closed.
+
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \
                         sock, *, ssl=None, ssl_handshake_timeout=None, \

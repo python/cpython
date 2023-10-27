@@ -1,4 +1,6 @@
 import asyncio
+import os
+import socket
 import time
 import threading
 import unittest
@@ -145,6 +147,33 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
 
         srv._detach()
         await task2
+
+
+class UnixServerCleanupTests(unittest.IsolatedAsyncioTestCase):
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_addr_cleanup(self):
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            srv = await asyncio.start_unix_server(serve, addr)
+
+            srv.close()
+            self.assertFalse(os.path.exists(addr))
+
+    @socket_helper.skip_unless_bind_unix_socket
+    async def test_unix_server_sock_cleanup(self):
+        with test_utils.unix_socket_path() as addr:
+            async def serve(*args):
+                pass
+
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.bind(addr)
+
+            srv = await asyncio.start_unix_server(serve, sock=sock)
+
+            srv.close()
+            self.assertFalse(os.path.exists(addr))
 
 
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
