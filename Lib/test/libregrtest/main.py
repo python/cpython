@@ -7,7 +7,7 @@ import sysconfig
 import time
 
 from test import support
-from test.support import os_helper
+from test.support import os_helper, MS_WINDOWS
 
 from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
@@ -19,12 +19,12 @@ from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
 from .utils import (
-    StrPath, StrJSON, TestName, TestList, TestTuple, FilterTuple,
+    StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
     printlist, get_temp_dir, get_work_dir, exit_timeout,
     display_header, cleanup_temp_dir, print_warning,
     is_cross_compiled, get_host_runner,
-    MS_WINDOWS, EXIT_TIMEOUT)
+    EXIT_TIMEOUT)
 
 
 class Regrtest:
@@ -78,14 +78,7 @@ class Regrtest:
                                            and ns._add_python_opts)
 
         # Select tests
-        if ns.match_tests:
-            self.match_tests: FilterTuple | None = tuple(ns.match_tests)
-        else:
-            self.match_tests = None
-        if ns.ignore_tests:
-            self.ignore_tests: FilterTuple | None = tuple(ns.ignore_tests)
-        else:
-            self.ignore_tests = None
+        self.match_tests: TestFilter = ns.match_tests
         self.exclude: bool = ns.exclude
         self.fromfile: StrPath | None = ns.fromfile
         self.starting_test: TestName | None = ns.start
@@ -129,10 +122,19 @@ class Regrtest:
 
         # Randomize
         self.randomize: bool = ns.randomize
-        self.random_seed: int | None = ns.random_seed
-        if 'SOURCE_DATE_EPOCH' in os.environ:
+        if ('SOURCE_DATE_EPOCH' in os.environ
+            # don't use the variable if empty
+            and os.environ['SOURCE_DATE_EPOCH']
+        ):
             self.randomize = False
-            self.random_seed = None
+            # SOURCE_DATE_EPOCH should be an integer, but use a string to not
+            # fail if it's not integer. random.seed() accepts a string.
+            # https://reproducible-builds.org/docs/source-date-epoch/
+            self.random_seed: int | str = os.environ['SOURCE_DATE_EPOCH']
+        elif ns.random_seed is None:
+            self.random_seed = random.getrandbits(32)
+        else:
+            self.random_seed = ns.random_seed
 
         # tests
         self.first_runtests: RunTests | None = None
@@ -214,10 +216,8 @@ class Regrtest:
                 print(f"Cannot find starting test: {self.starting_test}")
                 sys.exit(1)
 
+        random.seed(self.random_seed)
         if self.randomize:
-            if self.random_seed is None:
-                self.random_seed = random.randrange(100_000_000)
-            random.seed(self.random_seed)
             random.shuffle(selected)
 
         return (tuple(selected), tests)
@@ -382,7 +382,7 @@ class Regrtest:
 
     def display_summary(self):
         duration = time.perf_counter() - self.logger.start_time
-        filtered = bool(self.match_tests) or bool(self.ignore_tests)
+        filtered = bool(self.match_tests)
 
         # Total duration
         print()
@@ -400,7 +400,6 @@ class Regrtest:
             fail_fast=self.fail_fast,
             fail_env_changed=self.fail_env_changed,
             match_tests=self.match_tests,
-            ignore_tests=self.ignore_tests,
             match_tests_dict=None,
             rerun=False,
             forever=self.forever,
@@ -439,8 +438,7 @@ class Regrtest:
                    or tests or self.cmdline_args)):
             display_header(self.use_resources, self.python_cmd)
 
-        if self.randomize:
-            print("Using random seed", self.random_seed)
+        print("Using random seed:", self.random_seed)
 
         runtests = self.create_run_tests(selected)
         self.first_runtests = runtests
@@ -654,7 +652,6 @@ class Regrtest:
         elif self.want_list_cases:
             list_cases(selected,
                        match_tests=self.match_tests,
-                       ignore_tests=self.ignore_tests,
                        test_dir=self.test_dir)
         else:
             exitcode = self.run_tests(selected, tests)

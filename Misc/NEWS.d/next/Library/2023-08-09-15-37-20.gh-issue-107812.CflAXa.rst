@@ -1,1 +1,0 @@
-Extend socket's netlink support to the FreeBSD platform.

@@ -124,13 +124,13 @@ def _compile_pattern_lines(pattern_lines, case_sensitive):
         elif part == '*':
             part = r'.+'
         elif part == '**\n':
-            # '**/' component: we use '[\s\S]' rather than '.' so that path
+            # '**/' component: we use '(?s:.)' rather than '.' so that path
             # separators (i.e. newlines) are matched. The trailing '^' ensures
             # we terminate after a path separator (i.e. on a new line).
-            part = r'[\s\S]*^'
+            part = r'(?s:.)*^'
         elif part == '**':
             # '**' component.
-            part = r'[\s\S]*'
+            part = r'(?s:.)*'
         elif '**' in part:
             raise ValueError("Invalid pattern: '**' can only be an entire path component")
         else:
@@ -603,8 +603,7 @@ class PurePath:
         if not self.name:
             raise ValueError("%r has an empty name" % (self,))
         m = self.pathmod
-        drv, root, tail = m.splitroot(name)
-        if drv or root or not tail or m.sep in tail or (m.altsep and m.altsep in tail):
+        if not name or m.sep in name or (m.altsep and m.altsep in name) or name == '.':
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self.drive, self.root,
                                        self._tail[:-1] + [name])

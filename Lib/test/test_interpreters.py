@@ -68,6 +68,17 @@ def _running(interp):
 
 class TestBase(unittest.TestCase):
 
+    def pipe(self):
+        def ensure_closed(fd):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        r, w = os.pipe()
+        self.addCleanup(lambda: ensure_closed(r))
+        self.addCleanup(lambda: ensure_closed(w))
+        return r, w
+
     def tearDown(self):
         clean_up_interpreters()
 
@@ -262,7 +273,7 @@ class TestInterpreterIsRunning(TestBase):
         self.assertFalse(interp.is_running())
 
     def test_finished(self):
-        r, w = os.pipe()
+        r, w = self.pipe()
         interp = interpreters.create()
         interp.run(f"""if True:
             import os
@@ -299,8 +310,8 @@ class TestInterpreterIsRunning(TestBase):
             interp.is_running()
 
     def test_with_only_background_threads(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.pipe()
+        r_thread, w_thread = self.pipe()
 
         DONE = b'D'
         FINISHED = b'F'
@@ -425,8 +436,8 @@ class TestInterpreterClose(TestBase):
             self.assertTrue(interp.is_running())
 
     def test_subthreads_still_running(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.pipe()
+        r_thread, w_thread = self.pipe()
 
         FINISHED = b'F'
 
@@ -532,8 +543,8 @@ class TestInterpreterRun(TestBase):
             interp.run(b'print("spam")')
 
     def test_with_background_threads_still_running(self):
-        r_interp, w_interp = os.pipe()
-        r_thread, w_thread = os.pipe()
+        r_interp, w_interp = self.pipe()
+        r_thread, w_thread = self.pipe()
 
         RAN = b'R'
         DONE = b'D'
@@ -838,6 +849,19 @@ class TestChannels(TestBase):
         self.assertEqual(rch2, rch)
         self.assertEqual(sch2, sch)
 
+    def test_is_closed(self):
+        rch, sch = interpreters.create_channel()
+        rbefore = rch.is_closed
+        sbefore = sch.is_closed
+        rch.close()
+        rafter = rch.is_closed
+        safter = sch.is_closed
+
+        self.assertFalse(rbefore)
+        self.assertFalse(sbefore)
+        self.assertTrue(rafter)
+        self.assertTrue(safter)
+
 
 class TestRecvChannelAttrs(TestBase):
 
@@ -952,8 +976,8 @@ class TestSendRecv(TestBase):
 
         orig = b'spam'
         s.send(orig)
-        t.join()
         obj = r.recv()
+        t.join()
 
         self.assertEqual(obj, orig)
         self.assertIsNot(obj, orig)
@@ -1010,6 +1034,11 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj2, b'eggs')
         self.assertNotEqual(id(obj2), int(out))
 
+    def test_recv_timeout(self):
+        r, _ = interpreters.create_channel()
+        with self.assertRaises(TimeoutError):
+            r.recv(timeout=1)
+
     def test_recv_channel_does_not_exist(self):
         ch = interpreters.RecvChannel(1_000_000)
         with self.assertRaises(interpreters.ChannelNotFoundError):
@@ -1055,3 +1084,46 @@ class TestSendRecv(TestBase):
         self.assertEqual(obj4, b'spam')
         self.assertEqual(obj5, b'eggs')
         self.assertIs(obj6, default)
+
+    def test_send_buffer(self):
+        buf = bytearray(b'spamspamspam')
+        obj = None
+        rch, sch = interpreters.create_channel()
+
+        def f():
+            nonlocal obj
+            while True:
+                try:
+                    obj = rch.recv()
+                    break
+                except interpreters.ChannelEmptyError:
+                    time.sleep(0.1)
+        t = threading.Thread(target=f)
+        t.start()
+
+        sch.send_buffer(buf)
+        t.join()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)
+
+    def test_send_buffer_nowait(self):
+        buf = bytearray(b'spamspamspam')
+        rch, sch = interpreters.create_channel()
+        sch.send_buffer_nowait(buf)
+        obj = rch.recv()
+
+        self.assertIsNot(obj, buf)
+        self.assertIsInstance(obj, memoryview)
+        self.assertEqual(obj, buf)
+
+        buf[4:8] = b'eggs'
+        self.assertEqual(obj, buf)
+        obj[4:8] = b'ham.'
+        self.assertEqual(obj, buf)

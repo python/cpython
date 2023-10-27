@@ -303,7 +303,7 @@ The :mod:`locale` module defines the following exception and functions:
    *language code* and *encoding* may be ``None`` if their values cannot be
    determined.
 
-   .. deprecated-removed:: 3.11 3.13
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. function:: getlocale(category=LC_CTYPE)

@@ -92,6 +92,19 @@ struct _ts {
         /* padding to align to 4 bytes */
         unsigned int :24;
     } _status;
+#ifdef Py_BUILD_CORE
+#  define _PyThreadState_WHENCE_NOTSET -1
+#  define _PyThreadState_WHENCE_UNKNOWN 0
+#  define _PyThreadState_WHENCE_INTERP 1
+#  define _PyThreadState_WHENCE_THREADING 2
+#  define _PyThreadState_WHENCE_GILSTATE 3
+#  define _PyThreadState_WHENCE_EXEC 4
+#endif
+    int _whence;
+
+    /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_GC).
+       See Include/internal/pycore_pystate.h for more details. */
+    int state;
 
     int py_recursion_remaining;
     int py_recursion_limit;
@@ -209,7 +222,7 @@ struct _ts {
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
-PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
 
 // Disable tracing and profiling.
@@ -278,7 +291,7 @@ struct _xid {
     // with deleted interpreters.  Note that IDs are never re-used, so
     // each one will always correspond to a specific interpreter
     // (whether still alive or not).
-    int64_t interp;
+    int64_t interpid;
     // new_object is a function that returns a new object in the current
     // interpreter given the data.  The resulting object (a new
     // reference) will be equivalent to the original object.  This field

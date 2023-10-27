@@ -26,7 +26,6 @@ from instructions import (
     MacroInstruction,
     MacroParts,
     PseudoInstruction,
-    OverriddenInstructionPlaceHolder,
     TIER_ONE,
     TIER_TWO,
 )
@@ -68,7 +67,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SET_IP": 7,
+    "OPARG_SAVE_RETURN_OFFSET": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -208,8 +207,6 @@ class Generator(Analyzer):
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
-            if isinstance(thing, OverriddenInstructionPlaceHolder):
-                continue
             if isinstance(thing, parsing.Macro) and thing.name in self.instrs:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
@@ -393,8 +390,6 @@ class Generator(Analyzer):
         for thing in self.everything:
             format: str | None = None
             match thing:
-                case OverriddenInstructionPlaceHolder():
-                    continue
                 case parsing.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parsing.Macro():
@@ -492,8 +487,6 @@ class Generator(Analyzer):
                 # Write metadata for each instruction
                 for thing in self.everything:
                     match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            continue
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
@@ -678,8 +671,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SET_IP":
-                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
+                    if part.instr.name == "_SAVE_RETURN_OFFSET":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
@@ -774,16 +767,12 @@ class Generator(Analyzer):
             n_macros = 0
             for thing in self.everything:
                 match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
                         pass
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(
-                            mac, self.out, self.families.get(mac.name)
-                        )
+                        stacking.write_macro_instr(mac, self.out)
                     case parsing.Pseudo():
                         pass
                     case _:
@@ -836,14 +825,6 @@ class Generator(Analyzer):
         print(
             f"Wrote some stuff to {abstract_interpreter_filename}",
             file=sys.stderr,
-        )
-
-    def write_overridden_instr_place_holder(
-        self, place_holder: OverriddenInstructionPlaceHolder
-    ) -> None:
-        self.out.emit("")
-        self.out.emit(
-            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
         )
 
 
