@@ -201,15 +201,15 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, _PyInterpreterFrame *skip
     if (r < 0) {
         return -1;
     }
-    int lltrace = r;
+    int lltrace = r * 5;  // Levels 1-4 only trace uops
     if (!lltrace) {
-        // When tracing executed uops, also trace bytecode
-        char *uop_debug = Py_GETENV("PYTHONUOPSDEBUG");
-        if (uop_debug != NULL && *uop_debug >= '0') {
-            lltrace = (*uop_debug - '0') >= 5;  // TODO: Parse an int and all that
+        // Can also be controlled by environment variable
+        char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
+        if (python_lltrace != NULL && *python_lltrace >= '0') {
+            lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
-    if (lltrace) {
+    if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }
     return lltrace;
@@ -913,7 +913,7 @@ exception_unwind:
             }
             /* Resume normal execution */
 #ifdef LLTRACE
-            if (lltrace) {
+            if (lltrace >= 5) {
                 lltrace_resume_frame(frame);
             }
 #endif
