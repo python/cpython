@@ -508,6 +508,21 @@ class ThreadTests(BaseTestCase):
             if errors:
                 raise errors[0]
 
+    def test_join_with_timeout(self):
+        lock = _thread.allocate_lock()
+        lock.acquire()
+
+        def worker():
+            lock.acquire()
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join(timeout=0.01)
+        assert thread.is_alive()
+        lock.release()
+        thread.join()
+        assert not thread.is_alive()
+
     def test_no_refcycle_through_target(self):
         class RunSelfFunction(object):
             def __init__(self, should_raise):

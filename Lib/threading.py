@@ -1254,9 +1254,10 @@ class Thread:
         if self._is_stopped or not self._started.is_set():
             return False
         self._wait_for_tstate_lock(False)
-        if self._is_stopped:
-            self._join_os_thread()
-        return not self._is_stopped
+        if not self._is_stopped:
+            return True
+        self._join_os_thread()
+        return False
 
     @property
     def daemon(self):
