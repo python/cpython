@@ -182,8 +182,9 @@ bootstrap(void *call)
     return 0;
 }
 
-unsigned long
-PyThread_start_joinable_thread(void (*func)(void *), void *arg, Py_uintptr_t* handle) {
+int
+PyThread_start_joinable_thread(void (*func)(void *), void *arg,
+                               unsigned long long* ident, Py_uintptr_t* handle) {
     HANDLE hThread;
     unsigned threadID;
     callobj *obj;
@@ -193,7 +194,7 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg, Py_uintptr_t* ha
 
     obj = (callobj*)HeapAlloc(GetProcessHeap(), 0, sizeof(*obj));
     if (!obj)
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
     obj->func = func;
     obj->arg = arg;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -207,20 +208,22 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg, Py_uintptr_t* ha
          * too many threads".
          */
         HeapFree(GetProcessHeap(), 0, obj);
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
     }
+    *ident = threadID;
     *handle = (Py_uintptr_t) hThread;
-    return threadID;
+    return 0;
 }
 
 unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg) {
     Py_uintptr_t handle;
-    unsigned long threadID = PyThread_start_joinable_thread(func, arg, &handle);
-    if (handle) {
-      CloseHandle((HANDLE) handle);
+    unsigned long long ident;
+    if (PyThread_start_joinable_thread(func, arg, &ident, &handle)) {
+        return PYTHREAD_INVALID_THREAD_ID;
     }
-    return threadID;
+    CloseHandle((HANDLE) handle);
+    return ident;
 }
 
 int
@@ -241,14 +244,21 @@ PyThread_detach_thread(Py_uintptr_t handle) {
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
-unsigned long
-PyThread_get_thread_ident(void)
+unsigned long long
+PyThread_get_thread_ident_ex(void)
 {
     if (!initialized)
         PyThread_init_thread();
 
     return GetCurrentThreadId();
 }
+
+unsigned long
+PyThread_get_thread_ident(void)
+{
+    return (unsigned long) PyThread_get_thread_ident_ex();
+}
+
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID
 /*

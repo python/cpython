@@ -298,20 +298,18 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
     return 0;
 }
 
-unsigned long
-PyThread_start_joinable_thread(void (*func)(void *), void *arg, Py_uintptr_t* handle) {
+int
+PyThread_start_joinable_thread(void (*func)(void *), void *arg,
+                               unsigned long long* ident, Py_uintptr_t* handle) {
     pthread_t th = (pthread_t) 0;
     if (do_start_joinable_thread(func, arg, &th)) {
-        return PYTHREAD_INVALID_THREAD_ID;
+        return -1;
     }
-    assert(th == (pthread_t) (unsigned long) th);
-    assert(th == (pthread_t) (Py_uintptr_t) th);
+    *ident = (unsigned long long) th;
     *handle = (Py_uintptr_t) th;
-#if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (unsigned long) th;
-#else
-    return (unsigned long) *(unsigned long *) &th;
-#endif
+    assert(th == (pthread_t) *ident);
+    assert(th == (pthread_t) *handle);
+    return 0;
 }
 
 unsigned long
@@ -345,14 +343,20 @@ PyThread_detach_thread(Py_uintptr_t th) {
      - The cast to unsigned long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) are any longer necessary.
 */
-unsigned long
-PyThread_get_thread_ident(void)
-{
+unsigned long long
+PyThread_get_thread_ident_ex(void) {
     volatile pthread_t threadid;
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    return (unsigned long) threadid;
+    assert(threadid == (pthread_t) (unsigned long long) threadid);
+    return (unsigned long long) threadid;
+}
+
+unsigned long
+PyThread_get_thread_ident(void)
+{
+    return (unsigned long) PyThread_get_thread_ident_ex();
 }
 
 #ifdef PY_HAVE_THREAD_NATIVE_ID

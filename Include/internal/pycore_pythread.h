@@ -106,6 +106,8 @@ PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
     PyThread_type_lock,
     PY_TIMEOUT_T microseconds);
 
+PyAPI_FUNC(unsigned long long) PyThread_get_thread_ident_ex(void);
+
 /* Thread joining APIs.
  *
  * These APIs have a strict contract:
@@ -117,9 +119,10 @@ PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
  *    PyThread_detach_thread, or calling them more than once (including
  *    simultaneously), results in undefined behavior.
  */
-PyAPI_FUNC(unsigned long) PyThread_start_joinable_thread(void (*func)(void *),
-                                                         void *arg,
-                                                         Py_uintptr_t* handle);
+PyAPI_FUNC(int) PyThread_start_joinable_thread(void (*func)(void *),
+                                               void *arg,
+                                               unsigned long long* ident,
+                                               Py_uintptr_t* handle);
 /*
  * Join a thread started with `PyThread_start_joinable_thread`.
  * This function cannot be interrupted. It returns 0 on success,
