@@ -1,0 +1,3 @@
+Traceback location ranges involving wide unicode characters (like emoji and
+asian characters) now are properly highlighted. Patch by Batuhan Taskaya and
+Pablo Galindo.
