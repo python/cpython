@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
-#include "pycore_atomic.h"          // _Py_atomic_address
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
@@ -88,7 +87,7 @@ typedef struct _Py_DebugOffsets {
     struct _interpreter_frame {
         off_t previous;
         off_t executable;
-        off_t prev_instr;
+        off_t instr_ptr;
         off_t localsplus;
         off_t owner;
     } interpreter_frame;
@@ -170,7 +169,9 @@ typedef struct pyruntimestate {
 
        Use _PyRuntimeState_GetFinalizing() and _PyRuntimeState_SetFinalizing()
        to access it, don't access it directly. */
-    _Py_atomic_address _finalizing;
+    PyThreadState *_finalizing;
+    /* The ID of the OS thread in which we are finalizing. */
+    unsigned long _finalizing_id;
 
     struct pyinterpreters {
         PyThread_type_lock mutex;
@@ -199,10 +200,7 @@ typedef struct pyruntimestate {
      tools. */
 
     // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry {
-        PyThread_type_lock mutex;
-        struct _xidregitem *head;
-    } xidregistry;
+    struct _xidregistry xidregistry;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
@@ -300,12 +298,26 @@ extern void _PyRuntime_Finalize(void);
 
 static inline PyThreadState*
 _PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
-    return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
+    return (PyThreadState*)_Py_atomic_load_ptr_relaxed(&runtime->_finalizing);
+}
+
+static inline unsigned long
+_PyRuntimeState_GetFinalizingID(_PyRuntimeState *runtime) {
+    return _Py_atomic_load_ulong_relaxed(&runtime->_finalizing_id);
 }
 
 static inline void
 _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
-    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_ptr_relaxed(&runtime->_finalizing, tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_ulong_relaxed(&runtime->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_ulong_relaxed(&runtime->_finalizing_id,
+                                       tstate->thread_id);
+    }
 }
 
 #ifdef __cplusplus

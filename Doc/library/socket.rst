@@ -207,14 +207,14 @@ created.  Socket addresses are represented as follows:
   - *addr* - Optional bytes-like object specifying the hardware physical
     address, whose interpretation depends on the device.
 
-   .. availability:: Linux >= 2.2.
+  .. availability:: Linux >= 2.2.
 
 - :const:`AF_QIPCRTR` is a Linux-only socket based interface for communicating
   with services running on co-processors in Qualcomm platforms. The address
   family is represented as a ``(node, port)`` tuple where the *node* and *port*
   are non-negative integers.
 
-   .. availability:: Linux >= 4.7.
+  .. availability:: Linux >= 4.7.
 
   .. versionadded:: 3.8
 
@@ -858,7 +858,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
 .. function:: fromfd(fd, family, type, proto=0)
 
    Duplicate the file descriptor *fd* (an integer as returned by a file object's
-   :meth:`fileno` method) and build a socket object from the result.  Address
+   :meth:`~io.IOBase.fileno` method) and build a socket object from the result.  Address
    family, socket type and protocol number are as for the :func:`.socket` function
    above. The file descriptor should refer to a socket, but this is not checked ---
    subsequent operations on the object may fail if the file descriptor is invalid.
@@ -2100,7 +2100,7 @@ The next two examples are identical to the above two, but support both IPv4 and
 IPv6. The server side will listen to the first address family available (it
 should listen to both instead). On most of IPv6-ready systems, IPv6 will take
 precedence and the server may not accept IPv4 traffic. The client side will try
-to connect to the all addresses returned as a result of the name resolution, and
+to connect to all the addresses returned as a result of the name resolution, and
 sends traffic to the first one connected successfully. ::
 
    # Echo server program

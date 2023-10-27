@@ -3,8 +3,8 @@
 #endif
 
 #include "parts.h"
+#include "util.h"
 #include "clinic/long.c.h"
-#include "pycore_long.h"          // _PyLong_Sign()
 
 /*[clinic input]
 module _testcapi
@@ -536,57 +536,6 @@ _testcapi_test_long_as_double_impl(PyObject *module)
 }
 
 /*[clinic input]
-_testcapi.test_long_numbits
-[clinic start generated code]*/
-
-static PyObject *
-_testcapi_test_long_numbits_impl(PyObject *module)
-/*[clinic end generated code: output=9eaf8458cb15d7f7 input=265c02d48a13059e]*/
-{
-    struct triple {
-        long input;
-        size_t nbits;
-        int sign;
-    } testcases[] = {{0, 0, 0},
-                     {1L, 1, 1},
-                     {-1L, 1, -1},
-                     {2L, 2, 1},
-                     {-2L, 2, -1},
-                     {3L, 2, 1},
-                     {-3L, 2, -1},
-                     {4L, 3, 1},
-                     {-4L, 3, -1},
-                     {0x7fffL, 15, 1},          /* one Python int digit */
-             {-0x7fffL, 15, -1},
-             {0xffffL, 16, 1},
-             {-0xffffL, 16, -1},
-             {0xfffffffL, 28, 1},
-             {-0xfffffffL, 28, -1}};
-    size_t i;
-
-    for (i = 0; i < Py_ARRAY_LENGTH(testcases); ++i) {
-        size_t nbits;
-        int sign;
-        PyObject *plong;
-
-        plong = PyLong_FromLong(testcases[i].input);
-        if (plong == NULL)
-            return NULL;
-        nbits = _PyLong_NumBits(plong);
-        sign = _PyLong_Sign(plong);
-
-        Py_DECREF(plong);
-        if (nbits != testcases[i].nbits)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_NumBits");
-        if (sign != testcases[i].sign)
-            return raiseTestError("test_long_numbits",
-                            "wrong result for _PyLong_Sign");
-    }
-    Py_RETURN_NONE;
-}
-
-/*[clinic input]
 _testcapi.call_long_compact_api
     arg: object
     /
@@ -606,6 +555,69 @@ _testcapi_call_long_compact_api(PyObject *module, PyObject *arg)
     return Py_BuildValue("in", is_compact, value);
 }
 
+static PyObject *
+pylong_check(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyLong_Check(obj));
+}
+
+static PyObject *
+pylong_checkexact(PyObject *module, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromLong(PyLong_CheckExact(obj));
+}
+
+static PyObject *
+pylong_fromdouble(PyObject *module, PyObject *arg)
+{
+    double value;
+    if (!PyArg_Parse(arg, "d", &value)) {
+        return NULL;
+    }
+    return PyLong_FromDouble(value);
+}
+
+static PyObject *
+pylong_fromstring(PyObject *module, PyObject *args)
+{
+    const char *str;
+    Py_ssize_t len;
+    int base;
+    char *end = UNINITIALIZED_PTR;
+    if (!PyArg_ParseTuple(args, "z#i", &str, &len, &base)) {
+        return NULL;
+    }
+
+    PyObject *result = PyLong_FromString(str, &end, base);
+    if (result == NULL) {
+        // XXX 'end' is not always set.
+        return NULL;
+    }
+    return Py_BuildValue("Nn", result, (Py_ssize_t)(end - str));
+}
+
+static PyObject *
+pylong_fromunicodeobject(PyObject *module, PyObject *args)
+{
+    PyObject *unicode;
+    int base;
+    if (!PyArg_ParseTuple(args, "Oi", &unicode, &base)) {
+        return NULL;
+    }
+
+    NULLABLE(unicode);
+    return PyLong_FromUnicodeObject(unicode, base);
+}
+
+static PyObject *
+pylong_fromvoidptr(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    return PyLong_FromVoidPtr((void *)arg);
+}
+
 /*[clinic input]
 _testcapi.PyLong_AsInt
     arg: object
@@ -616,12 +628,152 @@ static PyObject *
 _testcapi_PyLong_AsInt(PyObject *module, PyObject *arg)
 /*[clinic end generated code: output=0df9f19de5fa575b input=9561b97105493a67]*/
 {
+    NULLABLE(arg);
     assert(!PyErr_Occurred());
     int value = PyLong_AsInt(arg);
     if (value == -1 && PyErr_Occurred()) {
         return NULL;
     }
     return PyLong_FromLong(value);
+}
+
+static PyObject *
+pylong_aslong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    long value = PyLong_AsLong(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLong(value);
+}
+
+static PyObject *
+pylong_aslongandoverflow(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int overflow = UNINITIALIZED_INT;
+    long value = PyLong_AsLongAndOverflow(arg, &overflow);
+    if (value == -1 && PyErr_Occurred()) {
+        assert(overflow == -1);
+        return NULL;
+    }
+    return Py_BuildValue("li", value, overflow);
+}
+
+static PyObject *
+pylong_asunsignedlong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long value = PyLong_AsUnsignedLong(arg);
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(value);
+}
+
+static PyObject *
+pylong_asunsignedlongmask(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long value = PyLong_AsUnsignedLongMask(arg);
+    if (value == (unsigned long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLong(value);
+}
+
+static PyObject *
+pylong_aslonglong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    long long value = PyLong_AsLongLong(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromLongLong(value);
+}
+
+static PyObject *
+pylong_aslonglongandoverflow(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    int overflow = UNINITIALIZED_INT;
+    long long value = PyLong_AsLongLongAndOverflow(arg, &overflow);
+    if (value == -1 && PyErr_Occurred()) {
+        assert(overflow == -1);
+        return NULL;
+    }
+    return Py_BuildValue("Li", value, overflow);
+}
+
+static PyObject *
+pylong_asunsignedlonglong(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long long value = PyLong_AsUnsignedLongLong(arg);
+    if (value == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+static PyObject *
+pylong_asunsignedlonglongmask(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    unsigned long long value = PyLong_AsUnsignedLongLongMask(arg);
+    if (value == (unsigned long long)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromUnsignedLongLong(value);
+}
+
+static PyObject *
+pylong_as_ssize_t(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    Py_ssize_t value = PyLong_AsSsize_t(arg);
+    if (value == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromSsize_t(value);
+}
+
+static PyObject *
+pylong_as_size_t(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    size_t value = PyLong_AsSize_t(arg);
+    if (value == (size_t)-1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyLong_FromSize_t(value);
+}
+
+static PyObject *
+pylong_asdouble(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    double value = PyLong_AsDouble(arg);
+    if (value == -1.0 && PyErr_Occurred()) {
+        return NULL;
+    }
+    return PyFloat_FromDouble(value);
+}
+
+static PyObject *
+pylong_asvoidptr(PyObject *module, PyObject *arg)
+{
+    NULLABLE(arg);
+    void *value = PyLong_AsVoidPtr(arg);
+    if (value == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef((PyObject *)value);
 }
 
 static PyMethodDef test_methods[] = {
@@ -631,10 +783,27 @@ static PyMethodDef test_methods[] = {
     _TESTCAPI_TEST_LONG_AS_SIZE_T_METHODDEF
     _TESTCAPI_TEST_LONG_AS_UNSIGNED_LONG_LONG_MASK_METHODDEF
     _TESTCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF
-    _TESTCAPI_TEST_LONG_NUMBITS_METHODDEF
     _TESTCAPI_TEST_LONGLONG_API_METHODDEF
     _TESTCAPI_CALL_LONG_COMPACT_API_METHODDEF
+    {"pylong_check",                pylong_check,               METH_O},
+    {"pylong_checkexact",           pylong_checkexact,          METH_O},
+    {"pylong_fromdouble",           pylong_fromdouble,          METH_O},
+    {"pylong_fromstring",           pylong_fromstring,          METH_VARARGS},
+    {"pylong_fromunicodeobject",    pylong_fromunicodeobject,   METH_VARARGS},
+    {"pylong_fromvoidptr",          pylong_fromvoidptr,         METH_O},
     _TESTCAPI_PYLONG_ASINT_METHODDEF
+    {"pylong_aslong",               pylong_aslong,              METH_O},
+    {"pylong_aslongandoverflow",    pylong_aslongandoverflow,   METH_O},
+    {"pylong_asunsignedlong",       pylong_asunsignedlong,      METH_O},
+    {"pylong_asunsignedlongmask",   pylong_asunsignedlongmask,  METH_O},
+    {"pylong_aslonglong",           pylong_aslonglong,          METH_O},
+    {"pylong_aslonglongandoverflow", pylong_aslonglongandoverflow, METH_O},
+    {"pylong_asunsignedlonglong",   pylong_asunsignedlonglong,  METH_O},
+    {"pylong_asunsignedlonglongmask", pylong_asunsignedlonglongmask, METH_O},
+    {"pylong_as_ssize_t",           pylong_as_ssize_t,          METH_O},
+    {"pylong_as_size_t",            pylong_as_size_t,           METH_O},
+    {"pylong_asdouble",             pylong_asdouble,            METH_O},
+    {"pylong_asvoidptr",            pylong_asvoidptr,           METH_O},
     {NULL},
 };
 

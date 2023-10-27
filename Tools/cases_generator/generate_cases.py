@@ -26,7 +26,6 @@ from instructions import (
     MacroInstruction,
     MacroParts,
     PseudoInstruction,
-    OverriddenInstructionPlaceHolder,
     TIER_ONE,
     TIER_TWO,
 )
@@ -68,7 +67,7 @@ OPARG_SIZES = {
     "OPARG_CACHE_4": 4,
     "OPARG_TOP": 5,
     "OPARG_BOTTOM": 6,
-    "OPARG_SET_IP": 7,
+    "OPARG_SAVE_RETURN_OFFSET": 7,
 }
 
 INSTR_FMT_PREFIX = "INSTR_FMT_"
@@ -91,6 +90,13 @@ SPECIALLY_HANDLED_ABSTRACT_INSTR = {
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the interpreter switch.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+)
+
+arg_parser.add_argument(
+    "-v",
+    "--verbose",
+    help="Print list of non-viable uops and exit",
+    action="store_true",
 )
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
@@ -201,8 +207,6 @@ class Generator(Analyzer):
         popped_data: list[tuple[AnyInstruction, str]] = []
         pushed_data: list[tuple[AnyInstruction, str]] = []
         for thing in self.everything:
-            if isinstance(thing, OverriddenInstructionPlaceHolder):
-                continue
             if isinstance(thing, parsing.Macro) and thing.name in self.instrs:
                 continue
             instr, popped, pushed = self.get_stack_effect_info(thing)
@@ -386,8 +390,6 @@ class Generator(Analyzer):
         for thing in self.everything:
             format: str | None = None
             match thing:
-                case OverriddenInstructionPlaceHolder():
-                    continue
                 case parsing.InstDef():
                     format = self.instrs[thing.name].instr_fmt
                 case parsing.Macro():
@@ -485,8 +487,6 @@ class Generator(Analyzer):
                 # Write metadata for each instruction
                 for thing in self.everything:
                     match thing:
-                        case OverriddenInstructionPlaceHolder():
-                            continue
                         case parsing.InstDef():
                             self.write_metadata_for_inst(self.instrs[thing.name])
                         case parsing.Macro():
@@ -671,8 +671,8 @@ class Generator(Analyzer):
                         )
                     return
                 if not part.active_caches:
-                    if part.instr.name == "_SET_IP":
-                        size, offset = OPARG_SIZES["OPARG_SET_IP"], cache_offset
+                    if part.instr.name == "_SAVE_RETURN_OFFSET":
+                        size, offset = OPARG_SIZES["OPARG_SAVE_RETURN_OFFSET"], cache_offset
                     else:
                         size, offset = OPARG_SIZES["OPARG_FULL"], 0
                 else:
@@ -767,16 +767,12 @@ class Generator(Analyzer):
             n_macros = 0
             for thing in self.everything:
                 match thing:
-                    case OverriddenInstructionPlaceHolder():
-                        self.write_overridden_instr_place_holder(thing)
                     case parsing.InstDef():
                         pass
                     case parsing.Macro():
                         n_macros += 1
                         mac = self.macro_instrs[thing.name]
-                        stacking.write_macro_instr(
-                            mac, self.out, self.families.get(mac.name)
-                        )
+                        stacking.write_macro_instr(mac, self.out)
                     case parsing.Pseudo():
                         pass
                     case _:
@@ -831,14 +827,6 @@ class Generator(Analyzer):
             file=sys.stderr,
         )
 
-    def write_overridden_instr_place_holder(
-        self, place_holder: OverriddenInstructionPlaceHolder
-    ) -> None:
-        self.out.emit("")
-        self.out.emit(
-            f"{self.out.comment} TARGET({place_holder.name}) overridden by later definition"
-        )
-
 
 def is_super_instruction(mac: MacroInstruction) -> bool:
     if (
@@ -865,6 +853,10 @@ def main() -> None:
     a.analyze()  # Prints messages and sets a.errors on failure
     if a.errors:
         sys.exit(f"Found {a.errors} errors")
+    if args.verbose:
+        # Load execution counts from bmraw.json, if it exists
+        a.report_non_viable_uops("bmraw.json")
+        return
 
     # These raise OSError if output can't be written
     a.write_instructions(args.output, args.emit_line_directives)
