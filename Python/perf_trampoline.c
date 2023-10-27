@@ -328,7 +328,7 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
-int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
+PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
     py_trampoline f = NULL;
