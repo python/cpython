@@ -217,7 +217,9 @@ unsigned long
 PyThread_start_new_thread(void (*func)(void *), void *arg) {
     Py_uintptr_t handle;
     unsigned long threadID = PyThread_start_joinable_thread(func, arg, &handle);
-    CloseHandle((HANDLE) handle);
+    if (handle) {
+      CloseHandle((HANDLE) handle);
+    }
     return threadID;
 }
 
