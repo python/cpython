@@ -477,6 +477,8 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
         if path is not None:
             try:
                 os.unlink(path)
+            except FileNotFoundError:
+                pass
             except OSError as err:
                 logger.error('Unable to clean up listening UNIX socket '
                              '%r: %r', path, err)
