@@ -308,7 +308,7 @@ class CodeopTests(unittest.TestCase):
         self.assertEqual(w[0].category, SyntaxWarning)
         self.assertRegex(str(w[0].message), 'invalid escape sequence')
         self.assertEqual(w[0].filename, '<input>')
-    
+
     def assertSyntaxErrorMatches(self, code, message):
         with self.subTest(code):
             with self.assertRaisesRegex(SyntaxError, message):
