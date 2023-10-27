@@ -598,15 +598,19 @@ class BaseCookie(dict):
 
 
 class SimpleCookie(BaseCookie):
-    """
-    SimpleCookie supports strings as cookie values.  When setting
+    """SimpleCookie supports strings as cookie values.  When setting
     the value using the dictionary assignment notation, SimpleCookie
     calls the builtin str() to convert the value to a string.  Values
     received from HTTP are kept as strings.
     """
     def value_decode(self, val):
+        """Return an unquoted string, from the cookie header in a reversed fasion of value_encode.
+        """
         return _unquote(val), val
 
     def value_encode(self, val):
+        """Return an escaped quoted string, if needed, for the cookie header usage.
+        Will include non-compliant characters in the cookie value if exist.
+        """
         strval = str(val)
         return strval, _quote(strval)
