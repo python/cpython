@@ -470,6 +470,10 @@ class SendfileMixin(SendfileBase):
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
                         srv_proto.nbytes)
+        if sys.platform != 'win32' or \
+                        not isinstance(self.loop, asyncio.ProactorEventLoop):
+            self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
+                            self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
 
     def test_sendfile_fallback_close_peer_in_the_middle_of_receiving(self):
