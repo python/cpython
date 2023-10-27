@@ -152,15 +152,20 @@ def compile_wasi_python(context, build_python, version):
     sysconfig_data = f"{guest_build_dir}/build/lib.wasi-wasm32-{version}"
     if context.debug:
         sysconfig_data += "-pydebug"
-    host_runner = (f"{shutil.which('wasmtime')} run "
-                   # Make sure the stack size will work in a pydebug build.
-                   # The value comes from `ulimit -s` under Linux which is
-                   # 8291 KiB.
-                   "--max-wasm-stack 8388608 "
-                    # Map the checkout to / to load the stdlib from /Lib.
-                   f"--mapdir /::{CHECKOUT} "
-                   f"--env PYTHONPATH=/{sysconfig_data} "
-                   f"{build_dir / 'python.wasm'} --")
+    # host_runner = (f"{shutil.which('wasmtime')} run "
+    #                # Make sure the stack size will work in a pydebug build.
+    #                # The value comes from `ulimit -s` under Linux which is
+    #                # 8291 KiB.
+    #                "--max-wasm-stack 8388608 "
+    #                 # Map the checkout to / to load the stdlib from /Lib.
+    #                f"--mapdir /::{CHECKOUT} "
+    #                f"--env PYTHONPATH=/{sysconfig_data} "
+    #                f"{build_dir / 'python.wasm'} --")
+    host_runner = context.host_runner.format(GUEST_DIR="/",
+                                             HOST_DIR=CHECKOUT,
+                                             ENV_VAR_NAME="PYTHONPATH",
+                                             ENV_VAR_VALUE=f"/{sysconfig_data}",
+                                             PYTHON_WASM=build_dir / "python.wasm")
     env_additions = {"CONFIG_SITE": config_site, "HOSTRUNNER": host_runner,
                      # Python's first commit:
                      # Thu, 09 Aug 1990 14:25:15 +0000 (1990-08-09)
@@ -210,6 +215,20 @@ def main():
     build.add_argument("--with-pydebug", action="store_true", default=False,
                        dest="debug",
                        help="Debug build (i.e., pydebug)")
+    default_host_runner = (f"{shutil.which('wasmtime')} run "
+                   # Make sure the stack size will work in a pydebug build.
+                   # The value comes from `ulimit -s` under Linux which is
+                   # 8291 KiB.
+                   "--wasm max-wasm-stack=8388608 "
+                    # Map the checkout to / to load the stdlib from /Lib.
+                   "--dir {HOST_DIR}::{GUEST_DIR} "
+                   "--env {ENV_VAR_NAME}={ENV_VAR_VALUE} "
+                   "{PYTHON_WASM}")
+    build.add_argument("--host-runner", action="store",
+                       default=default_host_runner, dest="host_runner",
+                       help="Command template for running the WebAssembly code "
+                            "(default for wasmtime 14 or newer: "
+                            f"`{default_host_runner}`)")
 
     context = parser.parse_args()
     if not context.wasi_sdk_path or not context.wasi_sdk_path.exists():
