@@ -2318,13 +2318,16 @@ dummy_func(
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
+            if (executor->execute == _PyUopExecute) {
+                self = (_PyUOpExecutorObject *)executor;
+                goto enter_tier_two;
+            }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
-            next_instr = frame->instr_ptr;
-            goto resume_frame;
+            goto enter_tier_one;
         }
 
         inst(POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
@@ -3947,18 +3950,18 @@ dummy_func(
 
         op(_POP_JUMP_IF_FALSE, (flag -- )) {
             if (Py_IsFalse(flag)) {
-                pc = oparg;
+                next_uop = self->trace + oparg;
             }
         }
 
         op(_POP_JUMP_IF_TRUE, (flag -- )) {
             if (Py_IsTrue(flag)) {
-                pc = oparg;
+                next_uop = self->trace + oparg;
             }
         }
 
         op(_JUMP_TO_TOP, (--)) {
-            pc = 0;
+            next_uop = self->trace;
             CHECK_EVAL_BREAKER();
         }
 
@@ -3981,7 +3984,7 @@ dummy_func(
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            return frame;
+            goto enter_tier_one;
         }
 
         op(_INSERT, (unused[oparg], top -- top, unused[oparg])) {

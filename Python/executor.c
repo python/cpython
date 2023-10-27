@@ -47,6 +47,7 @@
 _PyInterpreterFrame *
 _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
 {
+    Py_FatalError("Tier 2 is now inlined into Tier 1");
 #ifdef Py_DEBUG
     char *python_lltrace = Py_GETENV("PYTHON_LLTRACE");
     int lltrace = 0;
@@ -74,7 +75,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 
     OPT_STAT_INC(traces_executed);
     _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
-    int pc = 0;
+    _PyUOpInstruction *next_uop = self->trace;
     int opcode;
     int oparg;
     uint64_t operand;
@@ -83,17 +84,17 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
 #endif
 
     for (;;) {
-        opcode = self->trace[pc].opcode;
-        oparg = self->trace[pc].oparg;
-        operand = self->trace[pc].operand;
+        opcode = next_uop->opcode;
+        oparg = next_uop->oparg;
+        operand = next_uop->operand;
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", stack_level %d\n",
-                pc,
+                (int)(next_uop - self->trace),
                 opcode < 256 ? _PyOpcode_OpName[opcode] : _PyOpcode_uop_name[opcode],
                 oparg,
                 operand,
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
-        pc++;
+        next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_EXE_INC(opcode);
 #ifdef Py_STATS
@@ -146,5 +147,6 @@ deoptimize_tier_two:
     frame->return_offset = 0;  // Dispatch to frame->instr_ptr
     _PyFrame_SetStackPointer(frame, stack_pointer);
     Py_DECREF(self);
+enter_tier_one:
     return frame;
 }

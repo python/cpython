@@ -3245,7 +3245,7 @@
             PyObject *flag;
             flag = stack_pointer[-1];
             if (Py_IsFalse(flag)) {
-                pc = oparg;
+                next_uop = self->trace + oparg;
             }
             STACK_SHRINK(1);
             break;
@@ -3255,14 +3255,14 @@
             PyObject *flag;
             flag = stack_pointer[-1];
             if (Py_IsTrue(flag)) {
-                pc = oparg;
+                next_uop = self->trace + oparg;
             }
             STACK_SHRINK(1);
             break;
         }
 
         case _JUMP_TO_TOP: {
-            pc = 0;
+            next_uop = self->trace;
             CHECK_EVAL_BREAKER();
             break;
         }
@@ -3288,7 +3288,7 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             Py_DECREF(self);
             OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-            return frame;
+            goto enter_tier_one;
             break;
         }
 

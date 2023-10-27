@@ -2999,13 +2999,16 @@
             JUMPBY(1-original_oparg);
             frame->instr_ptr = next_instr;
             Py_INCREF(executor);
+            if (executor->execute == _PyUopExecute) {
+                self = (_PyUOpExecutorObject *)executor;
+                goto enter_tier_two;
+            }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
-            next_instr = frame->instr_ptr;
-            goto resume_frame;
+            goto enter_tier_one;
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
