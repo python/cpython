@@ -1002,6 +1002,32 @@ get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
 }
 
+static PyObject *
+add_executor_dependency(PyObject *self, PyObject *args)
+{
+    PyObject *exec;
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
+        return NULL;
+    }
+    /* No way to tell in general if exec is an executor, so we only accept
+     * counting_executor */
+    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
+        return NULL;
+    }
+    _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+invalidate_executors(PyObject *self, PyObject *obj)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_Executors_InvalidateDependency(interp, obj);
+    Py_RETURN_NONE;
+}
+
 static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
@@ -1595,6 +1621,8 @@ static PyMethodDef module_functions[] = {
     {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
+    {"invalidate_executors", invalidate_executors, METH_O, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},

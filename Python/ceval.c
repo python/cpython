@@ -640,8 +640,10 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     /* Put a NOP at the start, so that the IP points into
     * the code, rather than before it */
     { .op.code = NOP, .op.arg = 0 },
-    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },
-    { .op.code = RESUME, .op.arg = 0 }
+    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
+    { .op.code = NOP, .op.arg = 0 },
+    { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
+    { .op.code = RESUME, .op.arg = RESUME_AT_FUNC_START }
 };
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;
@@ -698,7 +700,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_builtins = (PyObject*)0xaaa4;
 #endif
     entry_frame.f_executable = Py_None;
-    entry_frame.prev_instr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS;
+    entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stacktop = 0;
     entry_frame.owner = FRAME_OWNED_BY_CSTACK;
     entry_frame.return_offset = 0;
@@ -722,7 +724,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Because this avoids the RESUME,
          * we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
-        monitor_throw(tstate, frame, frame->prev_instr);
+        monitor_throw(tstate, frame, frame->instr_ptr);
         /* TO DO -- Monitor throw entry. */
         goto resume_with_error;
     }
@@ -733,19 +735,15 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_CODEUNIT *next_instr;
     PyObject **stack_pointer;
 
-/* Sets the above local variables from the frame */
-#define SET_LOCALS_FROM_FRAME() \
-    /* Jump back to the last instruction executed... */ \
-    next_instr = frame->prev_instr + 1; \
-    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 start_frame:
     if (_Py_EnterRecursivePy(tstate)) {
         goto exit_unwind;
     }
 
+    next_instr = frame->instr_ptr;
 resume_frame:
-    SET_LOCALS_FROM_FRAME();
+    stack_pointer = _PyFrame_GetStackPointer(frame);
 
 #ifdef LLTRACE
     lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
@@ -774,7 +772,7 @@ resume_frame:
 #include "generated_cases.c.h"
 
     /* INSTRUMENTED_LINE has to be here, rather than in bytecodes.c,
-     * because it needs to capture frame->prev_instr before it is updated,
+     * because it needs to capture frame->instr_ptr before it is updated,
      * as happens in the standard instruction prologue.
      */
 #if USE_COMPUTED_GOTOS
@@ -783,8 +781,8 @@ resume_frame:
         case INSTRUMENTED_LINE:
 #endif
     {
-        _Py_CODEUNIT *prev = frame->prev_instr;
-        _Py_CODEUNIT *here = frame->prev_instr = next_instr;
+        _Py_CODEUNIT *prev = frame->instr_ptr;
+        _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
         _PyFrame_SetStackPointer(frame, stack_pointer);
         int original_opcode = _Py_call_instrumentation_line(
                 tstate, frame, here, prev);
@@ -793,7 +791,7 @@ resume_frame:
             next_instr = here+1;
             goto error;
         }
-        next_instr = frame->prev_instr;
+        next_instr = frame->instr_ptr;
         if (next_instr != here) {
             DISPATCH();
         }
@@ -908,7 +906,8 @@ exception_unwind:
                 Python main loop. */
             PyObject *exc = _PyErr_GetRaisedException(tstate);
             PUSH(exc);
-            JUMPTO(handler);
+            next_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + handler;
+
             if (monitor_handled(tstate, frame, next_instr, exc) < 0) {
                 goto exception_unwind;
             }
@@ -939,7 +938,8 @@ exit_unwind:
     }
 
 resume_with_error:
-    SET_LOCALS_FROM_FRAME();
+    next_instr = frame->instr_ptr;
+    stack_pointer = _PyFrame_GetStackPointer(frame);
     goto error;
 
 }

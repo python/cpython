@@ -23,7 +23,7 @@
                 next_instr--;
             }
             else {
-                if (oparg < 2) {
+                if (oparg < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 next_instr[-1].op.code = RESUME_CHECK;
@@ -61,9 +61,9 @@
                         tstate, oparg > 0, frame, next_instr-1);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err) goto error;
-                if (frame->prev_instr != next_instr-1) {
+                if (frame->instr_ptr != next_instr-1) {
                     /* Instrumentation has jumped */
-                    next_instr = frame->prev_instr;
+                    next_instr = frame->instr_ptr;
                     DISPATCH();
                 }
             }
@@ -804,7 +804,8 @@
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
             SKIP_OVER(INLINE_CACHE_ENTRIES_BINARY_SUBSCR);
-            frame->return_offset = 0;
+            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -987,36 +988,27 @@
 
         TARGET(RETURN_VALUE) {
             PyObject *retval;
-            // _SAVE_CURRENT_IP
-            {
-                TIER_ONE_ONLY
-                frame->prev_instr = next_instr - 1;
-            }
-            // _POP_FRAME
             retval = stack_pointer[-1];
             STACK_SHRINK(1);
-            {
-                assert(EMPTY());
-                #if TIER_ONE
-                assert(frame != &entry_frame);
-                #endif
-                STORE_SP();
-                _Py_LeaveRecursiveCallPy(tstate);
-                // GH-99729: We need to unlink the frame *before* clearing it:
-                _PyInterpreterFrame *dying = frame;
-                frame = tstate->current_frame = dying->previous;
-                _PyEval_FrameClearAndPop(tstate, dying);
-                frame->prev_instr += frame->return_offset;
-                _PyFrame_StackPush(frame, retval);
-                LOAD_SP();
-                LOAD_IP();
-    #if LLTRACE && TIER_ONE
-                lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
-                if (lltrace < 0) {
-                    goto exit_unwind;
-                }
-    #endif
+            assert(EMPTY());
+            #if TIER_ONE
+            assert(frame != &entry_frame);
+            #endif
+            STORE_SP();
+            _Py_LeaveRecursiveCallPy(tstate);
+            // GH-99729: We need to unlink the frame *before* clearing it:
+            _PyInterpreterFrame *dying = frame;
+            frame = tstate->current_frame = dying->previous;
+            _PyEval_FrameClearAndPop(tstate, dying);
+            _PyFrame_StackPush(frame, retval);
+            LOAD_SP();
+            LOAD_IP(frame->return_offset);
+#if LLTRACE && TIER_ONE
+            lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
+            if (lltrace < 0) {
+                goto exit_unwind;
             }
+#endif
             DISPATCH();
         }
 
@@ -1036,8 +1028,8 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
 
@@ -1048,11 +1040,6 @@
             {
                 value = GETITEM(FRAME_CO_CONSTS, oparg);
                 Py_INCREF(value);
-            }
-            // _SAVE_CURRENT_IP
-            {
-                TIER_ONE_ONLY
-                frame->prev_instr = next_instr - 1;
             }
             // _POP_FRAME
             retval = value;
@@ -1067,10 +1054,9 @@
                 _PyInterpreterFrame *dying = frame;
                 frame = tstate->current_frame = dying->previous;
                 _PyEval_FrameClearAndPop(tstate, dying);
-                frame->prev_instr += frame->return_offset;
                 _PyFrame_StackPush(frame, retval);
                 LOAD_SP();
-                LOAD_IP();
+                LOAD_IP(frame->return_offset);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -1096,8 +1082,8 @@
             _PyInterpreterFrame *dying = frame;
             frame = tstate->current_frame = dying->previous;
             _PyEval_FrameClearAndPop(tstate, dying);
-            frame->prev_instr += frame->return_offset;
             _PyFrame_StackPush(frame, retval);
+            LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
 
@@ -1252,7 +1238,8 @@
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
                 SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-                frame->return_offset = oparg;
+                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+                frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
             if (Py_IsNone(v) && PyIter_Check(receiver)) {
@@ -1297,7 +1284,8 @@
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
             SKIP_OVER(INLINE_CACHE_ENTRIES_SEND);
-            frame->return_offset = oparg;
+            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -1306,6 +1294,7 @@
             retval = stack_pointer[-1];
             assert(frame != &entry_frame);
             assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
+            frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
@@ -1320,6 +1309,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+            /* We don't know which of these is relevant here, so keep them equal */
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             goto resume_frame;
         }
 
@@ -1331,6 +1323,7 @@
             // or throw() call.
             assert(oparg >= 0); /* make the generator identify this as HAS_ARG */
             assert(frame != &entry_frame);
+            frame->instr_ptr = next_instr;
             PyGenObject *gen = _PyFrame_GetGenerator(frame);
             gen->gi_frame_state = FRAME_SUSPENDED;
             _PyFrame_SetStackPointer(frame, stack_pointer - 1);
@@ -1341,6 +1334,9 @@
             frame = tstate->current_frame = frame->previous;
             gen_frame->previous = NULL;
             _PyFrame_StackPush(frame, retval);
+            /* We don't know which of these is relevant here, so keep them equal */
+            assert(INLINE_CACHE_ENTRIES_SEND == INLINE_CACHE_ENTRIES_FOR_ITER);
+            LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             goto resume_frame;
         }
 
@@ -1362,7 +1358,7 @@
             if (oparg) {
                 PyObject *lasti = values[0];
                 if (PyLong_Check(lasti)) {
-                    frame->prev_instr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
+                    frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + PyLong_AsLong(lasti);
                     assert(!_PyErr_Occurred(tstate));
                 }
                 else {
@@ -2591,7 +2587,8 @@
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->return_offset = 0;
+            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2623,7 +2620,8 @@
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
             SKIP_OVER(INLINE_CACHE_ENTRIES_LOAD_ATTR);
-            frame->return_offset = 0;
+            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2999,13 +2997,14 @@
             _PyExecutorObject *executor = (_PyExecutorObject *)code->co_executors->executors[oparg&255];
             int original_oparg = executor->vm_data.oparg | (oparg & 0xfffff00);
             JUMPBY(1-original_oparg);
-            frame->prev_instr = next_instr - 1;
+            frame->instr_ptr = next_instr;
             Py_INCREF(executor);
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
                 frame = tstate->current_frame;
                 goto resume_with_error;
             }
+            next_instr = frame->instr_ptr;
             goto resume_frame;
         }
 
@@ -3272,7 +3271,7 @@
         }
 
         TARGET(INSTRUMENTED_FOR_ITER) {
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             _Py_CODEUNIT *target;
             PyObject *iter = TOP();
             PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
@@ -3440,7 +3439,8 @@
             SKIP_OVER(INLINE_CACHE_ENTRIES_FOR_ITER);
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            frame->return_offset = oparg;
+            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
 
@@ -3828,7 +3828,8 @@
                     goto error;
                 }
                 SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-                frame->return_offset = 0;
+                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+                frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -3928,11 +3929,15 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // _SAVE_CURRENT_IP
+            // _SAVE_RETURN_OFFSET
             next_instr += 3;
             {
-                TIER_ONE_ONLY
-                frame->prev_instr = next_instr - 1;
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -3940,7 +3945,6 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                frame->return_offset = 0;
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
@@ -3948,7 +3952,7 @@
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
-                LOAD_IP();
+                LOAD_IP(0);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -4001,11 +4005,15 @@
                     new_frame->localsplus[i] = args[i];
                 }
             }
-            // _SAVE_CURRENT_IP
+            // _SAVE_RETURN_OFFSET
             next_instr += 3;
             {
-                TIER_ONE_ONLY
-                frame->prev_instr = next_instr - 1;
+                #if TIER_ONE
+                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                #endif
+                #if TIER_TWO
+                frame->return_offset = oparg;
+                #endif
             }
             // _PUSH_FRAME
             STACK_SHRINK(oparg);
@@ -4013,7 +4021,6 @@
             {
                 // Write it out explicitly because it's subtly different.
                 // Eventually this should be the only occurrence of this code.
-                frame->return_offset = 0;
                 assert(tstate->interp->eval_frame == NULL);
                 STORE_SP();
                 new_frame->previous = frame;
@@ -4021,7 +4028,7 @@
                 frame = tstate->current_frame = new_frame;
                 tstate->py_recursion_remaining--;
                 LOAD_SP();
-                LOAD_IP();
+                LOAD_IP(0);
     #if LLTRACE && TIER_ONE
                 lltrace = maybe_lltrace_resume_frame(frame, &entry_frame, GLOBALS());
                 if (lltrace < 0) {
@@ -4070,7 +4077,8 @@
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->return_offset = 0;
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -4177,7 +4185,7 @@
             Py_DECREF(tp);
             _PyInterpreterFrame *shim = _PyFrame_PushTrampolineUnchecked(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1);
-            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[1].op.code == EXIT_INIT_CHECK);
+            assert(_PyCode_CODE((PyCodeObject *)shim->f_executable)[0].op.code == EXIT_INIT_CHECK);
             /* Push self onto stack of shim */
             Py_INCREF(self);
             shim->localsplus[0] = self;
@@ -4189,8 +4197,8 @@
                 init_frame->localsplus[i+1] = args[i];
             }
             SKIP_OVER(INLINE_CACHE_ENTRIES_CALL);
-            frame->prev_instr = next_instr - 1;
-            frame->return_offset = 0;
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
@@ -4698,7 +4706,8 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->return_offset = 0;
+                assert(next_instr - frame->instr_ptr == 1);
+                frame->return_offset = 1;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4806,7 +4815,8 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    frame->return_offset = 0;
+                    assert(next_instr - frame->instr_ptr == 1);
+                    frame->return_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
                 result = PyObject_Call(func, callargs, kwargs);
@@ -4887,6 +4897,7 @@
             assert(EMPTY());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyInterpreterFrame *gen_frame = (_PyInterpreterFrame *)gen->gi_iframe;
+            frame->instr_ptr = next_instr;
             _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
@@ -4897,6 +4908,7 @@
             _PyThreadState_PopFrame(tstate, frame);
             frame = tstate->current_frame = prev;
             _PyFrame_StackPush(frame, (PyObject *)gen);
+            LOAD_IP(frame->return_offset);
             goto resume_frame;
         }
 
@@ -5034,20 +5046,22 @@
         }
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
-            INSTRUMENTED_JUMP(next_instr-1, next_instr+oparg, PY_MONITORING_EVENT_JUMP);
+            _Py_CODEUNIT *here = frame->instr_ptr;
+            INSTRUMENTED_JUMP(here, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
+            _Py_CODEUNIT *here = frame->instr_ptr;
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(next_instr-1, next_instr+1-oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(here, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
-            _Py_CODEUNIT *here = next_instr - 1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             int flag = Py_IsTrue(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
@@ -5061,7 +5075,7 @@
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
             PyObject *cond = POP();
             assert(PyBool_Check(cond));
-            _Py_CODEUNIT *here = next_instr - 1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             int flag = Py_IsFalse(cond);
             int offset = flag * oparg;
             #if ENABLE_SPECIALIZATION
@@ -5074,7 +5088,7 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
             PyObject *value = POP();
-            _Py_CODEUNIT *here = next_instr - 1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             int flag = Py_IsNone(value);
             int offset;
             if (flag) {
@@ -5094,7 +5108,7 @@
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
             PyObject *value = POP();
-            _Py_CODEUNIT *here = next_instr-1;
+            _Py_CODEUNIT *here = frame->instr_ptr;
             int offset;
             int nflag = Py_IsNone(value);
             if (nflag) {

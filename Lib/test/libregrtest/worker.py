@@ -10,7 +10,7 @@ from .setup import setup_process, setup_test_dir
 from .runtests import RunTests, JsonFile, JsonFileType
 from .single import run_single_test
 from .utils import (
-    StrPath, StrJSON, FilterTuple,
+    StrPath, StrJSON, TestFilter,
     get_temp_dir, get_work_dir, exit_timeout)
 
 
@@ -73,7 +73,7 @@ def create_worker_process(runtests: RunTests, output_fd: int,
 def worker_process(worker_json: StrJSON) -> NoReturn:
     runtests = RunTests.from_json(worker_json)
     test_name = runtests.tests[0]
-    match_tests: FilterTuple | None = runtests.match_tests
+    match_tests: TestFilter = runtests.match_tests
     json_file: JsonFile = runtests.json_file
 
     setup_test_dir(runtests.test_dir)
@@ -81,7 +81,7 @@ def worker_process(worker_json: StrJSON) -> NoReturn:
 
     if runtests.rerun:
         if match_tests:
-            matching = "matching: " + ", ".join(match_tests)
+            matching = "matching: " + ", ".join(pattern for pattern, result in match_tests if result)
             print(f"Re-running {test_name} in verbose mode ({matching})", flush=True)
         else:
             print(f"Re-running {test_name} in verbose mode", flush=True)

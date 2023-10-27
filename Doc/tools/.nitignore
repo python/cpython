@@ -30,7 +30,6 @@ Doc/howto/logging.rst
 Doc/howto/urllib2.rst
 Doc/library/abc.rst
 Doc/library/ast.rst
-Doc/library/asyncio-dev.rst
 Doc/library/asyncio-eventloop.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
@@ -39,7 +38,6 @@ Doc/library/asyncio-subprocess.rst
 Doc/library/asyncio-task.rst
 Doc/library/bdb.rst
 Doc/library/bisect.rst
-Doc/library/bz2.rst
 Doc/library/calendar.rst
 Doc/library/cmd.rst
 Doc/library/collections.abc.rst
@@ -101,7 +99,6 @@ Doc/library/reprlib.rst
 Doc/library/resource.rst
 Doc/library/rlcompleter.rst
 Doc/library/select.rst
-Doc/library/selectors.rst
 Doc/library/shelve.rst
 Doc/library/signal.rst
 Doc/library/smtplib.rst
@@ -119,7 +116,6 @@ Doc/library/tkinter.rst
 Doc/library/tkinter.scrolledtext.rst
 Doc/library/tkinter.ttk.rst
 Doc/library/traceback.rst
-Doc/library/tty.rst
 Doc/library/unittest.mock.rst
 Doc/library/unittest.rst
 Doc/library/urllib.parse.rst
@@ -141,7 +137,6 @@ Doc/reference/expressions.rst
 Doc/reference/import.rst
 Doc/reference/simple_stmts.rst
 Doc/tutorial/datastructures.rst
-Doc/tutorial/introduction.rst
 Doc/using/windows.rst
 Doc/whatsnew/2.0.rst
 Doc/whatsnew/2.1.rst
