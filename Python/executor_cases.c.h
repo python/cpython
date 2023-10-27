@@ -119,14 +119,13 @@
             PyObject *res;
             value = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
-            _PyToBoolCache *cache = (_PyToBoolCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr = frame->instr_ptr;
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
+                next_instr = here;
                 _Py_Specialize_ToBool(value, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(TO_BOOL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             int err = PyObject_IsTrue(value);
             Py_DECREF(value);
@@ -380,14 +379,13 @@
             sub = stack_pointer[-1];
             container = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
-            _PyBinarySubscrCache *cache = (_PyBinarySubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_BinarySubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             res = PyObject_GetItem(container, sub);
             Py_DECREF(container);
@@ -574,14 +572,13 @@
             container = stack_pointer[-2];
             v = stack_pointer[-3];
             #if ENABLE_SPECIALIZATION
-            _PyStoreSubscrCache *cache = (_PyStoreSubscrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_SUBSCR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             /* container[sub] = v */
             int err = PyObject_SetItem(container, sub, v);
@@ -900,14 +897,13 @@
             PyObject *seq;
             seq = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
-            _PyUnpackSequenceCache *cache = (_PyUnpackSequenceCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_UnpackSequence(seq, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(UNPACK_SEQUENCE, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject **top = stack_pointer + oparg - 1;
             int res = _PyEval_UnpackIterable(tstate, seq, oparg, -1, top);
@@ -989,15 +985,14 @@
             owner = stack_pointer[-1];
             v = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_StoreAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(STORE_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             int err = PyObject_SetAttr(owner, name, v);
@@ -1133,15 +1128,14 @@
             PyObject *res;
             PyObject *null = NULL;
             #if ENABLE_SPECIALIZATION
-            _PyLoadGlobalCache *cache = (_PyLoadGlobalCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_LoadGlobal(GLOBALS(), BUILTINS(), next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_GLOBAL, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (PyDict_CheckExact(GLOBALS())
@@ -1559,71 +1553,6 @@
             break;
         }
 
-        case LOAD_SUPER_ATTR: {
-            PyObject *self;
-            PyObject *class;
-            PyObject *global_super;
-            PyObject *attr;
-            PyObject *null = NULL;
-            self = stack_pointer[-1];
-            class = stack_pointer[-2];
-            global_super = stack_pointer[-3];
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 2);
-            int load_method = oparg & 1;
-            #if ENABLE_SPECIALIZATION
-            _PySuperAttrCache *cache = (_PySuperAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
-                next_instr = frame->instr_ptr;
-                _Py_Specialize_LoadSuperAttr(global_super, class, next_instr, load_method);
-                DISPATCH_SAME_OPARG();
-            }
-            STAT_INC(LOAD_SUPER_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
-            #endif  /* ENABLE_SPECIALIZATION */
-
-            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
-                PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
-                int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_CALL,
-                        frame, frame->instr_ptr, global_super, arg);
-                if (err) goto pop_3_error;
-            }
-
-            // we make no attempt to optimize here; specializations should
-            // handle any case whose performance we care about
-            PyObject *stack[] = {class, self};
-            PyObject *super = PyObject_Vectorcall(global_super, stack, oparg & 2, NULL);
-            if (opcode == INSTRUMENTED_LOAD_SUPER_ATTR) {
-                PyObject *arg = oparg & 2 ? class : &_PyInstrumentation_MISSING;
-                if (super == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, frame->instr_ptr, global_super, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, frame->instr_ptr, global_super, arg);
-                    if (err < 0) {
-                        Py_CLEAR(super);
-                    }
-                }
-            }
-            Py_DECREF(global_super);
-            Py_DECREF(class);
-            Py_DECREF(self);
-            if (super == NULL) goto pop_3_error;
-            attr = PyObject_GetAttr(super, name);
-            Py_DECREF(super);
-            if (attr == NULL) goto pop_3_error;
-            null = NULL;
-            STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
-            stack_pointer[-1 - (oparg & 1 ? 1 : 0)] = attr;
-            if (oparg & 1) { stack_pointer[-(oparg & 1 ? 1 : 0)] = null; }
-            break;
-        }
-
         case LOAD_SUPER_ATTR_ATTR: {
             PyObject *self;
             PyObject *class;
@@ -1689,15 +1618,14 @@
             PyObject *self_or_null = NULL;
             owner = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
-            _PyAttrCache *cache = (_PyAttrCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(LOAD_ATTR, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             if (oparg & 1) {
@@ -1952,14 +1880,13 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
-            _PyCompareOpCache *cache = (_PyCompareOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(COMPARE_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             assert((oparg >> 5) <= Py_GE);
             res = PyObject_RichCompare(left, right, oparg >> 5);
@@ -3274,14 +3201,13 @@
             rhs = stack_pointer[-1];
             lhs = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
-            _PyBinaryOpCache *cache = (_PyBinaryOpCache *)next_instr;
-            if (ADAPTIVE_COUNTER_IS_ZERO(cache->counter)) {
+            if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 next_instr = frame->instr_ptr;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
             STAT_INC(BINARY_OP, deferred);
-            DECREMENT_ADAPTIVE_COUNTER(cache->counter);
+            DECREMENT_ADAPTIVE_COUNTER(here[1].cache);
             #endif  /* ENABLE_SPECIALIZATION */
             assert(NB_ADD <= oparg);
             assert(oparg <= NB_INPLACE_XOR);

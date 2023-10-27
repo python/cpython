@@ -61,6 +61,7 @@ class Instruction:
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_here: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -83,6 +84,7 @@ class Instruction:
         )
         self.always_exits = always_exits(self.block_text)
         self.has_deopt = variable_used(self.inst, "DEOPT_IF")
+        self.needs_here = variable_used(self.inst, "here")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
@@ -164,7 +166,8 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&here[{active.offset + 1}].cache);"
                 )
             else:
                 out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")

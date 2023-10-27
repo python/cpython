@@ -438,14 +438,6 @@
             break;
         }
 
-        case LOAD_SUPER_ATTR: {
-            STACK_SHRINK(2);
-            STACK_GROW(((oparg & 1) ? 1 : 0));
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1 - (oparg & 1 ? 1 : 0))), true);
-            PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-(oparg & 1 ? 1 : 0))), true);
-            break;
-        }
-
         case LOAD_SUPER_ATTR_ATTR: {
             STACK_SHRINK(2);
             PARTITIONNODE_OVERWRITE((_Py_PARTITIONNODE_t *)PARTITIONNODE_NULLROOT, PEEK(-(-1)), true);
