@@ -1,2 +1,0 @@
-Improve the location of the caret in :exc:`SyntaxError` exceptions emitted
-by the symbol table. Patch by Pablo Galindo.

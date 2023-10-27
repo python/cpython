@@ -13,6 +13,7 @@ __all__ = (
 
 import contextvars
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -60,6 +61,9 @@ class Handle:
             return self._repr
         info = self._repr_info()
         return '<{}>'.format(' '.join(info))
+
+    def get_context(self):
+        return self._context
 
     def cancel(self):
         if not self._cancelled:
@@ -257,13 +261,13 @@ class AbstractEventLoop:
         """Notification that a TimerHandle has been cancelled."""
         raise NotImplementedError
 
-    def call_soon(self, callback, *args):
-        return self.call_later(0, callback, *args)
+    def call_soon(self, callback, *args, context=None):
+        return self.call_later(0, callback, *args, context=context)
 
-    def call_later(self, delay, callback, *args):
+    def call_later(self, delay, callback, *args, context=None):
         raise NotImplementedError
 
-    def call_at(self, when, callback, *args):
+    def call_at(self, when, callback, *args, context=None):
         raise NotImplementedError
 
     def time(self):
@@ -274,12 +278,12 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None, context=None):
         raise NotImplementedError
 
     # Methods for interacting with threads.
 
-    def call_soon_threadsafe(self, callback, *args):
+    def call_soon_threadsafe(self, callback, *args, context=None):
         raise NotImplementedError
 
     def run_in_executor(self, executor, func, *args):
@@ -303,6 +307,7 @@ class AbstractEventLoop:
             flags=0, sock=None, local_addr=None,
             server_hostname=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
         raise NotImplementedError
 
@@ -312,6 +317,7 @@ class AbstractEventLoop:
             flags=socket.AI_PASSIVE, sock=None, backlog=100,
             ssl=None, reuse_address=None, reuse_port=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         """A coroutine which creates a TCP server bound to host and port.
 
@@ -352,6 +358,10 @@ class AbstractEventLoop:
         will wait for completion of the SSL handshake before aborting the
         connection. Default is 60s.
 
+        ssl_shutdown_timeout is the time in seconds that an SSL server
+        will wait for completion of the SSL shutdown procedure
+        before aborting the connection. Default is 30s.
+
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
@@ -370,7 +380,8 @@ class AbstractEventLoop:
     async def start_tls(self, transport, protocol, sslcontext, *,
                         server_side=False,
                         server_hostname=None,
-                        ssl_handshake_timeout=None):
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
         """Upgrade a transport to TLS.
 
         Return a new transport that *protocol* should start using
@@ -382,13 +393,15 @@ class AbstractEventLoop:
             self, protocol_factory, path=None, *,
             ssl=None, sock=None,
             server_hostname=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         raise NotImplementedError
 
     async def create_unix_server(
             self, protocol_factory, path=None, *,
             sock=None, backlog=100, ssl=None,
             ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None,
             start_serving=True):
         """A coroutine which creates a UNIX Domain Socket server.
 
@@ -410,6 +423,9 @@ class AbstractEventLoop:
         ssl_handshake_timeout is the time in seconds that an SSL server
         will wait for the SSL handshake to complete (defaults to 60s).
 
+        ssl_shutdown_timeout is the time in seconds that an SSL server
+        will wait for the SSL shutdown to finish (defaults to 30s).
+
         start_serving set to True (default) causes the created server
         to start accepting connections immediately.  When set to False,
         the user should await Server.start_serving() or Server.serve_forever()
@@ -420,7 +436,8 @@ class AbstractEventLoop:
     async def connect_accepted_socket(
             self, protocol_factory, sock,
             *, ssl=None,
-            ssl_handshake_timeout=None):
+            ssl_handshake_timeout=None,
+            ssl_shutdown_timeout=None):
         """Handle an accepted connection.
 
         This is used by servers that accept connections outside of
@@ -533,7 +550,16 @@ class AbstractEventLoop:
     async def sock_recv_into(self, sock, buf):
         raise NotImplementedError
 
+    async def sock_recvfrom(self, sock, bufsize):
+        raise NotImplementedError
+
+    async def sock_recvfrom_into(self, sock, buf, nbytes=0):
+        raise NotImplementedError
+
     async def sock_sendall(self, sock, data):
+        raise NotImplementedError
+
+    async def sock_sendto(self, sock, data, address):
         raise NotImplementedError
 
     async def sock_connect(self, sock, address):
@@ -591,7 +617,7 @@ class AbstractEventLoopPolicy:
     def get_event_loop(self):
         """Get the event loop for the current context.
 
-        Returns an event loop object implementing the BaseEventLoop interface,
+        Returns an event loop object implementing the AbstractEventLoop interface,
         or raises an exception in case no event loop has been set for the
         current context and the current policy does not specify to create one.
 
@@ -649,6 +675,23 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         if (self._local._loop is None and
                 not self._local._set_called and
                 threading.current_thread() is threading.main_thread()):
+            stacklevel = 2
+            try:
+                f = sys._getframe(1)
+            except AttributeError:
+                pass
+            else:
+                # Move up the call stack so that the warning is attached
+                # to the line outside asyncio itself.
+                while f:
+                    module = f.f_globals.get('__name__')
+                    if not (module == 'asyncio' or module.startswith('asyncio.')):
+                        break
+                    f = f.f_back
+                    stacklevel += 1
+            import warnings
+            warnings.warn('There is no current event loop',
+                          DeprecationWarning, stacklevel=stacklevel)
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:
@@ -760,16 +803,9 @@ def get_event_loop():
     the result of `get_event_loop_policy().get_event_loop()` call.
     """
     # NOTE: this function is implemented in C (see _asynciomodule.c)
-    return _py__get_event_loop()
-
-
-def _get_event_loop(stacklevel=3):
     current_loop = _get_running_loop()
     if current_loop is not None:
         return current_loop
-    import warnings
-    warnings.warn('There is no current event loop',
-                  DeprecationWarning, stacklevel=stacklevel)
     return get_event_loop_policy().get_event_loop()
 
 
@@ -799,7 +835,6 @@ _py__get_running_loop = _get_running_loop
 _py__set_running_loop = _set_running_loop
 _py_get_running_loop = get_running_loop
 _py_get_event_loop = get_event_loop
-_py__get_event_loop = _get_event_loop
 
 
 try:
@@ -807,7 +842,7 @@ try:
     # functions in asyncio.  Pure Python implementation is
     # about 4 times slower than C-accelerated.
     from _asyncio import (_get_running_loop, _set_running_loop,
-                          get_running_loop, get_event_loop, _get_event_loop)
+                          get_running_loop, get_event_loop)
 except ImportError:
     pass
 else:
@@ -816,4 +851,14 @@ else:
     _c__set_running_loop = _set_running_loop
     _c_get_running_loop = get_running_loop
     _c_get_event_loop = get_event_loop
-    _c__get_event_loop = _get_event_loop
+
+
+if hasattr(os, 'fork'):
+    def on_fork():
+        # Reset the loop and wakeupfd in the forked child process.
+        if _event_loop_policy is not None:
+            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+        _set_running_loop(None)
+        signal.set_wakeup_fd(-1)
+
+    os.register_at_fork(after_in_child=on_fork)

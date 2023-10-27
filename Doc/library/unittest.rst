@@ -72,7 +72,7 @@ test runner
    a GUI tool for test discovery and execution.  This is intended largely for ease of use
    for those new to unit testing.  For production environments it is
    recommended that tests be driven by a continuous integration system such as
-   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://jenkins.io/>`_,
+   `Buildbot <https://buildbot.net/>`_, `Jenkins <https://www.jenkins.io/>`_,
    `GitHub Actions <https://github.com/features/actions>`_, or
    `AppVeyor <https://www.appveyor.com/>`_.
 
@@ -139,9 +139,9 @@ line, the above script produces an output that looks like this::
 Passing the ``-v`` option to your test script will instruct :func:`unittest.main`
 to enable a higher level of verbosity, and produce the following output::
 
-   test_isupper (__main__.TestStringMethods) ... ok
-   test_split (__main__.TestStringMethods) ... ok
-   test_upper (__main__.TestStringMethods) ... ok
+   test_isupper (__main__.TestStringMethods.test_isupper) ... ok
+   test_split (__main__.TestStringMethods.test_split) ... ok
+   test_upper (__main__.TestStringMethods.test_upper) ... ok
 
    ----------------------------------------------------------------------
    Ran 3 tests in 0.001s
@@ -206,13 +206,13 @@ Command-line options
 
 .. program:: unittest
 
-.. cmdoption:: -b, --buffer
+.. option:: -b, --buffer
 
    The standard output and standard error streams are buffered during the test
    run. Output during a passing test is discarded. Output is echoed normally
    on test fail or error and is added to the failure messages.
 
-.. cmdoption:: -c, --catch
+.. option:: -c, --catch
 
    :kbd:`Control-C` during the test run waits for the current test to end and then
    reports all the results so far. A second :kbd:`Control-C` raises the normal
@@ -220,11 +220,11 @@ Command-line options
 
    See `Signal Handling`_ for the functions that provide this functionality.
 
-.. cmdoption:: -f, --failfast
+.. option:: -f, --failfast
 
    Stop the test run on the first error or failure.
 
-.. cmdoption:: -k
+.. option:: -k
 
    Only run test methods and classes that match the pattern or substring.
    This option may be used multiple times, in which case all test cases that
@@ -240,9 +240,13 @@ Command-line options
    For example, ``-k foo`` matches ``foo_tests.SomeTest.test_something``,
    ``bar_tests.SomeTest.test_foo``, but not ``bar_tests.FooTest.test_something``.
 
-.. cmdoption:: --locals
+.. option:: --locals
 
    Show local variables in tracebacks.
+
+.. option:: --durations N
+
+   Show the N slowest test cases (N=0 for all).
 
 .. versionadded:: 3.2
    The command-line options ``-b``, ``-c`` and ``-f`` were added.
@@ -253,9 +257,11 @@ Command-line options
 .. versionadded:: 3.7
    The command-line option ``-k``.
 
+.. versionadded:: 3.12
+   The command-line option ``--durations``.
+
 The command line can also be used for test discovery, for running all of the
 tests in a project or just a subset.
-
 
 .. _unittest-test-discovery:
 
@@ -266,8 +272,7 @@ Test Discovery
 
 Unittest supports simple test discovery. In order to be compatible with test
 discovery, all of the test files must be :ref:`modules <tut-modules>` or
-:ref:`packages <tut-packages>` (including :term:`namespace packages
-<namespace package>`) importable from the top-level directory of
+:ref:`packages <tut-packages>` importable from the top-level directory of
 the project (this means that their filenames must be valid :ref:`identifiers
 <identifiers>`).
 
@@ -287,19 +292,19 @@ The ``discover`` sub-command has the following options:
 
 .. program:: unittest discover
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output
 
-.. cmdoption:: -s, --start-directory directory
+.. option:: -s, --start-directory directory
 
    Directory to start discovery (``.`` default)
 
-.. cmdoption:: -p, --pattern pattern
+.. option:: -p, --pattern pattern
 
    Pattern to match test files (``test*.py`` default)
 
-.. cmdoption:: -t, --top-level-directory directory
+.. option:: -t, --top-level-directory directory
 
    Top level directory of project (defaults to start directory)
 
@@ -339,6 +344,24 @@ the `load_tests protocol`_.
    for the start directory. Note that you need to specify the top level
    directory too (e.g.
    ``python -m unittest discover -s root/namespace -t root``).
+
+.. versionchanged:: 3.11
+   Python 3.11 dropped the :term:`namespace packages <namespace package>`
+   support. It has been broken since Python 3.7. Start directory and
+   subdirectories containing tests must be regular package that have
+   ``__init__.py`` file.
+
+   Directories containing start directory still can be a namespace package.
+   In this case, you need to specify start directory as dotted package name,
+   and target directory explicitly. For example::
+
+      # proj/  <-- current directory
+      #   namespace/
+      #     mypkg/
+      #       __init__.py
+      #       test_mypkg.py
+
+      python -m unittest discover -s namespace.mypkg -t .
 
 
 .. _organizing-tests:
@@ -548,10 +571,10 @@ Basic skipping looks like this::
 
 This is the output of running the example above in verbose mode::
 
-   test_format (__main__.MyTestCase) ... skipped 'not supported in this library version'
-   test_nothing (__main__.MyTestCase) ... skipped 'demonstrating skipping'
-   test_maybe_skipped (__main__.MyTestCase) ... skipped 'external resource not available'
-   test_windows_support (__main__.MyTestCase) ... skipped 'requires Windows'
+   test_format (__main__.MyTestCase.test_format) ... skipped 'not supported in this library version'
+   test_nothing (__main__.MyTestCase.test_nothing) ... skipped 'demonstrating skipping'
+   test_maybe_skipped (__main__.MyTestCase.test_maybe_skipped) ... skipped 'external resource not available'
+   test_windows_support (__main__.MyTestCase.test_windows_support) ... skipped 'requires Windows'
 
    ----------------------------------------------------------------------
    Ran 4 tests in 0.005s
@@ -644,27 +667,33 @@ For example, the following test::
 will produce the following output::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=1)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=1)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=3)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=3)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest) (i=5)
+   FAIL: test_even (__main__.NumbersTest.test_even) (i=5)
+   Test that numbers between 0 and 5 are all even.
    ----------------------------------------------------------------------
    Traceback (most recent call last):
-     File "subtests.py", line 32, in test_even
+     File "subtests.py", line 11, in test_even
        self.assertEqual(i % 2, 0)
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
    AssertionError: 1 != 0
 
 Without using a subtest, execution would stop after the first failure,
@@ -672,7 +701,7 @@ and the error would be less easy to diagnose because the value of ``i``
 wouldn't be displayed::
 
    ======================================================================
-   FAIL: test_even (__main__.NumbersTest)
+   FAIL: test_even (__main__.NumbersTest.test_even)
    ----------------------------------------------------------------------
    Traceback (most recent call last):
      File "subtests.py", line 32, in test_even
@@ -1105,7 +1134,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       The test passes if at least one message emitted inside the ``with``
       block matches the *logger* and *level* conditions, otherwise it fails.
@@ -1127,8 +1156,8 @@ Test cases
       Example::
 
          with self.assertLogs('foo', level='INFO') as cm:
-            logging.getLogger('foo').info('first message')
-            logging.getLogger('foo.bar').error('second message')
+             logging.getLogger('foo').info('first message')
+             logging.getLogger('foo.bar').error('second message')
          self.assertEqual(cm.output, ['INFO:foo:first message',
                                       'ERROR:foo.bar:second message'])
 
@@ -1146,7 +1175,7 @@ Test cases
 
       If given, *level* should be either a numeric logging level or
       its string equivalent (for example either ``"ERROR"`` or
-      :attr:`logging.ERROR`).  The default is :attr:`logging.INFO`.
+      :const:`logging.ERROR`).  The default is :const:`logging.INFO`.
 
       Unlike :meth:`assertLogs`, nothing will be returned by the context
       manager.
@@ -1469,6 +1498,16 @@ Test cases
       .. versionadded:: 3.1
 
 
+   .. method:: enterContext(cm)
+
+      Enter the supplied :term:`context manager`.  If successful, also
+      add its :meth:`~object.__exit__` method as a cleanup function by
+      :meth:`addCleanup` and return the result of the
+      :meth:`~object.__enter__` method.
+
+      .. versionadded:: 3.11
+
+
    .. method:: doCleanups()
 
       This method is called unconditionally after :meth:`tearDown`, or
@@ -1484,6 +1523,7 @@ Test cases
 
       .. versionadded:: 3.1
 
+
    .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
 
       Add a function to be called after :meth:`tearDownClass` to cleanup
@@ -1496,6 +1536,16 @@ Test cases
       called, then any cleanup functions added will still be called.
 
       .. versionadded:: 3.8
+
+
+   .. classmethod:: enterClassContext(cm)
+
+      Enter the supplied :term:`context manager`.  If successful, also
+      add its :meth:`~object.__exit__` method as a cleanup function by
+      :meth:`addClassCleanup` and return the result of the
+      :meth:`~object.__enter__` method.
+
+      .. versionadded:: 3.11
 
 
    .. classmethod:: doClassCleanups()
@@ -1544,6 +1594,16 @@ Test cases
    .. method:: addAsyncCleanup(function, /, *args, **kwargs)
 
       This method accepts a coroutine that can be used as a cleanup function.
+
+   .. coroutinemethod:: enterAsyncContext(cm)
+
+      Enter the supplied :term:`asynchronous context manager`.  If successful,
+      also add its :meth:`~object.__aexit__` method as a cleanup function by
+      :meth:`addAsyncCleanup` and return the result of the
+      :meth:`~object.__aenter__` method.
+
+      .. versionadded:: 3.11
+
 
    .. method:: run(result=None)
 
@@ -1706,7 +1766,7 @@ Loading and running tests
 
       A list of the non-fatal errors encountered while loading tests. Not reset
       by the loader at any point. Fatal errors are signalled by the relevant
-      a method raising an exception to the caller. Non-fatal errors are also
+      method raising an exception to the caller. Non-fatal errors are also
       indicated by a synthetic test that will raise the original error when
       run.
 
@@ -1754,7 +1814,7 @@ Loading and running tests
       .. versionchanged:: 3.5
          Support for a keyword-only argument *pattern* has been added.
 
-      .. versionchanged:: 3.11
+      .. versionchanged:: 3.12
          The undocumented and unofficial *use_load_tests* parameter has been
          removed.
 
@@ -1858,6 +1918,10 @@ Loading and running tests
          whether their path matches *pattern*, because it is impossible for
          a package name to match the default pattern.
 
+      .. versionchanged:: 3.11
+         *start_dir* can not be a :term:`namespace packages <namespace package>`.
+         It has been broken since Python 3.7 and Python 3.11 officially remove it.
+
 
    The following attributes of a :class:`TestLoader` can be configured either by
    subclassing or assignment on an instance:
@@ -1889,12 +1953,12 @@ Loading and running tests
    .. attribute:: testNamePatterns
 
       List of Unix shell-style wildcard test name patterns that test methods
-      have to match to be included in test suites (see ``-v`` option).
+      have to match to be included in test suites (see ``-k`` option).
 
       If this attribute is not ``None`` (the default), all test methods to be
       included in test suites must match one of the patterns in this list.
       Note that matches are always performed using :meth:`fnmatch.fnmatchcase`,
-      so unlike patterns passed to the ``-v`` option, simple substring patterns
+      so unlike patterns passed to the ``-k`` option, simple substring patterns
       will have to be converted using ``*`` wildcards.
 
       This affects all the :meth:`loadTestsFrom\*` methods.
@@ -1950,6 +2014,13 @@ Loading and running tests
 
       A list containing :class:`TestCase` instances that were marked as expected
       failures, but succeeded.
+
+   .. attribute:: collectedDurations
+
+      A list containing 2-tuples of test case names and floats
+      representing the elapsed time of each test which was run.
+
+      .. versionadded:: 3.12
 
    .. attribute:: shouldStop
 
@@ -2102,14 +2173,23 @@ Loading and running tests
 
       .. versionadded:: 3.4
 
+   .. method:: addDuration(test, elapsed)
 
-.. class:: TextTestResult(stream, descriptions, verbosity)
+      Called when the test case finishes.  *elapsed* is the time represented in
+      seconds, and it includes the execution of cleanup functions.
+
+      .. versionadded:: 3.12
+
+.. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
    A concrete implementation of :class:`TestResult` used by the
-   :class:`TextTestRunner`.
+   :class:`TextTestRunner`. Subclasses should accept ``**kwargs`` to ensure
+   compatibility as the interface changes.
 
    .. versionadded:: 3.2
 
+   .. versionadded:: 3.12
+      Added *durations* keyword argument.
 
 .. data:: defaultTestLoader
 
@@ -2119,7 +2199,8 @@ Loading and running tests
 
 
 .. class:: TextTestRunner(stream=None, descriptions=True, verbosity=1, failfast=False, \
-                          buffer=False, resultclass=None, warnings=None, *, tb_locals=False)
+                          buffer=False, resultclass=None, warnings=None, *, \
+                          tb_locals=False, durations=None)
 
    A basic test runner implementation that outputs results to a stream. If *stream*
    is ``None``, the default, :data:`sys.stderr` is used as the output stream. This class
@@ -2137,14 +2218,17 @@ Loading and running tests
    *warnings* to ``None``.
 
    .. versionchanged:: 3.2
-      Added the ``warnings`` argument.
+      Added the *warnings* parameter.
 
    .. versionchanged:: 3.2
       The default stream is set to :data:`sys.stderr` at instantiation time rather
       than import time.
 
    .. versionchanged:: 3.5
-      Added the tb_locals parameter.
+      Added the *tb_locals* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *durations* parameter.
 
    .. method:: _makeResult()
 
@@ -2197,7 +2281,8 @@ Loading and running tests
 
    The *testRunner* argument can either be a test runner class or an already
    created instance of it. By default ``main`` calls :func:`sys.exit` with
-   an exit code indicating success or failure of the tests run.
+   an exit code indicating success (0) or failure (1) of the tests run.
+   An exit code of 5 indicates that no tests were run.
 
    The *testLoader* argument has to be a :class:`TestLoader` instance,
    and defaults to :data:`defaultTestLoader`.
@@ -2397,13 +2482,23 @@ To add cleanup code that must be run even in the case of an exception, use
    .. versionadded:: 3.8
 
 
+.. classmethod:: enterModuleContext(cm)
+
+   Enter the supplied :term:`context manager`.  If successful, also
+   add its :meth:`~object.__exit__` method as a cleanup function by
+   :func:`addModuleCleanup` and return the result of the
+   :meth:`~object.__enter__` method.
+
+   .. versionadded:: 3.11
+
+
 .. function:: doModuleCleanups()
 
    This function is called unconditionally after :func:`tearDownModule`, or
    after :func:`setUpModule` if :func:`setUpModule` raises an exception.
 
    It is responsible for calling all the cleanup functions added by
-   :func:`addCleanupModule`. If you need cleanup functions to be called
+   :func:`addModuleCleanup`. If you need cleanup functions to be called
    *prior* to :func:`tearDownModule` then you can call
    :func:`doModuleCleanups` yourself.
 
@@ -2411,6 +2506,7 @@ To add cleanup code that must be run even in the case of an exception, use
    functions one at a time, so it can be called at any time.
 
    .. versionadded:: 3.8
+
 
 Signal Handling
 ---------------

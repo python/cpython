@@ -9,6 +9,7 @@ import unittest
 import zipapp
 import zipfile
 from test.support import requires_zlib
+from test.support import os_helper
 
 from unittest.mock import patch
 
@@ -53,6 +54,22 @@ class ZipAppTest(unittest.TestCase):
         with zipfile.ZipFile(target, 'r') as z:
             self.assertIn('foo/', z.namelist())
             self.assertIn('bar/', z.namelist())
+
+    def test_create_sorted_archive(self):
+        # Test that zipapps order their files by name
+        source = self.tmpdir / 'source'
+        source.mkdir()
+        (source / 'zed.py').touch()
+        (source / 'bin').mkdir()
+        (source / 'bin' / 'qux').touch()
+        (source / 'bin' / 'baz').touch()
+        (source / '__main__.py').touch()
+        target = io.BytesIO()
+        zipapp.create_archive(str(source), target)
+        target.seek(0)
+        with zipfile.ZipFile(target, 'r') as zf:
+            self.assertEqual(zf.namelist(),
+                ["__main__.py", "bin/", "bin/baz", "bin/qux", "zed.py"])
 
     def test_create_archive_with_filter(self):
         # Test packing a directory and using filter to specify
@@ -301,6 +318,7 @@ class ZipAppTest(unittest.TestCase):
     # (Unix only) tests that archives with shebang lines are made executable
     @unittest.skipIf(sys.platform == 'win32',
                      'Windows does not support an executable bit')
+    @os_helper.skip_unless_working_chmod
     def test_shebang_is_executable(self):
         # Test that an archive with a shebang line is made executable.
         source = self.tmpdir / 'source'

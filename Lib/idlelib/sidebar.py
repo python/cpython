@@ -25,10 +25,9 @@ def get_end_linenumber(text):
 
 def get_displaylines(text, index):
     """Display height, in lines, of a logical line in a Tk text widget."""
-    res = text.count(f"{index} linestart",
-                     f"{index} lineend",
-                     "displaylines")
-    return res[0] if res else 0
+    return text.count(f"{index} linestart",
+                      f"{index} lineend",
+                      "displaylines")
 
 def get_widget_padding(widget):
     """Get the total padding of a Tk widget, including its border."""
@@ -471,10 +470,7 @@ class ShellSidebar(BaseSideBar):
         index = text.index("@0,0")
         if index.split('.', 1)[1] != '0':
             index = text.index(f'{index}+1line linestart')
-        while True:
-            lineinfo = text.dlineinfo(index)
-            if lineinfo is None:
-                break
+        while (lineinfo := text.dlineinfo(index)) is not None:
             y = lineinfo[1]
             prev_newline_tagnames = text_tagnames(f"{index} linestart -1c")
             prompt = (

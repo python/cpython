@@ -38,7 +38,7 @@ details that are unchanged.
 
 .. seealso::
 
-   * `TkDocs <http://tkdocs.com/>`_
+   * `TkDocs <https://tkdocs.com/>`_
       Extensive tutorial on creating user interfaces with Tkinter.  Explains key concepts,
       and illustrates recommended approaches using the modern API.
 
@@ -61,7 +61,7 @@ details that are unchanged.
    * `Python and Tkinter Programming <https://www.packtpub.com/product/python-gui-programming-with-tkinter/9781788835886>`_
       By Alan Moore. (ISBN 978-1788835886)
 
-   * `Programming Python <http://learning-python.com/about-pp4e.html>`_
+   * `Programming Python <https://learning-python.com/about-pp4e.html>`_
       By Mark Lutz; has excellent coverage of Tkinter. (ISBN 978-0596158101)
 
    * `Tcl and the Tk Toolkit (2nd edition)  <https://www.amazon.com/exec/obidos/ASIN/032133633X>`_
@@ -90,7 +90,7 @@ Tcl
    (see `Threading model`_ for details).
 
 Tk
-   Tk is a `Tcl package <http://wiki.tcl.tk/37432>`_ implemented in C
+   Tk is a `Tcl package <https://wiki.tcl-lang.org/37432>`_ implemented in C
    that adds custom commands to create and manipulate GUI widgets. Each
    :class:`Tk` object embeds its own Tcl interpreter instance with Tk loaded into
    it. Tk's widgets are very customizable, though at the cost of a dated appearance.
@@ -124,16 +124,72 @@ the modern themed widget set and API::
    from tkinter import ttk
 
 
-.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=1)
+.. class:: Tk(screenName=None, baseName=None, className='Tk', useTk=True, sync=False, use=None)
 
-   The :class:`Tk` class is instantiated without arguments. This creates a toplevel
-   widget of Tk which usually is the main window of an application. Each instance
-   has its own associated Tcl interpreter.
+   Construct a toplevel Tk widget, which is usually the main window of an
+   application, and initialize a Tcl interpreter for this widget.  Each
+   instance has its own associated Tcl interpreter.
 
-   .. FIXME: The following keyword arguments are currently recognized:
+   The :class:`Tk` class is typically instantiated using all default values.
+   However, the following keyword arguments are currently recognized:
+
+   *screenName*
+      When given (as a string), sets the :envvar:`DISPLAY` environment
+      variable. (X11 only)
+   *baseName*
+      Name of the profile file.  By default, *baseName* is derived from the
+      program name (``sys.argv[0]``).
+   *className*
+      Name of the widget class.  Used as a profile file and also as the name
+      with which Tcl is invoked (*argv0* in *interp*).
+   *useTk*
+      If ``True``, initialize the Tk subsystem.  The :func:`tkinter.Tcl() <Tcl>`
+      function sets this to ``False``.
+   *sync*
+      If ``True``, execute all X server commands synchronously, so that errors
+      are reported immediately.  Can be used for debugging. (X11 only)
+   *use*
+      Specifies the *id* of the window in which to embed the application,
+      instead of it being created as an independent toplevel window. *id* must
+      be specified in the same way as the value for the -use option for
+      toplevel widgets (that is, it has a form like that returned by
+      :meth:`winfo_id`).
+
+      Note that on some platforms this will only work correctly if *id* refers
+      to a Tk frame or toplevel that has its -container option enabled.
+
+   :class:`Tk` reads and interprets profile files, named
+   :file:`.{className}.tcl` and :file:`.{baseName}.tcl`, into the Tcl
+   interpreter and calls :func:`exec` on the contents of
+   :file:`.{className}.py` and :file:`.{baseName}.py`.  The path for the
+   profile files is the :envvar:`HOME` environment variable or, if that
+   isn't defined, then :data:`os.curdir`.
+
+   .. attribute:: tk
+
+      The Tk application object created by instantiating :class:`Tk`.  This
+      provides access to the Tcl interpreter.  Each widget that is attached
+      the same instance of :class:`Tk` has the same value for its :attr:`tk`
+      attribute.
+
+   .. attribute:: master
+
+      The widget object that contains this widget.  For :class:`Tk`, the
+      *master* is :const:`None` because it is the main window.  The terms
+      *master* and *parent* are similar and sometimes used interchangeably
+      as argument names; however, calling :meth:`winfo_parent` returns a
+      string of the widget name whereas :attr:`master` returns the object.
+      *parent*/*child* reflects the tree-like relationship while
+      *master*/*slave* reflects the container structure.
+
+   .. attribute:: children
+
+      The immediate descendants of this widget as a :class:`dict` with the
+      child widget names as the keys and the child instance objects as the
+      values.
 
 
-.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=0)
+.. function:: Tcl(screenName=None, baseName=None, className='Tk', useTk=False)
 
    The :func:`Tcl` function is a factory function which creates an object much like
    that created by the :class:`Tk` class, except that it does not initialize the Tk
@@ -195,10 +251,6 @@ Additional modules:
 :mod:`tkinter.dnd`
    (experimental) Drag-and-drop support for :mod:`tkinter`. This will
    become deprecated when it is replaced with the Tk DND.
-
-:mod:`tkinter.tix`
-   (deprecated) An older third-party Tcl/Tk package that adds several new
-   widgets. Better alternatives for most can be found in :mod:`tkinter.ttk`.
 
 :mod:`turtle`
    Turtle graphics in a Tk window.
@@ -296,7 +348,7 @@ Understanding How Tkinter Wraps Tcl/Tk
 
 When your application uses Tkinter's classes and methods, internally Tkinter
 is assembling strings representing Tcl/Tk commands, and executing those
-commands in the Tcl interpreter attached to your applicaton's :class:`Tk`
+commands in the Tcl interpreter attached to your application's :class:`Tk`
 instance.
 
 Whether it's trying to navigate reference documentation, trying to find
@@ -477,24 +529,24 @@ interpreter will fail.
 
 A number of special cases exist:
 
-  * Tcl/Tk libraries can be built so they are not thread-aware. In this case,
-    :mod:`tkinter` calls the library from the originating Python thread, even
-    if this is different than the thread that created the Tcl interpreter. A global
-    lock ensures only one call occurs at a time.
+* Tcl/Tk libraries can be built so they are not thread-aware. In this case,
+  :mod:`tkinter` calls the library from the originating Python thread, even
+  if this is different than the thread that created the Tcl interpreter. A global
+  lock ensures only one call occurs at a time.
 
-  * While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
-    object (with its own interpreter), all interpreters that are part of the same
-    thread share a common event queue, which gets ugly fast. In practice, don't create
-    more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
-    them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
+* While :mod:`tkinter` allows you to create more than one instance of a :class:`Tk`
+  object (with its own interpreter), all interpreters that are part of the same
+  thread share a common event queue, which gets ugly fast. In practice, don't create
+  more than one instance of :class:`Tk` at a time. Otherwise, it's best to create
+  them in separate threads and ensure you're running a thread-aware Tcl/Tk build.
 
-  * Blocking event handlers are not the only way to prevent the Tcl interpreter from
-    reentering the event loop. It is even possible to run multiple nested event loops
-    or abandon the event loop entirely. If you're doing anything tricky when it comes
-    to events or threads, be aware of these possibilities.
+* Blocking event handlers are not the only way to prevent the Tcl interpreter from
+  reentering the event loop. It is even possible to run multiple nested event loops
+  or abandon the event loop entirely. If you're doing anything tricky when it comes
+  to events or threads, be aware of these possibilities.
 
-  * There are a few select :mod:`tkinter` functions that presently work only when
-    called from the thread that created the Tcl interpreter.
+* There are a few select :mod:`tkinter` functions that presently work only when
+  called from the thread that created the Tcl interpreter.
 
 
 Handy Reference
@@ -756,8 +808,8 @@ callback
 
 color
    Colors can be given as the names of X colors in the rgb.txt file, or as strings
-   representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit"
-   ``"#RRRGGGBBB"``, or 16 bit ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
+   representing RGB values in 4 bit: ``"#RGB"``, 8 bit: ``"#RRGGBB"``, 12 bit:
+   ``"#RRRGGGBBB"``, or 16 bit: ``"#RRRRGGGGBBBB"`` ranges, where R,G,B here
    represent any legal hex digit.  See page 160 of Ousterhout's book for details.
 
 cursor
@@ -821,8 +873,9 @@ of the bind method is::
 where:
 
 sequence
-   is a string that denotes the target kind of event.  (See the bind man page and
-   page 201 of John Ousterhout's book for details).
+   is a string that denotes the target kind of event.  (See the
+   :manpage:`bind(3tk)` man page, and page 201 of John Ousterhout's book,
+   :title-reference:`Tcl and the Tk Toolkit (2nd edition)`, for details).
 
 func
    is a Python function, taking one argument, to be invoked when the event occurs.
@@ -931,7 +984,7 @@ wherever the image was used.
 
 .. seealso::
 
-    The `Pillow <http://python-pillow.org/>`_ package adds support for
+    The `Pillow <https://python-pillow.org/>`_ package adds support for
     formats such as BMP, JPEG, TIFF, and WebP, among others.
 
 .. _tkinter-file-handlers:

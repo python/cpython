@@ -1,7 +1,8 @@
 """asyncio exceptions."""
 
 
-__all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
+__all__ = ('BrokenBarrierError',
+           'CancelledError', 'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
            'SendfileNotAvailableError')
 
@@ -55,3 +56,7 @@ class LimitOverrunError(Exception):
 
     def __reduce__(self):
         return type(self), (self.args[0], self.consumed)
+
+
+class BrokenBarrierError(RuntimeError):
+    """Barrier is broken by barrier.abort() call."""

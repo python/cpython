@@ -22,15 +22,6 @@ Glossary
 
       * The :const:`Ellipsis` built-in constant.
 
-   2to3
-      A tool that tries to convert Python 2.x code to Python 3.x code by
-      handling most of the incompatibilities which can be detected by parsing the
-      source and traversing the parse tree.
-
-      2to3 is available in the standard library as :mod:`lib2to3`; a standalone
-      entry point is provided as :file:`Tools/scripts/2to3`.  See
-      :ref:`2to3-reference`.
-
    abstract base class
       Abstract base classes complement :term:`duck-typing` by
       providing a way to define interfaces when other techniques like
@@ -92,8 +83,8 @@ Glossary
 
    asynchronous context manager
       An object which controls the environment seen in an
-      :keyword:`async with` statement by defining :meth:`__aenter__` and
-      :meth:`__aexit__` methods.  Introduced by :pep:`492`.
+      :keyword:`async with` statement by defining :meth:`~object.__aenter__` and
+      :meth:`~object.__aexit__` methods.  Introduced by :pep:`492`.
 
    asynchronous generator
       A function which returns an :term:`asynchronous generator iterator`.  It
@@ -113,36 +104,43 @@ Glossary
       An object created by a :term:`asynchronous generator` function.
 
       This is an :term:`asynchronous iterator` which when called using the
-      :meth:`__anext__` method returns an awaitable object which will execute
+      :meth:`~object.__anext__` method returns an awaitable object which will execute
       the body of the asynchronous generator function until the next
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
       location execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
-      resumes with another awaitable returned by :meth:`__anext__`, it
+      resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
       Must return an :term:`asynchronous iterator` from its
-      :meth:`__aiter__` method.  Introduced by :pep:`492`.
+      :meth:`~object.__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
-      An object that implements the :meth:`__aiter__` and :meth:`__anext__`
-      methods.  ``__anext__`` must return an :term:`awaitable` object.
+      An object that implements the :meth:`~object.__aiter__` and :meth:`~object.__anext__`
+      methods.  :meth:`~object.__anext__` must return an :term:`awaitable` object.
       :keyword:`async for` resolves the awaitables returned by an asynchronous
-      iterator's :meth:`__anext__` method until it raises a
+      iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
    attribute
-      A value associated with an object which is referenced by name using
-      dotted expressions.  For example, if an object *o* has an attribute
+      A value associated with an object which is usually referenced by name
+      using dotted expressions.
+      For example, if an object *o* has an attribute
       *a* it would be referenced as *o.a*.
+
+      It is possible to give an object an attribute whose name is not an
+      identifier as defined by :ref:`identifiers`, for example using
+      :func:`setattr`, if the object allows it.
+      Such an attribute will not be accessible using a dotted expression,
+      and would instead need to be retrieved with :func:`getattr`.
 
    awaitable
       An object that can be used in an :keyword:`await` expression.  Can be
-      a :term:`coroutine` or an object with an :meth:`__await__` method.
+      a :term:`coroutine` or an object with an :meth:`~object.__await__` method.
       See also :pep:`492`.
 
    BDFL
@@ -161,8 +159,9 @@ Glossary
       :class:`str` objects.
 
    borrowed reference
-      In Python's C API, a borrowed reference is a reference to an object.
-      It does not modify the object reference count. It becomes a dangling
+      In Python's C API, a borrowed reference is a reference to an object,
+      where the code using the object does not own the reference.
+      It becomes a dangling
       pointer if the object is destroyed. For example, a garbage collection can
       remove the last :term:`strong reference` to the object and so destroy it.
 
@@ -203,6 +202,16 @@ Glossary
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
 
+   callable
+      A callable is an object that can be called, possibly with a set
+      of arguments (see :term:`argument`), with the following syntax::
+
+         callable(argument1, argument2, argumentN)
+
+      A :term:`function`, and by extension a :term:`method`, is a callable.
+      An instance of a class that implements the :meth:`~object.__call__`
+      method is also a callable.
+
    callback
       A subroutine function which is passed as an argument to be executed at
       some point in the future.
@@ -230,7 +239,7 @@ Glossary
 
    context manager
       An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
+      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
       See :pep:`343`.
 
    context variable
@@ -282,12 +291,12 @@ Glossary
       The decorator syntax is merely syntactic sugar, the following two
       function definitions are semantically equivalent::
 
-         def f(...):
+         def f(arg):
              ...
          f = staticmethod(f)
 
          @staticmethod
-         def f(...):
+         def f(arg):
              ...
 
       The same concept exists for classes, but is less commonly used there.  See
@@ -532,7 +541,7 @@ Glossary
       machines.
 
       However, some extension modules, either standard or third-party,
-      are designed so as to release the GIL when doing computationally-intensive
+      are designed so as to release the GIL when doing computationally intensive
       tasks such as compression or hashing.  Also, the GIL is always released
       when doing I/O.
 
@@ -566,9 +575,9 @@ Glossary
       from their :func:`id`.
 
    IDLE
-      An Integrated Development Environment for Python.  IDLE is a basic editor
-      and interpreter environment which ships with the standard distribution of
-      Python.
+      An Integrated Development and Learning Environment for Python.
+      :ref:`idle` is a basic editor and interpreter environment
+      which ships with the standard distribution of Python.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -627,8 +636,8 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`__iter__` method or with a :meth:`__getitem__` method
-      that implements :term:`Sequence <sequence>` semantics.
+      with an :meth:`__iter__` method or with a :meth:`~object.__getitem__` method
+      that implements :term:`sequence` semantics.
 
       Iterables can be
       used in a :keyword:`for` loop and in many other places where a sequence is
@@ -680,9 +689,8 @@ Glossary
       :meth:`str.lower` method can serve as a key function for case insensitive
       sorts.  Alternatively, a key function can be built from a
       :keyword:`lambda` expression such as ``lambda r: (r[0], r[2])``.  Also,
-      the :mod:`operator` module provides three key function constructors:
-      :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
-      :func:`~operator.methodcaller`.  See the :ref:`Sorting HOW TO
+      :func:`operator.attrgetter`, :func:`operator.itemgetter`, and
+      :func:`operator.methodcaller` are three key function constructors.  See the :ref:`Sorting HOW TO
       <sortinghowto>` for examples of how to create and use key functions.
 
    keyword argument
@@ -707,15 +715,15 @@ Glossary
 
    locale encoding
       On Unix, it is the encoding of the LC_CTYPE locale. It can be set with
-      ``locale.setlocale(locale.LC_CTYPE, new_locale)``.
+      :func:`locale.setlocale(locale.LC_CTYPE, new_locale) <locale.setlocale>`.
 
-      On Windows, it is the ANSI code page (ex: ``cp1252``).
+      On Windows, it is the ANSI code page (ex: ``"cp1252"``).
 
-      ``locale.getpreferredencoding(False)`` can be used to get the locale
-      encoding.
+      On Android and VxWorks, Python uses ``"utf-8"`` as the locale encoding.
 
-      Python uses the :term:`filesystem encoding and error handler` to convert
-      between Unicode filenames and bytes filenames.
+      ``locale.getencoding()`` can be used to get the locale encoding.
+
+      See also the :term:`filesystem encoding and error handler`.
 
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
@@ -743,8 +751,8 @@ Glossary
 
    mapping
       A container object that supports arbitrary key lookups and implements the
-      methods specified in the :class:`~collections.abc.Mapping` or
-      :class:`~collections.abc.MutableMapping`
+      methods specified in the :class:`collections.abc.Mapping` or
+      :class:`collections.abc.MutableMapping`
       :ref:`abstract base classes <collections-abstract-base-classes>`.  Examples
       include :class:`dict`, :class:`collections.defaultdict`,
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
@@ -866,7 +874,7 @@ Glossary
 
    package
       A Python :term:`module` which can contain submodules or recursively,
-      subpackages.  Technically, a package is a Python module with an
+      subpackages.  Technically, a package is a Python module with a
       ``__path__`` attribute.
 
       See also :term:`regular package` and :term:`namespace package`.
@@ -1047,10 +1055,12 @@ Glossary
 
    reference count
       The number of references to an object.  When the reference count of an
-      object drops to zero, it is deallocated.  Reference counting is
+      object drops to zero, it is deallocated.  Some objects are
+      "immortal" and have reference counts that are never modified, and
+      therefore the objects are never deallocated.  Reference counting is
       generally not visible to Python code, but it is a key element of the
-      :term:`CPython` implementation.  The :mod:`sys` module defines a
-      :func:`~sys.getrefcount` function that programmers can call to return the
+      :term:`CPython` implementation.  Programmers can call the
+      :func:`sys.getrefcount` function to return the
       reference count for a particular object.
 
    regular package
@@ -1068,17 +1078,17 @@ Glossary
 
    sequence
       An :term:`iterable` which supports efficient element access using integer
-      indices via the :meth:`__getitem__` special method and defines a
+      indices via the :meth:`~object.__getitem__` special method and defines a
       :meth:`__len__` method that returns the length of the sequence.
       Some built-in sequence types are :class:`list`, :class:`str`,
       :class:`tuple`, and :class:`bytes`. Note that :class:`dict` also
-      supports :meth:`__getitem__` and :meth:`__len__`, but is considered a
+      supports :meth:`~object.__getitem__` and :meth:`__len__`, but is considered a
       mapping rather than a sequence because the lookups use arbitrary
       :term:`immutable` keys rather than integers.
 
       The :class:`collections.abc.Sequence` abstract base class
       defines a much richer interface that goes beyond just
-      :meth:`__getitem__` and :meth:`__len__`, adding :meth:`count`,
+      :meth:`~object.__getitem__` and :meth:`__len__`, adding :meth:`count`,
       :meth:`index`, :meth:`__contains__`, and
       :meth:`__reversed__`. Types that implement this expanded
       interface can be registered explicitly using
@@ -1100,6 +1110,21 @@ Glossary
       when several are given, such as in ``variable_name[1:3:5]``.  The bracket
       (subscript) notation uses :class:`slice` objects internally.
 
+   soft deprecated
+      A soft deprecation can be used when using an API which should no longer
+      be used to write new code, but it remains safe to continue using it in
+      existing code. The API remains documented and tested, but will not be
+      developed further (no enhancement).
+
+      The main difference between a "soft" and a (regular) "hard" deprecation
+      is that the soft deprecation does not imply scheduling the removal of the
+      deprecated API.
+
+      Another difference is that a soft deprecation does not issue a warning.
+
+      See `PEP 387: Soft Deprecation
+      <https://peps.python.org/pep-0387/#soft-deprecation>`_.
+
    special method
       .. index:: pair: special; method
 
@@ -1115,8 +1140,10 @@ Glossary
 
    strong reference
       In Python's C API, a strong reference is a reference to an object
-      which increments the object's reference count when it is created and
-      decrements the object's reference count when it is deleted.
+      which is owned by the code holding the reference.  The strong
+      reference is taken by calling :c:func:`Py_INCREF` when the
+      reference is created and released with :c:func:`Py_DECREF`
+      when the reference is deleted.
 
       The :c:func:`Py_NewRef` function can be used to create a strong reference
       to an object. Usually, the :c:func:`Py_DECREF` function must be called on
@@ -1126,7 +1153,16 @@ Glossary
       See also :term:`borrowed reference`.
 
    text encoding
-      A codec which encodes Unicode strings to bytes.
+      A string in Python is a sequence of Unicode code points (in range
+      ``U+0000``--``U+10FFFF``). To store or transfer a string, it needs to be
+      serialized as a sequence of bytes.
+
+      Serializing a string into a sequence of bytes is known as "encoding", and
+      recreating the string from the sequence of bytes is known as "decoding".
+
+      There are a variety of different text serialization
+      :ref:`codecs <standard-encodings>`, which are collectively referred to as
+      "text encodings".
 
    text file
       A :term:`file object` able to read and write :class:`str` objects.

@@ -1,3 +1,0 @@
-Specialize the CALL_FUNCTION instruction for calls to builtin types with a
-single argument. Speeds up ``range(x)``, ``list(x)``, and specifically
-``type(obj)``.

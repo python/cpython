@@ -4,7 +4,6 @@ Test script for doctest.
 
 from test import support
 from test.support import import_helper
-from test.support import os_helper
 import doctest
 import functools
 import os
@@ -14,12 +13,17 @@ import importlib.abc
 import importlib.util
 import unittest
 import tempfile
-import shutil
 import types
 import contextlib
 
+
+if not support.has_subprocess_support:
+    raise unittest.SkipTest("test_CLI requires subprocess support.")
+
+
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
+# There are also related tests in `test_doctest2` module.
 
 ######################################################################
 ## Sample Objects (used by test cases)
@@ -106,6 +110,14 @@ class SampleClass:
         42
         """
         return cls.a_class_attribute
+
+    @functools.cached_property
+    def a_cached_property(self):
+        """
+        >>> print(SampleClass(29).get())
+        29
+        """
+        return "hello"
 
     class NestedClass:
         """
@@ -455,7 +467,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from test_doctest.py:28 (1 example)>]
+    [<DocTest sample_func from test_doctest.py:32 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -511,6 +523,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -567,6 +580,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
@@ -609,6 +623,7 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
@@ -630,12 +645,33 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
+
+When used with `exclude_empty=False` we are also interested in line numbers
+of doctests that are empty.
+It used to be broken for quite some time until `bpo-28249`.
+
+    >>> from test import doctest_lineno
+    >>> tests = doctest.DocTestFinder(exclude_empty=False).find(doctest_lineno)
+    >>> for t in tests:
+    ...     print('%5s  %s' % (t.lineno, t.name))
+     None  test.doctest_lineno
+       22  test.doctest_lineno.ClassWithDocstring
+       30  test.doctest_lineno.ClassWithDoctest
+     None  test.doctest_lineno.ClassWithoutDocstring
+     None  test.doctest_lineno.MethodWrapper
+       39  test.doctest_lineno.MethodWrapper.method_with_docstring
+       45  test.doctest_lineno.MethodWrapper.method_with_doctest
+     None  test.doctest_lineno.MethodWrapper.method_without_docstring
+        4  test.doctest_lineno.func_with_docstring
+       12  test.doctest_lineno.func_with_doctest
+     None  test.doctest_lineno.func_without_docstring
 
 Turning off Recursion
 ~~~~~~~~~~~~~~~~~~~~~
@@ -683,7 +719,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 825 < len(tests) < 845 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -712,19 +748,49 @@ and 'int' is a type.
 """
 
 
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
+
+
 class TestDocTestFinder(unittest.TestCase):
 
     def test_issue35753(self):
         # This import of `call` should trigger issue35753 when
-        # `support.run_doctest` is called due to unwrap failing,
+        # DocTestFinder.find() is called due to inspect.unwrap() failing,
         # however with a patched doctest this should succeed.
         from unittest.mock import call
         dummy_module = types.ModuleType("dummy")
         dummy_module.__dict__['inject_call'] = call
-        try:
-            support.run_doctest(dummy_module, verbosity=True)
-        except ValueError as e:
-            raise support.TestFailed("Doctest unwrap failed") from e
+        finder = doctest.DocTestFinder()
+        self.assertEqual(finder.find(dummy_module), [])
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
@@ -1263,14 +1329,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:
@@ -2785,6 +2851,8 @@ in it, and use a package hook to install a custom loader; on any platform,
 at least one of the line endings will raise a ValueError for inconsistent
 whitespace if doctest does not correctly do the newline conversion.
 
+    >>> from test.support import os_helper
+    >>> import shutil
     >>> dn = tempfile.mkdtemp()
     >>> pkg = os.path.join(dn, "doctest_testpkg")
     >>> os.mkdir(pkg)
@@ -2828,7 +2896,7 @@ except UnicodeEncodeError:
     # Skip the test: the filesystem encoding is unable to encode the filename
     supports_unicode = False
 
-if supports_unicode and not support.has_no_debug_ranges():
+if supports_unicode:
     def test_unicode(): """
 Check doctest with a non-ascii filename:
 
@@ -2850,10 +2918,8 @@ Check doctest with a non-ascii filename:
         Traceback (most recent call last):
           File ...
             exec(compile(example.source, filename, "single",
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
-            ^^^^^^^^^^^^^^^^^^^^^^
         Exception: clé
     TestResults(failed=1, attempted=1)
     """
@@ -3130,25 +3196,171 @@ def test_no_trailing_whitespace_stripping():
     """
 
 
+def test_run_doctestsuite_multiple_times():
+    """
+    It was not possible to run the same DocTestSuite multiple times
+    http://bugs.python.org/issue2604
+    http://bugs.python.org/issue9736
+
+    >>> import unittest
+    >>> import test.sample_doctest
+    >>> suite = doctest.DocTestSuite(test.sample_doctest)
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    >>> suite.run(unittest.TestResult())
+    <unittest.result.TestResult run=9 errors=0 failures=4>
+    """
+
+
+def test_exception_with_note(note):
+    """
+    >>> test_exception_with_note('Note')
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('Note')  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('''Note
+    ... multiline
+    ... example''')
+    Traceback (most recent call last):
+    ValueError: Text
+    Note
+    multiline
+    example
+
+    Different note will fail the test:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = ValueError('message')
+    ...     >>> exc.add_note('note')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     ValueError: message
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 5, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        ValueError: message
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        ValueError: message
+        note
+    TestResults(failed=1, attempted=...)
+    """
+    exc = ValueError('Text')
+    exc.add_note(note)
+    raise exc
+
+
+def test_exception_with_multiple_notes():
+    """
+    >>> test_exception_with_multiple_notes()
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    One
+    Two
+    """
+    exc = ValueError('Text')
+    exc.add_note('One')
+    exc.add_note('Two')
+    raise exc
+
+
+def test_syntax_error_with_note(cls, multiline=False):
+    """
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+      File "x.py", line 23
+        bad syntax
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(IndentationError)
+    Traceback (most recent call last):
+      ...
+    IndentationError: error
+    Note
+
+    >>> test_syntax_error_with_note(TabError, multiline=True)
+    Traceback (most recent call last):
+      ...
+    TabError: error
+    Note
+    Line
+    """
+    exc = cls("error", ("x.py", 23, None, "bad syntax"))
+    exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
+
+
+def test_syntax_error_with_incorrect_expected_note():
+    """
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+    ...     >>> exc.add_note('note1')
+    ...     >>> exc.add_note('note2')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     SyntaxError: error
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        SyntaxError: error
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        SyntaxError: error
+        note1
+        note2
+    TestResults(failed=1, attempted=...)
+    """
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())
     return tests
 
 
-def test_coverage(coverdir):
-    trace = import_helper.import_module('trace')
-    tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                         trace=0, count=1)
-    tracer.run('test_main()')
-    r = tracer.results()
-    print('Writing coverage results...')
-    r.write_results(show_missing=True, summary=True,
-                    coverdir=coverdir)
-
-
 if __name__ == '__main__':
-    if '-c' in sys.argv:
-        test_coverage('/tmp/doctest.cover')
-    else:
-        unittest.main()
+    unittest.main(module='test.test_doctest')

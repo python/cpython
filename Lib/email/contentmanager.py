@@ -72,12 +72,14 @@ def get_non_text_content(msg):
     return msg.get_payload(decode=True)
 for maintype in 'audio image video application'.split():
     raw_data_manager.add_get_handler(maintype, get_non_text_content)
+del maintype
 
 
 def get_message_content(msg):
     return msg.get_payload(0)
 for subtype in 'rfc822 external-body'.split():
     raw_data_manager.add_get_handler('message/'+subtype, get_message_content)
+del subtype
 
 
 def get_and_fixup_unknown_message_content(msg):
@@ -246,3 +248,4 @@ def set_bytes_content(msg, data, maintype, subtype, cte='base64',
     _finalize_set(msg, disposition, filename, cid, params)
 for typ in (bytes, bytearray, memoryview):
     raw_data_manager.add_set_handler(typ, set_bytes_content)
+del typ

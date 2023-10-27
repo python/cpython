@@ -7,6 +7,7 @@ import io
 import itertools
 import pprint
 import random
+import re
 import test.support
 import test.test_set
 import types
@@ -203,7 +204,7 @@ class QueryTestCase(unittest.TestCase):
     def test_unreadable(self):
         # Not recursive but not readable anyway
         pp = pprint.PrettyPrinter()
-        for unreadable in type(3), pprint, pprint.isrecursive:
+        for unreadable in object(), int, pprint, pprint.isrecursive:
             # module-level convenience functions
             self.assertFalse(pprint.isrecursive(unreadable),
                              "expected not isrecursive for %r" % (unreadable,))
@@ -535,7 +536,10 @@ AdvancedNamespace(the=0,
     def test_dataclass_no_repr(self):
         dc = dataclass3()
         formatted = pprint.pformat(dc, width=10)
-        self.assertRegex(formatted, r"<test.test_pprint.dataclass3 object at \w+>")
+        self.assertRegex(
+            formatted,
+            fr"<{re.escape(__name__)}.dataclass3 object at \w+>",
+        )
 
     def test_recursive_dataclass(self):
         dc = dataclass4(None)

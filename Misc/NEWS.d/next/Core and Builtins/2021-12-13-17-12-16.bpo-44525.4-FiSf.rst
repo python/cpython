@@ -1,8 +1,0 @@
-Replace the four call bytecode instructions which one pre-call instruction
-and two call instructions.
-
-Removes ``CALL_FUNCTION``, ``CALL_FUNCTION_KW``, ``CALL_METHOD`` and
-``CALL_METHOD_KW``.
-
-Adds ``CALL_NO_KW`` and ``CALL_KW`` call instructions, and
-``PRECALL_METHOD`` prefix for pairing with ``LOAD_METHOD``.

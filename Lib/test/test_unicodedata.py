@@ -18,7 +18,7 @@ from test.support import (open_urlresource, requires_resource, script_helper,
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '4739770dd4d0e5f1b1677accfc3552ed3c8ef326'
+    expectedchecksum = '63aa77dcb36b0e1df082ee2a6071caeda7f0955e'
 
     @requires_resource('cpu')
     def test_method_checksum(self):
@@ -71,7 +71,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '98d602e1f69d5c5bb8a5910c40bbbad4e18e8370'
+    expectedchecksum = '232affd2a50ec4bd69d2482aa0291385cbdefaba'
 
     @requires_resource('cpu')
     def test_function_checksum(self):
@@ -90,10 +90,19 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
                 self.db.decomposition(char),
                 str(self.db.mirrored(char)),
                 str(self.db.combining(char)),
+                unicodedata.east_asian_width(char),
+                self.db.name(char, ""),
             ]
             h.update(''.join(data).encode("ascii"))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
+
+    @requires_resource('cpu')
+    def test_name_inverse_lookup(self):
+        for i in range(sys.maxunicode + 1):
+            char = chr(i)
+            if looked_name := self.db.name(char, None):
+                self.assertEqual(self.db.lookup(looked_name), char)
 
     def test_digit(self):
         self.assertEqual(self.db.digit('A', None), None)
@@ -220,6 +229,23 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(eaw('\u2010'), 'A')
         self.assertEqual(eaw('\U00020000'), 'W')
 
+    def test_east_asian_width_unassigned(self):
+        eaw = self.db.east_asian_width
+        # unassigned
+        for char in '\u0530\u0ecf\u10c6\u20fc\uaaca\U000107bd\U000115f2':
+            self.assertEqual(eaw(char), 'N')
+            self.assertIs(self.db.name(char, None), None)
+
+        # unassigned but reserved for CJK
+        for char in '\uFA6E\uFADA\U0002A6E0\U0002FA20\U0003134B\U0003FFFD':
+            self.assertEqual(eaw(char), 'W')
+            self.assertIs(self.db.name(char, None), None)
+
+        # private use areas
+        for char in '\uE000\uF800\U000F0000\U000FFFEE\U00100000\U0010FFF0':
+            self.assertEqual(eaw(char), 'A')
+            self.assertIs(self.db.name(char, None), None)
+
     def test_east_asian_width_9_0_changes(self):
         self.assertEqual(self.db.ucd_3_2_0.east_asian_width('\u231a'), 'N')
         self.assertEqual(self.db.east_asian_width('\u231a'), 'W')
@@ -287,6 +313,7 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         self.assertTrue("\u1d79".upper()=='\ua77d')
         self.assertTrue(".".upper()=='.')
 
+    @requires_resource('cpu')
     def test_bug_5828(self):
         self.assertEqual("\u1d79".lower(), "\u1d79")
         # Only U+0000 should have U+0000 as its upper/lower/titlecase variant
@@ -327,6 +354,7 @@ class NormalizationTest(unittest.TestCase):
         return "".join([chr(x) for x in data])
 
     @requires_resource('network')
+    @requires_resource('cpu')
     def test_normalization(self):
         TESTDATAFILE = "NormalizationTest.txt"
         TESTDATAURL = f"http://www.pythontest.net/unicode/{unicodedata.unidata_version}/{TESTDATAFILE}"
@@ -338,8 +366,8 @@ class NormalizationTest(unittest.TestCase):
         except PermissionError:
             self.skipTest(f"Permission error when downloading {TESTDATAURL} "
                           f"into the test data directory")
-        except (OSError, HTTPException):
-            self.fail(f"Could not retrieve {TESTDATAURL}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Failed to download {TESTDATAURL}: {exc}")
 
         with testdata:
             self.run_normalization_tests(testdata)

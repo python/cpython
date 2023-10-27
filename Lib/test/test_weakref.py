@@ -14,6 +14,7 @@ import random
 from test import support
 from test.support import script_helper, ALWAYS_EQ
 from test.support import gc_collect
+from test.support import threading_helper
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -114,6 +115,17 @@ class ReferencesTestCase(TestBase):
         # Dead reference:
         del o
         repr(wr)
+
+    def test_repr_failure_gh99184(self):
+        class MyConfig(dict):
+            def __getattr__(self, x):
+                return self[x]
+
+        obj = MyConfig(offset=5)
+        obj_weakref = weakref.ref(obj)
+
+        self.assertIn('MyConfig', repr(obj_weakref))
+        self.assertIn('MyConfig', str(obj_weakref))
 
     def test_basic_callback(self):
         self.check_basic_callback(C)
@@ -596,7 +608,7 @@ class ReferencesTestCase(TestBase):
         # deallocation of c2.
         del c2
 
-    def test_callback_in_cycle_1(self):
+    def test_callback_in_cycle(self):
         import gc
 
         class J(object):
@@ -636,40 +648,11 @@ class ReferencesTestCase(TestBase):
         del I, J, II
         gc.collect()
 
-    def test_callback_in_cycle_2(self):
+    def test_callback_reachable_one_way(self):
         import gc
 
-        # This is just like test_callback_in_cycle_1, except that II is an
-        # old-style class.  The symptom is different then:  an instance of an
-        # old-style class looks in its own __dict__ first.  'J' happens to
-        # get cleared from I.__dict__ before 'wr', and 'J' was never in II's
-        # __dict__, so the attribute isn't found.  The difference is that
-        # the old-style II doesn't have a NULL __mro__ (it doesn't have any
-        # __mro__), so no segfault occurs.  Instead it got:
-        #    test_callback_in_cycle_2 (__main__.ReferencesTestCase) ...
-        #    Exception exceptions.AttributeError:
-        #   "II instance has no attribute 'J'" in <bound method II.acallback
-        #       of <?.II instance at 0x00B9B4B8>> ignored
-
-        class J(object):
-            pass
-
-        class II:
-            def acallback(self, ignore):
-                self.J
-
-        I = II()
-        I.J = J
-        I.wr = weakref.ref(J, I.acallback)
-
-        del I, J, II
-        gc.collect()
-
-    def test_callback_in_cycle_3(self):
-        import gc
-
-        # This one broke the first patch that fixed the last two.  In this
-        # case, the objects reachable from the callback aren't also reachable
+        # This one broke the first patch that fixed the previous test. In this case,
+        # the objects reachable from the callback aren't also reachable
         # from the object (c1) *triggering* the callback:  you can get to
         # c1 from c2, but not vice-versa.  The result was that c2's __dict__
         # got tp_clear'ed by the time the c2.cb callback got invoked.
@@ -689,10 +672,10 @@ class ReferencesTestCase(TestBase):
         del c1, c2
         gc.collect()
 
-    def test_callback_in_cycle_4(self):
+    def test_callback_different_classes(self):
         import gc
 
-        # Like test_callback_in_cycle_3, except c2 and c1 have different
+        # Like test_callback_reachable_one_way, except c2 and c1 have different
         # classes.  c2's class (C) isn't reachable from c1 then, so protecting
         # objects reachable from the dying object (c1) isn't enough to stop
         # c2's class (C) from getting tp_clear'ed before c2.cb is invoked.
@@ -1851,6 +1834,7 @@ class MappingTestCase(TestBase):
         dict = weakref.WeakKeyDictionary()
         self.assertRegex(repr(dict), '<WeakKeyDictionary at 0x.*>')
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_setdefault(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
@@ -1859,6 +1843,7 @@ class MappingTestCase(TestBase):
                 self.assertIsNot(x, None)  # we never put None in there!
                 del x
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_pop(self):
         d = weakref.WeakValueDictionary()
         with collect_in_thread():
@@ -1867,6 +1852,7 @@ class MappingTestCase(TestBase):
                 x = d.pop(10, 10)
                 self.assertIsNot(x, None)  # we never put None in there!
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_valued_consistency(self):
         # Issue #28427: old keys should not remove new values from
         # WeakValueDictionary when collecting from another thread.
@@ -1940,21 +1926,27 @@ class MappingTestCase(TestBase):
         if exc:
             raise exc[0]
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_key_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, False)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_key_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakKeyDictionary, True)
 
+    @threading_helper.requires_working_threading()
     def test_threaded_weak_value_dict_copy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakValueDictionary, False)
 
+    @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threaded_weak_value_dict_deepcopy(self):
         # Issue #35615: Weakref keys or values getting GC'ed during dict
         # copying should not result in a crash.
@@ -2144,6 +2136,17 @@ class FinalizeTestCase(unittest.TestCase):
         out = out.decode('ascii').splitlines()
         self.assertEqual(out, ['f4 foobar', 'f3 error', 'g1', 'f1 foobar'])
         self.assertTrue(b'ZeroDivisionError' in err)
+
+
+class ModuleTestCase(unittest.TestCase):
+    def test_names(self):
+        for name in ('ReferenceType', 'ProxyType', 'CallableProxyType',
+                     'WeakMethod', 'WeakSet', 'WeakKeyDictionary', 'WeakValueDictionary'):
+            obj = getattr(weakref, name)
+            if name != 'WeakSet':
+                self.assertEqual(obj.__module__, 'weakref')
+            self.assertEqual(obj.__name__, name)
+            self.assertEqual(obj.__qualname__, name)
 
 
 libreftest = """ Doctest for examples in the library reference: weakref.rst

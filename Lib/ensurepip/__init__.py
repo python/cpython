@@ -9,11 +9,9 @@ from importlib import resources
 
 
 __all__ = ["version", "bootstrap"]
-_PACKAGE_NAMES = ('setuptools', 'pip')
-_SETUPTOOLS_VERSION = "58.1.0"
-_PIP_VERSION = "21.2.4"
+_PACKAGE_NAMES = ('pip',)
+_PIP_VERSION = "23.2.1"
 _PROJECTS = [
-    ("setuptools", _SETUPTOOLS_VERSION, "py3"),
     ("pip", _PIP_VERSION, "py3"),
 ]
 
@@ -89,8 +87,18 @@ sys.path = {additional_paths or []} + sys.path
 sys.argv[1:] = {args}
 runpy.run_module("pip", run_name="__main__", alter_sys=True)
 """
-    return subprocess.run([sys.executable, '-W', 'ignore::DeprecationWarning',
-                           "-c", code], check=True).returncode
+
+    cmd = [
+        sys.executable,
+        '-W',
+        'ignore::DeprecationWarning',
+        '-c',
+        code,
+    ]
+    if sys.flags.isolated:
+        # run code in isolated mode if currently running isolated
+        cmd.insert(1, '-I')
+    return subprocess.run(cmd, check=True).returncode
 
 
 def version():
@@ -143,17 +151,17 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
 
     _disable_pip_configuration_settings()
 
-    # By default, installing pip and setuptools installs all of the
+    # By default, installing pip installs all of the
     # following scripts (X.Y == running Python version):
     #
-    #   pip, pipX, pipX.Y, easy_install, easy_install-X.Y
+    #   pip, pipX, pipX.Y
     #
     # pip 1.5+ allows ensurepip to request that some of those be left out
     if altinstall:
-        # omit pip, pipX and easy_install
+        # omit pip, pipX
         os.environ["ENSUREPIP_OPTIONS"] = "altinstall"
     elif not default_pip:
-        # omit pip and easy_install
+        # omit pip
         os.environ["ENSUREPIP_OPTIONS"] = "install"
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -261,14 +269,14 @@ def _main(argv=None):
         action="store_true",
         default=False,
         help=("Make an alternate install, installing only the X.Y versioned "
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
+              "scripts (Default: pipX, pipX.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts."),
+              "in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

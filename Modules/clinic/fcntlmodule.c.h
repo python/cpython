@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_fileutils.h"     // _PyLong_FileDescriptor_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(fcntl_fcntl__doc__,
 "fcntl($module, fd, cmd, arg=0, /)\n"
 "--\n"
@@ -19,7 +22,7 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
 "corresponding to the return value of the fcntl call in the C code.");
 
 #define FCNTL_FCNTL_METHODDEF    \
-    {"fcntl", (PyCFunction)(void(*)(void))fcntl_fcntl, METH_FASTCALL, fcntl_fcntl__doc__},
+    {"fcntl", _PyCFunction_CAST(fcntl_fcntl), METH_FASTCALL, fcntl_fcntl__doc__},
 
 static PyObject *
 fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
@@ -38,7 +41,7 @@ fcntl_fcntl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -87,7 +90,7 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
 "code.");
 
 #define FCNTL_IOCTL_METHODDEF    \
-    {"ioctl", (PyCFunction)(void(*)(void))fcntl_ioctl, METH_FASTCALL, fcntl_ioctl__doc__},
+    {"ioctl", _PyCFunction_CAST(fcntl_ioctl), METH_FASTCALL, fcntl_ioctl__doc__},
 
 static PyObject *
 fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
@@ -140,7 +143,7 @@ PyDoc_STRVAR(fcntl_flock__doc__,
 "function is emulated using fcntl()).");
 
 #define FCNTL_FLOCK_METHODDEF    \
-    {"flock", (PyCFunction)(void(*)(void))fcntl_flock, METH_FASTCALL, fcntl_flock__doc__},
+    {"flock", _PyCFunction_CAST(fcntl_flock), METH_FASTCALL, fcntl_flock__doc__},
 
 static PyObject *
 fcntl_flock_impl(PyObject *module, int fd, int code);
@@ -158,7 +161,7 @@ fcntl_flock(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -196,7 +199,7 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
+    {"lockf", _PyCFunction_CAST(fcntl_lockf), METH_FASTCALL, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
@@ -218,7 +221,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyLong_FileDescriptor_Converter(args[0], &fd)) {
         goto exit;
     }
-    code = _PyLong_AsInt(args[1]);
+    code = PyLong_AsInt(args[1]);
     if (code == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -233,7 +236,7 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 5) {
         goto skip_optional;
     }
-    whence = _PyLong_AsInt(args[4]);
+    whence = PyLong_AsInt(args[4]);
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -243,4 +246,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8ea34bd0f7cf25ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=732e33ba92042031 input=a9049054013a1b77]*/

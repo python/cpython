@@ -22,7 +22,7 @@
 
 This module provides :term:`abstract base classes <abstract base class>` that
 can be used to test whether a class provides a particular interface; for
-example, whether it is hashable or whether it is a mapping.
+example, whether it is :term:`hashable` or whether it is a mapping.
 
 An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
@@ -177,6 +177,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 :class:`AsyncIterable` [1]_                           ``__aiter__``
 :class:`AsyncIterator` [1]_    :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 :class:`AsyncGenerator` [1]_   :class:`AsyncIterator` ``asend``, ``athrow``   ``aclose``, ``__aiter__``, ``__anext__``
+:class:`Buffer` [1]_                                  ``__buffer__``
 ============================== ====================== ======================= ====================================================
 
 
@@ -191,7 +192,7 @@ ABC                            Inherits from          Abstract Methods        Mi
 .. [2] Checking ``isinstance(obj, Iterable)`` detects classes that are
    registered as :class:`Iterable` or that have an :meth:`__iter__`
    method, but it does not detect classes that iterate with the
-   :meth:`__getitem__` method.  The only reliable way to determine
+   :meth:`~object.__getitem__` method.  The only reliable way to determine
    whether an object is :term:`iterable` is to call ``iter(obj)``.
 
 
@@ -221,7 +222,7 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Checking ``isinstance(obj, Iterable)`` detects classes that are registered
    as :class:`Iterable` or that have an :meth:`__iter__` method, but it does
-   not detect classes that iterate with the :meth:`__getitem__` method.
+   not detect classes that iterate with the :meth:`~object.__getitem__` method.
    The only reliable way to determine whether an object is :term:`iterable`
    is to call ``iter(obj)``.
 
@@ -261,8 +262,8 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    Implementation note: Some of the mixin methods, such as
    :meth:`__iter__`, :meth:`__reversed__` and :meth:`index`, make
-   repeated calls to the underlying :meth:`__getitem__` method.
-   Consequently, if :meth:`__getitem__` is implemented with constant
+   repeated calls to the underlying :meth:`~object.__getitem__` method.
+   Consequently, if :meth:`~object.__getitem__` is implemented with constant
    access speed, the mixin methods will have linear performance;
    however, if the underlying method is linear (as it would be with a
    linked list), the mixins will have quadratic performance and will
@@ -271,6 +272,12 @@ Collections Abstract Base Classes -- Detailed Descriptions
    .. versionchanged:: 3.5
       The index() method added support for *stop* and *start*
       arguments.
+
+   .. deprecated-removed:: 3.12 3.14
+      The :class:`ByteString` ABC has been deprecated.
+      For use in typing, prefer a union, like ``bytes | bytearray``, or
+      :class:`collections.abc.Buffer`.
+      For use as an ABC, prefer :class:`Sequence` or :class:`collections.abc.Buffer`.
 
 .. class:: Set
            MutableSet
@@ -346,6 +353,13 @@ Collections Abstract Base Classes -- Detailed Descriptions
 
    .. versionadded:: 3.6
 
+.. class:: Buffer
+
+   ABC for classes that provide the :meth:`~object.__buffer__` method,
+   implementing the :ref:`buffer protocol <bufferobjects>`. See :pep:`688`.
+
+   .. versionadded:: 3.12
+
 Examples and Recipes
 --------------------
 
@@ -406,7 +420,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 (3)
    The :class:`Set` mixin provides a :meth:`_hash` method to compute a hash value
    for the set; however, :meth:`__hash__` is not defined because not all sets
-   are hashable or immutable.  To add set hashability using mixins,
+   are :term:`hashable` or immutable.  To add set hashability using mixins,
    inherit from both :meth:`Set` and :meth:`Hashable`, then define
    ``__hash__ = Set._hash``.
 

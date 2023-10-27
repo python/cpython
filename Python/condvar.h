@@ -41,7 +41,8 @@
 #define _CONDVAR_IMPL_H_
 
 #include "Python.h"
-#include "pycore_condvar.h"
+#include "pycore_pythread.h"      // _POSIX_THREADS
+
 
 #ifdef _POSIX_THREADS
 /*
@@ -68,9 +69,9 @@ void _PyThread_cond_after(long long us, struct timespec *abs);
 Py_LOCAL_INLINE(int)
 PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
-    struct timespec abs;
-    _PyThread_cond_after(us, &abs);
-    int ret = pthread_cond_timedwait(cond, mut, &abs);
+    struct timespec abs_timeout;
+    _PyThread_cond_after(us, &abs_timeout);
+    int ret = pthread_cond_timedwait(cond, mut, &abs_timeout);
     if (ret == ETIMEDOUT) {
         return 1;
     }

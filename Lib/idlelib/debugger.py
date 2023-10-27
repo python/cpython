@@ -49,9 +49,9 @@ class Idb(bdb.Bdb):
         filename = code.co_filename
         lineno = frame.f_lineno
         basename = os.path.basename(filename)
-        message = "%s:%s" % (basename, lineno)
+        message = f"{basename}:{lineno}"
         if code.co_name != "?":
-            message = "%s: %s()" % (message, code.co_name)
+            message = f"{message}: {code.co_name}()"
         return message
 
 
@@ -213,7 +213,8 @@ class Debugger:
                 m1 = "%s" % str(type)
             if value is not None:
                 try:
-                    m1 = "%s: %s" % (m1, str(value))
+                   # TODO redo entire section, tries not needed.
+                    m1 = f"{m1}: {value}"
                 except:
                     pass
             bg = "yellow"
@@ -508,7 +509,7 @@ class NamespaceViewer:
             # There is also an obscure bug in sorted(dict) where the
             # interpreter gets into a loop requesting non-existing dict[0],
             # dict[1], dict[2], etc from the debugger_r.DictProxy.
-            ###
+            # TODO recheck above; see debugger_r 159ff, debugobj 60.
             keys_list = dict.keys()
             names = sorted(keys_list)
             ###

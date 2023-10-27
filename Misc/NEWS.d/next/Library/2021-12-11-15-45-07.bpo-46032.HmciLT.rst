@@ -1,5 +1,0 @@
-The ``registry()`` method of :func:`functools.singledispatch` functions
-checks now the first argument or the first parameter annotation and raises a
-TypeError if it is not supported. Previously unsupported "types" were
-ignored (e.g. ``typing.List[int]``) or caused an error at calling time (e.g.
-``list[int]``).

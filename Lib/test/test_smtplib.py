@@ -21,13 +21,13 @@ from test import support, mock_socket
 from test.support import hashlib_helper
 from test.support import socket_helper
 from test.support import threading_helper
+from test.support import asyncore
 from unittest.mock import Mock
 
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore', DeprecationWarning)
-    import asyncore
-    import smtpd
+from . import smtpd
+
+
+support.requires_working_socket(module=True)
 
 HOST = socket_helper.HOST
 
@@ -831,6 +831,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
     def __init__(self, extra_features, *args, **kw):
         self._extrafeatures = ''.join(
             [ "250-{0}\r\n".format(x) for x in extra_features ])
+        self.all_received_lines = []
         super(SimSMTPChannel, self).__init__(*args, **kw)
 
     # AUTH related stuff.  It would be nice if support for this were in smtpd.
@@ -845,6 +846,7 @@ class SimSMTPChannel(smtpd.SMTPChannel):
                 self.smtp_state = self.COMMAND
                 self.push('%s %s' % (e.smtp_code, e.smtp_error))
             return
+        self.all_received_lines.append(self.received_lines)
         super().found_terminator()
 
 
@@ -1171,7 +1173,7 @@ class SMTPSimTests(unittest.TestCase):
         finally:
             smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
         smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
@@ -1180,7 +1182,7 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
-    @hashlib_helper.requires_hashdigest('md5')
+    @hashlib_helper.requires_hashdigest('md5', openssl=True)
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
         self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
@@ -1348,6 +1350,18 @@ class SMTPSimTests(unittest.TestCase):
 
         self.assertEqual(self.serv._addresses['from'], 'michael@example.com')
         self.assertEqual(self.serv._addresses['tos'], ['rene@example.com'])
+
+    def test_lowercase_mail_from_rcpt_to(self):
+        m = 'A test message'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        smtp.sendmail('John', 'Sally', m)
+
+        self.assertIn(['mail from:<John> size=14'], self.serv._SMTPchannel.all_received_lines)
+        self.assertIn(['rcpt to:<Sally>'], self.serv._SMTPchannel.all_received_lines)
 
 
 class SimSMTPUTF8Server(SimSMTPServer):

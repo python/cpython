@@ -53,7 +53,10 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
-        expected = sorted({'None.%s%s' % (x, '(' if x != '__doc__' else '')
+        expected = sorted({'None.%s%s' % (x,
+                                          '()' if x == '__init_subclass__'
+                                          else '' if x == '__doc__'
+                                          else '(')
                            for x in dir(None)})
         self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
         self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)
@@ -138,6 +141,9 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('el', 0), 'elif ')
         self.assertEqual(completer.complete('el', 1), 'else')
         self.assertEqual(completer.complete('tr', 0), 'try:')
+        self.assertEqual(completer.complete('_', 0), '_')
+        self.assertEqual(completer.complete('match', 0), 'match ')
+        self.assertEqual(completer.complete('case', 0), 'case ')
 
     def test_duplicate_globals(self):
         namespace = {

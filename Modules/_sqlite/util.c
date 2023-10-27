@@ -21,20 +21,13 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "module.h"
+#include "pycore_long.h"          // _PyLong_AsByteArray()
 #include "connection.h"
-
-int
-pysqlite_step(sqlite3_stmt *statement)
-{
-    int rc;
-
-    Py_BEGIN_ALLOW_THREADS
-    rc = sqlite3_step(statement);
-    Py_END_ALLOW_THREADS
-
-    return rc;
-}
 
 // Returns non-NULL if a new exception should be raised
 static PyObject *
@@ -71,7 +64,6 @@ get_exception_class(pysqlite_state *state, int errorcode)
         case SQLITE_MISMATCH:
             return state->IntegrityError;
         case SQLITE_MISUSE:
-            return state->ProgrammingError;
         case SQLITE_RANGE:
             return state->InterfaceError;
         default:

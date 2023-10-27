@@ -155,6 +155,21 @@ class AnyDBMTestCase:
             self.assertNotIn(b'xxx', d)
             self.assertRaises(KeyError, lambda: d[b'xxx'])
 
+    def test_clear(self):
+        with dbm.open(_fname, 'c') as d:
+            self.assertEqual(d.keys(), [])
+            a = [(b'a', b'b'), (b'12345678910', b'019237410982340912840198242')]
+            for k, v in a:
+                d[k] = v
+            for k, _ in a:
+                self.assertIn(k, d)
+            self.assertEqual(len(d), len(a))
+
+            d.clear()
+            self.assertEqual(len(d), 0)
+            for k, _ in a:
+                self.assertNotIn(k, d)
+
     def setUp(self):
         self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
         dbm._defaultmod = self.module

@@ -32,12 +32,16 @@ EXTENSION_PREFIX = """\
 #include "pegen.h"
 
 #if defined(Py_DEBUG) && defined(Py_BUILD_CORE)
-#  define D(x) if (Py_DebugFlag) x;
+#  define D(x) if (p->debug) { x; }
 #else
 #  define D(x)
 #endif
 
-# define MAXSTACK 6000
+#ifdef __wasi__
+#  define MAXSTACK 4000
+#else
+#  define MAXSTACK 6000
+#endif
 
 """
 
@@ -64,6 +68,7 @@ class NodeTypes(Enum):
     KEYWORD = 4
     SOFT_KEYWORD = 5
     CUT_OPERATOR = 6
+    F_STRING_CHUNK = 7
 
 
 BASE_NODETYPES = {
@@ -122,6 +127,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.exact_tokens = exact_tokens
         self.non_exact_tokens = non_exact_tokens
         self.cache: Dict[Any, FunctionCall] = {}
+        self.cleanup_statements: List[str] = []
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
         return FunctionCall(
@@ -364,18 +370,20 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self._varname_counter = 0
         self.debug = debug
         self.skip_actions = skip_actions
+        self.cleanup_statements: List[str] = []
 
     def add_level(self) -> None:
         self.print("if (p->level++ == MAXSTACK) {")
         with self.indent():
-            self.print("p->error_indicator = 1;")
-            self.print("PyErr_NoMemory();")
+            self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
 
     def remove_level(self) -> None:
         self.print("p->level--;")
 
     def add_return(self, ret_val: str) -> None:
+        for stmt in self.cleanup_statements:
+            self.print(stmt)
         self.remove_level()
         self.print(f"return {ret_val};")
 
@@ -547,9 +555,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     f"_PyPegen_update_memo(p, _mark, {node.name}_type, _res)", "_res"
                 )
                 self.print("p->mark = _mark;")
-                self.print("p->in_raw_rule++;")
                 self.print(f"void *_raw = {node.name}_raw(p);")
-                self.print("p->in_raw_rule--;")
                 self.print("if (p->error_indicator) {")
                 with self.indent():
                     self.add_return("NULL")
@@ -613,7 +619,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
-            self.print("int _start_mark = p->mark;")
+            if memoize:
+                self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
             self.print("Py_ssize_t _children_capacity = 1;")
@@ -636,7 +643,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
             self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
-            if node.name:
+            if memoize and node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
             self.add_return("_seq")
 
@@ -663,10 +670,21 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
             self._set_up_rule_memoization(node, result_type)
 
         self.print("{")
+
+        if node.name.endswith("without_invalid"):
+            with self.indent():
+                self.print("int _prev_call_invalid = p->call_invalid_rules;")
+                self.print("p->call_invalid_rules = 0;")
+                self.cleanup_statements.append("p->call_invalid_rules = _prev_call_invalid;")
+
         if is_loop:
             self._handle_loop_rule_body(node, rhs)
         else:
             self._handle_default_rule_body(node, rhs, result_type)
+
+        if node.name.endswith("without_invalid"):
+            self.cleanup_statements.pop()
+
         self.print("}")
 
     def visit_NamedItem(self, node: NamedItem) -> None:
@@ -784,7 +802,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print(
                     "void **_new_children = PyMem_Realloc(_children, _children_capacity*sizeof(void *));"
                 )
-                self.out_of_memory_return(f"!_new_children")
+                self.out_of_memory_return(f"!_new_children", cleanup_code="PyMem_Free(_children);")
                 self.print("_children = _new_children;")
             self.print("}")
             self.print("_children[_n++] = _res;")

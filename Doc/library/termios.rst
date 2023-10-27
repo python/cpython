@@ -43,10 +43,20 @@ The module defines the following functions:
 
    Set the tty attributes for file descriptor *fd* from the *attributes*, which is
    a list like the one returned by :func:`tcgetattr`.  The *when* argument
-   determines when the attributes are changed: :const:`TCSANOW` to change
-   immediately, :const:`TCSADRAIN` to change after transmitting all queued output,
-   or :const:`TCSAFLUSH` to change after transmitting all queued output and
-   discarding all queued input.
+   determines when the attributes are changed:
+
+   .. data:: TCSANOW
+
+      Change attributes immediately.
+
+   .. data:: TCSADRAIN
+
+      Change attributes after transmitting all queued output.
+
+   .. data:: TCSAFLUSH
+
+      Change attributes after transmitting all queued output and
+      discarding all queued input.
 
 
 .. function:: tcsendbreak(fd, duration)
@@ -85,11 +95,11 @@ The module defines the following functions:
 
 .. function:: tcsetwinsize(fd, winsize)
 
-    Set the tty window size for file descriptor *fd* from *winsize*, which is
-    a two-item tuple ``(ws_row, ws_col)`` like the one returned by
-    :func:`tcgetwinsize`. Requires at least one of the pairs
-    (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
-    (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
+   Set the tty window size for file descriptor *fd* from *winsize*, which is
+   a two-item tuple ``(ws_row, ws_col)`` like the one returned by
+   :func:`tcgetwinsize`. Requires at least one of the pairs
+   (:const:`termios.TIOCGWINSZ`, :const:`termios.TIOCSWINSZ`);
+   (:const:`termios.TIOCGSIZE`, :const:`termios.TIOCSSIZE`) to be defined.
 
    .. versionadded:: 3.11
 

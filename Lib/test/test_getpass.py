@@ -28,6 +28,9 @@ class GetpassGetuserTest(unittest.TestCase):
             getpass.getuser()
         except ImportError: # in case there's no pwd module
             pass
+        except KeyError:
+            # current user has no pwd entry
+            pass
         self.assertEqual(
             environ.get.call_args_list,
             [mock.call(x) for x in ('LOGNAME', 'USER', 'LNAME', 'USERNAME')])
