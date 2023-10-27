@@ -22,13 +22,13 @@
 // Forward declarations
 static struct PyModuleDef thread_module;
 
-
+// Module state
 typedef struct {
     PyTypeObject *excepthook_type;
     PyTypeObject *lock_type;
     PyTypeObject *local_type;
     PyTypeObject *local_dummy_type;
-    PyObject *joinable_dict;
+    PyTypeObject *thread_handle_type;
 } thread_module_state;
 
 static inline thread_module_state*
@@ -39,25 +39,127 @@ get_thread_state(PyObject *module)
     return (thread_module_state *)state;
 }
 
-static int get_joinable_thread(thread_module_state* state, PyObject* ident_obj,
-                               unsigned long *ident, Py_uintptr_t *handle) {
-    PyObject* handle_obj = PyDict_GetItemWithError(state->joinable_dict, ident_obj);
-    if (handle_obj == NULL) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError, "the given thread is not joinable");
-        }
-        return -1;
+// _ThreadHandle type
+
+typedef struct {
+    PyObject_HEAD
+    unsigned long ident;  // TODO ULL instead
+    Py_uintptr_t handle;
+    char joinable;
+} ThreadHandleObject;
+
+static ThreadHandleObject*
+new_thread_handle(thread_module_state* state)
+{
+    ThreadHandleObject* self = PyObject_New(ThreadHandleObject, state->thread_handle_type);
+    if (self == NULL) {
+        return NULL;
     }
-    *ident = PyLong_AsUnsignedLong(ident_obj);
-    unsigned long long ull_handle = PyLong_AsUnsignedLongLong(handle_obj);
-    if ((*ident == (unsigned long) -1 || ull_handle == (unsigned long long) -1)
-        && PyErr_Occurred()) {
-        // This should not occur as we control the contents of state->joinable_dict
-        return -1;
-    }
-    *handle = (Py_uintptr_t) ull_handle;
-    return 0;
+    self->ident = 0;
+    self->handle = 0;
+    self->joinable = 0;
+    return self;
 }
+
+static void
+ThreadHandle_dealloc(ThreadHandleObject *self)
+{
+    PyObject *tp = (PyObject *) Py_TYPE(self);
+    if (self->joinable) {
+        int ret = PyThread_detach_thread(self->handle);
+        if (ret) {
+            PyErr_SetString(ThreadError, "Failed detaching thread");
+            PyErr_WriteUnraisable(tp);
+        }
+    }
+    PyObject_Free(self);
+    Py_DECREF(tp);
+}
+
+static PyObject *
+ThreadHandle_repr(ThreadHandleObject *self)
+{
+    return PyUnicode_FromFormat("<%s object: ident=%ul>",
+                                Py_TYPE(self)->tp_name, self->ident);
+}
+
+static PyObject *
+ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
+{
+    return PyLong_FromUnsignedLong(self->ident);
+}
+
+static PyObject *
+ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
+{
+    if (!self->joinable) {
+        PyErr_SetString(PyExc_ValueError,
+                        "the thread is not joinable and thus cannot be detached");
+        return NULL;
+    }
+    self->joinable = 0;
+    // This is typically short so no need to release the GIL
+    int ret = PyThread_detach_thread(self->handle);
+    if (ret) {
+        PyErr_SetString(ThreadError, "Failed detaching thread");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+ThreadHandle_join(ThreadHandleObject *self, void* ignored)
+{
+    if (!self->joinable) {
+        PyErr_SetString(PyExc_ValueError, "the thread is not joinable");
+        return NULL;
+    }
+    if (self->ident == PyThread_get_thread_ident()) {
+        // PyThread_join_thread() would deadlock or error out.
+        PyErr_SetString(ThreadError, "Cannot join current thread");
+        return NULL;
+    }
+    // Before actually joining, we must first mark the thread as non-joinable,
+    // as joining several times simultaneously or sequentially is undefined behavior.
+    self->joinable = 0;
+    int ret;
+    Py_BEGIN_ALLOW_THREADS
+    ret = PyThread_join_thread(self->handle);
+    Py_END_ALLOW_THREADS
+    if (ret) {
+        PyErr_SetString(ThreadError, "Failed joining thread");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef ThreadHandle_getsetlist[] = {
+    {"ident", (getter)ThreadHandle_get_ident, NULL, NULL},
+    {0},
+};
+
+static PyMethodDef ThreadHandle_methods[] =
+{
+    {"detach", (PyCFunction)ThreadHandle_detach, METH_NOARGS},
+    {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
+    {0, 0}
+};
+
+static PyType_Slot ThreadHandle_Type_slots[] = {
+    {Py_tp_dealloc, (destructor)ThreadHandle_dealloc},
+    {Py_tp_repr, (reprfunc)ThreadHandle_repr},
+    {Py_tp_getset, ThreadHandle_getsetlist},
+    {Py_tp_methods, ThreadHandle_methods},
+    {0, 0}
+};
+
+static PyType_Spec ThreadHandle_Type_spec = {
+    "_thread._ThreadHandle",
+    sizeof(ThreadHandleObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
+    ThreadHandle_Type_slots,
+};
 
 /* Lock objects */
 
@@ -1129,14 +1231,67 @@ PyDoc_STRVAR(daemon_threads_allowed_doc,
 Return True if daemon threads are allowed in the current interpreter,\n\
 and False otherwise.\n");
 
+static int
+do_start_new_thread(thread_module_state* state,
+                    PyObject *func, PyObject* args, PyObject* kwargs,
+                    int joinable,
+                    unsigned long* ident, Py_uintptr_t* handle)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "thread is not supported for isolated subinterpreters");
+        return -1;
+    }
+    if (interp->finalizing) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "can't create new thread at interpreter shutdown");
+        return -1;
+    }
+
+    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
+    // because it should be possible to call thread_bootstate_free()
+    // without holding the GIL.
+    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
+    if (boot == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
+    if (boot->tstate == NULL) {
+        PyMem_RawFree(boot);
+        if (!PyErr_Occurred()) {
+            PyErr_NoMemory();
+        }
+        return -1;
+    }
+    boot->func = Py_NewRef(func);
+    boot->args = Py_NewRef(args);
+    boot->kwargs = Py_XNewRef(kwargs);
+
+    if (joinable) {
+        *ident = PyThread_start_joinable_thread(thread_run, (void*) boot, handle);
+    } else {
+        *handle = 0;
+        *ident = PyThread_start_new_thread(thread_run, (void*) boot);
+    }
+    if (*ident == PYTHREAD_INVALID_THREAD_ID) {
+        PyErr_SetString(ThreadError, "can't start new thread");
+        PyThreadState_Clear(boot->tstate);
+        thread_bootstate_free(boot, 1);
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
 {
-    PyObject *func, *args, *kwargs = NULL, *joinable = NULL;
+    PyObject *func, *args, *kwargs = NULL;
     thread_module_state *state = get_thread_state(module);
 
-    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 4,
-                           &func, &args, &kwargs, &joinable))
+    if (!PyArg_UnpackTuple(fargs, "start_new_thread", 2, 3,
+                           &func, &args, &kwargs))
         return NULL;
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1153,83 +1308,23 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
                         "optional 3rd arg must be a dictionary");
         return NULL;
     }
-    if (joinable != NULL && !PyBool_Check(joinable)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "optional 4th arg must be a boolean");
-        return NULL;
-    }
 
     if (PySys_Audit("_thread.start_new_thread", "OOO",
                     func, args, kwargs ? kwargs : Py_None) < 0) {
         return NULL;
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "thread is not supported for isolated subinterpreters");
+    unsigned long ident = 0;
+    Py_uintptr_t handle;
+    if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
+                            &ident, &handle)) {
         return NULL;
     }
-    if (interp->finalizing) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "can't create new thread at interpreter shutdown");
-        return NULL;
-    }
-
-    // gh-109795: Use PyMem_RawMalloc() instead of PyMem_Malloc(),
-    // because it should be possible to call thread_bootstate_free()
-    // without holding the GIL.
-    struct bootstate *boot = PyMem_RawMalloc(sizeof(struct bootstate));
-    if (boot == NULL) {
-        return PyErr_NoMemory();
-    }
-    boot->tstate = _PyThreadState_New(interp, _PyThreadState_WHENCE_THREADING);
-    if (boot->tstate == NULL) {
-        PyMem_RawFree(boot);
-        if (!PyErr_Occurred()) {
-            return PyErr_NoMemory();
-        }
-        return NULL;
-    }
-    boot->func = Py_NewRef(func);
-    boot->args = Py_NewRef(args);
-    boot->kwargs = Py_XNewRef(kwargs);
-
-    unsigned long ident;
-    Py_uintptr_t handle = 0;
-    if (joinable == Py_True) {
-        ident = PyThread_start_joinable_thread(thread_run, (void*) boot, &handle);
-    } else {
-        ident = PyThread_start_new_thread(thread_run, (void*) boot);
-    }
-    if (ident == PYTHREAD_INVALID_THREAD_ID) {
-        PyErr_SetString(ThreadError, "can't start new thread");
-        PyThreadState_Clear(boot->tstate);
-        thread_bootstate_free(boot, 1);
-        return NULL;
-    }
-    PyObject* ident_obj = PyLong_FromUnsignedLong(ident);
-    if (ident_obj == NULL) {
-        return NULL;
-    }
-    if (joinable == Py_True) {
-        PyObject* handle_obj = PyLong_FromUnsignedLongLong(handle);
-        if (handle_obj == NULL) {
-            Py_DECREF(ident_obj);
-            return NULL;
-        }
-        if (PyDict_SetItem(state->joinable_dict, ident_obj, handle_obj)) {
-            Py_DECREF(handle_obj);
-            Py_DECREF(ident_obj);
-            return NULL;
-        }
-        Py_DECREF(handle_obj);
-    }
-    return ident_obj;
+    return PyLong_FromUnsignedLong(ident);
 }
 
 PyDoc_STRVAR(start_new_doc,
-"start_new_thread(function, args[, kwargs[, joinable]])\n\
+"start_new_thread(function, args[, kwargs])\n\
 (start_new() is an obsolete synonym)\n\
 \n\
 Start a new thread and return its identifier.\n\
@@ -1239,11 +1334,53 @@ tuple args and keyword arguments taken from the optional dictionary\n\
 kwargs.  The thread exits when the function returns; the return value\n\
 is ignored.  The thread will also exit when the function raises an\n\
 unhandled exception; a stack trace will be printed unless the exception\n\
-is SystemExit.\n\
-If the optional joinable argument is True, then the thread must later\n\
-be joined with join_thread() or detached with detach_thread().\n\
-Failure to do so results in a system resource leak until interpreter\n\
-shutdown.\n");
+is SystemExit.\n");
+
+static PyObject *
+thread_PyThread_start_joinable_thread(PyObject *module, PyObject *func)
+{
+    thread_module_state *state = get_thread_state(module);
+
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "thread function must be callable");
+        return NULL;
+    }
+
+    if (PySys_Audit("_thread.start_joinable_thread", "O", func) < 0) {
+        return NULL;
+    }
+
+    PyObject* args = PyTuple_New(0);
+    if (args == NULL) {
+        return NULL;
+    }
+    ThreadHandleObject* hobj = new_thread_handle(state);
+    if (hobj == NULL) {
+        Py_DECREF(args);
+        return NULL;
+    }
+    if (do_start_new_thread(state, func, args, /*kwargs=*/ NULL, /*joinable=*/ 1,
+                            &hobj->ident, &hobj->handle)) {
+        Py_DECREF(args);
+        Py_DECREF(hobj);
+        return NULL;
+    }
+    Py_DECREF(args);
+    hobj->joinable = 1;
+    return (PyObject*) hobj;
+}
+
+PyDoc_STRVAR(start_joinable_doc,
+"start_joinable_thread(function)\n\
+\n\
+*For internal use only*: start a new thread.\n\
+\n\
+Like start_new_thread(), this starts a new thread calling the given function.\n\
+Unlike start_new_thread(), this returns a handle object with methods to join\n\
+or detach the given thread.\n\
+This function is not for third-party code, please use the\n\
+`threading` module instead.\n");
 
 static PyObject *
 thread_PyThread_exit_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -1258,89 +1395,6 @@ PyDoc_STRVAR(exit_doc,
 \n\
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
-
-static PyObject *
-thread_PyThread_join_thread(PyObject *module, PyObject *ident_obj)
-{
-    thread_module_state *state = get_thread_state(module);
-
-    if (!PyLong_Check(ident_obj)) {
-        PyErr_Format(PyExc_TypeError, "thread ident must be an int, not %s",
-                     Py_TYPE(ident_obj)->tp_name);
-        return NULL;
-    }
-    // Check if the ident is part of the joinable threads and fetch its handle.
-    unsigned long ident;
-    Py_uintptr_t handle;
-    if (get_joinable_thread(state, ident_obj, &ident, &handle)) {
-        return NULL;
-    }
-    if (ident == PyThread_get_thread_ident()) {
-        // PyThread_join_thread() would deadlock or error out.
-        PyErr_SetString(ThreadError, "Cannot join current thread");
-        return NULL;
-    }
-    // Before actually joining, we must first remove the ident from joinable_dict,
-    // as joining several times simultaneously or sequentially is undefined behavior.
-    if (PyDict_DelItem(state->joinable_dict, ident_obj)) {
-        return NULL;
-    }
-    int ret;
-    Py_BEGIN_ALLOW_THREADS
-    ret = PyThread_join_thread((Py_uintptr_t) handle);
-    Py_END_ALLOW_THREADS
-    if (ret) {
-        PyErr_SetString(ThreadError, "Failed joining thread");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(join_thread_doc,
-"join_thread(ident)\n\
-\n\
-Join the thread with the given identifier. The thread must have been started\n\
-with start_new_thread() with the `joinable` argument set to True.\n\
-This function can only be called once per joinable thread, and it cannot be\n\
-called if detach_thread() was previously called on the same thread.\n");
-
-static PyObject *
-thread_PyThread_detach_thread(PyObject *module, PyObject *ident_obj)
-{
-    thread_module_state *state = get_thread_state(module);
-
-    if (!PyLong_Check(ident_obj)) {
-        PyErr_Format(PyExc_TypeError, "thread ident must be an int, not %s",
-                     Py_TYPE(ident_obj)->tp_name);
-        return NULL;
-    }
-    unsigned long ident;
-    Py_uintptr_t handle;
-    if (get_joinable_thread(state, ident_obj, &ident, &handle)) {
-        return NULL;
-    }
-    if (PyDict_DelItem(state->joinable_dict, ident_obj)) {
-        if (PyErr_ExceptionMatches(PyExc_KeyError)) {
-            PyErr_SetString(PyExc_ValueError,
-                            "the given thread is not joinable and thus cannot be detached");
-        }
-        return NULL;
-    }
-    int ret = PyThread_detach_thread(handle);
-    if (ret) {
-        PyErr_SetString(ThreadError, "Failed detaching thread");
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(detach_thread_doc,
-"detach_thread(ident)\n\
-\n\
-Detach the thread with the given identifier. The thread must have been started\n\
-with start_new_thread() with the `joinable` argument set to True.\n\
-This function can only be called once per joinable thread, and it cannot be\n\
-called if join_thread() was previously called on the same thread.\n");
 
 static PyObject *
 thread_PyThread_interrupt_main(PyObject *self, PyObject *args)
@@ -1712,10 +1766,8 @@ static PyMethodDef thread_methods[] = {
      METH_VARARGS, start_new_doc},
     {"start_new",               (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
-    {"join_thread",             (PyCFunction)thread_PyThread_join_thread,
-     METH_O, join_thread_doc},
-    {"detach_thread",           (PyCFunction)thread_PyThread_detach_thread,
-     METH_O, detach_thread_doc},
+    {"start_joinable_thread",   (PyCFunction)thread_PyThread_start_joinable_thread,
+     METH_O, start_joinable_doc},
     {"daemon_threads_allowed",  (PyCFunction)thread_daemon_threads_allowed,
      METH_NOARGS, daemon_threads_allowed_doc},
     {"allocate_lock",           thread_PyThread_allocate_lock,
@@ -1759,6 +1811,15 @@ thread_module_exec(PyObject *module)
     // Initialize the C thread library
     PyThread_init_thread();
 
+    // _ThreadHandle
+    state->thread_handle_type = (PyTypeObject *)PyType_FromSpec(&ThreadHandle_Type_spec);
+    if (state->thread_handle_type == NULL) {
+        return -1;
+    }
+    if (PyDict_SetItemString(d, "_ThreadHandle", (PyObject *)state->thread_handle_type) < 0) {
+        return -1;
+    }
+
     // Lock
     state->lock_type = (PyTypeObject *)PyType_FromSpec(&lock_type_spec);
     if (state->lock_type == NULL) {
@@ -1791,12 +1852,6 @@ thread_module_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddType(module, state->local_type) < 0) {
-        return -1;
-    }
-
-    // Dict of joinable threads: ident -> handle
-    state->joinable_dict = PyDict_New();
-    if (state->joinable_dict == NULL) {
         return -1;
     }
 
@@ -1838,7 +1893,7 @@ thread_module_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(state->lock_type);
     Py_VISIT(state->local_type);
     Py_VISIT(state->local_dummy_type);
-    Py_VISIT(state->joinable_dict);
+    Py_VISIT(state->thread_handle_type);
     return 0;
 }
 
@@ -1850,24 +1905,7 @@ thread_module_clear(PyObject *module)
     Py_CLEAR(state->lock_type);
     Py_CLEAR(state->local_type);
     Py_CLEAR(state->local_dummy_type);
-    // To avoid resource leaks, detach all still joinable threads
-    if (state->joinable_dict != NULL) {
-        PyObject *key, *value;
-        Py_ssize_t pos = 0;
-
-        while (PyDict_Next(state->joinable_dict, &pos, &key, &value)) {
-            if (PyLong_Check(value)) {
-                unsigned long long handle = PyLong_AsUnsignedLongLong(value);
-                if (handle == (unsigned long long) -1 && PyErr_Occurred()) {
-                    // Should not happen
-                    PyErr_Clear();
-                } else {
-                    PyThread_detach_thread((Py_uintptr_t) handle);
-                }
-            }
-        }
-        Py_CLEAR(state->joinable_dict);
-    }
+    Py_CLEAR(state->thread_handle_type);
     return 0;
 }
 

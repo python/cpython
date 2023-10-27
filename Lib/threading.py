@@ -34,9 +34,7 @@ __all__ = ['get_ident', 'active_count', 'Condition', 'current_thread',
            'setprofile_all_threads','settrace_all_threads']
 
 # Rename some stuff so "from threading import *" is safe
-_start_new_thread = _thread.start_new_thread
-_join_thread = _thread.join_thread
-_detach_thread = _thread.detach_thread
+_start_joinable_thread = _thread.start_joinable_thread
 _daemon_threads_allowed = _thread.daemon_threads_allowed
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
@@ -928,6 +926,7 @@ class Thread:
             self._native_id = None
         self._tstate_lock = None
         self._join_lock = None
+        self._handle = None
         self._started = Event()
         self._is_stopped = False
         self._initialized = True
@@ -993,18 +992,12 @@ class Thread:
             _limbo[self] = self
         try:
             # Start joinable thread
-            _start_new_thread(self._bootstrap, (), {}, True)
+            self._handle = _start_joinable_thread(self._bootstrap)
         except Exception:
             with _active_limbo_lock:
                 del _limbo[self]
             raise
         self._started.wait()  # Will set ident and native_id
-
-        # We need to make sure the OS thread is either explicitly joined or
-        # detached at some point, otherwise system resources can be leaked.
-        def _finalizer(wr, _detach_thread=_detach_thread, ident=self._ident):
-            _detach_thread(ident)
-        self._non_joined_finalizer = _weakref.ref(self, _finalizer)
 
     def run(self):
         """Method representing the thread's activity.
@@ -1168,12 +1161,13 @@ class Thread:
         if join_lock is None:
             return
         with join_lock:
-            # Calling join() multiple times simultaneously would raise
-            # an exception in one of the callers.
-            if self._join_lock is not None:
-                _join_thread(self._ident)
+            # Calling join() multiple times would raise an exception
+            # in one of the callers.
+            if self._handle is not None:
+                self._handle.join()
+                self._handle = None
+                # No need to keep this around
                 self._join_lock = None
-                self._non_joined_finalizer = None
 
     def _wait_for_tstate_lock(self, block=True, timeout=-1):
         # Issue #18808: wait for the thread state to be gone.
