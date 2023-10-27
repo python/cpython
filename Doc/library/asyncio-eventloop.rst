@@ -803,7 +803,8 @@ Creating network servers
    .. versionchanged:: 3.13
 
       The Unix socket will automatically be removed from the filesystem
-      when the server is closed.
+      when the server is closed, unless the socket has been replaced
+      after the server has been created.
 
 
 .. coroutinemethod:: loop.connect_accepted_socket(protocol_factory, \

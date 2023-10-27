@@ -64,6 +64,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     def __init__(self, selector=None):
         super().__init__(selector)
         self._signal_handlers = {}
+        self._unix_server_sockets = {}
 
     def close(self):
         super().close()
@@ -340,6 +341,14 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                 raise ValueError(
                     f'A UNIX Domain Stream Socket was expected, got {sock!r}')
 
+        path = sock.getsockname()
+        # Check for abstract socket. `str` and `bytes` paths are supported.
+        if path[0] not in (0, '\x00'):
+            try:
+                self._unix_server_sockets[sock] = os.stat(path).st_ino
+            except FileNotFoundError:
+                pass
+
         sock.setblocking(False)
         server = base_events.Server(self, [sock], protocol_factory,
                                     ssl, backlog, ssl_handshake_timeout,
@@ -462,21 +471,19 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
 
     def _stop_serving(self, sock):
         # Is this a unix socket that needs cleanup?
-        if sock.family == socket.AF_UNIX:
+        if sock in self._unix_server_sockets:
             path = sock.getsockname()
-            if path == '':
-                path = None
-            # Check for abstract socket. `str` and `bytes` paths are supported.
-            elif path[0] in (0, '\x00'):
-                path = None
         else:
             path = None
 
         super()._stop_serving(sock)
 
         if path is not None:
+            prev_ino = self._unix_server_sockets[sock]
+            del self._unix_server_sockets[sock]
             try:
-                os.unlink(path)
+                if os.stat(path).st_ino == prev_ino:
+                    os.unlink(path)
             except FileNotFoundError:
                 pass
             except OSError as err:
