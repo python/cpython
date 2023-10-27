@@ -328,26 +328,6 @@ compile_trampoline(void)
     return code_arena_new_code(perf_code_arena);
 }
 
-PyAPI_FUNC(int) PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
-{
-#ifdef PY_HAVE_PERF_TRAMPOLINE
-    py_trampoline f = NULL;
-    assert(extra_code_index != -1);
-    int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
-    if (ret != 0 || f == NULL) {
-        py_trampoline new_trampoline = compile_trampoline();
-        if (new_trampoline == NULL) {
-            return 0;
-        }
-        trampoline_api.write_state(trampoline_api.state, new_trampoline,
-                                   perf_code_arena->code_size, co);
-        return _PyCode_SetExtra((PyObject *)co, extra_code_index,
-                         (void *)new_trampoline);
-    }
-#endif // PY_HAVE_PERF_TRAMPOLINE
-    return 0;
-}
-
 static PyObject *
 py_trampoline_evaluator(PyThreadState *ts, _PyInterpreterFrame *frame,
                         int throw)
@@ -380,6 +360,26 @@ default_eval:
     return _PyEval_EvalFrameDefault(ts, frame, throw);
 }
 #endif  // PY_HAVE_PERF_TRAMPOLINE
+
+int PyUnstable_PerfTrampoline_CompileCode(PyCodeObject *co)
+{
+#ifdef PY_HAVE_PERF_TRAMPOLINE
+    py_trampoline f = NULL;
+    assert(extra_code_index != -1);
+    int ret = _PyCode_GetExtra((PyObject *)co, extra_code_index, (void **)&f);
+    if (ret != 0 || f == NULL) {
+        py_trampoline new_trampoline = compile_trampoline();
+        if (new_trampoline == NULL) {
+            return 0;
+        }
+        trampoline_api.write_state(trampoline_api.state, new_trampoline,
+                                   perf_code_arena->code_size, co);
+        return _PyCode_SetExtra((PyObject *)co, extra_code_index,
+                         (void *)new_trampoline);
+    }
+#endif // PY_HAVE_PERF_TRAMPOLINE
+    return 0;
+}
 
 int
 _PyIsPerfTrampolineActive(void)
