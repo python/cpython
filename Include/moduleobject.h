@@ -79,12 +79,14 @@ struct PyModuleDef_Slot {
 #define _Py_mod_LAST_SLOT 3
 #endif
 
+#endif /* New in 3.5 */
+
 /* for Py_mod_multiple_interpreters: */
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 #define Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED ((void *)0)
 #define Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED ((void *)1)
 #define Py_MOD_PER_INTERPRETER_GIL_SUPPORTED ((void *)2)
-
-#endif /* New in 3.5 */
+#endif
 
 struct PyModuleDef {
   PyModuleDef_Base m_base;

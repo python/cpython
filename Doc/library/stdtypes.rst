@@ -48,9 +48,9 @@ By default, an object is considered true unless its class defines either a
 returns zero, when called with the object. [1]_  Here are most of the built-in
 objects considered false:
 
-  .. index::
-     single: None (Built-in object)
-     single: False (Built-in object)
+.. index::
+   single: None (Built-in object)
+   single: False (Built-in object)
 
 * constants defined to be false: ``None`` and ``False``
 
@@ -2267,7 +2267,7 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string in which each character has been mapped through
    the given translation table.  The table must be an object that implements
-   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   indexing via :meth:`~object.__getitem__`, typically a :term:`mapping` or
    :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
    table object can do any of the following: return a Unicode ordinal or a
    string, to map the character to one or more other characters; return
@@ -4857,7 +4857,7 @@ before the statement body is executed and exited when the statement ends:
    The exception passed in should never be reraised explicitly - instead, this
    method should return a false value to indicate that the method completed
    successfully and does not want to suppress the raised exception. This allows
-   context management code to easily detect whether or not an :meth:`__exit__`
+   context management code to easily detect whether or not an :meth:`~object.__exit__`
    method has actually failed.
 
 Python defines several context managers to support easy thread synchronisation,

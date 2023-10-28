@@ -666,18 +666,18 @@ functions.
    passed to the underlying ``CreateProcess`` function.
    *creationflags*, if given, can be one or more of the following flags:
 
-      * :data:`CREATE_NEW_CONSOLE`
-      * :data:`CREATE_NEW_PROCESS_GROUP`
-      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
-      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
-      * :data:`HIGH_PRIORITY_CLASS`
-      * :data:`IDLE_PRIORITY_CLASS`
-      * :data:`NORMAL_PRIORITY_CLASS`
-      * :data:`REALTIME_PRIORITY_CLASS`
-      * :data:`CREATE_NO_WINDOW`
-      * :data:`DETACHED_PROCESS`
-      * :data:`CREATE_DEFAULT_ERROR_MODE`
-      * :data:`CREATE_BREAKAWAY_FROM_JOB`
+   * :data:`CREATE_NEW_CONSOLE`
+   * :data:`CREATE_NEW_PROCESS_GROUP`
+   * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+   * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+   * :data:`HIGH_PRIORITY_CLASS`
+   * :data:`IDLE_PRIORITY_CLASS`
+   * :data:`NORMAL_PRIORITY_CLASS`
+   * :data:`REALTIME_PRIORITY_CLASS`
+   * :data:`CREATE_NO_WINDOW`
+   * :data:`DETACHED_PROCESS`
+   * :data:`CREATE_DEFAULT_ERROR_MODE`
+   * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    *pipesize* can be used to change the size of the pipe when
    :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
@@ -742,8 +742,8 @@ the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
-   .. versionadded:: 3.3
-      The :exc:`SubprocessError` base class was added.
+.. versionadded:: 3.3
+   The :exc:`SubprocessError` base class was added.
 
 .. _subprocess-security:
 

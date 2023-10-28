@@ -243,9 +243,9 @@ Scheduling callbacks
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-.. versionchanged:: 3.7
-   The *context* keyword-only parameter was added. See :pep:`567`
-   for more details.
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. _asyncio-pass-keywords:
 
@@ -660,6 +660,8 @@ Opening network connections
 
 Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. _loop_create_server:
 
 .. coroutinemethod:: loop.create_server(protocol_factory, \
                         host=None, port=None, *, \
@@ -1191,6 +1193,8 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
+.. _loop_add_signal_handler:
+
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
@@ -1391,6 +1395,14 @@ Enabling debug mode
       The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
+.. attribute:: loop.slow_callback_duration
+
+   This attribute can be used to set the
+   minimum execution duration in seconds that is considered "slow".
+   When debug mode is enabled, "slow" callbacks are logged.
+
+   Default value is 100 milliseconds.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1410,6 +1422,8 @@ async/await code consider using the high-level
    subprocesses, whereas :class:`SelectorEventLoop` does not. See
    :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
    details.
+
+.. _loop_subprocess_exec:
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1686,13 +1700,13 @@ Event Loop Implementations
 asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
-By default asyncio is configured to use :class:`SelectorEventLoop`
-on Unix and :class:`ProactorEventLoop` on Windows.
+By default asyncio is configured to use :class:`EventLoop`.
 
 
 .. class:: SelectorEventLoop
 
-   An event loop based on the :mod:`selectors` module.
+   A subclass of :class:`AbstractEventLoop` based on the
+   :mod:`selectors` module.
 
    Uses the most efficient *selector* available for the given
    platform.  It is also possible to manually configure the
@@ -1714,7 +1728,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
 .. class:: ProactorEventLoop
 
-   An event loop for Windows that uses "I/O Completion Ports" (IOCP).
+   A subclass of :class:`AbstractEventLoop` for Windows that uses "I/O Completion Ports" (IOCP).
 
    .. availability:: Windows.
 
@@ -1723,6 +1737,14 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       `MSDN documentation on I/O Completion Ports
       <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
 
+.. class:: EventLoop
+
+    An alias to the most efficient available subclass of :class:`AbstractEventLoop` for the given
+    platform.
+
+    It is an alias to :class:`SelectorEventLoop` on Unix and :class:`ProactorEventLoop` on Windows.
+
+   .. versionadded:: 3.13
 
 .. class:: AbstractEventLoop
 

@@ -1,0 +1,1 @@
+Ensure that IDLE.app and Python Launcher.app are installed with appropriate permissions on macOS builds.

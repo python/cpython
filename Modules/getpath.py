@@ -238,8 +238,6 @@ platstdlib_dir = None
 # CALCULATE program_name
 # ******************************************************************************
 
-program_name_was_set = bool(program_name)
-
 if not program_name:
     try:
         program_name = config.get('orig_argv', [])[0]

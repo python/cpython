@@ -93,7 +93,8 @@ class SequenceTreeItem(ObjectTreeItem):
 
 class DictTreeItem(SequenceTreeItem):
     def keys(self):
-        keys = list(self.object.keys())
+        # TODO return sorted(self.object)
+        keys = list(self.object)
         try:
             keys.sort()
         except:

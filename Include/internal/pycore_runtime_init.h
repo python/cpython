@@ -58,7 +58,7 @@ extern PyTypeObject _PyExc_MemoryError;
             .interpreter_frame = { \
                 .previous = offsetof(_PyInterpreterFrame, previous), \
                 .executable = offsetof(_PyInterpreterFrame, f_executable), \
-                .prev_instr = offsetof(_PyInterpreterFrame, prev_instr), \
+                .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
                 .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
                 .owner = offsetof(_PyInterpreterFrame, owner), \
             }, \
@@ -177,6 +177,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
                 .last_resort_memory_error = { \
                     _PyObject_HEAD_INIT(&_PyExc_MemoryError) \
+                    .args = (PyObject*)&_Py_SINGLETON(tuple_empty) \
                 }, \
             }, \
         }, \

@@ -1,2 +1,0 @@
-Remove ``cpython/pytime.h`` header file: it only contained private
-functions. Patch by Victor Stinner.
