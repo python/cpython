@@ -19,8 +19,9 @@ from collections import namedtuple
 # import types, weakref  # Deferred to single_dispatch()
 from reprlib import recursive_repr
 from _thread import RLock
-from types import GenericAlias
 
+# Avoid importing types, so we can speedup import time
+GenericAlias = type(list[int])
 
 ################################################################################
 ### update_wrapper() and wraps() decorator
@@ -30,7 +31,7 @@ from types import GenericAlias
 # wrapper functions that can handle naive introspection
 
 WRAPPER_ASSIGNMENTS = ('__module__', '__name__', '__qualname__', '__doc__',
-                       '__annotations__')
+                       '__annotations__', '__type_params__')
 WRAPPER_UPDATES = ('__dict__',)
 def update_wrapper(wrapper,
                    wrapped,
@@ -86,86 +87,86 @@ def wraps(wrapped,
 # infinite recursion that could occur when the operator dispatch logic
 # detects a NotImplemented result and then calls a reflected method.
 
-def _gt_from_lt(self, other, NotImplemented=NotImplemented):
+def _gt_from_lt(self, other):
     'Return a > b.  Computed by @total_ordering from (not a < b) and (a != b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _le_from_lt(self, other, NotImplemented=NotImplemented):
+def _le_from_lt(self, other):
     'Return a <= b.  Computed by @total_ordering from (a < b) or (a == b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result or self == other
 
-def _ge_from_lt(self, other, NotImplemented=NotImplemented):
+def _ge_from_lt(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a < b).'
-    op_result = self.__lt__(other)
+    op_result = type(self).__lt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _ge_from_le(self, other, NotImplemented=NotImplemented):
+def _ge_from_le(self, other):
     'Return a >= b.  Computed by @total_ordering from (not a <= b) or (a == b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _lt_from_le(self, other, NotImplemented=NotImplemented):
+def _lt_from_le(self, other):
     'Return a < b.  Computed by @total_ordering from (a <= b) and (a != b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _gt_from_le(self, other, NotImplemented=NotImplemented):
+def _gt_from_le(self, other):
     'Return a > b.  Computed by @total_ordering from (not a <= b).'
-    op_result = self.__le__(other)
+    op_result = type(self).__le__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _lt_from_gt(self, other, NotImplemented=NotImplemented):
+def _lt_from_gt(self, other):
     'Return a < b.  Computed by @total_ordering from (not a > b) and (a != b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result and self != other
 
-def _ge_from_gt(self, other, NotImplemented=NotImplemented):
+def _ge_from_gt(self, other):
     'Return a >= b.  Computed by @total_ordering from (a > b) or (a == b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result or self == other
 
-def _le_from_gt(self, other, NotImplemented=NotImplemented):
+def _le_from_gt(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a > b).'
-    op_result = self.__gt__(other)
+    op_result = type(self).__gt__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
 
-def _le_from_ge(self, other, NotImplemented=NotImplemented):
+def _le_from_ge(self, other):
     'Return a <= b.  Computed by @total_ordering from (not a >= b) or (a == b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result or self == other
 
-def _gt_from_ge(self, other, NotImplemented=NotImplemented):
+def _gt_from_ge(self, other):
     'Return a > b.  Computed by @total_ordering from (a >= b) and (a != b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return op_result and self != other
 
-def _lt_from_ge(self, other, NotImplemented=NotImplemented):
+def _lt_from_ge(self, other):
     'Return a < b.  Computed by @total_ordering from (not a >= b).'
-    op_result = self.__ge__(other)
+    op_result = type(self).__ge__(self, other)
     if op_result is NotImplemented:
         return op_result
     return not op_result
@@ -236,14 +237,14 @@ _initial_missing = object()
 
 def reduce(function, sequence, initial=_initial_missing):
     """
-    reduce(function, sequence[, initial]) -> value
+    reduce(function, iterable[, initial], /) -> value
 
-    Apply a function of two arguments cumulatively to the items of a sequence,
-    from left to right, so as to reduce the sequence to a single value.
-    For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
+    Apply a function of two arguments cumulatively to the items of a sequence
+    or iterable, from left to right, so as to reduce the iterable to a single
+    value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates
     ((((1+2)+3)+4)+5).  If initial is present, it is placed before the items
-    of the sequence in the calculation, and serves as a default when the
-    sequence is empty.
+    of the iterable in the calculation, and serves as a default when the
+    iterable is empty.
     """
 
     it = iter(sequence)
@@ -252,7 +253,8 @@ def reduce(function, sequence, initial=_initial_missing):
         try:
             value = next(it)
         except StopIteration:
-            raise TypeError("reduce() of empty sequence with no initial value") from None
+            raise TypeError(
+                "reduce() of empty iterable with no initial value") from None
     else:
         value = initial
 
@@ -482,8 +484,9 @@ def lru_cache(maxsize=128, typed=False):
     can grow without bound.
 
     If *typed* is True, arguments of different types will be cached separately.
-    For example, f(3.0) and f(3) will be treated as distinct calls with
-    distinct results.
+    For example, f(decimal.Decimal("3.0")) and f(3.0) will be treated as
+    distinct calls with distinct results. Some types such as str and int may
+    be cached separately even when typed is false.
 
     Arguments to the cached function must be hashable.
 
@@ -491,7 +494,7 @@ def lru_cache(maxsize=128, typed=False):
     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
-    See:  http://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
+    See:  https://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
     """
 
@@ -659,7 +662,7 @@ def cache(user_function, /):
 def _c3_merge(sequences):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
-    Adapted from http://www.python.org/download/releases/2.3/mro/.
+    Adapted from https://www.python.org/download/releases/2.3/mro/.
 
     """
     result = []
@@ -739,6 +742,7 @@ def _compose_mro(cls, types):
     # Remove entries which are already present in the __mro__ or unrelated.
     def is_related(typ):
         return (typ not in bases and hasattr(typ, '__mro__')
+                                 and not isinstance(typ, GenericAlias)
                                  and issubclass(cls, typ))
     types = [n for n in types if is_related(n)]
     # Remove entries which are strict bases of other entries (they will end up
@@ -836,6 +840,17 @@ def singledispatch(func):
             dispatch_cache[cls] = impl
         return impl
 
+    def _is_union_type(cls):
+        from typing import get_origin, Union
+        return get_origin(cls) in {Union, types.UnionType}
+
+    def _is_valid_dispatch_type(cls):
+        if isinstance(cls, type):
+            return True
+        from typing import get_args
+        return (_is_union_type(cls) and
+                all(isinstance(arg, type) for arg in get_args(cls)))
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -843,9 +858,15 @@ def singledispatch(func):
 
         """
         nonlocal cache_token
-        if func is None:
-            if isinstance(cls, type):
+        if _is_valid_dispatch_type(cls):
+            if func is None:
                 return lambda f: register(cls, f)
+        else:
+            if func is not None:
+                raise TypeError(
+                    f"Invalid first argument to `register()`. "
+                    f"{cls!r} is not a class or union type."
+                )
             ann = getattr(cls, '__annotations__', {})
             if not ann:
                 raise TypeError(
@@ -858,12 +879,25 @@ def singledispatch(func):
             # only import typing if annotation parsing is necessary
             from typing import get_type_hints
             argname, cls = next(iter(get_type_hints(func).items()))
-            if not isinstance(cls, type):
-                raise TypeError(
-                    f"Invalid annotation for {argname!r}. "
-                    f"{cls!r} is not a class."
-                )
-        registry[cls] = func
+            if not _is_valid_dispatch_type(cls):
+                if _is_union_type(cls):
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} not all arguments are classes."
+                    )
+                else:
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. "
+                        f"{cls!r} is not a class."
+                    )
+
+        if _is_union_type(cls):
+            from typing import get_args
+
+            for arg in get_args(cls):
+                registry[arg] = func
+        else:
+            registry[cls] = func
         if cache_token is None and hasattr(cls, '__abstractmethods__'):
             cache_token = get_cache_token()
         dispatch_cache.clear()
@@ -901,6 +935,9 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
+        import weakref # see comment in singledispatch function
+        self._method_cache = weakref.WeakKeyDictionary()
+
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -909,13 +946,27 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
+        if self._method_cache is not None:
+            try:
+                _method = self._method_cache[obj]
+            except TypeError:
+                self._method_cache = None
+            except KeyError:
+                pass
+            else:
+                return _method
+
+        dispatch = self.dispatcher.dispatch
         def _method(*args, **kwargs):
-            method = self.dispatcher.dispatch(args[0].__class__)
-            return method.__get__(obj, cls)(*args, **kwargs)
+            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
 
         _method.__isabstractmethod__ = self.__isabstractmethod__
         _method.register = self.register
         update_wrapper(_method, self.func)
+
+        if self._method_cache is not None:
+            self._method_cache[obj] = _method
+
         return _method
 
     @property
@@ -924,18 +975,17 @@ class singledispatchmethod:
 
 
 ################################################################################
-### cached_property() - computed once per instance, cached as attribute
+### cached_property() - property result cached as instance attribute
 ################################################################################
 
 _NOT_FOUND = object()
-
 
 class cached_property:
     def __init__(self, func):
         self.func = func
         self.attrname = None
         self.__doc__ = func.__doc__
-        self.lock = RLock()
+        self.__module__ = func.__module__
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -962,19 +1012,15 @@ class cached_property:
             raise TypeError(msg) from None
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is _NOT_FOUND:
-            with self.lock:
-                # check if another thread filled cache while we awaited lock
-                val = cache.get(self.attrname, _NOT_FOUND)
-                if val is _NOT_FOUND:
-                    val = self.func(instance)
-                    try:
-                        cache[self.attrname] = val
-                    except TypeError:
-                        msg = (
-                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                            f"does not support item assignment for caching {self.attrname!r} property."
-                        )
-                        raise TypeError(msg) from None
+            val = self.func(instance)
+            try:
+                cache[self.attrname] = val
+            except TypeError:
+                msg = (
+                    f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                    f"does not support item assignment for caching {self.attrname!r} property."
+                )
+                raise TypeError(msg) from None
         return val
 
     __class_getitem__ = classmethod(GenericAlias)

@@ -407,7 +407,10 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         # skip the test if the LC_CTYPE locale is C or coerced
         old_loc = locale.setlocale(locale.LC_CTYPE, None)
         self.addCleanup(locale.setlocale, locale.LC_CTYPE, old_loc)
-        loc = locale.setlocale(locale.LC_CTYPE, "")
+        try:
+            loc = locale.setlocale(locale.LC_CTYPE, "")
+        except locale.Error as e:
+            self.skipTest(str(e))
         if loc == "C":
             self.skipTest("test requires LC_CTYPE locale different than C")
         if loc in TARGET_LOCALES :
@@ -424,12 +427,9 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
         self.assertEqual(cmd.stdout.rstrip(), loc)
 
 
-def test_main():
-    support.run_unittest(
-        LocaleConfigurationTests,
-        LocaleCoercionTests
-    )
+def tearDownModule():
     support.reap_children()
 
+
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

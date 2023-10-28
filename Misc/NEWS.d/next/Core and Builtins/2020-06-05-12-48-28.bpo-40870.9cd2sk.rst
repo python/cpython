@@ -1,2 +1,0 @@
-Raise :exc:`ValueError` when validating custom AST's where the constants
-``True``, ``False`` and ``None`` are used within a :class:`ast.Name` node.

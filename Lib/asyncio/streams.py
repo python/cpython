@@ -2,6 +2,7 @@ __all__ = (
     'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
     'open_connection', 'start_server')
 
+import collections
 import socket
 import sys
 import warnings
@@ -23,7 +24,7 @@ _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
 
 
 async def open_connection(host=None, port=None, *,
-                          loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                          limit=_DEFAULT_LIMIT, **kwds):
     """A wrapper for create_connection() returning a (reader, writer) pair.
 
     The reader returned is a StreamReader instance; the writer is a
@@ -41,12 +42,7 @@ async def open_connection(host=None, port=None, *,
     StreamReaderProtocol classes, just copy the code -- there's
     really nothing special here except some convenience.)
     """
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
+    loop = events.get_running_loop()
     reader = StreamReader(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(reader, loop=loop)
     transport, _ = await loop.create_connection(
@@ -56,7 +52,7 @@ async def open_connection(host=None, port=None, *,
 
 
 async def start_server(client_connected_cb, host=None, port=None, *,
-                       loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                       limit=_DEFAULT_LIMIT, **kwds):
     """Start a socket server, call back for each client connected.
 
     The first parameter, `client_connected_cb`, takes two parameters:
@@ -71,19 +67,13 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     positional host and port, with various optional keyword arguments
     following.  The return value is the same as loop.create_server().
 
-    Additional optional keyword arguments are loop (to set the event loop
-    instance to use) and limit (to set the buffer limit passed to the
-    StreamReader).
+    Additional optional keyword argument is limit (to set the buffer
+    limit passed to the StreamReader).
 
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
     """
-    if loop is None:
-        loop = events.get_event_loop()
-    else:
-        warnings.warn("The loop argument is deprecated since Python 3.8, "
-                      "and scheduled for removal in Python 3.10.",
-                      DeprecationWarning, stacklevel=2)
+    loop = events.get_running_loop()
 
     def factory():
         reader = StreamReader(limit=limit, loop=loop)
@@ -98,14 +88,10 @@ if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
     async def open_unix_connection(path=None, *,
-                                   loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                                   limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
-        if loop is None:
-            loop = events.get_event_loop()
-        else:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+        loop = events.get_running_loop()
+
         reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, loop=loop)
         transport, _ = await loop.create_unix_connection(
@@ -114,14 +100,9 @@ if hasattr(socket, 'AF_UNIX'):
         return reader, writer
 
     async def start_unix_server(client_connected_cb, path=None, *,
-                                loop=None, limit=_DEFAULT_LIMIT, **kwds):
+                                limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
-        if loop is None:
-            loop = events.get_event_loop()
-        else:
-            warnings.warn("The loop argument is deprecated since Python 3.8, "
-                          "and scheduled for removal in Python 3.10.",
-                          DeprecationWarning, stacklevel=2)
+        loop = events.get_running_loop()
 
         def factory():
             reader = StreamReader(limit=limit, loop=loop)
@@ -148,7 +129,7 @@ class FlowControlMixin(protocols.Protocol):
         else:
             self._loop = loop
         self._paused = False
-        self._drain_waiter = None
+        self._drain_waiters = collections.deque()
         self._connection_lost = False
 
     def pause_writing(self):
@@ -163,38 +144,34 @@ class FlowControlMixin(protocols.Protocol):
         if self._loop.get_debug():
             logger.debug("%r resumes writing", self)
 
-        waiter = self._drain_waiter
-        if waiter is not None:
-            self._drain_waiter = None
+        for waiter in self._drain_waiters:
             if not waiter.done():
                 waiter.set_result(None)
 
     def connection_lost(self, exc):
         self._connection_lost = True
-        # Wake up the writer if currently paused.
+        # Wake up the writer(s) if currently paused.
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        if waiter is None:
-            return
-        self._drain_waiter = None
-        if waiter.done():
-            return
-        if exc is None:
-            waiter.set_result(None)
-        else:
-            waiter.set_exception(exc)
+
+        for waiter in self._drain_waiters:
+            if not waiter.done():
+                if exc is None:
+                    waiter.set_result(None)
+                else:
+                    waiter.set_exception(exc)
 
     async def _drain_helper(self):
         if self._connection_lost:
             raise ConnectionResetError('Connection lost')
         if not self._paused:
             return
-        waiter = self._drain_waiter
-        assert waiter is None or waiter.cancelled()
         waiter = self._loop.create_future()
-        self._drain_waiter = waiter
-        await waiter
+        self._drain_waiters.append(waiter)
+        try:
+            await waiter
+        finally:
+            self._drain_waiters.remove(waiter)
 
     def _get_close_waiter(self, stream):
         raise NotImplementedError
@@ -225,6 +202,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             self._strong_reader = stream_reader
         self._reject_connection = False
         self._stream_writer = None
+        self._task = None
         self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
@@ -235,6 +213,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         if self._stream_reader_wr is None:
             return None
         return self._stream_reader_wr()
+
+    def _replace_writer(self, writer):
+        loop = self._loop
+        transport = writer.transport
+        self._stream_writer = writer
+        self._transport = transport
+        self._over_ssl = transport.get_extra_info('sslcontext') is not None
 
     def connection_made(self, transport):
         if self._reject_connection:
@@ -260,7 +245,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
-                self._loop.create_task(res)
+                self._task = self._loop.create_task(res)
             self._strong_reader = None
 
     def connection_lost(self, exc):
@@ -278,6 +263,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         super().connection_lost(exc)
         self._stream_reader_wr = None
         self._stream_writer = None
+        self._task = None
         self._transport = None
 
     def data_received(self, data):
@@ -302,9 +288,13 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
-        closed = self._closed
-        if closed.done() and not closed.cancelled():
-            closed.exception()
+        try:
+            closed = self._closed
+        except AttributeError:
+            pass  # failed constructor
+        else:
+            if closed.done() and not closed.cancelled():
+                closed.exception()
 
 
 class StreamWriter:
@@ -385,6 +375,27 @@ class StreamWriter:
             # would not see an error when the socket is closed.
             await sleep(0)
         await self._protocol._drain_helper()
+
+    async def start_tls(self, sslcontext, *,
+                        server_hostname=None,
+                        ssl_handshake_timeout=None,
+                        ssl_shutdown_timeout=None):
+        """Upgrade an existing stream-based connection to TLS."""
+        server_side = self._protocol._client_connected_cb is not None
+        protocol = self._protocol
+        await self.drain()
+        new_transport = await self._loop.start_tls(  # type: ignore
+            self._transport, protocol, sslcontext,
+            server_side=server_side, server_hostname=server_hostname,
+            ssl_handshake_timeout=ssl_handshake_timeout,
+            ssl_shutdown_timeout=ssl_shutdown_timeout)
+        self._transport = new_transport
+        protocol._replace_writer(self)
+
+    def __del__(self, warnings=warnings):
+        if not self._transport.is_closing():
+            self.close()
+            warnings.warn(f"unclosed {self!r}", ResourceWarning)
 
 
 class StreamReader:
@@ -643,16 +654,17 @@ class StreamReader:
     async def read(self, n=-1):
         """Read up to `n` bytes from the stream.
 
-        If n is not provided, or set to -1, read until EOF and return all read
-        bytes. If the EOF was received and the internal buffer is empty, return
-        an empty bytes object.
+        If `n` is not provided or set to -1,
+        read until EOF, then return all read bytes.
+        If EOF was received and the internal buffer is empty,
+        return an empty bytes object.
 
-        If n is zero, return empty bytes object immediately.
+        If `n` is 0, return an empty bytes object immediately.
 
-        If n is positive, this function try to read `n` bytes, and may return
-        less or equal bytes than requested, but at least one byte. If EOF was
-        received before any byte is read, this function returns empty byte
-        object.
+        If `n` is positive, return at most `n` available bytes
+        as soon as at least 1 byte is available in the internal buffer.
+        If EOF is received before any byte is read, return an empty
+        bytes object.
 
         Returned value is not limited with limit, configured at stream
         creation.
@@ -684,7 +696,7 @@ class StreamReader:
             await self._wait_for_data('read')
 
         # This will work right even if buffer is less than n bytes
-        data = bytes(self._buffer[:n])
+        data = bytes(memoryview(self._buffer)[:n])
         del self._buffer[:n]
 
         self._maybe_resume_transport()
@@ -726,7 +738,7 @@ class StreamReader:
             data = bytes(self._buffer)
             self._buffer.clear()
         else:
-            data = bytes(self._buffer[:n])
+            data = bytes(memoryview(self._buffer)[:n])
             del self._buffer[:n]
         self._maybe_resume_transport()
         return data

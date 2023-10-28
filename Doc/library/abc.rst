@@ -21,7 +21,7 @@ The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
 a class or instance provides a particular interface, for example, if it is
-hashable or if it is a mapping.
+:term:`hashable` or if it is a mapping.
 
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
@@ -154,7 +154,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
    even though it does not define an :meth:`~iterator.__iter__` method (it uses
    the old-style iterable protocol, defined in terms of :meth:`__len__` and
-   :meth:`__getitem__`).  Note that this will not make ``get_iterator``
+   :meth:`~object.__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
 
 
@@ -174,10 +174,11 @@ The :mod:`abc` module also provides the following decorator:
    to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
-   abstraction status of a method or class once it is created, are not
-   supported.  The :func:`abstractmethod` only affects subclasses derived using
-   regular inheritance; "virtual subclasses" registered with the ABC's
-   :meth:`register` method are not affected.
+   abstraction status of a method or class once it is created, are only
+   supported using the :func:`update_abstractmethods` function.  The
+   :func:`abstractmethod` only affects subclasses derived using regular
+   inheritance; "virtual subclasses" registered with the ABC's :meth:`register`
+   method are not affected.
 
    When :func:`abstractmethod` is applied in combination with other method
    descriptors, it should be applied as the innermost decorator, as shown in
@@ -185,15 +186,15 @@ The :mod:`abc` module also provides the following decorator:
 
       class C(ABC):
           @abstractmethod
-          def my_abstract_method(self, ...):
+          def my_abstract_method(self, arg1):
               ...
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg2):
               ...
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg3):
               ...
 
           @property
@@ -235,7 +236,6 @@ The :mod:`abc` module also provides the following decorator:
       super-call in a framework that uses cooperative
       multiple-inheritance.
 
-
 The :mod:`abc` module also supports the following legacy decorators:
 
 .. decorator:: abstractclassmethod
@@ -255,7 +255,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @classmethod
           @abstractmethod
-          def my_abstract_classmethod(cls, ...):
+          def my_abstract_classmethod(cls, arg):
               ...
 
 
@@ -276,7 +276,7 @@ The :mod:`abc` module also supports the following legacy decorators:
       class C(ABC):
           @staticmethod
           @abstractmethod
-          def my_abstract_staticmethod(...):
+          def my_abstract_staticmethod(arg):
               ...
 
 
@@ -335,6 +335,23 @@ The :mod:`abc` module also provides the following functions:
 
    .. versionadded:: 3.4
 
+.. function:: update_abstractmethods(cls)
+
+   A function to recalculate an abstract class's abstraction status. This
+   function should be called if a class's abstract methods have been
+   implemented or changed after it was created. Usually, this function should
+   be called from within a class decorator.
+
+   Returns *cls*, to allow usage as a class decorator.
+
+   If *cls* is not an instance of :class:`ABCMeta`, does nothing.
+
+   .. note::
+
+      This function assumes that *cls*'s superclasses are already updated.
+      It does not update any subclasses.
+
+   .. versionadded:: 3.10
 
 .. rubric:: Footnotes
 

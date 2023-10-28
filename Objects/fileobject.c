@@ -1,18 +1,22 @@
 /* File object implementation (what's left of it -- see io.py) */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pycore_runtime.h"  // _PyRuntime
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_runtime.h"       // _PyRuntime
+
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // isatty()
+#endif
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
-/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
-#define GETC(f) getc_unlocked(f)
-#define FLOCKFILE(f) flockfile(f)
-#define FUNLOCKFILE(f) funlockfile(f)
+   /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
+#  define GETC(f) getc_unlocked(f)
+#  define FLOCKFILE(f) flockfile(f)
+#  define FUNLOCKFILE(f) funlockfile(f)
 #else
-#define GETC(f) getc(f)
-#define FLOCKFILE(f)
-#define FUNLOCKFILE(f)
+#  define GETC(f) getc(f)
+#  define FLOCKFILE(f)
+#  define FUNLOCKFILE(f)
 #endif
 
 /* Newline flags */
@@ -21,28 +25,22 @@
 #define NEWLINE_LF 2            /* \n newline seen */
 #define NEWLINE_CRLF 4          /* \r\n newline seen */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-_Py_IDENTIFIER(open);
-
 /* External C interface */
 
 PyObject *
 PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const char *encoding,
               const char *errors, const char *newline, int closefd)
 {
-    PyObject *io, *stream;
+    PyObject *open, *stream;
 
     /* import _io in case we are being used to open io.py */
-    io = PyImport_ImportModule("_io");
-    if (io == NULL)
+    open = _PyImport_GetModuleAttrString("_io", "open");
+    if (open == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
-                                 buffering, encoding, errors,
-                                 newline, closefd ? Py_True : Py_False);
-    Py_DECREF(io);
+    stream = PyObject_CallFunction(open, "isisssO", fd, mode,
+                                  buffering, encoding, errors,
+                                  newline, closefd ? Py_True : Py_False);
+    Py_DECREF(open);
     if (stream == NULL)
         return NULL;
     /* ignore name attribute because the name attribute of _BufferedIOMixin
@@ -53,7 +51,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
-    _Py_IDENTIFIER(readline);
     PyObject *result;
 
     if (f == NULL) {
@@ -62,15 +59,14 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
+        result = PyObject_CallMethodNoArgs(f, &_Py_ID(readline));
     }
     else {
-        result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
+        result = _PyObject_CallMethod(f, &_Py_ID(readline), "i", n);
     }
     if (result != NULL && !PyBytes_Check(result) &&
         !PyUnicode_Check(result)) {
-        Py_DECREF(result);
-        result = NULL;
+        Py_SETREF(result, NULL);
         PyErr_SetString(PyExc_TypeError,
                    "object.readline() returned non-string");
     }
@@ -79,8 +75,7 @@ PyFile_GetLine(PyObject *f, int n)
         const char *s = PyBytes_AS_STRING(result);
         Py_ssize_t len = PyBytes_GET_SIZE(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
@@ -90,24 +85,21 @@ PyFile_GetLine(PyObject *f, int n)
             else {
                 PyObject *v;
                 v = PyBytes_FromStringAndSize(s, len-1);
-                Py_DECREF(result);
-                result = v;
+                Py_SETREF(result, v);
             }
         }
     }
     if (n < 0 && result != NULL && PyUnicode_Check(result)) {
         Py_ssize_t len = PyUnicode_GET_LENGTH(result);
         if (len == 0) {
-            Py_DECREF(result);
-            result = NULL;
+            Py_SETREF(result, NULL);
             PyErr_SetString(PyExc_EOFError,
                             "EOF when reading a line");
         }
         else if (PyUnicode_READ_CHAR(result, len-1) == '\n') {
             PyObject *v;
             v = PyUnicode_Substring(result, 0, len-1);
-            Py_DECREF(result);
-            result = v;
+            Py_SETREF(result, v);
         }
     }
     return result;
@@ -119,13 +111,12 @@ int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
     PyObject *writer, *value, *result;
-    _Py_IDENTIFIER(write);
 
     if (f == NULL) {
         PyErr_SetString(PyExc_TypeError, "writeobject with NULL file");
         return -1;
     }
-    writer = _PyObject_GetAttrId(f, &PyId_write);
+    writer = PyObject_GetAttr(f, &_Py_ID(write));
     if (writer == NULL)
         return -1;
     if (flags & Py_PRINT_RAW) {
@@ -181,22 +172,21 @@ PyObject_AsFileDescriptor(PyObject *o)
 {
     int fd;
     PyObject *meth;
-    _Py_IDENTIFIER(fileno);
 
     if (PyLong_Check(o)) {
-        fd = _PyLong_AsInt(o);
+        fd = PyLong_AsInt(o);
     }
-    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+    else if (PyObject_GetOptionalAttr(o, &_Py_ID(fileno), &meth) < 0) {
         return -1;
     }
     else if (meth != NULL) {
-        PyObject *fno = _PyObject_CallNoArg(meth);
+        PyObject *fno = _PyObject_CallNoArgs(meth);
         Py_DECREF(meth);
         if (fno == NULL)
             return -1;
 
         if (PyLong_Check(fno)) {
-            fd = _PyLong_AsInt(fno);
+            fd = PyLong_AsInt(fno);
             Py_DECREF(fno);
         }
         else {
@@ -223,85 +213,64 @@ PyObject_AsFileDescriptor(PyObject *o)
     return fd;
 }
 
-/*
-** Py_UniversalNewlineFgets is an fgets variation that understands
-** all of \r, \n and \r\n conventions.
-** The stream should be opened in binary mode.
-** If fobj is NULL the routine always does newline conversion, and
-** it may peek one char ahead to gobble the second char in \r\n.
-** If fobj is non-NULL it must be a PyFileObject. In this case there
-** is no readahead but in stead a flag is used to skip a following
-** \n on the next read. Also, if the file is open in binary mode
-** the whole conversion is skipped. Finally, the routine keeps track of
-** the different types of newlines seen.
-** Note that we need no error handling: fgets() treats error and eof
-** identically.
-*/
+int
+_PyLong_FileDescriptor_Converter(PyObject *o, void *ptr)
+{
+    int fd = PyObject_AsFileDescriptor(o);
+    if (fd == -1) {
+        return 0;
+    }
+    *(int *)ptr = fd;
+    return 1;
+}
+
 char *
-Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj)
+_Py_UniversalNewlineFgetsWithSize(char *buf, int n, FILE *stream, PyObject *fobj, size_t* size)
 {
     char *p = buf;
     int c;
-    int newlinetypes = 0;
-    int skipnextlf = 0;
 
     if (fobj) {
         errno = ENXIO;          /* What can you do... */
         return NULL;
     }
     FLOCKFILE(stream);
-    c = 'x'; /* Shut up gcc warning */
     while (--n > 0 && (c = GETC(stream)) != EOF ) {
-        if (skipnextlf ) {
-            skipnextlf = 0;
-            if (c == '\n') {
-                /* Seeing a \n here with skipnextlf true
-                ** means we saw a \r before.
-                */
-                newlinetypes |= NEWLINE_CRLF;
-                c = GETC(stream);
-                if (c == EOF) break;
-            } else {
-                /*
-                ** Note that c == EOF also brings us here,
-                ** so we're okay if the last char in the file
-                ** is a CR.
-                */
-                newlinetypes |= NEWLINE_CR;
+        if (c == '\r') {
+            // A \r is translated into a \n, and we skip an adjacent \n, if any.
+            c = GETC(stream);
+            if (c != '\n') {
+                ungetc(c, stream);
+                c = '\n';
             }
         }
-        if (c == '\r') {
-            /* A \r is translated into a \n, and we skip
-            ** an adjacent \n, if any. We don't set the
-            ** newlinetypes flag until we've seen the next char.
-            */
-            skipnextlf = 1;
-            c = '\n';
-        } else if ( c == '\n') {
-            newlinetypes |= NEWLINE_LF;
-        }
         *p++ = c;
-        if (c == '\n') break;
+        if (c == '\n') {
+            break;
+        }
     }
-    /* if ( c == EOF && skipnextlf )
-        newlinetypes |= NEWLINE_CR; */
     FUNLOCKFILE(stream);
     *p = '\0';
-    if ( skipnextlf ) {
-        /* If we have no file object we cannot save the
-        ** skipnextlf flag. We have to readahead, which
-        ** will cause a pause if we're reading from an
-        ** interactive stream, but that is very unlikely
-        ** unless we're doing something silly like
-        ** exec(open("/dev/tty").read()).
-        */
-        c = GETC(stream);
-        if ( c != '\n' )
-            ungetc(c, stream);
-    }
-    if (p == buf)
+    if (p == buf) {
         return NULL;
+    }
+    *size = p - buf;
     return buf;
+}
+
+/*
+** Py_UniversalNewlineFgets is an fgets variation that understands
+** all of \r, \n and \r\n conventions.
+** The stream should be opened in binary mode.
+** The fobj parameter exists solely for legacy reasons and must be NULL.
+** Note that we need no error handling: fgets() treats error and eof
+** identically.
+*/
+
+char *
+Py_UniversalNewlineFgets(char *buf, int n, FILE *stream, PyObject *fobj) {
+    size_t size;
+    return _Py_UniversalNewlineFgetsWithSize(buf, n, stream, fobj, &size);
 }
 
 /* **************************** std printer ****************************
@@ -313,29 +282,6 @@ typedef struct {
     PyObject_HEAD
     int fd;
 } PyStdPrinter_Object;
-
-static PyObject *
-stdprinter_new(PyTypeObject *type, PyObject *args, PyObject *kews)
-{
-    PyStdPrinter_Object *self;
-
-    assert(type != NULL && type->tp_alloc != NULL);
-
-    self = (PyStdPrinter_Object *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->fd = -1;
-    }
-
-    return (PyObject *) self;
-}
-
-static int
-stdprinter_init(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "cannot create 'stderrprinter' instances");
-    return -1;
-}
 
 PyObject *
 PyFile_NewStdPrinter(int fd)
@@ -379,7 +325,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         return NULL;
     }
 
-    /* Encode Unicode to UTF-8/surrogateescape */
+    /* Encode Unicode to UTF-8/backslashreplace */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -496,7 +442,7 @@ PyTypeObject PyStdPrinter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                         /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION, /* tp_flags */
     0,                                          /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -512,9 +458,9 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    stdprinter_init,                            /* tp_init */
+    0,                                          /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    stdprinter_new,                             /* tp_new */
+    0,                                          /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
 
@@ -547,7 +493,7 @@ PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData) {
 PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
-    PyObject *iomod, *f = NULL;
+    PyObject *f = NULL;
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",
@@ -559,11 +505,10 @@ PyFile_OpenCodeObject(PyObject *path)
     if (hook) {
         f = hook(path, _PyRuntime.open_code_userdata);
     } else {
-        iomod = PyImport_ImportModule("_io");
-        if (iomod) {
-            f = _PyObject_CallMethodId(iomod, &PyId_open, "Os",
-                                       path, "rb");
-            Py_DECREF(iomod);
+        PyObject *open = _PyImport_GetModuleAttrString("_io", "open");
+        if (open) {
+            f = PyObject_CallFunction(open, "Os", path, "rb");
+            Py_DECREF(open);
         }
     }
 
@@ -584,6 +529,13 @@ PyFile_OpenCode(const char *utf8path)
 }
 
 
-#ifdef __cplusplus
+int
+_PyFile_Flush(PyObject *file)
+{
+    PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
 }
-#endif

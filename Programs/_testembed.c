@@ -8,24 +8,90 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
-#include <Python.h>
+#include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>               // putenv()
 #include <wchar.h>
+
+// These functions were removed from Python 3.13 API but are still exported
+// for the stable ABI. We want to test them in this program.
+extern void Py_SetProgramName(const wchar_t *program_name);
+extern void PySys_AddWarnOption(const wchar_t *s);
+extern void PySys_AddXOption(const wchar_t *s);
+extern void Py_SetPath(const wchar_t *path);
+extern void Py_SetPythonHome(const wchar_t *home);
+
+
+int main_argc;
+char **main_argv;
 
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
- * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
+ * Executed via Lib/test/test_embed.py
  *********************************************************/
+
+// Use to display the usage
+#define PROGRAM "test_embed"
 
 /* Use path starting with "./" avoids a search along the PATH */
 #define PROGRAM_NAME L"./_testembed"
 
+#define INIT_LOOPS 4
+
+// Ignore Py_DEPRECATED() compiler warnings: deprecated functions are
+// tested on purpose here.
+_Py_COMP_DIAG_PUSH
+_Py_COMP_DIAG_IGNORE_DEPR_DECLS
+
+
+static void error(const char *msg)
+{
+    fprintf(stderr, "ERROR: %s\n", msg);
+    fflush(stderr);
+}
+
+
+static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
+{
+    PyStatus status = PyConfig_SetString(config, config_str, str);
+    if (PyStatus_Exception(status)) {
+        PyConfig_Clear(config);
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void config_set_program_name(PyConfig *config)
+{
+    const wchar_t *program_name = PROGRAM_NAME;
+    config_set_string(config, &config->program_name, program_name);
+}
+
+
+static void init_from_config_clear(PyConfig *config)
+{
+    PyStatus status = Py_InitializeFromConfig(config);
+    PyConfig_Clear(config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+}
+
+
+static void _testembed_Py_InitializeFromConfig(void)
+{
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+}
+
 static void _testembed_Py_Initialize(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-    Py_Initialize();
+   Py_SetProgramName(PROGRAM_NAME);
+   Py_Initialize();
 }
 
 
@@ -54,11 +120,10 @@ static int test_repeated_init_and_subinterpreters(void)
 {
     PyThreadState *mainstate, *substate;
     PyGILState_STATE gilstate;
-    int i, j;
 
-    for (i=0; i<15; i++) {
+    for (int i=1; i <= INIT_LOOPS; i++) {
         printf("--- Pass %d ---\n", i);
-        _testembed_Py_Initialize();
+        _testembed_Py_InitializeFromConfig();
         mainstate = PyThreadState_Get();
 
         PyEval_ReleaseThread(mainstate);
@@ -67,7 +132,7 @@ static int test_repeated_init_and_subinterpreters(void)
         print_subinterp();
         PyThreadState_Swap(NULL);
 
-        for (j=0; j<3; j++) {
+        for (int j=0; j<3; j++) {
             substate = Py_NewInterpreter();
             print_subinterp();
             Py_EndInterpreter(substate);
@@ -83,27 +148,104 @@ static int test_repeated_init_and_subinterpreters(void)
     return 0;
 }
 
+#define EMBEDDED_EXT_NAME "embedded_ext"
+
+static PyModuleDef embedded_ext = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = EMBEDDED_EXT_NAME,
+    .m_size = 0,
+};
+
+static PyObject*
+PyInit_embedded_ext(void)
+{
+    return PyModule_Create(&embedded_ext);
+}
+
+/****************************************************************************
+ * Call Py_Initialize()/Py_Finalize() multiple times and execute Python code
+ ***************************************************************************/
+
+// Used by bpo-46417 to test that structseq types used by the sys module are
+// cleared properly and initialized again properly when Python is finalized
+// multiple times.
+static int test_repeated_init_exec(void)
+{
+    if (main_argc < 3) {
+        fprintf(stderr, "usage: %s test_repeated_init_exec CODE\n", PROGRAM);
+        exit(1);
+    }
+    const char *code = main_argv[2];
+
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_InitializeFromConfig();
+        int err = PyRun_SimpleString(code);
+        Py_Finalize();
+        if (err) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/****************************************************************************
+ * Test the Py_Initialize(Ex) convenience/compatibility wrappers
+ ***************************************************************************/
+// This is here to help ensure there are no wrapper resource leaks (gh-96853)
+static int test_repeated_simple_init(void)
+{
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        fprintf(stderr, "--- Loop #%d ---\n", i);
+        fflush(stderr);
+
+        _testembed_Py_Initialize();
+        Py_Finalize();
+        printf("Finalized\n"); // Give test_embed some output to check
+    }
+    return 0;
+}
+
+
 /*****************************************************
  * Test forcing a particular IO encoding
  *****************************************************/
 
-static void check_stdio_details(const char *encoding, const char * errors)
+static void check_stdio_details(const wchar_t *encoding, const wchar_t *errors)
 {
     /* Output info for the test case to check */
     if (encoding) {
-        printf("Expected encoding: %s\n", encoding);
+        printf("Expected encoding: %ls\n", encoding);
     } else {
         printf("Expected encoding: default\n");
     }
     if (errors) {
-        printf("Expected errors: %s\n", errors);
+        printf("Expected errors: %ls\n", errors);
     } else {
         printf("Expected errors: default\n");
     }
     fflush(stdout);
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
     /* Force the given IO encoding */
-    Py_SetStandardStreamEncoding(encoding, errors);
-    _testembed_Py_Initialize();
+    if (encoding) {
+        config_set_string(&config, &config.stdio_encoding, encoding);
+    }
+    if (errors) {
+        config_set_string(&config, &config.stdio_errors, errors);
+    }
+#ifdef MS_WINDOWS
+    // gh-106659: On Windows, don't use _io._WindowsConsoleIO which always
+    // announce UTF-8 for sys.stdin.encoding.
+    config.legacy_windows_stdio = 1;
+#endif
+    config_set_program_name(&config);
+    init_from_config_clear(&config);
+
+
     PyRun_SimpleString(
         "import sys;"
         "print('stdin: {0.encoding}:{0.errors}'.format(sys.stdin));"
@@ -120,19 +262,11 @@ static int test_forced_io_encoding(void)
     printf("--- Use defaults ---\n");
     check_stdio_details(NULL, NULL);
     printf("--- Set errors only ---\n");
-    check_stdio_details(NULL, "ignore");
+    check_stdio_details(NULL, L"ignore");
     printf("--- Set encoding only ---\n");
-    check_stdio_details("iso8859-1", NULL);
+    check_stdio_details(L"iso8859-1", NULL);
     printf("--- Set encoding and errors ---\n");
-    check_stdio_details("iso8859-1", "replace");
-
-    /* Check calling after initialization fails */
-    Py_Initialize();
-
-    if (Py_SetStandardStreamEncoding(NULL, NULL) == 0) {
-        printf("Unexpected success calling Py_SetStandardStreamEncoding");
-    }
-    Py_Finalize();
+    check_stdio_details(L"iso8859-1", L"replace");
     return 0;
 }
 
@@ -212,7 +346,7 @@ static int test_pre_initialization_sys_options(void)
     dynamic_xoption = NULL;
 
     _Py_EMBED_PREINIT_CHECK("Initializing interpreter\n");
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     _Py_EMBED_PREINIT_CHECK("Check sys module contents\n");
     PyRun_SimpleString("import sys; "
                        "print('sys.warnoptions:', sys.warnoptions); "
@@ -234,15 +368,13 @@ static void bpo20891_thread(void *lockp)
 
     PyGILState_STATE state = PyGILState_Ensure();
     if (!PyGILState_Check()) {
-        fprintf(stderr, "PyGILState_Check failed!");
+        error("PyGILState_Check failed!");
         abort();
     }
 
     PyGILState_Release(state);
 
     PyThread_release_lock(lock);
-
-    PyThread_exit_thread();
 }
 
 static int test_bpo20891(void)
@@ -254,15 +386,15 @@ static int test_bpo20891(void)
        crash. */
     PyThread_type_lock lock = PyThread_allocate_lock();
     if (!lock) {
-        fprintf(stderr, "PyThread_allocate_lock failed!");
+        error("PyThread_allocate_lock failed!");
         return 1;
     }
 
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     unsigned long thrd = PyThread_start_new_thread(bpo20891_thread, &lock);
     if (thrd == PYTHREAD_INVALID_THREAD_ID) {
-        fprintf(stderr, "PyThread_start_new_thread failed!");
+        error("PyThread_start_new_thread failed!");
         return 1;
     }
     PyThread_acquire_lock(lock, WAIT_LOCK);
@@ -274,12 +406,14 @@ static int test_bpo20891(void)
 
     PyThread_free_lock(lock);
 
+    Py_Finalize();
+
     return 0;
 }
 
 static int test_initialize_twice(void)
 {
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     /* bpo-33932: Calling Py_Initialize() twice should do nothing
      * (and not crash!). */
@@ -297,7 +431,7 @@ static int test_initialize_pymain(void)
                         L"print(f'Py_Main() after Py_Initialize: "
                         L"sys.argv={sys.argv}')"),
                        L"arg2"};
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     /* bpo-34008: Calling Py_Main() after Py_Initialize() must not crash */
     Py_Main(Py_ARRAY_LENGTH(argv), argv);
@@ -320,20 +454,10 @@ dump_config(void)
 
 static int test_init_initialize_config(void)
 {
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
-}
-
-
-static void config_set_string(PyConfig *config, wchar_t **config_str, const wchar_t *str)
-{
-    PyStatus status = PyConfig_SetString(config, config_str, str);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
 }
 
 
@@ -354,23 +478,6 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
     PyStatus status = PyConfig_SetWideStringList(config, list, length, items);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(config);
-        Py_ExitStatusException(status);
-    }
-}
-
-
-static void config_set_program_name(PyConfig *config)
-{
-    const wchar_t *program_name = PROGRAM_NAME;
-    config_set_string(config, &config->program_name, program_name);
-}
-
-
-static void init_from_config_clear(PyConfig *config)
-{
-    PyStatus status = Py_InitializeFromConfig(config);
-    PyConfig_Clear(config);
-    if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 }
@@ -502,6 +609,9 @@ static int test_init_from_config(void)
     putenv("PYTHONPROFILEIMPORTTIME=0");
     config.import_time = 1;
 
+    putenv("PYTHONNODEBUGRANGES=0");
+    config.code_debug_ranges = 0;
+
     config.show_ref_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
@@ -546,11 +656,7 @@ static int test_init_from_config(void)
     /* FIXME: test path config: module_search_path .. dll_path */
 
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
-    status = PyConfig_SetBytesString(&config, &config.platlibdir, "my_platlibdir");
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    config_set_string(&config, &config.platlibdir, L"my_platlibdir");
 
     putenv("PYTHONVERBOSE=0");
     Py_VerboseFlag = 0;
@@ -589,12 +695,6 @@ static int test_init_from_config(void)
     config.buffered_stdio = 0;
 
     putenv("PYTHONIOENCODING=cp424");
-    Py_SetStandardStreamEncoding("ascii", "ignore");
-#ifdef MS_WINDOWS
-    /* Py_SetStandardStreamEncoding() sets Py_LegacyWindowsStdioFlag to 1.
-       Force it to 0 through the config. */
-    config.legacy_windows_stdio = 0;
-#endif
     config_set_string(&config, &config.stdio_encoding, L"iso8859-1");
     config_set_string(&config, &config.stdio_errors, L"replace");
 
@@ -607,7 +707,15 @@ static int test_init_from_config(void)
     Py_FrozenFlag = 0;
     config.pathconfig_warnings = 0;
 
-    config._isolated_interpreter = 1;
+    config.safe_path = 1;
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=");
+    config._pystats = 1;
+#endif
+
+    putenv("PYTHONINTMAXSTRDIGITS=6666");
+    config.int_max_str_digits = 31337;
+    config.cpu_count = 4321;
 
     init_from_config_clear(&config);
 
@@ -660,6 +768,7 @@ static void set_most_env_vars(void)
     putenv("PYTHONMALLOC=malloc");
     putenv("PYTHONTRACEMALLOC=2");
     putenv("PYTHONPROFILEIMPORTTIME=1");
+    putenv("PYTHONNODEBUGRANGES=1");
     putenv("PYTHONMALLOCSTATS=1");
     putenv("PYTHONUTF8=1");
     putenv("PYTHONVERBOSE=1");
@@ -672,6 +781,11 @@ static void set_most_env_vars(void)
     putenv("PYTHONFAULTHANDLER=1");
     putenv("PYTHONIOENCODING=iso8859-1:replace");
     putenv("PYTHONPLATLIBDIR=env_platlibdir");
+    putenv("PYTHONSAFEPATH=1");
+    putenv("PYTHONINTMAXSTRDIGITS=4567");
+#ifdef Py_STATS
+    putenv("PYTHONSTATS=1");
+#endif
 }
 
 
@@ -689,7 +803,7 @@ static int test_init_compat_env(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars();
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -725,7 +839,7 @@ static int test_init_env_dev_mode(void)
     /* Test initialization from environment variables */
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -738,7 +852,7 @@ static int test_init_env_dev_mode_alloc(void)
     Py_IgnoreEnvironmentFlag = 0;
     set_all_env_vars_dev_mode();
     putenv("PYTHONMALLOC=malloc");
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     dump_config();
     Py_Finalize();
     return 0;
@@ -753,6 +867,10 @@ static int test_init_isolated_flag(void)
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
+    // These options are set to 1 by isolated=1
+    config.safe_path = 0;
+    config.use_environment = 1;
+    config.user_site_directory = 1;
 
     config_set_program_name(&config);
     set_all_env_vars();
@@ -831,6 +949,7 @@ static int test_preinit_dont_parse_argv(void)
     wchar_t *argv[] = {L"python3",
                        L"-E",
                        L"-I",
+                       L"-P",
                        L"-X", L"dev",
                        L"-X", L"utf8",
                        L"script.py"};
@@ -864,7 +983,7 @@ static int test_preinit_parse_argv(void)
 
     /* Pre-initialize implicitly using argv: make sure that -X dev
        is used to configure the allocation in preinitialization */
-    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"script.py"};
+    wchar_t *argv[] = {L"python3", L"-X", L"dev", L"-P", L"script.py"};
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config_set_program_name(&config);
     init_from_config_clear(&config);
@@ -1073,7 +1192,7 @@ static int test_open_code_hook(void)
     }
 
     Py_IgnoreEnvironmentFlag = 0;
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
     result = 0;
 
     PyObject *r = PyFile_OpenCode("$$test-filename");
@@ -1112,8 +1231,11 @@ static int test_open_code_hook(void)
     return result;
 }
 
+static int _audit_hook_clear_count = 0;
+
 static int _audit_hook(const char *event, PyObject *args, void *userdata)
 {
+    assert(args && PyTuple_CheckExact(args));
     if (strcmp(event, "_testembed.raise") == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Intentional error");
         return -1;
@@ -1122,6 +1244,8 @@ static int _audit_hook(const char *event, PyObject *args, void *userdata)
             return -1;
         }
         return 0;
+    } else if (strcmp(event, "cpython._PySys_ClearAuditHooks") == 0) {
+        _audit_hook_clear_count += 1;
     }
     return 0;
 }
@@ -1132,7 +1256,7 @@ static int _test_audit(Py_ssize_t setValue)
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook, &sawSet);
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     if (PySys_Audit("_testembed.raise", NULL) == 0) {
         printf("No error raised");
@@ -1155,11 +1279,16 @@ static int _test_audit(Py_ssize_t setValue)
         printf("Set event failed");
         return 4;
     }
+    if (PyErr_Occurred()) {
+        printf("Exception raised");
+        return 5;
+    }
 
     if (sawSet != 42) {
         printf("Failed to see *userData change\n");
-        return 5;
+        return 6;
     }
+
     return 0;
 }
 
@@ -1167,7 +1296,61 @@ static int test_audit(void)
 {
     int result = _test_audit(42);
     Py_Finalize();
+    if (_audit_hook_clear_count != 1) {
+        return 0x1000 | _audit_hook_clear_count;
+    }
     return result;
+}
+
+static int test_audit_tuple(void)
+{
+#define ASSERT(TEST, EXITCODE) \
+    if (!(TEST)) { \
+        printf("ERROR test failed at %s:%i\n", __FILE__, __LINE__); \
+        return (EXITCODE); \
+    }
+
+    Py_ssize_t sawSet = 0;
+
+    // we need at least one hook, otherwise code checking for
+    // PySys_AuditTuple() is skipped.
+    PySys_AddAuditHook(_audit_hook, &sawSet);
+    _testembed_Py_InitializeFromConfig();
+
+    ASSERT(!PyErr_Occurred(), 0);
+
+    // pass Python tuple object
+    PyObject *tuple = Py_BuildValue("(i)", 444);
+    if (tuple == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", tuple) == 0, 10);
+    ASSERT(!PyErr_Occurred(), 11);
+    ASSERT(sawSet == 444, 12);
+    Py_DECREF(tuple);
+
+    // pass Python int object
+    PyObject *int_arg = PyLong_FromLong(555);
+    if (int_arg == NULL) {
+        goto error;
+    }
+    ASSERT(PySys_AuditTuple("_testembed.set", int_arg) == -1, 20);
+    ASSERT(PyErr_ExceptionMatches(PyExc_TypeError), 21);
+    PyErr_Clear();
+    Py_DECREF(int_arg);
+
+    // NULL is accepted and means "no arguments"
+    ASSERT(PySys_AuditTuple("_testembed.test_audit_tuple", NULL) == 0, 30);
+    ASSERT(!PyErr_Occurred(), 31);
+
+    Py_Finalize();
+    return 0;
+
+error:
+    PyErr_Print();
+    return 1;
+
+#undef ASSERT
 }
 
 static volatile int _audit_subinterpreter_interpreter_count = 0;
@@ -1185,7 +1368,7 @@ static int test_audit_subinterpreter(void)
 {
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
-    _testembed_Py_Initialize();
+    _testembed_Py_InitializeFromConfig();
 
     Py_NewInterpreter();
     Py_NewInterpreter();
@@ -1298,11 +1481,7 @@ static int test_init_read_set(void)
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_SetBytesString(&config, &config.program_name,
-                                     "./init_read_set");
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
+    config_set_string(&config, &config.program_name, L"./init_read_set");
 
     status = PyConfig_Read(&config);
     if (PyStatus_Exception(status)) {
@@ -1384,12 +1563,12 @@ static int test_init_setpath(void)
 {
     char *env = getenv("TESTPATH");
     if (!env) {
-        fprintf(stderr, "missing TESTPATH env var\n");
+        error("missing TESTPATH env var");
         return 1;
     }
     wchar_t *path = Py_DecodeLocale(env, NULL);
     if (path == NULL) {
-        fprintf(stderr, "failed to decode TESTPATH\n");
+        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1417,12 +1596,12 @@ static int test_init_setpath_config(void)
 
     char *env = getenv("TESTPATH");
     if (!env) {
-        fprintf(stderr, "missing TESTPATH env var\n");
+        error("missing TESTPATH env var");
         return 1;
     }
     wchar_t *path = Py_DecodeLocale(env, NULL);
     if (path == NULL) {
-        fprintf(stderr, "failed to decode TESTPATH\n");
+        error("failed to decode TESTPATH");
         return 1;
     }
     Py_SetPath(path);
@@ -1446,12 +1625,12 @@ static int test_init_setpythonhome(void)
 {
     char *env = getenv("TESTHOME");
     if (!env) {
-        fprintf(stderr, "missing TESTHOME env var\n");
+        error("missing TESTHOME env var");
         return 1;
     }
     wchar_t *home = Py_DecodeLocale(env, NULL);
     if (home == NULL) {
-        fprintf(stderr, "failed to decode TESTHOME\n");
+        error("failed to decode TESTHOME");
         return 1;
     }
     Py_SetPythonHome(home);
@@ -1460,6 +1639,46 @@ static int test_init_setpythonhome(void)
 
     Py_Initialize();
     dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_is_python_build(void)
+{
+    // gh-91985: in-tree builds fail to check for build directory landmarks
+    // under the effect of 'home' or PYTHONHOME environment variable.
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        error("missing TESTHOME env var");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        error("failed to decode TESTHOME");
+        return 1;
+    }
+
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+    config_set_program_name(&config);
+    config_set_string(&config, &config.home, home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    // Use an impossible value so we can detect whether it isn't updated
+    // during initialization.
+    config._is_python_build = INT_MAX;
+    env = getenv("NEGATIVE_ISPYTHONBUILD");
+    if (env && strcmp(env, "0") != 0) {
+        config._is_python_build = INT_MIN;
+    }
+    init_from_config_clear(&config);
+    Py_Finalize();
+    // Second initialization
+    config._is_python_build = -1;
+    init_from_config_clear(&config);
+    dump_config();  // home and _is_python_build are cached in _Py_path_config
     Py_Finalize();
     return 0;
 }
@@ -1512,6 +1731,55 @@ static int test_init_warnoptions(void)
     }
 
     init_from_config_clear(&config);
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int tune_config(void)
+{
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
+        PyConfig_Clear(&config);
+        PyErr_Print();
+        return -1;
+    }
+
+    config.bytes_warning = 2;
+
+    if (_PyInterpreterState_SetConfig(&config) < 0) {
+        PyConfig_Clear(&config);
+        return -1;
+    }
+    PyConfig_Clear(&config);
+    return 0;
+}
+
+
+static int test_init_set_config(void)
+{
+    // Initialize core
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    config_set_string(&config, &config.program_name, PROGRAM_NAME);
+    config._init_main = 0;
+    config.bytes_warning = 0;
+    init_from_config_clear(&config);
+
+    // Tune the configuration using _PyInterpreterState_SetConfig()
+    if (tune_config() < 0) {
+        PyErr_Print();
+        return 1;
+    }
+
+    // Finish initialization: main part
+    PyStatus status = _Py_InitializeMain();
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     dump_config();
     Py_Finalize();
     return 0;
@@ -1589,15 +1857,26 @@ static int test_run_main(void)
 }
 
 
+static int test_run_main_loop(void)
+{
+    // bpo-40413: Calling Py_InitializeFromConfig()+Py_RunMain() multiple
+    // times must not crash.
+    for (int i=0; i<5; i++) {
+        int exitcode = test_run_main();
+        if (exitcode != 0) {
+            return exitcode;
+        }
+    }
+    return 0;
+}
+
+
 static int test_get_argc_argv(void)
 {
     PyConfig config;
     PyConfig_InitPythonConfig(&config);
 
-    wchar_t *argv[] = {L"python3", L"-c",
-                       (L"import sys; "
-                        L"print(f'Py_RunMain(): sys.argv={sys.argv}')"),
-                       L"arg2"};
+    wchar_t *argv[] = {L"python3", L"-c", L"pass", L"arg2"};
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config_set_string(&config, &config.program_name, L"./python3");
 
@@ -1629,6 +1908,224 @@ static int test_get_argc_argv(void)
 }
 
 
+static int check_use_frozen_modules(const char *rawval)
+{
+    wchar_t optval[100];
+    if (rawval == NULL) {
+        wcscpy(optval, L"frozen_modules");
+    }
+    else if (swprintf(optval, 100,
+#if defined(_MSC_VER)
+        L"frozen_modules=%S",
+#else
+        L"frozen_modules=%s",
+#endif
+        rawval) < 0) {
+        error("rawval is too long");
+        return -1;
+    }
+
+    PyConfig config;
+    PyConfig_InitPythonConfig(&config);
+
+    config.parse_argv = 1;
+
+    wchar_t* argv[] = {
+        L"./argv0",
+        L"-X",
+        optval,
+        L"-c",
+        L"pass",
+    };
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+static int test_init_use_frozen_modules(void)
+{
+    const char *envvar = getenv("TESTFROZEN");
+    return check_use_frozen_modules(envvar);
+}
+
+
+static int test_unicode_id_init(void)
+{
+    // bpo-42882: Test that _PyUnicode_FromId() works
+    // when Python is initialized multiples times.
+
+    // This is equivalent to `_Py_IDENTIFIER(test_unicode_id_init)`
+    // but since `_Py_IDENTIFIER` is disabled when `Py_BUILD_CORE`
+    // is defined, it is manually expanded here.
+    static _Py_Identifier PyId_test_unicode_id_init = {
+        .string = "test_unicode_id_init",
+        .index = -1,
+    };
+
+    // Initialize Python once without using the identifier
+    _testembed_Py_InitializeFromConfig();
+    Py_Finalize();
+
+    // Now initialize Python multiple times and use the identifier.
+    // The first _PyUnicode_FromId() call initializes the identifier index.
+    for (int i=0; i<3; i++) {
+        _testembed_Py_InitializeFromConfig();
+
+        PyObject *str1, *str2;
+
+        str1 = _PyUnicode_FromId(&PyId_test_unicode_id_init);
+        assert(str1 != NULL);
+        assert(_Py_IsImmortal(str1));
+
+        str2 = PyUnicode_FromString("test_unicode_id_init");
+        assert(str2 != NULL);
+
+        assert(PyUnicode_Compare(str1, str2) == 0);
+
+        Py_DECREF(str2);
+
+        Py_Finalize();
+    }
+    return 0;
+}
+
+
+static int test_init_main_interpreter_settings(void)
+{
+    _testembed_Py_Initialize();
+    (void) PyRun_SimpleStringFlags(
+        "import _testinternalcapi, json; "
+        "print(json.dumps(_testinternalcapi.get_interp_settings(0)))",
+        0);
+    Py_Finalize();
+    return 0;
+}
+
+
+#ifndef MS_WINDOWS
+#include "test_frozenmain.h"      // M_test_frozenmain
+
+static int test_frozenmain(void)
+{
+    static struct _frozen frozen_modules[4] = {
+        {"__main__", M_test_frozenmain, sizeof(M_test_frozenmain)},
+        {0, 0, 0}   // sentinel
+    };
+
+    char* argv[] = {
+        "./argv0",
+        "-E",
+        "arg1",
+        "arg2",
+    };
+    PyImport_FrozenModules = frozen_modules;
+    return Py_FrozenMain(Py_ARRAY_LENGTH(argv), argv);
+}
+#endif  // !MS_WINDOWS
+
+static int test_repeated_init_and_inittab(void)
+{
+    // bpo-44441: Py_RunMain() must reset PyImport_Inittab at exit.
+    // It must be possible to call PyImport_AppendInittab() or
+    // PyImport_ExtendInittab() before each Python initialization.
+    for (int i=1; i <= INIT_LOOPS; i++) {
+        printf("--- Pass %d ---\n", i);
+
+        // Call PyImport_AppendInittab() at each iteration
+        if (PyImport_AppendInittab(EMBEDDED_EXT_NAME,
+                                   &PyInit_embedded_ext) != 0) {
+            fprintf(stderr, "PyImport_AppendInittab() failed\n");
+            return 1;
+        }
+
+        // Initialize Python
+        wchar_t* argv[] = {PROGRAM_NAME, L"-c", L"pass"};
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config.isolated = 1;
+        config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+        init_from_config_clear(&config);
+
+        // Py_RunMain() calls _PyImport_Fini2() which resets PyImport_Inittab
+        int exitcode = Py_RunMain();
+        if (exitcode != 0) {
+            return exitcode;
+        }
+    }
+    return 0;
+}
+
+static void wrap_allocator(PyMemAllocatorEx *allocator);
+static void unwrap_allocator(PyMemAllocatorEx *allocator);
+
+static void *
+malloc_wrapper(void *ctx, size_t size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    unwrap_allocator(allocator);
+    PyEval_GetFrame();  // BOOM!
+    wrap_allocator(allocator);
+    return allocator->malloc(allocator->ctx, size);
+}
+
+static void *
+calloc_wrapper(void *ctx, size_t nelem, size_t elsize)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->calloc(allocator->ctx, nelem, elsize);
+}
+
+static void *
+realloc_wrapper(void *ctx, void *ptr, size_t new_size)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    return allocator->realloc(allocator->ctx, ptr, new_size);
+}
+
+static void
+free_wrapper(void *ctx, void *ptr)
+{
+    PyMemAllocatorEx *allocator = (PyMemAllocatorEx *)ctx;
+    allocator->free(allocator->ctx, ptr);
+}
+
+static void
+wrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+    PyMemAllocatorEx wrapper = {
+        .malloc = &malloc_wrapper,
+        .calloc = &calloc_wrapper,
+        .realloc = &realloc_wrapper,
+        .free = &free_wrapper,
+        .ctx = allocator,
+    };
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &wrapper);
+}
+
+static void
+unwrap_allocator(PyMemAllocatorEx *allocator)
+{
+    PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, allocator);
+}
+
+static int
+test_get_incomplete_frame(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyMemAllocatorEx allocator;
+    wrap_allocator(&allocator);
+    // Force an allocation with an incomplete (generator) frame:
+    int result = PyRun_SimpleString("(_ for _ in ())");
+    unwrap_allocator(&allocator);
+    Py_Finalize();
+    return result;
+}
+
+
 /* *********************************************************
  * List of test cases and the function that implements it.
  *
@@ -1648,8 +2145,12 @@ struct TestCase
 };
 
 static struct TestCase TestCases[] = {
+    // Python initialization
+    {"test_repeated_init_exec", test_repeated_init_exec},
+    {"test_repeated_simple_init", test_repeated_simple_init},
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
+    {"test_repeated_init_and_inittab", test_repeated_init_and_inittab},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},
@@ -1684,23 +2185,42 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
+    {"test_init_set_config", test_init_set_config},
     {"test_run_main", test_run_main},
+    {"test_run_main_loop", test_run_main_loop},
     {"test_get_argc_argv", test_get_argc_argv},
+    {"test_init_use_frozen_modules", test_init_use_frozen_modules},
+    {"test_init_main_interpreter_settings", test_init_main_interpreter_settings},
 
+    // Audit
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
+    {"test_audit_tuple", test_audit_tuple},
     {"test_audit_subinterpreter", test_audit_subinterpreter},
     {"test_audit_run_command", test_audit_run_command},
     {"test_audit_run_file", test_audit_run_file},
     {"test_audit_run_interactivehook", test_audit_run_interactivehook},
     {"test_audit_run_startup", test_audit_run_startup},
     {"test_audit_run_stdin", test_audit_run_stdin},
+
+    // Specific C API
+    {"test_unicode_id_init", test_unicode_id_init},
+#ifndef MS_WINDOWS
+    {"test_frozenmain", test_frozenmain},
+#endif
+    {"test_get_incomplete_frame", test_get_incomplete_frame},
+
     {NULL, NULL}
 };
 
+
 int main(int argc, char *argv[])
 {
+    main_argc = argc;
+    main_argv = argv;
+
     if (argc > 1) {
         for (struct TestCase *tc = TestCases; tc && tc->name; tc++) {
             if (strcmp(argv[1], tc->name) == 0)

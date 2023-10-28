@@ -167,7 +167,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
       Return a representation of the message corresponding to *key*. If no such
       message exists, *default* is returned if the method was called as
       :meth:`get` and a :exc:`KeyError` exception is raised if the method was
-      called as :meth:`__getitem__`. The message is represented as an instance
+      called as :meth:`~object.__getitem__`. The message is represented as an instance
       of the appropriate format-specific :class:`Message` subclass unless a
       custom message factory was specified when the :class:`Mailbox` instance
       was initialized.
@@ -426,16 +426,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `maildir man page from qmail <http://www.qmail.org/man/man5/maildir.html>`_
-      The original specification of the format.
+   `maildir man page from Courier <https://www.courier-mta.org/maildir.html>`_
+      A specification of the format. Describes a common extension for
+      supporting folders.
 
    `Using maildir format <https://cr.yp.to/proto/maildir.html>`_
       Notes on Maildir by its inventor. Includes an updated name-creation scheme and
       details on "info" semantics.
-
-   `maildir man page from Courier <http://www.courier-mta.org/maildir.html>`_
-      Another specification of the format. Describes a common extension for supporting
-      folders.
 
 
 .. _mailbox-mbox:
@@ -480,16 +477,13 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
 
-   `mbox man page from qmail <http://www.qmail.org/man/man5/mbox.html>`_
-      A specification of the format and its variations.
-
    `mbox man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mbox>`_
-      Another specification of the format, with details on locking.
+      A specification of the format, with details on locking.
 
    `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <https://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
@@ -594,7 +588,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls. For MH mailboxes, locking
+      :c:func:`!flock` and :c:func:`!lockf` system calls. For MH mailboxes, locking
       the mailbox means locking the :file:`.mh_sequences` file and, only for the
       duration of any operations that affect them, locking individual message
       files.
@@ -620,7 +614,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `nmh - Message Handling System <http://www.nongnu.org/nmh/>`_
+   `nmh - Message Handling System <https://www.nongnu.org/nmh/>`_
       Home page of :program:`nmh`, an updated version of the original :program:`mh`.
 
    `MH & nmh: Email for Users & Programmers <https://rand-mh.sourceforge.io/book/>`_
@@ -692,7 +686,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -743,7 +737,7 @@ Supported mailbox formats are Maildir, mbox, MH, Babyl, and MMDF.
                unlock()
 
       Three locking mechanisms are used---dot locking and, if available, the
-      :c:func:`flock` and :c:func:`lockf` system calls.
+      :c:func:`!flock` and :c:func:`!lockf` system calls.
 
 
 .. seealso::
@@ -1516,7 +1510,7 @@ The following exception classes are defined in the :mod:`mailbox` module:
 
    Raised when some mailbox-related condition beyond the control of the program
    causes it to be unable to proceed, such as when failing to acquire a lock that
-   another program already holds a lock, or when a uniquely-generated file name
+   another program already holds a lock, or when a uniquely generated file name
    already exists.
 
 

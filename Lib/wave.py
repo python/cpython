@@ -21,9 +21,9 @@ This returns an instance of a class with the following public methods:
       getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
       getmarkers()    -- returns None (for compatibility with the
-                         aifc module)
+                         old aifc module)
       getmark(id)     -- raises an error since the mark does not
-                         exist (for compatibility with the aifc module)
+                         exist (for compatibility with the old aifc module)
       readframes(n)   -- returns at most n frames of audio
       rewind()        -- rewind to the beginning of the audio stream
       setpos(pos)     -- seek to the specified position
@@ -71,9 +71,7 @@ The close() method is called automatically when the class instance
 is destroyed.
 """
 
-from chunk import Chunk
 from collections import namedtuple
-import audioop
 import builtins
 import struct
 import sys
@@ -85,11 +83,136 @@ class Error(Exception):
     pass
 
 WAVE_FORMAT_PCM = 0x0001
+WAVE_FORMAT_EXTENSIBLE = 0xFFFE
+# Derived from uuid.UUID("00000001-0000-0010-8000-00aa00389b71").bytes_le
+KSDATAFORMAT_SUBTYPE_PCM = b'\x01\x00\x00\x00\x00\x00\x10\x00\x80\x00\x00\xaa\x008\x9bq'
 
 _array_fmts = None, 'b', 'h', None, 'i'
 
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
+
+
+def _byteswap(data, width):
+    swapped_data = bytearray(len(data))
+
+    for i in range(0, len(data), width):
+        for j in range(width):
+            swapped_data[i + width - 1 - j] = data[i + j]
+
+    return bytes(swapped_data)
+
+
+class _Chunk:
+    def __init__(self, file, align=True, bigendian=True, inclheader=False):
+        self.closed = False
+        self.align = align      # whether to align to word (2-byte) boundaries
+        if bigendian:
+            strflag = '>'
+        else:
+            strflag = '<'
+        self.file = file
+        self.chunkname = file.read(4)
+        if len(self.chunkname) < 4:
+            raise EOFError
+        try:
+            self.chunksize = struct.unpack_from(strflag+'L', file.read(4))[0]
+        except struct.error:
+            raise EOFError from None
+        if inclheader:
+            self.chunksize = self.chunksize - 8 # subtract header
+        self.size_read = 0
+        try:
+            self.offset = self.file.tell()
+        except (AttributeError, OSError):
+            self.seekable = False
+        else:
+            self.seekable = True
+
+    def getname(self):
+        """Return the name (ID) of the current chunk."""
+        return self.chunkname
+
+    def close(self):
+        if not self.closed:
+            try:
+                self.skip()
+            finally:
+                self.closed = True
+
+    def seek(self, pos, whence=0):
+        """Seek to specified position into the chunk.
+        Default position is 0 (start of chunk).
+        If the file is not seekable, this will result in an error.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if not self.seekable:
+            raise OSError("cannot seek")
+        if whence == 1:
+            pos = pos + self.size_read
+        elif whence == 2:
+            pos = pos + self.chunksize
+        if pos < 0 or pos > self.chunksize:
+            raise RuntimeError
+        self.file.seek(self.offset + pos, 0)
+        self.size_read = pos
+
+    def tell(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        return self.size_read
+
+    def read(self, size=-1):
+        """Read at most size bytes from the chunk.
+        If size is omitted or negative, read until the end
+        of the chunk.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.size_read >= self.chunksize:
+            return b''
+        if size < 0:
+            size = self.chunksize - self.size_read
+        if size > self.chunksize - self.size_read:
+            size = self.chunksize - self.size_read
+        data = self.file.read(size)
+        self.size_read = self.size_read + len(data)
+        if self.size_read == self.chunksize and \
+           self.align and \
+           (self.chunksize & 1):
+            dummy = self.file.read(1)
+            self.size_read = self.size_read + len(dummy)
+        return data
+
+    def skip(self):
+        """Skip the rest of the chunk.
+        If you are not interested in the contents of the chunk,
+        this method should be called so that the file points to
+        the start of the next chunk.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.seekable:
+            try:
+                n = self.chunksize - self.size_read
+                # maybe fix alignment
+                if self.align and (self.chunksize & 1):
+                    n = n + 1
+                self.file.seek(n, 1)
+                self.size_read = self.size_read + n
+                return
+            except OSError:
+                pass
+        while self.size_read < self.chunksize:
+            n = min(8192, self.chunksize - self.size_read)
+            dummy = self.read(n)
+            if not dummy:
+                raise EOFError
+
 
 class Wave_read:
     """Variables used in this class:
@@ -125,7 +248,7 @@ class Wave_read:
     def initfp(self, file):
         self._convert = None
         self._soundpos = 0
-        self._file = Chunk(file, bigendian = 0)
+        self._file = _Chunk(file, bigendian = 0)
         if self._file.getname() != b'RIFF':
             raise Error('file does not start with RIFF id')
         if self._file.read(4) != b'WAVE':
@@ -135,7 +258,7 @@ class Wave_read:
         while 1:
             self._data_seek_needed = 1
             try:
-                chunk = Chunk(self._file, bigendian = 0)
+                chunk = _Chunk(self._file, bigendian = 0)
             except EOFError:
                 break
             chunkname = chunk.getname()
@@ -219,9 +342,13 @@ class Wave_read:
                        self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_read.getmarkers", remove=(3, 15))
         return None
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_read.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def setpos(self, pos):
@@ -241,7 +368,7 @@ class Wave_read:
             return b''
         data = self._data_chunk.read(nframes * self._framesize)
         if self._sampwidth != 1 and sys.byteorder == 'big':
-            data = audioop.byteswap(data, self._sampwidth)
+            data = _byteswap(data, self._sampwidth)
         if self._convert and data:
             data = self._convert(data)
         self._soundpos = self._soundpos + len(data) // (self._nchannels * self._sampwidth)
@@ -256,21 +383,37 @@ class Wave_read:
             wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         except struct.error:
             raise EOFError from None
-        if wFormatTag == WAVE_FORMAT_PCM:
+        if wFormatTag != WAVE_FORMAT_PCM and wFormatTag != WAVE_FORMAT_EXTENSIBLE:
+            raise Error('unknown format: %r' % (wFormatTag,))
+        try:
+            sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+        except struct.error:
+            raise EOFError from None
+        if wFormatTag == WAVE_FORMAT_EXTENSIBLE:
             try:
-                sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+                cbSize, wValidBitsPerSample, dwChannelMask = struct.unpack_from('<HHL', chunk.read(8))
+                # Read the entire UUID from the chunk
+                SubFormat = chunk.read(16)
+                if len(SubFormat) < 16:
+                    raise EOFError
             except struct.error:
                 raise EOFError from None
-            self._sampwidth = (sampwidth + 7) // 8
-            if not self._sampwidth:
-                raise Error('bad sample width')
-        else:
-            raise Error('unknown format: %r' % (wFormatTag,))
+            if SubFormat != KSDATAFORMAT_SUBTYPE_PCM:
+                try:
+                    import uuid
+                    subformat_msg = f'unknown extended format: {uuid.UUID(bytes_le=SubFormat)}'
+                except Exception:
+                    subformat_msg = 'unknown extended format'
+                raise Error(subformat_msg)
+        self._sampwidth = (sampwidth + 7) // 8
+        if not self._sampwidth:
+            raise Error('bad sample width')
         if not self._nchannels:
             raise Error('bad # of channels')
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
+
 
 class Wave_write:
     """Variables used in this class:
@@ -409,12 +552,18 @@ class Wave_write:
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
+        import warnings
+        warnings._deprecated("Wave_write.setmark", remove=(3, 15))
         raise Error('setmark() not supported')
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_write.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_write.getmarkers", remove=(3, 15))
         return None
 
     def tell(self):
@@ -428,7 +577,7 @@ class Wave_write:
         if self._convert:
             data = self._convert(data)
         if self._sampwidth != 1 and sys.byteorder == 'big':
-            data = audioop.byteswap(data, self._sampwidth)
+            data = _byteswap(data, self._sampwidth)
         self._file.write(data)
         self._datawritten += len(data)
         self._nframeswritten = self._nframeswritten + nframes
@@ -498,6 +647,7 @@ class Wave_write:
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
 
 def open(f, mode=None):
     if mode is None:

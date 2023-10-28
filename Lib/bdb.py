@@ -34,6 +34,8 @@ class Bdb:
         self.fncache = {}
         self.frame_returning = None
 
+        self._load_breaks()
+
     def canonic(self, filename):
         """Return canonical form of filename.
 
@@ -117,7 +119,7 @@ class Bdb:
         """Invoke user function and return trace function for call event.
 
         If the debugger stops on this function call, invoke
-        self.user_call(). Raise BbdQuit if self.quitting is set.
+        self.user_call(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
         """
         # XXX 'arg' is no longer used
@@ -365,6 +367,12 @@ class Bdb:
     # Call self.get_*break*() to see the breakpoints or better
     # for bp in Breakpoint.bpbynumber: if bp: bp.bpprint().
 
+    def _add_to_breaks(self, filename, lineno):
+        """Add breakpoint to breaks, if not already there."""
+        bp_linenos = self.breaks.setdefault(filename, [])
+        if lineno not in bp_linenos:
+            bp_linenos.append(lineno)
+
     def set_break(self, filename, lineno, temporary=False, cond=None,
                   funcname=None):
         """Set a new breakpoint for filename:lineno.
@@ -377,11 +385,20 @@ class Bdb:
         line = linecache.getline(filename, lineno)
         if not line:
             return 'Line %s:%d does not exist' % (filename, lineno)
-        list = self.breaks.setdefault(filename, [])
-        if lineno not in list:
-            list.append(lineno)
+        self._add_to_breaks(filename, lineno)
         bp = Breakpoint(filename, lineno, temporary, cond, funcname)
         return None
+
+    def _load_breaks(self):
+        """Apply all breakpoints (set in other instances) to this one.
+
+        Populates this instance's breaks list from the Breakpoint class's
+        list, which can have breakpoints set by another Bdb instance. This
+        is necessary for interactive sessions to keep the breakpoints
+        active across multiple calls to run().
+        """
+        for (filename, lineno) in Breakpoint.bplist.keys():
+            self._add_to_breaks(filename, lineno)
 
     def _prune_breaks(self, filename, lineno):
         """Prune breakpoints for filename:lineno.
@@ -553,9 +570,12 @@ class Bdb:
             rv = frame.f_locals['__return__']
             s += '->'
             s += reprlib.repr(rv)
-        line = linecache.getline(filename, lineno, frame.f_globals)
-        if line:
-            s += lprefix + line.strip()
+        if lineno is not None:
+            line = linecache.getline(filename, lineno, frame.f_globals)
+            if line:
+                s += lprefix + line.strip()
+        else:
+            s += f'{lprefix}Warning: lineno is None'
         return s
 
     # The following methods can be called by clients to use
@@ -681,6 +701,12 @@ class Breakpoint:
         else:
             self.bplist[file, line] = [self]
 
+    @staticmethod
+    def clearBreakpoints():
+        Breakpoint.next = 1
+        Breakpoint.bplist = {}
+        Breakpoint.bpbynumber = [None]
+
     def deleteMe(self):
         """Delete the breakpoint from the list associated to a file:line.
 
@@ -782,15 +808,18 @@ def checkfuncname(b, frame):
     return True
 
 
-# Determines if there is an effective (active) breakpoint at this
-# line of code.  Returns breakpoint number or 0 if none
 def effective(file, line, frame):
-    """Determine which breakpoint for this file:line is to be acted upon.
+    """Return (active breakpoint, delete temporary flag) or (None, None) as
+       breakpoint to act upon.
 
-    Called only if we know there is a breakpoint at this location.  Return
-    the breakpoint that was triggered and a boolean that indicates if it is
-    ok to delete a temporary breakpoint.  Return (None, None) if there is no
-    matching breakpoint.
+       The "active breakpoint" is the first entry in bplist[line, file] (which
+       must exist) that is enabled, for which checkfuncname is True, and that
+       has neither a False condition nor a positive ignore count.  The flag,
+       meaning that a temporary breakpoint should be deleted, is False only
+       when the condiion cannot be evaluated (in which case, ignore count is
+       ignored).
+
+       If no such entry exists, then (None, None) is returned.
     """
     possibles = Breakpoint.bplist[file, line]
     for b in possibles:

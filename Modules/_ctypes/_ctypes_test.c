@@ -1,7 +1,20 @@
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
+
+// gh-85283: On Windows, Py_LIMITED_API requires Py_BUILD_CORE to not attempt
+// linking the extension to python3.lib (which fails). Py_BUILD_CORE_MODULE is
+// needed to import Python symbols. Then Python.h undefines Py_BUILD_CORE and
+// Py_BUILD_CORE_MODULE if Py_LIMITED_API is defined.
+#define Py_BUILD_CORE
+#define Py_BUILD_CORE_MODULE
+
 #include <Python.h>
 
+#include <stdio.h>                // printf()
+#include <stdlib.h>               // qsort()
+#include <string.h>               // memset()
 #ifdef MS_WIN32
-#include <windows.h>
+#  include <windows.h>
 #endif
 
 #define EXPORT(x) Py_EXPORTED_SYMBOL x
@@ -1032,9 +1045,29 @@ EXPORT (HRESULT) KeepObject(IUnknown *punk)
 
 #endif
 
+#ifdef MS_WIN32
+
+// i38748: c stub for testing stack corruption
+// When executing a Python callback with a long and a long long
+
+typedef long(__stdcall *_test_i38748_funcType)(long, long long);
+
+EXPORT(long) _test_i38748_runCallback(_test_i38748_funcType callback, int a, int b) {
+    return callback(a, b);
+}
+
+#endif
+
+EXPORT(int)
+_testfunc_pylist_append(PyObject *list, PyObject *item)
+{
+    return PyList_Append(list, item);
+}
+
 static struct PyModuleDef_Slot _ctypes_test_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
-}; 
+};
 
 static struct PyModuleDef _ctypes_testmodule = {
     PyModuleDef_HEAD_INIT,

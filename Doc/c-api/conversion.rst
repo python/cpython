@@ -11,36 +11,37 @@ Functions for number conversion and formatted string output.
 .. c:function:: int PyOS_snprintf(char *str, size_t size,  const char *format, ...)
 
    Output not more than *size* bytes to *str* according to the format string
-   *format* and the extra arguments. See the Unix man page :manpage:`snprintf(2)`.
+   *format* and the extra arguments. See the Unix man page :manpage:`snprintf(3)`.
 
 
 .. c:function:: int PyOS_vsnprintf(char *str, size_t size, const char *format, va_list va)
 
    Output not more than *size* bytes to *str* according to the format string
    *format* and the variable argument list *va*. Unix man page
-   :manpage:`vsnprintf(2)`.
+   :manpage:`vsnprintf(3)`.
 
 :c:func:`PyOS_snprintf` and :c:func:`PyOS_vsnprintf` wrap the Standard C library
 functions :c:func:`snprintf` and :c:func:`vsnprintf`. Their purpose is to
 guarantee consistent behavior in corner cases, which the Standard C functions do
 not.
 
-The wrappers ensure that *str*[*size*-1] is always ``'\0'`` upon return. They
+The wrappers ensure that ``str[size-1]`` is always ``'\0'`` upon return. They
 never write more than *size* bytes (including the trailing ``'\0'``) into str.
 Both functions require that ``str != NULL``, ``size > 0``, ``format != NULL``
-and ``size < INT_MAX``.
+and ``size < INT_MAX``. Note that this means there is no equivalent to the C99
+``n = snprintf(NULL, 0, ...)`` which would determine the necessary buffer size.
 
 The return value (*rv*) for these functions should be interpreted as follows:
 
 * When ``0 <= rv < size``, the output conversion was successful and *rv*
   characters were written to *str* (excluding the trailing ``'\0'`` byte at
-  *str*[*rv*]).
+  ``str[rv]``).
 
 * When ``rv >= size``, the output conversion was truncated and a buffer with
-  ``rv + 1`` bytes would have been needed to succeed. *str*[*size*-1] is ``'\0'``
+  ``rv + 1`` bytes would have been needed to succeed. ``str[size-1]`` is ``'\0'``
   in this case.
 
-* When ``rv < 0``, "something bad happened." *str*[*size*-1] is ``'\0'`` in
+* When ``rv < 0``, "something bad happened." ``str[size-1]`` is ``'\0'`` in
   this case too, but the rest of *str* is undefined. The exact cause of the error
   depends on the underlying platform.
 
@@ -49,7 +50,7 @@ The following functions provide locale-independent string to number conversions.
 
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
-   Convert a string ``s`` to a :c:type:`double`, raising a Python
+   Convert a string ``s`` to a :c:expr:`double`, raising a Python
    exception on failure.  The set of accepted strings corresponds to
    the set of strings accepted by Python's :func:`float` constructor,
    except that ``s`` must not have leading or trailing whitespace.
@@ -83,7 +84,7 @@ The following functions provide locale-independent string to number conversions.
 
 .. c:function:: char* PyOS_double_to_string(double val, char format_code, int precision, int flags, int *ptype)
 
-   Convert a :c:type:`double` *val* to a string using supplied
+   Convert a :c:expr:`double` *val* to a string using supplied
    *format_code*, *precision*, and *flags*.
 
    *format_code* must be one of ``'e'``, ``'E'``, ``'f'``, ``'F'``,
@@ -118,10 +119,10 @@ The following functions provide locale-independent string to number conversions.
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strcmp` except that it ignores the case.
+   identically to :c:func:`!strcmp` except that it ignores the case.
 
 
 .. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strncmp` except that it ignores the case.
+   identically to :c:func:`!strncmp` except that it ignores the case.

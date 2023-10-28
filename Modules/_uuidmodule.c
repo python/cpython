@@ -3,13 +3,16 @@
  * DCE compatible Universally Unique Identifier library.
  */
 
-#define PY_SSIZE_T_CLEAN
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
-#ifdef HAVE_UUID_UUID_H
-#include <uuid/uuid.h>
-#elif defined(HAVE_UUID_H)
-#include <uuid.h>
+#if defined(HAVE_UUID_H)
+  // AIX, FreeBSD, libuuid with pkgconf
+  #include <uuid.h>
+#elif defined(HAVE_UUID_UUID_H)
+  // libuuid without pkgconf
+  #include <uuid/uuid.h>
 #endif
 
 #ifdef MS_WINDOWS
@@ -104,6 +107,7 @@ static PyMethodDef uuid_methods[] = {
 
 static PyModuleDef_Slot uuid_slots[] = {
     {Py_mod_exec, uuid_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

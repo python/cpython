@@ -1,10 +1,11 @@
+// Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+#define Py_LIMITED_API 0x030d0000
 
 #include "Python.h"
-#include <sys/resource.h>
-#include <sys/time.h>
+#include <errno.h>                // errno
 #include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <sys/resource.h>         // getrusage()
+#include <unistd.h>               // getpagesize()
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -24,8 +25,17 @@ module resource
 class pid_t_converter(CConverter):
     type = 'pid_t'
     format_unit = '" _Py_PARSE_PID "'
+
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
+            {paramname} = PyLong_AsPid({argname});
+            if ({paramname} == -1 && PyErr_Occurred()) {{{{
+                goto exit;
+            }}}}
+            """,
+            argname=argname)
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=0c1d19f640d57e48]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=c94349aa1aad151d]*/
 
 #include "clinic/resource.c.h"
 
@@ -63,9 +73,22 @@ static PyStructSequence_Desc struct_rusage_desc = {
     16          /* n_in_sequence */
 };
 
-static int initialized;
-static PyTypeObject StructRUsageType;
+typedef struct {
+  PyTypeObject *StructRUsageType;
+} resourcemodulestate;
 
+
+static inline resourcemodulestate*
+get_resource_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (resourcemodulestate *)state;
+}
+
+static struct PyModuleDef resourcemodule;
+
+#ifdef HAVE_GETRUSAGE
 /*[clinic input]
 resource.getrusage
 
@@ -91,28 +114,29 @@ resource_getrusage_impl(PyObject *module, int who)
         return NULL;
     }
 
-    result = PyStructSequence_New(&StructRUsageType);
+    result = PyStructSequence_New(
+        get_resource_state(module)->StructRUsageType);
     if (!result)
         return NULL;
 
-    PyStructSequence_SET_ITEM(result, 0,
+    PyStructSequence_SetItem(result, 0,
                     PyFloat_FromDouble(doubletime(ru.ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
+    PyStructSequence_SetItem(result, 1,
                     PyFloat_FromDouble(doubletime(ru.ru_stime)));
-    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong(ru.ru_maxrss));
-    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong(ru.ru_ixrss));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong(ru.ru_idrss));
-    PyStructSequence_SET_ITEM(result, 5, PyLong_FromLong(ru.ru_isrss));
-    PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(ru.ru_minflt));
-    PyStructSequence_SET_ITEM(result, 7, PyLong_FromLong(ru.ru_majflt));
-    PyStructSequence_SET_ITEM(result, 8, PyLong_FromLong(ru.ru_nswap));
-    PyStructSequence_SET_ITEM(result, 9, PyLong_FromLong(ru.ru_inblock));
-    PyStructSequence_SET_ITEM(result, 10, PyLong_FromLong(ru.ru_oublock));
-    PyStructSequence_SET_ITEM(result, 11, PyLong_FromLong(ru.ru_msgsnd));
-    PyStructSequence_SET_ITEM(result, 12, PyLong_FromLong(ru.ru_msgrcv));
-    PyStructSequence_SET_ITEM(result, 13, PyLong_FromLong(ru.ru_nsignals));
-    PyStructSequence_SET_ITEM(result, 14, PyLong_FromLong(ru.ru_nvcsw));
-    PyStructSequence_SET_ITEM(result, 15, PyLong_FromLong(ru.ru_nivcsw));
+    PyStructSequence_SetItem(result, 2, PyLong_FromLong(ru.ru_maxrss));
+    PyStructSequence_SetItem(result, 3, PyLong_FromLong(ru.ru_ixrss));
+    PyStructSequence_SetItem(result, 4, PyLong_FromLong(ru.ru_idrss));
+    PyStructSequence_SetItem(result, 5, PyLong_FromLong(ru.ru_isrss));
+    PyStructSequence_SetItem(result, 6, PyLong_FromLong(ru.ru_minflt));
+    PyStructSequence_SetItem(result, 7, PyLong_FromLong(ru.ru_majflt));
+    PyStructSequence_SetItem(result, 8, PyLong_FromLong(ru.ru_nswap));
+    PyStructSequence_SetItem(result, 9, PyLong_FromLong(ru.ru_inblock));
+    PyStructSequence_SetItem(result, 10, PyLong_FromLong(ru.ru_oublock));
+    PyStructSequence_SetItem(result, 11, PyLong_FromLong(ru.ru_msgsnd));
+    PyStructSequence_SetItem(result, 12, PyLong_FromLong(ru.ru_msgrcv));
+    PyStructSequence_SetItem(result, 13, PyLong_FromLong(ru.ru_nsignals));
+    PyStructSequence_SetItem(result, 14, PyLong_FromLong(ru.ru_nvcsw));
+    PyStructSequence_SetItem(result, 15, PyLong_FromLong(ru.ru_nivcsw));
 
     if (PyErr_Occurred()) {
         Py_DECREF(result);
@@ -121,6 +145,7 @@ resource_getrusage_impl(PyObject *module, int who)
 
     return result;
 }
+#endif
 
 static int
 py2rlimit(PyObject *limits, struct rlimit *rl_out)
@@ -131,13 +156,13 @@ py2rlimit(PyObject *limits, struct rlimit *rl_out)
         /* Here limits is a borrowed reference */
         return -1;
 
-    if (PyTuple_GET_SIZE(limits) != 2) {
+    if (PyTuple_Size(limits) != 2) {
         PyErr_SetString(PyExc_ValueError,
                         "expected a tuple of 2 integers");
         goto error;
     }
-    curobj = PyTuple_GET_ITEM(limits, 0);
-    maxobj = PyTuple_GET_ITEM(limits, 1);
+    curobj = PyTuple_GetItem(limits, 0);  // borrowed
+    maxobj = PyTuple_GetItem(limits, 1);  // borrowed
 #if !defined(HAVE_LARGEFILE_SUPPORT)
     rl_out->rlim_cur = PyLong_AsLong(curobj);
     if (rl_out->rlim_cur == (rlim_t)-1 && PyErr_Occurred())
@@ -253,17 +278,15 @@ resource.prlimit
 
     pid: pid_t
     resource: int
-    [
-    limits: object
-    ]
+    limits: object = None
     /
 
 [clinic start generated code]*/
 
 static PyObject *
 resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
-                      int group_right_1, PyObject *limits)
-/*[clinic end generated code: output=ee976b393187a7a3 input=b77743bdccc83564]*/
+                      PyObject *limits)
+/*[clinic end generated code: output=6ebc49ff8c3a816e input=54bb69c9585e33bf]*/
 {
     struct rlimit old_limit, new_limit;
     int retval;
@@ -279,7 +302,7 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
         return NULL;
     }
 
-    if (group_right_1) {
+    if (limits != Py_None) {
         if (py2rlimit(limits, &new_limit) < 0) {
             return NULL;
         }
@@ -313,13 +336,10 @@ resource_getpagesize_impl(PyObject *module)
     long pagesize = 0;
 #if defined(HAVE_GETPAGESIZE)
     pagesize = getpagesize();
-#elif defined(HAVE_SYSCONF)
-#if defined(_SC_PAGE_SIZE)
+#elif defined(HAVE_SYSCONF) && defined(_SC_PAGE_SIZE)
     pagesize = sysconf(_SC_PAGE_SIZE);
 #else
-    /* Irix 5.3 has _SC_PAGESIZE, but not _SC_PAGE_SIZE */
-    pagesize = sysconf(_SC_PAGESIZE);
-#endif
+#   error "unsupported platform: resource.getpagesize()"
 #endif
     return pagesize;
 }
@@ -339,10 +359,10 @@ resource_methods[] = {
 
 /* Module initialization */
 
-
 static int
 resource_exec(PyObject *module)
 {
+    resourcemodulestate *state = get_resource_state(module);
 #define ADD_INT(module, value)                                    \
     do {                                                          \
         if (PyModule_AddIntConstant(module, #value, value) < 0) { \
@@ -351,18 +371,15 @@ resource_exec(PyObject *module)
     } while (0)
 
     /* Add some symbolic constants to the module */
-    Py_INCREF(PyExc_OSError);
-    if (PyModule_AddObject(module, "error", PyExc_OSError) < 0) {
-        Py_DECREF(PyExc_OSError);
+    if (PyModule_AddObjectRef(module, "error", PyExc_OSError) < 0) {
         return -1;
     }
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructRUsageType,
-                                       &struct_rusage_desc) < 0)
-            return -1;
-    }
 
-    if(PyModule_AddType(module, &StructRUsageType) < 0) {
+    state->StructRUsageType = PyStructSequence_NewType(&struct_rusage_desc);
+    if (state->StructRUsageType == NULL) {
+        return -1;
+    }
+    if (PyModule_AddType(module, state->StructRUsageType) < 0) {
         return -1;
     }
 
@@ -471,6 +488,10 @@ resource_exec(PyObject *module)
     ADD_INT(module, RLIMIT_NPTS);
 #endif
 
+#ifdef RLIMIT_KQUEUES
+    ADD_INT(module, RLIMIT_KQUEUES);
+#endif
+
     PyObject *v;
     if (sizeof(RLIM_INFINITY) > sizeof(long)) {
         v = PyLong_FromLongLong((long long) RLIM_INFINITY);
@@ -478,16 +499,9 @@ resource_exec(PyObject *module)
     {
         v = PyLong_FromLong((long) RLIM_INFINITY);
     }
-    if (!v) {
+    if (PyModule_Add(module, "RLIM_INFINITY", v) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObject(module, "RLIM_INFINITY", v) < 0) {
-        Py_DECREF(v);
-        return -1;
-    }
-
-    initialized = 1;
     return 0;
 
 #undef ADD_INT
@@ -495,15 +509,36 @@ resource_exec(PyObject *module)
 
 static struct PyModuleDef_Slot resource_slots[] = {
     {Py_mod_exec, resource_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
+
+static int
+resourcemodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(get_resource_state(m)->StructRUsageType);
+    return 0;
+}
+
+static int
+resourcemodule_clear(PyObject *m) {
+    Py_CLEAR(get_resource_state(m)->StructRUsageType);
+    return 0;
+}
+
+static void
+resourcemodule_free(void *m) {
+    resourcemodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef resourcemodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "resource",
-    .m_size = 0,
+    .m_size = sizeof(resourcemodulestate),
     .m_methods = resource_methods,
     .m_slots = resource_slots,
+    .m_traverse = resourcemodule_traverse,
+    .m_clear = resourcemodule_clear,
+    .m_free = resourcemodule_free,
 };
 
 PyMODINIT_FUNC

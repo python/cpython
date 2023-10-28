@@ -34,7 +34,7 @@ Dynamic Type Creation
    freshly created class namespace. It should accept the class namespace
    as its sole argument and update the namespace directly with the class
    contents. If no callback is provided, it has the same effect as passing
-   in ``lambda ns: ns``.
+   in ``lambda ns: None``.
 
    .. versionadded:: 3.3
 
@@ -75,12 +75,52 @@ Dynamic Type Creation
 
    This function looks for items in *bases* that are not instances of
    :class:`type`, and returns a tuple where each such object that has
-   an ``__mro_entries__`` method is replaced with an unpacked result of
+   an :meth:`~object.__mro_entries__` method is replaced with an unpacked result of
    calling this method.  If a *bases* item is an instance of :class:`type`,
-   or it doesn't have an ``__mro_entries__`` method, then it is included in
+   or it doesn't have an :meth:`!__mro_entries__` method, then it is included in
    the return tuple unchanged.
 
    .. versionadded:: 3.7
+
+.. function:: get_original_bases(cls, /)
+
+    Return the tuple of objects originally given as the bases of *cls* before
+    the :meth:`~object.__mro_entries__` method has been called on any bases
+    (following the mechanisms laid out in :pep:`560`). This is useful for
+    introspecting :ref:`Generics <user-defined-generics>`.
+
+    For classes that have an ``__orig_bases__`` attribute, this
+    function returns the value of ``cls.__orig_bases__``.
+    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
+    returned.
+
+    Examples::
+
+        from typing import TypeVar, Generic, NamedTuple, TypedDict
+
+        T = TypeVar("T")
+        class Foo(Generic[T]): ...
+        class Bar(Foo[int], float): ...
+        class Baz(list[str]): ...
+        Eggs = NamedTuple("Eggs", [("a", int), ("b", str)])
+        Spam = TypedDict("Spam", {"a": int, "b": str})
+
+        assert Bar.__bases__ == (Foo, float)
+        assert get_original_bases(Bar) == (Foo[int], float)
+
+        assert Baz.__bases__ == (list,)
+        assert get_original_bases(Baz) == (list[str],)
+
+        assert Eggs.__bases__ == (tuple,)
+        assert get_original_bases(Eggs) == (NamedTuple,)
+
+        assert Spam.__bases__ == (dict,)
+        assert get_original_bases(Spam) == (TypedDict,)
+
+        assert int.__bases__ == (object,)
+        assert get_original_bases(int) == (object,)
+
+    .. versionadded:: 3.12
 
 .. seealso::
 
@@ -103,11 +143,23 @@ If you instantiate any of these types, note that signatures may vary between Pyt
 
 Standard names are defined for the following types:
 
+.. data:: NoneType
+
+   The type of :data:`None`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: FunctionType
           LambdaType
 
    The type of user-defined functions and functions created by
    :keyword:`lambda`  expressions.
+
+   .. audit-event:: function.__new__ code types.FunctionType
+
+   The audit event only occurs for direct instantiation of function objects,
+   and is not raised for normal compilation.
 
 
 .. data:: GeneratorType
@@ -134,18 +186,21 @@ Standard names are defined for the following types:
 
 .. class:: CodeType(**kwargs)
 
-   .. index:: builtin: compile
+   .. index:: pair: built-in function; compile
 
    The type for code objects such as returned by :func:`compile`.
 
-   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
-   required by the initializer.
+   required by the initializer.  The audit event only occurs for direct
+   instantiation of code objects, and is not raised for normal compilation.
 
    .. method:: CodeType.replace(**kwargs)
 
      Return a copy of the code object with new values for the specified fields.
+
+     Code objects are also supported by generic function :func:`copy.replace`.
 
      .. versionadded:: 3.8
 
@@ -186,6 +241,13 @@ Standard names are defined for the following types:
    .. versionadded:: 3.7
 
 
+.. data:: NotImplementedType
+
+   The type of :data:`NotImplemented`.
+
+   .. versionadded:: 3.10
+
+
 .. data:: MethodDescriptorType
 
    The type of methods of some built-in data types such as :meth:`str.join`.
@@ -203,7 +265,7 @@ Standard names are defined for the following types:
 
 .. class:: ModuleType(name, doc=None)
 
-   The type of :term:`modules <module>`. Constructor takes the name of the
+   The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
    .. note::
@@ -218,12 +280,23 @@ Standard names are defined for the following types:
 
       The :term:`loader` which loaded the module. Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
+      as stored in the :attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__loader__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
    .. attribute:: __name__
 
-      The name of the module.
+      The name of the module. Expected to match
+      :attr:`importlib.machinery.ModuleSpec.name`.
 
    .. attribute:: __package__
 
@@ -232,13 +305,71 @@ Standard names are defined for the following types:
       to ``''``, else it should be set to the name of the package (which can be
       :attr:`__name__` if the module is a package itself). Defaults to ``None``.
 
+      This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
+      as stored in the :attr:`__spec__` object.
+
+      .. note::
+         A future version of Python may stop setting this attribute by default.
+         To guard against this potential change, preferably read from the
+         :attr:`__spec__` attribute instead or use
+         ``getattr(module, "__package__", None)`` if you explicitly need to use
+         this attribute.
+
       .. versionchanged:: 3.4
          Defaults to ``None``. Previously the attribute was optional.
 
+   .. attribute:: __spec__
+
+      A record of the module's import-system-related state. Expected to be an
+      instance of :class:`importlib.machinery.ModuleSpec`.
+
+      .. versionadded:: 3.4
+
+
+.. data:: EllipsisType
+
+   The type of :data:`Ellipsis`.
+
+   .. versionadded:: 3.10
+
+.. class:: GenericAlias(t_origin, t_args)
+
+   The type of :ref:`parameterized generics <types-genericalias>` such as
+   ``list[int]``.
+
+   ``t_origin`` should be a non-parameterized generic class, such as ``list``,
+   ``tuple`` or ``dict``.  ``t_args`` should be a :class:`tuple` (possibly of
+   length 1) of types which parameterize ``t_origin``::
+
+      >>> from types import GenericAlias
+
+      >>> list[int] == GenericAlias(list, (int,))
+      True
+      >>> dict[str, int] == GenericAlias(dict, (str, int))
+      True
+
+   .. versionadded:: 3.9
+
+   .. versionchanged:: 3.9.2
+      This type can now be subclassed.
+
+   .. seealso::
+
+      :ref:`Generic Alias Types<types-genericalias>`
+         In-depth documentation on instances of :class:`!types.GenericAlias`
+
+      :pep:`585` - Type Hinting Generics In Standard Collections
+         Introducing the :class:`!types.GenericAlias` class
+
+.. class:: UnionType
+
+   The type of :ref:`union type expressions<types-union>`.
+
+   .. versionadded:: 3.10
 
 .. class:: TracebackType(tb_next, tb_frame, tb_lasti, tb_lineno)
 
-   The type of traceback objects such as found in ``sys.exc_info()[2]``.
+   The type of traceback objects such as found in ``sys.exception().__traceback__``.
 
    See :ref:`the language reference <traceback-objects>` for details of the
    available attributes and operations, and guidance on creating tracebacks
@@ -335,6 +466,18 @@ Standard names are defined for the following types:
 
       .. versionadded:: 3.9
 
+   .. describe:: hash(proxy)
+
+      Return a hash of the underlying mapping.
+
+      .. versionadded:: 3.12
+
+.. class:: CapsuleType
+
+   The type of :ref:`capsule objects <capsules>`.
+
+   .. versionadded:: 3.13
+
 
 Additional Utility Classes and Functions
 ----------------------------------------
@@ -359,11 +502,15 @@ Additional Utility Classes and Functions
                return "{}({})".format(type(self).__name__, ", ".join(items))
 
            def __eq__(self, other):
-               return self.__dict__ == other.__dict__
+               if isinstance(self, SimpleNamespace) and isinstance(other, SimpleNamespace):
+                  return self.__dict__ == other.__dict__
+               return NotImplemented
 
    ``SimpleNamespace`` may be useful as a replacement for ``class NS: pass``.
    However, for a structured record type use :func:`~collections.namedtuple`
    instead.
+
+   :class:`!SimpleNamespace` objects are supported by :func:`copy.replace`.
 
    .. versionadded:: 3.3
 
@@ -396,7 +543,7 @@ Coroutine Utility Functions
    The generator-based coroutine is still a :term:`generator iterator`,
    but is also considered to be a :term:`coroutine` object and is
    :term:`awaitable`.  However, it may not necessarily implement
-   the :meth:`__await__` method.
+   the :meth:`~object.__await__` method.
 
    If *gen_func* is a generator function, it will be modified in-place.
 

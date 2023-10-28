@@ -1,102 +1,64 @@
+// Entry point of the Python C API.
+// C extensions should only #include <Python.h>, and not include directly
+// the other Python header files included by <Python.h>.
+
 #ifndef Py_PYTHON_H
 #define Py_PYTHON_H
-/* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
-/* Include nearly all Python header files */
+// Since this is a "meta-include" file, "#ifdef __cplusplus / extern "C" {"
+// is not needed.
 
+
+// Include Python header files
 #include "patchlevel.h"
 #include "pyconfig.h"
 #include "pymacconfig.h"
 
-#include <limits.h>
 
-#ifndef UCHAR_MAX
-#error "Something's broken.  UCHAR_MAX should be defined in limits.h."
-#endif
-
-#if UCHAR_MAX != 255
-#error "Python's source code assumes C's unsigned char is an 8-bit type."
-#endif
-
-#if defined(__sgi) && !defined(_SGI_MP_SOURCE)
-#define _SGI_MP_SOURCE
-#endif
-
-#include <stdio.h>
-#ifndef NULL
-#   error "Python.h requires that stdio.h define NULL."
-#endif
-
-#include <string.h>
-#ifdef HAVE_ERRNO_H
-#include <errno.h>
-#endif
-#include <stdlib.h>
-#ifndef MS_WINDOWS
-#include <unistd.h>
-#endif
-#ifdef HAVE_CRYPT_H
-#if defined(HAVE_CRYPT_R) && !defined(_GNU_SOURCE)
-/* Required for glibc to expose the crypt_r() function prototype. */
-#  define _GNU_SOURCE
-#  define _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#include <crypt.h>
-#ifdef _Py_GNU_SOURCE_FOR_CRYPT
-/* Don't leak the _GNU_SOURCE define to other headers. */
-#  undef _GNU_SOURCE
-#  undef _Py_GNU_SOURCE_FOR_CRYPT
-#endif
-#endif
-
-/* For size_t? */
+// Include standard header files
+#include <assert.h>               // assert()
+#include <inttypes.h>             // uintptr_t
+#include <limits.h>               // INT_MAX
+#include <math.h>                 // HUGE_VAL
+#include <stdarg.h>               // va_list
+#include <wchar.h>                // wchar_t
 #ifdef HAVE_STDDEF_H
-#include <stddef.h>
+#  include <stddef.h>             // size_t
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>          // ssize_t
 #endif
 
-/* CAUTION:  Build setups should ensure that NDEBUG is defined on the
- * compiler command line when building Python in release mode; else
- * assert() calls won't be removed.
- */
-#include <assert.h>
+// errno.h, stdio.h, stdlib.h and string.h headers are no longer used by
+// Python, but kept for backward compatibility (avoid compiler warnings).
+// They are no longer included by limited C API version 3.11 and newer.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  include <errno.h>              // errno
+#  include <stdio.h>              // FILE*
+#  include <stdlib.h>             // getenv()
+#  include <string.h>             // memcpy()
+#endif
 
+
+// Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
-
-/* A convenient way for code to know if clang's memory sanitizer is enabled. */
-#if defined(__has_feature)
-#  if __has_feature(memory_sanitizer)
-#    if !defined(_Py_MEMORY_SANITIZER)
-#      define _Py_MEMORY_SANITIZER
-#    endif
-#  endif
-#endif
-
-/* Debug-mode build with pymalloc implies PYMALLOC_DEBUG.
- *  PYMALLOC_DEBUG is in error if pymalloc is not in use.
- */
-#if defined(Py_DEBUG) && defined(WITH_PYMALLOC) && !defined(PYMALLOC_DEBUG)
-#define PYMALLOC_DEBUG
-#endif
-#if defined(PYMALLOC_DEBUG) && !defined(WITH_PYMALLOC)
-#error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
-#endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
-
+#include "pytypedefs.h"
+#include "pybuffer.h"
+#include "pystats.h"
+#include "pyatomic.h"
 #include "object.h"
 #include "objimpl.h"
 #include "typeslots.h"
 #include "pyhash.h"
-
-#include "pydebug.h"
-
+#include "cpython/pydebug.h"
 #include "bytearrayobject.h"
 #include "bytesobject.h"
 #include "unicodeobject.h"
 #include "longobject.h"
-#include "longintrepr.h"
+#include "cpython/longintrepr.h"
 #include "boolobject.h"
 #include "floatobject.h"
 #include "complexobject.h"
@@ -105,39 +67,34 @@
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
-#include "odictobject.h"
+#include "cpython/odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
+#include "cpython/funcobject.h"
+#include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
-#include "code.h"
+#include "cpython/code.h"
 #include "pyframe.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
-#include "genobject.h"
+#include "cpython/initconfig.h"
+#include "pystate.h"
+#include "cpython/genobject.h"
 #include "descrobject.h"
 #include "genericaliasobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
 #include "structseq.h"
-#include "namespaceobject.h"
-#include "picklebufobject.h"
-
+#include "cpython/picklebufobject.h"
 #include "codecs.h"
 #include "pyerrors.h"
-
-#include "cpython/initconfig.h"
 #include "pythread.h"
-#include "pystate.h"
-#include "context.h"
-
-#include "pyarena.h"
+#include "cpython/context.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -147,17 +104,14 @@
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
-
 #include "abstract.h"
 #include "bltinmodule.h"
-
-#include "eval.h"
-
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "fileutils.h"
-#include "pyfpe.h"
-#include "tracemalloc.h"
+#include "cpython/pyfpe.h"
+#include "cpython/tracemalloc.h"
+#include "cpython/optimizer.h"
 
 #endif /* !Py_PYTHON_H */

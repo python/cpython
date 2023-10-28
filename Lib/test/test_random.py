@@ -5,11 +5,13 @@ import os
 import time
 import pickle
 import warnings
+import test.support
+
 from functools import partial
 from math import log, exp, pi, fsum, sin, factorial
 from test import support
 from fractions import Fraction
-from collections import Counter
+from collections import abc, Counter
 
 class TestBasicOps:
     # Superclass with tests common to all generators.
@@ -46,14 +48,18 @@ class TestBasicOps:
             self.gen.seed(arg)
 
         for arg in [1+2j, tuple('abc'), MySeed()]:
-            with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(TypeError):
                 self.gen.seed(arg)
 
         for arg in [list(range(3)), dict(one=1)]:
-            with self.assertWarns(DeprecationWarning):
-                self.assertRaises(TypeError, self.gen.seed, arg)
+            self.assertRaises(TypeError, self.gen.seed, arg)
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
+
+    def test_seed_no_mutate_bug_44018(self):
+        a = bytearray(b'1234')
+        self.gen.seed(a)
+        self.assertEqual(a, bytearray(b'1234'))
 
     @unittest.mock.patch('random._urandom') # os.urandom
     def test_seed_when_randomness_source_not_found(self, urandom_mock):
@@ -98,21 +104,27 @@ class TestBasicOps:
         self.assertTrue(lst != shuffled_lst)
         self.assertRaises(TypeError, shuffle, (1, 2, 3))
 
-    def test_shuffle_random_argument(self):
-        # Test random argument to shuffle.
-        shuffle = self.gen.shuffle
-        mock_random = unittest.mock.Mock(return_value=0.5)
-        seq = bytearray(b'abcdefghijk')
-        with self.assertWarns(DeprecationWarning):
-            shuffle(seq, mock_random)
-        mock_random.assert_called_with()
-
     def test_choice(self):
         choice = self.gen.choice
         with self.assertRaises(IndexError):
             choice([])
         self.assertEqual(choice([50]), 50)
         self.assertIn(choice([25, 75]), [25, 75])
+
+    def test_choice_with_numpy(self):
+        # Accommodation for NumPy arrays which have disabled __bool__().
+        # See: https://github.com/python/cpython/issues/100805
+        choice = self.gen.choice
+
+        class NA(list):
+            "Simulate numpy.array() behavior"
+            def __bool__(self):
+                raise RuntimeError
+
+        with self.assertRaises(IndexError):
+            choice(NA([]))
+        self.assertEqual(choice(NA([50])), 50)
+        self.assertIn(choice(NA([25, 75])), [25, 75])
 
     def test_sample(self):
         # For the entire allowable range of 0 <= k <= N, validate that
@@ -157,9 +169,25 @@ class TestBasicOps:
         self.assertRaises(TypeError, self.gen.sample, dict.fromkeys('abcdef'), 2)
 
     def test_sample_on_sets(self):
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             population = {10, 20, 30, 40, 50, 60, 70}
             self.gen.sample(population, k=5)
+
+    def test_sample_on_seqsets(self):
+        class SeqSet(abc.Sequence, abc.Set):
+            def __init__(self, items):
+                self._items = items
+
+            def __len__(self):
+                return len(self._items)
+
+            def __getitem__(self, index):
+                return self._items[index]
+
+        population = SeqSet([2, 4, 1, 3])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.gen.sample(population, k=2)
 
     def test_sample_with_counts(self):
         sample = self.gen.sample
@@ -204,33 +232,6 @@ class TestBasicOps:
             sample(['red', 'green', 'blue'], counts=[1, 2], k=2)            # too few counts
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[1, 2, 3, 4], k=2)      # too many counts
-
-    def test_sample_counts_equivalence(self):
-        # Test the documented strong equivalence to a sample with repeated elements.
-        # We run this test on random.Random() which makes deterministic selections
-        # for a given seed value.
-        sample = random.sample
-        seed = random.seed
-
-        colors =  ['red', 'green', 'blue', 'orange', 'black', 'amber']
-        counts = [500,      200,     20,       10,       5,       1 ]
-        k = 700
-        seed(8675309)
-        s1 = sample(colors, counts=counts, k=k)
-        seed(8675309)
-        expanded = [color for (color, count) in zip(colors, counts) for i in range(count)]
-        self.assertEqual(len(expanded), sum(counts))
-        s2 = sample(expanded, k=k)
-        self.assertEqual(s1, s2)
-
-        pop = 'abcdefghi'
-        counts = [10, 9, 8, 7, 6, 5, 4, 3, 2]
-        seed(8675309)
-        s1 = ''.join(sample(pop, counts=counts, k=30))
-        expanded = ''.join([letter for (letter, count) in zip(pop, counts) for i in range(count)])
-        seed(8675309)
-        s2 = ''.join(sample(expanded, k=30))
-        self.assertEqual(s1, s2)
 
     def test_choices(self):
         choices = self.gen.choices
@@ -322,6 +323,22 @@ class TestBasicOps:
         with self.assertRaises(ValueError):
             self.gen.choices('AB', [0.0, 0.0])
 
+    def test_choices_negative_total(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('ABC', [3, -5, 1])
+
+    def test_choices_infinite_total(self):
+        with self.assertRaises(ValueError):
+            self.gen.choices('A', [float('inf')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, float('inf')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [-float('inf'), 123])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [0.0, float('nan')])
+        with self.assertRaises(ValueError):
+            self.gen.choices('AB', [float('-inf'), float('inf')])
+
     def test_gauss(self):
         # Ensure that the seed() method initializes all the hidden state.  In
         # particular, through 2.2.1 it failed to reset a piece of state used
@@ -407,6 +424,10 @@ class TestBasicOps:
         self.assertRaises(ValueError, self.gen.randbytes, -1)
         self.assertRaises(TypeError, self.gen.randbytes, 1.0)
 
+    def test_mu_sigma_default_args(self):
+        self.assertIsInstance(self.gen.normalvariate(), float)
+        self.assertIsInstance(self.gen.gauss(), float)
+
 
 try:
     random.SystemRandom().random()
@@ -479,17 +500,52 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
         self.assertEqual(rint, 0)
 
     def test_randrange_errors(self):
-        raises = partial(self.assertRaises, ValueError, self.gen.randrange)
+        raises_value_error = partial(self.assertRaises, ValueError, self.gen.randrange)
+        raises_type_error = partial(self.assertRaises, TypeError, self.gen.randrange)
+
         # Empty range
-        raises(3, 3)
-        raises(-721)
-        raises(0, 100, -12)
-        # Non-integer start/stop
-        raises(3.14159)
-        raises(0, 2.71828)
-        # Zero and non-integer step
-        raises(0, 42, 0)
-        raises(0, 42, 3.14159)
+        raises_value_error(3, 3)
+        raises_value_error(-721)
+        raises_value_error(0, 100, -12)
+
+        # Zero step
+        raises_value_error(0, 42, 0)
+        raises_type_error(0, 42, 0.0)
+        raises_type_error(0, 0, 0.0)
+
+        # Non-integer stop
+        raises_type_error(3.14159)
+        raises_type_error(3.0)
+        raises_type_error(Fraction(3, 1))
+        raises_type_error('3')
+        raises_type_error(0, 2.71827)
+        raises_type_error(0, 2.0)
+        raises_type_error(0, Fraction(2, 1))
+        raises_type_error(0, '2')
+        raises_type_error(0, 2.71827, 2)
+
+        # Non-integer start
+        raises_type_error(2.71827, 5)
+        raises_type_error(2.0, 5)
+        raises_type_error(Fraction(2, 1), 5)
+        raises_type_error('2', 5)
+        raises_type_error(2.71827, 5, 2)
+
+        # Non-integer step
+        raises_type_error(0, 42, 3.14159)
+        raises_type_error(0, 42, 3.0)
+        raises_type_error(0, 42, Fraction(3, 1))
+        raises_type_error(0, 42, '3')
+        raises_type_error(0, 42, 1.0)
+        raises_type_error(0, 0, 1.0)
+
+    def test_randrange_step(self):
+        # bpo-42772: When stop is None, the step argument was being ignored.
+        randrange = self.gen.randrange
+        with self.assertRaises(TypeError):
+            randrange(1000, step=100)
+        with self.assertRaises(TypeError):
+            randrange(1000, None, step=100)
 
     def test_randbelow_logic(self, _log=log, int=int):
         # check bitcount transition points:  2**i and 2**(i+1)-1
@@ -511,6 +567,25 @@ class SystemRandom_TestBasicOps(TestBasicOps, unittest.TestCase):
             k = int(1.00001 + _log(n, 2))
             self.assertEqual(k, numbits)        # note the stronger assertion
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
+
+
+class TestRawMersenneTwister(unittest.TestCase):
+    @test.support.cpython_only
+    def test_bug_41052(self):
+        # _random.Random should not be allowed to serialization
+        import _random
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            r = _random.Random()
+            self.assertRaises(TypeError, pickle.dumps, r, proto)
+
+    @test.support.cpython_only
+    def test_bug_42008(self):
+        # _random.Random should call seed with first element of arg tuple
+        import _random
+        r1 = _random.Random()
+        r1.seed(8675309)
+        r2 = _random.Random(8675309)
+        self.assertEqual(r1.random(), r2.random())
 
 
 class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
@@ -760,10 +835,6 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
                 maxsize+1, maxsize=maxsize
             )
         self.gen._randbelow_without_getrandbits(5640, maxsize=maxsize)
-        # issue 33203: test that _randbelow returns zero on
-        # n == 0 also in its getrandbits-independent branch.
-        x = self.gen._randbelow_without_getrandbits(0, maxsize=maxsize)
-        self.assertEqual(x, 0)
 
         # This might be going too far to test a single line, but because of our
         # noble aim of achieving 100% test coverage we need to write a case in
@@ -878,6 +949,33 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertEqual(self.gen.randbytes(n),
                              gen2.getrandbits(n * 8).to_bytes(n, 'little'))
 
+    def test_sample_counts_equivalence(self):
+        # Test the documented strong equivalence to a sample with repeated elements.
+        # We run this test on random.Random() which makes deterministic selections
+        # for a given seed value.
+        sample = self.gen.sample
+        seed = self.gen.seed
+
+        colors =  ['red', 'green', 'blue', 'orange', 'black', 'amber']
+        counts = [500,      200,     20,       10,       5,       1 ]
+        k = 700
+        seed(8675309)
+        s1 = sample(colors, counts=counts, k=k)
+        seed(8675309)
+        expanded = [color for (color, count) in zip(colors, counts) for i in range(count)]
+        self.assertEqual(len(expanded), sum(counts))
+        s2 = sample(expanded, k=k)
+        self.assertEqual(s1, s2)
+
+        pop = 'abcdefghi'
+        counts = [10, 9, 8, 7, 6, 5, 4, 3, 2]
+        seed(8675309)
+        s1 = ''.join(sample(pop, counts=counts, k=30))
+        expanded = ''.join([letter for (letter, count) in zip(pop, counts) for i in range(count)])
+        seed(8675309)
+        s2 = ''.join(sample(expanded, k=30))
+        self.assertEqual(s1, s2)
+
 
 def gamma(z, sqrt2pi=(2.0*pi)**0.5):
     # Reflection to right half of complex plane
@@ -905,6 +1003,7 @@ class TestDistributions(unittest.TestCase):
         g.random = x[:].pop; g.uniform(1,10)
         g.random = x[:].pop; g.paretovariate(1.0)
         g.random = x[:].pop; g.expovariate(1.0)
+        g.random = x[:].pop; g.expovariate()
         g.random = x[:].pop; g.weibullvariate(1.0, 1.0)
         g.random = x[:].pop; g.vonmisesvariate(1.0, 1.0)
         g.random = x[:].pop; g.normalvariate(0.0, 1.0)
@@ -962,12 +1061,68 @@ class TestDistributions(unittest.TestCase):
                 (g.lognormvariate, (0.0, 0.0), 1.0),
                 (g.lognormvariate, (-float('inf'), 0.0), 0.0),
                 (g.normalvariate, (10.0, 0.0), 10.0),
+                (g.binomialvariate, (0, 0.5), 0),
+                (g.binomialvariate, (10, 0.0), 0),
+                (g.binomialvariate, (10, 1.0), 10),
                 (g.paretovariate, (float('inf'),), 1.0),
                 (g.weibullvariate, (10.0, float('inf')), 10.0),
                 (g.weibullvariate, (0.0, 10.0), 0.0),
             ]:
             for i in range(N):
                 self.assertEqual(variate(*args), expected)
+
+    def test_binomialvariate(self):
+        B = random.binomialvariate
+
+        # Cover all the code paths
+        with self.assertRaises(ValueError):
+            B(n=-1)                            # Negative n
+        with self.assertRaises(ValueError):
+            B(n=1, p=-0.5)                     # Negative p
+        with self.assertRaises(ValueError):
+            B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(10, 0.0), 0)        # p == 0.0
+        self.assertEqual(B(10, 1.0), 10)       # p == 1.0
+        self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
+        self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
+        self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method p <= 0.5 and n*p=1.25
+        self.assertTrue(B(5, 0.25) in set(range(6)))
+
+        # BG method p >= 0.5 and n*(1-p)=1.25
+        self.assertTrue(B(5, 0.75) in set(range(6)))
+
+        # BTRS method p <= 0.5 and n*p=25
+        self.assertTrue(B(100, 0.25) in set(range(101)))
+
+        # BTRS method p > 0.5 and n*(1-p)=25
+        self.assertTrue(B(100, 0.75) in set(range(101)))
+
+        # Statistical tests chosen such that they are
+        # exceedingly unlikely to ever fail for correct code.
+
+        # BG code path
+        # Expected dist: [31641, 42188, 21094, 4688, 391]
+        c = Counter(B(4, 0.25) for i in range(100_000))
+        self.assertTrue(29_641 <= c[0] <= 33_641, c)
+        self.assertTrue(40_188 <= c[1] <= 44_188)
+        self.assertTrue(19_094 <= c[2] <= 23_094)
+        self.assertTrue(2_688  <= c[3] <= 6_688)
+        self.assertEqual(set(c), {0, 1, 2, 3, 4})
+
+        # BTRS code path
+        # Sum of c[20], c[21], c[22], c[23], c[24] expected to be 36,214
+        c = Counter(B(100, 0.25) for i in range(100_000))
+        self.assertTrue(34_214 <= c[20]+c[21]+c[22]+c[23]+c[24] <= 38_214)
+        self.assertTrue(set(c) <= set(range(101)))
+        self.assertEqual(c.total(), 100_000)
+
+        # Demonstrate the BTRS works for huge values of n
+        self.assertTrue(19_000_000 <= B(100_000_000, 0.2) <= 21_000_000)
+        self.assertTrue(89_000_000 <= B(100_000_000, 0.9) <= 91_000_000)
+
 
     def test_von_mises_range(self):
         # Issue 17149: von mises variates were not consistently in the
@@ -1214,7 +1369,7 @@ class TestModule(unittest.TestCase):
         # tests validity but not completeness of the __all__ list
         self.assertTrue(set(random.__all__) <= set(dir(random)))
 
-    @unittest.skipUnless(hasattr(os, "fork"), "fork() required")
+    @test.support.requires_fork()
     def test_after_fork(self):
         # Test the global Random instance gets reseeded in child
         r, w = os.pipe()

@@ -13,8 +13,8 @@
 
 The :mod:`stat` module defines constants and functions for interpreting the
 results of :func:`os.stat`, :func:`os.fstat` and :func:`os.lstat` (if they
-exist).  For complete details about the :c:func:`stat`, :c:func:`fstat` and
-:c:func:`lstat` calls, consult the documentation for your system.
+exist).  For complete details about the :c:func:`stat`, :c:func:`!fstat` and
+:c:func:`!lstat` calls, consult the documentation for your system.
 
 .. versionchanged:: 3.4
    The stat module is backed by a C implementation.
@@ -89,9 +89,9 @@ mode:
 .. function:: S_IFMT(mode)
 
    Return the portion of the file's mode that describes the file type (used by the
-   :func:`S_IS\*` functions above).
+   :func:`!S_IS\*` functions above).
 
-Normally, you would use the :func:`os.path.is\*` functions for testing the type
+Normally, you would use the :func:`!os.path.is\*` functions for testing the type
 of a file; the functions here are useful when you are doing multiple tests of
 the same file and wish to avoid the overhead of the :c:func:`stat` system call
 for each test.  These are also useful when checking for information about a file
@@ -109,7 +109,7 @@ Example::
 
        for f in os.listdir(top):
            pathname = os.path.join(top, f)
-           mode = os.stat(pathname).st_mode
+           mode = os.lstat(pathname).st_mode
            if S_ISDIR(mode):
                # It's a directory, recurse into it
                walktree(pathname, callback)
@@ -372,11 +372,11 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
 .. data:: UF_COMPRESSED
 
-   The file is stored compressed (Mac OS X 10.6+).
+   The file is stored compressed (macOS 10.6+).
 
 .. data:: UF_HIDDEN
 
-   The file should not be displayed in a GUI (Mac OS X 10.5+).
+   The file should not be displayed in a GUI (macOS 10.5+).
 
 .. data:: SF_ARCHIVED
 
@@ -398,7 +398,7 @@ The following flags can be used in the *flags* argument of :func:`os.chflags`:
 
    The file is a snapshot file.
 
-See the \*BSD or Mac OS systems man page :manpage:`chflags(2)` for more information.
+See the \*BSD or macOS systems man page :manpage:`chflags(2)` for more information.
 
 On Windows, the following file attribute constants are available for use when
 testing bits in the ``st_file_attributes`` member returned by :func:`os.stat`.

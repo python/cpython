@@ -18,12 +18,13 @@
 --------------
 
 This module provides classes and functions for comparing sequences. It
-can be used for example, for comparing files, and can produce difference
-information in various formats, including HTML and context and unified
+can be used for example, for comparing files, and can produce information
+about file differences in various formats, including HTML and context and unified
 diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 
 .. class:: SequenceMatcher
+   :noindex:
 
    This is a flexible class for comparing pairs of sequences of any type, so long
    as the sequence elements are :term:`hashable`.  The basic algorithm predates, and is a
@@ -78,7 +79,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    Lines beginning with '``?``' attempt to guide the eye to intraline differences,
    and were not present in either input sequence. These lines can be confusing if
-   the sequences contain tab characters.
+   the sequences contain whitespace characters, such as spaces, tabs or line breaks.
 
 
 .. class:: HtmlDiff
@@ -144,11 +145,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       The arguments for this method are the same as those for the :meth:`make_file`
       method.
 
-   :file:`Tools/scripts/diff.py` is a command-line front-end to this class and
-   contains a good example of its use.
 
 
-.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\\n')
+.. function:: context_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in context diff format.
@@ -239,8 +238,6 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    function :func:`IS_CHARACTER_JUNK`, which filters out whitespace characters (a
    blank or tab; it's a bad idea to include newline in this!).
 
-   :file:`Tools/scripts/ndiff.py` is a command-line front-end to this function.
-
       >>> diff = ndiff('one\ntwo\nthree\n'.splitlines(keepends=True),
       ...              'ore\ntree\nemu\n'.splitlines(keepends=True))
       >>> print(''.join(diff), end="")
@@ -278,7 +275,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       emu
 
 
-.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\\n')
+.. function:: unified_diff(a, b, fromfile='', tofile='', fromfiledate='', tofiledate='', n=3, lineterm='\n')
 
    Compare *a* and *b* (lists of strings); return a delta (a :term:`generator`
    generating the delta lines) in unified diff format.
@@ -320,7 +317,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
-.. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\\n')
+.. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n')
 
    Compare *a* and *b* (lists of bytes objects) using *dfunc*; yield a
    sequence of delta lines (also bytes) in the format returned by *dfunc*.
@@ -352,9 +349,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. seealso::
 
-   `Pattern Matching: The Gestalt Approach <http://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
+   `Pattern Matching: The Gestalt Approach <https://www.drdobbs.com/database/pattern-matching-the-gestalt-approach/184407970>`_
       Discussion of a similar algorithm by John W. Ratcliff and D. E. Metzener. This
-      was published in `Dr. Dobb's Journal <http://www.drdobbs.com/>`_ in July, 1988.
+      was published in `Dr. Dobb's Journal <https://www.drdobbs.com/>`_ in July, 1988.
 
 
 .. _sequence-matcher:
@@ -573,8 +570,8 @@ The :class:`SequenceMatcher` class has this constructor:
 
 The three methods that return the ratio of matching to total characters can give
 different results due to differing levels of approximation, although
-:meth:`quick_ratio` and :meth:`real_quick_ratio` are always at least as large as
-:meth:`ratio`:
+:meth:`~SequenceMatcher.quick_ratio` and :meth:`~SequenceMatcher.real_quick_ratio`
+are always at least as large as :meth:`~SequenceMatcher.ratio`:
 
    >>> s = SequenceMatcher(None, "abcd", "bcde")
    >>> s.ratio()
@@ -596,15 +593,15 @@ This example compares two strings, considering blanks to be "junk":
    ...                     "private Thread currentThread;",
    ...                     "private volatile Thread currentThread;")
 
-:meth:`ratio` returns a float in [0, 1], measuring the similarity of the
-sequences.  As a rule of thumb, a :meth:`ratio` value over 0.6 means the
+:meth:`~SequenceMatcher.ratio` returns a float in [0, 1], measuring the similarity of the
+sequences.  As a rule of thumb, a :meth:`~SequenceMatcher.ratio` value over 0.6 means the
 sequences are close matches:
 
    >>> print(round(s.ratio(), 3))
    0.866
 
 If you're only interested in where the sequences match,
-:meth:`get_matching_blocks` is handy:
+:meth:`~SequenceMatcher.get_matching_blocks` is handy:
 
    >>> for block in s.get_matching_blocks():
    ...     print("a[%d] and b[%d] match for %d elements" % block)
@@ -612,12 +609,12 @@ If you're only interested in where the sequences match,
    a[8] and b[17] match for 21 elements
    a[29] and b[38] match for 0 elements
 
-Note that the last tuple returned by :meth:`get_matching_blocks` is always a
-dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
+Note that the last tuple returned by :meth:`~SequenceMatcher.get_matching_blocks`
+is always a dummy, ``(len(a), len(b), 0)``, and this is the only case in which the last
 tuple element (number of elements matched) is ``0``.
 
 If you want to know how to change the first sequence into the second, use
-:meth:`get_opcodes`:
+:meth:`~SequenceMatcher.get_opcodes`:
 
    >>> for opcode in s.get_opcodes():
    ...     print("%6s a[%d:%d] b[%d:%d]" % opcode)
@@ -651,6 +648,7 @@ The :class:`Differ` class has this constructor:
 
 
 .. class:: Differ(linejunk=None, charjunk=None)
+   :noindex:
 
    Optional keyword parameters *linejunk* and *charjunk* are for filter functions
    (or ``None``):
@@ -691,7 +689,7 @@ Differ Example
 
 This example compares two texts. First we set up the texts, sequences of
 individual single-line strings ending with newlines (such sequences can also be
-obtained from the :meth:`~io.BaseIO.readlines` method of file-like objects):
+obtained from the :meth:`~io.IOBase.readlines` method of file-like objects):
 
    >>> text1 = '''  1. Beautiful is better than ugly.
    ...   2. Explicit is better than implicit.
@@ -757,7 +755,12 @@ A command-line interface to difflib
 -----------------------------------
 
 This example shows how to use difflib to create a ``diff``-like utility.
-It is also contained in the Python source distribution, as
-:file:`Tools/scripts/diff.py`.
 
-.. literalinclude:: ../../Tools/scripts/diff.py
+.. literalinclude:: ../includes/diff.py
+
+ndiff example
+-------------
+
+This example shows how to use :func:`difflib.ndiff`.
+
+.. literalinclude:: ../includes/ndiff.py
