@@ -713,6 +713,7 @@ init_interpreter(PyInterpreterState *interp,
     interp->optimizer_backedge_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->optimizer_resume_threshold = _PyOptimizer_Default.backedge_threshold;
     interp->next_func_version = 1;
+    interp->executor_list_head = NULL;
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -889,6 +890,10 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     // XXX Make sure we properly deal with problematic finalizers.
 
     Py_CLEAR(interp->audit_hooks);
+
+    // At this time, all the threads should be cleared so we don't need
+    // atomic operations for eval_breaker
+    interp->ceval.eval_breaker = 0;
 
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
@@ -2424,7 +2429,7 @@ _xidata_init(_PyCrossInterpreterData *data)
     assert(data->data == NULL);
     assert(data->obj == NULL);
     *data = (_PyCrossInterpreterData){0};
-    data->interp = -1;
+    data->interpid = -1;
 }
 
 static inline void
@@ -2461,7 +2466,7 @@ _PyCrossInterpreterData_Init(_PyCrossInterpreterData *data,
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    data->interp = (interp != NULL) ? interp->id : -1;
+    data->interpid = (interp != NULL) ? interp->id : -1;
     data->new_object = new_object;
 }
 
@@ -2490,7 +2495,7 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
 {
     assert(data != NULL);
     // This must be called in the owning interpreter.
-    assert(interp == NULL || data->interp == interp->id);
+    assert(interp == NULL || data->interpid == interp->id);
     _xidata_clear(data);
 }
 
@@ -2501,7 +2506,7 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
 
     // data->obj may be NULL, so we don't check it.
 
-    if (data->interp < 0) {
+    if (data->interpid < 0) {
         _PyErr_SetString(tstate, PyExc_SystemError, "missing interp");
         return -1;
     }
@@ -2553,7 +2558,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Reset data before re-populating.
     *data = (_PyCrossInterpreterData){0};
-    data->interp = -1;
+    data->interpid = -1;
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
@@ -2569,7 +2574,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     }
 
     // Fill in the blanks and validate the result.
-    data->interp = interp->id;
+    data->interpid = interp->id;
     if (_check_xidata(tstate, data) != 0) {
         (void)_PyCrossInterpreterData_Release(data);
         return -1;
@@ -2632,7 +2637,7 @@ _xidata_release(_PyCrossInterpreterData *data, int rawfree)
     }
 
     // Switch to the original interpreter.
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interp);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(data->interpid);
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.

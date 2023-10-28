@@ -215,6 +215,7 @@ struct _is {
     struct types_state types;
     struct callable_cache callable_cache;
     _PyOptimizerObject *optimizer;
+    _PyExecutorObject *executor_list_head;
     uint16_t optimizer_resume_threshold;
     uint16_t optimizer_backedge_threshold;
     uint32_t next_func_version;
@@ -233,6 +234,7 @@ struct _is {
 
    /* the initial PyInterpreterState.threads.head */
     PyThreadState _initial_thread;
+    Py_ssize_t _interactive_src_count;
 };
 
 

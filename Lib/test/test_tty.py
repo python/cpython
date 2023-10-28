@@ -58,7 +58,9 @@ class TestTty(unittest.TestCase):
         self.assertEqual(mode[5], self.mode[5])
 
     def test_setraw(self):
-        mode = tty.setraw(self.fd)
+        mode0 = termios.tcgetattr(self.fd)
+        mode1 = tty.setraw(self.fd)
+        self.assertEqual(mode1, mode0)
         mode2 = termios.tcgetattr(self.fd)
         self.check_raw(mode2)
         mode3 = tty.setraw(self.fd, termios.TCSANOW)
@@ -67,7 +69,9 @@ class TestTty(unittest.TestCase):
         tty.setraw(fd=self.fd, when=termios.TCSANOW)
 
     def test_setcbreak(self):
-        mode = tty.setcbreak(self.fd)
+        mode0 = termios.tcgetattr(self.fd)
+        mode1 = tty.setcbreak(self.fd)
+        self.assertEqual(mode1, mode0)
         mode2 = termios.tcgetattr(self.fd)
         self.check_cbreak(mode2)
         mode3 = tty.setcbreak(self.fd, termios.TCSANOW)
