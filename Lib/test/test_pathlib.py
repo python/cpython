@@ -2802,7 +2802,7 @@ class DummyPathTest(DummyPurePathTest):
         # directory_depth > recursion_limit
         directory_depth = recursion_limit + 10
         base = self.cls(BASE, 'deep')
-        path = self.cls(base, *(['d'] * directory_depth))
+        path = self.cls(BASE, 'deep', *(['d'] * directory_depth))
         path.mkdir(parents=True)
 
         with set_recursion_limit(recursion_limit):
