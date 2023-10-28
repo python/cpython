@@ -433,8 +433,6 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         self.frame = tkinter.Frame(self.root, class_='Test',
                                    width=150, height=100)
         self.frame.pack()
-        self.frame.focus_set()
-        self.frame.wait_visibility()
 
     def assertCommandExist(self, funcid):
         self.assertEqual(_info_commands(self.root, funcid), (funcid,))
@@ -481,6 +479,8 @@ class BindTest(AbstractTkTest, unittest.TestCase):
 
     def test_unbind2(self):
         f = self.frame
+        f.focus_set()
+        f.wait_visibility()
         event = '<Control-Alt-Key-c>'
         self.assertEqual(f.bind(), ())
         self.assertEqual(f.bind(event), '')
