@@ -430,7 +430,8 @@ class StyleTest(AbstractTkTest, unittest.TestCase):
 
         style.theme_use(new_theme)
         self.assertIn('pin', style.element_names())
-        self.assertEqual(style.layout('Explorer.Pin'), [])
+        self.assertEqual(style.layout('Explorer.Pin'),
+                         [('Explorer.Pin.pin', {'sticky': 'nswe'})])
 
         pin = ttk.Checkbutton(self.root, style='Explorer.Pin')
         pin.pack(expand=True, fill='both')
