@@ -1530,7 +1530,10 @@ class Misc:
         """Unbind for this widget the event SEQUENCE.
 
         If FUNCID is given, only unbind the function identified with FUNCID
-        and also delete that command.
+        and also delete the corresponding Tcl command.
+
+        Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
+        unbound.
         """
         if funcid is None:
             self.tk.call('bind', self._w, sequence, '')
