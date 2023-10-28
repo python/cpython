@@ -217,10 +217,10 @@ def _script_from_settings(settings):
 
             elemargs = eopts[1:argc]
             elemkw = eopts[argc] if argc < len(eopts) and eopts[argc] else {}
-            specs, opts = _format_elemcreate(etype, True, *elemargs, **elemkw)
+            specs, eopts = _format_elemcreate(etype, True, *elemargs, **elemkw)
 
             script.append("ttk::style element create %s %s %s %s" % (
-                name, etype, specs, opts))
+                name, etype, specs, eopts))
 
     return '\n'.join(script)
 
