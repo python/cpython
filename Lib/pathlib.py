@@ -652,15 +652,12 @@ class PurePath:
             other = self.with_segments(other)
         for step, path in enumerate([other] + list(other.parents)):
             if path == self or path in self.parents:
-                break
+                return self.with_segments(*['..'] * step, *self._tail[len(path._tail):])
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
             elif path.name == '..':
                 raise ValueError(f"'..' segment in {str(other)!r} cannot be walked")
-        else:
-            raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
-        parts = ['..'] * step + self._tail[len(path._tail):]
-        return self.with_segments(*parts)
+        raise ValueError(f"{str(self)!r} and {str(other)!r} have different anchors")
 
     def is_relative_to(self, other, /, *_deprecated):
         """Return True if the path is relative to another path or False.
