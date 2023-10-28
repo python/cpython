@@ -652,7 +652,8 @@ class PurePath:
             other = self.with_segments(other)
         for step, path in enumerate([other] + list(other.parents)):
             if path == self or path in self.parents:
-                return self.with_segments(*['..'] * step, *self._tail[len(path._tail):])
+                tail = ['..'] * step + self._tail[len(path._tail):]
+                return self._from_parsed_parts('', '', tail)
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
             elif path.name == '..':
