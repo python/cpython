@@ -13,7 +13,7 @@
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
-#include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
+#include "pycore_optimizer.h"     // _PyCounterExecutor_Type, _PyCounterOptimizer_Type, _PyDefaultOptimizer_Type, _PyUOpExecutor_Type, _PyUOpOptimizer_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
