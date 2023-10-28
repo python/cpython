@@ -249,7 +249,7 @@ pymain_run_command(wchar_t *command)
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags |= PyCF_IGNORE_COOKIE;
-    ret = PyRun_SimpleStringFlags(PyBytes_AsString(bytes), &cf);
+    ret = _PyRun_SimpleStringFlagsWithName(PyBytes_AsString(bytes), "<string>", &cf);
     Py_DECREF(bytes);
     return (ret != 0);
 

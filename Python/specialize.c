@@ -10,6 +10,7 @@
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
 
@@ -134,7 +135,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
     fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
     fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
-        if (_PyOpcode_Caches[i]) {
+        if (_PyOpcode_Caches[i] && i != JUMP_BACKWARD) {
             fprintf(out, "opcode[%s].specializable : 1\n", _PyOpcode_OpName[i]);
         }
         PRINT_STAT(i, specialization.success);
@@ -2524,7 +2525,7 @@ static const PyBytesObject no_location = {
 };
 
 const struct _PyCode_DEF(8) _Py_InitCleanup = {
-    _PyVarObject_HEAD_INIT(&PyCode_Type, 4)
+    _PyVarObject_HEAD_INIT(&PyCode_Type, 3)
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
@@ -2539,9 +2540,8 @@ const struct _PyCode_DEF(8) _Py_InitCleanup = {
     .co_stacksize = 2,
     .co_framesize = 2 + FRAME_SPECIALS_SIZE,
     .co_code_adaptive = {
-        NOP, 0,
         EXIT_INIT_CHECK, 0,
         RETURN_VALUE, 0,
-        RESUME, 0,
+        RESUME, RESUME_AT_FUNC_START,
     }
 };
