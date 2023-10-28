@@ -1,0 +1,6 @@
+Another attempt at fixing :func:`asyncio.Server.wait_closed()`. It now
+blocks until both conditions are true: the server is closed, *and* there
+are no more active connections. (This means that in some cases where in
+3.12.0 this function would *incorrectly* have returned immediately,
+it will now block; in particular, when there are no active connections
+but the server hasn't been closed yet.)

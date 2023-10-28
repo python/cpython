@@ -122,29 +122,59 @@ class SelectorStartServerTests(BaseStartServer, unittest.TestCase):
 
 class TestServer2(unittest.IsolatedAsyncioTestCase):
 
-    async def test_wait_closed(self):
+    async def test_wait_closed_basic(self):
         async def serve(*args):
             pass
 
         srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
 
-        # active count = 0
+        # active count = 0, not closed: should block
         task1 = asyncio.create_task(srv.wait_closed())
         await asyncio.sleep(0)
-        self.assertTrue(task1.done())
+        self.assertFalse(task1.done())
 
-        # active count != 0
+        # active count != 0, not closed: should block
         srv._attach()
         task2 = asyncio.create_task(srv.wait_closed())
         await asyncio.sleep(0)
+        self.assertFalse(task1.done())
         self.assertFalse(task2.done())
 
         srv.close()
         await asyncio.sleep(0)
+        # active count != 0, closed: should block
+        task3 = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertFalse(task1.done())
         self.assertFalse(task2.done())
+        self.assertFalse(task3.done())
 
         srv._detach()
+        # active count == 0, closed: should unblock
+        await task1
         await task2
+        await task3
+        await srv.wait_closed()  # Return immediately
+
+    async def test_wait_closed_race(self):
+        # Test a regression in 3.12.0, should be fixed in 3.12.1
+        async def serve(*args):
+            pass
+
+        srv = await asyncio.start_server(serve, socket_helper.HOSTv4, 0)
+        self.addCleanup(srv.close)
+
+        task = asyncio.create_task(srv.wait_closed())
+        await asyncio.sleep(0)
+        self.assertFalse(task.done())
+        srv._attach()
+        loop = asyncio.get_running_loop()
+        loop.call_soon(srv.close)
+        loop.call_soon(srv._detach)
+        await srv.wait_closed()
+
+
 
 
 @unittest.skipUnless(hasattr(asyncio, 'ProactorEventLoop'), 'Windows only')
