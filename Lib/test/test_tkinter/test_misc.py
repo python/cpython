@@ -481,6 +481,7 @@ class BindTest(AbstractTkTest, unittest.TestCase):
         f = self.frame
         f.focus_set()
         f.wait_visibility()
+        f.update_idletasks()
         event = '<Control-Alt-Key-c>'
         self.assertEqual(f.bind(), ())
         self.assertEqual(f.bind(event), '')
