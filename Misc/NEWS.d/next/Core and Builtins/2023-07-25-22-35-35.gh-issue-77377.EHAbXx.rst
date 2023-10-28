@@ -1,1 +1,0 @@
-Ensure that multiprocessing synchronization objects created in a fork context are not sent to a different process created in a spawn context. This changes a segfault into an actionable RuntimeError in the parent process.

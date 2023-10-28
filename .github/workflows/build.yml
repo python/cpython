@@ -13,7 +13,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
   pull_request:
     branches:
     - 'main'
@@ -22,7 +21,6 @@ on:
     - '3.10'
     - '3.9'
     - '3.8'
-    - '3.7'
 
 permissions:
   contents: read
@@ -40,6 +38,7 @@ jobs:
       run-docs: ${{ steps.docs-changes.outputs.run-docs || false }}
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_hypothesis: ${{ steps.check.outputs.run_hypothesis }}
+      run_cifuzz: ${{ steps.check.outputs.run_cifuzz }}
       config_hash: ${{ steps.config_hash.outputs.hash }}
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +74,21 @@ jobs:
           else
             echo "Run hypothesis tests"
             echo "run_hypothesis=true" >> $GITHUB_OUTPUT
+          fi
+
+          # oss-fuzz maintains a configuration for fuzzing the main branch of
+          # CPython, so CIFuzz should be run only for code that is likely to be
+          # merged into the main branch; compatibility with older branches may
+          # be broken.
+          FUZZ_RELEVANT_FILES='(\.c$|\.h$|\.cpp$|^configure$|^\.github/workflows/build\.yml$|^Modules/_xxtestfuzz)'
+          if [ "$GITHUB_BASE_REF" = "main" ] && [ "$(git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE $FUZZ_RELEVANT_FILES; echo $?)" -eq 0 ]; then
+            # The tests are pretty slow so they are executed only for PRs
+            # changing relevant files.
+            echo "Run CIFuzz tests"
+            echo "run_cifuzz=true" >> $GITHUB_OUTPUT
+          else
+            echo "Branch too old for CIFuzz tests; or no C files were changed"
+            echo "run_cifuzz=false" >> $GITHUB_OUTPUT
           fi
       - name: Compute hash for config cache key
         id: config_hash
@@ -112,14 +126,14 @@ jobs:
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
       - name: Restore config.cache
         uses: actions/cache@v3
         with:
           path: config.cache
-          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+          key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}-${{ env.pythonLocation }}
       - name: Install Dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
@@ -264,7 +278,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Register gcc problem matcher
       run: echo "::add-matcher::.github/problem-matchers/gcc.json"
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
@@ -534,6 +548,46 @@ jobs:
     - name: Tests
       run: xvfb-run make test
 
+  # CIFuzz job based on https://google.github.io/oss-fuzz/getting-started/continuous-integration/
+  cifuzz:
+    name: CIFuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: check_source
+    if: needs.check_source.outputs.run_cifuzz == 'true'
+    permissions:
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined, memory]
+    steps:
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        id: build
+        uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+        with:
+          oss-fuzz-project-name: cpython3
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+        with:
+          fuzz-seconds: 600
+          oss-fuzz-project-name: cpython3
+          output-sarif: true
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Upload crash
+        uses: actions/upload-artifact@v3
+        if: failure() && steps.build.outcome == 'success'
+        with:
+          name: ${{ matrix.sanitizer }}-artifacts
+          path: ./out/artifacts
+      - name: Upload SARIF
+        if: always() && steps.build.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: cifuzz-sarif/results.sarif
+          checkout_path: cifuzz-sarif
+
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
     if: always()
@@ -550,6 +604,7 @@ jobs:
     - build_ubuntu_ssltests
     - test_hypothesis
     - build_asan
+    - cifuzz
 
     runs-on: ubuntu-latest
 
@@ -562,6 +617,7 @@ jobs:
           build_ubuntu_ssltests,
           build_win32,
           build_win_arm64,
+          cifuzz,
           test_hypothesis,
         allowed-skips: >-
           ${{
@@ -582,6 +638,13 @@ jobs:
             build_ubuntu,
             build_ubuntu_ssltests,
             build_asan,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.check_source.outputs.run_cifuzz)
+            && '
+            cifuzz,
             '
             || ''
           }}

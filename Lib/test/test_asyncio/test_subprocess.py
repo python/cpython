@@ -14,8 +14,7 @@ from test import support
 from test.support import os_helper
 
 
-MS_WINDOWS = (sys.platform == 'win32')
-if MS_WINDOWS:
+if support.MS_WINDOWS:
     import msvcrt
 else:
     from asyncio import unix_events
@@ -283,7 +282,7 @@ class SubprocessMixin:
         rfd, wfd = os.pipe()
         self.addCleanup(os.close, rfd)
         self.addCleanup(os.close, wfd)
-        if MS_WINDOWS:
+        if support.MS_WINDOWS:
             handle = msvcrt.get_osfhandle(rfd)
             os.set_handle_inheritable(handle, True)
             code = textwrap.dedent(f'''

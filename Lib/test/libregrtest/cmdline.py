@@ -3,6 +3,7 @@ import os.path
 import shlex
 import sys
 from test.support import os_helper
+from .utils import ALL_RESOURCES, RESOURCE_NAMES
 
 
 USAGE = """\
@@ -27,8 +28,10 @@ EPILOG = """\
 Additional option details:
 
 -r randomizes test execution order. You can use --randseed=int to provide an
-int seed value for the randomizer; this is useful for reproducing troublesome
-test orders.
+int seed value for the randomizer. The randseed value will be used
+to set seeds for all random usages in tests
+(including randomizing the tests order if -r is set).
+By default we always set random seed, but do not randomize test order.
 
 -s On the first invocation of regrtest using -s, the first test file found
 or the first test file given on the command line is run, and the name of
@@ -130,19 +133,6 @@ Pattern examples:
 """
 
 
-ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
-
-# Other resources excluded from --use=all:
-#
-# - extralagefile (ex: test_zipfile64): really too slow to be enabled
-#   "by default"
-# - tzdata: while needed to validate fully test_datetime, it makes
-#   test_datetime too slow (15-20 min on some buildbots) and so is disabled by
-#   default (see bpo-30822).
-RESOURCE_NAMES = ALL_RESOURCES + ('extralargefile', 'tzdata')
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs) -> None:
         self.ci = False
@@ -171,8 +161,7 @@ class Namespace(argparse.Namespace):
         self.forever = False
         self.header = False
         self.failfast = False
-        self.match_tests = None
-        self.ignore_tests = None
+        self.match_tests = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -193,6 +182,20 @@ class _ArgParser(argparse.ArgumentParser):
         super().error(message + "\nPass -h or --help for complete help.")
 
 
+class FilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        items.append((value, self.const))
+
+
+class FromFileFilterAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        items = getattr(namespace, self.dest)
+        with open(value, encoding='utf-8') as fp:
+            for line in fp:
+                items.append((line.strip(), self.const))
+
+
 def _create_parser():
     # Set prog to prevent the uninformative "__main__.py" from displaying in
     # error messages when using "python -m test ...".
@@ -202,6 +205,7 @@ def _create_parser():
                         epilog=EPILOG,
                         add_help=False,
                         formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.set_defaults(match_tests=[])
 
     # Arguments with this clause added to its help are described further in
     # the epilog's "Additional option details" section.
@@ -229,6 +233,9 @@ def _create_parser():
                             more_details)
     group.add_argument('-p', '--python', metavar='PYTHON',
                        help='Command to run Python test subprocesses with.')
+    group.add_argument('--randseed', metavar='SEED',
+                       dest='random_seed', type=int,
+                       help='pass a global random seed')
 
     group = parser.add_argument_group('Verbosity')
     group.add_argument('-v', '--verbose', action='count',
@@ -249,10 +256,6 @@ def _create_parser():
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
                        help='randomize test execution order.' + more_details)
-    group.add_argument('--randseed', metavar='SEED',
-                       dest='random_seed', type=int,
-                       help='pass a random seed to reproduce a previous '
-                            'random run')
     group.add_argument('-f', '--fromfile', metavar='FILE',
                        help='read names of tests to run from a file.' +
                             more_details)
@@ -262,17 +265,19 @@ def _create_parser():
                        help='single step through a set of tests.' +
                             more_details)
     group.add_argument('-m', '--match', metavar='PAT',
-                       dest='match_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=True,
                        help='match test cases and methods with glob pattern PAT')
     group.add_argument('-i', '--ignore', metavar='PAT',
-                       dest='ignore_tests', action='append',
+                       dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
-                       dest='match_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=True,
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
     group.add_argument('--ignorefile', metavar='FILENAME',
-                       dest='ignore_filename',
+                       dest='match_tests',
+                       action=FromFileFilterAction, const=False,
                        help='similar to --matchfile but it receives patterns '
                             'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
@@ -417,7 +422,6 @@ def _parse_args(args, **kwargs):
             ns.use_mp = 0
         ns.randomize = True
         ns.fail_env_changed = True
-        ns.fail_rerun = True
         if ns.python is None:
             ns.rerun = True
         ns.print_slow = True
@@ -429,14 +433,16 @@ def _parse_args(args, **kwargs):
     # --slow-ci has the priority
     if ns.slow_ci:
         # Similar to: -u "all" --timeout=1200
-        if not ns.use:
-            ns.use = [['all']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all'])
         if ns.timeout is None:
             ns.timeout = 1200  # 20 minutes
     elif ns.fast_ci:
         # Similar to: -u "all,-cpu" --timeout=600
-        if not ns.use:
-            ns.use = [['all', '-cpu']]
+        if ns.use is None:
+            ns.use = []
+        ns.use.insert(0, ['all', '-cpu'])
         if ns.timeout is None:
             ns.timeout = 600  # 10 minutes
 
@@ -492,18 +498,6 @@ def _parse_args(args, **kwargs):
         print("WARNING: Disable --verbose3 because it's incompatible with "
               "--huntrleaks: see http://bugs.python.org/issue27103",
               file=sys.stderr)
-    if ns.match_filename:
-        if ns.match_tests is None:
-            ns.match_tests = []
-        with open(ns.match_filename) as fp:
-            for line in fp:
-                ns.match_tests.append(line.strip())
-    if ns.ignore_filename:
-        if ns.ignore_tests is None:
-            ns.ignore_tests = []
-        with open(ns.ignore_filename) as fp:
-            for line in fp:
-                ns.ignore_tests.append(line.strip())
     if ns.forever:
         # --forever implies --failfast
         ns.failfast = True

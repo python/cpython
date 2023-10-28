@@ -1,1 +1,0 @@
-Deopt opcodes hidden by the executor when base opcode is needed

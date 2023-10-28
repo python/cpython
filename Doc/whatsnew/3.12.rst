@@ -46,7 +46,7 @@
    researching a change.
 
 This article explains the new features in Python 3.12, compared to 3.11.
-Python 3.12 will be released on October 2, 2023.
+Python 3.12 was released on October 2, 2023.
 For full details, see the :ref:`changelog <changelog>`.
 
 .. seealso::
@@ -121,7 +121,7 @@ Significant improvements in the standard library:
 * A :ref:`command-line interface <uuid-cli>` has been added to the
   :mod:`uuid` module
 * Due to the changes in :ref:`PEP 701 <whatsnew312-pep701>`,
-  producing tokens via the :mod:`tokenize` module is up to up to 64% faster.
+  producing tokens via the :mod:`tokenize` module is up to 64% faster.
 
 Security improvements:
 
@@ -303,7 +303,7 @@ Let's cover these in detail:
 See :pep:`701` for more details.
 
 As a positive side-effect of how this feature has been implemented (by parsing f-strings
-with :pep:`the PEG parser <617>`, now error messages for f-strings are more precise
+with :pep:`the PEG parser <617>`), now error messages for f-strings are more precise
 and include the exact location of the error. For example, in Python 3.11, the following
 f-string raises a :exc:`SyntaxError`:
 
@@ -1360,7 +1360,6 @@ Other modules:
 APIs:
 
 * :class:`!configparser.LegacyInterpolation` (:gh:`90765`)
-* :func:`locale.getdefaultlocale` (:gh:`90817`)
 * ``locale.resetlocale()`` (:gh:`90817`)
 * :meth:`!turtle.RawTurtle.settiltangle` (:gh:`50096`)
 * :func:`!unittest.findTestCases` (:gh:`50096`)
@@ -1429,6 +1428,17 @@ and will be removed in Python 3.14.
 * The ``__package__`` and ``__cached__`` attributes on module objects.
 
 * The ``co_lnotab`` attribute of code objects.
+
+Pending Removal in Python 3.15
+------------------------------
+
+The following APIs have been deprecated
+and will be removed in Python 3.15.
+
+APIs:
+
+* :func:`locale.getdefaultlocale` (:gh:`90817`)
+
 
 Pending Removal in Future Versions
 ----------------------------------
@@ -2123,7 +2133,7 @@ Porting to Python 3.12
   The use of ``tp_dictoffset`` and ``tp_weaklistoffset`` is still
   supported, but does not fully support multiple inheritance
   (:gh:`95589`), and performance may be worse.
-  Classes declaring :c:macro:`Py_TPFLAGS_MANAGED_DICT` should call
+  Classes declaring :c:macro:`Py_TPFLAGS_MANAGED_DICT` must call
   :c:func:`!_PyObject_VisitManagedDict` and :c:func:`!_PyObject_ClearManagedDict`
   to traverse and clear their instance's dictionaries.
   To clear weakrefs, call :c:func:`PyObject_ClearWeakRefs`, as before.
@@ -2398,15 +2408,15 @@ Removed
 
 * Legacy Unicode APIs have been removed. See :pep:`623` for detail.
 
-   * :c:macro:`!PyUnicode_WCHAR_KIND`
-   * :c:func:`!PyUnicode_AS_UNICODE`
-   * :c:func:`!PyUnicode_AsUnicode`
-   * :c:func:`!PyUnicode_AsUnicodeAndSize`
-   * :c:func:`!PyUnicode_AS_DATA`
-   * :c:func:`!PyUnicode_FromUnicode`
-   * :c:func:`!PyUnicode_GET_SIZE`
-   * :c:func:`!PyUnicode_GetSize`
-   * :c:func:`!PyUnicode_GET_DATA_SIZE`
+  * :c:macro:`!PyUnicode_WCHAR_KIND`
+  * :c:func:`!PyUnicode_AS_UNICODE`
+  * :c:func:`!PyUnicode_AsUnicode`
+  * :c:func:`!PyUnicode_AsUnicodeAndSize`
+  * :c:func:`!PyUnicode_AS_DATA`
+  * :c:func:`!PyUnicode_FromUnicode`
+  * :c:func:`!PyUnicode_GET_SIZE`
+  * :c:func:`!PyUnicode_GetSize`
+  * :c:func:`!PyUnicode_GET_DATA_SIZE`
 
 * Remove the ``PyUnicode_InternImmortal()`` function macro.
   (Contributed by Victor Stinner in :gh:`85858`.)
