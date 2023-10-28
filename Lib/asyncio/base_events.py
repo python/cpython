@@ -383,6 +383,7 @@ class Server(events.AbstractServer):
         - If it is closed, but there are still active connections, wait.
 
         Anyone waiting here will be unblocked once both conditions
+        (server is closed and all connections have been dropped)
         have become true, in either order.
 
         Historical note: In 3.11 and before, this was broken, returning
