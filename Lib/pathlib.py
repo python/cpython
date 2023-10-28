@@ -647,9 +647,11 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.relative_to(*args)", msg,
                                  remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
         for step, path in enumerate([other] + list(other.parents)):
-            if self.is_relative_to(path):
+            if path == self or path in self.parents:
                 break
             elif not walk_up:
                 raise ValueError(f"{str(self)!r} is not in the subpath of {str(other)!r}")
@@ -669,7 +671,9 @@ class PurePath:
                    "scheduled for removal in Python {remove}")
             warnings._deprecated("pathlib.PurePath.is_relative_to(*args)",
                                  msg, remove=(3, 14))
-        other = self.with_segments(other, *_deprecated)
+            other = self.with_segments(other, *_deprecated)
+        elif not isinstance(other, PurePath):
+            other = self.with_segments(other)
         return other == self or other in self.parents
 
     @property
