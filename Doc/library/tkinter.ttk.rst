@@ -1392,7 +1392,7 @@ option. If you don't know the class name of a widget, use the method
 
       Create a new element in the current theme, of the given *etype* which is
       expected to be either "image", "from" or "vsapi". The latter is only
-      available in Tk 8.6a for Windows XP and Vista.
+      available in Tk 8.6 on Windows.
 
       If "image" is used, *args* should contain the default image name followed
       by statespec/value pairs (this is the imagespec), and *kw* may have the
