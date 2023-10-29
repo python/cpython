@@ -817,9 +817,12 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
-    def test_number_check_complex(self):
+    def test_number_check(self):
         number_check = _testcapi.number_check
-        self.assertTrue(_testcapi.number_check(1 + 1j))
+        self.assertTrue(number_check(1 + 1j))
+        self.assertTrue(number_check(1))
+        self.assertTrue(number_check(0.5))
+        self.assertFalse(number_check("1 + 1j"))
 
 
 if __name__ == "__main__":
