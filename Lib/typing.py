@@ -2163,8 +2163,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         for base in reversed(obj.__mro__):
             orig_bases = getattr(base, '__orig_bases__', None)
-            # skip base if already visited
-            if orig_bases and base not in hint_tracking:
+
+            if orig_bases:
                 traverse = list(orig_bases)
                 contains_generic = Generic in orig_bases
 
