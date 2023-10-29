@@ -25,18 +25,19 @@ class Logger:
     GOOD_COLOR = '\033[1m\033[32m'
     RESET_COLOR = '\033[0m'
 
-    def __init__(self, results: TestResults, quiet: bool, pgo: bool,
-                 color: bool):
+    def __init__(self, results: TestResults, ns: Namespace):
         self.start_time = time.perf_counter()
         self.test_count_text = ''
         self.test_count_width = 3
         self.win_load_tracker: WindowsLoadTracker | None = None
         self._results: TestResults = results
-        self._quiet: bool = quiet
-        self._pgo: bool = pgo
+        self._quiet: bool = ns.quiet
+        self._pgo: bool = ns.pgo
+        self.color = ns.color
+        # If NO_COLOR is set (to something other than '' or '0'), don't use
+        # color regardless of options.
         if os.environ.get('NO_COLOR', '') not in ('', '0'):
-            color = False
-        self.color = color
+            self.color = False
         self.load_threshold = os.process_cpu_count()
 
     def error(self, s):
@@ -77,12 +78,12 @@ class Logger:
     def log(self, line: str = '') -> int:
         empty = not line
 
-        # add the system load prefix: " 1.80 "
+        # add the system load prefix: "load avg: 1.80 "
 
         load_avg = self.get_load_avg()
         if load_avg is not None:
             load = self.load_color(load_avg)
-            line = f"{load} {line}"
+            line = f"load avg: {load} {line}"
 
         # add the timestamp prefix:  "0:01:05 "
         log_time = time.perf_counter() - self.start_time
@@ -140,10 +141,15 @@ class Logger:
         # To avoid spamming the output, only report running tests if they
         # are taking a long time.
         if running:
-            running_tests = ', '.join(f'{test} {self.warning(format_duration(dt))}'
-                for dt, test in running if dt >= PROGRESS_MIN_TIME)
-            if running_tests:
-                text += f' -- running ({running_tests})'
+            lrt = [(dt, test) for dt, test in running if dt >= PROGRESS_MIN_TIME]
+            if lrt:
+                test_text = ', '.join(
+                    f'{test} {self.warning(format_duration(dt))}'
+                    for dt, test in lrt
+                )
+                if text:
+                    text += ' -- '
+                text += f'running ({len(lrt)}): {test_text}'
         self.display_progress(test_index, text, stdout)
 
     def set_tests(self, runtests: RunTests) -> None:
@@ -199,17 +205,16 @@ def replace_stdout():
 
 class FancyLogger(Logger):
     """A logger with more compact, colorized output."""
-    def __init__(self, results: TestResults, quiet: bool, pgo: bool,
-                 color: bool):
-        # If NO_COLOR is set to something other than '' or '0', don't use
-        # color (regardless of options).
-        if color is None:
-            color = True
+    def __init__(self, results: TestResults, ns: Namespace):
+        # In the fancy reporter, default to color.
+        if ns.color is None:
+            ns.color = True
+        self.report_skip_reason = ns.fancy_report_skip_reason
         self.setup_terminal()
         # Import here to avoid circular import issues.
         from . import run_workers
         run_workers.PROGRESS_UPDATE = 5
-        super().__init__(results, quiet, pgo, color)
+        super().__init__(results, ns)
 
     def setup_terminal(self):
         import termios
@@ -233,19 +238,20 @@ class FancyLogger(Logger):
             state = result.state
         # We don't want any of the text to wrap (or it'll mess up the
         # in-place update logic), so if the log line is too long, emit it on
-        # its own line. The logging process probably adds no more than 30
+        # its own line. The logging process probably adds no more than 35
         # visible characters, or just 4 characters of indentation when
         # printed on its own.
-        linelen = len(text) + 4
+        linelen = len(text)
         text = self.state_color(text, state)
         # If the test is skipped, extra info might be in the test output. We
         # want to display just the skip reason, though, so that needs to be
         # extracted.
-        if (state in STATE_SKIP and stdout and ' skipped -- ' in stdout and
-            stdout.count('\n') <= 1):
-            _, _, extra_text = stdout.partition(' skipped -- ')
-            linelen += len(extra_text) + 3
-            text = f'{text} ({self.warning(extra_text)})'
+        if (state in STATE_SKIP and stdout and
+            ' skipped -- ' in stdout and stdout.count('\n') <= 1):
+            if self.report_skip_reason:
+                _, _, extra_text = stdout.partition(' skipped -- ')
+                linelen += len(extra_text) + 3
+                text = f'{text} ({self.warning(extra_text)})'
             stdout = None
         elif state is not None and state not in STATE_SKIP:
             duration = format_duration(result.duration)
@@ -255,25 +261,32 @@ class FancyLogger(Logger):
             linelen += len(error_text) + 3
             text = f'{text} ({self.error(error_text)})'
 
-        # If the test does something other than pass uneventfully, or if
-        # there's test output we need to show, make sure we don't overwrite
-        # it on the next print. If it might wrap even on a line of its own,
-        # do the same thing.
-        if ((state is not None and state not in STATE_OK + STATE_SKIP) or
-            stdout or linelen > self.columns):
+        # If the report line is too long (it might wrap even on a line of
+        # its own, with 4-space indent), or there's test stdout to show
+        # (which should be preceded by the test report so we know where it
+        # came from), or it's a test skip and we need to report those on
+        # their own, or it's otherwise not a passing test, display the
+        # report with the test's stdout, then display the regular progress
+        # report below it.
+        if (linelen + 4 > self.columns or
+            stdout or
+            (self.report_skip_reason and state in STATE_SKIP) or
+            (state is not None and state not in STATE_OK + STATE_SKIP)):
             self.display_progress(test_index, text, stdout=stdout)
             text = ''
             linelen = 0
 
-        if linelen + 26 > self.columns:
+        # Logging adds ~35 characters (timestamp, load avg, test count), so
+        # if that would make the report line wrap, print it on a line of its own.
+        if linelen + 35 > self.columns:
             lines = ['', f'     {text}']
         else:
             lines = [text]
         if running:
             # Don't fill more than half the screen with running tests (in
-            # case someone runs with `-j 100`). The list is already sorted
-            # (descending) by running time, so the longest running ones will
-            # be shown.
+            # case someone runs with `-j 100` or has a very short screen).
+            # The list is already sorted (descending) by running time, so
+            # the longest running ones will be shown.
             for dt, test in running[:self.lines // 2]:
                 duration = format_duration(dt)
                 visible_line = f" ... running: {test} ({duration})"
@@ -322,4 +335,4 @@ def create_logger(results: TestResults, ns: Namespace) -> Logger:
         logger_class = FancyLogger
     else:
         logger_class = Logger
-    return logger_class(results, ns.quiet, ns.pgo, ns.color)
+    return logger_class(results, ns)

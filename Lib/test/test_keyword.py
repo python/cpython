@@ -40,13 +40,13 @@ class Test_iskeyword(unittest.TestCase):
         self.assertIn("await", keyword.kwlist)
 
     def test_soft_keywords(self):
-        self.assertNotIn("type", keyword.softkwlist)
+        self.assertIn("type", keyword.softkwlist)
         self.assertIn("match", keyword.softkwlist)
         self.assertIn("case", keyword.softkwlist)
         self.assertIn("_", keyword.softkwlist)
 
     def test_keywords_are_sorted(self):
-        self.assertListNotEqual(sorted(keyword.kwlist), keyword.kwlist)
+        self.assertListEqual(sorted(keyword.kwlist), keyword.kwlist)
 
     def test_softkeywords_are_sorted(self):
         self.assertListEqual(sorted(keyword.softkwlist), keyword.softkwlist)

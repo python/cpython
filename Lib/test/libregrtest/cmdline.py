@@ -174,6 +174,7 @@ class Namespace(argparse.Namespace):
         self.tempdir = None
         self.progress_reporter = None
         self.color = None
+        self.fancy_report_skip_reason = False
         self._add_python_opts = True
         self.xmlpath = None
         self.single_process = False
@@ -261,6 +262,8 @@ def _create_parser():
                        choices=['plain', 'fancy', 'detect'], default='detect')
     group.add_argument('--color', action=argparse.BooleanOptionalAction,
                        help='use color in the progress reports')
+    group.add_argument('--fancy_report_skip_reason', action='store_true',
+                       help='in the fancy reporter, report the skip reason')
 
     group = parser.add_argument_group('Selecting tests')
     group.add_argument('-r', '--randomize', action='store_true',
