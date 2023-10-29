@@ -40,6 +40,7 @@ class StatsTestCase(unittest.TestCase):
         cProfile.run(profiled, filename=self.temp_storage.name)
 
     def tearDown(self):
+        self.temp_storage.close()
         os.remove(self.temp_storage.name)
 
     def test_add(self):
