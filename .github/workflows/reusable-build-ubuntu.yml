@@ -4,9 +4,6 @@ on:
       config_hash:
         required: true
         type: string
-      ubuntu_version:
-        required: true
-        type: string
 
 jobs:
   build_ubuntu_reusable:
