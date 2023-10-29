@@ -267,10 +267,10 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
-    uses: ./.github/workflows/reusable-build-macos.yml
+    uses: ./.github/workflows/reusable-build-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      ubuntu_version: "ubuntu-20.04"
+      ubuntu_version: 'ubuntu-20.04'
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
