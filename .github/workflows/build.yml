@@ -332,7 +332,7 @@ jobs:
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: xvfb-run make test
 
-  build_ubuntu:
+  build_ubuntu_nogil:
     name: 'Ubuntu'
     runs-on: ubuntu-latest
     timeout-minutes: 60
