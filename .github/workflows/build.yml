@@ -214,6 +214,22 @@ jobs:
     - name: Tests
       run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci
 
+  build_win_amd64_free_threaded:
+    name: 'Windows (x64): Free Threaded'
+    if: contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+        IncludeUwp: 'true'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Register MSVC problem matcher
+      run: echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - name: Build CPython
+      run: .\PCbuild\build.bat -e --disable-gil -d -p x64
+    - name: Display build info
+      run: .\python.bat -m test.pythoninfo
+
   build_win_arm64:
     name: 'Windows (arm64)'
     runs-on: windows-latest
