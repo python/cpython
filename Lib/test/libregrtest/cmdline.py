@@ -172,8 +172,8 @@ class Namespace(argparse.Namespace):
         self.threshold = None
         self.fail_rerun = False
         self.tempdir = None
-        self.color = None
-        self.progress_reporter = None
+        self.color: bool | None = None
+        self.progress_reporter: str | None = None
         self.fancy_report_skip_reason = False
         self._add_python_opts = True
         self.xmlpath = None

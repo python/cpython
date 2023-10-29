@@ -6,8 +6,8 @@ import time
 
 from test.support import MS_WINDOWS
 from .cmdline import Namespace
-from .result import TestResult
-from .results import TestResults, State
+from .result import TestResult, State
+from .results import TestResults
 from .runtests import RunTests
 from .single import PROGRESS_MIN_TIME
 from .utils import print_warning, format_duration
@@ -19,8 +19,11 @@ STATE_OK = (State.PASSED,)
 STATE_SKIP = (State.SKIPPED, State.RESOURCE_DENIED)
 
 class Logger:
+    # Bold red for errors and high load.
     ERROR_COLOR = '\033[1m\033[31m'
+    # Regular yellow for info/warnings and expected load.
     INFO_COLOR = '\033[33m'
+    # Bold green for passing tests and low load.
     GOOD_COLOR = '\033[1m\033[32m'
     RESET_COLOR = '\033[0m'
 
@@ -39,22 +42,22 @@ class Logger:
             self.color = False
         self.load_threshold = os.process_cpu_count()
 
-    def error(self, s):
+    def error(self, s) -> str:
         if not self.color:
             return s
         return f'{self.ERROR_COLOR}{s}{self.RESET_COLOR}'
 
-    def warning(self, s):
+    def warning(self, s) -> str:
         if not self.color:
             return s
         return f'{self.INFO_COLOR}{s}{self.RESET_COLOR}'
 
-    def good(self, s):
+    def good(self, s) -> str:
         if not self.color:
             return s
         return f'{self.GOOD_COLOR}{s}{self.RESET_COLOR}'
 
-    def load_color(self, load_avg):
+    def load_color(self, load_avg: float):
         load = f"{load_avg:.2f}"
         if load_avg < self.load_threshold:
             load = self.good(load)
@@ -64,7 +67,7 @@ class Logger:
             load = self.error(load)
         return load
 
-    def state_color(self, text, state):
+    def state_color(self, text: str, state: str | None):
         if state is None or not self.color:
             return text
         if state in STATE_OK:
@@ -121,7 +124,7 @@ class Logger:
 
     def update_progress(self, test_index: int, result: TestResult|None,
                          error_text: str|None = None,
-                         running: list[tuple[str, str]]|None = None,
+                         running: list[tuple[float, str]]|None = None,
                          stdout: str|None = None) -> None:
         if self._quiet:
             return
@@ -132,6 +135,7 @@ class Logger:
             state = result.state
         text = self.state_color(text, state)
         if (result is not None and not self._pgo and
+            result.duration is not None and
             result.duration >= PROGRESS_MIN_TIME):
             text = f"{text} ({format_duration(result.duration)})"
         if error_text:
@@ -140,11 +144,11 @@ class Logger:
         # To avoid spamming the output, only report running tests if they
         # are taking a long time.
         if running:
-            lrt = [(dt, test) for dt, test in running if dt >= PROGRESS_MIN_TIME]
+            lrt = [(secs, test) for secs, test in running if secs >= PROGRESS_MIN_TIME]
             if lrt:
                 test_text = ', '.join(
-                    f'{test} {self.warning(format_duration(dt))}'
-                    for dt, test in lrt
+                    f'{test} {self.warning(format_duration(secs))}'
+                    for secs, test in lrt
                 )
                 if text:
                     text += ' -- '
@@ -225,7 +229,7 @@ class FancyLogger(Logger):
 
     def update_progress(self, test_index: int, result: TestResult|None,
                         error_text: str|None = None,
-                        running: list[tuple[str, str]]|None = None,
+                        running: list[tuple[float, str]]|None = None,
                         stdout: str|None = None) -> None:
         if self._quiet:
             return
@@ -252,7 +256,7 @@ class FancyLogger(Logger):
                 linelen += len(extra_text) + 3
                 text = f'{text} ({self.warning(extra_text)})'
             stdout = None
-        elif state is not None and state not in STATE_SKIP:
+        elif result is not None and result.duration is not None:
             duration = format_duration(result.duration)
             linelen += len(duration) + 3
             text = f'{text} ({self.warning(duration)})'
@@ -286,8 +290,8 @@ class FancyLogger(Logger):
             # case someone runs with `-j 100` or has a very short screen).
             # The list is already sorted (descending) by running time, so
             # the longest running ones will be shown.
-            for dt, test in running[:self.lines // 2]:
-                duration = format_duration(dt)
+            for secs, test in running[:self.lines // 2]:
+                duration = format_duration(secs)
                 visible_line = f" ... running: {test} ({duration})"
                 duration = self.warning(duration)
                 # Truncate the status lines in case very long test names
@@ -302,7 +306,7 @@ class FancyLogger(Logger):
                 lines.append(line)
         report = '\n'.join(lines)
         self.display_progress(test_index, report)
-        sys.stdout.status_size = report.count('\n') + 1
+        sys.stdout.status_size = report.count('\n') + 1  # type: ignore[attr-defined]
 
 
 def detect_vt100_capability():
@@ -327,6 +331,7 @@ def detect_vt100_capability():
 
 def create_logger(results: TestResults, ns: Namespace) -> Logger:
     reporter = ns.progress_reporter
+    logger_class: type[Logger]
     if (reporter == 'detect' and ns.use_mp is not None and
         detect_vt100_capability()):
         logger_class = FancyLogger

@@ -446,8 +446,8 @@ class WorkerThread(threading.Thread):
                 break
 
 
-def get_running(workers: list[WorkerThread]) -> str | None:
-    running: list[str] = []
+def get_running(workers: list[WorkerThread]) -> list[tuple[float, str]] | None:
+    running: list[tuple[float, str]] = []
     for worker in workers:
         test_name = worker.test_name
         if not test_name:
