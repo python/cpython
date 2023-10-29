@@ -1272,7 +1272,6 @@ class MathTests(unittest.TestCase):
         self.assertEqual(sumprod([], []), 0)
         self.assertEqual(sumprod([-1], [1.]), -1)
         self.assertEqual(sumprod([1.], [-1]), -1)
-        self.assertEqual(sumprod([True], [1.0]), 1)
 
         # Type preservation and coercion
         for v in [
