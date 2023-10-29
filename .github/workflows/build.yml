@@ -542,7 +542,7 @@ jobs:
     - build_win_arm64
     - build_macos
     - build_ubuntu
-    - build_ubuntu_nogil
+    - build_ubuntu_free_threaded
     - build_ubuntu_ssltests
     - test_hypothesis
     - build_asan
