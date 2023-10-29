@@ -541,7 +541,7 @@ Miscellaneous options
      development (running from the source tree) then the default is "off".
      Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
      frozen modules are always used, even if this flag is set to "off". See
-     also :envvar:`PYTHONFROZENMODULES`.
+     also :envvar:`PYTHON_FROZEN_MODULES`.
    * ``-X perf`` enables support for the Linux ``perf`` profiler.
      When this option is provided, the ``perf`` profiler will be able to
      report Python calls. This option is only available on some platforms and
@@ -1092,7 +1092,7 @@ conflict.
 
    .. versionadded:: 3.13
 
-.. envvar:: PYTHONFROZENMODULES
+.. envvar:: PYTHON_FROZEN_MODULES
 
    If this variable is set to ``on`` or ``off``, it determines whether or not
    frozen modules are ignored by the import machinery.  A value of "on" means

@@ -290,7 +290,7 @@ static const char usage_envvars[] =
 "   and end column offset) to every instruction in code objects. This is useful \n"
 "   when smaller code objects and pyc files are desired as well as suppressing the \n"
 "   extra visual location indicators when the interpreter displays tracebacks.\n"
-"PYTHONFROZENMODULES     : if this variable is set, it determines whether or not \n"
+"PYTHON_FROZEN_MODULES     : if this variable is set, it determines whether or not \n"
 "   frozen modules should be used. The default is \"on\" (or \"off\" if you are \n"
 "   running a local build).\n"
 "These variables have equivalent command-line parameters (see --help for details):\n"
@@ -2135,7 +2135,7 @@ config_init_import(PyConfig *config, int compute_path_config)
         return status;
     }
 
-    const char *env = config_get_env(config, "PYTHONFROZENMODULES");
+    const char *env = config_get_env(config, "PYTHON_FROZEN_MODULES");
     if (env == NULL) {
     }
     else if (strcmp(env, "on") == 0) {
@@ -2144,7 +2144,7 @@ config_init_import(PyConfig *config, int compute_path_config)
     else if (strcmp(env, "off") == 0) {
         config->use_frozen_modules = 0;
     } else {
-        return PyStatus_Error("bad value for PYTHONFROZENMODULES "
+        return PyStatus_Error("bad value for PYTHON_FROZEN_MODULES "
                               "(expected \"on\" or \"off\")");
     }
 

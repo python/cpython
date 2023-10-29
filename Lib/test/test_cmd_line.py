@@ -161,7 +161,7 @@ class CmdLineTest(unittest.TestCase):
         for raw, expected in tests:
             cmd = ['-c', 'import os; print(os.__spec__.loader, end="")']
             with self.subTest(raw):
-                res = assert_python_ok(*cmd, PYTHONFROZENMODULES=raw)
+                res = assert_python_ok(*cmd, PYTHON_FROZEN_MODULES=raw)
                 self.assertRegex(res.out.decode('utf-8'), expected)
 
     def test_run_module(self):
