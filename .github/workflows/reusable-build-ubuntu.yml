@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_ubuntu_reusable:
-    runs-on: ${{ inputs.ubuntu_version }}
+    runs-on: ubuntu-20.04
     timeout-minutes: 60
     env:
       OPENSSL_VER: 3.0.11
