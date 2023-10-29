@@ -260,7 +260,7 @@ jobs:
           --with-openssl=$OPENSSL_DIR
 
   build_ubuntu_free_threaded:
-    name: 'Ubuntu GIL disabled'
+    name: 'Ubuntu (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-build-ubuntu.yml
