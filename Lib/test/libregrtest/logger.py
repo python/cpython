@@ -190,7 +190,9 @@ class StatusRemovingWrapper(io.TextIOWrapper):
             # of the status report and clearing the screen below it. This
             # will mess up if something wrote new lines to the screen since
             # the last status report without going through here (e.g.
-            # writing directly to the underlying buffer, or the fd).
+            # writing directly to the underlying buffer, or the fd). That
+            # shouldn't happen when using multiprocessing to run the tests
+            # in isolation.
             super().write(f'\033[{self.status_size}A' + '\033[0J')
         self.status_size = 0
         super().write(msg)
@@ -310,7 +312,7 @@ class FancyLogger(Logger):
 
 
 def detect_vt100_capability():
-    # Rough, "good enough" vt100 detection.
+    """Rough, "good enough" vt100 detection."""
     if not sys.stdout.isatty():
         return False
     try:
