@@ -1,0 +1,4 @@
+<dsig:CanonicalizationMethod xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:c14n2="http://www.w3.org/2010/xml-c14n2" Algorithm="http://www.w3.org/2010/xml-c14n2">
+ <c14n2:TrimTextNodes>true</c14n2:TrimTextNodes>
+</dsig:CanonicalizationMethod>
+
