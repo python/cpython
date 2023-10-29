@@ -17,7 +17,6 @@ if MS_WINDOWS:
 
 STATE_OK = (State.PASSED,)
 STATE_SKIP = (State.SKIPPED, State.RESOURCE_DENIED)
-STATE_WARNING = (State.SKIPPED, State.ENV_CHANGED, State.RESOURCE_DENIED)
 
 class Logger:
     ERROR_COLOR = '\033[1m\033[31m'
@@ -70,7 +69,7 @@ class Logger:
             return text
         if state in STATE_OK:
             return self.good(text)
-        elif state in STATE_WARNING:
+        elif state in STATE_SKIP:
             return self.warning(text)
         else:
             return self.error(text)
