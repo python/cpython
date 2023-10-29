@@ -2149,6 +2149,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     if getattr(obj, '__no_type_check__', None):
         return {}
 
+    # for Generic Aliases we need to inspect the origin
+    # then apply its args later
     ga_args = None
     if isinstance(obj, _GenericAlias):
         ga_args = get_args(obj)
@@ -2236,7 +2238,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 hint_tracking[base][name] = value
                 hints[name] = value
 
-        # if obj was a generic alias, we need to sub the original args back in
+        # sub the original args back in
         if ga_args is not None:
             parameters[obj].append(ga_args)
             to_sub = _substitute_type_hints(parameters[obj], hints)
