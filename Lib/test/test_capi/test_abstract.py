@@ -822,6 +822,5 @@ class CAPITest(unittest.TestCase):
         self.assertTrue(number_check(1 + 1j))
 
 
-
 if __name__ == "__main__":
     unittest.main()
