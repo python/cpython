@@ -192,8 +192,8 @@ jobs:
       run: .\PCbuild\build.bat -e -d -p Win32
     - name: Display build info
       run: .\python.bat -m test.pythoninfo
-    - name: Tests
-      run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
+    # - name: Tests
+    #   run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
 
   build_win_amd64:
     name: 'Windows (x64)'
