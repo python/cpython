@@ -2119,12 +2119,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals and recursively replaces all
-    'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
+    forward references encoded as string literals, recursively replaces all
+    'Annotated[T, ...]' with 'T' (unless 'include_extras=True'), and resolves
+    type variables to their values as needed.
 
-    The argument may be a module, class, method, or function. The annotations
-    are returned as a dictionary. For classes, annotations include also
-    inherited members.
+    The argument may be a module, class, generic alias, method, or function.
+    The annotations are returned as a dictionary. For classes and generic aliases,
+    annotations also include inherited members.
 
     TypeError is raised if the argument is not of a type that can contain
     annotations, and an empty dictionary is returned if no annotations are
@@ -2158,8 +2159,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
     # Classes require a special treatment.
     if isinstance(obj, type):
-        # mapping[cls, list[types]]
-        parameters: "defaultdict[type, list[tuple[Any, ...]]]" = defaultdict(list)
+        # mapping[cls, list[type variables/values]]
+        parameters = defaultdict(list)
         hint_tracking = {}
         hints = {}
         for base in reversed(obj.__mro__):
@@ -2279,7 +2280,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
     if len(substitutions) < 2:
         return {}
 
-    # get a mapping of typevar to value
+    # get a mapping of type variable to value
     mapping = {substitutions[-2][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
 
     hints_to_replace = {}
