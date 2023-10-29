@@ -4,6 +4,9 @@ on:
       config_hash:
         required: true
         type: string
+      options:
+        required: true
+        type: string
 
 jobs:
   build_ubuntu_reusable:
@@ -52,7 +55,7 @@ jobs:
         key: ${{ github.job }}-${{ runner.os }}-${{ inputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: |
+      run: options|
         ../cpython-ro-srcdir/configure \
           --config-cache \
           --with-pydebug \
