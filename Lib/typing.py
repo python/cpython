@@ -2199,7 +2199,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
                     parameters[access].append(args)
 
-            # this is needed if the class inherits two generic classes
+            # this is needed if the class inherits two or more generic classes
             # class Baz(Foo[U, T], Bar[T]): ...
             # we need to resolve the types for these attributes individually
             # then update the type hints
@@ -2236,7 +2236,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 hint_tracking[base][name] = value
                 hints[name] = value
 
-        # if obj is a generic alias, we need to sub the original args back in
+        # if obj was a generic alias, we need to sub the original args back in
         if ga_args is not None:
             parameters[obj].append(ga_args)
             to_sub = _substitute_type_hints(parameters[obj], hints)
