@@ -49,10 +49,12 @@ class StatsTestCase(unittest.TestCase):
         stats.add(self.stats, self.stats)
 
     def test_dump_and_load_works_correctly(self):
-        temp_storage_new = tempfile.NamedTemporaryFile(delete=True)
+        temp_storage_new = tempfile.NamedTemporaryFile(delete=False)
         self.stats.dump_stats(filename=temp_storage_new.name)
         tmp_stats = pstats.Stats(temp_storage_new.name)
         self.assertEqual(self.stats.stats, tmp_stats.stats)
+        temp_storage_new.close()
+        os.remove(temp_storage_new.name)
 
     def test_load_equivalent_to_init(self):
         empty = pstats.Stats()
