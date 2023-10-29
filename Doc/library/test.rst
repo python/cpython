@@ -512,16 +512,6 @@ The :mod:`test.support` module defines the following functions:
    automatically.
 
 
-.. function:: match_test(test)
-
-   Determine whether *test* matches the patterns set in :func:`set_match_tests`.
-
-
-.. function:: set_match_tests(accept_patterns=None, ignore_patterns=None)
-
-   Define match patterns on test filenames and test method names for filtering tests.
-
-
 .. function:: get_pagesize()
 
    Get size of a page in bytes.
