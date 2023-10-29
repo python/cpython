@@ -21,7 +21,6 @@ jobs:
     runs-on: ${{ inputs.ubuntu_version }}
     timeout-minutes: 60
     needs: check_source
-    if: inputs.run_tests == 'true'
     env:
       OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
