@@ -237,6 +237,15 @@ jobs:
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
 
+  build_macos_free_threaded:
+    name: 'macOS (free-threaded)'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
+    uses: ./.github/workflows/reusable-build-macos.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      free-threaded: true
+
   build_ubuntu:
     name: 'Ubuntu'
     runs-on: ubuntu-20.04
