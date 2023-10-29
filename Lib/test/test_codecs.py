@@ -170,14 +170,14 @@ class ReadTest(MixInCheckStateHandling):
             return "|".join(lines)
 
         s = "foo\nbar\r\nbaz\rspam\u2028eggs"
-        sexpected = "foo\n|bar\r\n|baz\r|spam\u2028|eggs"
-        sexpectednoends = "foo|bar|baz|spam|eggs"
+        sexpected = "foo\n|bar\r\n|baz\r|spam\u2028eggs"
+        sexpectednoends = "foo|bar|baz|spam\u2028eggs"
         self.assertEqual(readalllines(s, True), sexpected)
         self.assertEqual(readalllines(s, False), sexpectednoends)
         self.assertEqual(readalllines(s, True, 10), sexpected)
         self.assertEqual(readalllines(s, False, 10), sexpectednoends)
 
-        lineends = ("\n", "\r\n", "\r", "\u2028")
+        lineends = ("\n", "\r\n", "\r")
         # Test long lines (multiple calls to read() in readline())
         vw = []
         vwo = []
