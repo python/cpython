@@ -2162,29 +2162,34 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         previous_bases = []
         hints = {}
         for base in reversed(obj.__mro__):
-
-            if issubclass(base, Generic) and base is not Generic:
-                orig_bases = list(base.__orig_bases__)
+            orig_bases = getattr(base, '__orig_bases__', None)
+            # skip base if already visited
+            if orig_bases and base not in hint_tracking:
+                traverse = list(orig_bases)
                 contains_generic = Generic in orig_bases
-                for orig_base in orig_bases:
+
+                # this occurs if obj is
+                # class Bar(Foo[str, U]): ...
+                # in this case, we need to imagine there's a generic base
+                # with the required typevars here.
+                if not contains_generic:
+                    # we need to collect all the typevars from all bases
+                    # in the case that they have multiple generic bases
+                    # class Baz(Foo[str, U], Bar[U, T]): ...
+                    type_vars_for_generic = _collect_parameters(orig_bases)
+
+                    # this may be empty if obj is
+                    # class Bar(Foo[str]): ...
+                    # we can skip creating a Generic here.
+                    if type_vars_for_generic:
+                        traverse.append(Generic[type_vars_for_generic])
+
+                for orig_base in traverse:
                     origin = get_origin(orig_base)
                     if origin is None:
                         continue
 
                     args = get_args(orig_base)
-                    # this occurs if obj is
-                    # class Bar(Foo[str, U]): ...
-                    # in this case, we need to imagine there's a generic base
-                    # with the required typevars here.
-                    if not contains_generic:
-                        type_vars_for_generic = tuple(
-                            arg for arg in args if hasattr(arg, '__typing_subst__'))
-                        # this may be empty if obj is
-                        # class Bar(Foo[str]): ...
-                        # we can skip creating a Generic here.
-                        if type_vars_for_generic:
-                            orig_bases.append(Generic[type_vars_for_generic])
-                        contains_generic = True
 
                     if origin is Generic:
                         access = base
@@ -2202,8 +2207,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 prev = previous_bases.pop(0)
 
                 to_sub = _substitute_type_hints(parameters[prev], hint_tracking[prev])
-                if to_sub is not None:
-                    hints.update(to_sub)
+                hints.update(to_sub)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
@@ -2236,8 +2240,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         if ga_args is not None:
             parameters[obj].append(ga_args)
             to_sub = _substitute_type_hints(parameters[obj], hints)
-            if to_sub is not None:
-                hints.update(to_sub)
+            hints.update(to_sub)
 
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
@@ -2278,11 +2281,11 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[str, Any]"):
-    if not substitutions:
-        return
+    if len(substitutions) < 2:
+        return {}
 
     # get a mapping of typevar to value
-    mapping = {substitutions[0][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
+    mapping = {substitutions[-2][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
 
     hints_to_replace = {}
 
@@ -2295,7 +2298,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
                 sub = origin.copy_with(subs)
             else:
                 sub = origin[subs]
-        elif isinstance(value, (TypeVar, TypeVarTuple, ParamSpec)):
+        elif hasattr(value, '__typing_subst__'):
             sub = mapping[value]
         else:
             continue
