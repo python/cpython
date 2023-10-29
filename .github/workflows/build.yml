@@ -259,7 +259,7 @@ jobs:
           --with-pydebug \
           --with-openssl=$OPENSSL_DIR
 
-  build_ubuntu_nogil:
+  build_ubuntu_free_threaded:
     name: 'Ubuntu GIL disabled'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
