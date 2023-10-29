@@ -10,8 +10,8 @@ on:
 
 jobs:
   build_ubuntu_reusable:
-    runs-on: ubuntu-20.04
     timeout-minutes: 60
+    runs-on: ubuntu-20.04
     env:
       OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
