@@ -34,7 +34,7 @@ class StatsTestCase(unittest.TestCase):
         stats_file = support.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
         to_compile = 'import os'
-        self.temp_storage = tempfile.mktemp()
+        self.temp_storage = tempfile.TemporaryFile()
         profiled = compile(to_compile, '<string>', 'exec')
         cProfile.run(profiled, filename=self.temp_storage)
 
@@ -47,9 +47,12 @@ class StatsTestCase(unittest.TestCase):
         stats.add(self.stats, self.stats)
 
     def test_dump_and_load_works_correctly(self):
-        self.stats.dump_stats(filename=self.temp_storage)
-        tmp_stats = pstats.Stats(self.temp_storage)
+        temp_storage_new = tempfile.TemporaryFile()
+        self.stats.dump_stats(filename=temp_storage_new)
+        tmp_stats = pstats.Stats(temp_storage_new)
         self.assertEqual(self.stats.stats, tmp_stats.stats)
+        remove(temp_storage_new)
+        
 
     def test_load_equivalent_to_init(self):
         empty = pstats.Stats()
