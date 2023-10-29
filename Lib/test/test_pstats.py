@@ -4,6 +4,7 @@ from test import support
 from io import StringIO
 from pstats import SortKey
 from enum import StrEnum, _test_simple_enum
+import os
 
 import pstats
 import tempfile
@@ -34,12 +35,12 @@ class StatsTestCase(unittest.TestCase):
         stats_file = support.findfile('pstats.pck')
         self.stats = pstats.Stats(stats_file)
         to_compile = 'import os'
-        self.temp_storage = tempfile.TemporaryFile()
+        self.temp_storage = tempfile.NamedTemporaryFile(delete=False)
         profiled = compile(to_compile, '<string>', 'exec')
-        cProfile.run(profiled, filename=self.temp_storage)
+        cProfile.run(profiled, filename=self.temp_storage.name)
 
     def tearDown(self):
-        remove(self.temp_storage)
+        os.remove(self.temp_storage.name)
 
     def test_add(self):
         stream = StringIO()
@@ -47,17 +48,15 @@ class StatsTestCase(unittest.TestCase):
         stats.add(self.stats, self.stats)
 
     def test_dump_and_load_works_correctly(self):
-        temp_storage_new = tempfile.TemporaryFile()
-        self.stats.dump_stats(filename=temp_storage_new)
-        tmp_stats = pstats.Stats(temp_storage_new)
+        temp_storage_new = tempfile.NamedTemporaryFile(delete=True)
+        self.stats.dump_stats(filename=temp_storage_new.name)
+        tmp_stats = pstats.Stats(temp_storage_new.name)
         self.assertEqual(self.stats.stats, tmp_stats.stats)
-        remove(temp_storage_new)
-        
 
     def test_load_equivalent_to_init(self):
         empty = pstats.Stats()
-        empty.load_stats(self.temp_storage)
-        created = pstats.Stats(self.temp_storage)
+        empty.load_stats(self.temp_storage.name)
+        created = pstats.Stats(self.temp_storage.name)
         self.assertEqual(empty.stats, created.stats)
 
     def test_loading_wrong_types(self):
