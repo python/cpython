@@ -2148,43 +2148,62 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """
     if getattr(obj, '__no_type_check__', None):
         return {}
+
+    ga_args = None
+    if isinstance(obj, _GenericAlias):
+        ga_args = get_args(obj)
+        obj = get_origin(obj)
+
     # Classes require a special treatment.
     if isinstance(obj, type):
         # mapping[cls, list[types]]
-        parameters = defaultdict(list)
+        parameters: "defaultdict[type, list[tuple[Any, ...]]]" = defaultdict(list)
+        hint_tracking = {}
+        previous_bases = []
         hints = {}
-        previous_base = None
         for base in reversed(obj.__mro__):
+
             if issubclass(base, Generic) and base is not Generic:
-                orig_bases = base.__orig_bases__
+                orig_bases = list(base.__orig_bases__)
+                contains_generic = Generic in orig_bases
                 for orig_base in orig_bases:
                     origin = get_origin(orig_base)
-                    args = get_args(orig_base)
+                    if origin is None:
+                        continue
 
-                    access = origin
+                    args = get_args(orig_base)
+                    # this occurs if obj is
+                    # class Bar(Foo[str, U]): ...
+                    # in this case, we need to imagine there's a generic base
+                    # with the required typevars here.
+                    if not contains_generic:
+                        type_vars_for_generic = tuple(
+                            arg for arg in args if hasattr(arg, '__typing_subst__'))
+                        # this may be empty if obj is
+                        # class Bar(Foo[str]): ...
+                        # we can skip creating a Generic here.
+                        if type_vars_for_generic:
+                            orig_bases.append(Generic[type_vars_for_generic])
+                        contains_generic = True
+
                     if origin is Generic:
                         access = base
+                    else:
+                        access = origin
+                        previous_bases.append(access)
 
                     parameters[access].append(args)
 
-            for attribute, hint in hints.items():
-                substitutions = parameters[previous_base]
-                mapping = {
-                    substitutions[0][i]: substitutions[-1][i] for i in range(len(substitutions))}
+            # this is needed if the class inherits two generic classes
+            # class Baz(Foo[U, T], Bar[T]): ...
+            # we need to resolve the types for these attributes individually
+            # then update the type hints
+            while previous_bases:
+                prev = previous_bases.pop(0)
 
-                sub = hint
-
-                origin = get_origin(hint)
-                if origin is not None:
-                    subs = tuple(_make_substitution(origin, get_args(hint), mapping))
-                    if isinstance(origin, _GenericAlias):
-                        sub = origin.copy_with(subs)
-                    else:
-                        # how to copy_with types.GenericAlias?
-                        sub = origin[subs]
-                elif isinstance(hint, TypeVar):
-                    sub = mapping[hint]
-                hints[attribute] = sub
+                to_sub = _substitute_type_hints(parameters[prev], hint_tracking[prev])
+                if to_sub is not None:
+                    hints.update(to_sub)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
@@ -2202,15 +2221,24 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 # *base_globals* first rather than *base_locals*.
                 # This only affects ForwardRefs.
                 base_globals, base_locals = base_locals, base_globals
+
+            hint_tracking[base] = {}
             for name, value in ann.items():
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):
                     value = ForwardRef(value, is_argument=False, is_class=True)
                 value = _eval_type(value, base_globals, base_locals)
+                hint_tracking[base][name] = value
                 hints[name] = value
 
-            previous_base = base
+        # if obj is a generic alias, we need to sub the original args back in
+        if ga_args is not None:
+            parameters[obj].append(ga_args)
+            to_sub = _substitute_type_hints(parameters[obj], hints)
+            if to_sub is not None:
+                hints.update(to_sub)
+
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
     if globalns is None:
@@ -2248,6 +2276,33 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             )
         hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[str, Any]"):
+    if not substitutions:
+        return
+
+    # get a mapping of typevar to value
+    mapping = {substitutions[0][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
+
+    hints_to_replace = {}
+
+    for name, value in hints.items():
+        origin = get_origin(value)
+        # if the typevar is nested, we must substitute the typevar all the way down.
+        if origin is not None:
+            subs = tuple(_make_substitution(origin, get_args(value), mapping))
+            if isinstance(origin, _GenericAlias):
+                sub = origin.copy_with(subs)
+            else:
+                sub = origin[subs]
+        elif isinstance(value, (TypeVar, TypeVarTuple, ParamSpec)):
+            sub = mapping[value]
+        else:
+            continue
+
+        hints_to_replace[name] = sub
+
+    return hints_to_replace
 
 
 def _strip_annotations(t):
