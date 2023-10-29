@@ -2161,7 +2161,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         # mapping[cls, list[types]]
         parameters: "defaultdict[type, list[tuple[Any, ...]]]" = defaultdict(list)
         hint_tracking = {}
-        previous_bases = []
         hints = {}
         for base in reversed(obj.__mro__):
             orig_bases = getattr(base, '__orig_bases__', None)
@@ -2194,22 +2193,16 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     args = get_args(orig_base)
 
                     if origin is Generic:
-                        access = base
+                        parameters[base].append(args)
                     else:
-                        access = origin
-                        previous_bases.append(access)
+                        parameters[origin].append(args)
 
-                    parameters[access].append(args)
-
-            # this is needed if the class inherits two or more generic classes
-            # class Baz(Foo[U, T], Bar[T]): ...
-            # we need to resolve the types for these attributes individually
-            # then update the type hints
-            while previous_bases:
-                prev = previous_bases.pop(0)
-
-                to_sub = _substitute_type_hints(parameters[prev], hint_tracking[prev])
-                hints.update(to_sub)
+                        # this is needed if the class inherits two or more generic classes
+                        # class Baz(Foo[U, T], Bar[T]): ...
+                        # we need to resolve the types for these attributes individually
+                        # then update the type hints
+                        to_sub = _substitute_type_hints(parameters[origin], hint_tracking[origin])
+                        hints.update(to_sub)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
