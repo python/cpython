@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_msi;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_uuid;_wmi;_zoneinfo ?>
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_uuid;_wmi;_zoneinfo ?>
     <Fragment>
         <DirectoryRef Id="Lib_venv_scripts_nt" />
 
@@ -115,10 +115,6 @@
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
                     <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
                 </RegistryKey>
-            </Component>
-            <Component Id="Lib2to3_pickle_remove" Directory="Lib_lib2to3" Guid="$(var.RemoveLib2to3PickleComponentGuid)">
-                <RemoveFile Id="Lib2to3_pickle_remove_files" Name="*.pickle" On="uninstall" />
-                <RemoveFolder Id="Lib2to3_pickle_remove_folder" On="uninstall" />
             </Component>
         </ComponentGroup>
     </Fragment>

@@ -2,7 +2,7 @@ import unittest
 import tkinter
 from test import support
 from test.support import os_helper
-from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tcl
+from test.test_tkinter.support import AbstractTkTest, AbstractDefaultRootTest, requires_tk
 
 support.requires('gui')
 
@@ -66,7 +66,7 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.xbm', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.xbm', subdir='tkinterdata')
 
     def test_create_from_file(self):
         image = tkinter.BitmapImage('::img::test', master=self.root,
@@ -144,13 +144,21 @@ class BitmapImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['foreground'],
                          '-foreground {} {} #000000 yellow')
 
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.BitmapImage('::img::test', master=self.root, spam=print)
+        image = tkinter.BitmapImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
+
 
 class PhotoImageTest(AbstractTkTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.testfile = support.findfile('python.gif', subdir='imghdrdata')
+        cls.testfile = support.findfile('python.gif', subdir='tkinterdata')
 
     def create(self):
         return tkinter.PhotoImage('::img::test', master=self.root,
@@ -163,7 +171,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
             return tkinter._join(args)
 
     def check_create_from_file(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         image = tkinter.PhotoImage('::img::test', master=self.root,
                                    file=testfile)
         self.assertEqual(str(image), '::img::test')
@@ -178,7 +186,7 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertNotIn('::img::test', self.root.image_names())
 
     def check_create_from_data(self, ext):
-        testfile = support.findfile('python.' + ext, subdir='imghdrdata')
+        testfile = support.findfile('python.' + ext, subdir='tkinterdata')
         with open(testfile, 'rb') as f:
             data = f.read()
         image = tkinter.PhotoImage('::img::test', master=self.root,
@@ -213,11 +221,11 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
     def test_create_from_gif_data(self):
         self.check_create_from_data('gif')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_file(self):
         self.check_create_from_file('png')
 
-    @requires_tcl(8, 6)
+    @requires_tk(8, 6)
     def test_create_from_png_data(self):
         self.check_create_from_data('png')
 
@@ -273,6 +281,14 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image['palette'], '256')
         image.configure(palette='3/4/2')
         self.assertEqual(image['palette'], '3/4/2')
+
+    def test_bug_100814(self):
+        # gh-100814: Passing a callable option value causes AttributeError.
+        with self.assertRaises(tkinter.TclError):
+            tkinter.PhotoImage('::img::test', master=self.root, spam=print)
+        image = tkinter.PhotoImage('::img::test', master=self.root)
+        with self.assertRaises(tkinter.TclError):
+            image.configure(spam=print)
 
     def test_blank(self):
         image = self.create()
@@ -341,13 +357,18 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertRaises(tkinter.TclError, image.get, 15, 16)
 
     def test_write(self):
+        filename = os_helper.TESTFN
+        import locale
+        if locale.getlocale()[0] is None:
+            # Tcl uses Latin1 in the C locale
+            filename = os_helper.TESTFN_ASCII
         image = self.create()
-        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        self.addCleanup(os_helper.unlink, filename)
 
-        image.write(os_helper.TESTFN)
+        image.write(filename)
         image2 = tkinter.PhotoImage('::img::test2', master=self.root,
                                     format='ppm',
-                                    file=os_helper.TESTFN)
+                                    file=filename)
         self.assertEqual(str(image2), '::img::test2')
         self.assertEqual(image2.type(), 'photo')
         self.assertEqual(image2.width(), 16)
@@ -355,10 +376,10 @@ class PhotoImageTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(image2.get(0, 0), image.get(0, 0))
         self.assertEqual(image2.get(15, 8), image.get(15, 8))
 
-        image.write(os_helper.TESTFN, format='gif', from_coords=(4, 6, 6, 9))
+        image.write(filename, format='gif', from_coords=(4, 6, 6, 9))
         image3 = tkinter.PhotoImage('::img::test3', master=self.root,
                                     format='gif',
-                                    file=os_helper.TESTFN)
+                                    file=filename)
         self.assertEqual(str(image3), '::img::test3')
         self.assertEqual(image3.type(), 'photo')
         self.assertEqual(image3.width(), 2)

@@ -1072,8 +1072,8 @@ write the obvious :keyword:`for` loop::
 
 A related function is :func:`itertools.accumulate(iterable, func=operator.add)
 <itertools.accumulate>`.  It performs the same calculation, but instead of
-returning only the final result, :func:`accumulate` returns an iterator that
-also yields each partial result::
+returning only the final result, :func:`~itertools.accumulate` returns an iterator
+that also yields each partial result::
 
     itertools.accumulate([1, 2, 3, 4, 5]) =>
       1, 3, 6, 10, 15

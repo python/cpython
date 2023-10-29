@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.1t",
-              url="https://www.openssl.org/source/openssl-1.1.1t.tar.gz",
-              checksum='8dee9b24bdb1dcbf0c3d1e9b02fb8f6bf22165e807f45adeb7c9677536859d3b',
+              name="OpenSSL 3.0.11",
+              url="https://www.openssl.org/source/openssl-3.0.11.tar.gz",
+              checksum='b3425d3bb4a2218d0697eb41f7fc0cdede016ed19ca49d168b78e8d947887f55',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['tk868_on_10_8_10_9.patch']
 
         else:
-            tcl_tk_ver='8.6.12'
-            tcl_checksum='87ea890821d2221f2ab5157bc5eb885f'
+            tcl_tk_ver='8.6.13'
+            tcl_checksum='43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066'
 
-            tk_checksum='1d6dcf6120356e3d211e056dff5e462a'
+            tk_checksum='2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675'
             tk_patches = [ ]
 
 
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.40.1",
-              url="https://sqlite.org/2022/sqlite-autoconf-3400100.tar.gz",
-              checksum="42175b1a1d23529cb133bbd2b5900afd",
+              name="SQLite 3.43.1",
+              url="https://sqlite.org/2023/sqlite-autoconf-3430100.tar.gz",
+              checksum="77e61befe9c3298da0504f87772a24b0",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '

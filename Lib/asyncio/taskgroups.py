@@ -2,7 +2,7 @@
 # license: PSFL.
 
 
-__all__ = ["TaskGroup"]
+__all__ = ("TaskGroup",)
 
 from . import events
 from . import exceptions
@@ -54,16 +54,14 @@ class TaskGroup:
     async def __aenter__(self):
         if self._entered:
             raise RuntimeError(
-                f"TaskGroup {self!r} has been already entered")
-        self._entered = True
-
+                f"TaskGroup {self!r} has already been entered")
         if self._loop is None:
             self._loop = events.get_running_loop()
-
         self._parent_task = tasks.current_task(self._loop)
         if self._parent_task is None:
             raise RuntimeError(
                 f'TaskGroup {self!r} cannot determine the parent task')
+        self._entered = True
 
         return self
 
@@ -163,9 +161,15 @@ class TaskGroup:
             task = self._loop.create_task(coro)
         else:
             task = self._loop.create_task(coro, context=context)
-        tasks._set_task_name(task, name)
-        task.add_done_callback(self._on_task_done)
-        self._tasks.add(task)
+        task.set_name(name)
+        # optimization: Immediately call the done callback if the task is
+        # already done (e.g. if the coro was able to complete eagerly),
+        # and skip scheduling a done callback
+        if task.done():
+            self._on_task_done(task)
+        else:
+            self._tasks.add(task)
+            task.add_done_callback(self._on_task_done)
         return task
 
     # Since Python 3.8 Tasks propagate all exceptions correctly,

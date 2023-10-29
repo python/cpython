@@ -2,8 +2,11 @@
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
 #include "osdefs.h"               // SEP
-#include <locale.h>
+
 #include <stdlib.h>               // mbstowcs()
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>             // getcwd()
+#endif
 
 #ifdef MS_WINDOWS
 #  include <malloc.h>
@@ -19,7 +22,7 @@ extern int winerror_to_errno(int);
 #endif
 
 #ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
+#  include <langinfo.h>           // nl_langinfo(CODESET)
 #endif
 
 #ifdef HAVE_SYS_IOCTL_H
@@ -27,12 +30,12 @@ extern int winerror_to_errno(int);
 #endif
 
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
-#include <iconv.h>
+#  include <iconv.h>              // iconv_open()
 #endif
 
 #ifdef HAVE_FCNTL_H
-#include <fcntl.h>
-#endif /* HAVE_FCNTL_H */
+#  include <fcntl.h>              // fcntl(F_GETFD)
+#endif
 
 #ifdef O_CLOEXEC
 /* Does open() support the O_CLOEXEC flag? Possible values:
@@ -105,14 +108,14 @@ _Py_device_encoding(int fd)
 #else
     if (_PyRuntime.preconfig.utf8_mode) {
         _Py_DECLARE_STR(utf_8, "utf-8");
-        return Py_NewRef(&_Py_STR(utf_8));
+        return &_Py_STR(utf_8);
     }
     return _Py_GetLocaleEncodingObject();
 #endif
 }
 
 
-static size_t
+static int
 is_valid_wide_char(wchar_t ch)
 {
 #ifdef HAVE_NON_UNICODE_WCHAR_T_REPRESENTATION
@@ -1132,7 +1135,8 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
         file_id.id = id_info->FileId;
         result->st_ino = file_id.st_ino;
         result->st_ino_high = file_id.st_ino_high;
-    } else {
+    }
+    if (!result->st_ino && !result->st_ino_high) {
         /* should only occur for DirEntry_from_find_data, in which case the
            index is likely to be zero anyway. */
         result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
@@ -1789,6 +1793,7 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+    int saved_errno = errno;
     PyMem_Free(wpath);
 #else
     PyObject *bytes;
@@ -1811,13 +1816,14 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
+    int saved_errno = errno;
     Py_DECREF(bytes);
 #endif
     if (async_err)
         return NULL;
 
     if (f == NULL) {
+        errno = saved_errno;
         PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
         return NULL;
     }
@@ -2376,12 +2382,14 @@ _Py_find_basename(const wchar_t *filename)
    path, which will be within the original buffer. Guaranteed to not
    make the path longer, and will not fail. 'size' is the length of
    the path, if known. If -1, the first null character will be assumed
-   to be the end of the path. */
+   to be the end of the path. 'normsize' will be set to contain the
+   length of the resulting normalized path. */
 wchar_t *
-_Py_normpath(wchar_t *path, Py_ssize_t size)
+_Py_normpath_and_size(wchar_t *path, Py_ssize_t size, Py_ssize_t *normsize)
 {
     assert(path != NULL);
-    if (!path[0] || size == 0) {
+    if ((size < 0 && !path[0]) || size == 0) {
+        *normsize = 0;
         return path;
     }
     wchar_t *pEnd = size >= 0 ? &path[size] : NULL;
@@ -2430,11 +2438,7 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
                 *p2++ = lastC = *p1;
             }
         }
-        if (sepCount) {
-            minP2 = p2;      // Invalid path
-        } else {
-            minP2 = p2 - 1;  // Absolute path has SEP at minP2
-        }
+        minP2 = p2 - 1;
     }
 #else
     // Skip past two leading SEPs
@@ -2494,11 +2498,26 @@ _Py_normpath(wchar_t *path, Py_ssize_t size)
         while (--p2 != minP2 && *p2 == SEP) {
             *p2 = L'\0';
         }
+    } else {
+        --p2;
     }
+    *normsize = p2 - path + 1;
 #undef SEP_OR_END
 #undef IS_SEP
 #undef IS_END
     return path;
+}
+
+/* In-place path normalisation. Returns the start of the normalized
+   path, which will be within the original buffer. Guaranteed to not
+   make the path longer, and will not fail. 'size' is the length of
+   the path, if known. If -1, the first null character will be assumed
+   to be the end of the path. */
+wchar_t *
+_Py_normpath(wchar_t *path, Py_ssize_t size)
+{
+    Py_ssize_t norm_length;
+    return _Py_normpath_and_size(path, size, &norm_length);
 }
 
 

@@ -66,10 +66,6 @@ else:
     class EmptyStruct(ctypes.Structure):
         pass
 
-# Does io.IOBase finalizer log the exception if the close() method fails?
-# The exception is ignored silently by default in release build.
-IOBASE_EMITS_UNRAISABLE = (support.Py_DEBUG or sys.flags.dev_mode)
-
 
 def _default_chunk_size():
     """Get the default TextIOWrapper chunk size"""
@@ -1218,10 +1214,7 @@ class CommonBufferedTests:
             with self.assertRaises(AttributeError):
                 self.tp(rawio).xyzzy
 
-            if not IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNone(cm.unraisable)
-            elif cm.unraisable is not None:
-                self.assertEqual(cm.unraisable.exc_type, OSError)
+            self.assertEqual(cm.unraisable.exc_type, OSError)
 
     def test_repr(self):
         raw = self.MockRawIO()
@@ -1548,8 +1541,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
 
         self.assertEqual(b"abcdefg", bufio.read())
 
-    @support.requires_resource('cpu')
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes with exactly the same number of 0's,
@@ -1937,8 +1930,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                 f.truncate()
                 self.assertEqual(f.tell(), buffer_size + 2)
 
-    @support.requires_resource('cpu')
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_threads(self):
         try:
             # Write out many bytes from many threads and test they were
@@ -3022,10 +3015,7 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.assertRaises(AttributeError):
                 self.TextIOWrapper(rawio, encoding="utf-8").xyzzy
 
-            if not IOBASE_EMITS_UNRAISABLE:
-                self.assertIsNone(cm.unraisable)
-            elif cm.unraisable is not None:
-                self.assertEqual(cm.unraisable.exc_type, OSError)
+            self.assertEqual(cm.unraisable.exc_type, OSError)
 
     # Systematic tests of the text I/O API
 
@@ -4242,6 +4232,7 @@ class MiscIOTest(unittest.TestCase):
 
     def test_pickling(self):
         # Pickling file objects is forbidden
+        msg = "cannot pickle"
         for kwargs in [
                 {"mode": "w"},
                 {"mode": "wb"},
@@ -4256,8 +4247,10 @@ class MiscIOTest(unittest.TestCase):
             if "b" not in kwargs["mode"]:
                 kwargs["encoding"] = "utf-8"
             for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
-                with self.open(os_helper.TESTFN, **kwargs) as f:
-                    self.assertRaises(TypeError, pickle.dumps, f, protocol)
+                with self.subTest(protocol=protocol, kwargs=kwargs):
+                    with self.open(os_helper.TESTFN, **kwargs) as f:
+                        with self.assertRaisesRegex(TypeError, msg):
+                            pickle.dumps(f, protocol)
 
     @unittest.skipIf(
         support.is_emscripten, "fstat() of a pipe fd is not supported"
@@ -4403,11 +4396,11 @@ class MiscIOTest(unittest.TestCase):
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
-        self.assertEqual(len(warnings), 2)
+        self.assertEqual(len(warnings), 4)
         self.assertTrue(
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
+            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4475,10 +4468,12 @@ class CMiscIOTest(MiscIOTest):
             self.assertFalse(err.strip('.!'))
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_daemon_threads_shutdown_stdout_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stdout')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('walltime')
     def test_daemon_threads_shutdown_stderr_deadlock(self):
         self.check_daemon_threads_shutdown_deadlock('stderr')
 
@@ -4652,11 +4647,13 @@ class SignalsTest(unittest.TestCase):
             os.close(r)
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_read_retry_buffered(self):
         self.check_interrupted_read_retry(lambda x: x.decode('latin1'),
                                           mode="rb")
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_read_retry_text(self):
         self.check_interrupted_read_retry(lambda x: x,
                                           mode="r", encoding="latin1")
@@ -4730,10 +4727,12 @@ class SignalsTest(unittest.TestCase):
                     raise
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_write_retry_buffered(self):
         self.check_interrupted_write_retry(b"x", mode="wb")
 
     @requires_alarm
+    @support.requires_resource('walltime')
     def test_interrupted_write_retry_text(self):
         self.check_interrupted_write_retry("x", mode="w", encoding="latin1")
 

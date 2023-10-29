@@ -7,6 +7,10 @@
 # GitHub
 .github/**                    @ezio-melotti @hugovk
 
+# pre-commit
+.pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
+
 # Build system
 configure*                    @erlend-aasland @corona10
 
@@ -19,15 +23,19 @@ configure*                    @erlend-aasland @corona10
 **/*hamt*                     @1st1
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
+Objects/typevarobject.c       @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
 Objects/call.c                @markshannon
 Python/ceval.c                @markshannon
 Python/compile.c              @markshannon @iritkatriel
+Python/assemble.c             @markshannon @iritkatriel
+Python/flowgraph.c            @markshannon @iritkatriel
 Python/ast_opt.c              @isidentical
 Lib/test/test_patma.py        @brandtbucher
 Lib/test/test_peepholer.py    @brandtbucher
+Lib/test/test_type_*.py       @JelleZijlstra
 
 # Exceptions
 Lib/traceback.py              @iritkatriel
@@ -61,7 +69,8 @@ Python/traceback.c            @iritkatriel
 /Tools/build/parse_html5_entities.py   @ezio-melotti
 
 # Import (including importlib).
-**/*import*                   @brettcannon @encukou @ericsnowcurrently @ncoghlan @warsaw
+**/*import*                   @brettcannon @ericsnowcurrently @ncoghlan @warsaw
+/Python/import.c              @kumaraditya303
 **/*importlib/resources/*      @jaraco @warsaw @FFY00
 **/importlib/metadata/*       @jaraco @warsaw
 
@@ -72,7 +81,7 @@ Doc/library/time.rst          @pganssle @abalkin
 Lib/test/test_time.py         @pganssle @abalkin
 Modules/timemodule.c          @pganssle @abalkin
 Python/pytime.c               @pganssle @abalkin
-Include/pytime.h              @pganssle @abalkin
+Include/internal/pycore_time.h  @pganssle @abalkin
 
 # Email and related
 **/*mail*                     @python/email-team
@@ -90,6 +99,8 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/peg_generator/         @pablogsal @lysnikolaou
 /Lib/test/test_peg_generator/ @pablogsal @lysnikolaou
 /Grammar/python.gram          @pablogsal @lysnikolaou
+/Lib/tokenize.py              @pablogsal @lysnikolaou
+/Lib/test/test_tokenize.py    @pablogsal @lysnikolaou
 
 # AST
 Python/ast.c                  @isidentical
@@ -108,6 +119,12 @@ Lib/ast.py                    @isidentical
 /Lib/subprocess.py            @gpshead
 /Lib/test/test_subprocess.py  @gpshead
 /Modules/*subprocess*         @gpshead
+
+# Limited C API & stable ABI
+Tools/build/stable_abi.py     @encukou
+Misc/stable_abi.toml          @encukou
+Doc/data/*.abi                @encukou
+Doc/c-api/stable.rst          @encukou
 
 # Windows
 /PC/                          @python/windows-team
@@ -157,4 +174,12 @@ Lib/ast.py                    @isidentical
 **/*pathlib*                  @barneygale
 
 # zipfile.Path
-**/*zipfile/*_path.py         @jaraco
+**/*zipfile/_path/*           @jaraco
+
+# Argument Clinic
+/Tools/clinic/**              @erlend-aasland @AlexWaygood
+/Lib/test/test_clinic.py      @erlend-aasland @AlexWaygood
+Doc/howto/clinic.rst          @erlend-aasland
+
+# WebAssembly
+/Tools/wasm/                  @brettcannon

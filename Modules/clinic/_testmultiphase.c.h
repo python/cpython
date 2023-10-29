@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_testmultiphase_StateAccessType_get_defining_module__doc__,
 "get_defining_module($self, /)\n"
@@ -117,7 +117,7 @@ _testmultiphase_StateAccessType_increment_count_clinic(StateAccessTypeObject *se
         goto skip_optional_pos;
     }
     if (args[0]) {
-        n = _PyLong_AsInt(args[0]);
+        n = PyLong_AsInt(args[0]);
         if (n == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -162,4 +162,4 @@ _testmultiphase_StateAccessType_get_count(StateAccessTypeObject *self, PyTypeObj
     }
     return _testmultiphase_StateAccessType_get_count_impl(self, cls);
 }
-/*[clinic end generated code: output=52ea97ab2f03bb6d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d8c262af27b3b98d input=a9049054013a1b77]*/
