@@ -2934,6 +2934,29 @@ _str_shared(PyThreadState *tstate, PyObject *obj,
 }
 
 static PyObject *
+_new_float_object(_PyCrossInterpreterData *data)
+{
+    double * value_ptr = data->data;
+    return PyFloat_FromDouble(*value_ptr);
+}
+
+static int
+_float_shared(PyThreadState *tstate, PyObject *obj,
+             _PyCrossInterpreterData *data)
+{
+    if (_PyCrossInterpreterData_InitWithSize(
+            data, tstate->interp, sizeof(double), obj,
+            _new_float_object
+            ) < 0)
+    {
+        return -1;
+    }
+    double * shared = (double*)data->data;
+    *shared =  PyFloat_AsDouble(obj);
+    return 0;
+}
+
+static PyObject *
 _new_long_object(_PyCrossInterpreterData *data)
 {
     return PyLong_FromSsize_t((Py_ssize_t)(data->data));
@@ -2998,6 +3021,11 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
     // str
     if (_xidregistry_add_type(xidregistry, &PyUnicode_Type, _str_shared) != 0) {
         Py_FatalError("could not register str for cross-interpreter sharing");
+    }
+
+    // float
+    if (_xidregistry_add_type(xidregistry, &PyFloat_Type, _float_shared) != 0) {
+        Py_FatalError("could not register float for cross-interpreter sharing");
     }
 }
 
