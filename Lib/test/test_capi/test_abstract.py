@@ -819,7 +819,7 @@ class CAPITest(unittest.TestCase):
 
     def test_number_check_complex(self):
         number_check = _testcapi.number_check
-        self.assertTrue(number_check(1 + 1j))
+        self.assertTrue(_testcapi.number_check(1 + 1j))
 
 
 if __name__ == "__main__":
