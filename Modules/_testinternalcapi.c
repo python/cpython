@@ -1002,6 +1002,32 @@ get_executor(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     return (PyObject *)PyUnstable_GetExecutor((PyCodeObject *)code, ioffset);
 }
 
+static PyObject *
+add_executor_dependency(PyObject *self, PyObject *args)
+{
+    PyObject *exec;
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "OO", &exec, &obj)) {
+        return NULL;
+    }
+    /* No way to tell in general if exec is an executor, so we only accept
+     * counting_executor */
+    if (strcmp(Py_TYPE(exec)->tp_name, "counting_executor")) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a counting_executor");
+        return NULL;
+    }
+    _Py_Executor_DependsOn((_PyExecutorObject *)exec, obj);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+invalidate_executors(PyObject *self, PyObject *obj)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _Py_Executors_InvalidateDependency(interp, obj);
+    Py_RETURN_NONE;
+}
+
 static int _pending_callback(void *arg)
 {
     /* we assume the argument is callable object to which we own a reference */
@@ -1530,6 +1556,36 @@ _testinternalcapi_test_long_numbits_impl(PyObject *module)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+compile_perf_trampoline_entry(PyObject *self, PyObject *args)
+{
+    PyObject *co;
+    if (!PyArg_ParseTuple(args, "O!", &PyCode_Type, &co)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_CompileCode((PyCodeObject *)co);
+    if (ret != 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to compile trampoline");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
+static PyObject *
+perf_trampoline_set_persist_after_fork(PyObject *self, PyObject *args)
+{
+    int enable;
+    if (!PyArg_ParseTuple(args, "i", &enable)) {
+        return NULL;
+    }
+    int ret = PyUnstable_PerfTrampoline_SetPersistAfterFork(enable);
+    if (ret == 0) {
+        PyErr_SetString(PyExc_AssertionError, "Failed to set persist_after_fork");
+        return NULL;
+    }
+    return PyLong_FromLong(ret);
+}
+
 
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
@@ -1565,6 +1621,8 @@ static PyMethodDef module_functions[] = {
     {"get_executor", _PyCFunction_CAST(get_executor),  METH_FASTCALL, NULL},
     {"get_counter_optimizer", get_counter_optimizer, METH_NOARGS, NULL},
     {"get_uop_optimizer", get_uop_optimizer, METH_NOARGS, NULL},
+    {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
+    {"invalidate_executors", invalidate_executors, METH_O, NULL},
     {"pending_threadfunc", _PyCFunction_CAST(pending_threadfunc),
      METH_VARARGS | METH_KEYWORDS},
     {"pending_identify", pending_identify, METH_VARARGS, NULL},
@@ -1585,6 +1643,8 @@ static PyMethodDef module_functions[] = {
     {"run_in_subinterp_with_config",
      _PyCFunction_CAST(run_in_subinterp_with_config),
      METH_VARARGS | METH_KEYWORDS},
+    {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
+    {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
     _TESTINTERNALCAPI_WRITE_UNRAISABLE_EXC_METHODDEF
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {NULL, NULL} /* sentinel */

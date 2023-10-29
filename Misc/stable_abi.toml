@@ -2480,3 +2480,5 @@
     added = '3.13'
 [function.PyErr_FormatUnraisable]
     added = '3.13'
+[function.PyUnicode_AsUTF8]
+    added = '3.13'
