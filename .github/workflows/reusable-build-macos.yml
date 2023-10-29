@@ -7,7 +7,6 @@ on:
 
 jobs:
   build_macos:
-    name: Test on macOS
     runs-on: macos-latest
     timeout-minutes: 60
     env:
