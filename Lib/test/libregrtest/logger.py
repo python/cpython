@@ -137,7 +137,7 @@ class Logger:
         if (result is not None and not self._pgo and
             result.duration is not None and
             result.duration >= PROGRESS_MIN_TIME):
-            text = f"{text} ({format_duration(result.duration)})"
+            text = f"{text} ({self.warning(format_duration(result.duration))})"
         if error_text:
             text = f"{text} ({self.error(error_text)})"
 
