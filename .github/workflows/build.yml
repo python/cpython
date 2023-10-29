@@ -419,10 +419,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Restore config.cache
-    #   uses: actions/cache@v3
-    #   with:
-    #     path: config.cache
-    #     key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
+      uses: actions/cache@v3
+      with:
+        path: config.cache
+        key: ${{ github.job }}-${{ runner.os }}-${{ needs.check_source.outputs.config_hash }}
     # - name: Register gcc problem matcher
     #   run: echo "::add-matcher::.github/problem-matchers/gcc.json"
     # - name: Install Dependencies
