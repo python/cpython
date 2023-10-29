@@ -120,6 +120,10 @@ Other Language Changes
   is rejected when the global is used in the :keyword:`else` block.
   (Contributed by Irit Katriel in :gh:`111123`.)
 
+* Added a new environment variable :envvar:`PYTHON_FROZEN_MODULES`. It
+  determines whether or not frozen modules are ignored by the import machinery.
+  (Contributed by Yilei Yang in :gh:`111374`.)
+
 New Modules
 ===========
 
