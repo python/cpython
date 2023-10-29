@@ -270,7 +270,7 @@ jobs:
     uses: ./.github/workflows/reusable-build-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
-      # ubuntu_version: 'ubuntu-20.04'
+      ubuntu_version: ubuntu-20.04
       run_tests: needs.check_source.outputs.run_tests
 
   build_ubuntu_ssltests:
