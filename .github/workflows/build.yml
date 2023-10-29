@@ -262,7 +262,7 @@ jobs:
   build_ubuntu_free_threaded:
     name: 'Ubuntu (free-threaded)'
     needs: check_source
-    if: needs.check_source.outputs.run_tests == 'true'
+    if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
     uses: ./.github/workflows/reusable-build-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
