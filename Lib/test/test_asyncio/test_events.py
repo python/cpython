@@ -2691,7 +2691,7 @@ class PolicyTests(unittest.TestCase):
         old_policy = asyncio.get_event_loop_policy()
 
         policy = asyncio.DefaultEventLoopPolicy()
-        with self.assertWarns(DeprecationWarning) as cm:
+        with self.assertWarns(DeprecationWarning):
             asyncio.set_event_loop_policy(policy)
         self.assertIs(policy, asyncio.get_event_loop_policy())
         self.assertIsNot(policy, old_policy)
