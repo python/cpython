@@ -470,8 +470,8 @@ class SendfileMixin(SendfileBase):
 
         self.assertTrue(1024 <= srv_proto.nbytes < len(self.DATA),
                         srv_proto.nbytes)
-        if sys.platform != 'win32' or \
-                        not isinstance(self.loop, asyncio.ProactorEventLoop):
+        if not (sys.platform == 'win32'
+                and isinstance(self.loop, asyncio.ProactorEventLoop)):
             self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
                             self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
