@@ -162,8 +162,7 @@ class Namespace(argparse.Namespace):
         self.header = False
         self.failfast = False
         self.match_tests = []
-        self.accept_labels = None
-        self.ignore_labels = None
+        self.match_labels = []
         self.pgo = False
         self.pgo_extended = False
         self.worker_json = None
@@ -273,10 +272,10 @@ def _create_parser():
                        dest='match_tests', action=FilterAction, const=False,
                        help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--label', metavar='NAME',
-                       dest='accept_labels', action='append',
+                       dest='match_labels', action=FilterAction, const=True,
                        help='match test cases and methods with label NAME')
     group.add_argument('--no-label', metavar='NAME',
-                       dest='ignore_labels', action='append',
+                       dest='match_labels', action=FilterAction, const=False,
                        help='ignore test cases and methods with label NAME')
     group.add_argument('--matchfile', metavar='FILENAME',
                        dest='match_tests',

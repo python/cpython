@@ -73,8 +73,7 @@ class RunTests:
     fail_fast: bool
     fail_env_changed: bool
     match_tests: TestFilter
-    accept_labels: tuple[str, ...] | None
-    ignore_labels: tuple[str, ...] | None
+    match_labels: TestFilter
     match_tests_dict: FilterDict | None
     rerun: bool
     forever: bool

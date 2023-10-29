@@ -7,21 +7,44 @@ import sys
 # By default, don't filter tests
 _test_matchers = ()
 _test_patterns = ()
-_match_test_func2 = None
+_match_labels = ()
 
 
-def match_test1(test):
+def match_test(test):
     # Function used by support.run_unittest() and regrtest --list-cases
+    return match_test_id(test) and match_test_label(test)
+
+def match_test_id(test):
     result = False
     for matcher, result in reversed(_test_matchers):
         if matcher(test.id()):
             return result
     return not result
 
-def match_test(test):
-    # Function used by support.run_unittest() and regrtest --list-cases
-    return (match_test1(test) and
-            (_match_test_func2 is None or _match_test_func2(test)))
+def match_test_label(test):
+    result = False
+    for label, result in reversed(_match_labels):
+        if _has_label(test, label):
+            return result
+    return not result
+
+def _has_label(test, label):
+    attrname = f'_label_{label}'
+    if hasattr(test, attrname):
+        return True
+    testMethod = getattr(test, test._testMethodName)
+    while testMethod is not None:
+        if hasattr(testMethod, attrname):
+            return True
+        testMethod = getattr(testMethod, '__wrapped__', None)
+    try:
+        module = sys.modules[test.__class__.__module__]
+        if hasattr(module, attrname):
+            return True
+    except KeyError:
+        pass
+    return False
+
 
 def _is_full_match_test(pattern):
     # If a pattern contains at least one dot, it's considered
@@ -33,7 +56,7 @@ def _is_full_match_test(pattern):
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
+def set_match_tests(patterns=None, match_labels=None):
     global _test_matchers, _test_patterns
 
     if not patterns:
@@ -48,51 +71,6 @@ def set_match_tests(patterns):
                 for result, it in itertools.groupby(patterns, itemgetter(1))
             ]
             _test_patterns = patterns
-
-
-def _check_obj_labels(obj, labels):
-    for label in labels:
-        if hasattr(obj, f'_label_{label}'):
-            return True
-    return False
-
-def _check_test_labels(test, labels):
-    if _check_obj_labels(test, labels):
-        return True
-    testMethod = getattr(test, test._testMethodName)
-    while testMethod is not None:
-        if _check_obj_labels(testMethod, labels):
-            return True
-        testMethod = getattr(testMethod, '__wrapped__', None)
-    try:
-        module = sys.modules[test.__class__.__module__]
-        if _check_obj_labels(module, labels):
-            return True
-    except KeyError:
-        pass
-    return False
-
-def set_match_tests2(accept_labels=None, ignore_labels=None):
-    global _match_test_func2
-
-    if accept_labels is None:
-        accept_labels = ()
-    if ignore_labels is None:
-        ignore_labels = ()
-    # Create a copy since label lists can be mutable and so modified later
-    accept_labels = tuple(accept_labels)
-    ignore_labels = tuple(ignore_labels)
-
-    def match_function(test):
-        accept = True
-        ignore = False
-        if accept_labels:
-            accept = _check_test_labels(test, accept_labels)
-        if ignore_labels:
-            ignore = _check_test_labels(test, ignore_labels)
-        return accept and not ignore
-
-    _match_test_func2 = match_function
 
 
 def _compile_match_function(patterns):
