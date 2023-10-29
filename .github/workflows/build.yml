@@ -333,7 +333,7 @@ jobs:
     #   run: xvfb-run make test
 
   build_ubuntu_nogil:
-    name: 'Ubuntu'
+    name: 'Ubuntu nogil-build'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: check_source
