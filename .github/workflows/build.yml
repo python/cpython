@@ -267,6 +267,7 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
+    needs: check_source
     uses: ./.github/workflows/reusable-build-ubuntu.yml
     if: needs.check_source.outputs.run_tests == 'true'
     with:
