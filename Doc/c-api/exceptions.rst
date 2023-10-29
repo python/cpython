@@ -92,9 +92,6 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
-   .. versionchanged:: 3.2
-      Accept ``NULL`` as argument.
-
    .. versionchanged:: 3.4
       Print a traceback. Print only traceback if *obj* is ``NULL``.
 
