@@ -20,7 +20,6 @@ jobs:
   build_ubuntu_reusable:
     runs-on: ${{ inputs.ubuntu_version }}
     timeout-minutes: 60
-    needs: check_source
     env:
       OPENSSL_VER: 3.0.11
       PYTHONSTRICTEXTENSIONBUILD: 1
