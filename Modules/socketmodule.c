@@ -3168,7 +3168,7 @@ internal_settimeout(PySocketSockObject *s, _PyTime_t timeout) {
                 }
             }
             #ifdef MS_WINDOWS
-            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_SNDTIMEO,
+            if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
                            (char *)&timeout_ms, sizeof(int)) != 0)
             #else
             if (setsockopt(s->sock_fd, SOL_SOCKET, SO_RCVTIMEO,
