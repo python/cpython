@@ -2271,7 +2271,7 @@ class NullHandler(Handler):
 
 _warnings_showwarning = None
 
-def _showwarning(message, category, filename, lineno, file=None, line=None):
+def _showwarning(message, category, filename, lineno, file=None, line=None, source=None):
     """
     Implementation of showwarnings which redirects to logging, which will first
     check to see if the file parameter is None. If a file is specified, it will
@@ -2281,9 +2281,9 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
     """
     if file is not None:
         if _warnings_showwarning is not None:
-            _warnings_showwarning(message, category, filename, lineno, file, line)
+            _warnings_showwarning(message, category, filename, lineno, file, line, source)
     else:
-        s = warnings.formatwarning(message, category, filename, lineno, line)
+        s = warnings.formatwarning(message, category, filename, lineno, line, source)
         logger = getLogger("py.warnings")
         if not logger.handlers:
             logger.addHandler(NullHandler())
