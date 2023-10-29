@@ -244,6 +244,25 @@ jobs:
     uses: ./.github/workflows/reusable-build-ubuntu.yml
     with:
       config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-pydebug \
+          --with-openssl=$OPENSSL_DIR
+
+  build_ubuntu_nogil:
+    name: 'Ubuntu GIL disabled'
+    needs: check_source
+    if: needs.check_source.outputs.run_tests == 'true'
+    uses: ./.github/workflows/reusable-build-ubuntu.yml
+    with:
+      config_hash: ${{ needs.check_source.outputs.config_hash }}
+      options: |
+        ../cpython-ro-srcdir/configure \
+          --config-cache \
+          --with-pydebug \
+          --with-openssl=$OPENSSL_DIR \
+          --disable-gil
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
@@ -514,6 +533,7 @@ jobs:
     - build_win_arm64
     - build_macos
     - build_ubuntu
+    - build_ubuntu_nogil
     - build_ubuntu_ssltests
     - test_hypothesis
     - build_asan
@@ -527,6 +547,7 @@ jobs:
       with:
         allowed-failures: >-
           build_macos,
+          build_ubuntu_nogil,
           build_ubuntu_ssltests,
           build_win32,
           build_win_arm64,
@@ -549,6 +570,7 @@ jobs:
             build_win_arm64,
             build_macos,
             build_ubuntu,
+            build_ubuntu_nogil,
             build_ubuntu_ssltests,
             build_asan,
             '
