@@ -8,8 +8,7 @@ import sys
 import unittest
 import warnings
 
-from .. import support
-from .os_helper import unlink
+from .os_helper import unlink, temp_dir
 
 
 @contextlib.contextmanager
@@ -77,7 +76,8 @@ def import_module(name, deprecated=False, *, required_on=()):
     with _ignore_deprecated_imports(deprecated):
         f = sys._getframe(1)
         if f.f_globals is f.f_locals:
-            support.mark(f'requires_{name}', globals=f.f_globals)
+            from test.support import mark
+            mark(f'requires_{name}', globals=f.f_globals)
         try:
             return importlib.import_module(name)
         except ImportError as msg:
@@ -278,3 +278,26 @@ def mock_register_at_fork(func):
     # memory.
     from unittest import mock
     return mock.patch('os.register_at_fork', create=True)(func)
+
+
+@contextlib.contextmanager
+def ready_to_import(name=None, source=""):
+    from test.support import script_helper
+
+    # 1. Sets up a temporary directory and removes it afterwards
+    # 2. Creates the module file
+    # 3. Temporarily clears the module from sys.modules (if any)
+    # 4. Reverts or removes the module when cleaning up
+    name = name or "spam"
+    with temp_dir() as tempdir:
+        path = script_helper.make_script(tempdir, name, source)
+        old_module = sys.modules.pop(name, None)
+        try:
+            sys.path.insert(0, tempdir)
+            yield name, path
+            sys.path.remove(tempdir)
+        finally:
+            if old_module is not None:
+                sys.modules[name] = old_module
+            else:
+                sys.modules.pop(name, None)

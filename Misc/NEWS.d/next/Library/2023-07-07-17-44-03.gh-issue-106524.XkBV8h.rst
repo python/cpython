@@ -1,1 +1,0 @@
-Fix crash in :func:`!_sre.template` with templates containing invalid group indices.

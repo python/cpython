@@ -553,10 +553,3 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
 
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-
-EM_JS(PyObject*, _PyCFunctionWithKeywords_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
-    return wasmTable.get(func)(self, args, kw);
-});
-#endif

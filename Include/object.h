@@ -394,6 +394,10 @@ PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObjec
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
@@ -656,17 +660,15 @@ static inline void Py_DECREF(PyObject *op) {
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-    }
-    else {
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }

@@ -135,23 +135,33 @@ The module defines the following functions:
    text line is not ``None``.
 
 
-.. function:: format_exception_only(exc, /[, value])
+.. function:: format_exception_only(exc, /[, value], *, show_group=False)
 
    Format the exception part of a traceback using an exception value such as
    given by ``sys.last_value``.  The return value is a list of strings, each
-   ending in a newline.  Normally, the list contains a single string; however,
-   for :exc:`SyntaxError` exceptions, it contains several lines that (when
-   printed) display detailed information about where the syntax error occurred.
-   The message indicating which exception occurred is the always last string in
-   the list.
+   ending in a newline.  The list contains the exception's message, which is
+   normally a single string; however, for :exc:`SyntaxError` exceptions, it
+   contains several lines that (when printed) display detailed information
+   about where the syntax error occurred. Following the message, the list
+   contains the exception's :attr:`notes <BaseException.__notes__>`.
 
    Since Python 3.10, instead of passing *value*, an exception object
    can be passed as the first argument.  If *value* is provided, the first
    argument is ignored in order to provide backwards compatibility.
 
+   When *show_group* is ``True``, and the exception is an instance of
+   :exc:`BaseExceptionGroup`, the nested exceptions are included as
+   well, recursively, with indentation relative to their nesting depth.
+
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
       positional-only.
+
+   .. versionchanged:: 3.11
+      The returned list now includes any notes attached to the exception.
+
+   .. versionchanged:: 3.13
+      *show_group* parameter was added.
 
 
 .. function:: format_exception(exc, /[, value, tb], limit=None, chain=True)
@@ -234,6 +244,12 @@ capture data for later printing in a lightweight fashion.
    level of the group, and the width refers to the size of a single exception
    group's exceptions array. The formatted output is truncated when either
    limit is exceeded.
+
+   .. versionchanged:: 3.10
+      Added the *compact* parameter.
+
+   .. versionchanged:: 3.11
+      Added the *max_group_width* and *max_group_depth* parameters.
 
    .. attribute:: __cause__
 
@@ -330,34 +346,27 @@ capture data for later printing in a lightweight fashion.
       some containing internal newlines. :func:`~traceback.print_exception`
       is a wrapper around this method which just prints the lines to a file.
 
-      The message indicating which exception occurred is always the last
-      string in the output.
-
    .. method::  format_exception_only(*, show_group=False)
 
       Format the exception part of the traceback.
 
       The return value is a generator of strings, each ending in a newline.
 
-      When *show_group* is ``False``, the generator normally emits a single
-      string; however, for :exc:`SyntaxError` exceptions, it emits several
-      lines that (when printed) display detailed information about where
-      the syntax error occurred.  The message indicating which exception
-      occurred is always the last string in the output.
+      When *show_group* is ``False``, the generator emits the exception's
+      message followed by its notes (if it has any). The exception message
+      is normally a single string; however, for :exc:`SyntaxError` exceptions,
+      it consists of several lines that (when printed) display detailed
+      information about where the syntax error occurred.
 
       When *show_group* is ``True``, and the exception is an instance of
       :exc:`BaseExceptionGroup`, the nested exceptions are included as
       well, recursively, with indentation relative to their nesting depth.
 
+      .. versionchanged:: 3.11
+         The exception's notes are now included in the output.
+
       .. versionchanged:: 3.13
          Added the *show_group* parameter.
-
-   .. versionchanged:: 3.10
-      Added the *compact* parameter.
-
-   .. versionchanged:: 3.11
-      Added the *max_group_width* and *max_group_depth* parameters.
-
 
 
 :class:`StackSummary` Objects

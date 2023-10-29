@@ -40,7 +40,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_atomic_funcs.h"  // _Py_atomic_size_get()
 #include "pycore_bytes_methods.h" // _Py_bytes_lower()
 #include "pycore_bytesobject.h"   // _PyBytes_Repeat()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
@@ -100,11 +99,6 @@ NOTE: In the interpreter's initialization phase, some globals are currently
       be created before the Unicode type is ready.
 
 */
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 // Maximum code point of Unicode 6.0: 0x10ffff (1,114,111).
 // The value must be the same in fileutils.c.
@@ -1906,19 +1900,19 @@ _PyUnicode_FromId(_Py_Identifier *id)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _Py_unicode_ids *ids = &interp->unicode.ids;
 
-    Py_ssize_t index = _Py_atomic_size_get(&id->index);
+    Py_ssize_t index = _Py_atomic_load_ssize(&id->index);
     if (index < 0) {
         struct _Py_unicode_runtime_ids *rt_ids = &interp->runtime->unicode_state.ids;
 
         PyThread_acquire_lock(rt_ids->lock, WAIT_LOCK);
         // Check again to detect concurrent access. Another thread can have
         // initialized the index while this thread waited for the lock.
-        index = _Py_atomic_size_get(&id->index);
+        index = _Py_atomic_load_ssize(&id->index);
         if (index < 0) {
             assert(rt_ids->next_index < PY_SSIZE_T_MAX);
             index = rt_ids->next_index;
             rt_ids->next_index++;
-            _Py_atomic_size_set(&id->index, index);
+            _Py_atomic_store_ssize(&id->index, index);
         }
         PyThread_release_lock(rt_ids->lock);
     }
@@ -3826,24 +3820,37 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
+        if (psize) {
+            *psize = -1;
+        }
         return NULL;
     }
 
     if (PyUnicode_UTF8(unicode) == NULL) {
         if (unicode_fill_utf8(unicode) == -1) {
+            if (psize) {
+                *psize = -1;
+            }
             return NULL;
         }
     }
 
-    if (psize)
+    if (psize) {
         *psize = PyUnicode_UTF8_LENGTH(unicode);
+    }
     return PyUnicode_UTF8(unicode);
 }
 
 const char *
 PyUnicode_AsUTF8(PyObject *unicode)
 {
-    return PyUnicode_AsUTF8AndSize(unicode, NULL);
+    Py_ssize_t size;
+    const char *utf8 = PyUnicode_AsUTF8AndSize(unicode, &size);
+    if (utf8 != NULL && strlen(utf8) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        return NULL;
+    }
+    return utf8;
 }
 
 /*
@@ -10680,6 +10687,82 @@ PyUnicode_CompareWithASCIIString(PyObject* uni, const char* str)
 }
 
 int
+PyUnicode_EqualToUTF8(PyObject *unicode, const char *str)
+{
+    return PyUnicode_EqualToUTF8AndSize(unicode, str, strlen(str));
+}
+
+int
+PyUnicode_EqualToUTF8AndSize(PyObject *unicode, const char *str, Py_ssize_t size)
+{
+    assert(_PyUnicode_CHECK(unicode));
+    assert(str);
+
+    if (PyUnicode_IS_ASCII(unicode)) {
+        Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
+        return size == len &&
+            memcmp(PyUnicode_1BYTE_DATA(unicode), str, len) == 0;
+    }
+    if (PyUnicode_UTF8(unicode) != NULL) {
+        Py_ssize_t len = PyUnicode_UTF8_LENGTH(unicode);
+        return size == len &&
+            memcmp(PyUnicode_UTF8(unicode), str, len) == 0;
+    }
+
+    Py_ssize_t len = PyUnicode_GET_LENGTH(unicode);
+    if ((size_t)len >= (size_t)size || (size_t)len < (size_t)size / 4) {
+        return 0;
+    }
+    const unsigned char *s = (const unsigned char *)str;
+    const unsigned char *ends = s + (size_t)size;
+    int kind = PyUnicode_KIND(unicode);
+    const void *data = PyUnicode_DATA(unicode);
+    /* Compare Unicode string and UTF-8 string */
+    for (Py_ssize_t i = 0; i < len; i++) {
+        Py_UCS4 ch = PyUnicode_READ(kind, data, i);
+        if (ch < 0x80) {
+            if (ends == s || s[0] != ch) {
+                return 0;
+            }
+            s += 1;
+        }
+        else if (ch < 0x800) {
+            if ((ends - s) < 2 ||
+                s[0] != (0xc0 | (ch >> 6)) ||
+                s[1] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 2;
+        }
+        else if (ch < 0x10000) {
+            if (Py_UNICODE_IS_SURROGATE(ch) ||
+                (ends - s) < 3 ||
+                s[0] != (0xe0 | (ch >> 12)) ||
+                s[1] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[2] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 3;
+        }
+        else {
+            assert(ch <= MAX_UNICODE);
+            if ((ends - s) < 4 ||
+                s[0] != (0xf0 | (ch >> 18)) ||
+                s[1] != (0x80 | ((ch >> 12) & 0x3f)) ||
+                s[2] != (0x80 | ((ch >> 6) & 0x3f)) ||
+                s[3] != (0x80 | (ch & 0x3f)))
+            {
+                return 0;
+            }
+            s += 4;
+        }
+    }
+    return s == ends;
+}
+
+int
 _PyUnicode_EqualToASCIIString(PyObject *unicode, const char *str)
 {
     size_t len;
@@ -15398,8 +15481,3 @@ PyInit__string(void)
 {
     return PyModuleDef_Init(&_string_module);
 }
-
-
-#ifdef __cplusplus
-}
-#endif

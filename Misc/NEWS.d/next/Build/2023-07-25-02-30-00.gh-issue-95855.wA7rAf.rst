@@ -1,2 +1,0 @@
-Refactor platform triplet detection code and add detection for MIPS soft
-float and musl libc.
