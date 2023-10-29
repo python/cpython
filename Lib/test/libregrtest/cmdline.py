@@ -172,8 +172,8 @@ class Namespace(argparse.Namespace):
         self.threshold = None
         self.fail_rerun = False
         self.tempdir = None
-        self.progress_reporter = None
         self.color = None
+        self.progress_reporter = None
         self.fancy_report_skip_reason = False
         self._add_python_opts = True
         self.xmlpath = None
@@ -258,10 +258,10 @@ def _create_parser():
                        help='print the slowest 10 tests')
     group.add_argument('--header', action='store_true',
                        help='print header with interpreter info')
-    group.add_argument('--progress_reporter',
-                       choices=['plain', 'fancy', 'detect'], default='detect')
     group.add_argument('--color', action=argparse.BooleanOptionalAction,
                        help='use color in the progress reports')
+    group.add_argument('--progress_reporter',
+                       choices=['plain', 'fancy', 'detect'], default='detect')
     group.add_argument('--fancy_report_skip_reason', action='store_true',
                        help='in the fancy reporter, report the skip reason')
 
