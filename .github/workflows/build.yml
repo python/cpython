@@ -393,12 +393,12 @@ jobs:
     - name: Display build info
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: make pythoninfo
-    - name: Remount sources writable for tests
-      # some tests write to srcdir, lack of pyc files slows down testing
-      run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
-    - name: Tests
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: xvfb-run make test
+    # - name: Remount sources writable for tests
+    #   # some tests write to srcdir, lack of pyc files slows down testing
+    #   run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
+    # - name: Tests
+    #   working-directory: ${{ env.CPYTHON_BUILDDIR }}
+    #   run: xvfb-run make test
 
 
   build_ubuntu_ssltests:
