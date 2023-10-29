@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 jobs:
-  runs-on: inputs.ubuntu_version
+  runs-on: 'ubuntu_20.04'
   timeout-minutes: 60
   needs: check_source
   if: inputs.run_tests == 'true'
