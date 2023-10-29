@@ -472,6 +472,7 @@ class SendfileMixin(SendfileBase):
                         srv_proto.nbytes)
         if not (sys.platform == 'win32'
                 and isinstance(self.loop, asyncio.ProactorEventLoop)):
+            # On Windows, Proactor uses transmitFile, which does not update tell()
             self.assertTrue(1024 <= self.file.tell() < len(self.DATA),
                             self.file.tell())
         self.assertTrue(cli_proto.transport.is_closing())
