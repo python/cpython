@@ -7,7 +7,8 @@ __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings"]
 
-def showwarning(message, category, filename, lineno, file=None, line=None, source=None):
+def showwarning(message, category, filename, lineno, file=None, line=None,
+                source=None):
     """Hook to write a warning to a file; replace if you like."""
     msg = WarningMessage(message, category, filename, lineno, file, line, source)
     _showwarnmsg_impl(msg)
