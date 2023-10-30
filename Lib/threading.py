@@ -590,7 +590,7 @@ class Event:
         return f"<{cls.__module__}.{cls.__qualname__} at {id(self):#x}: {status}>"
 
     def _at_fork_reinit(self):
-        # Private method called by Thread._reset_internal_locks()
+        # Private method called by Thread._after_fork()
         self._cond._at_fork_reinit()
 
     def is_set(self):
@@ -936,11 +936,15 @@ class Thread:
         # For debugging and _after_fork()
         _dangling.add(self)
 
-    def _reset_internal_locks(self, is_alive):
-        # private!  Called by _after_fork() to reset our internal locks as
-        # they may be in an invalid state leading to a deadlock or crash.
+    def _after_fork(self, new_ident=None):
+        # Private!  Called by threading._after_fork().
         self._started._at_fork_reinit()
-        if is_alive:
+        if new_ident is not None:
+            # This thread is alive.
+            self._ident = new_ident
+            if self._handle is not None:
+                self._handle.after_fork_alive()
+                assert self._handle.ident == new_ident
             # bpo-42350: If the fork happens when the thread is already stopped
             # (ex: after threading._shutdown() has been called), _tstate_lock
             # is None. Do nothing in this case.
@@ -950,11 +954,14 @@ class Thread:
             if self._join_lock is not None:
                 self._join_lock._at_fork_reinit()
         else:
-            # The thread isn't alive after fork: it doesn't have a tstate
+            # This thread isn't alive after fork: it doesn't have a tstate
             # anymore.
             self._is_stopped = True
             self._tstate_lock = None
             self._join_lock = None
+            if self._handle is not None:
+                self._handle.after_fork_dead()
+                self._handle = None
 
     def __repr__(self):
         assert self._initialized, "Thread.__init__() was not called"
@@ -1707,15 +1714,13 @@ def _after_fork():
             # Any lock/condition variable may be currently locked or in an
             # invalid state, so we reinitialize them.
             if thread is current:
-                # There is only one active thread. We reset the ident to
-                # its new value since it can have changed.
-                thread._reset_internal_locks(True)
+                # This is the one and only active thread.
                 ident = get_ident()
-                thread._ident = ident
+                thread._after_fork(new_ident=ident)
                 new_active[ident] = thread
             else:
                 # All the others are already stopped.
-                thread._reset_internal_locks(False)
+                thread._after_fork()
                 thread._stop()
 
         _limbo.clear()

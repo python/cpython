@@ -337,6 +337,16 @@ PyThread_detach_thread(Py_uintptr_t th) {
     return pthread_detach((pthread_t) th);
 }
 
+void
+PyThread_update_thread_after_fork(unsigned long long* ident, Py_uintptr_t* handle) {
+    // The thread id might have been updated in the forked child
+    pthread_t th = pthread_self();
+    *ident = (unsigned long long) th;
+    *handle = (Py_uintptr_t) th;
+    assert(th == (pthread_t) *ident);
+    assert(th == (pthread_t) *handle);
+}
+
 /* XXX This implementation is considered (to quote Tim Peters) "inherently
    hosed" because:
      - It does not guarantee the promise that a non-zero integer is returned.

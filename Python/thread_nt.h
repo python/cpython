@@ -240,6 +240,10 @@ PyThread_detach_thread(Py_uintptr_t handle) {
     return (CloseHandle(hThread) == 0);
 }
 
+void
+PyThread_update_thread_after_fork(unsigned long long* ident, Py_uintptr_t* handle) {
+}
+
 /*
  * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system

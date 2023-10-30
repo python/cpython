@@ -89,6 +89,22 @@ ThreadHandle_get_ident(ThreadHandleObject *self, void *ignored)
     return PyLong_FromUnsignedLongLong(self->ident);
 }
 
+
+static PyObject *
+ThreadHandle_after_fork_alive(ThreadHandleObject *self, void* ignored)
+{
+    PyThread_update_thread_after_fork(&self->ident, &self->handle);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+ThreadHandle_after_fork_dead(ThreadHandleObject *self, void* ignored)
+{
+    // Disallow calls to detach() and join() as they could crash.
+    self->joinable = 0;
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 ThreadHandle_detach(ThreadHandleObject *self, void* ignored)
 {
@@ -140,6 +156,8 @@ static PyGetSetDef ThreadHandle_getsetlist[] = {
 
 static PyMethodDef ThreadHandle_methods[] =
 {
+    {"after_fork_alive", (PyCFunction)ThreadHandle_after_fork_alive, METH_NOARGS},
+    {"after_fork_dead", (PyCFunction)ThreadHandle_after_fork_dead, METH_NOARGS},
     {"detach", (PyCFunction)ThreadHandle_detach, METH_NOARGS},
     {"join", (PyCFunction)ThreadHandle_join, METH_NOARGS},
     {0, 0}
