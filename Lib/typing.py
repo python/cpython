@@ -376,6 +376,16 @@ def _tp_cache(func=None, /, *, typed=False):
 
     return decorator
 
+def _copy_with(t, new_args):
+    if new_args == t.__args__:
+        return t
+    if isinstance(t, GenericAlias):
+        return GenericAlias(t.__origin__, new_args)
+    if isinstance(t, types.UnionType):
+        return functools.reduce(operator.or_, new_args)
+    else:
+        return t.copy_with(new_args)
+
 def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
     """Evaluate all forward references in the given type t.
 
@@ -399,14 +409,7 @@ def _eval_type(t, globalns, localns, recursive_guard=frozenset()):
             if is_unpacked:
                 t = Unpack[t]
         ev_args = tuple(_eval_type(a, globalns, localns, recursive_guard) for a in t.__args__)
-        if ev_args == t.__args__:
-            return t
-        if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
-        if isinstance(t, types.UnionType):
-            return functools.reduce(operator.or_, ev_args)
-        else:
-            return t.copy_with(ev_args)
+        return _copy_with(t, ev_args)
     return t
 
 
@@ -2277,6 +2280,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
 def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[str, Any]"):
+    # nothing to substitute
     if len(substitutions) < 2:
         return {}
 
@@ -2289,11 +2293,8 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
         origin = get_origin(value)
         # if the typevar is nested, we must substitute the typevar all the way down.
         if origin is not None:
-            subs = tuple(_make_substitution(origin, get_args(value), mapping))
-            if isinstance(origin, _GenericAlias):
-                sub = origin.copy_with(subs)
-            else:
-                sub = origin[subs]
+            new_args = tuple(_make_substitution(origin, get_args(value), mapping))
+            sub = _copy_with(value, new_args)
         elif hasattr(value, '__typing_subst__'):
             sub = mapping[value]
         else:
