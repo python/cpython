@@ -39,7 +39,7 @@ static inline void
 PyList_SET_ITEM(PyObject *op, Py_ssize_t index, PyObject *value) {
     PyListObject *list = _PyList_CAST(op);
     assert(0 <= index);
-    assert(index < Py_SIZE(list));
+    assert(index < list->allocated);
     list->ob_item[index] = value;
 }
 #define PyList_SET_ITEM(op, index, value) \
