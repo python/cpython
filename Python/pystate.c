@@ -2951,8 +2951,8 @@ _float_shared(PyThreadState *tstate, PyObject *obj,
     {
         return -1;
     }
-    double * shared = (double*)data->data;
-    *shared =  PyFloat_AsDouble(obj);
+    double *shared = (double *)data->data;
+    *shared = PyFloat_AsDouble(obj);
     return 0;
 }
 
