@@ -7,7 +7,7 @@ from textwrap import dedent
 import threading
 import unittest
 
-import _testcapi
+import _testinternalcapi
 from test import support
 from test.support import import_helper
 from test.support import script_helper
@@ -146,8 +146,8 @@ class ShareableTypeTests(unittest.TestCase):
     def _assert_values(self, values):
         for obj in values:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 self.assertEqual(got, obj)
                 self.assertIs(type(got), type(obj))
@@ -155,8 +155,8 @@ class ShareableTypeTests(unittest.TestCase):
     def test_singletons(self):
         for obj in [None]:
             with self.subTest(obj):
-                xid = _testcapi.get_crossinterp_data(obj)
-                got = _testcapi.restore_crossinterp_data(xid)
+                xid = _testinternalcapi.get_crossinterp_data(obj)
+                got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
@@ -187,7 +187,7 @@ class ShareableTypeTests(unittest.TestCase):
         for i in ints:
             with self.subTest(i):
                 with self.assertRaises(OverflowError):
-                    _testcapi.get_crossinterp_data(i)
+                    _testinternalcapi.get_crossinterp_data(i)
 
 
 class ModuleTests(TestBase):

@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_atexit.h"          // struct _atexit_runtime_state
 #include "pycore_ceval_state.h"     // struct _ceval_runtime_state
+#include "pycore_crossinterp.h"   // struct _xidregistry
 #include "pycore_faulthandler.h"    // struct _faulthandler_runtime_state
 #include "pycore_floatobject.h"     // struct _Py_float_runtime_state
 #include "pycore_import.h"          // struct _import_runtime_state
