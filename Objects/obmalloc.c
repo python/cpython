@@ -561,14 +561,13 @@ _PyMem_GetCurrentAllocatorName(void)
 }
 
 
-#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_DebugEnabled(void)
 {
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
-#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -579,7 +578,7 @@ _PyMem_PymallocEnabled(void)
         return (_PyObject.malloc == _PyObject_Malloc);
     }
 }
-#endif
+
 #ifdef WITH_MIMALLOC
 static int
 _PyMem_MimallocEnabled(void)
@@ -591,8 +590,9 @@ _PyMem_MimallocEnabled(void)
         return (_PyObject.malloc == _PyObject_MiMalloc);
     }
 }
-#endif
-#endif // defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
+#endif  // WITH_MIMALLOC
+
+#endif  // WITH_PYMALLOC
 
 
 static void
@@ -1073,7 +1073,7 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 void
 _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
-#ifdef WITH_MIAMLLOC
+#ifdef WITH_MIMALLOC
     if (_PyMem_MimallocEnabled()) {
         return;
     }
