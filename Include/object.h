@@ -231,7 +231,7 @@ typedef struct {
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
-#ifndef Py_LIMITED_API
+#if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
 static inline uintptr_t
 _Py_ThreadId(void)
 {
@@ -259,9 +259,7 @@ _Py_ThreadId(void)
 #endif
   return tid;
 }
-#endif
 
-#if defined(Py_NOGIL) && !defined(Py_LIMITED_API)
 static inline Py_ALWAYS_INLINE int
 _Py_IsOwnedByCurrentThread(PyObject *ob)
 {
