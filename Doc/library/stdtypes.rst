@@ -723,8 +723,7 @@ made available to Python as the :attr:`modulus` attribute of
 .. impl-detail::
 
    Currently, the prime used is ``P = 2**31 - 1`` on machines with 32-bit C
-   longs and ``P = 2**61 - 1`` on machines with 64-bit C longs.  The exponent
-   of this Mersenne prime is available as ``_PyHASH_BITS`` macro.
+   longs and ``P = 2**61 - 1`` on machines with 64-bit C longs.
 
 Here are the rules in detail:
 

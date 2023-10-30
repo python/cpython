@@ -1022,13 +1022,11 @@ always available.
 
    .. attribute:: hash_info.modulus
 
-      The prime modulus P used for numeric hash scheme.  Available also as
-      ``_PyHASH_MODULUS`` macro.
+      The prime modulus P used for numeric hash scheme
 
    .. attribute:: hash_info.inf
 
-      The hash value returned for a positive infinity.  Available also as
-      ``_PyHASH_INF`` macro.
+      The hash value returned for a positive infinity
 
    .. attribute:: hash_info.nan
 
@@ -1036,8 +1034,7 @@ always available.
 
    .. attribute:: hash_info.imag
 
-      The multiplier used for the imaginary part of a complex number.
-      Available also as ``_PyHASH_IMAG`` macro.
+      The multiplier used for the imaginary part of a complex number
 
    .. attribute:: hash_info.algorithm
 
