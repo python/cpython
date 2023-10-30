@@ -1831,6 +1831,11 @@ def with_pymalloc():
     return _testcapi.WITH_PYMALLOC
 
 
+def with_mimalloc():
+    import _testcapi
+    return _testcapi.WITH_MIMALLOC
+
+
 class _ALWAYS_EQ:
     """
     Object that is equal to anything.
