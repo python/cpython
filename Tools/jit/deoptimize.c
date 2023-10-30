@@ -5,7 +5,7 @@
 _PyInterpreterFrame *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
-    frame->prev_instr--;
+    frame->return_offset = 0;
     _PyFrame_SetStackPointer(frame, stack_pointer);
     return frame;
 }
