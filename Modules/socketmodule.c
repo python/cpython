@@ -3517,13 +3517,6 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 {
     int res, err, wait_connect;
 
-    if (s->sock_timeout > 0 &&
-        (s->sock_family == AF_INET || s->sock_family == AF_INET6))
-    {
-        if (internal_setblocking(s, 0) < 0) {
-            return -1;
-        }
-    }
     Py_BEGIN_ALLOW_THREADS
     res = connect(s->sock_fd, addr, addrlen);
     Py_END_ALLOW_THREADS
@@ -3537,13 +3530,6 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
     /* save error, PyErr_CheckSignals() can replace it */
     err = GET_SOCK_ERROR;
-
-    if (s->sock_timeout > 0) {
-        if (internal_setblocking(s, 1) < 0) {
-            return -1;
-        }
-    }
-
     if (CHECK_ERRNO(EINTR)) {
         if (PyErr_CheckSignals())
             return -1;
