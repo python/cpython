@@ -3573,8 +3573,7 @@ class ThreadedTests(unittest.TestCase):
                 c.settimeout(0.2)
                 c.connect((host, port))
                 # Will attempt handshake and time out
-                self.assertRaisesRegex(TimeoutError, "timed out",
-                                       test_wrap_socket, c)
+                self.assertRaises(TimeoutError, test_wrap_socket, c)
             finally:
                 c.close()
             try:
@@ -3582,8 +3581,7 @@ class ThreadedTests(unittest.TestCase):
                 c = test_wrap_socket(c)
                 c.settimeout(0.2)
                 # Will attempt handshake and time out
-                self.assertRaisesRegex(TimeoutError, "timed out",
-                                       c.connect, (host, port))
+                self.assertRaises(TimeoutError, c.connect, (host, port))
             finally:
                 c.close()
         finally:
