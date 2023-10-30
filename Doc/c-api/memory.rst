@@ -379,8 +379,8 @@ Default memory allocators:
 ===============================  ====================  ==================  =====================  ====================
 Configuration                    Name                  PyMem_RawMalloc     PyMem_Malloc           PyObject_Malloc
 ===============================  ====================  ==================  =====================  ====================
-Release build                    ``"mimalloc"``        ``malloc``          ``mimalloc``           ``mimalloc``
-Debug build                      ``"mimalloc_debug"``  ``malloc`` + debug  ``mimalloc`` + debug   ``mimalloc`` + debug
+Release build                    ``"pymalloc"``        ``malloc``          ``pymalloc``           ``pymalloc``
+Debug build                      ``"pymalloc_debug"``  ``malloc`` + debug  ``pymalloc`` + debug   ``pymalloc`` + debug
 Release build, without pymalloc  ``"malloc"``          ``malloc``          ``malloc``             ``malloc``
 Debug build, without pymalloc    ``"malloc_debug"``    ``malloc`` + debug  ``malloc`` + debug     ``malloc`` + debug
 ===============================  ====================  ==================  =====================  ====================
@@ -683,8 +683,6 @@ The mimalloc allocator
 Python supports the mimalloc allocator when the underlying platform support is available.
 mimalloc "is a general purpose allocator with excellent performance characteristics.
 Initially developed by Daan Leijen for the runtime systems of the Koka and Lean languages."
-
-When mimalloc support is available it is the default allocator.
 
 tracemalloc C API
 =================
