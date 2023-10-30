@@ -540,7 +540,7 @@ jobs:
     - check_source  # Transitive dependency, needed to access `run_tests` value
     - check-docs
     - check_generated_files
-    - build_win
+    - build_windows
     - build_macos
     - build_ubuntu
     - build_ubuntu_ssltests
