@@ -487,12 +487,16 @@ class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
         # Create a reference loop.
         a = [buf]
         a.append(a)
-        # XXX The Python implementation emits an unraisable exception.
+        # XXX The following code is not obvious because the current behaviour
+        # is not normal;
+        # The Python implementation emits an unraisable exception.
         with support.catch_unraisable_exception():
             del memio
         del buf
         del a
-        # XXX The C implementation emits an unraisable exception.
+        # XXX The following code is not obvious because the current behaviour
+        # is not normal;
+        # The C implementation emits an unraisable exception.
         with support.catch_unraisable_exception():
             gc.collect()
         self.assertIsNone(memiowr())
