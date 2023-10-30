@@ -717,56 +717,25 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
 
+#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
-#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
     // Stable ABI implements Py_INCREF() as a function call on limited C API
     // version 3.12 and newer, and on Python built in debug mode. _Py_IncRef()
     // was added to Python 3.10.0a7, use Py_IncRef() on older Python versions.
     // Py_IncRef() accepts NULL whereas _Py_IncRef() doesn't.
-#  if Py_LIMITED_API+0 >= 0x030a00A7
+#if Py_LIMITED_API+0 >= 0x030a00A7
     _Py_IncRef(op);
-#  else
+#else
     Py_IncRef(op);
-#  endif
-#else
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
-#if defined(Py_NOGIL)
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    uint32_t new_local = local + 1;
-    if (new_local == 0) {
-        return;
-    }
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
-    }
-    else {
-        _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
-    }
-#elif SIZEOF_VOID_P > 4
-    // Portable saturated add, branching on the carry flag and set low bits
-    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
-    PY_UINT32_T new_refcnt = cur_refcnt + 1;
-    if (new_refcnt == 0) {
-        return;
-    }
-    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
-#else
-    // Explicitly check immortality against the immortal value
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-    op->ob_refcnt++;
-#endif
-    _Py_INCREF_STAT_INC();
-#ifdef Py_REF_DEBUG
-    _Py_INCREF_IncRefTotal();
-#endif
 #endif
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
+
+#  if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#    define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
+#  endif
+#else
+   // Implemented in cpython/object.h
 #endif
 
 
@@ -795,84 +764,8 @@ static inline void Py_DECREF(PyObject *op) {
 #  endif
 }
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-
-#elif defined(Py_NOGIL) && defined(Py_REF_DEBUG)
-static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
-{
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-    _Py_DECREF_DecRefTotal();
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        if (local == 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-        local--;
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
-        if (local == 0) {
-            _Py_MergeZeroLocalRefcount(op);
-        }
-    }
-    else {
-        _Py_DecRefSharedDebug(op, filename, lineno);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-
-#elif defined(Py_NOGIL)
-static inline void Py_DECREF(PyObject *op)
-{
-    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
-    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        local--;
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
-        if (local == 0) {
-            _Py_MergeZeroLocalRefcount(op);
-        }
-    }
-    else {
-        _Py_DecRefShared(op);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-
-#elif defined(Py_REF_DEBUG)
-static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
-{
-    if (op->ob_refcnt <= 0) {
-        _Py_NegativeRefcount(filename, lineno, op);
-    }
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-    _Py_DECREF_DecRefTotal();
-    if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-
 #else
-static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
-{
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
-    if (_Py_IsImmortal(op)) {
-        return;
-    }
-    _Py_DECREF_STAT_INC();
-    if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+   // Implemented in cpython/object.h
 #endif
 
 
@@ -945,58 +838,6 @@ static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
             Py_DECREF(_tmp_old_op); \
         } \
     } while (0)
-#endif
-
-
-/* Function to use in case the object pointer can be NULL: */
-static inline void Py_XINCREF(PyObject *op)
-{
-    if (op != _Py_NULL) {
-        Py_INCREF(op);
-    }
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_XINCREF(op) Py_XINCREF(_PyObject_CAST(op))
-#endif
-
-static inline void Py_XDECREF(PyObject *op)
-{
-    if (op != _Py_NULL) {
-        Py_DECREF(op);
-    }
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
-#endif
-
-// Create a new strong reference to an object:
-// increment the reference count of the object and return the object.
-PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
-
-// Similar to Py_NewRef(), but the object can be NULL.
-PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
-
-static inline PyObject* _Py_NewRef(PyObject *obj)
-{
-    Py_INCREF(obj);
-    return obj;
-}
-
-static inline PyObject* _Py_XNewRef(PyObject *obj)
-{
-    Py_XINCREF(obj);
-    return obj;
-}
-
-// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overridden with macros by static inline functions for best
-// performances.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
-#  define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
-#else
-#  define Py_NewRef(obj) _Py_NewRef(obj)
-#  define Py_XNewRef(obj) _Py_XNewRef(obj)
 #endif
 
 
@@ -1117,6 +958,58 @@ times.
 #  define Py_CPYTHON_OBJECT_H
 #  include "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
+#endif
+
+
+/* Function to use in case the object pointer can be NULL: */
+static inline void Py_XINCREF(PyObject *op)
+{
+    if (op != _Py_NULL) {
+        Py_INCREF(op);
+    }
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define Py_XINCREF(op) Py_XINCREF(_PyObject_CAST(op))
+#endif
+
+static inline void Py_XDECREF(PyObject *op)
+{
+    if (op != _Py_NULL) {
+        Py_DECREF(op);
+    }
+}
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
+#endif
+
+// Create a new strong reference to an object:
+// increment the reference count of the object and return the object.
+PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
+
+// Similar to Py_NewRef(), but the object can be NULL.
+PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
+
+static inline PyObject* _Py_NewRef(PyObject *obj)
+{
+    Py_INCREF(obj);
+    return obj;
+}
+
+static inline PyObject* _Py_XNewRef(PyObject *obj)
+{
+    Py_XINCREF(obj);
+    return obj;
+}
+
+// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
+// Names overridden with macros by static inline functions for best
+// performances.
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#  define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
+#  define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
+#else
+#  define Py_NewRef(obj) _Py_NewRef(obj)
+#  define Py_XNewRef(obj) _Py_XNewRef(obj)
 #endif
 
 

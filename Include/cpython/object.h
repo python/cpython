@@ -2,6 +2,146 @@
 #  error "this header file must not be included directly"
 #endif
 
+#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+   // Implemented in ../object.h
+#else
+static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
+{
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
+#if defined(Py_NOGIL)
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    uint32_t new_local = local + 1;
+    if (new_local == 0) {
+        return;
+    }
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, new_local);
+    }
+    else {
+        _Py_atomic_add_ssize(&op->ob_ref_shared, (1 << _Py_REF_SHARED_SHIFT));
+    }
+#elif SIZEOF_VOID_P > 4
+    // Portable saturated add, branching on the carry flag and set low bits
+    PY_UINT32_T cur_refcnt = op->ob_refcnt_split[PY_BIG_ENDIAN];
+    PY_UINT32_T new_refcnt = cur_refcnt + 1;
+    if (new_refcnt == 0) {
+        return;
+    }
+    op->ob_refcnt_split[PY_BIG_ENDIAN] = new_refcnt;
+#else
+    // Explicitly check immortality against the immortal value
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    op->ob_refcnt++;
+#endif
+    _Py_INCREF_STAT_INC();
+#ifdef Py_REF_DEBUG
+    _Py_INCREF_IncRefTotal();
+#endif
+}
+
+#  if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+#    define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
+#  endif
+#endif
+
+
+#ifdef Py_NOGIL
+// Implements Py_DECREF on objects not owned by the current thread.
+PyAPI_FUNC(void) _Py_DecRefShared(PyObject *);
+PyAPI_FUNC(void) _Py_DecRefSharedDebug(PyObject *, const char *, int);
+
+// Called from Py_DECREF by the owning thread when the local refcount reaches
+// zero. The call will deallocate the object if the shared refcount is also
+// zero. Otherwise, the thread gives up ownership and merges the reference
+// count fields.
+PyAPI_FUNC(void) _Py_MergeZeroLocalRefcount(PyObject *);
+#endif
+
+#if defined(Py_LIMITED_API) && (Py_LIMITED_API+0 >= 0x030c0000 || defined(Py_REF_DEBUG))
+   // Implemented in ../object.h
+#elif defined(Py_NOGIL) && defined(Py_REF_DEBUG)
+static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
+{
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    _Py_DECREF_DecRefTotal();
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        if (local == 0) {
+            _Py_NegativeRefcount(filename, lineno, op);
+        }
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcount(op);
+        }
+    }
+    else {
+        _Py_DecRefSharedDebug(op, filename, lineno);
+    }
+}
+#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+
+#elif defined(Py_NOGIL)
+static inline void Py_DECREF(PyObject *op)
+{
+    uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
+    if (local == _Py_IMMORTAL_REFCNT_LOCAL) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    if (_Py_IsOwnedByCurrentThread(op)) {
+        local--;
+        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, local);
+        if (local == 0) {
+            _Py_MergeZeroLocalRefcount(op);
+        }
+    }
+    else {
+        _Py_DecRefShared(op);
+    }
+}
+#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+
+#elif defined(Py_REF_DEBUG)
+static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    _Py_DECREF_DecRefTotal();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+
+#else
+static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
+{
+    // Non-limited C API and limited C API for Python 3.9 and older access
+    // directly PyObject.ob_refcnt.
+    if (_Py_IsImmortal(op)) {
+        return;
+    }
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
+#endif
+
+
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 
