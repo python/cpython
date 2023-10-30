@@ -134,7 +134,7 @@ class TestLiterals(unittest.TestCase):
         # Check that the warning is raised ony once if there are syntax errors
 
         with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter('always', category=SyntaxWarning)
+            warnings.simplefilter('always', category=DeprecationWarning)
             with self.assertRaises(SyntaxError) as cm:
                 eval("'\\e' $")
             exc = cm.exception
