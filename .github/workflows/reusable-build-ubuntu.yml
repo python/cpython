@@ -10,6 +10,7 @@ on:
 
 jobs:
   build_ubuntu_reusable:
+    name: 'build and test'
     timeout-minutes: 60
     runs-on: ubuntu-20.04
     env:
