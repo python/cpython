@@ -446,7 +446,7 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP3);
             PyObject *right;

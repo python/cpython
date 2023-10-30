@@ -1620,7 +1620,7 @@
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -1881,7 +1881,7 @@
             left = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -3202,7 +3202,7 @@
             lhs = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
@@ -3266,7 +3266,7 @@
 
         case _SAVE_RETURN_OFFSET: {
             #if TIER_ONE
-            frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+            frame->return_offset = (uint16_t)(next_instr - here);
             #endif
             #if TIER_TWO
             frame->return_offset = oparg;

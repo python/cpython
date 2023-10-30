@@ -2637,7 +2637,7 @@
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_LoadAttr(owner, next_instr, name);
                 DISPATCH_SAME_OPARG();
             }
@@ -2935,7 +2935,7 @@
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_LOAD_ATTR == next_instr - here);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_LOAD_ATTR;
             DISPATCH_INLINED(new_frame);
         }
@@ -3076,7 +3076,7 @@
             left = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_CompareOp(left, right, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -3626,7 +3626,7 @@
             iter = stack_pointer[-1];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_ForIter(iter, next_instr, oparg);
                 DISPATCH_SAME_OPARG();
             }
@@ -3640,7 +3640,7 @@
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)) {
                         goto error;
                     }
-                    monitor_raise(tstate, frame, frame->instr_ptr);
+                    monitor_raise(tstate, frame, here);
                     _PyErr_Clear(tstate);
                 }
                 /* iterator ended normally */
@@ -3817,7 +3817,7 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_GEN);
             PyObject *iter;
@@ -3834,7 +3834,7 @@
             tstate->exc_info = &gen->gi_exc_state;
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
-            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - here);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
             DISPATCH_INLINED(gen_frame);
         }
@@ -4214,7 +4214,7 @@
             }
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_Call(callable, next_instr, total_args);
                 DISPATCH_SAME_OPARG();
             }
@@ -4249,7 +4249,7 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+                assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - here);
                 frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
                 DISPATCH_INLINED(new_frame);
             }
@@ -4355,7 +4355,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                frame->return_offset = (uint16_t)(next_instr - here);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -4433,7 +4433,7 @@
             // _SAVE_RETURN_OFFSET
             {
                 #if TIER_ONE
-                frame->return_offset = (uint16_t)(next_instr - frame->instr_ptr);
+                frame->return_offset = (uint16_t)(next_instr - here);
                 #endif
                 #if TIER_TWO
                 frame->return_offset = oparg;
@@ -4503,7 +4503,7 @@
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - here);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             DISPATCH_INLINED(new_frame);
         }
@@ -4588,7 +4588,7 @@
         }
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
-            frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             PyObject **args;
@@ -4602,7 +4602,7 @@
              * 2. Pushes a shim frame to the frame stack (to cleanup after ``__init__``)
              * 3. Pushes the frame for ``__init__`` to the frame stack
              * */
-            _PyCallCache *cache = (_PyCallCache *)&frame->instr_ptr[1];
+            _PyCallCache *cache = (_PyCallCache *)&here[1];
             DEOPT_IF(null != NULL, CALL);
             DEOPT_IF(!PyType_Check(callable), CALL);
             PyTypeObject *tp = (PyTypeObject *)callable;
@@ -4631,7 +4631,7 @@
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
-            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_CALL == next_instr - here);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_CALL;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -5127,6 +5127,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(CALL_KW);
             PREDICTED(CALL_KW);
+            _Py_CODEUNIT *here = next_instr - 1;
             PyObject *kwnames;
             PyObject **args;
             PyObject *self_or_null;
@@ -5172,7 +5173,7 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                assert(next_instr - frame->instr_ptr == 1);
+                assert(next_instr - here == 1);
                 frame->return_offset = 1;
                 DISPATCH_INLINED(new_frame);
             }
@@ -5224,6 +5225,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(CALL_FUNCTION_EX);
             PREDICTED(CALL_FUNCTION_EX);
+            _Py_CODEUNIT *here = next_instr - 1;
             PyObject *kwargs = NULL;
             PyObject *callargs;
             PyObject *func;
@@ -5287,7 +5289,7 @@
                     if (new_frame == NULL) {
                         goto error;
                     }
-                    assert(next_instr - frame->instr_ptr == 1);
+                    assert(next_instr - here == 1);
                     frame->return_offset = 1;
                     DISPATCH_INLINED(new_frame);
                 }
@@ -5499,7 +5501,7 @@
             lhs = stack_pointer[-2];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(here[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = here;
                 _Py_Specialize_BinaryOp(lhs, rhs, next_instr, oparg, LOCALS_ARRAY);
                 DISPATCH_SAME_OPARG();
             }
