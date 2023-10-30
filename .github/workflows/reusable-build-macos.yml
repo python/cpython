@@ -11,6 +11,7 @@ on:
 
 jobs:
   build_macos:
+    name: 'build and test'
     runs-on: macos-latest
     timeout-minutes: 60
     env:
