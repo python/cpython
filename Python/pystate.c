@@ -2945,7 +2945,7 @@ _float_shared(PyThreadState *tstate, PyObject *obj,
              _PyCrossInterpreterData *data)
 {
     if (_PyCrossInterpreterData_InitWithSize(
-            data, tstate->interp, sizeof(double), obj,
+            data, tstate->interp, sizeof(double), NULL,
             _new_float_object
             ) < 0)
     {
