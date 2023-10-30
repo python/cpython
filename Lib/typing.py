@@ -2166,7 +2166,11 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         parameters = defaultdict(list)
         hint_tracking = {}
         hints = {}
-        for base in reversed(obj.__mro__):
+        previous_bases = []
+        searching = list(reversed(obj.__mro__))
+        while searching:
+            base = searching[0]
+
             orig_bases = getattr(base, '__orig_bases__', None)
 
             if orig_bases:
@@ -2201,12 +2205,40 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     else:
                         parameters[origin].append(args)
 
-                        # this is needed if the class inherits two or more generic classes
-                        # class Baz(Foo[U, T], Bar[T]): ...
-                        # we need to resolve the types for these attributes individually
-                        # then update the type hints
-                        to_sub = _substitute_type_hints(parameters[origin], hint_tracking[origin])
-                        hints.update(to_sub)
+                        previous_bases.append(origin)
+
+            skip_parse = False
+            while previous_bases:
+                origin = previous_bases.pop(0)
+
+                # we need to parse the type hints of this origin before we can continue
+                if origin not in hint_tracking:
+                    break
+
+                # if we did scan it and it found no type hints then skip
+                if not hint_tracking[origin]:
+                    hint_tracking.pop(origin)
+                    continue
+
+                # an original base may not be present when dealing with typeddicts
+                # so we need to scan it before scanning the one we are on
+                if origin not in searching:
+                    searching.insert(0, origin)
+                    previous_bases.insert(0, origin)
+                    skip_parse = True
+                    break
+
+                # this is needed if the class inherits two or more generic classes
+                # class Baz(Foo[U, T], Bar[T]): ...
+                # we need to resolve the types for these attributes individually
+                # then update the type hints
+                to_sub = _substitute_type_hints(parameters[origin], hint_tracking[origin])
+                hints.update(to_sub)
+
+            if skip_parse:
+                continue
+
+            searching.pop(0)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
