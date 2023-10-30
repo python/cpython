@@ -182,13 +182,13 @@ jobs:
     name: 'Windows'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
-    uses: ./.github/workflows/reusable-build-win.yml
+    uses: ./.github/workflows/reusable-build-windows.yml
 
   build_win_free_threaded:
     name: 'Windows (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
-    uses: ./.github/workflows/reusable-build-win.yml
+    uses: ./.github/workflows/reusable-build-windows.yml
     with:
       free-threaded: true
 
