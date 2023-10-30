@@ -11,9 +11,9 @@
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>
 #ifdef WITH_MIMALLOC
-#include "pycore_mimalloc.h"
-#include "mimalloc/static.c"
-#include "mimalloc/internal.h"    // for stats
+#  include "pycore_mimalloc.h"
+#  include "mimalloc/static.c"
+#  include "mimalloc/internal.h"  // for stats
 #endif
 
 #undef  uint
