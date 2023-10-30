@@ -3835,7 +3835,7 @@
             assert(next_instr[oparg].op.code == END_FOR ||
                    next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
             assert(1 + INLINE_CACHE_ENTRIES_FOR_ITER == next_instr - this_instr);
-            frame->return_offset = 1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg;
+            frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_FOR_ITER + oparg);
             DISPATCH_INLINED(gen_frame);
         }
 
