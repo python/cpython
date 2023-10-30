@@ -313,8 +313,7 @@ err_writeunraisable(PyObject *Py_UNUSED(module), PyObject *args)
     NULLABLE(exc);
     NULLABLE(obj);
     if (exc) {
-        Py_INCREF(exc);
-        PyErr_SetRaisedException(exc);
+        PyErr_SetRaisedException(Py_NewRef(exc));
     }
     PyErr_WriteUnraisable(obj);
     Py_RETURN_NONE;
@@ -336,8 +335,7 @@ err_formatunraisable(PyObject *Py_UNUSED(module), PyObject *args)
     }
     NULLABLE(exc);
     if (exc) {
-        Py_INCREF(exc);
-        PyErr_SetRaisedException(exc);
+        PyErr_SetRaisedException(Py_NewRef(exc));
     }
     PyErr_FormatUnraisable(fmt,
             objs[0], objs[1], objs[2], objs[3], objs[4],

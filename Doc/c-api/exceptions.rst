@@ -92,6 +92,12 @@ Printing and clearing
 
    An exception must be set when calling this function.
 
+   .. versionchanged:: 3.4
+      Print a traceback. Print only traceback if *obj* is ``NULL``.
+
+   .. versionchanged:: 3.8
+      Use :func:`sys.unraisablehook`.
+
 
 .. c:function:: void PyErr_FormatUnraisable(const char *format, ...)
 

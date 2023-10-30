@@ -62,8 +62,14 @@
           pass
    */
 
+#ifndef _MSC_VER
+#include "pyconfig.h"   // Py_NOGIL
+#endif
+
+#ifndef Py_NOGIL
 // Need limited C API version 3.13 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
 #define Py_LIMITED_API 0x030d0000
+#endif
 
 #include "Python.h"
 #include <string.h>
