@@ -19,17 +19,9 @@
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
 
-PyObject _PyInstrumentation_DISABLE =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_DISABLE = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
-PyObject _PyInstrumentation_MISSING =
-{
-    .ob_refcnt = _Py_IMMORTAL_REFCNT,
-    .ob_type = &PyBaseObject_Type
-};
+PyObject _PyInstrumentation_MISSING = _PyObject_HEAD_INIT(&PyBaseObject_Type);
 
 static const int8_t EVENT_FOR_OPCODE[256] = {
     [RETURN_CONST] = PY_MONITORING_EVENT_PY_RETURN,
