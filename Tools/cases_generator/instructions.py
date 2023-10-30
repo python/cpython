@@ -25,18 +25,10 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
-    "INSTRUMENTED_JUMP",
-    "throwflag",
-    "exception_unwind",
-    "import_from",
-    "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
     "TIER_ONE_ONLY",
 )
 

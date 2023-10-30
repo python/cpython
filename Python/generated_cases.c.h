@@ -1090,6 +1090,7 @@
             INSTRUCTION_STATS(RAISE_VARARGS);
             PyObject **args;
             args = stack_pointer - oparg;
+            TIER_ONE_ONLY
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1532,6 +1533,7 @@
             PyObject **values;
             exc = stack_pointer[-1];
             values = stack_pointer - 1 - oparg;
+            TIER_ONE_ONLY
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1560,6 +1562,7 @@
             PyObject *awaitable;
             exc = stack_pointer[-1];
             awaitable = stack_pointer[-2];
+            TIER_ONE_ONLY
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 Py_DECREF(awaitable);
@@ -1587,6 +1590,7 @@
             exc_value = stack_pointer[-1];
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
+            TIER_ONE_ONLY
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
