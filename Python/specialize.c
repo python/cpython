@@ -2525,7 +2525,7 @@ static const PyBytesObject no_location = {
 };
 
 const struct _PyCode_DEF(8) _Py_InitCleanup = {
-    _PyVarObject_HEAD_INIT(&PyCode_Type, 3)
+    _PyVarObject_HEAD_INIT(&PyCode_Type, 3),
     .co_consts = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_names = (PyObject *)&_Py_SINGLETON(tuple_empty),
     .co_exceptiontable = (PyObject *)&_Py_SINGLETON(bytes_empty),
