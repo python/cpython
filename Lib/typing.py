@@ -2162,10 +2162,12 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
     # Classes require a special treatment.
     if isinstance(obj, type):
-        # mapping[cls, list[type variables/values]]
-        parameters = defaultdict(list)
+        # track typevars of each base
+        param_tracking = defaultdict(list)
+        # track type hints of each base
         hint_tracking = {}
         hints = {}
+        # track previous bases for type hint changes
         previous_bases = []
         searching = list(reversed(obj.__mro__))
         # typeddicts cannot redefine pre-existing keys
@@ -2175,6 +2177,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
             orig_bases = getattr(base, '__orig_bases__', ())
 
+            # keep track of typevars and the values they are being
+            # replaced with
             generic_encountered = False
             for orig_base in orig_bases:
                 origin = get_origin(orig_base)
@@ -2189,10 +2193,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
                 if origin is Generic:
                     generic_encountered = True
-                    parameters[base].append(args)
+                    param_tracking[base].append(args)
                 else:
-                    parameters[origin].append(args)
-
+                    param_tracking[origin].append(args)
                     previous_bases.append(origin)
 
             # this occurs if obj is
@@ -2209,7 +2212,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 # class Bar(Foo[str]): ...
                 # we can skip adding typevars here.
                 if type_vars_for_generic:
-                    parameters[base].append(type_vars_for_generic)
+                    param_tracking[base].append(type_vars_for_generic)
 
             # this is needed if the class inherits two or more generic classes
             # class Baz(Foo[U, T], Bar[T]): ...
@@ -2228,7 +2231,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                         searching.insert(0, origin)
                         skip_parse = True
 
-                    if origin not in parameters:
+                    if origin not in param_tracking:
                         previous_bases.insert(0, origin)
 
                     break
@@ -2238,7 +2241,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     hint_tracking.pop(origin)
                     continue
 
-                to_sub = _substitute_type_hints(parameters[origin], hint_tracking[origin])
+                to_sub = _substitute_type_hints(param_tracking[origin], hint_tracking[origin])
                 if not trust_annotations:
                     filter_keys.update(to_sub)
                 hints.update(to_sub)
@@ -2253,7 +2256,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
-
             if isinstance(ann, types.GetSetDescriptorType):
                 ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
@@ -2268,6 +2270,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
             hint_tracking[base] = {}
             for name, value in ann.items():
+                # skip pre-existing keys for typeddict
                 if name in filter_keys:
                     continue
 
@@ -2281,8 +2284,8 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
         # sub the original args back in
         if ga_args is not None:
-            parameters[obj].append(ga_args)
-            to_sub = _substitute_type_hints(parameters[obj], hints)
+            param_tracking[obj].append(ga_args)
+            to_sub = _substitute_type_hints(param_tracking[obj], hints)
             hints.update(to_sub)
 
         return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
@@ -2328,7 +2331,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
     if len(substitutions) < 2:
         return {}
 
-    # get a mapping of type variable to value
+    # get a mapping of typevar to value
     mapping = {substitutions[-2][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
 
     hints_to_replace = {}
