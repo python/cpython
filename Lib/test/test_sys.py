@@ -1208,7 +1208,7 @@ class SysModuleTest(unittest.TestCase):
     @test.support.cpython_only
     @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
     def test_disable_gil_abi(self):
-        abi_threaded = 't' in sys.abiflags
+        abi_threaded = 'n' in sys.abiflags
         py_nogil = (sysconfig.get_config_var('Py_NOGIL') == 1)
         self.assertEqual(py_nogil, abi_threaded)
 
