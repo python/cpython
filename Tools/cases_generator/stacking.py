@@ -365,7 +365,7 @@ def write_macro_instr(mac: MacroInstruction, out: Formatter) -> None:
     ]
     out.emit("")
     with out.block(f"TARGET({mac.name})"):
-        needs_here = any(part.instr.needs_here for part in parts) or mac.cache_offset != 0
+        needs_here = any(part.instr.needs_here for part in parts)
         if needs_here and not mac.predicted:
             out.emit(f"_Py_CODEUNIT *here = frame->instr_ptr = next_instr;")
         else:

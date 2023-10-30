@@ -84,11 +84,11 @@ class Instruction:
         )
         self.always_exits = always_exits(self.block_text)
         self.has_deopt = variable_used(self.inst, "DEOPT_IF")
-        self.needs_here = variable_used(self.inst, "here")
         self.cache_effects = [
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_here = variable_used(self.inst, "here") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]

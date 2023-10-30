@@ -351,7 +351,7 @@
         }
 
         TARGET(TO_BOOL_BOOL) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_BOOL);
             PyObject *value;
@@ -362,7 +362,7 @@
         }
 
         TARGET(TO_BOOL_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_INT);
             PyObject *value;
@@ -383,7 +383,7 @@
         }
 
         TARGET(TO_BOOL_LIST) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_LIST);
             PyObject *value;
@@ -398,7 +398,7 @@
         }
 
         TARGET(TO_BOOL_NONE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_NONE);
             PyObject *value;
@@ -413,7 +413,7 @@
         }
 
         TARGET(TO_BOOL_STR) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(TO_BOOL_STR);
             PyObject *value;
@@ -467,7 +467,7 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_INT);
             PyObject *right;
@@ -494,7 +494,7 @@
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_INT);
             PyObject *right;
@@ -521,7 +521,7 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_INT);
             PyObject *right;
@@ -548,7 +548,7 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_MULTIPLY_FLOAT);
             PyObject *right;
@@ -575,7 +575,7 @@
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_FLOAT);
             PyObject *right;
@@ -602,7 +602,7 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_SUBTRACT_FLOAT);
             PyObject *right;
@@ -629,7 +629,7 @@
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_ADD_UNICODE);
             PyObject *right;
@@ -656,7 +656,7 @@
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_OP_INPLACE_ADD_UNICODE);
             PyObject *right;
@@ -785,7 +785,7 @@
         }
 
         TARGET(BINARY_SUBSCR_LIST_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_LIST_INT);
             PyObject *sub;
@@ -812,7 +812,7 @@
         }
 
         TARGET(BINARY_SUBSCR_STR_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_STR_INT);
             PyObject *sub;
@@ -838,7 +838,7 @@
         }
 
         TARGET(BINARY_SUBSCR_TUPLE_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_TUPLE_INT);
             PyObject *sub;
@@ -865,7 +865,7 @@
         }
 
         TARGET(BINARY_SUBSCR_DICT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_DICT);
             PyObject *sub;
@@ -893,7 +893,7 @@
         }
 
         TARGET(BINARY_SUBSCR_GETITEM) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(BINARY_SUBSCR_GETITEM);
             PyObject *sub;
@@ -985,7 +985,7 @@
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_LIST_INT);
             PyObject *sub;
@@ -1015,7 +1015,7 @@
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(STORE_SUBSCR_DICT);
             PyObject *sub;
@@ -1432,7 +1432,7 @@
         }
 
         TARGET(SEND_GEN) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(SEND_GEN);
             PyObject *v;
@@ -1710,7 +1710,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TWO_TUPLE);
             PyObject *seq;
@@ -1730,7 +1730,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_TUPLE);
             PyObject *seq;
@@ -1751,7 +1751,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(UNPACK_SEQUENCE_LIST);
             PyObject *seq;
@@ -2559,7 +2559,7 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_ATTR) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_ATTR);
             PyObject *self;
@@ -2585,7 +2585,7 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_METHOD) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(LOAD_SUPER_ATTR_METHOD);
             PyObject *self;
@@ -3100,7 +3100,7 @@
         }
 
         TARGET(COMPARE_OP_FLOAT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_FLOAT);
             PyObject *right;
@@ -3125,7 +3125,7 @@
         }
 
         TARGET(COMPARE_OP_INT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_INT);
             PyObject *right;
@@ -3154,7 +3154,7 @@
         }
 
         TARGET(COMPARE_OP_STR) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(COMPARE_OP_STR);
             PyObject *right;
@@ -3690,7 +3690,7 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_LIST);
             PyObject *iter;
@@ -3733,7 +3733,7 @@
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_TUPLE);
             PyObject *iter;
@@ -3776,7 +3776,7 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_RANGE);
             PyObject *iter;
@@ -3817,7 +3817,7 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(FOR_ITER_GEN);
             PyObject *iter;
@@ -4509,7 +4509,7 @@
         }
 
         TARGET(CALL_TYPE_1) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TYPE_1);
             PyObject **args;
@@ -4534,7 +4534,7 @@
         }
 
         TARGET(CALL_STR_1) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_STR_1);
             PyObject **args;
@@ -4561,7 +4561,7 @@
         }
 
         TARGET(CALL_TUPLE_1) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_TUPLE_1);
             PyObject **args;
@@ -4588,7 +4588,7 @@
         }
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ALLOC_AND_ENTER_INIT);
             PyObject **args;
@@ -4665,7 +4665,7 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_CLASS);
             PyObject **args;
@@ -4699,7 +4699,7 @@
         }
 
         TARGET(CALL_BUILTIN_O) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_O);
             PyObject **args;
@@ -4741,7 +4741,7 @@
         }
 
         TARGET(CALL_BUILTIN_FAST) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST);
             PyObject **args;
@@ -4787,7 +4787,7 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_BUILTIN_FAST_WITH_KEYWORDS);
             PyObject **args;
@@ -4827,7 +4827,7 @@
         }
 
         TARGET(CALL_LEN) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LEN);
             PyObject **args;
@@ -4865,7 +4865,7 @@
         }
 
         TARGET(CALL_ISINSTANCE) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_ISINSTANCE);
             PyObject **args;
@@ -4905,7 +4905,7 @@
         }
 
         TARGET(CALL_LIST_APPEND) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_LIST_APPEND);
             PyObject **args;
@@ -4933,7 +4933,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_O) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_O);
             PyObject **args;
@@ -4978,7 +4978,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS);
             PyObject **args;
@@ -5021,7 +5021,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_NOARGS);
             PyObject **args;
@@ -5065,7 +5065,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(CALL_METHOD_DESCRIPTOR_FAST);
             PyObject **args;
