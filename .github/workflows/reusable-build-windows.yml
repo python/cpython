@@ -7,7 +7,7 @@ on:
         default: false
 
 jobs:
-  build_win_32:
+  build_win32:
     name: 'build and test (x86)'
     runs-on: windows-latest
     timeout-minutes: 60
