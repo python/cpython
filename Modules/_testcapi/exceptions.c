@@ -313,8 +313,7 @@ err_writeunraisable(PyObject *Py_UNUSED(module), PyObject *args)
     NULLABLE(exc);
     NULLABLE(obj);
     if (exc) {
-        Py_INCREF(exc);
-        PyErr_SetRaisedException(exc);
+        PyErr_SetRaisedException(Py_NewRef(exc));
     }
     PyErr_WriteUnraisable(obj);
     Py_RETURN_NONE;
