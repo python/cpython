@@ -7,7 +7,7 @@ on:
         default: false
 
 jobs:
-  build_win_32:
+  build_windows_32:
     name: 'build and test (x86)'
     runs-on: windows-latest
     timeout-minutes: 60
@@ -22,7 +22,7 @@ jobs:
     - name: Tests
       run: .\PCbuild\rt.bat -p Win32 -d -q --fast-ci
 
-  build_win_amd64:
+  build_windows_amd64:
     name: 'build and test (x64)'
     runs-on: windows-latest
     timeout-minutes: 60
@@ -39,7 +39,7 @@ jobs:
     - name: Tests
       run: .\PCbuild\rt.bat -p x64 -d -q --fast-ci
 
-  build_win_arm64:
+  build_windows_arm64:
     name: 'build (arm64)'
     runs-on: windows-latest
     timeout-minutes: 60
