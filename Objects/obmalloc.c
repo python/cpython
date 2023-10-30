@@ -2726,44 +2726,33 @@ static bool _collect_alloc_stats(
     stats->bytes_committed += area->committed;
     return 1;
 }
-#endif
 
-/* Print summary info to "out" about the state of pymalloc's structures.
- * In Py_DEBUG mode, also perform some expensive internal consistency
- * checks.
- *
- * Return 0 if the memory debug hooks are not installed or no statistics was
- * written into out, return 1 otherwise.
- */
-int
-_PyObject_DebugMallocStats(FILE *out)
+static void
+py_mimalloc_print_stats(FILE *out)
 {
-#ifdef WITH_MIMALLOC
-    if (_PyMem_MimallocEnabled()) {
-        fprintf(out, "Small block threshold = %ld, in %u size classes.\n",
-            MI_SMALL_OBJ_SIZE_MAX, MI_BIN_HUGE);
-        fprintf(out, "Medium block threshold = %ld\n",
-                MI_MEDIUM_OBJ_SIZE_MAX);
-        fprintf(out, "Large object max size = %ld\n",
-                MI_LARGE_OBJ_SIZE_MAX);
+    fprintf(out, "Small block threshold = %ld, in %u size classes.\n",
+        MI_SMALL_OBJ_SIZE_MAX, MI_BIN_HUGE);
+    fprintf(out, "Medium block threshold = %ld\n",
+            MI_MEDIUM_OBJ_SIZE_MAX);
+    fprintf(out, "Large object max size = %ld\n",
+            MI_LARGE_OBJ_SIZE_MAX);
 
-        mi_heap_t *heap = mi_heap_get_default();
-        struct _alloc_stats stats = {};
-        mi_heap_visit_blocks(heap, false, &_collect_alloc_stats, &stats);
+    mi_heap_t *heap = mi_heap_get_default();
+    struct _alloc_stats stats = {};
+    mi_heap_visit_blocks(heap, false, &_collect_alloc_stats, &stats);
 
-        fprintf(out, "    Allocated Blocks: %ld\n", stats.allocated_blocks);
-        fprintf(out, "    Allocated Bytes: %ld\n", stats.allocated_bytes);
-        fprintf(out, "    Allocated Bytes w/ Overhead: %ld\n", stats.allocated_with_overhead);
-        fprintf(out, "    Bytes Reserved: %ld\n", stats.bytes_reserved);
-        fprintf(out, "    Bytes Committed: %ld\n", stats.bytes_committed);
-
-        return 1;
-    }
+    fprintf(out, "    Allocated Blocks: %ld\n", stats.allocated_blocks);
+    fprintf(out, "    Allocated Bytes: %ld\n", stats.allocated_bytes);
+    fprintf(out, "    Allocated Bytes w/ Overhead: %ld\n", stats.allocated_with_overhead);
+    fprintf(out, "    Bytes Reserved: %ld\n", stats.bytes_reserved);
+    fprintf(out, "    Bytes Committed: %ld\n", stats.bytes_committed);
+}
 #endif
 
-    if (!_PyMem_PymallocEnabled()) {
-        return 0;
-    }
+
+static void
+pymalloc_print_stats(FILE *out)
+{
     OMState *state = get_state();
 
     uint i;
@@ -2916,7 +2905,32 @@ _PyObject_DebugMallocStats(FILE *out)
 #endif
 #endif
 
-    return 1;
+}
+
+/* Print summary info to "out" about the state of pymalloc's structures.
+ * In Py_DEBUG mode, also perform some expensive internal consistency
+ * checks.
+ *
+ * Return 0 if the memory debug hooks are not installed or no statistics was
+ * written into out, return 1 otherwise.
+ */
+int
+_PyObject_DebugMallocStats(FILE *out)
+{
+#ifdef WITH_MIMALLOC
+    if (_PyMem_MimallocEnabled()) {
+        py_mimalloc_print_stats(out);
+        return 1;
+    }
+    else
+#endif
+    if (_PyMem_PymallocEnabled()) {
+        pymalloc_print_stats(out);
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
