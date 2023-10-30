@@ -1095,11 +1095,11 @@ conflict.
 .. envvar:: PYTHON_FROZEN_MODULES
 
    If this variable is set to ``on`` or ``off``, it determines whether or not
-   frozen modules are ignored by the import machinery.  A value of "on" means
-   they get imported and "off" means they are ignored.  The default is "on"
-   for non-debug builds (the normal case) and "off" for debug builds.
-   Note that the "importlib_bootstrap" and "importlib_bootstrap_external"
-   frozen modules are always used, even if this flag is set to "off".
+   frozen modules are ignored by the import machinery.  A value of ``on`` means
+   they get imported and ``off`` means they are ignored.  The default is ``on``
+   for non-debug builds (the normal case) and ``off`` for debug builds.
+   Note that the :mod:`!importlib_bootstrap` and :mod:`!importlib_bootstrap_external`
+   frozen modules are always used, even if this flag is set to ``off``.
 
    See also the :option:`-X frozen_modules <-X>` command-line option.
 
