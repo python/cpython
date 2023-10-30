@@ -860,6 +860,8 @@ DTRACE_OBJS
 DTRACE_HEADERS
 DFLAGS
 DTRACE
+WITH_MIMALLOC
+MIMALLOC_HEADERS
 GDBM_LIBS
 GDBM_CFLAGS
 X11_LIBS
@@ -1088,6 +1090,7 @@ enable_loadable_sqlite_extensions
 with_dbmliborder
 enable_ipv6
 with_doc_strings
+with_mimalloc
 with_pymalloc
 with_freelists
 with_c_locale_coercion
@@ -1874,6 +1877,8 @@ Optional Packages:
                           value is a colon separated string with the backend
                           names `ndbm', `gdbm' and `bdb'.
   --with-doc-strings      enable documentation strings (default is yes)
+  --with-mimalloc         build with mimalloc memory allocator (default is yes
+                          if C11 stdatomic.h is available.)
   --with-pymalloc         enable specialized mallocs (default is yes)
   --with-freelists        enable object freelists (default is yes)
   --with-c-locale-coercion
@@ -16772,6 +16777,127 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_doc_strings" >&5
 printf "%s\n" "$with_doc_strings" >&6; }
 
+# Check for stdatomic.h, required for mimalloc.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdatomic.h" >&5
+printf %s "checking for stdatomic.h... " >&6; }
+if test ${ac_cv_header_stdatomic_h+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    #include <stdatomic.h>
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
+    int main() {
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
+      return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_header_stdatomic_h=yes
+else $as_nop
+  ac_cv_header_stdatomic_h=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_stdatomic_h" >&5
+printf "%s\n" "$ac_cv_header_stdatomic_h" >&6; }
+
+if test "x$ac_cv_header_stdatomic_h" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_STD_ATOMIC 1" >>confdefs.h
+
+
+fi
+
+# Check for GCC >= 4.7 and clang __atomic builtin functions
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
+printf %s "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }
+if test ${ac_cv_builtin_atomic+y}
+then :
+  printf %s "(cached) " >&6
+else $as_nop
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    int val;
+    int main() {
+      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
+      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
+      return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_builtin_atomic=yes
+else $as_nop
+  ac_cv_builtin_atomic=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_atomic" >&5
+printf "%s\n" "$ac_cv_builtin_atomic" >&6; }
+
+if test "x$ac_cv_builtin_atomic" = xyes
+then :
+
+
+printf "%s\n" "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
+
+
+fi
+
+# --with-mimalloc
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-mimalloc" >&5
+printf %s "checking for --with-mimalloc... " >&6; }
+
+# Check whether --with-mimalloc was given.
+if test ${with_mimalloc+y}
+then :
+  withval=$with_mimalloc;
+else $as_nop
+  with_mimalloc="$ac_cv_header_stdatomic_h"
+
+fi
+
+
+if test "$with_mimalloc" != no; then
+  if test "$ac_cv_header_stdatomic_h" != yes; then
+    # mimalloc-atomic.h wants C11 stdatomic.h on POSIX
+    as_fn_error $? "mimalloc requires stdatomic.h, use --without-mimalloc to disable mimalloc." "$LINENO" 5
+  fi
+  with_mimalloc=yes
+
+printf "%s\n" "#define WITH_MIMALLOC 1" >>confdefs.h
+
+  MIMALLOC_HEADERS='$(MIMALLOC_HEADERS)'
+
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $with_mimalloc" >&5
+printf "%s\n" "$with_mimalloc" >&6; }
+
+
+
 # Check for Python-specific malloc support
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-pymalloc" >&5
 printf %s "checking for --with-pymalloc... " >&6; }
@@ -26683,6 +26809,8 @@ SRCDIRS="\
   Modules/cjkcodecs \
   Modules/expat \
   Objects \
+  Objects/mimalloc \
+  Objects/mimalloc/prim \
   Parser \
   Parser/tokenizer \
   Parser/lexer \
@@ -26839,95 +26967,6 @@ printf "%s\n" "#define HAVE_IPA_PURE_CONST_BUG 1" >>confdefs.h
             fi
         ;;
     esac
-fi
-
-# Check for stdatomic.h
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdatomic.h" >&5
-printf %s "checking for stdatomic.h... " >&6; }
-if test ${ac_cv_header_stdatomic_h+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-    #include <stdatomic.h>
-    atomic_int int_var;
-    atomic_uintptr_t uintptr_var;
-    int main(void) {
-      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
-      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
-      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
-      return 0;
-    }
-
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_header_stdatomic_h=yes
-else $as_nop
-  ac_cv_header_stdatomic_h=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_stdatomic_h" >&5
-printf "%s\n" "$ac_cv_header_stdatomic_h" >&6; }
-
-if test "x$ac_cv_header_stdatomic_h" = xyes
-then :
-
-
-printf "%s\n" "#define HAVE_STD_ATOMIC 1" >>confdefs.h
-
-
-fi
-
-# Check for GCC >= 4.7 and clang __atomic builtin functions
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for builtin __atomic_load_n and __atomic_store_n functions" >&5
-printf %s "checking for builtin __atomic_load_n and __atomic_store_n functions... " >&6; }
-if test ${ac_cv_builtin_atomic+y}
-then :
-  printf %s "(cached) " >&6
-else $as_nop
-
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-    int val;
-    int main(void) {
-      __atomic_store_n(&val, 1, __ATOMIC_SEQ_CST);
-      (void)__atomic_load_n(&val, __ATOMIC_SEQ_CST);
-      return 0;
-    }
-
-
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_builtin_atomic=yes
-else $as_nop
-  ac_cv_builtin_atomic=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_builtin_atomic" >&5
-printf "%s\n" "$ac_cv_builtin_atomic" >&6; }
-
-if test "x$ac_cv_builtin_atomic" = xyes
-then :
-
-
-printf "%s\n" "#define HAVE_BUILTIN_ATOMIC 1" >>confdefs.h
-
-
 fi
 
 # ensurepip option
@@ -32191,5 +32230,10 @@ printf "%s\n" "$as_me: WARNING:
 Platform \"$host\" with compiler \"$ac_cv_cc_name\" is not supported by the
 CPython core team, see https://peps.python.org/pep-0011/ for more information.
 " >&2;}
+fi
+
+if test "$ac_cv_header_stdatomic_h" != "yes"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&5
+printf "%s\n" "$as_me: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&6;}
 fi
 
