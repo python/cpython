@@ -181,7 +181,7 @@ dummy_func(
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_call_instrumentation(
-                        tstate, oparg > 0, frame, frame->instr_ptr);
+                        tstate, oparg > 0, frame, this_instr);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 ERROR_IF(err, error);
                 if (frame->instr_ptr != this_instr) {
@@ -267,7 +267,7 @@ dummy_func(
              * to conform to PEP 380 */
             if (PyGen_Check(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, frame->instr_ptr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr)) {
                     goto error;
                 }
                 PyErr_SetRaisedException(NULL);
@@ -283,7 +283,7 @@ dummy_func(
             TIER_ONE_ONLY
             if (PyGen_Check(receiver) || PyCoro_CheckExact(receiver)) {
                 PyErr_SetObject(PyExc_StopIteration, value);
-                if (monitor_stop_iteration(tstate, frame, frame->instr_ptr)) {
+                if (monitor_stop_iteration(tstate, frame, this_instr)) {
                     goto error;
                 }
                 PyErr_SetRaisedException(NULL);
@@ -657,7 +657,7 @@ dummy_func(
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR == next_instr - this_instr);
             frame->return_offset = 1 + INLINE_CACHE_ENTRIES_BINARY_SUBSCR;
             DISPATCH_INLINED(new_frame);
         }
@@ -680,7 +680,7 @@ dummy_func(
         inst(STORE_SUBSCR, (unused/1, v, container, sub -- )) {
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = this_instr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
@@ -753,7 +753,7 @@ dummy_func(
             case 0:
                 if (do_raise(tstate, exc, cause)) {
                     assert(oparg == 0);
-                    monitor_reraise(tstate, frame, frame->instr_ptr);
+                    monitor_reraise(tstate, frame, this_instr);
                     goto exception_unwind;
                 }
                 break;
@@ -807,7 +807,7 @@ dummy_func(
         inst(INSTRUMENTED_RETURN_VALUE, (retval --)) {
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, frame->instr_ptr, retval);
+                    frame, this_instr, retval);
             if (err) goto error;
             STACK_SHRINK(1);
             assert(EMPTY());
@@ -831,7 +831,7 @@ dummy_func(
             PyObject *retval = GETITEM(FRAME_CO_CONSTS, oparg);
             int err = _Py_call_instrumentation_arg(
                     tstate, PY_MONITORING_EVENT_PY_RETURN,
-                    frame, frame->instr_ptr, retval);
+                    frame, this_instr, retval);
             if (err) goto error;
             Py_INCREF(retval);
             assert(EMPTY());
@@ -977,7 +977,7 @@ dummy_func(
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
-                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+                assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
                 frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
                 DISPATCH_INLINED(gen_frame);
             }
@@ -990,7 +990,7 @@ dummy_func(
             if (retval == NULL) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_StopIteration)
                 ) {
-                    monitor_raise(tstate, frame, frame->instr_ptr);
+                    monitor_raise(tstate, frame, this_instr);
                 }
                 if (_PyGen_FetchStopIterationValue(&retval) == 0) {
                     assert(retval != NULL);
@@ -1015,7 +1015,7 @@ dummy_func(
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
-            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - frame->instr_ptr);
+            assert(1 + INLINE_CACHE_ENTRIES_SEND == next_instr - this_instr);
             frame->return_offset = (uint16_t)(1 + INLINE_CACHE_ENTRIES_SEND + oparg);
             DISPATCH_INLINED(gen_frame);
         }
@@ -1101,7 +1101,7 @@ dummy_func(
             else {
                 Py_INCREF(exc);
                 _PyErr_SetRaisedException(tstate, exc);
-                monitor_reraise(tstate, frame, frame->instr_ptr);
+                monitor_reraise(tstate, frame, this_instr);
                 goto exception_unwind;
             }
         }
@@ -1116,7 +1116,7 @@ dummy_func(
             }
             else {
                 _PyErr_SetRaisedException(tstate, Py_NewRef(exc_value));
-                monitor_reraise(tstate, frame, frame->instr_ptr);
+                monitor_reraise(tstate, frame, this_instr);
                 goto exception_unwind;
             }
         }
@@ -2989,12 +2989,12 @@ dummy_func(
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, frame->instr_ptr, callable, arg);
+                        frame, this_instr, callable, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, frame->instr_ptr, callable, arg);
+                        frame, this_instr, callable, arg);
                     if (err < 0) {
                         Py_CLEAR(res);
                     }
@@ -3533,7 +3533,7 @@ dummy_func(
                                             : PEEK(total_args + 1);
             int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
-                    frame, frame->instr_ptr, function, arg);
+                    frame, this_instr, function, arg);
             ERROR_IF(err, error);
             GO_TO_INSTRUCTION(CALL_KW);
         }
@@ -3590,12 +3590,12 @@ dummy_func(
                 if (res == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, frame->instr_ptr, callable, arg);
+                        frame, this_instr, callable, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, frame->instr_ptr, callable, arg);
+                        frame, this_instr, callable, arg);
                     if (err < 0) {
                         Py_CLEAR(res);
                     }
@@ -3638,18 +3638,18 @@ dummy_func(
                     PyTuple_GET_ITEM(callargs, 0) : Py_None;
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
-                    frame, frame->instr_ptr, func, arg);
+                    frame, this_instr, func, arg);
                 if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
                 if (result == NULL) {
                     _Py_call_instrumentation_exc2(
                         tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, frame->instr_ptr, func, arg);
+                        frame, this_instr, func, arg);
                 }
                 else {
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, frame->instr_ptr, func, arg);
+                        frame, this_instr, func, arg);
                     if (err < 0) {
                         Py_CLEAR(result);
                     }

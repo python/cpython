@@ -573,7 +573,7 @@
             v = stack_pointer[-3];
             #if ENABLE_SPECIALIZATION
             if (ADAPTIVE_COUNTER_IS_ZERO(this_instr[1].cache)) {
-                next_instr = frame->instr_ptr;
+                next_instr = this_instr;
                 _Py_Specialize_StoreSubscr(container, sub, next_instr);
                 DISPATCH_SAME_OPARG();
             }
