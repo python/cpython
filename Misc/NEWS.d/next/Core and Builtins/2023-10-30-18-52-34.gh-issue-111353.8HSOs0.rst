@@ -1,0 +1,1 @@
+Add support for providing generic aliases and resolving type variables in :func:`typing.get_type_hints`.
