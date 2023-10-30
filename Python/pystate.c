@@ -495,7 +495,7 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
 }
 
 // This is defined in crossinterp.c (for now).
-void _xidregistry_clear(struct _xidregistry *);
+extern void _Py_xidregistry_clear(struct _xidregistry *);
 
 void
 _PyRuntimeState_Fini(_PyRuntimeState *runtime)
@@ -505,7 +505,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
 
-    _xidregistry_clear(&runtime->xidregistry);
+    _Py_xidregistry_clear(&runtime->xidregistry);
 
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
@@ -948,7 +948,7 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
 
-    _xidregistry_clear(&interp->xidregistry);
+    _Py_xidregistry_clear(&interp->xidregistry);
     /* The lock is owned by the runtime, so we don't free it here. */
     interp->xidregistry.mutex = NULL;
 

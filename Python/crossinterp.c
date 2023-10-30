@@ -353,7 +353,7 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
 
 // This is used in pystate.c (for now).
 void
-_xidregistry_clear(struct _xidregistry *xidregistry)
+_Py_xidregistry_clear(struct _xidregistry *xidregistry)
 {
     struct _xidregitem *cur = xidregistry->head;
     xidregistry->head = NULL;
