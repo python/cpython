@@ -20,3 +20,4 @@ and parsing function arguments and constructing Python values from C values.
    reflection.rst
    codec.rst
    perfmaps.rst
+   hashing.rst
