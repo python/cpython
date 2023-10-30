@@ -2231,9 +2231,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                         searching.insert(0, origin)
                         skip_parse = True
 
-                    if origin not in param_tracking:
-                        previous_bases.insert(0, origin)
-
                     break
 
                 # if we did scan it and it found no type hints then skip
