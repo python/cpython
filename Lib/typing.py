@@ -2156,7 +2156,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     # for Generic Aliases we need to inspect the origin
     # then apply its args later
     ga_args = None
-    if isinstance(obj, _GenericAlias):
+    if isinstance(obj, (_GenericAlias, GenericAlias)):
         ga_args = get_args(obj)
         obj = get_origin(obj)
 
@@ -2168,51 +2168,69 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         previous_bases = []
         searching = list(reversed(obj.__mro__))
+        # typeddicts cannot redefine pre-existing keys
+        trust_annotations = not is_typeddict(obj)
         while searching:
             base = searching[0]
 
-            orig_bases = getattr(base, '__orig_bases__', None)
+            orig_bases = getattr(base, '__orig_bases__', ())
 
-            if orig_bases:
-                traverse = list(orig_bases)
-                contains_generic = Generic in orig_bases
+            generic_encountered = False
+            for orig_base in orig_bases:
+                origin = get_origin(orig_base)
+                if origin is None:
+                    # if the base hasn't been discovered (re: typeddicts)
+                    # then search the base
+                    if not trust_annotations and orig_base not in searching:
+                        searching.insert(1, orig_base)
+                    continue
 
-                # this occurs if obj is
-                # class Bar(Foo[str, U]): ...
-                # in this case, we need to imagine there's a generic base
-                # with the required typevars here.
-                if not contains_generic:
-                    # we need to collect all the typevars from all bases
-                    # in the case that they have multiple generic bases
-                    # class Baz(Foo[str, U], Bar[U, T]): ...
-                    type_vars_for_generic = _collect_parameters(orig_bases)
+                args = get_args(orig_base)
 
-                    # this may be empty if obj is
-                    # class Bar(Foo[str]): ...
-                    # we can skip creating a Generic here.
-                    if type_vars_for_generic:
-                        traverse.append(Generic[type_vars_for_generic])
+                if origin is Generic:
+                    generic_encountered = True
+                    parameters[base].append(args)
+                else:
+                    parameters[origin].append(args)
 
-                for orig_base in traverse:
-                    origin = get_origin(orig_base)
-                    if origin is None:
-                        continue
+                    previous_bases.append(origin)
 
-                    args = get_args(orig_base)
+            # this occurs if obj is
+            # class Bar(Foo[str, U]): ...
+            # in this case, we need to imagine there's a generic base
+            # with the required typevars here.
+            if orig_bases and not generic_encountered:
+                # we need to collect all the typevars from all bases
+                # in the case that they have multiple generic bases
+                # class Baz(Foo[str, U], Bar[U, T]): ...
+                type_vars_for_generic = _collect_parameters(orig_bases)
 
-                    if origin is Generic:
-                        parameters[base].append(args)
-                    else:
-                        parameters[origin].append(args)
+                # this may be empty if obj is
+                # class Bar(Foo[str]): ...
+                # we can skip adding typevars here.
+                if type_vars_for_generic:
+                    parameters[base].append(type_vars_for_generic)
 
-                        previous_bases.append(origin)
-
+            # this is needed if the class inherits two or more generic classes
+            # class Baz(Foo[U, T], Bar[T]): ...
+            # we need to resolve the types for these attributes individually
+            # then update the type hints
             skip_parse = False
+            filter_keys = {}
             while previous_bases:
                 origin = previous_bases.pop(0)
 
                 # we need to parse the type hints of this origin before we can continue
                 if origin not in hint_tracking:
+                    # an original base may not be present when dealing with typeddicts
+                    # so we need to scan it before scanning the one we are on
+                    if origin not in searching:
+                        searching.insert(0, origin)
+                        skip_parse = True
+
+                    if origin not in parameters:
+                        previous_bases.insert(0, origin)
+
                     break
 
                 # if we did scan it and it found no type hints then skip
@@ -2220,19 +2238,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     hint_tracking.pop(origin)
                     continue
 
-                # an original base may not be present when dealing with typeddicts
-                # so we need to scan it before scanning the one we are on
-                if origin not in searching:
-                    searching.insert(0, origin)
-                    previous_bases.insert(0, origin)
-                    skip_parse = True
-                    break
-
-                # this is needed if the class inherits two or more generic classes
-                # class Baz(Foo[U, T], Bar[T]): ...
-                # we need to resolve the types for these attributes individually
-                # then update the type hints
                 to_sub = _substitute_type_hints(parameters[origin], hint_tracking[origin])
+                if not trust_annotations:
+                    filter_keys.update(to_sub)
                 hints.update(to_sub)
 
             if skip_parse:
@@ -2245,6 +2253,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             else:
                 base_globals = globalns
             ann = base.__dict__.get('__annotations__', {})
+
             if isinstance(ann, types.GetSetDescriptorType):
                 ann = {}
             base_locals = dict(vars(base)) if localns is None else localns
@@ -2259,6 +2268,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
 
             hint_tracking[base] = {}
             for name, value in ann.items():
+                if name in filter_keys:
+                    continue
+
                 if value is None:
                     value = type(None)
                 if isinstance(value, str):

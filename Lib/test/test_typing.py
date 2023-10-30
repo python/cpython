@@ -6485,6 +6485,85 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(get_type_hints(g), {'x': collections.abc.Callable[..., int]})
         self.assertEqual(get_type_hints(h), {'x': collections.abc.Callable[P, int]})
 
+    def test_get_type_hints_generic_alias(self):
+        class Foo(Generic[T, KT]):
+            arr: List[T]
+            key: KT
+
+        self.assertEqual(get_type_hints(Foo[str, int]), {'arr': List[str], 'key': int})
+
+    def test_get_type_hints_partial_typevars(self):
+        class Foo(Generic[T, KT]):
+            arr: List[T]
+            key: KT
+
+        class Bar(Foo[str, KT]):
+            pass
+
+        self.assertEqual(get_type_hints(Bar), {'arr': List[str], 'key': KT})
+        self.assertEqual(get_type_hints(Bar[bool]), {'arr': List[str], 'key': bool})
+
+    def test_get_type_hints_swapped_typevar_order(self):
+        class Foo(Generic[T, KT]):
+            arr: List[T]
+            key: KT
+
+        class Bar(Foo[KT, T]):
+            pass
+
+        self.assertEqual(get_type_hints(Bar), {'arr': List[KT], 'key': T})
+        self.assertEqual(get_type_hints(Bar), {'arr': List[KT], 'key': T})
+
+    def test_get_type_hints_multiple_generic_inheritance(self):
+        class Foo(Generic[T, KT]):
+            arr: List[T]
+            key: KT
+
+        class Bar(Generic[T]):
+            beer: T
+
+        class Baz(Foo[T, KT], Bar[T], Generic[T, KT]):
+            pass
+
+        class Baz2(Foo[T, KT], Bar[T]):
+            pass
+
+        self.assertEqual(get_type_hints(Baz[int, bool]), {'arr': List[int], 'key': bool, 'beer': int})
+        self.assertEqual(get_type_hints(Baz2[int, bool]), {'arr': List[int], 'key': bool, 'beer': int})
+
+    def test_get_type_hints_unorthodox_generic_placement(self):
+        class A(Generic[T, VT]):
+            a_type: T
+            value: VT
+
+        class B(Generic[KT, T]):
+            b_type: T
+            key: KT
+
+        class C(A[T, VT], Generic[VT, T, KT], B[KT, T]):
+            pass
+
+        self.assertEqual(gth(C), {'a_type': T, 'value': VT, 'b_type': T, 'key': KT})
+
+    def test_get_type_hints_extended_generic_rules_subclassing(self):
+        class T1(Type[T]):
+            value: T
+        class T2(list[T]):
+            value: T
+
+        self.assertEqual(gth(T1), {'value': T})
+        self.assertEqual(gth(T2), {'value': T})
+        self.assertEqual(gth(T1[bool]), {'value': bool})
+
+    def test_get_type_hints_generic_class_no_params_required(self):
+        class Foo(Generic[T, KT]):
+            arr: List[T]
+            key: KT
+
+        class Bar(Foo[str, int]):
+            ...
+
+        self.assertEqual(get_type_hints(Bar), {'arr': List[str], 'key': int})
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
@@ -7321,6 +7400,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(X.__bases__, (tuple, Generic))
         self.assertEqual(X.__orig_bases__, (NamedTuple, Generic[T]))
         self.assertEqual(X.__mro__, (X, tuple, Generic, object))
+        self.assertEqual(X.__annotations__, {'x': T})
+        self.assertEqual(gth(X), {'x': T})
+        self.assertEqual(gth(X[bool]), {'x': bool})
 
         class Y(Generic[T], NamedTuple):
             x: T
@@ -7358,6 +7440,9 @@ class NamedTupleTests(BaseTestCase):
         self.assertEqual(X.__parameters__, (T,))
         self.assertEqual(X[str].__args__, (str,))
         self.assertEqual(X[str].__parameters__, ())
+        self.assertEqual(X.__annotations__, {'x': T})
+        self.assertEqual(gth(X), {'x': T})
+        self.assertEqual(gth(X[bool]), {'x': bool})
 
     def test_non_generic_subscript(self):
         # For backward compatibility, subscription works
@@ -7959,6 +8044,11 @@ class TypedDictTests(BaseTestCase):
             'a': T,
             'b': KT,
             'c': int,
+        })
+        self.assertEqual(gth(WithImplicitAny), {
+            'a': KT,
+            'b': KT,
+            'c': int
         })
         with self.assertRaises(TypeError):
             WithImplicitAny[str]
