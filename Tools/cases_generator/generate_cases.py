@@ -178,17 +178,17 @@ class Generator(Analyzer):
                 # for all targets.
                 for target in self.pseudos[thing.name].targets:
                     target_instr = self.instrs.get(target)
-                    # Currently target is always an instr. This could change
-                    # in the future, e.g., if we have a pseudo targetting a
-                    # macro instruction.
-                    assert target_instr
-                    target_popped = effect_str(target_instr.input_effects)
-                    target_pushed = effect_str(target_instr.output_effects)
-                    if popped is None:
-                        popped, pushed = target_popped, target_pushed
+                    if target_instr is None:
+                        target_instr = self.macro_instrs[target]
+                        popped, pushed = stacking.get_stack_effect_info_for_macro(target_instr)
                     else:
-                        assert popped == target_popped
-                        assert pushed == target_pushed
+                        target_popped = effect_str(target_instr.input_effects)
+                        target_pushed = effect_str(target_instr.output_effects)
+                        if popped is None:
+                            popped, pushed = target_popped, target_pushed
+                        else:
+                            assert popped == target_popped
+                            assert pushed == target_pushed
             case _:
                 assert_never(thing)
         assert popped is not None and pushed is not None
