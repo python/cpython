@@ -9,11 +9,62 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
+/***************************/
+/* cross-interpreter calls */
+/***************************/
+
+int
+_Py_CallInInterpreter(PyInterpreterState *interp,
+                      _Py_simple_func func, void *arg)
+{
+    if (interp == _PyThreadState_GetCurrent()->interp) {
+        return func(arg);
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, (_Py_pending_call_func)func, arg, 0);
+    return 0;
+}
+
+int
+_Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
+                                _Py_simple_func func, void *arg)
+{
+    if (interp == _PyThreadState_GetCurrent()->interp) {
+        int res = func(arg);
+        PyMem_RawFree(arg);
+        return res;
+    }
+    // XXX Emit a warning if this fails?
+    _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_RAWFREE);
+    return 0;
+}
+
+
 /**************************/
 /* cross-interpreter data */
 /**************************/
 
-/* cross-interpreter data */
+_PyCrossInterpreterData *
+_PyCrossInterpreterData_New(void)
+{
+    _PyCrossInterpreterData *xid = PyMem_RawMalloc(
+                                            sizeof(_PyCrossInterpreterData));
+    if (xid == NULL) {
+        PyErr_NoMemory();
+    }
+    return xid;
+}
+
+void
+_PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyCrossInterpreterData_Clear(interp, xid);
+    PyMem_RawFree(xid);
+}
+
+
+/* defining cross-interpreter data */
 
 static inline void
 _xidata_init(_PyCrossInterpreterData *data)
@@ -40,25 +91,6 @@ _xidata_clear(_PyCrossInterpreterData *data)
         data->data = NULL;
     }
     Py_CLEAR(data->obj);
-}
-
-_PyCrossInterpreterData *
-_PyCrossInterpreterData_New(void)
-{
-    _PyCrossInterpreterData *xid = PyMem_RawMalloc(
-                                            sizeof(_PyCrossInterpreterData));
-    if (xid == NULL) {
-        PyErr_NoMemory();
-    }
-    return xid;
-}
-
-void
-_PyCrossInterpreterData_Free(_PyCrossInterpreterData *xid)
-{
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyCrossInterpreterData_Clear(interp, xid);
-    PyMem_RawFree(xid);
 }
 
 void
@@ -113,6 +145,9 @@ _PyCrossInterpreterData_Clear(PyInterpreterState *interp,
            || data->interpid == interp->id);
     _xidata_clear(data);
 }
+
+
+/* using cross-interpreter data */
 
 static int
 _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
@@ -203,32 +238,6 @@ _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *data)
     return data->new_object(data);
 }
 
-int
-_Py_CallInInterpreter(PyInterpreterState *interp,
-                      _Py_simple_func func, void *arg)
-{
-    if (interp == _PyThreadState_GetCurrent()->interp) {
-        return func(arg);
-    }
-    // XXX Emit a warning if this fails?
-    _PyEval_AddPendingCall(interp, (_Py_pending_call_func)func, arg, 0);
-    return 0;
-}
-
-int
-_Py_CallInInterpreterAndRawFree(PyInterpreterState *interp,
-                                _Py_simple_func func, void *arg)
-{
-    if (interp == _PyThreadState_GetCurrent()->interp) {
-        int res = func(arg);
-        PyMem_RawFree(arg);
-        return res;
-    }
-    // XXX Emit a warning if this fails?
-    _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_RAWFREE);
-    return 0;
-}
-
 static int
 _call_clear_xidata(void *data)
 {
@@ -283,6 +292,7 @@ _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *data)
 {
     return _xidata_release(data, 1);
 }
+
 
 /* registry of {type -> crossinterpdatafunc} */
 

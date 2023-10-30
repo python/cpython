@@ -9,6 +9,21 @@ extern "C" {
 #endif
 
 
+/***************************/
+/* cross-interpreter calls */
+/***************************/
+
+typedef int (*_Py_simple_func)(void *);
+extern int _Py_CallInInterpreter(
+    PyInterpreterState *interp,
+    _Py_simple_func func,
+    void *arg);
+extern int _Py_CallInInterpreterAndRawFree(
+    PyInterpreterState *interp,
+    _Py_simple_func func,
+    void *arg);
+
+
 /**************************/
 /* cross-interpreter data */
 /**************************/
@@ -62,6 +77,9 @@ struct _xid {
 PyAPI_FUNC(_PyCrossInterpreterData *) _PyCrossInterpreterData_New(void);
 PyAPI_FUNC(void) _PyCrossInterpreterData_Free(_PyCrossInterpreterData *data);
 
+
+/* defining cross-interpreter data */
+
 PyAPI_FUNC(void) _PyCrossInterpreterData_Init(
         _PyCrossInterpreterData *data,
         PyInterpreterState *interp, void *shared, PyObject *obj,
@@ -73,12 +91,15 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_InitWithSize(
 PyAPI_FUNC(void) _PyCrossInterpreterData_Clear(
         PyInterpreterState *, _PyCrossInterpreterData *);
 
+
+/* using cross-interpreter data */
+
+PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 PyAPI_FUNC(int) _PyObject_GetCrossInterpreterData(PyObject *, _PyCrossInterpreterData *);
 PyAPI_FUNC(PyObject *) _PyCrossInterpreterData_NewObject(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_Release(_PyCrossInterpreterData *);
 PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
 
-PyAPI_FUNC(int) _PyObject_CheckCrossInterpreterData(PyObject *);
 
 /* cross-interpreter data registry */
 

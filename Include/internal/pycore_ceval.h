@@ -54,16 +54,6 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
     void *arg,
     int flags);
 
-typedef int (*_Py_simple_func)(void *);
-extern int _Py_CallInInterpreter(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
-extern int _Py_CallInInterpreterAndRawFree(
-    PyInterpreterState *interp,
-    _Py_simple_func func,
-    void *arg);
-
 extern void _PyEval_SignalAsyncExc(PyInterpreterState *interp);
 #ifdef HAVE_FORK
 extern PyStatus _PyEval_ReInitThreads(PyThreadState *tstate);
