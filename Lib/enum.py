@@ -1,8 +1,6 @@
 import sys
 import builtins as bltns
 from types import MappingProxyType, DynamicClassAttribute
-from operator import or_ as _or_
-from functools import reduce
 
 
 __all__ = [
@@ -12,6 +10,7 @@ __all__ = [
         'FlagBoundary', 'STRICT', 'CONFORM', 'EJECT', 'KEEP',
         'global_flag_repr', 'global_enum_repr', 'global_str', 'global_enum',
         'EnumCheck', 'CONTINUOUS', 'NAMED_FLAGS', 'UNIQUE',
+        'pickle_by_global_name', 'pickle_by_enum_name',
         ]
 
 
@@ -62,8 +61,8 @@ def _is_sunder(name):
     return (
             len(name) > 2 and
             name[0] == name[-1] == '_' and
-            name[1:2] != '_' and
-            name[-2:-1] != '_'
+            name[1] != '_' and
+            name[-2] != '_'
             )
 
 def _is_internal_class(cls_name, obj):
@@ -82,7 +81,6 @@ def _is_private(cls_name, name):
     if (
             len(name) > pat_len
             and name.startswith(pattern)
-            and name[pat_len:pat_len+1] != ['_']
             and (name[-1] != '_' or name[-2] != '_')
         ):
         return True
@@ -157,7 +155,6 @@ def _dedent(text):
     Like textwrap.dedent.  Rewritten because we cannot import textwrap.
     """
     lines = text.split('\n')
-    blanks = 0
     for i, ch in enumerate(lines[0]):
         if ch != ' ':
             break
@@ -729,6 +726,11 @@ class EnumType(type):
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
+        if names is None and type is None:
+            # no body? no data-type? possibly wrong usage
+            raise TypeError(
+                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    )
         return cls._create_(
                 class_name=value,
                 names=names,
@@ -855,6 +857,8 @@ class EnumType(type):
                 value = first_enum._generate_next_value_(name, start, count, last_values[:])
                 last_values.append(value)
                 names.append((name, value))
+        if names is None:
+            names = ()
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
@@ -913,7 +917,6 @@ class EnumType(type):
         body['__module__'] = module
         tmp_cls = type(name, (object, ), body)
         cls = _simple_enum(etype=cls, boundary=boundary or KEEP)(tmp_cls)
-        cls.__reduce_ex__ = _reduce_ex_by_global_name
         if as_global:
             global_enum(cls)
         else:
@@ -1112,6 +1115,11 @@ class Enum(metaclass=EnumType):
             for member in cls._member_map_.values():
                 if member._value_ == value:
                     return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
         # still not found -- try _missing_ hook
         try:
             exc = None
@@ -1216,7 +1224,13 @@ class Enum(metaclass=EnumType):
         return hash(self._name_)
 
     def __reduce_ex__(self, proto):
-        return getattr, (self.__class__, self._name_)
+        return self.__class__, (self._value_, )
+
+    def __deepcopy__(self,memo):
+        return self
+
+    def __copy__(self):
+        return self
 
     # enum.property is used to provide access to the `name` and
     # `value` attributes of enum members while keeping some measure of
@@ -1283,8 +1297,14 @@ class StrEnum(str, ReprEnum):
         return name.lower()
 
 
-def _reduce_ex_by_global_name(self, proto):
+def pickle_by_global_name(self, proto):
+    # should not be used with Flag-type enums
     return self.name
+_reduce_ex_by_global_name = pickle_by_global_name
+
+def pickle_by_enum_name(self, proto):
+    # should not be used with Flag-type enums
+    return getattr, (self.__class__, self._name_)
 
 class FlagBoundary(StrEnum):
     """
@@ -1305,23 +1325,6 @@ class Flag(Enum, boundary=STRICT):
     """
     Support for flags
     """
-
-    def __reduce_ex__(self, proto):
-        cls = self.__class__
-        unknown = self._value_ & ~cls._flag_mask_
-        member_value = self._value_ & cls._flag_mask_
-        if unknown and member_value:
-            return _or_, (cls(member_value), unknown)
-        for val in _iter_bits_lsb(member_value):
-            rest = member_value & ~val
-            if rest:
-                return _or_, (cls(rest), cls._value2member_map_.get(val))
-            else:
-                break
-        if self._name_ is None:
-            return cls, (self._value_,)
-        else:
-            return getattr, (cls, self._name_)
 
     _numeric_repr_ = repr
 
@@ -1450,12 +1453,11 @@ class Flag(Enum, boundary=STRICT):
         else:
             pseudo_member._name_ = None
         # use setdefault in case another thread already created a composite
-        # with this value, but only if all members are known
-        # note: zero is a special case -- add it
-        if not unknown:
-            pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
-            if neg_value is not None:
-                cls._value2member_map_[neg_value] = pseudo_member
+        # with this value
+        # note: zero is a special case -- always add it
+        pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
+        if neg_value is not None:
+            cls._value2member_map_[neg_value] = pseudo_member
         return pseudo_member
 
     def __contains__(self, other):
@@ -1527,14 +1529,10 @@ class Flag(Enum, boundary=STRICT):
 
     def __invert__(self):
         if self._inverted_ is None:
-            if self._boundary_ is KEEP:
-                # use all bits
+            if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
             else:
-                # calculate flags not in this member
-                self._inverted_ = self.__class__(self._flag_mask_ ^ self._value_)
-            if isinstance(self._inverted_, self.__class__):
-                self._inverted_._inverted_ = self
+                self._inverted_ = self.__class__(self._singles_mask_ & ~self._value_)
         return self._inverted_
 
     __rand__ = __and__
@@ -1639,7 +1637,7 @@ def _simple_enum(etype=Enum, *, boundary=None, use_args=None):
     Class decorator that converts a normal class into an :class:`Enum`.  No
     safety checks are done, and some advanced behavior (such as
     :func:`__init_subclass__`) is not available.  Enum creation can be faster
-    using :func:`simple_enum`.
+    using :func:`_simple_enum`.
 
         >>> from enum import Enum, _simple_enum
         >>> @_simple_enum(Enum)
@@ -1882,7 +1880,8 @@ class verify:
                     missed = [v for v in values if v not in member_values]
                     if missed:
                         missing_names.append(name)
-                        missing_value |= reduce(_or_, missed)
+                        for val in missed:
+                            missing_value |= val
                 if missing_names:
                     if len(missing_names) == 1:
                         alias = 'alias %s is missing' % missing_names[0]
@@ -2049,7 +2048,6 @@ def _old_convert_(etype, name, module, filter, source=None, *, boundary=None):
         # unless some values aren't comparable, in which case sort by name
         members.sort(key=lambda t: t[0])
     cls = etype(name, members, module=module, boundary=boundary or KEEP)
-    cls.__reduce_ex__ = _reduce_ex_by_global_name
     return cls
 
 _stdlib_enums = IntEnum, StrEnum, IntFlag

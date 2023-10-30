@@ -1,6 +1,8 @@
 #include "Python.h"
 #include "errcode.h"
-#include "../Parser/tokenizer.h"
+#include "../Parser/lexer/state.h"
+#include "../Parser/lexer/lexer.h"
+#include "../Parser/tokenizer/tokenizer.h"
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 #include "../Parser/pegen.h"      // _PyPegen_byte_offset_to_character_offset()
 
@@ -85,7 +87,8 @@ _tokenizer_error(struct tok_state *tok)
             break;
         case E_EOF:
             PyErr_SetString(PyExc_SyntaxError, "unexpected EOF in multi-line statement");
-            PyErr_SyntaxLocationObject(tok->filename, tok->lineno, tok->inp - tok->buf < 0 ? 0 : tok->inp - tok->buf);
+            PyErr_SyntaxLocationObject(tok->filename, tok->lineno,
+                                       tok->inp - tok->buf < 0 ? 0 : (int)(tok->inp - tok->buf));
             return -1;
         case E_DEDENT:
             msg = "unindent does not match any outer indentation level";
@@ -205,6 +208,9 @@ tokenizeriter_next(tokenizeriterobject *it)
         line = PyUnicode_FromString("");
     } else {
         Py_ssize_t size = it->tok->inp - line_start;
+        if (size >= 1 && it->tok->implicit_newline) {
+            size -= 1;
+        }
         line = PyUnicode_DecodeUTF8(line_start, size, "replace");
     }
     if (line == NULL) {
@@ -233,9 +239,6 @@ tokenizeriter_next(tokenizeriterobject *it)
         if (type > DEDENT && type < OP) {
             type = OP;
         }
-        else if (type == ASYNC || type == AWAIT) {
-            type = NAME;
-        }
         else if (type == NEWLINE) {
             Py_DECREF(str);
             if (!it->tok->implicit_newline) {
@@ -246,6 +249,17 @@ tokenizeriter_next(tokenizeriterobject *it)
                 }
             }
             end_col_offset++;
+        }
+        else if (type == NL) {
+            if (it->tok->implicit_newline) {
+                Py_DECREF(str);
+                str = PyUnicode_FromString("");
+            }
+        }
+
+        if (str == NULL) {
+            Py_DECREF(line);
+            goto exit;
         }
     }
 

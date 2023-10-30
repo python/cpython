@@ -245,6 +245,13 @@ supported.
 
       Close the ``gdbm`` database.
 
+   .. method:: gdbm.clear()
+
+      Remove all items from the ``gdbm`` database.
+
+      .. versionadded:: 3.13
+
+
 :mod:`dbm.ndbm` --- Interface based on ndbm
 -------------------------------------------
 
@@ -312,6 +319,12 @@ to locate the appropriate header file to simplify building this module.
    .. method:: ndbm.close()
 
       Close the ``ndbm`` database.
+
+   .. method:: ndbm.clear()
+
+      Remove all items from the ``ndbm`` database.
+
+      .. versionadded:: 3.13
 
 
 :mod:`dbm.dumb` --- Portable DBM implementation

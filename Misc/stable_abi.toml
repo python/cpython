@@ -2428,3 +2428,55 @@
     added = '3.12'
 [const.Py_TPFLAGS_ITEMS_AT_END]
     added = '3.12'
+[function.PyImport_AddModuleRef]
+    added = '3.13'
+[function.PyWeakref_GetRef]
+    added = '3.13'
+[function.PyObject_DelAttr]
+    added = '3.13'
+[function.PyObject_DelAttrString]
+    added = '3.13'
+[function.PyObject_GetOptionalAttr]
+    added = '3.13'
+[function.PyObject_GetOptionalAttrString]
+    added = '3.13'
+[function.PyMapping_GetOptionalItem]
+    added = '3.13'
+[function.PyMapping_GetOptionalItemString]
+    added = '3.13'
+[function.PyModule_Add]
+    added = '3.13'
+[function.PyDict_GetItemRef]
+    added = '3.13'
+[function.PyDict_GetItemStringRef]
+    added = '3.13'
+[function.PyLong_AsInt]
+    added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
+    added = '3.13'
+[function.Py_IsFinalizing]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8AndSize]
+    added = '3.13'
+[function.PyMem_RawMalloc]
+    added = '3.13'
+[function.PyMem_RawCalloc]
+    added = '3.13'
+[function.PyMem_RawRealloc]
+    added = '3.13'
+[function.PyMem_RawFree]
+    added = '3.13'
+[function.PySys_Audit]
+    added = '3.13'
+[function.PySys_AuditTuple]
+    added = '3.13'
+[function.PyUnicode_AsUTF8]
+    added = '3.13'

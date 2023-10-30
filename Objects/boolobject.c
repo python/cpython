@@ -1,8 +1,9 @@
 /* Boolean type, a subtype of int */
 
 #include "Python.h"
-#include "pycore_object.h"      // _Py_FatalRefcountError()
-#include "pycore_long.h"        // FALSE_TAG TRUE_TAG
+#include "pycore_long.h"          // FALSE_TAG TRUE_TAG
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _Py_FatalRefcountError()
 #include "pycore_runtime.h"       // _Py_ID()
 
 #include <stddef.h>
@@ -12,8 +13,7 @@
 static PyObject *
 bool_repr(PyObject *self)
 {
-    PyObject *res = self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
-    return Py_NewRef(res);
+    return self == Py_True ? &_Py_ID(True) : &_Py_ID(False);
 }
 
 /* Function to return a bool from a C long */

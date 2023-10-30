@@ -7,6 +7,10 @@ try:
     import _testcapi
 except ImportError:
     _testcapi = None
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 
 NULL = None
@@ -329,7 +333,7 @@ class CAPITest(unittest.TestCase):
             pythonapi, py_object, sizeof,
             c_int, c_long, c_longlong, c_ssize_t,
             c_uint, c_ulong, c_ulonglong, c_size_t, c_void_p,
-            sizeof, c_wchar, c_wchar_p)
+            c_wchar, c_wchar_p)
         name = "PyUnicode_FromFormat"
         _PyUnicode_FromFormat = getattr(pythonapi, name)
         _PyUnicode_FromFormat.argtypes = (c_char_p,)
@@ -878,7 +882,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(unicode_asutf8('abc', 4), b'abc\0')
         self.assertEqual(unicode_asutf8('абв', 7), b'\xd0\xb0\xd0\xb1\xd0\xb2\0')
         self.assertEqual(unicode_asutf8('\U0001f600', 5), b'\xf0\x9f\x98\x80\0')
-        self.assertEqual(unicode_asutf8('abc\0def', 8), b'abc\0def\0')
+
+        # disallow embedded null characters
+        self.assertRaises(ValueError, unicode_asutf8, 'abc\0', 0)
+        self.assertRaises(ValueError, unicode_asutf8, 'abc\0def', 0)
 
         self.assertRaises(UnicodeEncodeError, unicode_asutf8, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8, b'abc', 0)
@@ -902,7 +909,11 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize, '\ud8ff', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, b'abc', 0)
         self.assertRaises(TypeError, unicode_asutf8andsize, [], 0)
+        self.assertRaises(UnicodeEncodeError, unicode_asutf8andsize_null, '\ud8ff', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, b'abc', 0)
+        self.assertRaises(TypeError, unicode_asutf8andsize_null, [], 0)
         # CRASHES unicode_asutf8andsize(NULL, 0)
+        # CRASHES unicode_asutf8andsize_null(NULL, 0)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')
@@ -913,10 +924,10 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(getdefaultencoding(), b'utf-8')
 
     @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @unittest.skipIf(_testinternalcapi is None, 'need _testinternalcapi module')
     def test_transform_decimal_and_space(self):
         """Test _PyUnicode_TransformDecimalAndSpaceToASCII()"""
-        from _testcapi import unicode_transformdecimalandspacetoascii as transform_decimal
+        from _testinternalcapi import _PyUnicode_TransformDecimalAndSpaceToASCII as transform_decimal
 
         self.assertEqual(transform_decimal('123'),
                          '123')
@@ -1292,6 +1303,118 @@ class CAPITest(unittest.TestCase):
         # CRASHES comparewithasciistring(b'abc', b'abc')
         # CRASHES comparewithasciistring([], b'abc')
         # CRASHES comparewithasciistring(NULL, b'abc')
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_equaltoutf8(self):
+        # Test PyUnicode_EqualToUTF8()
+        from _testcapi import unicode_equaltoutf8 as equaltoutf8
+        from _testcapi import unicode_asutf8andsize as asutf8andsize
+
+        strings = [
+            'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
+            '\U0001f600\U0001f601\U0001f602',
+            '\U0010ffff',
+        ]
+        for s in strings:
+            # Call PyUnicode_AsUTF8AndSize() which creates the UTF-8
+            # encoded string cached in the Unicode object.
+            asutf8andsize(s, 0)
+            b = s.encode()
+            self.assertEqual(equaltoutf8(s, b), 1)  # Use the UTF-8 cache.
+            s2 = b.decode()  # New Unicode object without the UTF-8 cache.
+            self.assertEqual(equaltoutf8(s2, b), 1)
+            self.assertEqual(equaltoutf8(s + 'x', b + b'x'), 1)
+            self.assertEqual(equaltoutf8(s + 'x', b + b'y'), 0)
+            self.assertEqual(equaltoutf8(s, b + b'\0'), 1)
+            self.assertEqual(equaltoutf8(s2, b + b'\0'), 1)
+            self.assertEqual(equaltoutf8(s + '\0', b + b'\0'), 0)
+            self.assertEqual(equaltoutf8(s + '\0', b), 0)
+            self.assertEqual(equaltoutf8(s2, b + b'x'), 0)
+            self.assertEqual(equaltoutf8(s2, b[:-1]), 0)
+            self.assertEqual(equaltoutf8(s2, b[:-1] + b'x'), 0)
+
+        self.assertEqual(equaltoutf8('', b''), 1)
+        self.assertEqual(equaltoutf8('', b'\0'), 1)
+
+        # embedded null chars/bytes
+        self.assertEqual(equaltoutf8('abc', b'abc\0def\0'), 1)
+        self.assertEqual(equaltoutf8('a\0bc', b'abc'), 0)
+        self.assertEqual(equaltoutf8('abc', b'a\0bc'), 0)
+
+        # Surrogate characters are always treated as not equal
+        self.assertEqual(equaltoutf8('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogateescape")), 0)
+        self.assertEqual(equaltoutf8('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogatepass")), 0)
+        self.assertEqual(equaltoutf8('\ud801',
+                            '\ud801'.encode("utf8", "surrogatepass")), 0)
+
+    @support.cpython_only
+    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    def test_equaltoutf8andsize(self):
+        # Test PyUnicode_EqualToUTF8AndSize()
+        from _testcapi import unicode_equaltoutf8andsize as equaltoutf8andsize
+        from _testcapi import unicode_asutf8andsize as asutf8andsize
+
+        strings = [
+            'abc', '\xa1\xa2\xa3', '\u4f60\u597d\u4e16',
+            '\U0001f600\U0001f601\U0001f602',
+            '\U0010ffff',
+        ]
+        for s in strings:
+            # Call PyUnicode_AsUTF8AndSize() which creates the UTF-8
+            # encoded string cached in the Unicode object.
+            asutf8andsize(s, 0)
+            b = s.encode()
+            self.assertEqual(equaltoutf8andsize(s, b), 1)  # Use the UTF-8 cache.
+            s2 = b.decode()  # New Unicode object without the UTF-8 cache.
+            self.assertEqual(equaltoutf8andsize(s2, b), 1)
+            self.assertEqual(equaltoutf8andsize(s + 'x', b + b'x'), 1)
+            self.assertEqual(equaltoutf8andsize(s + 'x', b + b'y'), 0)
+            self.assertEqual(equaltoutf8andsize(s, b + b'\0'), 0)
+            self.assertEqual(equaltoutf8andsize(s2, b + b'\0'), 0)
+            self.assertEqual(equaltoutf8andsize(s + '\0', b + b'\0'), 1)
+            self.assertEqual(equaltoutf8andsize(s + '\0', b), 0)
+            self.assertEqual(equaltoutf8andsize(s2, b + b'x'), 0)
+            self.assertEqual(equaltoutf8andsize(s2, b[:-1]), 0)
+            self.assertEqual(equaltoutf8andsize(s2, b[:-1] + b'x'), 0)
+            # Not null-terminated,
+            self.assertEqual(equaltoutf8andsize(s, b + b'x', len(b)), 1)
+            self.assertEqual(equaltoutf8andsize(s2, b + b'x', len(b)), 1)
+            self.assertEqual(equaltoutf8andsize(s + '\0', b + b'\0x', len(b) + 1), 1)
+            self.assertEqual(equaltoutf8andsize(s2, b, len(b) - 1), 0)
+
+        self.assertEqual(equaltoutf8andsize('', b''), 1)
+        self.assertEqual(equaltoutf8andsize('', b'\0'), 0)
+        self.assertEqual(equaltoutf8andsize('', b'x', 0), 1)
+
+        # embedded null chars/bytes
+        self.assertEqual(equaltoutf8andsize('abc\0def', b'abc\0def'), 1)
+        self.assertEqual(equaltoutf8andsize('abc\0def\0', b'abc\0def\0'), 1)
+
+        # Surrogate characters are always treated as not equal
+        self.assertEqual(equaltoutf8andsize('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogateescape")), 0)
+        self.assertEqual(equaltoutf8andsize('\udcfe',
+                            '\udcfe'.encode("utf8", "surrogatepass")), 0)
+        self.assertEqual(equaltoutf8andsize('\ud801',
+                            '\ud801'.encode("utf8", "surrogatepass")), 0)
+
+        def check_not_equal_encoding(text, encoding):
+            self.assertEqual(equaltoutf8andsize(text, text.encode(encoding)), 0)
+            self.assertNotEqual(text.encode(encoding), text.encode("utf8"))
+
+        # Strings encoded to other encodings are not equal to expected UTF8-encoding string
+        check_not_equal_encoding('Stéphane', 'latin1')
+        check_not_equal_encoding('Stéphane', 'utf-16-le')  # embedded null characters
+        check_not_equal_encoding('北京市', 'gbk')
+
+        # CRASHES equaltoutf8andsize('abc', b'abc', -1)
+        # CRASHES equaltoutf8andsize(b'abc', b'abc')
+        # CRASHES equaltoutf8andsize([], b'abc')
+        # CRASHES equaltoutf8andsize(NULL, b'abc')
+        # CRASHES equaltoutf8andsize('abc', NULL)
 
     @support.cpython_only
     @unittest.skipIf(_testcapi is None, 'need _testcapi module')

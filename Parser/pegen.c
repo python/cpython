@@ -3,7 +3,8 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include <errcode.h>
 
-#include "tokenizer.h"
+#include "lexer/lexer.h"
+#include "tokenizer/tokenizer.h"
 #include "pegen.h"
 
 // Internal parser functions
@@ -465,7 +466,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))
     {
-        PyObject *id2;
         if (!init_normalization(p))
         {
             Py_DECREF(id);
@@ -478,12 +478,13 @@ _PyPegen_new_identifier(Parser *p, const char *n)
             goto error;
         }
         PyObject *args[2] = {form, id};
-        id2 = _PyObject_FastCall(p->normalize, args, 2);
+        PyObject *id2 = PyObject_Vectorcall(p->normalize, args, 2, NULL);
         Py_DECREF(id);
         Py_DECREF(form);
         if (!id2) {
             goto error;
         }
+
         if (!PyUnicode_Check(id2))
         {
             PyErr_Format(PyExc_TypeError,
@@ -734,9 +735,6 @@ compute_parser_flags(PyCompilerFlags *flags)
     if (flags->cf_flags & PyCF_TYPE_COMMENTS) {
         parser_flags |= PyPARSE_TYPE_COMMENTS;
     }
-    if ((flags->cf_flags & PyCF_ONLY_AST) && flags->cf_feature_version < 7) {
-        parser_flags |= PyPARSE_ASYNC_HACKS;
-    }
     if (flags->cf_flags & PyCF_ALLOW_INCOMPLETE_INPUT) {
         parser_flags |= PyPARSE_ALLOW_INCOMPLETE_INPUT;
     }
@@ -755,7 +753,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     }
     assert(tok != NULL);
     tok->type_comments = (flags & PyPARSE_TYPE_COMMENTS) > 0;
-    tok->async_hacks = (flags & PyPARSE_ASYNC_HACKS) > 0;
     p->tok = tok;
     p->keywords = NULL;
     p->n_keyword_lists = -1;
@@ -881,7 +878,8 @@ _PyPegen_run_parser(Parser *p)
 mod_ty
 _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filename_ob,
                              const char *enc, const char *ps1, const char *ps2,
-                             PyCompilerFlags *flags, int *errcode, PyArena *arena)
+                             PyCompilerFlags *flags, int *errcode,
+                             PyObject **interactive_src, PyArena *arena)
 {
     struct tok_state *tok = _PyTokenizer_FromFile(fp, enc, ps1, ps2);
     if (tok == NULL) {
@@ -910,6 +908,15 @@ _PyPegen_run_parser_from_file_pointer(FILE *fp, int start_rule, PyObject *filena
 
     result = _PyPegen_run_parser(p);
     _PyPegen_Parser_Free(p);
+
+    if (tok->fp_interactive && tok->interactive_src_start && result && interactive_src != NULL) {
+        *interactive_src = PyUnicode_FromString(tok->interactive_src_start);
+        if (!interactive_src || _PyArena_AddPyObject(arena, *interactive_src) < 0) {
+            Py_XDECREF(interactive_src);
+            result = NULL;
+            goto error;
+        }
+    }
 
 error:
     _PyTokenizer_Free(tok);

@@ -740,6 +740,11 @@ A ``TarInfo`` object has the following public data attributes:
    Name of the target file name, which is only present in :class:`TarInfo` objects
    of type :const:`LNKTYPE` and :const:`SYMTYPE`.
 
+   For symbolic links (``SYMTYPE``), the *linkname* is relative to the directory
+   that contains the link.
+   For hard links (``LNKTYPE``), the *linkname* is relative to the root of
+   the archive.
+
 
 .. attribute:: TarInfo.uid
    :type: int
@@ -908,7 +913,7 @@ can be:
   path to where the archive is extracted (i.e. the same path is used for all
   members)::
 
-      filter(/, member: TarInfo, path: str) -> TarInfo | None
+      filter(member: TarInfo, path: str, /) -> TarInfo | None
 
   The callable is called just before each member is extracted, so it can
   take the current state of the disk into account.
@@ -928,17 +933,17 @@ Default named filters
 The pre-defined, named filters are available as functions, so they can be
 reused in custom filters:
 
-.. function:: fully_trusted_filter(/, member, path)
+.. function:: fully_trusted_filter(member, path)
 
    Return *member* unchanged.
 
    This implements the ``'fully_trusted'`` filter.
 
-.. function:: tar_filter(/, member, path)
+.. function:: tar_filter(member, path)
 
   Implements the ``'tar'`` filter.
 
-  - Strip leading slashes (``/`` and :attr:`os.sep`) from filenames.
+  - Strip leading slashes (``/`` and :data:`os.sep`) from filenames.
   - :ref:`Refuse <tarfile-extraction-refuse>` to extract files with absolute
     paths (in case the name is absolute
     even after stripping slashes, e.g. ``C:/foo`` on Windows).
@@ -947,11 +952,11 @@ reused in custom filters:
     path (after following symlinks) would end up outside the destination.
     This raises :class:`~tarfile.OutsideDestinationError`.
   - Clear high mode bits (setuid, setgid, sticky) and group/other write bits
-    (:attr:`~stat.S_IWGRP`|:attr:`~stat.S_IWOTH`).
+    (:const:`~stat.S_IWGRP`|:const:`~stat.S_IWOTH`).
 
   Return the modified ``TarInfo`` member.
 
-.. function:: data_filter(/, member, path)
+.. function:: data_filter(member, path)
 
   Implements the ``'data'`` filter.
   In addition to what ``tar_filter`` does:
@@ -972,10 +977,10 @@ reused in custom filters:
   - For regular files, including hard links:
 
     - Set the owner read and write permissions
-      (:attr:`~stat.S_IRUSR`|:attr:`~stat.S_IWUSR`).
+      (:const:`~stat.S_IRUSR`|:const:`~stat.S_IWUSR`).
     - Remove the group & other executable permission
-      (:attr:`~stat.S_IXGRP`|:attr:`~stat.S_IXOTH`)
-      if the owner doesn’t have it (:attr:`~stat.S_IXUSR`).
+      (:const:`~stat.S_IXGRP`|:const:`~stat.S_IXOTH`)
+      if the owner doesn’t have it (:const:`~stat.S_IXUSR`).
 
   - For other files (directories), set ``mode`` to ``None``, so
     that extraction methods skip applying permission bits.
@@ -1151,31 +1156,31 @@ For a list of the files in a tar archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <tarfile>
-               --list <tarfile>
+.. option:: -l <tarfile>
+            --list <tarfile>
 
    List files in a tarfile.
 
-.. cmdoption:: -c <tarfile> <source1> ... <sourceN>
-               --create <tarfile> <source1> ... <sourceN>
+.. option:: -c <tarfile> <source1> ... <sourceN>
+            --create <tarfile> <source1> ... <sourceN>
 
    Create tarfile from source files.
 
-.. cmdoption:: -e <tarfile> [<output_dir>]
-               --extract <tarfile> [<output_dir>]
+.. option:: -e <tarfile> [<output_dir>]
+            --extract <tarfile> [<output_dir>]
 
    Extract tarfile into the current directory if *output_dir* is not specified.
 
-.. cmdoption:: -t <tarfile>
-               --test <tarfile>
+.. option:: -t <tarfile>
+            --test <tarfile>
 
    Test whether the tarfile is valid or not.
 
-.. cmdoption:: -v, --verbose
+.. option:: -v, --verbose
 
    Verbose output.
 
-.. cmdoption:: --filter <filtername>
+.. option:: --filter <filtername>
 
    Specifies the *filter* for ``--extract``.
    See :ref:`tarfile-extraction-filter` for details.
