@@ -359,13 +359,13 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
-            uint16_t counter = read_u16(&here[1].cache);
-            uint32_t extra = read_u32(&here[2].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
+            uint32_t extra = read_u32(&this_instr[2].cache);
             STACK_SHRINK(1);
             DISPATCH();
         }
@@ -404,14 +404,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
-            _Py_CODEUNIT *here = frame->instr_ptr = next_instr;
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
             PyObject *right;
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            uint16_t counter = read_u16(&here[1].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
             op1(left, right);
             DISPATCH();
         }
@@ -421,7 +421,7 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 6;
             INSTRUCTION_STATS(OP);
             PREDICTED(OP);
-            _Py_CODEUNIT *here = next_instr - 6;
+            _Py_CODEUNIT *this_instr = next_instr - 6;
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right;
             PyObject *left;
@@ -431,13 +431,13 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             {
-                uint16_t counter = read_u16(&here[1].cache);
+                uint16_t counter = read_u16(&this_instr[1].cache);
                 op1(left, right);
             }
             // OP2
             arg2 = stack_pointer[-3];
             {
-                uint32_t extra = read_u32(&here[4].cache);
+                uint32_t extra = read_u32(&this_instr[4].cache);
                 res = op2(arg2, left, right);
             }
             STACK_SHRINK(2);
