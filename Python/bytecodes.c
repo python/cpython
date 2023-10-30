@@ -2269,10 +2269,10 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (--)) {
+        inst(JUMP_BACKWARD, (unused/1 --)) {
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
-            JUMPBY(1-oparg);
+            JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
@@ -3839,9 +3839,9 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
         }
 
-        inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
+        inst(INSTRUMENTED_JUMP_BACKWARD, (unused/1 -- )) {
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(this_instr, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {

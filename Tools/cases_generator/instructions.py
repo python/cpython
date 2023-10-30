@@ -286,7 +286,6 @@ class PseudoInstruction:
 
     name: str
     targets: list[Instruction]
-    instr_fmt: str
     instr_flags: InstructionFlags
 
 

@@ -2111,7 +2111,7 @@
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto resume_with_error;
+                goto error;
             }
             SETLOCAL(oparg, cell);
             DISPATCH();
@@ -3286,6 +3286,7 @@
             PyObject *res;
             fromlist = stack_pointer[-1];
             level = stack_pointer[-2];
+            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             Py_DECREF(level);
@@ -3303,6 +3304,7 @@
             PyObject *from;
             PyObject *res;
             from = stack_pointer[-1];
+            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             if (res == NULL) goto error;
@@ -3321,11 +3323,11 @@
 
         TARGET(JUMP_BACKWARD) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 1;
+            next_instr += 2;
             INSTRUCTION_STATS(JUMP_BACKWARD);
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
-            JUMPBY(1-oparg);
+            JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
@@ -3350,6 +3352,7 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(ENTER_EXECUTOR);
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -3894,6 +3897,7 @@
             PyObject *exit;
             PyObject *res;
             mgr = stack_pointer[-1];
+            TIER_ONE_ONLY
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -5564,10 +5568,10 @@
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
             _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
-            next_instr += 1;
+            next_instr += 2;
             INSTRUCTION_STATS(INSTRUMENTED_JUMP_BACKWARD);
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(this_instr, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
             DISPATCH();
         }
 

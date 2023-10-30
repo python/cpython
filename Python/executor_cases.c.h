@@ -1240,6 +1240,18 @@
             break;
         }
 
+        case MAKE_CELL: {
+            // "initial" is probably NULL but not if it's an arg (or set
+            // via PyFrame_LocalsToFast() before MAKE_CELL has run).
+            PyObject *initial = GETLOCAL(oparg);
+            PyObject *cell = PyCell_New(initial);
+            if (cell == NULL) {
+                goto error;
+            }
+            SETLOCAL(oparg, cell);
+            break;
+        }
+
         case DELETE_DEREF: {
             PyObject *cell = GETLOCAL(oparg);
             PyObject *oldobj = PyCell_GET(cell);
@@ -2317,6 +2329,46 @@
             if (next == NULL) goto error;
             STACK_GROW(1);
             stack_pointer[-1] = next;
+            break;
+        }
+
+        case BEFORE_ASYNC_WITH: {
+            PyObject *mgr;
+            PyObject *exit;
+            PyObject *res;
+            mgr = stack_pointer[-1];
+            PyObject *enter = _PyObject_LookupSpecial(mgr, &_Py_ID(__aenter__));
+            if (enter == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                goto error;
+            }
+            exit = _PyObject_LookupSpecial(mgr, &_Py_ID(__aexit__));
+            if (exit == NULL) {
+                if (!_PyErr_Occurred(tstate)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  "'%.200s' object does not support the "
+                                  "asynchronous context manager protocol "
+                                  "(missed __aexit__ method)",
+                                  Py_TYPE(mgr)->tp_name);
+                }
+                Py_DECREF(enter);
+                goto error;
+            }
+            Py_DECREF(mgr);
+            res = _PyObject_CallNoArgs(enter);
+            Py_DECREF(enter);
+            if (res == NULL) {
+                Py_DECREF(exit);
+                if (true) goto pop_1_error;
+            }
+            STACK_GROW(1);
+            stack_pointer[-2] = exit;
+            stack_pointer[-1] = res;
             break;
         }
 
