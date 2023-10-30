@@ -300,13 +300,13 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
 
 int
 PyThread_start_joinable_thread(void (*func)(void *), void *arg,
-                               unsigned long long* ident, Py_uintptr_t* handle) {
+                               PyThread_ident_t* ident, PyThread_handle_t* handle) {
     pthread_t th = (pthread_t) 0;
     if (do_start_joinable_thread(func, arg, &th)) {
         return -1;
     }
-    *ident = (unsigned long long) th;
-    *handle = (Py_uintptr_t) th;
+    *ident = (PyThread_ident_t) th;
+    *handle = (PyThread_handle_t) th;
     assert(th == (pthread_t) *ident);
     assert(th == (pthread_t) *handle);
     return 0;
@@ -328,21 +328,21 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 }
 
 int
-PyThread_join_thread(Py_uintptr_t th) {
+PyThread_join_thread(PyThread_handle_t th) {
     return pthread_join((pthread_t) th, NULL);
 }
 
 int
-PyThread_detach_thread(Py_uintptr_t th) {
+PyThread_detach_thread(PyThread_handle_t th) {
     return pthread_detach((pthread_t) th);
 }
 
 void
-PyThread_update_thread_after_fork(unsigned long long* ident, Py_uintptr_t* handle) {
+PyThread_update_thread_after_fork(PyThread_ident_t* ident, PyThread_handle_t* handle) {
     // The thread id might have been updated in the forked child
     pthread_t th = pthread_self();
-    *ident = (unsigned long long) th;
-    *handle = (Py_uintptr_t) th;
+    *ident = (PyThread_ident_t) th;
+    *handle = (PyThread_handle_t) th;
     assert(th == (pthread_t) *ident);
     assert(th == (pthread_t) *handle);
 }
@@ -353,14 +353,14 @@ PyThread_update_thread_after_fork(unsigned long long* ident, Py_uintptr_t* handl
      - The cast to unsigned long is inherently unsafe.
      - It is not clear that the 'volatile' (for AIX?) are any longer necessary.
 */
-unsigned long long
+PyThread_ident_t
 PyThread_get_thread_ident_ex(void) {
     volatile pthread_t threadid;
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    assert(threadid == (pthread_t) (unsigned long long) threadid);
-    return (unsigned long long) threadid;
+    assert(threadid == (pthread_t) (PyThread_ident_t) threadid);
+    return (PyThread_ident_t) threadid;
 }
 
 unsigned long

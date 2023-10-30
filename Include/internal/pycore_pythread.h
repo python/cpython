@@ -106,7 +106,12 @@ PyAPI_FUNC(PyLockStatus) PyThread_acquire_lock_timed_with_retries(
     PyThread_type_lock,
     PY_TIMEOUT_T microseconds);
 
-PyAPI_FUNC(unsigned long long) PyThread_get_thread_ident_ex(void);
+typedef unsigned long long PyThread_ident_t;
+typedef Py_uintptr_t PyThread_handle_t;
+
+#define PY_FORMAT_THREAD_IDENT_T "llu"
+
+PyAPI_FUNC(PyThread_ident_t) PyThread_get_thread_ident_ex(void);
 
 /* Thread joining APIs.
  *
@@ -121,27 +126,27 @@ PyAPI_FUNC(unsigned long long) PyThread_get_thread_ident_ex(void);
  */
 PyAPI_FUNC(int) PyThread_start_joinable_thread(void (*func)(void *),
                                                void *arg,
-                                               unsigned long long* ident,
-                                               Py_uintptr_t* handle);
+                                               PyThread_ident_t* ident,
+                                               PyThread_handle_t* handle);
 /*
  * Join a thread started with `PyThread_start_joinable_thread`.
  * This function cannot be interrupted. It returns 0 on success,
  * a non-zero value on failure.
  */
-PyAPI_FUNC(int) PyThread_join_thread(Py_uintptr_t);
+PyAPI_FUNC(int) PyThread_join_thread(PyThread_handle_t);
 /*
  * Detach a thread started with `PyThread_start_joinable_thread`, such
  * that its resources are relased as soon as it exits.
  * This function cannot be interrupted. It returns 0 on success,
  * a non-zero value on failure.
  */
-PyAPI_FUNC(int) PyThread_detach_thread(Py_uintptr_t);
+PyAPI_FUNC(int) PyThread_detach_thread(PyThread_handle_t);
 
 /*
  * Obtain the new thread ident and handle in a forked child process.
  */
-PyAPI_FUNC(void) PyThread_update_thread_after_fork(unsigned long long* ident,
-                                                   Py_uintptr_t* handle);
+PyAPI_FUNC(void) PyThread_update_thread_after_fork(PyThread_ident_t* ident,
+                                                   PyThread_handle_t* handle);
 
 #ifdef __cplusplus
 }

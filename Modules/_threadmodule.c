@@ -43,8 +43,8 @@ get_thread_state(PyObject *module)
 
 typedef struct {
     PyObject_HEAD
-    unsigned long long ident;
-    Py_uintptr_t handle;
+    PyThread_ident_t ident;
+    PyThread_handle_t handle;
     char joinable;
 } ThreadHandleObject;
 
@@ -79,7 +79,7 @@ ThreadHandle_dealloc(ThreadHandleObject *self)
 static PyObject *
 ThreadHandle_repr(ThreadHandleObject *self)
 {
-    return PyUnicode_FromFormat("<%s object: ident=%llu>",
+    return PyUnicode_FromFormat("<%s object: ident=" PY_FORMAT_THREAD_IDENT_T ">",
                                 Py_TYPE(self)->tp_name, self->ident);
 }
 
@@ -414,7 +414,7 @@ static PyType_Spec lock_type_spec = {
 typedef struct {
     PyObject_HEAD
     PyThread_type_lock rlock_lock;
-    unsigned long long rlock_owner;
+    PyThread_ident_t rlock_owner;
     unsigned long rlock_count;
     PyObject *in_weakreflist;
 } rlockobject;
@@ -451,7 +451,7 @@ static PyObject *
 rlock_acquire(rlockobject *self, PyObject *args, PyObject *kwds)
 {
     _PyTime_t timeout;
-    unsigned long long tid;
+    PyThread_ident_t tid;
     PyLockStatus r = PY_LOCK_ACQUIRED;
 
     if (lock_acquire_parse_args(args, kwds, &timeout) < 0)
@@ -500,7 +500,7 @@ the lock is taken and its internal counter initialized to 1.");
 static PyObject *
 rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    unsigned long long tid = PyThread_get_thread_ident_ex();
+    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
     if (self->rlock_count == 0 || self->rlock_owner != tid) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -584,7 +584,7 @@ For internal use by `threading.Condition`.");
 static PyObject *
 rlock_recursion_count(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    unsigned long long tid = PyThread_get_thread_ident_ex();
+    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
     return PyLong_FromUnsignedLong(
         self->rlock_owner == tid ? self->rlock_count : 0UL);
 }
@@ -597,7 +597,7 @@ For internal use by reentrancy checks.");
 static PyObject *
 rlock_is_owned(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
-    unsigned long long tid = PyThread_get_thread_ident_ex();
+    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
 
     if (self->rlock_count > 0 && self->rlock_owner == tid) {
         Py_RETURN_TRUE;
@@ -1253,7 +1253,7 @@ static int
 do_start_new_thread(thread_module_state* state,
                     PyObject *func, PyObject* args, PyObject* kwargs,
                     int joinable,
-                    unsigned long long* ident, Py_uintptr_t* handle)
+                    PyThread_ident_t* ident, PyThread_handle_t* handle)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (!_PyInterpreterState_HasFeature(interp, Py_RTFLAGS_THREADS)) {
@@ -1334,8 +1334,8 @@ thread_PyThread_start_new_thread(PyObject *module, PyObject *fargs)
         return NULL;
     }
 
-    unsigned long long ident = 0;
-    Py_uintptr_t handle;
+    PyThread_ident_t ident = 0;
+    PyThread_handle_t handle;
     if (do_start_new_thread(state, func, args, kwargs, /*joinable=*/ 0,
                             &ident, &handle)) {
         return NULL;
@@ -1460,7 +1460,7 @@ information about locks.");
 static PyObject *
 thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    unsigned long long ident = PyThread_get_thread_ident_ex();
+    PyThread_ident_t ident = PyThread_get_thread_ident_ex();
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "no current thread ident");
         return NULL;
@@ -1652,8 +1652,8 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
         Py_DECREF(name);
     }
     else {
-        unsigned long long ident = PyThread_get_thread_ident_ex();
-        PyObject *str = PyUnicode_FromFormat("%llu", ident);
+        PyThread_ident_t ident = PyThread_get_thread_ident_ex();
+        PyObject *str = PyUnicode_FromFormat("%" PY_FORMAT_THREAD_IDENT_T, ident);
         if (str != NULL) {
             if (PyFile_WriteObject(str, file, Py_PRINT_RAW) < 0) {
                 Py_DECREF(str);
