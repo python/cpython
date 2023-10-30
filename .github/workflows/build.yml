@@ -178,13 +178,13 @@ jobs:
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
 
-  build_win:
+  build_windows:
     name: 'Windows'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     uses: ./.github/workflows/reusable-build-windows.yml
 
-  build_win_free_threaded:
+  build_windows_free_threaded:
     name: 'Windows (free-threaded)'
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && contains(github.event.pull_request.labels.*.name, 'topic-free-threaded')
