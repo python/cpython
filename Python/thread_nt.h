@@ -211,6 +211,7 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg,
         return -1;
     }
     *ident = threadID;
+    // The cast is safe since HANDLE is pointer-sized
     *handle = (Py_uintptr_t) hThread;
     return 0;
 }
@@ -223,7 +224,8 @@ PyThread_start_new_thread(void (*func)(void *), void *arg) {
         return PYTHREAD_INVALID_THREAD_ID;
     }
     CloseHandle((HANDLE) handle);
-    return ident;
+    // The cast is safe since the ident is really an unsigned int
+    return (unsigned long) ident;
 }
 
 int
