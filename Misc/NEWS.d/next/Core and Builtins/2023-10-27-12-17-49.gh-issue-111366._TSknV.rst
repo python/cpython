@@ -1,0 +1,3 @@
+Fix an issue in the :mod:`codeop` that was causing :exc:`SyntaxError`
+exceptions raised in the presence of invalid syntax to not contain precise
+error messages. Patch by Pablo Galindo
