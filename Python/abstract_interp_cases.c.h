@@ -920,6 +920,10 @@
             break;
         }
 
+        case _SAVE_RETURN_OFFSET: {
+            break;
+        }
+
         case _EXIT_TRACE: {
             break;
         }

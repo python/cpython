@@ -111,7 +111,7 @@ error_optimize(
     return -1;
 }
 
-static PyTypeObject DefaultOptimizer_Type = {
+PyTypeObject _PyDefaultOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "noop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
@@ -120,7 +120,7 @@ static PyTypeObject DefaultOptimizer_Type = {
 };
 
 _PyOptimizerObject _PyOptimizer_Default = {
-    PyObject_HEAD_INIT(&DefaultOptimizer_Type)
+    PyObject_HEAD_INIT(&_PyDefaultOptimizer_Type)
     .optimize = error_optimize,
     .resume_threshold = UINT16_MAX,
     .backedge_threshold = UINT16_MAX,
@@ -225,19 +225,25 @@ counter_dealloc(_PyCounterExecutorObject *self) {
     PyObject_Free(self);
 }
 
-static PyMemberDef counter_members[] = {
-    { "valid", Py_T_UBYTE, offsetof(_PyCounterExecutorObject, executor.vm_data.valid), Py_READONLY, "is valid?" },
-    { NULL }
+static PyObject *
+is_valid(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyBool_FromLong(((_PyExecutorObject *)self)->vm_data.valid);
+}
+
+static PyMethodDef executor_methods[] = {
+    { "is_valid", is_valid, METH_NOARGS, NULL },
+    { NULL, NULL },
 };
 
-static PyTypeObject CounterExecutor_Type = {
+PyTypeObject _PyCounterExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "counting_executor",
     .tp_basicsize = sizeof(_PyCounterExecutorObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)counter_dealloc,
-    .tp_members = counter_members,
+    .tp_methods = executor_methods,
 };
 
 static _PyInterpreterFrame *
@@ -245,7 +251,7 @@ counter_execute(_PyExecutorObject *self, _PyInterpreterFrame *frame, PyObject **
 {
     ((_PyCounterExecutorObject *)self)->optimizer->count++;
     _PyFrame_SetStackPointer(frame, stack_pointer);
-    frame->prev_instr = ((_PyCounterExecutorObject *)self)->next_instr - 1;
+    frame->instr_ptr = ((_PyCounterExecutorObject *)self)->next_instr;
     Py_DECREF(self);
     return frame;
 }
@@ -259,7 +265,7 @@ counter_optimize(
     int Py_UNUSED(curr_stackentries)
 )
 {
-    _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&CounterExecutor_Type);
+    _PyCounterExecutorObject *executor = (_PyCounterExecutorObject *)_PyObject_New(&_PyCounterExecutor_Type);
     if (executor == NULL) {
         return -1;
     }
@@ -280,27 +286,25 @@ counter_get_counter(PyObject *self, PyObject *args)
     return PyLong_FromLongLong(((_PyCounterOptimizerObject *)self)->count);
 }
 
-static PyMethodDef counter_methods[] = {
+static PyMethodDef counter_optimizer_methods[] = {
     { "get_count", counter_get_counter, METH_NOARGS, NULL },
     { NULL, NULL },
 };
 
-static PyTypeObject CounterOptimizer_Type = {
+PyTypeObject _PyCounterOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "Counter optimizer",
     .tp_basicsize = sizeof(_PyCounterOptimizerObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
-    .tp_methods = counter_methods,
+    .tp_methods = counter_optimizer_methods,
     .tp_dealloc = (destructor)PyObject_Del,
 };
 
 PyObject *
 PyUnstable_Optimizer_NewCounter(void)
 {
-    PyType_Ready(&CounterExecutor_Type);
-    PyType_Ready(&CounterOptimizer_Type);
-    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&CounterOptimizer_Type);
+    _PyCounterOptimizerObject *opt = (_PyCounterOptimizerObject *)_PyObject_New(&_PyCounterOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }
@@ -369,13 +373,7 @@ PySequenceMethods uop_as_sequence = {
     .sq_item = (ssizeargfunc)uop_item,
 };
 
-
-static PyMemberDef uop_members[] = {
-    { "valid", Py_T_UBYTE, offsetof(_PyUOpExecutorObject, base.vm_data.valid), Py_READONLY, "is valid?" },
-    { NULL }
-};
-
-static PyTypeObject UOpExecutor_Type = {
+PyTypeObject _PyUOpExecutor_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_executor",
     .tp_basicsize = sizeof(_PyUOpExecutorObject) - sizeof(_PyUOpInstruction),
@@ -383,7 +381,7 @@ static PyTypeObject UOpExecutor_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION,
     .tp_dealloc = (destructor)uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
-    .tp_members = uop_members,
+    .tp_methods = executor_methods,
 };
 
 static int
@@ -701,11 +699,9 @@ pop_jump_if_bool:
                             case OPARG_BOTTOM:  // Second half of super-instr
                                 oparg = orig_oparg & 0xF;
                                 break;
-                            case OPARG_SET_IP:  // uop=_SET_IP; oparg=next_instr-1
-                                // The number of caches is smuggled in via offset:
-                                assert(offset == _PyOpcode_Caches[_PyOpcode_Deopt[opcode]]);
-                                oparg = INSTR_IP(instr + offset, code);
-                                uop = _SET_IP;
+                            case OPARG_SAVE_RETURN_OFFSET:  // op=_SAVE_RETURN_OFFSET; oparg=return_offset
+                                oparg = offset;
+                                assert(uop == _SAVE_RETURN_OFFSET);
                                 break;
 
                             default:
@@ -931,7 +927,7 @@ uop_optimize(
         trace_length = _Py_uop_analyze_and_optimize(code, trace, trace_length, curr_stackentries);
     }
     trace_length = remove_unneeded_uops(trace, trace_length);
-    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &UOpExecutor_Type, trace_length);
+    _PyUOpExecutorObject *executor = PyObject_NewVar(_PyUOpExecutorObject, &_PyUOpExecutor_Type, trace_length);
     if (executor == NULL) {
         return -1;
     }
@@ -948,7 +944,7 @@ uop_opt_dealloc(PyObject *self) {
     PyObject_Free(self);
 }
 
-static PyTypeObject UOpOptimizer_Type = {
+PyTypeObject _PyUOpOptimizer_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "uop_optimizer",
     .tp_basicsize = sizeof(_PyOptimizerObject),
@@ -960,9 +956,7 @@ static PyTypeObject UOpOptimizer_Type = {
 PyObject *
 PyUnstable_Optimizer_NewUOpOptimizer(void)
 {
-    PyType_Ready(&UOpExecutor_Type);
-    PyType_Ready(&UOpOptimizer_Type);
-    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &UOpOptimizer_Type);
+    _PyOptimizerObject *opt = PyObject_New(_PyOptimizerObject, &_PyUOpOptimizer_Type);
     if (opt == NULL) {
         return NULL;
     }

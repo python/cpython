@@ -372,8 +372,8 @@ class Analyzer:
                 case Instruction() as instr:
                     part, offset = self.analyze_instruction(instr, offset)
                     parts.append(part)
-                    if instr.name != "_SET_IP":
-                        # _SET_IP in a macro is a no-op in Tier 1
+                    if instr.name != "_SAVE_RETURN_OFFSET":
+                        # _SAVE_RETURN_OFFSET's oparg does not transfer
                         flags.add(instr.instr_flags)
                 case _:
                     assert_never(component)
