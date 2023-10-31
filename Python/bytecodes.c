@@ -742,6 +742,7 @@ dummy_func(
         }
 
         inst(RAISE_VARARGS, (args[oparg] -- )) {
+            TIER_ONE_ONLY
             PyObject *cause = NULL, *exc = NULL;
             switch (oparg) {
             case 2:
@@ -1073,6 +1074,7 @@ dummy_func(
         }
 
         inst(RERAISE, (values[oparg], exc -- values[oparg])) {
+            TIER_ONE_ONLY
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
                 PyObject *lasti = values[0];
@@ -1094,6 +1096,7 @@ dummy_func(
         }
 
         inst(END_ASYNC_FOR, (awaitable, exc -- )) {
+            TIER_ONE_ONLY
             assert(exc && PyExceptionInstance_Check(exc));
             if (PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration)) {
                 DECREF_INPUTS();
@@ -1107,6 +1110,7 @@ dummy_func(
         }
 
         inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value -- none, value)) {
+            TIER_ONE_ONLY
             assert(throwflag);
             assert(exc_value && PyExceptionInstance_Check(exc_value));
             if (PyErr_GivenExceptionMatches(exc_value, PyExc_StopIteration)) {
@@ -1467,7 +1471,7 @@ dummy_func(
             PyObject *initial = GETLOCAL(oparg);
             PyObject *cell = PyCell_New(initial);
             if (cell == NULL) {
-                goto resume_with_error;
+                goto error;
             }
             SETLOCAL(oparg, cell);
         }
@@ -2247,6 +2251,7 @@ dummy_func(
         }
 
          inst(IMPORT_NAME, (level, fromlist -- res)) {
+            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_name(tstate, frame, name, fromlist, level);
             DECREF_INPUTS();
@@ -2254,6 +2259,7 @@ dummy_func(
         }
 
         inst(IMPORT_FROM, (from -- from, res)) {
+            TIER_ONE_ONLY
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg);
             res = import_from(tstate, from, name);
             ERROR_IF(res == NULL, error);
@@ -2263,10 +2269,10 @@ dummy_func(
             JUMPBY(oparg);
         }
 
-        inst(JUMP_BACKWARD, (--)) {
+        inst(JUMP_BACKWARD, (unused/1 --)) {
             CHECK_EVAL_BREAKER();
             assert(oparg <= INSTR_OFFSET());
-            JUMPBY(1-oparg);
+            JUMPBY(-oparg);
             #if ENABLE_SPECIALIZATION
             this_instr[1].cache += (1 << OPTIMIZER_BITS_IN_COUNTER);
             if (this_instr[1].cache > tstate->interp->optimizer_backedge_threshold &&
@@ -2297,6 +2303,7 @@ dummy_func(
         };
 
         inst(ENTER_EXECUTOR, (--)) {
+            TIER_ONE_ONLY
             CHECK_EVAL_BREAKER();
 
             PyCodeObject *code = _PyFrame_GetCode(frame);
@@ -2703,6 +2710,7 @@ dummy_func(
         }
 
         inst(BEFORE_WITH, (mgr -- exit, res)) {
+            TIER_ONE_ONLY
             /* pop the context manager, push its __exit__ and the
              * value returned from calling its __enter__
              */
@@ -3831,9 +3839,9 @@ dummy_func(
             INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_JUMP);
         }
 
-        inst(INSTRUMENTED_JUMP_BACKWARD, ( -- )) {
+        inst(INSTRUMENTED_JUMP_BACKWARD, (unused/1 -- )) {
             CHECK_EVAL_BREAKER();
-            INSTRUMENTED_JUMP(this_instr, next_instr + 1 - oparg, PY_MONITORING_EVENT_JUMP);
+            INSTRUMENTED_JUMP(this_instr, next_instr - oparg, PY_MONITORING_EVENT_JUMP);
         }
 
         inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
