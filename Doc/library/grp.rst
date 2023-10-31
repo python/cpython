@@ -10,7 +10,7 @@
 This module provides access to the Unix group database. It is available on all
 Unix versions.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not Emscripten, not WASI.
 
 Group database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``group`` structure (Attribute field below, see
