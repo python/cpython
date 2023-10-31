@@ -60,25 +60,21 @@
 #endif
 
 #ifdef Py_STATS
-#define INSTRUCTION_START(op) \
+#define INSTRUCTION_STATS(op) \
     do { \
-        frame->instr_ptr = next_instr++; \
         OPCODE_EXE_INC(op); \
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
 #else
-#define INSTRUCTION_START(op) \
-    do { \
-        frame->instr_ptr = next_instr++; \
-    } while(0)
+#define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
 #if USE_COMPUTED_GOTOS
-#  define TARGET(op) TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) TARGET_##op:
 #  define DISPATCH_GOTO() goto *opcode_targets[opcode]
 #else
-#  define TARGET(op) case op: TARGET_##op: INSTRUCTION_START(op);
+#  define TARGET(op) case op: TARGET_##op:
 #  define DISPATCH_GOTO() goto dispatch_opcode
 #endif
 
