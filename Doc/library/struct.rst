@@ -160,7 +160,7 @@ following table:
 
 If the first character is not one of these, ``'@'`` is assumed.
 
-The number ``1023``, or ``0x3ff`` in hex, is represented as follows in bytes:
+The number 1023 (``0x3ff`` in hexadecimal) has the following byte representations:
 
 * ``0x03 0xff`` in big-endian (``>``)
 * ``0xff 0x03`` in little-endian (``<``)
