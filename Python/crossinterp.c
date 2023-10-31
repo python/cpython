@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
@@ -352,6 +353,7 @@ _xidregistry_remove_entry(struct _xidregistry *xidregistry,
 }
 
 // This is used in pystate.c (for now).
+// XXX Call this is _PyXI_Fini() instead of _PyRuntimeState_Fini()?
 void
 _Py_xidregistry_clear(struct _xidregistry *xidregistry)
 {
@@ -394,10 +396,10 @@ _xidregistry_find_type(struct _xidregistry *xidregistry, PyTypeObject *cls)
 static inline struct _xidregistry *
 _get_xidregistry(PyInterpreterState *interp, PyTypeObject *cls)
 {
-    struct _xidregistry *xidregistry = &interp->runtime->xidregistry;
+    struct _xidregistry *xidregistry = &interp->runtime->xi.registry;
     if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        assert(interp->xidregistry.mutex == xidregistry->mutex);
-        xidregistry = &interp->xidregistry;
+        assert(interp->xi.registry.mutex == xidregistry->mutex);
+        xidregistry = &interp->xi.registry;
     }
     return xidregistry;
 }
@@ -407,8 +409,8 @@ static void _register_builtins_for_crossinterpreter_data(struct _xidregistry *xi
 static inline void
 _ensure_builtins_xid(PyInterpreterState *interp, struct _xidregistry *xidregistry)
 {
-    if (xidregistry != &interp->xidregistry) {
-        assert(xidregistry == &interp->runtime->xidregistry);
+    if (xidregistry != &interp->xi.registry) {
+        assert(xidregistry == &interp->runtime->xi.registry);
         if (xidregistry->head == NULL) {
             _register_builtins_for_crossinterpreter_data(xidregistry);
         }
@@ -433,6 +435,7 @@ _PyCrossInterpreterData_RegisterClass(PyTypeObject *cls,
     struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
 
+    // XXX Do this once in _PyXI_Init()?
     _ensure_builtins_xid(interp, xidregistry);
 
     struct _xidregitem *matched = _xidregistry_find_type(xidregistry, cls);
@@ -1273,4 +1276,21 @@ _PyXI_Exit(_PyXI_session *session)
 {
     _capture_current_exception(session);
     _exit_session(session);
+}
+
+
+/*********************/
+/* runtime lifecycle */
+/*********************/
+
+PyStatus
+_PyXI_Init(PyInterpreterState *interp)
+{
+    return _PyStatus_OK();
+}
+
+void
+_PyXI_Fini(PyInterpreterState *interp)
+{
+    // For now we don't do anything.
 }

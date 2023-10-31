@@ -382,7 +382,7 @@ _Py_COMP_DIAG_POP
 #define LOCKS_INIT(runtime) \
     { \
         &(runtime)->interpreters.mutex, \
-        &(runtime)->xidregistry.mutex, \
+        &(runtime)->xi.registry.mutex, \
         &(runtime)->getargs.mutex, \
         &(runtime)->unicode_state.ids.lock, \
         &(runtime)->imports.extensions.mutex, \
@@ -505,7 +505,7 @@ _PyRuntimeState_Fini(_PyRuntimeState *runtime)
     assert(runtime->object_state.interpreter_leaks == 0);
 #endif
 
-    _Py_xidregistry_clear(&runtime->xidregistry);
+    _Py_xidregistry_clear(&runtime->xi.registry);
 
     if (gilstate_tss_initialized(runtime)) {
         gilstate_tss_fini(runtime);
@@ -556,7 +556,7 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
        _PyInterpreterState_DeleteExceptMain(), so we only need to update
        the main interpreter here. */
     assert(runtime->interpreters.main != NULL);
-    runtime->interpreters.main->xidregistry.mutex = runtime->xidregistry.mutex;
+    runtime->interpreters.main->xi.registry.mutex = runtime->xi.registry.mutex;
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
@@ -720,8 +720,8 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->f_opcode_trace_set = false;
 
-    assert(runtime->xidregistry.mutex != NULL);
-    interp->xidregistry.mutex = runtime->xidregistry.mutex;
+    assert(runtime->xi.registry.mutex != NULL);
+    interp->xi.registry.mutex = runtime->xi.registry.mutex;
 
     interp->_initialized = 1;
     return _PyStatus_OK();
@@ -948,9 +948,9 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
 
-    _Py_xidregistry_clear(&interp->xidregistry);
+    _Py_xidregistry_clear(&interp->xi.registry);
     /* The lock is owned by the runtime, so we don't free it here. */
-    interp->xidregistry.mutex = NULL;
+    interp->xi.registry.mutex = NULL;
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */

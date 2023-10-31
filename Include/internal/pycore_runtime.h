@@ -200,8 +200,8 @@ typedef struct pyruntimestate {
      possible to facilitate out-of-process observability
      tools. */
 
-    // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry xidregistry;
+    /* cross-interpreter data and utils */
+    struct _xi_runtime_state xi;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;

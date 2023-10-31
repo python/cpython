@@ -139,6 +139,26 @@ PyAPI_FUNC(int) _PyCrossInterpreterData_UnregisterClass(PyTypeObject *);
 PyAPI_FUNC(crossinterpdatafunc) _PyCrossInterpreterData_Lookup(PyObject *);
 
 
+/*************************/
+/* runtime state */
+/*************************/
+
+struct _xi_runtime_state {
+    // builtin types
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry registry;
+};
+
+struct _xi_state {
+    // heap types
+    // XXX Remove this field once we have a tp_* slot.
+    struct _xidregistry registry;
+};
+
+extern PyStatus _PyXI_Init(PyInterpreterState *interp);
+extern void _PyXI_Fini(PyInterpreterState *interp);
+
+
 /***************************/
 /* short-term data sharing */
 /***************************/

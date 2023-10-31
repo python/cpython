@@ -854,6 +854,11 @@ pycore_interp_init(PyThreadState *tstate)
         goto done;
     }
 
+    status = _PyXI_Init(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
     const PyConfig *config = _PyInterpreterState_GetConfig(interp);
 
     status = _PyImport_InitCore(tstate, sysmod, config->_install_importlib);
@@ -1736,6 +1741,7 @@ finalize_interp_types(PyInterpreterState *interp)
 {
     _PyUnicode_FiniTypes(interp);
     _PySys_FiniTypes(interp);
+    _PyXI_Fini(interp);
     _PyExc_Fini(interp);
     _PyAsyncGen_Fini(interp);
     _PyContext_Fini(interp);
