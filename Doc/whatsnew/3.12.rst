@@ -716,6 +716,9 @@ importlib.resources
 * :func:`importlib.resources.as_file` now supports resource directories.
   (Contributed by Jason R. Coombs in :gh:`97930`.)
 
+* Rename first parameter of :func:`importlib.resources.files` to *anchor*.
+  (Contributed by Jason R. Coombs in :gh:`100598`.)
+
 inspect
 -------
 
