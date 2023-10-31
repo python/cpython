@@ -919,7 +919,7 @@
             STACK_SHRINK(2);
             new_frame->localsplus[0] = container;
             new_frame->localsplus[1] = sub;
-            frame->return_offset = next_instr - this_instr;
+            frame->return_offset = (uint16_t)next_instr - this_instr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2903,7 +2903,7 @@
             // Manipulate stack directly because we exit with DISPATCH_INLINED().
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
-            frame->return_offset = next_instr - this_instr;
+            frame->return_offset = (uint16_t)next_instr - this_instr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -2937,7 +2937,7 @@
             STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             new_frame->localsplus[1] = Py_NewRef(name);
-            frame->return_offset = next_instr - this_instr;
+            frame->return_offset = (uint16_t)next_instr - this_instr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -4254,7 +4254,7 @@
                 if (new_frame == NULL) {
                     goto error;
                 }
-                frame->return_offset = next_instr - this_instr;
+                frame->return_offset = (uint16_t)next_instr - this_instr;
                 DISPATCH_INLINED(new_frame);
             }
             /* Callable is not a normal Python function */
@@ -4507,7 +4507,7 @@
             }
             // Manipulate stack and cache directly since we leave using DISPATCH_INLINED().
             STACK_SHRINK(oparg + 2);
-            frame->return_offset = next_instr - this_instr;
+            frame->return_offset = (uint16_t)next_instr - this_instr;
             DISPATCH_INLINED(new_frame);
         }
 
@@ -4634,7 +4634,7 @@
             for (int i = 0; i < oparg; i++) {
                 init_frame->localsplus[i+1] = args[i];
             }
-            frame->return_offset = next_instr - this_instr;
+            frame->return_offset = (uint16_t)next_instr - this_instr;
             STACK_SHRINK(oparg+2);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             /* Link frames */
