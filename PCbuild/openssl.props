@@ -6,19 +6,27 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(opensslLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;$(opensslLibDir)\libcrypto.lib;$(opensslLibDir)\libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
-    <_DLLSuffix>-1_1</_DLLSuffix>
+    <SSLMajorVersion>$(SSL_MAJOR_VERSION)</SSLMajorVersion>
+    <SSLMajorVersion Condition="$(SSLMajorVersion) == ''">3</SSLMajorVersion>
+    <SSLMinorVersion>$(SSL_MINOR_VERSION)</SSLMinorVersion>
+    <SSLMinorVersion Condition="$(SSLMinorVersion) == ''">0</SSLMinorVersion>
+    <SSLVersion>$(SSLMajorVersion)_$(SSLMinorVersion)</SSLVersion>
+    <SSLVersion Condition="$(SSLMinorVersion) == '0'">$(SSLMajorVersion)</SSLVersion>
+    <SSLVersion Condition="$(SSLMajorVersion) == '3'">$(SSLMajorVersion)</SSLVersion>
+    <_DLLSuffix>-$(SSLVersion)</_DLLSuffix>
+    <_DLLSuffix Condition="$(Platform) == 'x64'">$(_DLLSuffix)-x64</_DLLSuffix>
     <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
     <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
   </PropertyGroup>
   <ItemGroup>
-    <_SSLDLL Include="$(opensslLibDir)\libcrypto$(_DLLSuffix).dll" />
-    <_SSLDLL Include="$(opensslLibDir)\libcrypto$(_DLLSuffix).pdb" />
-    <_SSLDLL Include="$(opensslLibDir)\libssl$(_DLLSuffix).dll" />
-    <_SSLDLL Include="$(opensslLibDir)\libssl$(_DLLSuffix).pdb" />
+    <_SSLDLL Include="$(opensslBinDir)\libcrypto$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslBinDir)\libcrypto$(_DLLSuffix).pdb" />
+    <_SSLDLL Include="$(opensslBinDir)\libssl$(_DLLSuffix).dll" />
+    <_SSLDLL Include="$(opensslBinDir)\libssl$(_DLLSuffix).pdb" />
   </ItemGroup>
   <Target Name="_CopySSLDLL" Inputs="@(_SSLDLL)" Outputs="@(_SSLDLL->'$(OutDir)%(Filename)%(Extension)')" AfterTargets="Build">
     <Copy SourceFiles="@(_SSLDLL)" DestinationFolder="$(OutDir)" />
