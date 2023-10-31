@@ -233,15 +233,15 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
         assert(refcount != 0);
         refcount--;
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, refcount);
-#ifdef Py_REF_DEBUG
-        if (refcount <= 0) {
-            _Py_FatalRefcountError("Expected a positive remaining refcount");
+        if (refcount == 0) {
+            // Assume that local + share >= 1
+            _Py_MergeZeroLocalRefcount(op);
         }
-#endif
     }
     else {
         Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
         Py_ssize_t new_shared;
+        // Shared refcount can be zero but we should consider local refcount.
         int should_queue = (refcount == 0 || refcount == _Py_REF_MAYBE_WEAKREF);
         do {
             if (should_queue) {
