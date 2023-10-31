@@ -139,7 +139,7 @@ class TestLiterals(unittest.TestCase):
                 eval("'\\e' $")
             exc = cm.exception
         self.assertEqual(len(w), 1)
-        self.assertEqual(w[0].category, SyntaxWarning)
+        self.assertEqual(w[0].category, DeprecationWarning)
         self.assertRegex(str(w[0].message), 'invalid escape sequence')
         self.assertEqual(w[0].filename, '<string>')
 
