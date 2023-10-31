@@ -1769,7 +1769,7 @@ Non-matching 'elif'/'else' statements:
     >>> elif m == n:
     Traceback (most recent call last):
     SyntaxError: 'elif' must match an if-statement here
-    
+
     >>> else:
     Traceback (most recent call last):
     SyntaxError: 'else' must match a valid statement here
