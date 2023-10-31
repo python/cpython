@@ -7,6 +7,7 @@
 #include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
@@ -733,7 +734,7 @@ PyUnstable_Code_New(int argcount, int kwonlyargcount,
 // test.test_code.CodeLocationTest.test_code_new_empty to keep it in sync!
 
 static const uint8_t assert0[6] = {
-    RESUME, 0,
+    RESUME, RESUME_AT_FUNC_START,
     LOAD_ASSERTION_ERROR, 0,
     RAISE_VARARGS, 1
 };

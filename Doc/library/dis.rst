@@ -1627,23 +1627,26 @@ iterations of the loop.
       success (``True``) or failure (``False``).
 
 
-.. opcode:: RESUME (where)
+.. opcode:: RESUME (context)
 
    A no-op. Performs internal tracing, debugging and optimization checks.
 
-   The ``where`` operand marks where the ``RESUME`` occurs:
+   The ``context`` oparand consists of two parts. The lowest two bits
+   indicate where the ``RESUME`` occurs:
 
    * ``0`` The start of a function, which is neither a generator, coroutine
      nor an async generator
-   * ``1`` After a ``yield`` expression, with except-depth > 1
-   * ``2`` After a ``yield`` expression, with except-depth 1
-   * ``3`` After a ``yield from`` expression
-   * ``4`` After an ``await`` expression
+   * ``1`` After a ``yield`` expression
+   * ``2`` After a ``yield from`` expression
+   * ``3`` After an ``await`` expression
+
+   The next bit is ``1`` if the RESUME is at except-depth ``1``, and ``0``
+   otherwise.
 
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.13
-      new oparg value for ``RESUME`` after ``YIELD_VALUE`` with except-depth of 1
+      The oparg value changed to include information about except-depth
 
 
 .. opcode:: RETURN_GENERATOR

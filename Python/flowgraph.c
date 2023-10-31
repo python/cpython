@@ -878,13 +878,11 @@ label_exception_targets(basicblock *entryblock) {
                     todo++;
                 }
             }
+            else if (instr->i_opcode == RESUME) {
+                instr->i_except = handler;
+                instr->i_oparg |= ((except_stack->depth == 1) << RESUME_OPARG_DEPTH1_SHIFT);
+            }
             else {
-                if (instr->i_opcode == RESUME &&
-                    instr->i_oparg == RESUME_AFTER_YIELD &&
-                    except_stack->depth == 1)
-                {
-                    instr->i_oparg = RESUME_AFTER_YIELD_EXC_DEPTH_1;
-                }
                 instr->i_except = handler;
             }
         }

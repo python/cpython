@@ -23,7 +23,7 @@
                 next_instr--;
             }
             else {
-                if (oparg < RESUME_AFTER_YIELD_FROM) {
+                if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                     CHECK_EVAL_BREAKER();
                 }
                 next_instr[-1].op.code = RESUME_CHECK;

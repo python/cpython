@@ -643,7 +643,7 @@ static const _Py_CODEUNIT _Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS[] = {
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on return */
     { .op.code = NOP, .op.arg = 0 },
     { .op.code = INTERPRETER_EXIT, .op.arg = 0 },  /* reached on yield */
-    { .op.code = RESUME, .op.arg = RESUME_AT_FUNC_START }
+    { .op.code = RESUME, .op.arg = (1 << RESUME_OPARG_DEPTH1_SHIFT) | RESUME_AT_FUNC_START }
 };
 
 extern const struct _PyCode_DEF(8) _Py_InitCleanup;

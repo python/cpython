@@ -358,7 +358,8 @@ _PyGen_yf(PyGenObject *gen)
             assert(_PyCode_CODE(_PyGen_GetCode(gen))[0].op.code != SEND);
             return NULL;
         }
-        if (!is_resume(frame->instr_ptr) || frame->instr_ptr->op.arg < RESUME_AFTER_YIELD_FROM)
+        if (!is_resume(frame->instr_ptr) ||
+            (frame->instr_ptr->op.arg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM)
         {
             /* Not in a yield from */
             return NULL;
@@ -374,6 +375,7 @@ gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
     int err = 0;
+
 
     if (gen->gi_frame_state == FRAME_CREATED) {
         gen->gi_frame_state = FRAME_COMPLETED;
@@ -395,7 +397,10 @@ gen_close(PyGenObject *gen, PyObject *args)
         /* We can safely ignore the outermost try block
          * as it is automatically generated to handle
          * StopIteration. */
-        if (frame->instr_ptr->op.arg == RESUME_AFTER_YIELD_EXC_DEPTH_1) {
+        int oparg = frame->instr_ptr->op.arg;
+        if (((oparg & RESUME_OPARG_LOCATION_MASK) > RESUME_AT_FUNC_START) &&
+            (oparg & RESUME_OPARG_DEPTH1_MASK)) {
+            // RESUME after YIELD_VALUE and exception depth is 1
             gen->gi_frame_state = FRAME_COMPLETED;
             Py_RETURN_NONE;
         }
