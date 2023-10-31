@@ -1898,18 +1898,11 @@ class DummyPathTest(unittest.TestCase):
 
     def test_read_text_with_newlines(self):
         p = self.cls(BASE)
-        # Check that `\n` character change nothing
-        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
-        self.assertEqual((p / 'fileA').read_text(newline='\n'),
-                         'abcde\r\nfghlk\n\rmnopq')
-        # Check that `\r` character replaces `\n`
-        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
-        self.assertEqual((p / 'fileA').read_text(newline='\r'),
-                         'abcde\r\nfghlk\n\rmnopq')
-        # Check that `\r\n` character replaces `\n`
-        (p / 'fileA').write_bytes(b'abcde\r\nfghlk\n\rmnopq')
-        self.assertEqual((p / 'fileA').read_text(newline='\r\n'),
-                            'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(newline=None), 'abcde\nfghlk\n\nmnopq')
+        self.assertEqual(p.read_text(newline=''), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(newline='\r'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(newline='\n'), 'abcde\r\nfghlk\n\rmnopq')
+        self.assertEqual(p.read_text(newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
 
     def test_write_text_with_newlines(self):
         p = self.cls(BASE)
