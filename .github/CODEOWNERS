@@ -151,7 +151,7 @@ Doc/c-api/stable.rst          @encukou
 
 **/*idlelib*                  @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
+**/*typing*                   @gvanrossum @JelleZijlstra @AlexWaygood
 
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo

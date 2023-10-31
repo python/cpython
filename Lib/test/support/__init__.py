@@ -796,7 +796,10 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
-_header = 'nP'
+if sysconfig.get_config_var('Py_NOGIL'):
+    _header = 'PHBBInP'
+else:
+    _header = 'nP'
 _align = '0n'
 _vheader = _header + 'n'
 
@@ -1829,6 +1832,11 @@ class SaveSignals:
 def with_pymalloc():
     import _testcapi
     return _testcapi.WITH_PYMALLOC
+
+
+def with_mimalloc():
+    import _testcapi
+    return _testcapi.WITH_MIMALLOC
 
 
 class _ALWAYS_EQ:
