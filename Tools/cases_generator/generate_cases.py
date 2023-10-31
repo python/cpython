@@ -726,7 +726,7 @@ class Generator(Analyzer):
             f"{{ .nuops = {len(pieces)}, .uops = {{ {', '.join(pieces)} }} }},"
         )
 
-    def emit_metadata_entry(self, name: str, fmt: str, flags: InstructionFlags) -> None:
+    def emit_metadata_entry(self, name: str, fmt: str | None, flags: InstructionFlags) -> None:
         flag_names = flags.names(value=True)
         if not flag_names:
             flag_names.append("0")
