@@ -98,6 +98,7 @@ extern void _Py_DecRefTotal(PyInterpreterState *);
 static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 {
     if (_Py_IsImmortal(op)) {
+        // test comment
         return;
     }
 #ifdef Py_REF_DEBUG
