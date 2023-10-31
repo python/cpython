@@ -2117,42 +2117,6 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
-def _get_all_bases(cls):
-    """Correctly obtains the bases for classes
-    and typeddicts alike.
-    """
-    mro = reversed(cls.__mro__)
-
-    if not is_typeddict(cls):
-        yield from mro
-        return
-
-    traversing = list(mro)
-    visited = []
-
-    while traversing:
-        base = traversing.pop(0)
-
-        orig_bases = getattr(base, '__orig_bases__', ())
-        mro_changed = False
-
-        for orig_base in orig_bases:
-            origin = get_origin(orig_base)
-
-            if origin is not Generic:
-                new_base = orig_base if origin is None else origin
-                if new_base not in visited:
-                    traversing.insert(0, new_base)
-                    traversing.insert(1, base)
-                    mro_changed = True
-
-        if mro_changed:
-            continue
-
-        yield base
-
-        visited.append(base)
-
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
@@ -2205,46 +2169,19 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         # typeddicts cannot redefine pre-existing keys
         can_override = not is_typeddict(obj)
         for base in _get_all_bases(obj):
-            orig_bases = getattr(base, '__orig_bases__', ())
-
             # keep track of typevars and the values they are being
             # replaced with
-            generic_encountered = False
-            for orig_base in orig_bases:
-                origin = get_origin(orig_base)
-                if origin is None:
-                    continue
+            for cls, args in _track_parameter_changes(base):
+                param_tracking[cls].append(args)
 
-                args = get_args(orig_base)
-
-                if origin is Generic:
-                    generic_encountered = True
-                    param_tracking[base].append(args)
-                else:
-                    param_tracking[origin].append(args)
-                    # if we did scan it and it found no type hints then skip
-                    if not hint_tracking[origin]:
-                        hint_tracking.pop(origin)
+                if cls is not base:
+                    # if we previously scanned it and it found no type hints
+                    # then skip processing it
+                    if not hint_tracking[cls]:
                         continue
 
-                    to_sub = _substitute_type_hints(param_tracking[origin], hint_tracking[origin])
+                    to_sub = _substitute_type_hints(param_tracking[cls], hint_tracking[cls])
                     hints.update(to_sub)
-
-            # this occurs if obj is
-            # class Bar(Foo[str, U]): ...
-            # in this case, we need to imagine there's a generic base
-            # with the required typevars here.
-            if orig_bases and not generic_encountered:
-                # we need to collect all the typevars from all bases
-                # in the case that they have multiple generic bases
-                # class Baz(Foo[str, U], Bar[U, T]): ...
-                type_vars_for_generic = _collect_parameters(orig_bases)
-
-                # this may be empty if obj is
-                # class Bar(Foo[str]): ...
-                # we can skip adding typevars here.
-                if type_vars_for_generic:
-                    param_tracking[base].append(type_vars_for_generic)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
@@ -2320,6 +2257,78 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             )
         hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+def _track_parameter_changes(base):
+    """Track how a parameters values are substituted
+    or changed while traversing its bases.
+    """
+    orig_bases = getattr(base, '__orig_bases__', ())
+    generic_encountered = False
+
+    for orig_base in orig_bases:
+        origin = get_origin(orig_base)
+        if origin is None:
+            continue
+
+        args = get_args(orig_base)
+
+        if origin is Generic:
+            generic_encountered = True
+            yield base, args
+        else:
+            yield origin, args
+
+    # this occurs if obj is
+    # class Bar(Foo[str, U]): ...
+    # in this case, we need to imagine there's a generic base
+    # with the required typevars here.
+    if orig_bases and not generic_encountered:
+        # we need to collect all the typevars from all bases
+        # in the case that they have multiple generic bases
+        # class Baz(Foo[str, U], Bar[U, T]): ...
+        type_vars_for_generic = _collect_parameters(orig_bases)
+
+        # this may be empty if obj is
+        # class Bar(Foo[str]): ...
+        # we can skip adding typevars here.
+        if type_vars_for_generic:
+            yield base, type_vars_for_generic
+
+def _get_all_bases(cls):
+    """Correctly obtains the bases for classes
+    and typeddicts alike.
+    """
+    mro = reversed(cls.__mro__)
+
+    if not is_typeddict(cls):
+        yield from mro
+        return
+
+    traversing = list(mro)
+    visited = []
+
+    while traversing:
+        base = traversing.pop(0)
+
+        orig_bases = getattr(base, '__orig_bases__', ())
+        mro_changed = False
+
+        for orig_base in orig_bases:
+            origin = get_origin(orig_base)
+
+            if origin is not Generic:
+                new_base = orig_base if origin is None else origin
+                if new_base not in visited:
+                    traversing.insert(0, new_base)
+                    traversing.insert(1, base)
+                    mro_changed = True
+
+        if mro_changed:
+            continue
+
+        yield base
+
+        visited.append(base)
 
 def _repack_args(reference, params):
     """transforms params to match the requested arguments
