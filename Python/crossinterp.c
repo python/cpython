@@ -616,7 +616,7 @@ _bool_shared(PyThreadState *tstate, PyObject *obj,
              _PyCrossInterpreterData *data)
 {
     _PyCrossInterpreterData_Init(data, tstate->interp,
-            (void *) (Py_IsTrue(obj) ? 1ll : 0ll), NULL,
+            (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
             _new_bool_object);
     // data->obj and data->free remain NULL
     return 0;
