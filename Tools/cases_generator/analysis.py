@@ -432,7 +432,6 @@ class Analyzer:
             "LOAD_FAST_LOAD_FAST",
             "LOAD_CONST_LOAD_FAST",
             "STORE_FAST_STORE_FAST",
-            "_BINARY_OP_INPLACE_ADD_UNICODE",
             "POP_JUMP_IF_TRUE",
             "POP_JUMP_IF_FALSE",
             "_ITER_JUMP_LIST",

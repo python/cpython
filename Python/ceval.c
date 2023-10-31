@@ -867,7 +867,7 @@ error:
         monitor_raise(tstate, frame, next_instr-1);
 exception_unwind:
         {
-            /* We can't use frame->f_lasti here, as RERAISE may have set it */
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
             if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
