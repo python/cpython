@@ -242,7 +242,7 @@ _Py_DECREF_NO_DEALLOC(PyObject *op)
     else {
         Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&op->ob_ref_shared);
         Py_ssize_t new_shared;
-        int should_queue = refcount == _Py_REF_MAYBE_WEAKREF;
+        int should_queue = (refcount == 0 || refcount == _Py_REF_MAYBE_WEAKREF);
         do {
             if (should_queue) {
                 new_shared = _Py_REF_QUEUED;
