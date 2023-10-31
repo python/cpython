@@ -743,12 +743,23 @@ Decimal objects
 
    .. method:: normalize(context=None)
 
-      Normalize the number by stripping the rightmost trailing zeros and
-      converting any result equal to ``Decimal('0')`` to
-      ``Decimal('0e0')``. Used for producing canonical values for attributes
-      of an equivalence class. For example, ``Decimal('32.100')`` and
-      ``Decimal('0.321000e+2')`` both normalize to the equivalent value
-      ``Decimal('32.1')``.
+      Used for producing canonical values of an equivalence
+      class within either the current context or the specified context.
+
+      This has the same semantics as the unary plus operation, except that if
+      the final result is finite it is reduced to its simplest form, with all
+      trailing zeros removed and its sign preserved. That is, while the
+      coefficient is non-zero and a multiple of ten the coefficient is divided
+      by ten and the exponent is incremented by 1. Otherwise (the coefficient is
+      zero) the exponent is set to 0. In all cases the sign is unchanged.
+
+      For example, ``Decimal('32.100')`` and ``Decimal('0.321000e+2')`` both
+      normalize to the equivalent value ``Decimal('32.1')``.
+
+      Note that rounding is applied *before* reducing to simplest form.
+
+      In the latest versions of the specification, this operation is also known
+      as ``reduce``.
 
    .. method:: number_class(context=None)
 
@@ -926,7 +937,7 @@ Each thread has its own current context which is accessed or changed using the
 You can also use the :keyword:`with` statement and the :func:`localcontext`
 function to temporarily change the active context.
 
-.. function:: localcontext(ctx=None, \*\*kwargs)
+.. function:: localcontext(ctx=None, **kwargs)
 
    Return a context manager that will set the current context for the active thread
    to a copy of *ctx* on entry to the with-statement and restore the previous context
@@ -1385,10 +1396,10 @@ In addition to the three supplied contexts, new contexts can be created with the
       With three arguments, compute ``(x**y) % modulo``.  For the three argument
       form, the following restrictions on the arguments hold:
 
-         - all three arguments must be integral
-         - ``y`` must be nonnegative
-         - at least one of ``x`` or ``y`` must be nonzero
-         - ``modulo`` must be nonzero and have at most 'precision' digits
+      - all three arguments must be integral
+      - ``y`` must be nonnegative
+      - at least one of ``x`` or ``y`` must be nonzero
+      - ``modulo`` must be nonzero and have at most 'precision' digits
 
       The value resulting from ``Context.power(x, y, modulo)`` is
       equal to the value that would be obtained by computing ``(x**y)
@@ -1497,7 +1508,7 @@ are also included in the pure Python version for compatibility.
 
    The value is ``True``.  Deprecated, because Python now always has threads.
 
-.. deprecated:: 3.9
+   .. deprecated:: 3.9
 
 .. data:: HAVE_CONTEXTVAR
 
@@ -2077,6 +2088,26 @@ representative:
    >>> values = map(Decimal, '200 200.000 2E2 .02E+4'.split())
    >>> [v.normalize() for v in values]
    [Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2'), Decimal('2E+2')]
+
+Q. When does rounding occur in a computation?
+
+A. It occurs *after* the computation.  The philosophy of the decimal
+specification is that numbers are considered exact and are created
+independent of the current context.  They can even have greater
+precision than current context.  Computations process with those
+exact inputs and then rounding (or other context operations) is
+applied to the *result* of the computation::
+
+   >>> getcontext().prec = 5
+   >>> pi = Decimal('3.1415926535')   # More than 5 digits
+   >>> pi                             # All digits are retained
+   Decimal('3.1415926535')
+   >>> pi + 0                         # Rounded after an addition
+   Decimal('3.1416')
+   >>> pi - Decimal('0.00005')        # Subtract unrounded numbers, then round
+   Decimal('3.1415')
+   >>> pi + 0 - Decimal('0.00005').   # Intermediate values are rounded
+   Decimal('3.1416')
 
 Q. Some decimal values always print with exponential notation.  Is there a way
 to get a non-exponential representation?

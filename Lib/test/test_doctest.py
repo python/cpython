@@ -102,14 +102,13 @@ class SampleClass:
 
     a_class_attribute = 42
 
-    @classmethod
-    @property
-    def a_classmethod_property(cls):
+    @functools.cached_property
+    def a_cached_property(self):
         """
-        >>> print(SampleClass.a_classmethod_property)
-        42
+        >>> print(SampleClass(29).get())
+        29
         """
-        return cls.a_class_attribute
+        return "hello"
 
     class NestedClass:
         """
@@ -515,8 +514,8 @@ methods, classmethods, staticmethods, properties, and nested classes.
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -571,8 +570,8 @@ functions, classes, and the `__test__` dictionary, if it exists:
      3  some_module.SampleClass.NestedClass
      1  some_module.SampleClass.NestedClass.__init__
      1  some_module.SampleClass.__init__
+     1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
-     1  some_module.SampleClass.a_classmethod_property
      1  some_module.SampleClass.a_property
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
@@ -613,8 +612,8 @@ By default, an object with no doctests doesn't create any tests:
      3  SampleClass.NestedClass
      1  SampleClass.NestedClass.__init__
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -634,8 +633,8 @@ displays.
      0  SampleClass.NestedClass.get
      0  SampleClass.NestedClass.square
      1  SampleClass.__init__
+     1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
-     1  SampleClass.a_classmethod_property
      1  SampleClass.a_property
      1  SampleClass.a_staticmethod
      1  SampleClass.double
@@ -707,7 +706,7 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 830 < len(tests) < 850 # approximate number of objects with docstrings
+    >>> 830 < len(tests) < 860 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
@@ -736,19 +735,49 @@ and 'int' is a type.
 """
 
 
+class TestDocTest(unittest.TestCase):
+
+    def test_run(self):
+        test = '''
+            >>> 1 + 1
+            11
+            >>> 2 + 3      # doctest: +SKIP
+            "23"
+            >>> 5 + 7
+            57
+        '''
+
+        def myfunc():
+            pass
+        myfunc.__doc__ = test
+
+        # test DocTestFinder.run()
+        test = doctest.DocTestFinder().find(myfunc)[0]
+        with support.captured_stdout():
+            with support.captured_stderr():
+                results = doctest.DocTestRunner(verbose=False).run(test)
+
+        # test TestResults
+        self.assertIsInstance(results, doctest.TestResults)
+        self.assertEqual(results.failed, 2)
+        self.assertEqual(results.attempted, 3)
+        self.assertEqual(results.skipped, 1)
+        self.assertEqual(tuple(results), (2, 3))
+        x, y = results
+        self.assertEqual((x, y), (2, 3))
+
+
 class TestDocTestFinder(unittest.TestCase):
 
     def test_issue35753(self):
         # This import of `call` should trigger issue35753 when
-        # `support.run_doctest` is called due to unwrap failing,
+        # DocTestFinder.find() is called due to inspect.unwrap() failing,
         # however with a patched doctest this should succeed.
         from unittest.mock import call
         dummy_module = types.ModuleType("dummy")
         dummy_module.__dict__['inject_call'] = call
-        try:
-            support.run_doctest(dummy_module, verbosity=True)
-        except ValueError as e:
-            raise support.TestFailed("Doctest unwrap failed") from e
+        finder = doctest.DocTestFinder()
+        self.assertEqual(finder.find(dummy_module), [])
 
     def test_empty_namespace_package(self):
         pkg_name = 'doctest_empty_pkg'
@@ -1287,14 +1316,14 @@ The NORMALIZE_WHITESPACE flag causes all sequences of whitespace to be
 treated as equal:
 
     >>> def f(x):
-    ...     '>>> print(1, 2, 3)\n  1   2\n 3'
+    ...     '\n>>> print(1, 2, 3)\n  1   2\n 3'
 
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    File ..., line 2, in f
+    File ..., line 3, in f
     Failed example:
         print(1, 2, 3)
     Expected:
@@ -3170,25 +3199,155 @@ def test_run_doctestsuite_multiple_times():
     """
 
 
+def test_exception_with_note(note):
+    """
+    >>> test_exception_with_note('Note')
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('Note')  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    Note
+
+    >>> test_exception_with_note('''Note
+    ... multiline
+    ... example''')
+    Traceback (most recent call last):
+    ValueError: Text
+    Note
+    multiline
+    example
+
+    Different note will fail the test:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = ValueError('message')
+    ...     >>> exc.add_note('note')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     ValueError: message
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 5, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        ValueError: message
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        ValueError: message
+        note
+    TestResults(failed=1, attempted=...)
+    """
+    exc = ValueError('Text')
+    exc.add_note(note)
+    raise exc
+
+
+def test_exception_with_multiple_notes():
+    """
+    >>> test_exception_with_multiple_notes()
+    Traceback (most recent call last):
+      ...
+    ValueError: Text
+    One
+    Two
+    """
+    exc = ValueError('Text')
+    exc.add_note('One')
+    exc.add_note('Two')
+    raise exc
+
+
+def test_syntax_error_with_note(cls, multiline=False):
+    """
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(SyntaxError)
+    Traceback (most recent call last):
+      ...
+      File "x.py", line 23
+        bad syntax
+    SyntaxError: error
+    Note
+
+    >>> test_syntax_error_with_note(IndentationError)
+    Traceback (most recent call last):
+      ...
+    IndentationError: error
+    Note
+
+    >>> test_syntax_error_with_note(TabError, multiline=True)
+    Traceback (most recent call last):
+      ...
+    TabError: error
+    Note
+    Line
+    """
+    exc = cls("error", ("x.py", 23, None, "bad syntax"))
+    exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
+
+
+def test_syntax_error_with_incorrect_expected_note():
+    """
+    >>> def f(x):
+    ...     r'''
+    ...     >>> exc = SyntaxError("error", ("x.py", 23, None, "bad syntax"))
+    ...     >>> exc.add_note('note1')
+    ...     >>> exc.add_note('note2')
+    ...     >>> raise exc
+    ...     Traceback (most recent call last):
+    ...     SyntaxError: error
+    ...     wrong note
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File "...", line 6, in f
+    Failed example:
+        raise exc
+    Expected:
+        Traceback (most recent call last):
+        SyntaxError: error
+        wrong note
+    Got:
+        Traceback (most recent call last):
+          ...
+        SyntaxError: error
+        note1
+        note2
+    TestResults(failed=1, attempted=...)
+    """
+
+
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite(doctest))
     tests.addTest(doctest.DocTestSuite())
     return tests
 
 
-def test_coverage(coverdir):
-    trace = import_helper.import_module('trace')
-    tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,],
-                         trace=0, count=1)
-    tracer.run('test_main()')
-    r = tracer.results()
-    print('Writing coverage results...')
-    r.write_results(show_missing=True, summary=True,
-                    coverdir=coverdir)
-
-
 if __name__ == '__main__':
-    if '-c' in sys.argv:
-        test_coverage('/tmp/doctest.cover')
-    else:
-        unittest.main()
+    unittest.main(module='test.test_doctest')

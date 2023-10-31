@@ -1,3 +1,0 @@
-Add :data:`sys.last_exc` and deprecate :data:`sys.last_type`, :data:`sys.last_value`
-and :data:`sys.last_traceback`,
-which hold the same information in its legacy form.

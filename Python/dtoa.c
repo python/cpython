@@ -172,10 +172,6 @@ typedef uint64_t ULLong;
 #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef union { double d; ULong L[2]; } U;
 
 #ifdef IEEE_8087
@@ -272,11 +268,6 @@ typedef union { double d; ULong L[2]; } U;
 
 #define Big0 (Frac_mask1 | Exp_msk1*(DBL_MAX_EXP+Bias-1))
 #define Big1 0xffffffff
-
-/* Standard NaN used by _Py_dg_stdnan. */
-
-#define NAN_WORD0 0x7ff80000
-#define NAN_WORD1 0
 
 /* Bits of the representation of positive infinity. */
 
@@ -1399,35 +1390,6 @@ bigcomp(U *rv, const char *s0, BCinfo *bc)
     return 0;
 }
 
-/* Return a 'standard' NaN value.
-
-   There are exactly two quiet NaNs that don't arise by 'quieting' signaling
-   NaNs (see IEEE 754-2008, section 6.2.1).  If sign == 0, return the one whose
-   sign bit is cleared.  Otherwise, return the one whose sign bit is set.
-*/
-
-double
-_Py_dg_stdnan(int sign)
-{
-    U rv;
-    word0(&rv) = NAN_WORD0;
-    word1(&rv) = NAN_WORD1;
-    if (sign)
-        word0(&rv) |= Sign_bit;
-    return dval(&rv);
-}
-
-/* Return positive or negative infinity, according to the given sign (0 for
- * positive infinity, 1 for negative infinity). */
-
-double
-_Py_dg_infinity(int sign)
-{
-    U rv;
-    word0(&rv) = POSINF_WORD0;
-    word1(&rv) = POSINF_WORD1;
-    return sign ? -dval(&rv) : dval(&rv);
-}
 
 double
 _Py_dg_strtod(const char *s00, char **se)
@@ -2847,8 +2809,5 @@ _Py_dg_dtoa(double dd, int mode, int ndigits,
         _Py_dg_freedtoa(s0);
     return NULL;
 }
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // _PY_SHORT_FLOAT_REPR == 1

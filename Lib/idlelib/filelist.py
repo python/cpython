@@ -22,7 +22,7 @@ class FileList:
             # This can happen when bad filename is passed on command line:
             messagebox.showerror(
                 "File Error",
-                "%r is a directory." % (filename,),
+                f"{filename!r} is a directory.",
                 master=self.root)
             return None
         key = os.path.normcase(filename)
@@ -90,7 +90,7 @@ class FileList:
             self.inversedict[conflict] = None
             messagebox.showerror(
                 "Name Conflict",
-                "You now have multiple edit windows open for %r" % (filename,),
+                f"You now have multiple edit windows open for {filename!r}",
                 master=self.root)
         self.dict[newkey] = edit
         self.inversedict[edit] = newkey

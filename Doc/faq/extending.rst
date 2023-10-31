@@ -42,7 +42,7 @@ on what you're trying to do.
 .. XXX make sure these all work
 
 `Cython <https://cython.org>`_ and its relative `Pyrex
-<https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
+<https://www.csse.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
 that accept a slightly modified form of Python and generate the corresponding
 C code.  Cython and Pyrex make it possible to write an extension without having
 to learn Python's C API.
@@ -81,13 +81,13 @@ How do I extract C values from a Python object?
 
 That depends on the object's type.  If it's a tuple, :c:func:`PyTuple_Size`
 returns its length and :c:func:`PyTuple_GetItem` returns the item at a specified
-index.  Lists have similar functions, :c:func:`PyListSize` and
+index.  Lists have similar functions, :c:func:`PyList_Size` and
 :c:func:`PyList_GetItem`.
 
 For bytes, :c:func:`PyBytes_Size` returns its length and
 :c:func:`PyBytes_AsStringAndSize` provides a pointer to its value and its
 length.  Note that Python bytes objects may contain null bytes so C's
-:c:func:`strlen` should not be used.
+:c:func:`!strlen` should not be used.
 
 To test the type of an object, first make sure it isn't ``NULL``, and then use
 :c:func:`PyBytes_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.

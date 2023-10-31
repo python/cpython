@@ -11,9 +11,9 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
+#include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include <ctype.h>
 
 const char *Py_hexdigits = "0123456789abcdef";
 
@@ -54,7 +54,7 @@ int PyCodec_Register(PyObject *search_function)
 int
 PyCodec_Unregister(PyObject *search_function)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
     PyObject *codec_search_path = interp->codec_search_path;
     /* Do nothing if codec_search_path is not created yet or was cleared. */
     if (codec_search_path == NULL) {
@@ -382,29 +382,6 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
     return codec_getstreamcodec(encoding, stream, errors, 3);
 }
 
-static void
-add_note_to_codec_error(const char *operation,
-                        const char *encoding)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    if (exc == NULL) {
-        return;
-    }
-    PyObject *note = PyUnicode_FromFormat("%s with '%s' codec failed",
-                                          operation, encoding);
-    if (note == NULL) {
-        _PyErr_ChainExceptions1(exc);
-        return;
-    }
-    int res = _PyException_AddNote(exc, note);
-    Py_DECREF(note);
-    if (res < 0) {
-        _PyErr_ChainExceptions1(exc);
-        return;
-    }
-    PyErr_SetRaisedException(exc);
-}
-
 /* Encode an object (e.g. a Unicode object) using the given encoding
    and return the resulting encoded object (usually a Python string).
 
@@ -425,7 +402,7 @@ _PyCodec_EncodeInternal(PyObject *object,
 
     result = PyObject_Call(encoder, args, NULL);
     if (result == NULL) {
-        add_note_to_codec_error("encoding", encoding);
+        _PyErr_FormatNote("%s with '%s' codec failed", "encoding", encoding);
         goto onError;
     }
 
@@ -470,7 +447,7 @@ _PyCodec_DecodeInternal(PyObject *object,
 
     result = PyObject_Call(decoder, args, NULL);
     if (result == NULL) {
-        add_note_to_codec_error("decoding", encoding);
+        _PyErr_FormatNote("%s with '%s' codec failed", "decoding", encoding);
         goto onError;
     }
     if (!PyTuple_Check(result) ||
@@ -538,7 +515,7 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
      * attribute.
      */
     if (!PyTuple_CheckExact(codec)) {
-        if (_PyObject_LookupAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
+        if (PyObject_GetOptionalAttr(codec, &_Py_ID(_is_text_encoding), &attr) < 0) {
             Py_DECREF(codec);
             return NULL;
         }
@@ -639,20 +616,19 @@ int PyCodec_RegisterError(const char *name, PyObject *error)
    the error handling callback for strict encoding will be returned. */
 PyObject *PyCodec_LookupError(const char *name)
 {
-    PyObject *handler = NULL;
-
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (interp->codec_search_path == NULL && _PyCodecRegistry_Init())
         return NULL;
 
     if (name==NULL)
         name = "strict";
-    handler = _PyDict_GetItemStringWithError(interp->codec_error_registry, name);
-    if (handler) {
-        Py_INCREF(handler);
+    PyObject *handler;
+    if (PyDict_GetItemStringRef(interp->codec_error_registry, name, &handler) < 0) {
+        return NULL;
     }
-    else if (!PyErr_Occurred()) {
+    if (handler == NULL) {
         PyErr_Format(PyExc_LookupError, "unknown error handler name '%.400s'", name);
+        return NULL;
     }
     return handler;
 }

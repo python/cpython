@@ -4,29 +4,24 @@
 extern "C" {
 #endif
 
-#include "pycore_moduleobject.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-
-/* runtime lifecycle */
-
-extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
-extern void _PyTypes_FiniTypes(PyInterpreterState *);
-extern void _PyTypes_Fini(PyInterpreterState *);
+#include "pycore_moduleobject.h"  // PyModuleObject
 
 
-/* other API */
+/* state */
 
-/* Length of array of slotdef pointers used to store slots with the
-   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
-   the same __name__, for any __name__. Since that's a static property, it is
-   appropriate to declare fixed-size arrays for this. */
-#define MAX_EQUIV 10
+#define _Py_TYPE_BASE_VERSION_TAG (2<<16)
+#define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
-typedef struct wrapperbase pytype_slotdef;
+struct _types_runtime_state {
+    /* Used to set PyTypeObject.tp_version_tag for core static types. */
+    // bpo-42745: next_version_tag remains shared by all interpreters
+    // because of static types.
+    unsigned int next_version_tag;
+};
 
 
 // Type attribute lookup cache: speed up attribute and method lookups,
@@ -49,6 +44,11 @@ struct type_cache {
 
 typedef struct {
     PyTypeObject *type;
+    int readying;
+    int ready;
+    // XXX tp_dict can probably be statically allocated,
+    // instead of dynamically and stored on the interpreter.
+    PyObject *tp_dict;
     PyObject *tp_subclasses;
     /* We never clean up weakrefs for static builtin types since
        they will effectively never get triggered.  However, there
@@ -56,6 +56,36 @@ typedef struct {
        so we still keep it. */
     PyObject *tp_weaklist;
 } static_builtin_state;
+
+struct types_state {
+    /* Used to set PyTypeObject.tp_version_tag.
+       It starts at _Py_MAX_GLOBAL_TYPE_VERSION_TAG + 1,
+       where all those lower numbers are used for core static types. */
+    unsigned int next_version_tag;
+
+    struct type_cache type_cache;
+    size_t num_builtins_initialized;
+    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
+};
+
+
+/* runtime lifecycle */
+
+extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
+extern void _PyTypes_FiniTypes(PyInterpreterState *);
+extern void _PyTypes_Fini(PyInterpreterState *);
+
+
+/* other API */
+
+/* Length of array of slotdef pointers used to store slots with the
+   same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
+   the same __name__, for any __name__. Since that's a static property, it is
+   appropriate to declare fixed-size arrays for this. */
+#define MAX_EQUIV 10
+
+typedef struct wrapperbase pytype_slotdef;
+
 
 static inline PyObject **
 _PyStaticType_GET_WEAKREFS_LISTPTR(static_builtin_state *state)
@@ -78,25 +108,40 @@ _PyType_GetModuleState(PyTypeObject *type)
     return mod->md_state;
 }
 
-struct types_state {
-    struct type_cache type_cache;
-    size_t num_builtins_initialized;
-    static_builtin_state builtins[_Py_MAX_STATIC_BUILTIN_TYPES];
-};
 
+extern int _PyStaticType_InitBuiltin(PyInterpreterState *, PyTypeObject *type);
+extern static_builtin_state * _PyStaticType_GetState(PyInterpreterState *, PyTypeObject *);
+extern void _PyStaticType_ClearWeakRefs(PyInterpreterState *, PyTypeObject *type);
+extern void _PyStaticType_Dealloc(PyInterpreterState *, PyTypeObject *);
 
-extern int _PyStaticType_InitBuiltin(PyTypeObject *type);
-extern static_builtin_state * _PyStaticType_GetState(PyTypeObject *);
-extern void _PyStaticType_ClearWeakRefs(PyTypeObject *type);
-extern void _PyStaticType_Dealloc(PyTypeObject *type);
+// Export for 'math' shared extension, used via _PyType_IsReady() static inline
+// function
+PyAPI_FUNC(PyObject *) _PyType_GetDict(PyTypeObject *);
 
-PyObject *
-_Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int *suppress_missing_attribute);
-PyObject *
-_Py_type_getattro(PyTypeObject *type, PyObject *name);
+extern PyObject * _PyType_GetBases(PyTypeObject *type);
+extern PyObject * _PyType_GetMRO(PyTypeObject *type);
+extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+extern int _PyType_HasSubclasses(PyTypeObject *);
 
-PyObject *_Py_slot_tp_getattro(PyObject *self, PyObject *name);
-PyObject *_Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+// PyType_Ready() must be called if _PyType_IsReady() is false.
+// See also the Py_TPFLAGS_READY flag.
+static inline int
+_PyType_IsReady(PyTypeObject *type)
+{
+    return _PyType_GetDict(type) != NULL;
+}
+
+extern PyObject* _Py_type_getattro_impl(PyTypeObject *type, PyObject *name,
+                                        int *suppress_missing_attribute);
+extern PyObject* _Py_type_getattro(PyTypeObject *type, PyObject *name);
+
+extern PyObject* _Py_slot_tp_getattro(PyObject *self, PyObject *name);
+extern PyObject* _Py_slot_tp_getattr_hook(PyObject *self, PyObject *name);
+
+extern PyTypeObject _PyBufferWrapper_Type;
+
+extern PyObject* _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj,
+                                 PyObject *name, int *meth_found);
 
 #ifdef __cplusplus
 }

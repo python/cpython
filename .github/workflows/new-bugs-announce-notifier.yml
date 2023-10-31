@@ -11,6 +11,7 @@ permissions:
 jobs:
   notify-new-bugs-announce:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/setup-node@v3
         with:
@@ -40,7 +41,10 @@ jobs:
                 url    : issue.data.html_url,
                 labels : issue.data.labels.map(label => { return label.name }).join(", "),
                 assignee : issue.data.assignees.map(assignee => { return assignee.login }),
-                body   : issue.data.body
+                // We need to truncate the body size, because the max size for
+                // the whole payload is 16kb. We want to be safe and assume that
+                // body can take up to ~8kb of space.
+                body   : issue.data.body.substring(0, 8000)
               };
 
               const data = {

@@ -1,37 +1,22 @@
 /* Descriptors -- a new, flexible way to describe attributes */
 
 #include "Python.h"
+#include "pycore_abstract.h"      // _PyObject_RealIsSubclass()
+#include "pycore_call.h"          // _PyStack_AsDict()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_emscripten_trampoline.h" // descr_set_trampoline_call(), descr_get_trampoline_call()
+#include "pycore_descrobject.h"   // _PyMethodWrapper_Type
+#include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "structmember.h"         // PyMemberDef
-#include "pycore_descrobject.h"
+
 
 /*[clinic input]
 class mappingproxy "mappingproxyobject *" "&PyDictProxy_Type"
 class property "propertyobject *" "&PyProperty_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
-
-// see pycore_object.h
-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-#include <emscripten.h>
-EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
-    return wasmTable.get(set)(obj, value, closure);
-});
-
-EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
-    return wasmTable.get(get)(obj, closure);
-});
-#else
-#define descr_set_trampoline_call(set, obj, value, closure) \
-    (set)((obj), (value), (closure))
-
-#define descr_get_trampoline_call(get, obj, closure) \
-    (get)((obj), (closure))
-
-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
 
 static void
 descr_dealloc(PyDescrObject *descr)
@@ -180,7 +165,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    if (descr->d_member->flags & PY_AUDIT_READ) {
+    if (descr->d_member->flags & Py_AUDIT_READ) {
         if (PySys_Audit("object.__getattr__", "Os",
             obj ? obj : Py_None, descr->d_member->name) < 0) {
             return NULL;
@@ -586,7 +571,9 @@ method_get_doc(PyMethodDescrObject *descr, void *closure)
 static PyObject *
 method_get_text_signature(PyMethodDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name, descr->d_method->ml_doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_method->ml_name,
+                                                   descr->d_method->ml_doc,
+                                                   descr->d_method->ml_flags);
 }
 
 static PyObject *
@@ -638,8 +625,8 @@ static PyMethodDef descr_methods[] = {
 };
 
 static PyMemberDef descr_members[] = {
-    {"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
-    {"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
+    {"__objclass__", _Py_T_OBJECT, offsetof(PyDescrObject, d_type), Py_READONLY},
+    {"__name__", _Py_T_OBJECT, offsetof(PyDescrObject, d_name), Py_READONLY},
     {0}
 };
 
@@ -689,7 +676,8 @@ wrapperdescr_get_doc(PyWrapperDescrObject *descr, void *closure)
 static PyObject *
 wrapperdescr_get_text_signature(PyWrapperDescrObject *descr, void *closure)
 {
-    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->name, descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(descr->d_base->name,
+                                                   descr->d_base->doc, 0);
 }
 
 static PyGetSetDef wrapperdescr_getset[] = {
@@ -978,6 +966,12 @@ PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 {
     PyMemberDescrObject *descr;
 
+    if (member->flags & Py_RELATIVE_OFFSET) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "PyDescr_NewMember used with Py_RELATIVE_OFFSET");
+        return NULL;
+    }
     descr = (PyMemberDescrObject *)descr_new(&PyMemberDescr_Type,
                                              type, member->name);
     if (descr != NULL)
@@ -1104,9 +1098,9 @@ mappingproxy_get(mappingproxyobject *pp, PyObject *const *args, Py_ssize_t nargs
     {
         return NULL;
     }
-    return _PyObject_VectorcallMethod(&_Py_ID(get), newargs,
-                                        3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
-                                        NULL);
+    return PyObject_VectorcallMethod(&_Py_ID(get), newargs,
+                                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+                                     NULL);
 }
 
 static PyObject *
@@ -1347,7 +1341,7 @@ static PyMethodDef wrapper_methods[] = {
 };
 
 static PyMemberDef wrapper_members[] = {
-    {"__self__", T_OBJECT, offsetof(wrapperobject, self), READONLY},
+    {"__self__", _Py_T_OBJECT, offsetof(wrapperobject, self), Py_READONLY},
     {0}
 };
 
@@ -1376,7 +1370,8 @@ wrapper_doc(wrapperobject *wp, void *Py_UNUSED(ignored))
 static PyObject *
 wrapper_text_signature(wrapperobject *wp, void *Py_UNUSED(ignored))
 {
-    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name, wp->descr->d_base->doc);
+    return _PyType_GetTextSignatureFromInternalDoc(wp->descr->d_base->name,
+                                                   wp->descr->d_base->doc, 0);
 }
 
 static PyObject *
@@ -1479,7 +1474,10 @@ class property(object):
         self.__get = fget
         self.__set = fset
         self.__del = fdel
-        self.__doc__ = doc
+        try:
+            self.__doc__ = doc
+        except AttributeError:  # read-only or dict-less class
+            pass
 
     def __get__(self, inst, type=None):
         if inst is None:
@@ -1504,10 +1502,10 @@ static PyObject * property_copy(PyObject *, PyObject *, PyObject *,
                                   PyObject *);
 
 static PyMemberDef property_members[] = {
-    {"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
-    {"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
-    {"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
-    {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), 0},
+    {"fget", _Py_T_OBJECT, offsetof(propertyobject, prop_get), Py_READONLY},
+    {"fset", _Py_T_OBJECT, offsetof(propertyobject, prop_set), Py_READONLY},
+    {"fdel", _Py_T_OBJECT, offsetof(propertyobject, prop_del), Py_READONLY},
+    {"__doc__",  _Py_T_OBJECT, offsetof(propertyobject, prop_doc), 0},
     {0}
 };
 
@@ -1781,9 +1779,22 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     }
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
-        int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
+        int rc = PyObject_GetOptionalAttr(fget, &_Py_ID(__doc__), &prop_doc);
         if (rc <= 0) {
             return rc;
+        }
+        if (!Py_IS_TYPE(self, &PyProperty_Type) &&
+            prop_doc != NULL && prop_doc != Py_None) {
+            // This oddity preserves the long existing behavior of surfacing
+            // an AttributeError when using a dict-less (__slots__) property
+            // subclass as a decorator on a getter method with a docstring.
+            // See PropertySubclassTest.test_slots_docstring_copy_exception.
+            int err = PyObject_SetAttr(
+                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
+            if (err < 0) {
+                Py_DECREF(prop_doc);  // release our new reference.
+                return -1;
+            }
         }
         if (prop_doc == Py_None) {
             prop_doc = NULL;
@@ -1800,19 +1811,32 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if (Py_IS_TYPE(self, &PyProperty_Type)) {
         Py_XSETREF(self->prop_doc, prop_doc);
     } else {
-        /* If this is a property subclass, put __doc__
-           in dict of the subclass instance instead,
-           otherwise it gets shadowed by __doc__ in the
-           class's dict. */
+        /* If this is a property subclass, put __doc__ in the dict
+           or designated slot of the subclass instance instead, otherwise
+           it gets shadowed by __doc__ in the class's dict. */
 
         if (prop_doc == NULL) {
             prop_doc = Py_NewRef(Py_None);
         }
         int err = PyObject_SetAttr(
                     (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-        Py_XDECREF(prop_doc);
-        if (err < 0)
-            return -1;
+        Py_DECREF(prop_doc);
+        if (err < 0) {
+            assert(PyErr_Occurred());
+            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+                PyErr_Clear();
+                // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
+                // Python silently dropped this doc assignment through 3.11.
+                // We preserve that behavior for backwards compatibility.
+                //
+                // If we ever want to deprecate this behavior, only raise a
+                // warning or error when proc_doc is not None so that
+                // property without a specific doc= still works.
+                return 0;
+            } else {
+                return -1;
+            }
+        }
     }
 
     return 0;

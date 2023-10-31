@@ -1,9 +1,20 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
+build           Automatically generated directory by the build system
+                contain build artifacts and intermediate files.
+
 buildbot        Batchfiles for running on Windows buildbot workers.
 
+c-analyzer      Tools to check no new global variables have been added.
+
+cases_generator Tooling to generate interpreters.
+
 ccbench         A Python threads-based concurrency benchmark. (*)
+
+clinic          A preprocessor for CPython C files in order to automate
+                the boilerplate involved with writing argument parsing
+                code for "builtins".
 
 freeze          Create a stand-alone executable from a Python program.
 
@@ -15,21 +26,29 @@ i18n            Tools for internationalization. pygettext.py
                 and msgfmt.py generates a binary message catalog
                 from a catalog in text format.
 
+importbench     A set of micro-benchmarks for various import scenarios.
+
 iobench         Benchmark for the new Python I/O system. (*)
 
 msi             Support for packaging Python as an MSI package on Windows.
 
-parser          Un-parsing tool to generate code from an AST.
+nuget           Files for the NuGet package manager for .NET.
+
+patchcheck      Tools for checking and applying patches to the Python source code
+                and verifying the integrity of patch files.
 
 peg_generator   PEG-based parser generator (pegen) used for new parser.
 
-scripts         A number of useful single-file programs, e.g. tabnanny.py
-                by Tim Peters, which checks for inconsistent mixing of
-                tabs and spaces, and 2to3, which converts Python 2 code
-                to Python 3 code.
+scripts         A number of useful single-file programs, e.g. run_tests.py
+                which runs the Python test suite.
+
+ssl             Scripts to generate ssl_data.h from OpenSSL sources, and run
+                tests against multiple installations of OpenSSL and LibreSSL.
 
 stringbench     A suite of micro-benchmarks for various operations on
                 strings (both 8-bit and unicode). (*)
+
+tz              A script to dump timezone from /usr/share/zoneinfo.
 
 unicode         Tools for generating unicodedata and codecs from unicode.org
                 and other mapping files (by Fredrik Lundh, Marc-Andre Lemburg
@@ -38,6 +57,8 @@ unicode         Tools for generating unicodedata and codecs from unicode.org
 unittestgui     A Tkinter based GUI test runner for unittest, with test
                 discovery.
 
+wasm            Config and helpers to facilitate cross compilation of CPython
+                to WebAssembly (WASM).
 
 (*) A generic benchmark suite is maintained separately at https://github.com/python/performance
 

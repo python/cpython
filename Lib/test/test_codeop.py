@@ -5,6 +5,7 @@
 import unittest
 import warnings
 from test.support import warnings_helper
+from textwrap import dedent
 
 from codeop import compile_command, PyCF_DONT_IMPLY_DEDENT
 
@@ -277,7 +278,7 @@ class CodeopTests(unittest.TestCase):
     def test_warning(self):
         # Test that the warning is only returned once.
         with warnings_helper.check_warnings(
-                ('"is" with a literal', SyntaxWarning),
+                ('"is" with \'str\' literal', SyntaxWarning),
                 ("invalid escape sequence", SyntaxWarning),
                 ) as w:
             compile_command(r"'\e' is 0")
@@ -307,6 +308,19 @@ class CodeopTests(unittest.TestCase):
         self.assertEqual(w[0].category, SyntaxWarning)
         self.assertRegex(str(w[0].message), 'invalid escape sequence')
         self.assertEqual(w[0].filename, '<input>')
+
+    def assertSyntaxErrorMatches(self, code, message):
+        with self.subTest(code):
+            with self.assertRaisesRegex(SyntaxError, message):
+                compile_command(code, symbol='exec')
+
+    def test_syntax_errors(self):
+        self.assertSyntaxErrorMatches(
+            dedent("""\
+                def foo(x,x):
+                   pass
+            """), "duplicate argument 'x' in function definition")
+
 
 
 if __name__ == "__main__":

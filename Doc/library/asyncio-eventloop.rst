@@ -243,9 +243,9 @@ Scheduling callbacks
    See the :ref:`concurrency and multithreading <asyncio-multithreading>`
    section of the documentation.
 
-.. versionchanged:: 3.7
-   The *context* keyword-only parameter was added. See :pep:`567`
-   for more details.
+   .. versionchanged:: 3.7
+      The *context* keyword-only parameter was added. See :pep:`567`
+      for more details.
 
 .. _asyncio-pass-keywords:
 
@@ -403,11 +403,11 @@ Opening network connections
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
 
-   The socket family can be either :py:data:`~socket.AF_INET` or
-   :py:data:`~socket.AF_INET6` depending on *host* (or the *family*
+   The socket family can be either :py:const:`~socket.AF_INET` or
+   :py:const:`~socket.AF_INET6` depending on *host* (or the *family*
    argument, if provided).
 
-   The socket type will be :py:data:`~socket.SOCK_STREAM`.
+   The socket type will be :py:const:`~socket.SOCK_STREAM`.
 
    *protocol_factory* must be a callable returning an
    :ref:`asyncio protocol <asyncio-protocol>` implementation.
@@ -509,7 +509,7 @@ Opening network connections
 
    .. versionchanged:: 3.6
 
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.7
@@ -529,7 +529,7 @@ Opening network connections
       specifies requirements for algorithms that reduce this user-visible
       delay and provides an algorithm.
 
-      For more information: https://tools.ietf.org/html/rfc6555
+      For more information: https://datatracker.ietf.org/doc/html/rfc6555
 
    .. versionchanged:: 3.11
 
@@ -552,11 +552,11 @@ Opening network connections
 
    Create a datagram connection.
 
-   The socket family can be either :py:data:`~socket.AF_INET`,
-   :py:data:`~socket.AF_INET6`, or :py:data:`~socket.AF_UNIX`,
+   The socket family can be either :py:const:`~socket.AF_INET`,
+   :py:const:`~socket.AF_INET6`, or :py:const:`~socket.AF_UNIX`,
    depending on *host* (or the *family* argument, if provided).
 
-   The socket type will be :py:data:`~socket.SOCK_DGRAM`.
+   The socket type will be :py:const:`~socket.SOCK_DGRAM`.
 
    *protocol_factory* must be a callable returning a
    :ref:`protocol <asyncio-protocol>` implementation.
@@ -581,7 +581,7 @@ Opening network connections
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
-     and some Unixes. If the :py:data:`~socket.SO_REUSEPORT` constant is not
+     and some Unixes. If the :ref:`socket.SO_REUSEPORT <socket-unix-constants>` constant is not
      defined then this capability is unsupported.
 
    * *allow_broadcast* tells the kernel to allow this endpoint to send
@@ -607,7 +607,8 @@ Opening network connections
 
    .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported, as using
-      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      :ref:`socket.SO_REUSEADDR <socket-unix-constants>`
+      poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
@@ -616,7 +617,8 @@ Opening network connections
 
       For supported platforms, *reuse_port* can be used as a replacement for
       similar functionality. With *reuse_port*,
-      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      :ref:`socket.SO_REUSEPORT <socket-unix-constants>`
+      is used instead, which specifically
       prevents processes with differing UIDs from assigning sockets to the same
       socket address.
 
@@ -634,8 +636,8 @@ Opening network connections
 
    Create a Unix connection.
 
-   The socket family will be :py:data:`~socket.AF_UNIX`; socket
-   type will be :py:data:`~socket.SOCK_STREAM`.
+   The socket family will be :py:const:`~socket.AF_UNIX`; socket
+   type will be :py:const:`~socket.SOCK_STREAM`.
 
    A tuple of ``(transport, protocol)`` is returned on success.
 
@@ -661,6 +663,8 @@ Opening network connections
 Creating network servers
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. _loop_create_server:
+
 .. coroutinemethod:: loop.create_server(protocol_factory, \
                         host=None, port=None, *, \
                         family=socket.AF_UNSPEC, \
@@ -671,7 +675,7 @@ Creating network servers
                         ssl_shutdown_timeout=None, \
                         start_serving=True)
 
-   Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) listening
+   Create a TCP server (socket type :const:`~socket.SOCK_STREAM`) listening
    on *port* of the *host* address.
 
    Returns a :class:`Server` object.
@@ -699,10 +703,10 @@ Creating network servers
      be selected (note that if *host* resolves to multiple network interfaces,
      a different random port will be selected for each interface).
 
-   * *family* can be set to either :data:`socket.AF_INET` or
-     :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
+   * *family* can be set to either :const:`socket.AF_INET` or
+     :const:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6.
      If not set, the *family* will be determined from host name
-     (defaults to :data:`~socket.AF_UNSPEC`).
+     (defaults to :const:`~socket.AF_UNSPEC`).
 
    * *flags* is a bitmask for :meth:`getaddrinfo`.
 
@@ -756,7 +760,7 @@ Creating network servers
    .. versionchanged:: 3.6
 
       Added *ssl_handshake_timeout* and *start_serving* parameters.
-      The socket option :py:data:`~socket.TCP_NODELAY` is set by default
+      The socket option :ref:`socket.TCP_NODELAY <socket-unix-constants>` is set by default
       for all TCP connections.
 
    .. versionchanged:: 3.11
@@ -777,7 +781,7 @@ Creating network servers
                           start_serving=True)
 
    Similar to :meth:`loop.create_server` but works with the
-   :py:data:`~socket.AF_UNIX` socket family.
+   :py:const:`~socket.AF_UNIX` socket family.
 
    *path* is the name of a Unix domain socket, and is required,
    unless a *sock* argument is provided.  Abstract Unix sockets,
@@ -894,6 +898,9 @@ TLS Upgrade
    must stop using the original *transport* and communicate with the returned
    object only because the coder caches *protocol*-side data and sporadically
    exchanges extra TLS session packets with *transport*.
+
+   In some situations (e.g. when the passed transport is already closing) this
+   may return ``None``.
 
    Parameters:
 
@@ -1188,6 +1195,8 @@ Working with pipes
 Unix signals
 ^^^^^^^^^^^^
 
+.. _loop_add_signal_handler:
+
 .. method:: loop.add_signal_handler(signum, callback, *args)
 
    Set *callback* as the handler for the *signum* signal.
@@ -1388,6 +1397,14 @@ Enabling debug mode
       The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
+.. attribute:: loop.slow_callback_duration
+
+   This attribute can be used to set the
+   minimum execution duration in seconds that is considered "slow".
+   When debug mode is enabled, "slow" callbacks are logged.
+
+   Default value is 100 milliseconds.
+
 .. seealso::
 
    The :ref:`debug mode of asyncio <asyncio-debug-mode>`.
@@ -1407,6 +1424,8 @@ async/await code consider using the high-level
    subprocesses, whereas :class:`SelectorEventLoop` does not. See
    :ref:`Subprocess Support on Windows <asyncio-windows-subprocess>` for
    details.
+
+.. _loop_subprocess_exec:
 
 .. coroutinemethod:: loop.subprocess_exec(protocol_factory, *args, \
                       stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
@@ -1438,9 +1457,8 @@ async/await code consider using the high-level
 
    * *stdin* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard input stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
+     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe()`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1450,9 +1468,7 @@ async/await code consider using the high-level
 
    * *stdout* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard output stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1462,9 +1478,7 @@ async/await code consider using the high-level
 
    * *stderr* can be any of these:
 
-     * a file-like object representing a pipe to be connected to the
-       subprocess's standard error stream using
-       :meth:`~loop.connect_write_pipe`
+     * a file-like object
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1482,6 +1496,11 @@ async/await code consider using the high-level
      The ``asyncio`` subprocess API does not support decoding the streams
      as text. :func:`bytes.decode` can be used to convert the bytes returned
      from the stream to text.
+
+   If a file-like object passed as *stdin*, *stdout* or *stderr* represents a
+   pipe, then the other side of this pipe should be registered with
+   :meth:`~loop.connect_write_pipe` or :meth:`~loop.connect_read_pipe` for use
+   with the event loop.
 
    See the constructor of the :class:`subprocess.Popen` class
    for documentation on other arguments.
@@ -1571,7 +1590,7 @@ Server objects are created by :meth:`loop.create_server`,
 :meth:`loop.create_unix_server`, :func:`start_server`,
 and :func:`start_unix_server` functions.
 
-Do not instantiate the class directly.
+Do not instantiate the :class:`Server` class directly.
 
 .. class:: Server
 
@@ -1591,6 +1610,9 @@ Do not instantiate the class directly.
    .. versionchanged:: 3.7
       Server object is an asynchronous context manager since Python 3.7.
 
+   .. versionchanged:: 3.11
+      This class was exposed publicly as ``asyncio.Server`` in Python 3.9.11, 3.10.3 and 3.11.
+
    .. method:: close()
 
       Stop serving: close listening sockets and set the :attr:`sockets`
@@ -1599,8 +1621,9 @@ Do not instantiate the class directly.
       The sockets that represent existing incoming client connections
       are left open.
 
-      The server is closed asynchronously, use the :meth:`wait_closed`
-      coroutine to wait until the server is closed.
+      The server is closed asynchronously; use the :meth:`wait_closed`
+      coroutine to wait until the server is closed (and no more
+      connections are active).
 
    .. method:: get_loop()
 
@@ -1658,11 +1681,13 @@ Do not instantiate the class directly.
 
    .. coroutinemethod:: wait_closed()
 
-      Wait until the :meth:`close` method completes.
+      Wait until the :meth:`close` method completes and all active
+      connections have finished.
 
    .. attribute:: sockets
 
-      List of :class:`socket.socket` objects the server is listening on.
+      List of socket-like objects, ``asyncio.trsock.TransportSocket``, which
+      the server is listening on.
 
       .. versionchanged:: 3.7
          Prior to Python 3.7 ``Server.sockets`` used to return an
@@ -1679,13 +1704,13 @@ Event Loop Implementations
 asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
-By default asyncio is configured to use :class:`SelectorEventLoop`
-on Unix and :class:`ProactorEventLoop` on Windows.
+By default asyncio is configured to use :class:`EventLoop`.
 
 
 .. class:: SelectorEventLoop
 
-   An event loop based on the :mod:`selectors` module.
+   A subclass of :class:`AbstractEventLoop` based on the
+   :mod:`selectors` module.
 
    Uses the most efficient *selector* available for the given
    platform.  It is also possible to manually configure the
@@ -1707,7 +1732,7 @@ on Unix and :class:`ProactorEventLoop` on Windows.
 
 .. class:: ProactorEventLoop
 
-   An event loop for Windows that uses "I/O Completion Ports" (IOCP).
+   A subclass of :class:`AbstractEventLoop` for Windows that uses "I/O Completion Ports" (IOCP).
 
    .. availability:: Windows.
 
@@ -1716,6 +1741,14 @@ on Unix and :class:`ProactorEventLoop` on Windows.
       `MSDN documentation on I/O Completion Ports
       <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
 
+.. class:: EventLoop
+
+    An alias to the most efficient available subclass of :class:`AbstractEventLoop` for the given
+    platform.
+
+    It is an alias to :class:`SelectorEventLoop` on Unix and :class:`ProactorEventLoop` on Windows.
+
+   .. versionadded:: 3.13
 
 .. class:: AbstractEventLoop
 
@@ -1865,7 +1898,7 @@ Set signal handlers for SIGINT and SIGTERM
 
 (This ``signals`` example only works on Unix.)
 
-Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM`
+Register handlers for signals :const:`~signal.SIGINT` and :const:`~signal.SIGTERM`
 using the :meth:`loop.add_signal_handler` method::
 
     import asyncio

@@ -25,8 +25,6 @@ __all__ = [
 import os
 import re
 import time
-import random
-import socket
 import datetime
 import urllib.parse
 
@@ -35,9 +33,6 @@ from email._parseaddr import AddressList as _AddressList
 from email._parseaddr import mktime_tz
 
 from email._parseaddr import parsedate, parsedate_tz, _parsedate_tz
-
-# Intrapackage imports
-from email.charset import Charset
 
 COMMASPACE = ', '
 EMPTYSTRING = ''
@@ -94,6 +89,8 @@ def formataddr(pair, charset='utf-8'):
             name.encode('ascii')
         except UnicodeEncodeError:
             if isinstance(charset, str):
+                # lazy import to improve module import time
+                from email.charset import Charset
                 charset = Charset(charset)
             encoded_name = charset.header_encode(name)
             return "%s <%s>" % (encoded_name, address)
@@ -143,13 +140,13 @@ def formatdate(timeval=None, localtime=False, usegmt=False):
     # 2822 requires that day and month names be the English abbreviations.
     if timeval is None:
         timeval = time.time()
-    if localtime or usegmt:
-        dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
-    else:
-        dt = datetime.datetime.utcfromtimestamp(timeval)
+    dt = datetime.datetime.fromtimestamp(timeval, datetime.timezone.utc)
+
     if localtime:
         dt = dt.astimezone()
         usegmt = False
+    elif not usegmt:
+        dt = dt.replace(tzinfo=None)
     return format_datetime(dt, usegmt)
 
 def format_datetime(dt, usegmt=False):
@@ -181,6 +178,11 @@ def make_msgid(idstring=None, domain=None):
     portion of the message id after the '@'.  It defaults to the locally
     defined hostname.
     """
+    # Lazy imports to speedup module import time
+    # (no other functions in email.utils need these modules)
+    import random
+    import socket
+
     timeval = int(time.time()*100)
     pid = os.getpid()
     randint = random.getrandbits(64)

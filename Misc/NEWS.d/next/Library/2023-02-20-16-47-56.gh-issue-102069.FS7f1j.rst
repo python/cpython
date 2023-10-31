@@ -1,1 +1,0 @@
-Fix ``__weakref__`` descriptor generation for custom dataclasses.

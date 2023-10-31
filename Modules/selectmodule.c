@@ -14,7 +14,12 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_set_inheritable()
-#include "structmember.h"         // PyMemberDef
+#include "pycore_time.h"          // _PyTime_t
+
+#include <stddef.h>               // offsetof()
+#ifndef MS_WINDOWS
+#  include <unistd.h>             // close()
+#endif
 
 #ifdef HAVE_SYS_DEVPOLL_H
 #include <sys/resource.h>
@@ -1292,8 +1297,8 @@ newPyEpoll_Object(PyTypeObject *type, int sizehint, SOCKET fd)
         self->epfd = fd;
     }
     if (self->epfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -1757,18 +1762,18 @@ typedef struct {
 #if (SIZEOF_UINTPTR_T != SIZEOF_VOID_P)
 #   error uintptr_t does not match void *!
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG_LONG)
-#   define T_UINTPTRT         T_ULONGLONG
-#   define T_INTPTRT          T_LONGLONG
+#   define T_UINTPTRT         Py_T_ULONGLONG
+#   define T_INTPTRT          Py_T_LONGLONG
 #   define UINTPTRT_FMT_UNIT  "K"
 #   define INTPTRT_FMT_UNIT   "L"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_LONG)
-#   define T_UINTPTRT         T_ULONG
-#   define T_INTPTRT          T_LONG
+#   define T_UINTPTRT         Py_T_ULONG
+#   define T_INTPTRT          Py_T_LONG
 #   define UINTPTRT_FMT_UNIT  "k"
 #   define INTPTRT_FMT_UNIT   "l"
 #elif (SIZEOF_UINTPTR_T == SIZEOF_INT)
-#   define T_UINTPTRT         T_UINT
-#   define T_INTPTRT          T_INT
+#   define T_UINTPTRT         Py_T_UINT
+#   define T_INTPTRT          Py_T_INT
 #   define UINTPTRT_FMT_UNIT  "I"
 #   define INTPTRT_FMT_UNIT   "i"
 #else
@@ -1776,26 +1781,26 @@ typedef struct {
 #endif
 
 #if SIZEOF_LONG_LONG == 8
-#   define T_INT64          T_LONGLONG
+#   define T_INT64          Py_T_LONGLONG
 #   define INT64_FMT_UNIT   "L"
 #elif SIZEOF_LONG == 8
-#   define T_INT64          T_LONG
+#   define T_INT64          Py_T_LONG
 #   define INT64_FMT_UNIT   "l"
 #elif SIZEOF_INT == 8
-#   define T_INT64          T_INT
+#   define T_INT64          Py_T_INT
 #   define INT64_FMT_UNIT   "i"
 #else
 #   define INT64_FMT_UNIT   "_"
 #endif
 
 #if SIZEOF_LONG_LONG == 4
-#   define T_UINT32         T_ULONGLONG
+#   define T_UINT32         Py_T_ULONGLONG
 #   define UINT32_FMT_UNIT  "K"
 #elif SIZEOF_LONG == 4
-#   define T_UINT32         T_ULONG
+#   define T_UINT32         Py_T_ULONG
 #   define UINT32_FMT_UNIT  "k"
 #elif SIZEOF_INT == 4
-#   define T_UINT32         T_UINT
+#   define T_UINT32         Py_T_UINT
 #   define UINT32_FMT_UNIT  "I"
 #else
 #   define UINT32_FMT_UNIT  "_"
@@ -1812,11 +1817,11 @@ typedef struct {
 #   define FFLAGS_TYPE      T_UINT32
 #   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
-#   define FILTER_TYPE      T_SHORT
+#   define FILTER_TYPE      Py_T_SHORT
 #   define FILTER_FMT_UNIT  "h"
-#   define FLAGS_TYPE       T_USHORT
+#   define FLAGS_TYPE       Py_T_USHORT
 #   define FLAGS_FMT_UNIT   "H"
-#   define FFLAGS_TYPE      T_UINT
+#   define FFLAGS_TYPE      Py_T_UINT
 #   define FFLAGS_FMT_UNIT  "I"
 #endif
 
@@ -1838,7 +1843,7 @@ static struct PyMemberDef kqueue_event_members[] = {
     {"ident",           T_UINTPTRT,     KQ_OFF(e.ident)},
     {"filter",          FILTER_TYPE,    KQ_OFF(e.filter)},
     {"flags",           FLAGS_TYPE,     KQ_OFF(e.flags)},
-    {"fflags",          T_UINT,         KQ_OFF(e.fflags)},
+    {"fflags",          Py_T_UINT,         KQ_OFF(e.fflags)},
     {"data",            DATA_TYPE,      KQ_OFF(e.data)},
     {"udata",           T_UINTPTRT,     KQ_OFF(e.udata)},
     {NULL} /* Sentinel */
@@ -1849,14 +1854,11 @@ static PyObject *
 
 kqueue_event_repr(kqueue_event_Object *s)
 {
-    char buf[1024];
-    PyOS_snprintf(
-        buf, sizeof(buf),
+    return PyUnicode_FromFormat(
         "<select.kevent ident=%zu filter=%d flags=0x%x fflags=0x%x "
         "data=0x%llx udata=%p>",
         (size_t)(s->e.ident), (int)s->e.filter, (unsigned int)s->e.flags,
         (unsigned int)s->e.fflags, (long long)(s->e.data), (void *)s->e.udata);
-    return PyUnicode_FromString(buf);
 }
 
 static int
@@ -1974,8 +1976,8 @@ newKqueue_Object(PyTypeObject *type, SOCKET fd)
         self->kqfd = fd;
     }
     if (self->kqfd < 0) {
-        Py_DECREF(self);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_DECREF(self);
         return NULL;
     }
 
@@ -2442,12 +2444,18 @@ _select_exec(PyObject *m)
         return -1;
     }
 
+#define ADD_INT(VAL) do {                                 \
+    if (PyModule_AddIntConstant((m), #VAL, (VAL)) < 0) {  \
+        return -1;                                        \
+    }                                                     \
+} while (0)
+
 #ifdef PIPE_BUF
 #ifdef HAVE_BROKEN_PIPE_BUF
 #undef PIPE_BUF
 #define PIPE_BUF 512
 #endif
-    PyModule_AddIntMacro(m, PIPE_BUF);
+    ADD_INT(PIPE_BUF);
 #endif
 
 #if defined(HAVE_POLL) && !defined(HAVE_BROKEN_POLL)
@@ -2466,31 +2474,31 @@ _select_exec(PyObject *m)
             return -1;
         }
 
-        PyModule_AddIntMacro(m, POLLIN);
-        PyModule_AddIntMacro(m, POLLPRI);
-        PyModule_AddIntMacro(m, POLLOUT);
-        PyModule_AddIntMacro(m, POLLERR);
-        PyModule_AddIntMacro(m, POLLHUP);
-        PyModule_AddIntMacro(m, POLLNVAL);
+        ADD_INT(POLLIN);
+        ADD_INT(POLLPRI);
+        ADD_INT(POLLOUT);
+        ADD_INT(POLLERR);
+        ADD_INT(POLLHUP);
+        ADD_INT(POLLNVAL);
 
 #ifdef POLLRDNORM
-        PyModule_AddIntMacro(m, POLLRDNORM);
+        ADD_INT(POLLRDNORM);
 #endif
 #ifdef POLLRDBAND
-        PyModule_AddIntMacro(m, POLLRDBAND);
+        ADD_INT(POLLRDBAND);
 #endif
 #ifdef POLLWRNORM
-        PyModule_AddIntMacro(m, POLLWRNORM);
+        ADD_INT(POLLWRNORM);
 #endif
 #ifdef POLLWRBAND
-        PyModule_AddIntMacro(m, POLLWRBAND);
+        ADD_INT(POLLWRBAND);
 #endif
 #ifdef POLLMSG
-        PyModule_AddIntMacro(m, POLLMSG);
+        ADD_INT(POLLMSG);
 #endif
 #ifdef POLLRDHUP
         /* Kernel 2.6.17+ */
-        PyModule_AddIntMacro(m, POLLRDHUP);
+        ADD_INT(POLLRDHUP);
 #endif
     }
 #endif /* HAVE_POLL */
@@ -2513,44 +2521,53 @@ _select_exec(PyObject *m)
         return -1;
     }
 
-    PyModule_AddIntMacro(m, EPOLLIN);
-    PyModule_AddIntMacro(m, EPOLLOUT);
-    PyModule_AddIntMacro(m, EPOLLPRI);
-    PyModule_AddIntMacro(m, EPOLLERR);
-    PyModule_AddIntMacro(m, EPOLLHUP);
+    ADD_INT(EPOLLIN);
+    ADD_INT(EPOLLOUT);
+    ADD_INT(EPOLLPRI);
+    ADD_INT(EPOLLERR);
+    ADD_INT(EPOLLHUP);
 #ifdef EPOLLRDHUP
     /* Kernel 2.6.17 */
-    PyModule_AddIntMacro(m, EPOLLRDHUP);
+    ADD_INT(EPOLLRDHUP);
 #endif
-    PyModule_AddIntMacro(m, EPOLLET);
+    ADD_INT(EPOLLET);
 #ifdef EPOLLONESHOT
     /* Kernel 2.6.2+ */
-    PyModule_AddIntMacro(m, EPOLLONESHOT);
+    ADD_INT(EPOLLONESHOT);
 #endif
 #ifdef EPOLLEXCLUSIVE
-    PyModule_AddIntMacro(m, EPOLLEXCLUSIVE);
+    ADD_INT(EPOLLEXCLUSIVE);
 #endif
 
 #ifdef EPOLLRDNORM
-    PyModule_AddIntMacro(m, EPOLLRDNORM);
+    ADD_INT(EPOLLRDNORM);
 #endif
 #ifdef EPOLLRDBAND
-    PyModule_AddIntMacro(m, EPOLLRDBAND);
+    ADD_INT(EPOLLRDBAND);
 #endif
 #ifdef EPOLLWRNORM
-    PyModule_AddIntMacro(m, EPOLLWRNORM);
+    ADD_INT(EPOLLWRNORM);
 #endif
 #ifdef EPOLLWRBAND
-    PyModule_AddIntMacro(m, EPOLLWRBAND);
+    ADD_INT(EPOLLWRBAND);
 #endif
 #ifdef EPOLLMSG
-    PyModule_AddIntMacro(m, EPOLLMSG);
+    ADD_INT(EPOLLMSG);
 #endif
 
 #ifdef EPOLL_CLOEXEC
-    PyModule_AddIntMacro(m, EPOLL_CLOEXEC);
+    ADD_INT(EPOLL_CLOEXEC);
 #endif
 #endif /* HAVE_EPOLL */
+
+#undef ADD_INT
+
+#define ADD_INT_CONST(NAME, VAL) \
+    do { \
+        if (PyModule_AddIntConstant(m, NAME, VAL) < 0) { \
+            return -1; \
+        } \
+    } while (0)
 
 #ifdef HAVE_KQUEUE
     state->kqueue_event_Type = (PyTypeObject *)PyType_FromModuleAndSpec(
@@ -2572,85 +2589,89 @@ _select_exec(PyObject *m)
     }
 
     /* event filters */
-    PyModule_AddIntConstant(m, "KQ_FILTER_READ", EVFILT_READ);
-    PyModule_AddIntConstant(m, "KQ_FILTER_WRITE", EVFILT_WRITE);
+    ADD_INT_CONST("KQ_FILTER_READ", EVFILT_READ);
+    ADD_INT_CONST("KQ_FILTER_WRITE", EVFILT_WRITE);
 #ifdef EVFILT_AIO
-    PyModule_AddIntConstant(m, "KQ_FILTER_AIO", EVFILT_AIO);
+    ADD_INT_CONST("KQ_FILTER_AIO", EVFILT_AIO);
 #endif
 #ifdef EVFILT_VNODE
-    PyModule_AddIntConstant(m, "KQ_FILTER_VNODE", EVFILT_VNODE);
+    ADD_INT_CONST("KQ_FILTER_VNODE", EVFILT_VNODE);
 #endif
 #ifdef EVFILT_PROC
-    PyModule_AddIntConstant(m, "KQ_FILTER_PROC", EVFILT_PROC);
+    ADD_INT_CONST("KQ_FILTER_PROC", EVFILT_PROC);
 #endif
 #ifdef EVFILT_NETDEV
-    PyModule_AddIntConstant(m, "KQ_FILTER_NETDEV", EVFILT_NETDEV);
+    ADD_INT_CONST("KQ_FILTER_NETDEV", EVFILT_NETDEV);
 #endif
 #ifdef EVFILT_SIGNAL
-    PyModule_AddIntConstant(m, "KQ_FILTER_SIGNAL", EVFILT_SIGNAL);
+    ADD_INT_CONST("KQ_FILTER_SIGNAL", EVFILT_SIGNAL);
 #endif
-    PyModule_AddIntConstant(m, "KQ_FILTER_TIMER", EVFILT_TIMER);
+    ADD_INT_CONST("KQ_FILTER_TIMER", EVFILT_TIMER);
 
     /* event flags */
-    PyModule_AddIntConstant(m, "KQ_EV_ADD", EV_ADD);
-    PyModule_AddIntConstant(m, "KQ_EV_DELETE", EV_DELETE);
-    PyModule_AddIntConstant(m, "KQ_EV_ENABLE", EV_ENABLE);
-    PyModule_AddIntConstant(m, "KQ_EV_DISABLE", EV_DISABLE);
-    PyModule_AddIntConstant(m, "KQ_EV_ONESHOT", EV_ONESHOT);
-    PyModule_AddIntConstant(m, "KQ_EV_CLEAR", EV_CLEAR);
+    ADD_INT_CONST("KQ_EV_ADD", EV_ADD);
+    ADD_INT_CONST("KQ_EV_DELETE", EV_DELETE);
+    ADD_INT_CONST("KQ_EV_ENABLE", EV_ENABLE);
+    ADD_INT_CONST("KQ_EV_DISABLE", EV_DISABLE);
+    ADD_INT_CONST("KQ_EV_ONESHOT", EV_ONESHOT);
+    ADD_INT_CONST("KQ_EV_CLEAR", EV_CLEAR);
 
 #ifdef EV_SYSFLAGS
-    PyModule_AddIntConstant(m, "KQ_EV_SYSFLAGS", EV_SYSFLAGS);
+    ADD_INT_CONST("KQ_EV_SYSFLAGS", EV_SYSFLAGS);
 #endif
 #ifdef EV_FLAG1
-    PyModule_AddIntConstant(m, "KQ_EV_FLAG1", EV_FLAG1);
+    ADD_INT_CONST("KQ_EV_FLAG1", EV_FLAG1);
 #endif
 
-    PyModule_AddIntConstant(m, "KQ_EV_EOF", EV_EOF);
-    PyModule_AddIntConstant(m, "KQ_EV_ERROR", EV_ERROR);
+    ADD_INT_CONST("KQ_EV_EOF", EV_EOF);
+    ADD_INT_CONST("KQ_EV_ERROR", EV_ERROR);
 
     /* READ WRITE filter flag */
 #ifdef NOTE_LOWAT
-    PyModule_AddIntConstant(m, "KQ_NOTE_LOWAT", NOTE_LOWAT);
+    ADD_INT_CONST("KQ_NOTE_LOWAT", NOTE_LOWAT);
 #endif
 
     /* VNODE filter flags  */
 #ifdef EVFILT_VNODE
-    PyModule_AddIntConstant(m, "KQ_NOTE_DELETE", NOTE_DELETE);
-    PyModule_AddIntConstant(m, "KQ_NOTE_WRITE", NOTE_WRITE);
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXTEND", NOTE_EXTEND);
-    PyModule_AddIntConstant(m, "KQ_NOTE_ATTRIB", NOTE_ATTRIB);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINK", NOTE_LINK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_RENAME", NOTE_RENAME);
-    PyModule_AddIntConstant(m, "KQ_NOTE_REVOKE", NOTE_REVOKE);
+    ADD_INT_CONST("KQ_NOTE_DELETE", NOTE_DELETE);
+    ADD_INT_CONST("KQ_NOTE_WRITE", NOTE_WRITE);
+    ADD_INT_CONST("KQ_NOTE_EXTEND", NOTE_EXTEND);
+    ADD_INT_CONST("KQ_NOTE_ATTRIB", NOTE_ATTRIB);
+    ADD_INT_CONST("KQ_NOTE_LINK", NOTE_LINK);
+    ADD_INT_CONST("KQ_NOTE_RENAME", NOTE_RENAME);
+    ADD_INT_CONST("KQ_NOTE_REVOKE", NOTE_REVOKE);
 #endif
 
     /* PROC filter flags  */
 #ifdef EVFILT_PROC
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXIT", NOTE_EXIT);
-    PyModule_AddIntConstant(m, "KQ_NOTE_FORK", NOTE_FORK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_EXEC", NOTE_EXEC);
-    PyModule_AddIntConstant(m, "KQ_NOTE_PCTRLMASK", NOTE_PCTRLMASK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_PDATAMASK", NOTE_PDATAMASK);
+    ADD_INT_CONST("KQ_NOTE_EXIT", NOTE_EXIT);
+    ADD_INT_CONST("KQ_NOTE_FORK", NOTE_FORK);
+    ADD_INT_CONST("KQ_NOTE_EXEC", NOTE_EXEC);
+    ADD_INT_CONST("KQ_NOTE_PCTRLMASK", NOTE_PCTRLMASK);
+    ADD_INT_CONST("KQ_NOTE_PDATAMASK", NOTE_PDATAMASK);
 
-    PyModule_AddIntConstant(m, "KQ_NOTE_TRACK", NOTE_TRACK);
-    PyModule_AddIntConstant(m, "KQ_NOTE_CHILD", NOTE_CHILD);
-    PyModule_AddIntConstant(m, "KQ_NOTE_TRACKERR", NOTE_TRACKERR);
+    ADD_INT_CONST("KQ_NOTE_TRACK", NOTE_TRACK);
+    ADD_INT_CONST("KQ_NOTE_CHILD", NOTE_CHILD);
+    ADD_INT_CONST("KQ_NOTE_TRACKERR", NOTE_TRACKERR);
 #endif
 
     /* NETDEV filter flags */
 #ifdef EVFILT_NETDEV
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKUP", NOTE_LINKUP);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKDOWN", NOTE_LINKDOWN);
-    PyModule_AddIntConstant(m, "KQ_NOTE_LINKINV", NOTE_LINKINV);
+    ADD_INT_CONST("KQ_NOTE_LINKUP", NOTE_LINKUP);
+    ADD_INT_CONST("KQ_NOTE_LINKDOWN", NOTE_LINKDOWN);
+    ADD_INT_CONST("KQ_NOTE_LINKINV", NOTE_LINKINV);
 #endif
 
 #endif /* HAVE_KQUEUE */
+
+#undef ADD_INT_CONST
+
     return 0;
 }
 
 static PyModuleDef_Slot _select_slots[] = {
     {Py_mod_exec, _select_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 
