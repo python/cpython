@@ -1459,7 +1459,7 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._bind(('bind', 'all'), sequence, func, add, 0)
+        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
@@ -1473,7 +1473,7 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._bind(('bind', className), sequence, func, add, 0)
+        return self._root()._bind(('bind', className), sequence, func, add, True)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
