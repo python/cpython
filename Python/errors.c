@@ -1576,7 +1576,7 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
    An exception must be set when calling this function. */
 
 static void
-format_unraisable_v(PyObject *obj, const char *format, va_list va)
+format_unraisable_v(const char *format, va_list va, PyObject *obj)
 {
     const char *err_msg_str;
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1684,7 +1684,7 @@ PyErr_FormatUnraisable(const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    format_unraisable_v(NULL, format, va);
+    format_unraisable_v(format, va, NULL);
     va_end(va);
 }
 
@@ -1694,7 +1694,7 @@ format_unraisable(PyObject *obj, const char *format, ...)
     va_list va;
 
     va_start(va, format);
-    format_unraisable_v(obj, format, va);
+    format_unraisable_v(format, va, obj);
     va_end(va);
 }
 

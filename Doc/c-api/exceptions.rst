@@ -104,6 +104,8 @@ Printing and clearing
    Similar to :c:func:`PyErr_WriteUnraisable`, but the *format* and subsequent
    parameters help format the warning message; they have the same meaning and
    values as in :c:func:`PyUnicode_FromFormat`.
+   ``PyErr_WriteUnraisable(obj)`` is roughtly equivalent to
+   ``PyErr_FormatUnraisable("Exception ignored in: %R, obj)``.
    If *format* is ``NULL``, only the traceback is printed.
 
    .. versionadded:: 3.13
