@@ -1584,6 +1584,26 @@ _PyXI_HasCapturedException(_PyXI_session *session)
     return session->exc != NULL;
 }
 
+PyObject *
+_PyXI_ResolveCapturedException(_PyXI_session *session, PyObject *excwrapper)
+{
+    assert(!PyErr_Occurred());
+    assert(session->exc != NULL);
+    PyObject *snapshot = NULL;
+    if (session->exc->code == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
+        snapshot = PyExceptionSnapshot_FromInfo(&session->exc->uncaught);
+        if (snapshot == NULL) {
+            return NULL;
+        }
+        assert(!PyErr_Occurred());
+    }
+    else {
+        _PyXI_ApplyCapturedException(session, excwrapper);
+        assert(PyErr_Occurred());
+    }
+    return snapshot;
+}
+
 int
 _PyXI_Enter(_PyXI_session *session,
             PyInterpreterState *interp, PyObject *nsupdates)

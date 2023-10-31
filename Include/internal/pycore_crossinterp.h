@@ -258,6 +258,9 @@ PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
 PyAPI_FUNC(void) _PyXI_ApplyCapturedException(
     _PyXI_session *session,
     PyObject *excwrapper);
+PyAPI_FUNC(PyObject *) _PyXI_ResolveCapturedException(
+    _PyXI_session *session,
+    PyObject *excwrapper);
 PyAPI_FUNC(int) _PyXI_HasCapturedException(_PyXI_session *session);
 
 
