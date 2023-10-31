@@ -1117,7 +1117,6 @@
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
-
                 /* namespace 1: globals */
                 if (PyMapping_GetOptionalItem(GLOBALS(), name, &res) < 0) goto error;
                 if (res == NULL) {
@@ -1596,7 +1595,6 @@
                 if (_PyObject_GetMethod(owner, name, &attr)) {
                     /* We can bypass temporary bound method object.
                        meth is unbound method and obj is self.
-
                        meth | self | arg1 | ... | argN
                      */
                     assert(attr != NULL);  // No errors on this branch
@@ -1607,7 +1605,6 @@
                        something was returned by a descriptor protocol).  Set
                        the second element of the stack to NULL, to signal
                        CALL that it's not a method call.
-
                        NULL | meth | arg1 | ... | argN
                     */
                     Py_DECREF(owner);
