@@ -3517,6 +3517,9 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 {
     int res, err, wait_connect;
 
+    // SO_SNDTIMEO dose not affcet the connect call on some platforms, so set
+    // the sock to non-blocking mode to get the result immediate and use the
+    // select stuff latter.
     if (s->sock_timeout > 0 &&
         (s->sock_family == AF_INET || s->sock_family == AF_INET6))
     {
