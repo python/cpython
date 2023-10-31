@@ -59,3 +59,13 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(SystemError, getitem, 42, 1)
 
         # CRASHES getitem(NULL, 1)
+
+    def test_list_get_item(self):
+        # Test PyList_GET_SIZE()
+        get_item = _testcapi.list_get_item
+        lst = [1, 2, NULL]
+        self.assertEqual(get_item(lst, 0), 1)
+        self.assertNotEqual(get_item(lst, 1), 12)
+
+        # CRASHES for out of index: get_item(lst, 3)
+        # CRASHES get_item(21, 2)
