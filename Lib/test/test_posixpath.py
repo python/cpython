@@ -115,6 +115,32 @@ class PosixPathTest(unittest.TestCase):
         self.splitextTest("........", "........", "")
         self.splitextTest("", "", "")
 
+    def test_splitroot(self):
+        f = posixpath.splitroot
+        self.assertEqual(f(''), ('', '', ''))
+        self.assertEqual(f('a'), ('', '', 'a'))
+        self.assertEqual(f('a/b'), ('', '', 'a/b'))
+        self.assertEqual(f('a/b/'), ('', '', 'a/b/'))
+        self.assertEqual(f('/a'), ('', '/', 'a'))
+        self.assertEqual(f('/a/b'), ('', '/', 'a/b'))
+        self.assertEqual(f('/a/b/'), ('', '/', 'a/b/'))
+        # The root is collapsed when there are redundant slashes
+        # except when there are exactly two leading slashes, which
+        # is a special case in POSIX.
+        self.assertEqual(f('//a'), ('', '//', 'a'))
+        self.assertEqual(f('///a'), ('', '/', '//a'))
+        self.assertEqual(f('///a/b'), ('', '/', '//a/b'))
+        # Paths which look like NT paths aren't treated specially.
+        self.assertEqual(f('c:/a/b'), ('', '', 'c:/a/b'))
+        self.assertEqual(f('\\/a/b'), ('', '', '\\/a/b'))
+        self.assertEqual(f('\\a\\b'), ('', '', '\\a\\b'))
+        # Byte paths are supported
+        self.assertEqual(f(b''), (b'', b'', b''))
+        self.assertEqual(f(b'a'), (b'', b'', b'a'))
+        self.assertEqual(f(b'/a'), (b'', b'/', b'a'))
+        self.assertEqual(f(b'//a'), (b'', b'//', b'a'))
+        self.assertEqual(f(b'///a'), (b'', b'/', b'//a'))
+
     def test_isabs(self):
         self.assertIs(posixpath.isabs(""), False)
         self.assertIs(posixpath.isabs("/"), True)
@@ -751,6 +777,9 @@ class PathLikeTests(unittest.TestCase):
 
     def test_path_splitdrive(self):
         self.assertPathEqual(self.path.splitdrive)
+
+    def test_path_splitroot(self):
+        self.assertPathEqual(self.path.splitroot)
 
     def test_path_basename(self):
         self.assertPathEqual(self.path.basename)

@@ -1,5 +1,10 @@
 /* statistics accelerator C extension: _statistics module. */
 
+// clinic/_statisticsmodule.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "clinic/_statisticsmodule.c.h"
 
@@ -129,6 +134,7 @@ PyDoc_STRVAR(statistics_doc,
 "Accelerators for the statistics module.\n");
 
 static struct PyModuleDef_Slot _statisticsmodule_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {0, NULL}
 };
 

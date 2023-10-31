@@ -36,7 +36,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
     <PythonVersion>{PYTHON_VERSION}</PythonVersion>
 
     <IncludePythonExe Condition="$(IncludePythonExe) == ''">true</IncludePythonExe>
-    <IncludeLib2To3 Condition="$(IncludeLib2To3) == ''">false</IncludeLib2To3>
     <IncludeVEnv Condition="$(IncludeVEnv) == ''">false</IncludeVEnv>
 
     <GetPythonRuntimeFilesDependsOn>{PYTHON_TARGET};$(GetPythonRuntimeFilesDependsOn)</GetPythonRuntimeFilesDependsOn>
@@ -67,7 +66,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
         <Link>DLLs\%(Filename)%(Extension)</Link>
       </_PythonRuntimeDlls>
       <_PythonRuntimeLib Include="$(PythonHome)\Lib\**\*" Exclude="$(PythonHome)\Lib\**\*.pyc;$(PythonHome)\Lib\site-packages\**\*" />
-      <_PythonRuntimeLib Remove="$(PythonHome)\Lib\lib2to3\**\*" Condition="$(IncludeLib2To3) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\ensurepip\**\*" Condition="$(IncludeVEnv) != 'true'" />
       <_PythonRuntimeLib Remove="$(PythonHome)\Lib\venv\**\*" Condition="$(IncludeVEnv) != 'true'" />
       <_PythonRuntimeLib>

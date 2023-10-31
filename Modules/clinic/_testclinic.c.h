@@ -3,10 +3,12 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+#include "pycore_runtime.h"       // _Py_ID()
 
 PyDoc_STRVAR(test_empty_function__doc__,
 "test_empty_function($module, /)\n"
@@ -135,9 +137,6 @@ unicode_converter(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("unicode_converter", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     a = arg;
     return_value = unicode_converter_impl(module, a);
 
@@ -184,7 +183,7 @@ bool_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 3) {
         goto skip_optional;
     }
-    c = _PyLong_AsInt(args[2]);
+    c = PyLong_AsInt(args[2]);
     if (c == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -630,14 +629,14 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 1) {
         goto skip_optional;
     }
-    a = _PyLong_AsInt(args[0]);
+    a = PyLong_AsInt(args[0]);
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (nargs < 2) {
         goto skip_optional;
     }
-    b = _PyLong_AsInt(args[1]);
+    b = PyLong_AsInt(args[1]);
     if (b == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -646,9 +645,6 @@ int_converter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     if (!PyUnicode_Check(args[2])) {
         _PyArg_BadArgument("int_converter", "argument 3", "a unicode character", args[2]);
-        goto exit;
-    }
-    if (PyUnicode_READY(args[2])) {
         goto exit;
     }
     if (PyUnicode_GET_LENGTH(args[2]) != 1) {
@@ -2817,4 +2813,332 @@ gh_99240_double_free(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8211606b03d733a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(null_or_tuple_for_varargs__doc__,
+"null_or_tuple_for_varargs($module, /, name, *constraints,\n"
+"                          covariant=False)\n"
+"--\n"
+"\n"
+"See https://github.com/python/cpython/issues/110864");
+
+#define NULL_OR_TUPLE_FOR_VARARGS_METHODDEF    \
+    {"null_or_tuple_for_varargs", _PyCFunction_CAST(null_or_tuple_for_varargs), METH_FASTCALL|METH_KEYWORDS, null_or_tuple_for_varargs__doc__},
+
+static PyObject *
+null_or_tuple_for_varargs_impl(PyObject *module, PyObject *name,
+                               PyObject *constraints, int covariant);
+
+static PyObject *
+null_or_tuple_for_varargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(name), &_Py_ID(covariant), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"name", "covariant", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "null_or_tuple_for_varargs",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = Py_MIN(nargs, 1) + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name;
+    PyObject *constraints = NULL;
+    int covariant = 0;
+
+    args = _PyArg_UnpackKeywordsWithVararg(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, 1, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    name = args[0];
+    constraints = args[1];
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    covariant = PyObject_IsTrue(args[2]);
+    if (covariant < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = null_or_tuple_for_varargs_impl(module, name, constraints, covariant);
+
+exit:
+    Py_XDECREF(constraints);
+    return return_value;
+}
+
+PyDoc_STRVAR(clone_f1__doc__,
+"clone_f1($module, /, path)\n"
+"--\n"
+"\n");
+
+#define CLONE_F1_METHODDEF    \
+    {"clone_f1", _PyCFunction_CAST(clone_f1), METH_FASTCALL|METH_KEYWORDS, clone_f1__doc__},
+
+static PyObject *
+clone_f1_impl(PyObject *module, const char *path);
+
+static PyObject *
+clone_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "clone_f1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    const char *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("clone_f1", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = clone_f1_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(clone_f2__doc__,
+"clone_f2($module, /, path)\n"
+"--\n"
+"\n");
+
+#define CLONE_F2_METHODDEF    \
+    {"clone_f2", _PyCFunction_CAST(clone_f2), METH_FASTCALL|METH_KEYWORDS, clone_f2__doc__},
+
+static PyObject *
+clone_f2_impl(PyObject *module, const char *path);
+
+static PyObject *
+clone_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "clone_f2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    const char *path;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("clone_f2", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t path_length;
+    path = PyUnicode_AsUTF8AndSize(args[0], &path_length);
+    if (path == NULL) {
+        goto exit;
+    }
+    if (strlen(path) != (size_t)path_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    return_value = clone_f2_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(clone_with_conv_f1__doc__,
+"clone_with_conv_f1($module, /, path=None)\n"
+"--\n"
+"\n");
+
+#define CLONE_WITH_CONV_F1_METHODDEF    \
+    {"clone_with_conv_f1", _PyCFunction_CAST(clone_with_conv_f1), METH_FASTCALL|METH_KEYWORDS, clone_with_conv_f1__doc__},
+
+static PyObject *
+clone_with_conv_f1_impl(PyObject *module, custom_t path);
+
+static PyObject *
+clone_with_conv_f1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "clone_with_conv_f1",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    custom_t path = {
+                .name = "clone_with_conv_f1",
+            };
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!custom_converter(args[0], &path)) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = clone_with_conv_f1_impl(module, path);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(clone_with_conv_f2__doc__,
+"clone_with_conv_f2($module, /, path=None)\n"
+"--\n"
+"\n");
+
+#define CLONE_WITH_CONV_F2_METHODDEF    \
+    {"clone_with_conv_f2", _PyCFunction_CAST(clone_with_conv_f2), METH_FASTCALL|METH_KEYWORDS, clone_with_conv_f2__doc__},
+
+static PyObject *
+clone_with_conv_f2_impl(PyObject *module, custom_t path);
+
+static PyObject *
+clone_with_conv_f2(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "clone_with_conv_f2",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    custom_t path = {
+                .name = "clone_with_conv_f2",
+            };
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (!custom_converter(args[0], &path)) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = clone_with_conv_f2_impl(module, path);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=90743ac900d60f9f input=a9049054013a1b77]*/

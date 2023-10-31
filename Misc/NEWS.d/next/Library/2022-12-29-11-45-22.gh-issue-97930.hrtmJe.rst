@@ -1,6 +1,0 @@
-``importlib.resources.files`` now accepts a module as an anchor instead of
-only accepting packages. If a module is passed, resources are resolved
-adjacent to that module (in the same package or at the package root). The
-parameter was renamed from ``package`` to ``anchor`` with a compatibility
-shim for those passing by keyword. Additionally, the new ``anchor``
-parameter is now optional and will default to the caller's module.

@@ -71,7 +71,7 @@ The :mod:`pty` module defines the following functions:
 
    Return the exit status value from :func:`os.waitpid` on the child process.
 
-   :func:`waitstatus_to_exitcode` can be used to convert the exit status into
+   :func:`os.waitstatus_to_exitcode` can be used to convert the exit status into
    an exit code.
 
    .. audit-event:: pty.spawn argv pty.spawn

@@ -9,6 +9,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import time
 import types
 
 from . import result
@@ -572,6 +573,15 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _addDuration(self, result, elapsed):
+        try:
+            addDuration = result.addDuration
+        except AttributeError:
+            warnings.warn("TestResult has no addDuration method",
+                          RuntimeWarning)
+        else:
+            addDuration(self, elapsed)
+
     def _callSetUp(self):
         self.setUp()
 
@@ -596,7 +606,6 @@ class TestCase(object):
         else:
             stopTestRun = None
 
-        result.startTest(self)
         try:
             testMethod = getattr(self, self._testMethodName)
             if (getattr(self.__class__, "__unittest_skip__", False) or
@@ -607,11 +616,15 @@ class TestCase(object):
                 _addSkip(result, self, skip_why)
                 return result
 
+            # Increase the number of tests only if it hasn't been skipped
+            result.startTest(self)
+
             expecting_failure = (
                 getattr(self, "__unittest_expecting_failure__", False) or
                 getattr(testMethod, "__unittest_expecting_failure__", False)
             )
             outcome = _Outcome(result)
+            start_time = time.perf_counter()
             try:
                 self._outcome = outcome
 
@@ -625,6 +638,7 @@ class TestCase(object):
                     with outcome.testPartExecutor(self):
                         self._callTearDown()
                 self.doCleanups()
+                self._addDuration(result, (time.perf_counter() - start_time))
 
                 if outcome.success:
                     if expecting_failure:
@@ -1205,19 +1219,34 @@ class TestCase(object):
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""
-        self.assertIsInstance(first, str, 'First argument is not a string')
-        self.assertIsInstance(second, str, 'Second argument is not a string')
+        self.assertIsInstance(first, str, "First argument is not a string")
+        self.assertIsInstance(second, str, "Second argument is not a string")
 
         if first != second:
-            # don't use difflib if the strings are too long
+            # Don't use difflib if the strings are too long
             if (len(first) > self._diffThreshold or
                 len(second) > self._diffThreshold):
                 self._baseAssertEqual(first, second, msg)
-            firstlines = first.splitlines(keepends=True)
-            secondlines = second.splitlines(keepends=True)
-            if len(firstlines) == 1 and first.strip('\r\n') == first:
-                firstlines = [first + '\n']
-                secondlines = [second + '\n']
+
+            # Append \n to both strings if either is missing the \n.
+            # This allows the final ndiff to show the \n difference. The
+            # exception here is if the string is empty, in which case no
+            # \n should be added
+            first_presplit = first
+            second_presplit = second
+            if first and second:
+                if first[-1] != '\n' or second[-1] != '\n':
+                    first_presplit += '\n'
+                    second_presplit += '\n'
+            elif second and second[-1] != '\n':
+                second_presplit += '\n'
+            elif first and first[-1] != '\n':
+                first_presplit += '\n'
+
+            firstlines = first_presplit.splitlines(keepends=True)
+            secondlines = second_presplit.splitlines(keepends=True)
+
+            # Generate the message and diff, then raise the exception
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
             diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)

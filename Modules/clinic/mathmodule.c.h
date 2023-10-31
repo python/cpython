@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(math_ceil__doc__,
 "ceil($module, x, /)\n"
@@ -186,49 +186,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(math_log__doc__,
-"log(x, [base=math.e])\n"
-"Return the logarithm of x to the given base.\n"
-"\n"
-"If the base not specified, returns the natural logarithm (base e) of x.");
-
-#define MATH_LOG_METHODDEF    \
-    {"log", (PyCFunction)math_log, METH_VARARGS, math_log__doc__},
-
-static PyObject *
-math_log_impl(PyObject *module, PyObject *x, int group_right_1,
-              PyObject *base);
-
-static PyObject *
-math_log(PyObject *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *x;
-    int group_right_1 = 0;
-    PyObject *base = NULL;
-
-    switch (PyTuple_GET_SIZE(args)) {
-        case 1:
-            if (!PyArg_ParseTuple(args, "O:log", &x)) {
-                goto exit;
-            }
-            break;
-        case 2:
-            if (!PyArg_ParseTuple(args, "OO:log", &x, &base)) {
-                goto exit;
-            }
-            group_right_1 = 1;
-            break;
-        default:
-            PyErr_SetString(PyExc_TypeError, "math.log requires 1 to 2 arguments");
-            goto exit;
-    }
-    return_value = math_log_impl(module, x, group_right_1, base);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(math_log2__doc__,
 "log2($module, x, /)\n"
 "--\n"
@@ -328,6 +285,43 @@ math_dist(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     p = args[0];
     q = args[1];
     return_value = math_dist_impl(module, p, q);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_sumprod__doc__,
+"sumprod($module, p, q, /)\n"
+"--\n"
+"\n"
+"Return the sum of products of values from two iterables p and q.\n"
+"\n"
+"Roughly equivalent to:\n"
+"\n"
+"    sum(itertools.starmap(operator.mul, zip(p, q, strict=True)))\n"
+"\n"
+"For float and mixed int/float inputs, the intermediate products\n"
+"and sums are computed with extended precision.");
+
+#define MATH_SUMPROD_METHODDEF    \
+    {"sumprod", _PyCFunction_CAST(math_sumprod), METH_FASTCALL, math_sumprod__doc__},
+
+static PyObject *
+math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q);
+
+static PyObject *
+math_sumprod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *p;
+    PyObject *q;
+
+    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 2)) {
+        goto exit;
+    }
+    p = args[0];
+    q = args[1];
+    return_value = math_sumprod_impl(module, p, q);
 
 exit:
     return return_value;
@@ -832,25 +826,59 @@ exit:
 }
 
 PyDoc_STRVAR(math_nextafter__doc__,
-"nextafter($module, x, y, /)\n"
+"nextafter($module, x, y, /, *, steps=None)\n"
 "--\n"
 "\n"
-"Return the next floating-point value after x towards y.");
+"Return the floating-point value the given number of steps after x towards y.\n"
+"\n"
+"If steps is not specified or is None, it defaults to 1.\n"
+"\n"
+"Raises a TypeError, if x or y is not a double, or if steps is not an integer.\n"
+"Raises ValueError if steps is negative.");
 
 #define MATH_NEXTAFTER_METHODDEF    \
-    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL, math_nextafter__doc__},
+    {"nextafter", _PyCFunction_CAST(math_nextafter), METH_FASTCALL|METH_KEYWORDS, math_nextafter__doc__},
 
 static PyObject *
-math_nextafter_impl(PyObject *module, double x, double y);
+math_nextafter_impl(PyObject *module, double x, double y, PyObject *steps);
 
 static PyObject *
-math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(steps), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"", "", "steps", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "nextafter",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     double x;
     double y;
+    PyObject *steps = Py_None;
 
-    if (!_PyArg_CheckPositional("nextafter", nargs, 2, 2)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (PyFloat_CheckExact(args[0])) {
@@ -873,7 +901,12 @@ math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
             goto exit;
         }
     }
-    return_value = math_nextafter_impl(module, x, y);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    steps = args[2];
+skip_optional_kwonly:
+    return_value = math_nextafter_impl(module, x, y, steps);
 
 exit:
     return return_value;
@@ -917,4 +950,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c2c2f42452d63734 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b2eeaed8d8a76d5 input=a9049054013a1b77]*/

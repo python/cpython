@@ -12,8 +12,8 @@
 --------------
 
 This module provides a decorator and functions for automatically
-adding generated :term:`special method`\s such as :meth:`__init__` and
-:meth:`__repr__` to user-defined classes.  It was originally described
+adding generated :term:`special method`\s such as :meth:`~object.__init__` and
+:meth:`~object.__repr__` to user-defined classes.  It was originally described
 in :pep:`557`.
 
 The member variables to use in these generated methods are defined
@@ -31,7 +31,7 @@ using :pep:`526` type annotations.  For example, this code::
       def total_cost(self) -> float:
           return self.unit_price * self.quantity_on_hand
 
-will add, among other things, a :meth:`__init__` that looks like::
+will add, among other things, a :meth:`~object.__init__` that looks like::
 
   def __init__(self, name: str, unit_price: float, quantity_on_hand: int = 0):
       self.name = name
@@ -86,86 +86,86 @@ Module contents
 
    The parameters to :func:`dataclass` are:
 
-   - ``init``: If true (the default), a :meth:`__init__` method will be
+   - ``init``: If true (the default), a :meth:`~object.__init__` method will be
      generated.
 
-     If the class already defines :meth:`__init__`, this parameter is
+     If the class already defines :meth:`~object.__init__`, this parameter is
      ignored.
 
-   - ``repr``: If true (the default), a :meth:`__repr__` method will be
+   - ``repr``: If true (the default), a :meth:`~object.__repr__` method will be
      generated.  The generated repr string will have the class name and
      the name and repr of each field, in the order they are defined in
      the class.  Fields that are marked as being excluded from the repr
      are not included.  For example:
      ``InventoryItem(name='widget', unit_price=3.0, quantity_on_hand=10)``.
 
-     If the class already defines :meth:`__repr__`, this parameter is
+     If the class already defines :meth:`~object.__repr__`, this parameter is
      ignored.
 
-   - ``eq``: If true (the default), an :meth:`__eq__` method will be
+   - ``eq``: If true (the default), an :meth:`~object.__eq__` method will be
      generated.  This method compares the class as if it were a tuple
      of its fields, in order.  Both instances in the comparison must
      be of the identical type.
 
-     If the class already defines :meth:`__eq__`, this parameter is
+     If the class already defines :meth:`~object.__eq__`, this parameter is
      ignored.
 
-   - ``order``: If true (the default is ``False``), :meth:`__lt__`,
-     :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` methods will be
+   - ``order``: If true (the default is ``False``), :meth:`~object.__lt__`,
+     :meth:`~object.__le__`, :meth:`~object.__gt__`, and :meth:`~object.__ge__` methods will be
      generated.  These compare the class as if it were a tuple of its
      fields, in order.  Both instances in the comparison must be of the
      identical type.  If ``order`` is true and ``eq`` is false, a
      :exc:`ValueError` is raised.
 
-     If the class already defines any of :meth:`__lt__`,
-     :meth:`__le__`, :meth:`__gt__`, or :meth:`__ge__`, then
+     If the class already defines any of :meth:`~object.__lt__`,
+     :meth:`~object.__le__`, :meth:`~object.__gt__`, or :meth:`~object.__ge__`, then
      :exc:`TypeError` is raised.
 
-   - ``unsafe_hash``: If ``False`` (the default), a :meth:`__hash__` method
+   - ``unsafe_hash``: If ``False`` (the default), a :meth:`~object.__hash__` method
      is generated according to how ``eq`` and ``frozen`` are set.
 
-     :meth:`__hash__` is used by built-in :meth:`hash()`, and when objects are
+     :meth:`~object.__hash__` is used by built-in :meth:`hash()`, and when objects are
      added to hashed collections such as dictionaries and sets.  Having a
-     :meth:`__hash__` implies that instances of the class are immutable.
+     :meth:`~object.__hash__` implies that instances of the class are immutable.
      Mutability is a complicated property that depends on the programmer's
-     intent, the existence and behavior of :meth:`__eq__`, and the values of
+     intent, the existence and behavior of :meth:`~object.__eq__`, and the values of
      the ``eq`` and ``frozen`` flags in the :func:`dataclass` decorator.
 
-     By default, :func:`dataclass` will not implicitly add a :meth:`__hash__`
+     By default, :func:`dataclass` will not implicitly add a :meth:`~object.__hash__`
      method unless it is safe to do so.  Neither will it add or change an
-     existing explicitly defined :meth:`__hash__` method.  Setting the class
+     existing explicitly defined :meth:`~object.__hash__` method.  Setting the class
      attribute ``__hash__ = None`` has a specific meaning to Python, as
-     described in the :meth:`__hash__` documentation.
+     described in the :meth:`~object.__hash__` documentation.
 
-     If :meth:`__hash__` is not explicitly defined, or if it is set to ``None``,
-     then :func:`dataclass` *may* add an implicit :meth:`__hash__` method.
+     If :meth:`~object.__hash__` is not explicitly defined, or if it is set to ``None``,
+     then :func:`dataclass` *may* add an implicit :meth:`~object.__hash__` method.
      Although not recommended, you can force :func:`dataclass` to create a
-     :meth:`__hash__` method with ``unsafe_hash=True``. This might be the case
+     :meth:`~object.__hash__` method with ``unsafe_hash=True``. This might be the case
      if your class is logically immutable but can nonetheless be mutated.
      This is a specialized use case and should be considered carefully.
 
-     Here are the rules governing implicit creation of a :meth:`__hash__`
-     method.  Note that you cannot both have an explicit :meth:`__hash__`
+     Here are the rules governing implicit creation of a :meth:`~object.__hash__`
+     method.  Note that you cannot both have an explicit :meth:`~object.__hash__`
      method in your dataclass and set ``unsafe_hash=True``; this will result
      in a :exc:`TypeError`.
 
      If ``eq`` and ``frozen`` are both true, by default :func:`dataclass` will
-     generate a :meth:`__hash__` method for you.  If ``eq`` is true and
-     ``frozen`` is false, :meth:`__hash__` will be set to ``None``, marking it
+     generate a :meth:`~object.__hash__` method for you.  If ``eq`` is true and
+     ``frozen`` is false, :meth:`~object.__hash__` will be set to ``None``, marking it
      unhashable (which it is, since it is mutable).  If ``eq`` is false,
-     :meth:`__hash__` will be left untouched meaning the :meth:`__hash__`
+     :meth:`~object.__hash__` will be left untouched meaning the :meth:`~object.__hash__`
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
    - ``frozen``: If true (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
-     :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
+     :meth:`~object.__setattr__` or :meth:`~object.__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
 
    - ``match_args``: If true (the default is ``True``), the
      ``__match_args__`` tuple will be created from the list of
-     parameters to the generated :meth:`__init__` method (even if
-     :meth:`__init__` is not generated, see above).  If false, or if
+     parameters to the generated :meth:`~object.__init__` method (even if
+     :meth:`~object.__init__` is not generated, see above).  If false, or if
      ``__match_args__`` is already defined in the class, then
      ``__match_args__`` will not be generated.
 
@@ -173,18 +173,18 @@ Module contents
 
    - ``kw_only``: If true (the default value is ``False``), then all
      fields will be marked as keyword-only.  If a field is marked as
-     keyword-only, then the only effect is that the :meth:`__init__`
+     keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`__init__` is called.  There is no
+     with a keyword when :meth:`~object.__init__` is called.  There is no
      effect on any other aspect of dataclasses.  See the
      :term:`parameter` glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
 
     .. versionadded:: 3.10
 
-   - ``slots``: If true (the default is ``False``), :attr:`__slots__` attribute
+   - ``slots``: If true (the default is ``False``), :attr:`~object.__slots__` attribute
      will be generated and new class will be returned instead of the original one.
-     If :attr:`__slots__` is already defined in the class, then :exc:`TypeError`
+     If :attr:`~object.__slots__` is already defined in the class, then :exc:`TypeError`
      is raised.
 
     .. versionadded:: 3.10
@@ -215,7 +215,7 @@ Module contents
          b: int = 0   # assign a default value for 'b'
 
    In this example, both ``a`` and ``b`` will be included in the added
-   :meth:`__init__` method, which will be defined as::
+   :meth:`~object.__init__` method, which will be defined as::
 
      def __init__(self, a: int, b: int = 0):
 
@@ -256,13 +256,13 @@ Module contents
      error to specify both ``default`` and ``default_factory``.
 
    - ``init``: If true (the default), this field is included as a
-     parameter to the generated :meth:`__init__` method.
+     parameter to the generated :meth:`~object.__init__` method.
 
    - ``repr``: If true (the default), this field is included in the
-     string returned by the generated :meth:`__repr__` method.
+     string returned by the generated :meth:`~object.__repr__` method.
 
    - ``hash``: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`__hash__` method.  If ``None`` (the
+     included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
      default), use the value of ``compare``: this would normally be
      the expected behavior.  A field should be considered in the hash
      if it's used for comparisons.  Setting this value to anything
@@ -275,8 +275,8 @@ Module contents
      is excluded from the hash, it will still be used for comparisons.
 
    - ``compare``: If true (the default), this field is included in the
-     generated equality and comparison methods (:meth:`__eq__`,
-     :meth:`__gt__`, et al.).
+     generated equality and comparison methods (:meth:`~object.__eq__`,
+     :meth:`~object.__gt__`, et al.).
 
    - ``metadata``: This can be a mapping or None. None is treated as
      an empty dict.  This value is wrapped in
@@ -287,7 +287,7 @@ Module contents
      namespace in the metadata.
 
    - ``kw_only``: If true, this field will be marked as keyword-only.
-     This is used when the generated :meth:`__init__` method's
+     This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
 
     .. versionadded:: 3.10
@@ -319,13 +319,11 @@ Module contents
    module-level method (see below).  Users should never instantiate a
    :class:`Field` object directly.  Its documented attributes are:
 
-     - ``name``: The name of the field.
-
-     - ``type``: The type of the field.
-
-     - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
-       ``compare``, ``metadata``, and ``kw_only`` have the identical
-       meaning and values as they do in the :func:`field` function.
+   - ``name``: The name of the field.
+   - ``type``: The type of the field.
+   - ``default``, ``default_factory``, ``init``, ``repr``, ``hash``,
+     ``compare``, ``metadata``, and ``kw_only`` have the identical
+     meaning and values as they do in the :func:`field` function.
 
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
@@ -389,7 +387,7 @@ Module contents
    :func:`astuple` raises :exc:`TypeError` if ``obj`` is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
 
    Creates a new dataclass with name ``cls_name``, fields as defined
    in ``fields``, base classes as given in ``bases``, and initialized
@@ -400,6 +398,10 @@ Module contents
    ``repr``, ``eq``, ``order``, ``unsafe_hash``, ``frozen``,
    ``match_args``, ``kw_only``, ``slots``, and ``weakref_slot`` have
    the same meaning as they do in :func:`dataclass`.
+
+   If ``module`` is defined, the ``__module__`` attribute
+   of the dataclass is set to that value.
+   By default, it is set to the module name of the caller.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with ``__annotations__`` can
@@ -431,13 +433,13 @@ Module contents
    Class, raises :exc:`TypeError`.  If values in ``changes`` do not
    specify fields, raises :exc:`TypeError`.
 
-   The newly returned object is created by calling the :meth:`__init__`
+   The newly returned object is created by calling the :meth:`~object.__init__`
    method of the dataclass.  This ensures that
    :meth:`__post_init__`, if present, is also called.
 
    Init-only variables without default values, if any exist, must be
    specified on the call to :func:`replace` so that they can be passed to
-   :meth:`__init__` and :meth:`__post_init__`.
+   :meth:`~object.__init__` and :meth:`__post_init__`.
 
    It is an error for ``changes`` to contain any fields that are
    defined as having ``init=False``.  A :exc:`ValueError` will be raised
@@ -451,6 +453,8 @@ Module contents
    to have alternate class constructors, or perhaps a custom
    ``replace()`` (or similarly named) method which handles instance
    copying.
+
+   Dataclass instances are also supported by generic function :func:`copy.replace`.
 
 .. function:: is_dataclass(obj)
 
@@ -476,7 +480,7 @@ Module contents
    :const:`KW_ONLY` is otherwise completely ignored.  This includes the
    name of such a field.  By convention, a name of ``_`` is used for a
    :const:`KW_ONLY` field.  Keyword-only fields signify
-   :meth:`__init__` parameters that must be specified as keywords when
+   :meth:`~object.__init__` parameters that must be specified as keywords when
    the class is instantiated.
 
    In this example, the fields ``y`` and ``z`` will be marked as keyword-only fields::
@@ -497,35 +501,38 @@ Module contents
 
 .. exception:: FrozenInstanceError
 
-   Raised when an implicitly defined :meth:`__setattr__` or
-   :meth:`__delattr__` is called on a dataclass which was defined with
+   Raised when an implicitly defined :meth:`~object.__setattr__` or
+   :meth:`~object.__delattr__` is called on a dataclass which was defined with
    ``frozen=True``. It is a subclass of :exc:`AttributeError`.
+
+.. _post-init-processing:
 
 Post-init processing
 --------------------
 
-The generated :meth:`__init__` code will call a method named
-:meth:`__post_init__`, if :meth:`__post_init__` is defined on the
-class.  It will normally be called as ``self.__post_init__()``.
-However, if any ``InitVar`` fields are defined, they will also be
-passed to :meth:`__post_init__` in the order they were defined in the
-class.  If no :meth:`__init__` method is generated, then
-:meth:`__post_init__` will not automatically be called.
+.. function:: __post_init__()
 
-Among other uses, this allows for initializing field values that
-depend on one or more other fields.  For example::
+   When defined on the class, it will be called by the generated
+   :meth:`~object.__init__`, normally as ``self.__post_init__()``.
+   However, if any ``InitVar`` fields are defined, they will also be
+   passed to :meth:`__post_init__` in the order they were defined in the
+   class.  If no :meth:`~object.__init__` method is generated, then
+   :meth:`__post_init__` will not automatically be called.
 
-    @dataclass
-    class C:
-        a: float
-        b: float
-        c: float = field(init=False)
+   Among other uses, this allows for initializing field values that
+   depend on one or more other fields.  For example::
 
-        def __post_init__(self):
-            self.c = self.a + self.b
+     @dataclass
+     class C:
+         a: float
+         b: float
+         c: float = field(init=False)
 
-The :meth:`__init__` method generated by :func:`dataclass` does not call base
-class :meth:`__init__` methods. If the base class has an :meth:`__init__` method
+         def __post_init__(self):
+             self.c = self.a + self.b
+
+The :meth:`~object.__init__` method generated by :func:`dataclass` does not call base
+class :meth:`~object.__init__` methods. If the base class has an :meth:`~object.__init__` method
 that has to be called, it is common to call this method in a
 :meth:`__post_init__` method::
 
@@ -541,7 +548,7 @@ that has to be called, it is common to call this method in a
         def __post_init__(self):
             super().__init__(self.side, self.side)
 
-Note, however, that in general the dataclass-generated :meth:`__init__` methods
+Note, however, that in general the dataclass-generated :meth:`~object.__init__` methods
 don't need to be called, since the derived dataclass will take care of
 initializing all fields of any base class that is a dataclass itself.
 
@@ -552,7 +559,7 @@ parameters to :meth:`__post_init__`.  Also see the warning about how
 Class variables
 ---------------
 
-One of two places where :func:`dataclass` actually inspects the type
+One of the few places where :func:`dataclass` actually inspects the type
 of a field is to determine if a field is a class variable as defined
 in :pep:`526`.  It does this by checking if the type of the field is
 ``typing.ClassVar``.  If a field is a ``ClassVar``, it is excluded
@@ -563,13 +570,13 @@ module-level :func:`fields` function.
 Init-only variables
 -------------------
 
-The other place where :func:`dataclass` inspects a type annotation is to
+Another place where :func:`dataclass` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
 if the type of a field is of type ``dataclasses.InitVar``.  If a field
 is an ``InitVar``, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
-parameters to the generated :meth:`__init__` method, and are passed to
+parameters to the generated :meth:`~object.__init__` method, and are passed to
 the optional :meth:`__post_init__` method.  They are not otherwise used
 by dataclasses.
 
@@ -597,12 +604,12 @@ Frozen instances
 It is not possible to create truly immutable Python objects.  However,
 by passing ``frozen=True`` to the :meth:`dataclass` decorator you can
 emulate immutability.  In that case, dataclasses will add
-:meth:`__setattr__` and :meth:`__delattr__` methods to the class.  These
+:meth:`~object.__setattr__` and :meth:`~object.__delattr__` methods to the class.  These
 methods will raise a :exc:`FrozenInstanceError` when invoked.
 
 There is a tiny performance penalty when using ``frozen=True``:
-:meth:`__init__` cannot use simple assignment to initialize fields, and
-must use :meth:`object.__setattr__`.
+:meth:`~object.__init__` cannot use simple assignment to initialize fields, and
+must use :meth:`!object.__setattr__`.
 
 Inheritance
 -----------
@@ -630,14 +637,14 @@ example::
 The final list of fields is, in order, ``x``, ``y``, ``z``.  The final
 type of ``x`` is ``int``, as specified in class ``C``.
 
-The generated :meth:`__init__` method for ``C`` will look like::
+The generated :meth:`~object.__init__` method for ``C`` will look like::
 
   def __init__(self, x: int = 15, y: int = 0, z: int = 10):
 
-Re-ordering of keyword-only parameters in :meth:`__init__`
-----------------------------------------------------------
+Re-ordering of keyword-only parameters in :meth:`~object.__init__`
+------------------------------------------------------------------
 
-After the parameters needed for :meth:`__init__` are computed, any
+After the parameters needed for :meth:`~object.__init__` are computed, any
 keyword-only parameters are moved to come after all regular
 (non-keyword-only) parameters.  This is a requirement of how
 keyword-only parameters are implemented in Python: they must come
@@ -658,7 +665,7 @@ fields, and ``Base.x`` and ``D.z`` are regular fields::
       z: int = 10
       t: int = field(kw_only=True, default=0)
 
-The generated :meth:`__init__` method for ``D`` will look like::
+The generated :meth:`~object.__init__` method for ``D`` will look like::
 
   def __init__(self, x: Any = 15.0, z: int = 10, *, y: int = 0, w: int = 1, t: int = 0):
 
@@ -667,7 +674,7 @@ the list of fields: parameters derived from regular fields are
 followed by parameters derived from keyword-only fields.
 
 The relative ordering of keyword-only parameters is maintained in the
-re-ordered :meth:`__init__` parameter list.
+re-ordered :meth:`~object.__init__` parameter list.
 
 
 Default factory functions
@@ -679,10 +686,10 @@ example, to create a new instance of a list, use::
 
   mylist: list = field(default_factory=list)
 
-If a field is excluded from :meth:`__init__` (using ``init=False``)
+If a field is excluded from :meth:`~object.__init__` (using ``init=False``)
 and the field also specifies ``default_factory``, then the default
 factory function will always be called from the generated
-:meth:`__init__` function.  This happens because there is no other
+:meth:`~object.__init__` function.  This happens because there is no other
 way to give the field an initial value.
 
 Mutable default values
@@ -710,7 +717,7 @@ Using dataclasses, *if* this code was valid::
 
   @dataclass
   class D:
-      x: List = []
+      x: list = []      # This code raises ValueError
       def add(self, element):
           self.x += element
 
@@ -731,7 +738,7 @@ for ``x`` when creating a class instance will share the same copy
 of ``x``.  Because dataclasses just use normal Python class
 creation they also share this behavior.  There is no general way
 for Data Classes to detect this condition.  Instead, the
-:func:`dataclass` decorator will raise a :exc:`TypeError` if it
+:func:`dataclass` decorator will raise a :exc:`ValueError` if it
 detects an unhashable default parameter.  The assumption is that if
 a value is unhashable, it is mutable.  This is a partial solution,
 but it does protect against many common errors.

@@ -5,7 +5,7 @@
 Function Objects
 ----------------
 
-.. index:: object: function
+.. index:: pair: object; function
 
 There are a few functions specific to Python functions.
 
@@ -169,12 +169,23 @@ There are a few functions specific to Python functions.
    before the modification to *func* takes place, so the prior state of *func*
    can be inspected. The runtime is permitted to optimize away the creation of
    function objects when possible. In such cases no event will be emitted.
-   Although this creates the possitibility of an observable difference of
+   Although this creates the possibility of an observable difference of
    runtime behavior depending on optimization decisions, it does not change
    the semantics of the Python code being executed.
 
-   If the callback returns with an exception set, it must return ``-1``; this
-   exception will be printed as an unraisable exception using
-   :c:func:`PyErr_WriteUnraisable`. Otherwise it should return ``0``.
+   If *event* is ``PyFunction_EVENT_DESTROY``,  Taking a reference in the
+   callback to the about-to-be-destroyed function will resurrect it, preventing
+   it from being freed at this time. When the resurrected object is destroyed
+   later, any watcher callbacks active at that time will be called again.
+
+   If the callback sets an exception, it must return ``-1``; this exception will
+   be printed as an unraisable exception using :c:func:`PyErr_WriteUnraisable`.
+   Otherwise it should return ``0``.
+
+   There may already be a pending exception set on entry to the callback. In
+   this case, the callback should return ``0`` with the same exception still
+   set. This means the callback may not call any other API that can set an
+   exception unless it saves and clears the exception state first, and restores
+   it before returning.
 
    .. versionadded:: 3.12

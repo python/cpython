@@ -36,11 +36,13 @@ struct _PyTraceMalloc_Config {
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
    architectures: 12 bytes instead of 16. */
+#if defined(_MSC_VER)
+#pragma pack(push, 4)
+#endif
+
 struct
 #ifdef __GNUC__
 __attribute__((packed))
-#elif defined(_MSC_VER)
-#pragma pack(push, 4)
 #endif
 tracemalloc_frame {
     /* filename cannot be NULL: "<unknown>" is used if the Python frame
@@ -114,6 +116,53 @@ struct _tracemalloc_runtime_state {
         .reentrant_key = Py_tss_NEEDS_INIT, \
     }
 
+
+// Get the traceback where a memory block was allocated.
+//
+// Return a tuple of (filename: str, lineno: int) tuples.
+//
+// Return None if the tracemalloc module is disabled or if the memory block
+// is not tracked by tracemalloc.
+//
+// Raise an exception and return NULL on error.
+//
+// Export for '_testinternalcapi' shared extension.
+PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
+    unsigned int domain,
+    uintptr_t ptr);
+
+/* Return non-zero if tracemalloc is tracing */
+extern int _PyTraceMalloc_IsTracing(void);
+
+/* Clear the tracemalloc traces */
+extern void _PyTraceMalloc_ClearTraces(void);
+
+/* Clear the tracemalloc traces */
+extern PyObject* _PyTraceMalloc_GetTraces(void);
+
+/* Clear tracemalloc traceback for an object */
+extern PyObject* _PyTraceMalloc_GetObjectTraceback(PyObject *obj);
+
+/* Initialize tracemalloc */
+extern int _PyTraceMalloc_Init(void);
+
+/* Start tracemalloc */
+extern int _PyTraceMalloc_Start(int max_nframe);
+
+/* Stop tracemalloc */
+extern void _PyTraceMalloc_Stop(void);
+
+/* Get the tracemalloc traceback limit */
+extern int _PyTraceMalloc_GetTracebackLimit(void);
+
+/* Get the memory usage of tracemalloc in bytes */
+extern size_t _PyTraceMalloc_GetMemory(void);
+
+/* Get the current size and peak size of traced memory blocks as a 2-tuple */
+extern PyObject* _PyTraceMalloc_GetTracedMemory(void);
+
+/* Set the peak size of traced memory blocks to the current size */
+extern void _PyTraceMalloc_ResetPeak(void);
 
 #ifdef __cplusplus
 }

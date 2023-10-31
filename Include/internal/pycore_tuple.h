@@ -8,13 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "tupleobject.h"   /* _PyTuple_CAST() */
-
+extern void _PyTuple_MaybeUntrack(PyObject *);
+extern void _PyTuple_DebugMallocStats(FILE *out);
 
 /* runtime lifecycle */
 
 extern PyStatus _PyTuple_InitGlobalObjects(PyInterpreterState *);
-extern PyStatus _PyTuple_InitTypes(PyInterpreterState *);
 extern void _PyTuple_Fini(PyInterpreterState *);
 
 

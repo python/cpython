@@ -1,1 +1,0 @@
-Remove claim in documentation that the ``stripdir``, ``prependdir`` and ``limit_sl_dest`` parameters of :func:`compileall.compile_dir` and :func:`compileall.compile_file` could be :class:`bytes`.

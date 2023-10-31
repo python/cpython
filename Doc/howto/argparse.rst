@@ -1,10 +1,12 @@
+.. _argparse-tutorial:
+
 *****************
 Argparse Tutorial
 *****************
 
 :author: Tshepang Mbambo
 
-.. _argparse-tutorial:
+.. currentmodule:: argparse
 
 This tutorial is intended to be a gentle introduction to :mod:`argparse`, the
 recommended command-line parsing module in the Python standard library.
@@ -12,7 +14,7 @@ recommended command-line parsing module in the Python standard library.
 .. note::
 
    There are two other modules that fulfill the same task, namely
-   :mod:`getopt` (an equivalent for :c:func:`getopt` from the C
+   :mod:`getopt` (an equivalent for ``getopt()`` from the C
    language) and the deprecated :mod:`optparse`.
    Note also that :mod:`argparse` is based on :mod:`optparse`,
    and therefore very similar in terms of usage.
@@ -79,16 +81,16 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h]
 
    options:
      -h, --help  show this help message and exit
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: --verbose
-   $ python3 prog.py foo
+   $ python prog.py foo
    usage: prog.py [-h]
    prog.py: error: unrecognized arguments: foo
 
@@ -121,10 +123,10 @@ And running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] echo
    prog.py: error: the following arguments are required: echo
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] echo
 
    positional arguments:
@@ -132,18 +134,18 @@ And running the code:
 
    options:
      -h, --help  show this help message and exit
-   $ python3 prog.py foo
+   $ python prog.py foo
    foo
 
 Here is what's happening:
 
-* We've added the :meth:`add_argument` method, which is what we use to specify
+* We've added the :meth:`~ArgumentParser.add_argument` method, which is what we use to specify
   which command-line options the program is willing to accept. In this case,
   I've named it ``echo`` so that it's in line with its function.
 
 * Calling our program now requires us to specify an option.
 
-* The :meth:`parse_args` method actually returns some data from the
+* The :meth:`~ArgumentParser.parse_args` method actually returns some data from the
   options specified, in this case, ``echo``.
 
 * The variable is some form of 'magic' that :mod:`argparse` performs for free
@@ -166,7 +168,7 @@ And we get:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] echo
 
    positional arguments:
@@ -187,7 +189,7 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 5, in <module>
        print(args.square**2)
@@ -208,9 +210,9 @@ Following is a result of running the code:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py four
+   $ python prog.py four
    usage: prog.py [-h] square
    prog.py: error: argument square: invalid int value: 'four'
 
@@ -235,17 +237,17 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbosity 1
+   $ python prog.py --verbosity 1
    verbosity turned on
-   $ python3 prog.py
-   $ python3 prog.py --help
+   $ python prog.py
+   $ python prog.py --help
    usage: prog.py [-h] [--verbosity VERBOSITY]
 
    options:
      -h, --help            show this help message and exit
      --verbosity VERBOSITY
                            increase output verbosity
-   $ python3 prog.py --verbosity
+   $ python prog.py --verbosity
    usage: prog.py [-h] [--verbosity VERBOSITY]
    prog.py: error: argument --verbosity: expected one argument
 
@@ -256,7 +258,7 @@ Here is what is happening:
 
 * To show that the option is actually optional, there is no error when running
   the program without it. Note that by default, if an optional argument isn't
-  used, the relevant variable, in this case :attr:`args.verbosity`, is
+  used, the relevant variable, in this case ``args.verbosity``, is
   given ``None`` as a value, which is the reason it fails the truth
   test of the :keyword:`if` statement.
 
@@ -281,12 +283,12 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --verbose
+   $ python prog.py --verbose
    verbosity turned on
-   $ python3 prog.py --verbose 1
+   $ python prog.py --verbose 1
    usage: prog.py [-h] [--verbose]
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [--verbose]
 
    options:
@@ -299,7 +301,7 @@ Here is what is happening:
   We even changed the name of the option to match that idea.
   Note that we now specify a new keyword, ``action``, and give it the value
   ``"store_true"``. This means that, if the option is specified,
-  assign the value ``True`` to :data:`args.verbose`.
+  assign the value ``True`` to ``args.verbose``.
   Not specifying it implies ``False``.
 
 * It complains when you specify a value, in true spirit of what flags
@@ -327,9 +329,9 @@ And here goes:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py -v
+   $ python prog.py -v
    verbosity turned on
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v]
 
    options:
@@ -361,14 +363,14 @@ And now the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] square
    prog.py: error: the following arguments are required: square
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 --verbose
+   $ python prog.py 4 --verbose
    the square of 4 equals 16
-   $ python3 prog.py --verbose 4
+   $ python prog.py --verbose 4
    the square of 4 equals 16
 
 * We've brought back a positional argument, hence the complaint.
@@ -397,16 +399,16 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    usage: prog.py [-h] [-v VERBOSITY] square
    prog.py: error: argument -v/--verbosity: expected one argument
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    4^2 == 16
-   $ python3 prog.py 4 -v 2
+   $ python prog.py 4 -v 2
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    16
 
 These all look good except the last one, which exposes a bug in our program.
@@ -431,10 +433,10 @@ And the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -v 3
+   $ python prog.py 4 -v 3
    usage: prog.py [-h] [-v {0,1,2}] square
    prog.py: error: argument -v/--verbosity: invalid choice: 3 (choose from 0, 1, 2)
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v {0,1,2}] square
 
    positional arguments:
@@ -473,18 +475,18 @@ to count the number of occurrences of specific options.
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
-   $ python3 prog.py 4 -v
+   $ python prog.py 4 -v
    4^2 == 16
-   $ python3 prog.py 4 -vv
+   $ python prog.py 4 -vv
    the square of 4 equals 16
-   $ python3 prog.py 4 --verbosity --verbosity
+   $ python prog.py 4 --verbosity --verbosity
    the square of 4 equals 16
-   $ python3 prog.py 4 -v 1
+   $ python prog.py 4 -v 1
    usage: prog.py [-h] [-v] square
    prog.py: error: unrecognized arguments: 1
-   $ python3 prog.py 4 -h
+   $ python prog.py 4 -h
    usage: prog.py [-h] [-v] square
 
    positional arguments:
@@ -493,7 +495,7 @@ to count the number of occurrences of specific options.
    options:
      -h, --help       show this help message and exit
      -v, --verbosity  increase output verbosity
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    16
 
 * Yes, it's now more of a flag (similar to ``action="store_true"``) in the
@@ -540,11 +542,11 @@ And this is what it gives:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 -vvv
+   $ python prog.py 4 -vvv
    the square of 4 equals 16
-   $ python3 prog.py 4 -vvvv
+   $ python prog.py 4 -vvvv
    the square of 4 equals 16
-   $ python3 prog.py 4
+   $ python prog.py 4
    Traceback (most recent call last):
      File "prog.py", line 11, in <module>
        if args.verbosity >= 2:
@@ -584,7 +586,7 @@ And:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4
+   $ python prog.py 4
    16
 
 You can go quite far just with what we've learned so far,
@@ -617,10 +619,10 @@ Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py
+   $ python prog.py
    usage: prog.py [-h] [-v] x y
    prog.py: error: the following arguments are required: x, y
-   $ python3 prog.py -h
+   $ python prog.py -h
    usage: prog.py [-h] [-v] x y
 
    positional arguments:
@@ -630,7 +632,7 @@ Output:
    options:
      -h, --help       show this help message and exit
      -v, --verbosity
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
 
 
@@ -655,11 +657,11 @@ Output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4^2 == 16
-   $ python3 prog.py 4 2 -vv
+   $ python prog.py 4 2 -vv
    Running 'prog.py'
    4^2 == 16
 
@@ -698,7 +700,7 @@ Conflicting options
 
 So far, we have been working with two methods of an
 :class:`argparse.ArgumentParser` instance. Let's introduce a third one,
-:meth:`add_mutually_exclusive_group`. It allows for us to specify options that
+:meth:`~ArgumentParser.add_mutually_exclusive_group`. It allows for us to specify options that
 conflict with each other. Let's also change the rest of the program so that
 the new functionality makes more sense:
 we'll introduce the ``--quiet`` option,
@@ -727,16 +729,16 @@ demonstration. Anyways, here's the output:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py 4 2
+   $ python prog.py 4 2
    4^2 == 16
-   $ python3 prog.py 4 2 -q
+   $ python prog.py 4 2 -q
    16
-   $ python3 prog.py 4 2 -v
+   $ python prog.py 4 2 -v
    4 to the power 2 equals 16
-   $ python3 prog.py 4 2 -vq
+   $ python prog.py 4 2 -vq
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
-   $ python3 prog.py 4 2 -v --quiet
+   $ python prog.py 4 2 -v --quiet
    usage: prog.py [-h] [-v | -q] x y
    prog.py: error: argument -q/--quiet: not allowed with argument -v/--verbose
 
@@ -771,7 +773,7 @@ but not both at the same time:
 
 .. code-block:: shell-session
 
-   $ python3 prog.py --help
+   $ python prog.py --help
    usage: prog.py [-h] [-v | -q] x y
 
    calculate X to the power of Y
@@ -785,6 +787,59 @@ but not both at the same time:
      -v, --verbose
      -q, --quiet
 
+
+How to translate the argparse output
+====================================
+
+The output of the :mod:`argparse` module such as its help text and error
+messages are all made translatable using the :mod:`gettext` module. This
+allows applications to easily localize messages produced by
+:mod:`argparse`. See also :ref:`i18n-howto`.
+
+For instance, in this :mod:`argparse` output:
+
+.. code-block:: shell-session
+
+   $ python prog.py --help
+   usage: prog.py [-h] [-v | -q] x y
+
+   calculate X to the power of Y
+
+   positional arguments:
+     x              the base
+     y              the exponent
+
+   options:
+     -h, --help     show this help message and exit
+     -v, --verbose
+     -q, --quiet
+
+The strings ``usage:``, ``positional arguments:``, ``options:`` and
+``show this help message and exit`` are all translatable.
+
+In order to translate these strings, they must first be extracted
+into a ``.po`` file. For example, using `Babel <https://babel.pocoo.org/>`__,
+run this command:
+
+.. code-block:: shell-session
+
+  $ pybabel extract -o messages.po /usr/lib/python3.12/argparse.py
+
+This command will extract all translatable strings from the :mod:`argparse`
+module and output them into a file named ``messages.po``. This command assumes
+that your Python installation is in ``/usr/lib``.
+
+You can find out the location of the :mod:`argparse` module on your system
+using this script::
+
+   import argparse
+   print(argparse.__file__)
+
+Once the messages in the ``.po`` file are translated and the translations are
+installed using :mod:`gettext`, :mod:`argparse` will be able to display the
+translated messages.
+
+To translate your own strings in the :mod:`argparse` output, use :mod:`gettext`.
 
 Conclusion
 ==========

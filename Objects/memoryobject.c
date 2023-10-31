@@ -12,6 +12,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include <stddef.h>               // offsetof()
@@ -85,7 +86,7 @@ mbuf_alloc(void)
 }
 
 static PyObject *
-_PyManagedBuffer_FromObject(PyObject *base)
+_PyManagedBuffer_FromObject(PyObject *base, int flags)
 {
     _PyManagedBufferObject *mbuf;
 
@@ -93,7 +94,7 @@ _PyManagedBuffer_FromObject(PyObject *base)
     if (mbuf == NULL)
         return NULL;
 
-    if (PyObject_GetBuffer(base, &mbuf->master, PyBUF_FULL_RO) < 0) {
+    if (PyObject_GetBuffer(base, &mbuf->master, flags) < 0) {
         mbuf->master.obj = NULL;
         Py_DECREF(mbuf);
         return NULL;
@@ -191,6 +192,20 @@ PyTypeObject _PyManagedBuffer_Type = {
         PyErr_SetString(PyExc_ValueError,                         \
             "operation forbidden on released memoryview object"); \
         return -1;                                                \
+    }
+
+#define CHECK_RESTRICTED(mv) \
+    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
+        PyErr_SetString(PyExc_ValueError,                                  \
+            "cannot create new view on restricted memoryview");            \
+        return NULL;                                                       \
+    }
+
+#define CHECK_RESTRICTED_INT(mv) \
+    if (((PyMemoryViewObject *)(mv))->flags & _Py_MEMORYVIEW_RESTRICTED) { \
+        PyErr_SetString(PyExc_ValueError,                                  \
+            "cannot create new view on restricted memoryview");            \
+        return -1;                                                       \
     }
 
 /* See gh-92888. These macros signal that we need to check the memoryview
@@ -777,22 +792,24 @@ PyMemoryView_FromBuffer(const Py_buffer *info)
     return mv;
 }
 
-/* Create a memoryview from an object that implements the buffer protocol.
+/* Create a memoryview from an object that implements the buffer protocol,
+   using the given flags.
    If the object is a memoryview, the new memoryview must be registered
    with the same managed buffer. Otherwise, a new managed buffer is created. */
-PyObject *
-PyMemoryView_FromObject(PyObject *v)
+static PyObject *
+PyMemoryView_FromObjectAndFlags(PyObject *v, int flags)
 {
     _PyManagedBufferObject *mbuf;
 
     if (PyMemoryView_Check(v)) {
         PyMemoryViewObject *mv = (PyMemoryViewObject *)v;
         CHECK_RELEASED(mv);
+        CHECK_RESTRICTED(mv);
         return mbuf_add_view(mv->mbuf, &mv->view);
     }
     else if (PyObject_CheckBuffer(v)) {
         PyObject *ret;
-        mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(v);
+        mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(v, flags);
         if (mbuf == NULL)
             return NULL;
         ret = mbuf_add_view(mbuf, NULL);
@@ -804,6 +821,38 @@ PyMemoryView_FromObject(PyObject *v)
         "memoryview: a bytes-like object is required, not '%.200s'",
         Py_TYPE(v)->tp_name);
     return NULL;
+}
+
+/* Create a memoryview from an object that implements the buffer protocol,
+   using the given flags.
+   If the object is a memoryview, the new memoryview must be registered
+   with the same managed buffer. Otherwise, a new managed buffer is created. */
+PyObject *
+_PyMemoryView_FromBufferProc(PyObject *v, int flags, getbufferproc bufferproc)
+{
+    _PyManagedBufferObject *mbuf = mbuf_alloc();
+    if (mbuf == NULL)
+        return NULL;
+
+    int res = bufferproc(v, &mbuf->master, flags);
+    if (res < 0) {
+        mbuf->master.obj = NULL;
+        Py_DECREF(mbuf);
+        return NULL;
+    }
+
+    PyObject *ret = mbuf_add_view(mbuf, NULL);
+    Py_DECREF(mbuf);
+    return ret;
+}
+
+/* Create a memoryview from an object that implements the buffer protocol.
+   If the object is a memoryview, the new memoryview must be registered
+   with the same managed buffer. Otherwise, a new managed buffer is created. */
+PyObject *
+PyMemoryView_FromObject(PyObject *v)
+{
+    return PyMemoryView_FromObjectAndFlags(v, PyBUF_FULL_RO);
 }
 
 /* Copy the format string from a base object that might vanish. */
@@ -851,7 +900,7 @@ memory_from_contiguous_copy(const Py_buffer *src, char order)
     if (bytes == NULL)
         return NULL;
 
-    mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(bytes);
+    mbuf = (_PyManagedBufferObject *)_PyManagedBuffer_FromObject(bytes, PyBUF_FULL_RO);
     Py_DECREF(bytes);
     if (mbuf == NULL)
         return NULL;
@@ -965,6 +1014,24 @@ memoryview_impl(PyTypeObject *type, PyObject *object)
 /*[clinic end generated code: output=7de78e184ed66db8 input=f04429eb0bdf8c6e]*/
 {
     return PyMemoryView_FromObject(object);
+}
+
+
+/*[clinic input]
+@classmethod
+memoryview._from_flags
+
+    object: object
+    flags: int
+
+Create a new memoryview object which references the given object.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags)
+/*[clinic end generated code: output=bf71f9906c266ee2 input=f5f82fd0e744356b]*/
+{
+    return PyMemoryView_FromObjectAndFlags(object, flags);
 }
 
 
@@ -1370,6 +1437,7 @@ memoryview_cast_impl(PyMemoryViewObject *self, PyObject *format,
     Py_ssize_t ndim = 1;
 
     CHECK_RELEASED(self);
+    CHECK_RESTRICTED(self);
 
     if (!MV_C_CONTIGUOUS(self->flags)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1425,6 +1493,7 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=2c7e056f04c99e62 input=dc06d20f19ba236f]*/
 {
     CHECK_RELEASED(self);
+    CHECK_RESTRICTED(self);
     /* Even if self is already readonly, we still need to create a new
      * object for .release() to work correctly.
      */
@@ -1447,6 +1516,7 @@ memory_getbuf(PyMemoryViewObject *self, Py_buffer *view, int flags)
     int baseflags = self->flags;
 
     CHECK_RELEASED_INT(self);
+    CHECK_RESTRICTED_INT(self);
 
     /* start with complete information */
     *view = *base;
@@ -2508,6 +2578,7 @@ memory_subscript(PyMemoryViewObject *self, PyObject *key)
         return memory_item(self, index);
     }
     else if (PySlice_Check(key)) {
+        CHECK_RESTRICTED(self);
         PyMemoryViewObject *sliced;
 
         sliced = (PyMemoryViewObject *)mbuf_add_view(self->mbuf, view);
@@ -2642,7 +2713,11 @@ static Py_ssize_t
 memory_length(PyMemoryViewObject *self)
 {
     CHECK_RELEASED_INT(self);
-    return self->view.ndim == 0 ? 1 : self->view.shape[0];
+    if (self->view.ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "0-dim memory has no length");
+        return -1;
+    }
+    return self->view.shape[0];
 }
 
 /* As mapping */
@@ -3180,6 +3255,7 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_TOLIST_METHODDEF
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
+    MEMORYVIEW__FROM_FLAGS_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}

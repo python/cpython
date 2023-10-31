@@ -14,7 +14,7 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
     Py_VISIT(frame->f_funcobj);
-    Py_VISIT(frame->f_code);
+    Py_VISIT(_PyFrame_GetCode(frame));
    /* locals */
     PyObject **locals = _PyFrame_GetLocalsArray(frame);
     int i = 0;
@@ -29,17 +29,14 @@ PyFrameObject *
 _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 {
     assert(frame->frame_obj == NULL);
-    PyObject *error_type, *error_value, *error_traceback;
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+    PyObject *exc = PyErr_GetRaisedException();
 
-    PyFrameObject *f = _PyFrame_New_NoTrack(frame->f_code);
+    PyFrameObject *f = _PyFrame_New_NoTrack(_PyFrame_GetCode(frame));
     if (f == NULL) {
-        Py_XDECREF(error_type);
-        Py_XDECREF(error_value);
-        Py_XDECREF(error_traceback);
+        Py_XDECREF(exc);
         return NULL;
     }
-    PyErr_Restore(error_type, error_value, error_traceback);
+    PyErr_SetRaisedException(exc);
     if (frame->frame_obj) {
         // GH-97002: How did we get into this horrible situation? Most likely,
         // allocating f triggered a GC collection, which ran some code that
@@ -68,7 +65,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 void
 _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    assert(src->stacktop >= src->f_code->co_nlocalsplus);
+    assert(src->stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     Py_ssize_t size = ((char*)&src->localsplus[src->stacktop]) - (char *)src;
     memcpy(dest, src, size);
     // Don't leave a dangling pointer to the old frame when creating generators
@@ -84,6 +81,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     assert(frame->owner != FRAME_CLEARED);
     Py_ssize_t size = ((char*)&frame->localsplus[frame->stacktop]) - (char *)frame;
+    Py_INCREF(_PyFrame_GetCode(frame));
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
     frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
@@ -91,15 +89,12 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     if (_PyFrame_IsIncomplete(frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
-        PyCodeObject *code = frame->f_code;
-        frame->prev_instr = _PyCode_CODE(code) + code->_co_firsttraceable;
+        PyCodeObject *code = _PyFrame_GetCode(frame);
+        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
     }
     assert(!_PyFrame_IsIncomplete(frame));
     assert(f->f_back == NULL);
-    _PyInterpreterFrame *prev = frame->previous;
-    while (prev && _PyFrame_IsIncomplete(prev)) {
-        prev = prev->previous;
-    }
+    _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     frame->previous = NULL;
     if (prev) {
         assert(prev->owner != FRAME_OWNED_BY_CSTACK);
@@ -121,7 +116,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 }
 
 void
-_PyFrame_Clear(_PyInterpreterFrame *frame)
+_PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 {
     /* It is the responsibility of the owning generator/coroutine
      * to have cleared the enclosing generator, if any. */
@@ -129,7 +124,7 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
         _PyFrame_GetGenerator(frame)->gi_frame_state == FRAME_CLEARED);
     // GH-99729: Clearing this frame can expose the stack (via finalizers). It's
     // crucial that this frame has been unlinked, and is no longer visible:
-    assert(_PyThreadState_GET()->cframe->current_frame != frame);
+    assert(_PyThreadState_GET()->current_frame != frame);
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
@@ -147,12 +142,35 @@ _PyFrame_Clear(_PyInterpreterFrame *frame)
     Py_XDECREF(frame->frame_obj);
     Py_XDECREF(frame->f_locals);
     Py_DECREF(frame->f_funcobj);
-    Py_DECREF(frame->f_code);
+}
+
+/* Unstable API functions */
+
+PyObject *
+PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
+{
+    PyObject *code = frame->f_executable;
+    Py_INCREF(code);
+    return code;
 }
 
 int
-_PyInterpreterFrame_GetLine(_PyInterpreterFrame *frame)
+PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
+{
+    return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
+}
+
+int
+PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
-    return PyCode_Addr2Line(frame->f_code, addr);
+    return PyCode_Addr2Line(_PyFrame_GetCode(frame), addr);
 }
+
+const PyTypeObject *const PyUnstable_ExecutableKinds[PyUnstable_EXECUTABLE_KINDS+1] = {
+    [PyUnstable_EXECUTABLE_KIND_SKIP] = &_PyNone_Type,
+    [PyUnstable_EXECUTABLE_KIND_PY_FUNCTION] = &PyCode_Type,
+    [PyUnstable_EXECUTABLE_KIND_BUILTIN_FUNCTION] = &PyMethod_Type,
+    [PyUnstable_EXECUTABLE_KIND_METHOD_DESCRIPTOR] = &PyMethodDescr_Type,
+    [PyUnstable_EXECUTABLE_KINDS] = NULL,
+};

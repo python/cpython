@@ -1,2 +1,0 @@
-Document existing ``attr`` parameter to :func:`curses.window.vline` function
-in :mod:`curses`.

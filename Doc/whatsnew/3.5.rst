@@ -425,7 +425,7 @@ are declared in the annotations::
 While these annotations are available at runtime through the usual
 :attr:`__annotations__` attribute, *no automatic type checking happens at
 runtime*.  Instead, it is assumed that a separate off-line type checker
-(e.g. `mypy <http://mypy-lang.org>`_) will be used for on-demand
+(e.g. `mypy <https://mypy-lang.org>`_) will be used for on-demand
 source code analysis.
 
 The type system supports unions, generic types, and a special type
@@ -478,7 +478,7 @@ not make an additional system call::
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
 
-An :py:data:`errno.EINTR` error code is returned whenever a system call, that
+An :py:const:`errno.EINTR` error code is returned whenever a system call, that
 is waiting for I/O, is interrupted by a signal.  Previously, Python would
 raise :exc:`InterruptedError` in such cases.  This meant that, when writing a
 Python application, the developer had two choices:
@@ -527,7 +527,7 @@ by a signal:
   :func:`~os.writev`;
 
 * special cases: :func:`os.close` and :func:`os.dup2` now ignore
-  :py:data:`~errno.EINTR` errors; the syscall is not retried (see the PEP
+  :py:const:`~errno.EINTR` errors; the syscall is not retried (see the PEP
   for the rationale);
 
 * :mod:`select` functions: :func:`devpoll.poll() <select.devpoll.poll>`,
@@ -921,7 +921,7 @@ and improves their substitutability for lists.
 Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
     Point = namedtuple('Point', ['x', 'y'])
-    Point.__doc__ += ': Cartesian coodinate'
+    Point.__doc__ += ': Cartesian coordinate'
     Point.x.__doc__ = 'abscissa'
     Point.y.__doc__ = 'ordinate'
 
@@ -1045,8 +1045,8 @@ not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 curses
 ------
 
-The new :func:`~curses.update_lines_cols` function updates the :envvar:`LINES`
-and :envvar:`COLS` environment variables.  This is useful for detecting
+The new :func:`~curses.update_lines_cols` function updates the :data:`LINES`
+and :data:`COLS` module variables.  This is useful for detecting
 manual screen resizing.  (Contributed by Arnon Yaari in :issue:`4254`.)
 
 
@@ -1252,7 +1252,7 @@ Oberkirch in :issue:`21800`.)
 imghdr
 ------
 
-The :func:`~imghdr.what` function now recognizes the
+The :func:`~!imghdr.what` function now recognizes the
 `OpenEXR <https://www.openexr.com>`_ format
 (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
 and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format
@@ -1498,7 +1498,7 @@ use ``/dev/urandom`` and avoiding failures due to potential file descriptor
 exhaustion.  (Contributed by Victor Stinner in :issue:`22181`.)
 
 New :func:`~os.get_blocking` and :func:`~os.set_blocking` functions allow
-getting and setting a file descriptor's blocking mode (:data:`~os.O_NONBLOCK`.)
+getting and setting a file descriptor's blocking mode (:const:`~os.O_NONBLOCK`.)
 (Contributed by Victor Stinner in :issue:`22054`.)
 
 The :func:`~os.truncate` and :func:`~os.ftruncate` functions are now supported
@@ -1783,7 +1783,7 @@ the TLS handshake.
 The new
 :meth:`SSLSocket.selected_alpn_protocol() <ssl.SSLSocket.selected_alpn_protocol>`
 returns the protocol that was selected during the TLS handshake.
-The :data:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
+The :const:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
 
 
 Other Changes
@@ -2095,7 +2095,7 @@ accepts ``"x"`` to request exclusive creation.
 Other module-level changes
 ==========================
 
-Many functions in the :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+Many functions in the :mod:`mmap`, :mod:`!ossaudiodev`, :mod:`socket`,
 :mod:`ssl`, and :mod:`codecs` modules now accept writable
 :term:`bytes-like objects <bytes-like object>`.
 (Contributed by Serhiy Storchaka in :issue:`23001`.)
@@ -2192,7 +2192,7 @@ encode error with ``\N{...}`` escapes.
 (Contributed by Serhiy Storchaka in :issue:`19676`.)
 
 A new :c:func:`PyErr_FormatV` function similar to :c:func:`PyErr_Format`,
-but accepts a ``va_list`` argument.
+but accepts a :c:type:`va_list` argument.
 (Contributed by Antoine Pitrou in :issue:`18711`.)
 
 A new :c:data:`PyExc_RecursionError` exception.
@@ -2212,7 +2212,7 @@ for details.)
 The :c:member:`PyTypeObject.tp_finalize` slot is now part of the stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
-is available as part of `Visual Studio 2015 <https://www.visualstudio.com/>`_.
+is available as part of `Visual Studio 2015 <https://visualstudio.microsoft.com/en/vs/older-downloads/#visual-studio-2015-and-other-products>`_.
 
 Extension modules now include a platform information tag in their filename on
 some platforms (the tag is optional, and CPython will import extensions without
@@ -2476,7 +2476,7 @@ Changes in the Python API
   in Python 3.5, all old ``.pyo`` files from previous versions of Python are
   invalid regardless of this PEP.
 
-* The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_FD_FRAMES`
+* The :mod:`socket` module now exports the :const:`~socket.CAN_RAW_FD_FRAMES`
   constant on linux 3.6 and greater.
 
 * The :func:`ssl.cert_time_to_seconds` function now interprets the input time
@@ -2512,7 +2512,7 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* The undocumented :c:member:`~PyMemoryViewObject.format` member of the
+* The undocumented :c:member:`!format` member of the
   (non-public) :c:type:`PyMemoryViewObject` structure has been removed.
   All extensions relying on the relevant parts in ``memoryobject.h``
   must be rebuilt.
@@ -2520,7 +2520,7 @@ Changes in the C API
 * The :c:type:`PyMemAllocator` structure was renamed to
   :c:type:`PyMemAllocatorEx` and a new ``calloc`` field was added.
 
-* Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
+* Removed non-documented macro :c:macro:`!PyObject_REPR()` which leaked references.
   Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
   to format the :func:`repr` of the object.
   (Contributed by Serhiy Storchaka in :issue:`22453`.)
@@ -2533,7 +2533,7 @@ Changes in the C API
 
 * As part of the :pep:`492` implementation, the ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
-  :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
+  :c:member:`~PyTypeObject.tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
 
 

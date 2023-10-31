@@ -2,9 +2,12 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_interp.h"        // PyInterpreterState.list
 #include "pycore_list.h"          // struct _Py_list_state, _PyListIterObject
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_long.h"          // _PyLong_DigitCount
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include <stddef.h>
 
@@ -952,8 +955,9 @@ list_extend(PyListObject *self, PyObject *iterable)
         }
         if (Py_SIZE(self) < self->allocated) {
             /* steals ref */
-            PyList_SET_ITEM(self, Py_SIZE(self), item);
-            Py_SET_SIZE(self, Py_SIZE(self) + 1);
+            Py_ssize_t len = Py_SIZE(self);
+            Py_SET_SIZE(self, len + 1);
+            PyList_SET_ITEM(self, len, item);
         }
         else {
             if (_PyList_AppendTakeRef(self, item) < 0)
@@ -2144,24 +2148,21 @@ unsafe_latin_compare(PyObject *v, PyObject *w, MergeState *ms)
 static int
 unsafe_long_compare(PyObject *v, PyObject *w, MergeState *ms)
 {
-    PyLongObject *vl, *wl; sdigit v0, w0; int res;
+    PyLongObject *vl, *wl;
+    intptr_t v0, w0;
+    int res;
 
     /* Modified from Objects/longobject.c:long_compare, assuming: */
     assert(Py_IS_TYPE(v, &PyLong_Type));
     assert(Py_IS_TYPE(w, &PyLong_Type));
-    assert(Py_ABS(Py_SIZE(v)) <= 1);
-    assert(Py_ABS(Py_SIZE(w)) <= 1);
+    assert(_PyLong_IsCompact((PyLongObject *)v));
+    assert(_PyLong_IsCompact((PyLongObject *)w));
 
     vl = (PyLongObject*)v;
     wl = (PyLongObject*)w;
 
-    v0 = Py_SIZE(vl) == 0 ? 0 : (sdigit)vl->ob_digit[0];
-    w0 = Py_SIZE(wl) == 0 ? 0 : (sdigit)wl->ob_digit[0];
-
-    if (Py_SIZE(vl) < 0)
-        v0 = -v0;
-    if (Py_SIZE(wl) < 0)
-        w0 = -w0;
+    v0 = _PyLong_CompactValue(vl);
+    w0 = _PyLong_CompactValue(wl);
 
     res = v0 < w0;
     assert(res == PyObject_RichCompareBool(v, w, Py_LT));
@@ -2359,7 +2360,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
             if (keys_are_all_same_type) {
                 if (key_type == &PyLong_Type &&
                     ints_are_bounded &&
-                    Py_ABS(Py_SIZE(key)) > 1) {
+                    !_PyLong_IsCompact((PyLongObject *)key)) {
 
                     ints_are_bounded = 0;
                 }
@@ -2694,7 +2695,7 @@ list_remove(PyListObject *self, PyObject *value)
         else if (cmp < 0)
             return NULL;
     }
-    PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
     return NULL;
 }
 
@@ -3444,19 +3445,31 @@ listiter_reduce_general(void *_it, int forward)
 {
     PyObject *list;
 
+    /* _PyEval_GetBuiltin can invoke arbitrary code,
+     * call must be before access of iterator pointers.
+     * see issue #101765 */
+
     /* the objects are not the same, index is of different types! */
     if (forward) {
+        PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
+        if (!iter) {
+            return NULL;
+        }
         _PyListIterObject *it = (_PyListIterObject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(iter)),
-                                 it->it_seq, it->it_index);
+            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
         }
+        Py_DECREF(iter);
     } else {
+        PyObject *reversed = _PyEval_GetBuiltin(&_Py_ID(reversed));
+        if (!reversed) {
+            return NULL;
+        }
         listreviterobject *it = (listreviterobject *)_it;
         if (it->it_seq) {
-            return Py_BuildValue("N(O)n", _PyEval_GetBuiltin(&_Py_ID(reversed)),
-                                 it->it_seq, it->it_index);
+            return Py_BuildValue("N(O)n", reversed, it->it_seq, it->it_index);
         }
+        Py_DECREF(reversed);
     }
     /* empty iterator, create an empty list */
     list = PyList_New(0);
