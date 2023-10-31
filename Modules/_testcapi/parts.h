@@ -44,6 +44,7 @@ int _PyTestCapi_Init_Float(PyObject *module);
 int _PyTestCapi_Init_Complex(PyObject *module);
 int _PyTestCapi_Init_Numbers(PyObject *module);
 int _PyTestCapi_Init_Dict(PyObject *module);
+int _PyTestCapi_Init_List(PyObject *module);
 int _PyTestCapi_Init_Set(PyObject *module);
 int _PyTestCapi_Init_List(PyObject *module);
 int _PyTestCapi_Init_Tuple(PyObject *module);
