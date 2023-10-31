@@ -790,7 +790,7 @@ def set_event_loop_policy(policy):
     If policy is None, the default policy is restored."""
     warnings._deprecated("set_event_loop_policy",
                          "{name!r} is deprecated as of Python 3.13 and will be "
-                         "removed in Python {remove}.", remove=(3, 15))
+                         "removed in Python {remove} or later.", remove=(3, 15))
     global _event_loop_policy
     if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
         raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
