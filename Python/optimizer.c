@@ -939,6 +939,15 @@ uop_optimize(
     return 1;
 }
 
+/* Dummy execute() function for Uop Executor.
+ * The actual implementation is inlined in ceval.c,
+ * in _PyEval_EvalFrameDefault(). */
+_PyInterpreterFrame *
+_PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject **stack_pointer)
+{
+    Py_FatalError("Tier 2 is now inlined into Tier 1");
+}
+
 static void
 uop_opt_dealloc(PyObject *self) {
     PyObject_Free(self);
