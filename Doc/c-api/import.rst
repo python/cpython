@@ -98,16 +98,22 @@ Importing Modules
    an exception set on failure (the module still exists in this case).
 
 
-.. c:function:: PyObject* PyImport_AddModuleRef(const char *name)
+.. c:function:: int PyImport_ImportOrAddModule(const char *name, PyObject **module)
 
-   Return the module object corresponding to a module name.
+   Create a new module and store it in :data:`sys.modules`, or get an already
+   imported module from :data:`sys.modules`.
 
-   The *name* argument may be of the form ``package.module``. First check the
-   modules dictionary if there's one there, and if not, create a new one and
-   insert it in the modules dictionary.
+   First check the modules dictionary if there's one there, and if not, create
+   a new one and insert it in the modules dictionary.
 
-   Return a :term:`strong reference` to the module on success. Return ``NULL``
-   with an exception set on failure.
+   The *name* argument may be of the form ``package.module``.
+
+   - If the module does not exist, create a module, store it in
+     :data:`sys.modules`, set *\*module* to a :term:`strong reference` to the
+     module, and return 1.
+   - If the module was already imported, set *\*module* to a :term:`strong
+     reference` to the existing module, and return 0.
+   - On error, raise an exception, set *\*module* to NULL, and return -1.
 
    The module name *name* is decoded from UTF-8.
 
@@ -122,16 +128,18 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_AddModuleObject(PyObject *name)
 
-   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
-   reference` and *name* is a Python :class:`str` object.
+   Similar to :c:func:`PyImport_ImportOrAddModule`, but return a :term:`borrowed
+   reference`, *name* is a Python :class:`str` object, and don't provide the
+   information if the module was created or was already imported.
 
    .. versionadded:: 3.3
 
 
 .. c:function:: PyObject* PyImport_AddModule(const char *name)
 
-   Similar to :c:func:`PyImport_AddModuleRef`, but return a :term:`borrowed
-   reference`.
+   Similar to :c:func:`PyImport_ImportOrAddModule`, but return a :term:`borrowed
+   reference`, and don't provide the information if the module was created or
+   was already imported.
 
 
 .. c:function:: PyObject* PyImport_ExecCodeModule(const char *name, PyObject *co)

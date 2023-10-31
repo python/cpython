@@ -974,9 +974,6 @@ PyCoro_New:PyFrameObject*:frame:0:
 PyCoro_New:PyObject*:name:0:
 PyCoro_New:PyObject*:qualname:0:
 
-PyImport_AddModuleRef:PyObject*::+1:
-PyImport_AddModuleRef:const char*:name::
-
 PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:const char*:name::
 

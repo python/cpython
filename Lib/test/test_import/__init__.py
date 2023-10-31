@@ -2669,24 +2669,25 @@ class SinglephaseInitTests(unittest.TestCase):
 @cpython_only
 class CAPITests(unittest.TestCase):
     def test_pyimport_addmodule(self):
-        # gh-105922: Test PyImport_AddModuleRef(), PyImport_AddModule()
-        # and PyImport_AddModuleObject()
+        # gh-105922: Test PyImport_ImportOrAddModule(), PyImport_AddModule()
+        # and PyImport_AddModuleObject(): module already exists.
         import _testcapi
         for name in (
             'sys',     # frozen module
             'test',    # package
             __name__,  # package.module
         ):
-            _testcapi.check_pyimport_addmodule(name)
+            self.assertIn(name, sys.modules)
+            _testcapi.check_pyimport_addmodule(name, False)
 
     def test_pyimport_addmodule_create(self):
-        # gh-105922: Test PyImport_AddModuleRef(), create a new module
+        # gh-105922: Test PyImport_ImportOrAddModule(): create a new module
         import _testcapi
         name = 'dontexist'
         self.assertNotIn(name, sys.modules)
         self.addCleanup(unload, name)
 
-        mod = _testcapi.check_pyimport_addmodule(name)
+        mod = _testcapi.check_pyimport_addmodule(name, True)
         self.assertIs(mod, sys.modules[name])
 
 

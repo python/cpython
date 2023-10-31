@@ -1,0 +1,2 @@
+Add :c:func:`PyImport_ImportOrAddModule` function and remove
+:c:func:`PyImport_AddModuleRef` function. Patch by Victor Stinner.

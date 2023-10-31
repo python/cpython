@@ -277,8 +277,8 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
         return parse_res;
     }
 
-    PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL) {
+    PyObject *main_module;
+    if (PyImport_ImportOrAddModule("__main__", &main_module) < 0) {
         _PyArena_Free(arena);
         return -1;
     }
@@ -407,9 +407,10 @@ _PyRun_SimpleFileObject(FILE *fp, PyObject *filename, int closeit,
 {
     int ret = -1;
 
-    PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL)
+    PyObject *main_module;
+    if (PyImport_ImportOrAddModule("__main__", &main_module) < 0) {
         return -1;
+    }
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref
 
     int set_file_name = 0;
@@ -503,8 +504,8 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
 
 int
 _PyRun_SimpleStringFlagsWithName(const char *command, const char* name, PyCompilerFlags *flags) {
-    PyObject *main_module = PyImport_AddModuleRef("__main__");
-    if (main_module == NULL) {
+    PyObject *main_module;
+    if (PyImport_ImportOrAddModule("__main__", &main_module) < 0) {
         return -1;
     }
     PyObject *dict = PyModule_GetDict(main_module);  // borrowed ref

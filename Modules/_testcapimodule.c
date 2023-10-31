@@ -3036,15 +3036,19 @@ static PyObject *
 check_pyimport_addmodule(PyObject *self, PyObject *args)
 {
     const char *name;
-    if (!PyArg_ParseTuple(args, "s", &name)) {
+    int is_new;
+    if (!PyArg_ParseTuple(args, "si", &name, &is_new)) {
         return NULL;
     }
+    // name must be the name of a module which is already in sys.modules
 
-    // test PyImport_AddModuleRef()
-    PyObject *module = PyImport_AddModuleRef(name);
-    if (module == NULL) {
+    // test PyImport_ImportOrAddModule()
+    PyObject *module = UNINITIALIZED_PTR;
+    int res = PyImport_ImportOrAddModule(name, &module);
+    if (res < 0) {
         return NULL;
     }
+    assert(res == is_new);
     assert(PyModule_Check(module));
     // module is a strong reference
 

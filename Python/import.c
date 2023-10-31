@@ -291,7 +291,7 @@ PyImport_GetModule(PyObject *name)
    if not, create a new one and insert it in the modules dictionary. */
 
 static PyObject *
-import_add_module(PyThreadState *tstate, PyObject *name)
+import_add_module(PyThreadState *tstate, PyObject *name, int *is_new)
 {
     PyObject *modules = MODULES(tstate->interp);
     if (modules == NULL) {
@@ -305,31 +305,47 @@ import_add_module(PyThreadState *tstate, PyObject *name)
         return NULL;
     }
     if (m != NULL && PyModule_Check(m)) {
+        if (is_new) {
+            *is_new = 0;
+        }
         return m;
     }
     Py_XDECREF(m);
+
     m = PyModule_NewObject(name);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
     if (PyObject_SetItem(modules, name, m) != 0) {
         Py_DECREF(m);
         return NULL;
     }
 
+    if (is_new) {
+        *is_new = 1;
+    }
     return m;
 }
 
-PyObject *
-PyImport_AddModuleRef(const char *name)
+int
+PyImport_ImportOrAddModule(const char *name, PyObject **pmodule)
 {
     PyObject *name_obj = PyUnicode_FromString(name);
     if (name_obj == NULL) {
-        return NULL;
+        *pmodule = NULL;
+        return -1;
     }
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *module = import_add_module(tstate, name_obj);
+    int is_new;
+    PyObject *module = import_add_module(tstate, name_obj, &is_new);
     Py_DECREF(name_obj);
-    return module;
+
+    *pmodule = module;
+    if (module == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    return is_new;
 }
 
 
@@ -337,7 +353,7 @@ PyObject *
 PyImport_AddModuleObject(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *mod = import_add_module(tstate, name);
+    PyObject *mod = import_add_module(tstate, name, NULL);
     if (!mod) {
         return NULL;
     }
@@ -351,7 +367,7 @@ PyImport_AddModuleObject(PyObject *name)
     // unknown.  With weakref we can be sure that we get either a reference to
     // live object or NULL.
     //
-    // Use PyImport_AddModuleRef() to avoid these issues.
+    // Use PyImport_ImportOrAddModule() to avoid these issues.
     PyObject *ref = PyWeakref_NewRef(mod, NULL);
     Py_DECREF(mod);
     if (ref == NULL) {
@@ -1258,7 +1274,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
                 return NULL;
             }
         }
-        mod = import_add_module(tstate, name);
+        mod = import_add_module(tstate, name, NULL);
         if (mod == NULL) {
             return NULL;
         }
@@ -1386,7 +1402,7 @@ create_builtin(PyThreadState *tstate, PyObject *name, PyObject *spec)
         if (_PyUnicode_EqualToASCIIString(name, p->name)) {
             if (p->initfunc == NULL) {
                 /* Cannot re-init internal module ("sys" or "builtins") */
-                return import_add_module(tstate, name);
+                return import_add_module(tstate, name, NULL);
             }
             mod = (*p->initfunc)();
             if (mod == NULL) {
@@ -1671,7 +1687,7 @@ module_dict_for_exec(PyThreadState *tstate, PyObject *name)
 {
     PyObject *m, *d;
 
-    m = import_add_module(tstate, name);
+    m = import_add_module(tstate, name, NULL);
     if (m == NULL)
         return NULL;
     /* If the module is being reloaded, we get the old module back
@@ -2110,7 +2126,7 @@ PyImport_ImportFrozenModuleObject(PyObject *name)
     if (info.is_package) {
         /* Set __path__ to the empty list */
         PyObject *l;
-        m = import_add_module(tstate, name);
+        m = import_add_module(tstate, name, NULL);
         if (m == NULL)
             goto err_return;
         d = PyModule_GetDict(m);
@@ -2252,8 +2268,8 @@ init_importlib(PyThreadState *tstate, PyObject *sysmod)
         return -1;
     }
 
-    PyObject *importlib = PyImport_AddModuleRef("_frozen_importlib");
-    if (importlib == NULL) {
+    PyObject *importlib;
+    if (PyImport_ImportOrAddModule("_frozen_importlib", &importlib) < 0) {
         return -1;
     }
     IMPORTLIB(interp) = importlib;
@@ -3464,7 +3480,7 @@ _imp_init_frozen_impl(PyObject *module, PyObject *name)
     if (ret == 0) {
         Py_RETURN_NONE;
     }
-    return import_add_module(tstate, name);
+    return import_add_module(tstate, name, NULL);
 }
 
 /*[clinic input]
