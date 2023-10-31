@@ -648,10 +648,12 @@ _copy_string_obj_raw(PyObject *strobj)
 }
 
 static int
-_release_xid_data(_PyCrossInterpreterData *data)
+_release_xid_data(_PyCrossInterpreterData *data, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
-    int res = _PyCrossInterpreterData_Release(data);
+    int res = rawfree
+        ? _PyCrossInterpreterData_Release(data)
+        : _PyCrossInterpreterData_ReleaseAndRawFree(data);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         _PyCrossInterpreterData_Clear(NULL, data);
@@ -763,21 +765,24 @@ _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
 /* shared namespaces */
 
 typedef struct _sharednsitem {
+    int64_t interpid;
     const char *name;
-    int hasdata;
-    _PyCrossInterpreterData data;
+    _PyCrossInterpreterData *data;
+    _PyCrossInterpreterData _data;
 } _PyXI_namespace_item;
 
 static void _sharednsitem_clear(_PyXI_namespace_item *);  // forward
 
 static int
-_sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
+_sharednsitem_init(_PyXI_namespace_item *item, int64_t interpid, PyObject *key)
 {
+    assert(interpid >= 0);
+    item->interpid = interpid;
     item->name = _copy_string_obj_raw(key);
     if (item->name == NULL) {
         return -1;
     }
-    item->hasdata = 0;
+    item->data = NULL;
     return 0;
 }
 
@@ -785,10 +790,23 @@ static int
 _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 {
     assert(item->name != NULL);
-    assert(!item->hasdata);
-    item->hasdata = 1;
-    if (_PyObject_GetCrossInterpreterData(value, &item->data) != 0) {
-        item->hasdata = 0;
+    assert(item->data == NULL);
+    item->data = &item->_data;
+    if (item->interpid == PyInterpreterState_GetID(PyInterpreterState_Get())) {
+        item->data = &item->_data;
+    }
+    else {
+        item->data = PyMem_RawMalloc(sizeof(_PyCrossInterpreterData));
+        if (item->data == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+    }
+    if (_PyObject_GetCrossInterpreterData(value, item->data) != 0) {
+        if (item->data != &item->_data) {
+            PyMem_RawFree(item->data);
+        }
+        item->data = NULL;
         return -1;
     }
     return 0;
@@ -801,9 +819,11 @@ _sharednsitem_clear(_PyXI_namespace_item *item)
         PyMem_RawFree((void *)item->name);
         item->name = NULL;
     }
-    if (item->hasdata) {
-        item->hasdata = 0;
-        (void)_release_xid_data(&item->data);
+    _PyCrossInterpreterData *data = item->data;
+    if (data != NULL) {
+        item->data = NULL;
+        int rawfree = (data == &item->_data);
+        (void)_release_xid_data(data, rawfree);
     }
 }
 
@@ -815,8 +835,8 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns, PyObject *dflt)
         return -1;
     }
     PyObject *value;
-    if (item->hasdata) {
-        value = _PyCrossInterpreterData_NewObject(&item->data);
+    if (item->data != NULL) {
+        value = _PyCrossInterpreterData_NewObject(item->data);
         if (value == NULL) {
             Py_DECREF(name);
             return -1;
@@ -889,7 +909,7 @@ _PyXI_FreeNamespace(_PyXI_namespace *ns)
     }
     else {
         // We can assume the first item represents all items.
-        assert(ns->items[0].data.interpid == interp->id);
+        assert(ns->items[0].data->interpid == interp->id);
         if (interp == PyInterpreterState_Get()) {
             // We can avoid pending calls.
             _free_xi_namespace(ns);
@@ -918,13 +938,14 @@ _PyXI_NamespaceFromNames(PyObject *names)
     if (ns == NULL) {
         return NULL;
     }
+    int64_t interpid = PyInterpreterState_Get()->id;
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *key = PySequence_GetItem(names, i);
         if (key == NULL) {
             break;
         }
         struct _sharednsitem *item = &ns->items[i];
-        int res = _sharednsitem_init(item, key);
+        int res = _sharednsitem_init(item, interpid, key);
         Py_DECREF(key);
         if (res < 0) {
             break;
@@ -958,6 +979,7 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
         return NULL;
     }
     ns->interp = PyInterpreterState_Get();
+    int64_t interpid = ns->interp->id;
 
     Py_ssize_t pos = 0;
     for (Py_ssize_t i=0; i < len; i++) {
@@ -966,7 +988,7 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
             break;
         }
         _PyXI_namespace_item *item = &ns->items[i];
-        if (_sharednsitem_init(item, key) != 0) {
+        if (_sharednsitem_init(item, interpid, key) != 0) {
             break;
         }
         if (_sharednsitem_set_value(item, value) < 0) {
