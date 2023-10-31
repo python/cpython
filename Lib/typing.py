@@ -2323,13 +2323,78 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
+def _get_type_var_args(reference, params):
+    """transforms params to match the requested arguments
+    of reference.
+
+    >>> _get_type_var_args((T, U, *Ts), (int, str, float, bool))
+    (int, str, (float, bool))
+    >>> _get_type_var_args((T, U, *Ts), (int, str, *Ts))
+    (int, str *Ts)
+    """
+
+    # find bounds of potential typevar tuple
+    tuple_start, tuple_end = 0, None
+    found_typvartuple = False
+    for i, tv in enumerate(reference):
+        if _is_unpacked_typevartuple(tv) or isinstance(tv, TypeVarTuple):
+            tuple_start = i
+            found_typvartuple = True
+        elif found_typvartuple:
+            tuple_end = i
+            break
+
+    if found_typvartuple:
+        # if typevartuple doesnt consume rest
+        if tuple_end is not None:
+            tuple_end = tuple_end - len(reference)
+
+        # tuple of typevars
+        type_var_tuple_params = params[tuple_start:tuple_end]
+
+        # params contains typevartuple args
+        if len(params) > tuple_start:
+            # if params[tuple_start] is *Ts keep it as-is
+            if _is_unpacked_typevartuple(params[tuple_start]):
+                type_var_tuple_params = params[tuple_start]
+
+        # if starts with type var tuple
+        if tuple_start == 0:
+            # if there are type vars after it
+            if tuple_end is not None:
+                return (type_var_tuple_params, *params[tuple_end:])
+            return (type_var_tuple_params,)
+        # if it's at the end
+        elif tuple_end is None:
+            return (*params[:tuple_start], type_var_tuple_params)
+        # if it's in the middle
+        return (*params[:tuple_start], type_var_tuple_params, *params[tuple_end:])
+    return params
+
 def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[str, Any]"):
     # nothing to substitute
     if len(substitutions) < 2:
         return {}
 
+    previous_params = substitutions[-2]
+    new_params = substitutions[-1]
+    new_substitutions = _get_type_var_args(previous_params, new_params)
+
     # get a mapping of typevar to value
-    mapping = {substitutions[-2][i]: substitutions[-1][i] for i in range(len(substitutions[0]))}
+    mapping = {}
+    for i in range(len(previous_params)):
+        current = previous_params[i]
+        # if the previous parameter is *Ts
+        # make it {Ts: new Ts or value}
+        if _is_unpacked_typevartuple(current):
+            (previous_typevartuple,) = get_args(current)
+            new_value = new_substitutions[i]
+            if _is_unpacked_typevartuple(new_value):
+                (new_value,) = get_args(new_value)
+
+            mapping[previous_typevartuple] = new_value
+        else:
+            mapping[current] = new_substitutions[i]
 
     hints_to_replace = {}
 
@@ -2339,7 +2404,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
         if origin is not None:
             new_args = tuple(_make_substitution(origin, get_args(value), mapping))
             sub = _copy_with(value, new_args)
-        elif hasattr(value, '__typing_subst__'):
+        elif _is_typevar_like(value):
             sub = mapping[value]
         else:
             continue

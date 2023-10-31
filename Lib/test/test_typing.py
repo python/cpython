@@ -6561,9 +6561,78 @@ class GetTypeHintTests(BaseTestCase):
             key: KT
 
         class Bar(Foo[str, int]):
-            ...
+            pass
 
         self.assertEqual(get_type_hints(Bar), {'arr': List[str], 'key': int})
+
+    def test_get_type_hints_variadic_class(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+
+        class A(Generic[T1, T2, *Ts]):
+            t1: T1
+            t2: T2
+            ts: Tuple[*Ts]
+        self.assertEqual(gth(A[int, str]), {'t1': int, 't2': str, 'ts': Tuple[()]})
+        self.assertEqual(gth(A[int, str, float]), {'t1': int, 't2': str, 'ts': Tuple[float]})
+        self.assertEqual(gth(A[int, str, float, bool]), {'t1': int, 't2': str, 'ts': Tuple[float, bool]})
+
+        class B(Generic[T1, T2, Unpack[Ts]]):
+            t1: T1
+            t2: T2
+            ts: Tuple[Unpack[Ts]]
+        self.assertEqual(gth(B[int, str]), {'t1': int, 't2': str, 'ts': Tuple[()]})
+        self.assertEqual(gth(B[int, str, float]), {'t1': int, 't2': str, 'ts': Tuple[float]})
+        self.assertEqual(gth(B[int, str, float, bool]), {'t1': int, 't2': str, 'ts': Tuple[float, bool]})
+        class C(Generic[T1, *Ts, T2]):
+            t1: T1
+            ts: Tuple[*Ts]
+            t2: T2
+
+        self.assertEqual(gth(C[int, str]), {'t1': int, 'ts': Tuple[()], 't2': str})
+        self.assertEqual(gth(C[int, str, float]), {'t1': int, 'ts': Tuple[str], 't2': float})
+        self.assertEqual(gth(C[int, str, float, bool]), {'t1': int, 'ts': Tuple[str, float], 't2': bool})
+
+        class E(Generic[*Ts, T1, T2]):
+            ts: Tuple[*Ts]
+            t1: T1
+            t2: T2
+
+        self.assertEqual(gth(E[int, str]), {'ts': Tuple[()], 't1': int, 't2': str})
+        self.assertEqual(gth(E[int, str, float]), {'ts': Tuple[int], 't1': str, 't2': float})
+        self.assertEqual(gth(E[int, str, float, bool]), {'ts': Tuple[int, str], 't1': float, 't2': bool})
+
+    def test_get_type_hints_variadic_type_parameter(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+
+        class A(Generic[T1, T2, *Ts]):
+            t1: T1
+            t2: T2
+            ts: Tuple[*Ts]
+
+        class B(A[int, str, *Ts]):
+            pass
+        self.assertEqual(gth(B), {'t1': int, 't2': str, 'ts': Tuple[*Ts]})
+        self.assertEqual(gth(B[()]), {'t1': int, 't2': str, 'ts': Tuple[()]})
+        self.assertEqual(gth(B[float]), {'t1': int, 't2': str, 'ts': Tuple[float]})
+
+    def test_get_type_hints_variadic_with_typevars(self):
+        T1 = TypeVar('T1')
+        T2 = TypeVar('T2')
+        Ts = TypeVarTuple('Ts')
+
+        class A(Generic[T1, T2, *Ts]):
+            t1: T1
+            t2: T2
+            ts: Tuple[*Ts]
+
+        class D(A[int, str, T1, T2]):
+            pass
+
+        self.assertEqual(gth(D[int, str]), {'t1': int, 't2': str, 'ts': Tuple[int, str]})
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
