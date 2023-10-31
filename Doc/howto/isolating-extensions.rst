@@ -401,21 +401,25 @@ Defining ``tp_dealloc``
 .......................
 
 If your type has a custom :c:member:`~PyTypeObject.tp_dealloc` function,
-it needs to decrement the reference count of the type.
+it needs to:
 
-To keep the type valid while ``tp_free`` is called, this needs to be done
-*after* the instance is deallocated. For example::
+- call :c:func:`PyObject_GC_UnTrack` before any fields are invalidated, and
+- decrement the reference count of the type.
+
+To keep the type valid while ``tp_free`` is called, the type's refcount needs
+to be decremented *after* the instance is deallocated. For example::
 
    static void my_dealloc(PyObject *self)
    {
+       PyObject_GC_UnTrack(self);
        ...
        PyTypeObject *type = Py_TYPE(self);
        type->tp_free(self);
        Py_DECREF(type);
    }
 
-The default ``tp_dealloc`` function does this;
-If your type does *not* override
+The default ``tp_dealloc`` function does this, so
+if your type does *not* override
 ``tp_dealloc`` you don't need to add it.
 
 
@@ -425,6 +429,18 @@ Not overriding ``tp_free``
 The :c:member:`~PyTypeObject.tp_free` slot of a heap type must be set to
 :c:func:`PyObject_GC_Del`.
 This is the default; avoid overriding it.
+
+
+Avoiding ``PyObject_New``
+.........................
+
+GC-tracked objects need to be allocated using GC-aware functions.
+
+If you use use :c:func:`PyObject_New` or :c:func:`PyObject_NewVar`:
+
+- Get and call type's :c:member:`~PyTypeObject.tp_alloc` slot , if possible.
+- If not possible (e.g. inside a custom ``tp_alloc``),
+  call :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
 
 
 Module State Access from Classes
