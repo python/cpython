@@ -18,14 +18,22 @@ list_check_exact(PyObject* Py_UNUSED(module), PyObject *obj)
 static PyObject *
 list_new(PyObject *self, PyObject *obj)
 {
-    return PyList_New(obj);
+    return PyList_New(PyLong_AsSsize_t(obj));
 }
 
+static PyObject *
+list_size(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    RETURN_SIZE(PyList_Size(obj));
+}
 
 static PyMethodDef test_methods[] = {
     {"list_check", list_check, METH_O},
     {"list_check_exact", list_check_exact, METH_O},
-    {"list_new", list_new, METH_NOARGS},
+    {"list_new", list_new, METH_O},
+    {"list_size", list_size, METH_O},
+    
 };
 
 int

@@ -33,8 +33,18 @@ class CAPITest(unittest.TestCase):
 
     def test_list_new(self):
         list_new = _testcapi.list_new
-        lst = list_new()
+        lst = list_new(0)
         self.assertEqual(lst, [])
         self.assertIs(type(lst), list)
-        lst2 = list_new()
+        lst2 = list_new(0)
         self.assertIsNot(lst2, lst)
+
+    def test_list_size(self):
+        size = _testcapi.list_size
+        self.assertEqual(size([1, 2]), 2)
+        self.assertEqual(size(ListSubclass([1, 2])), 2)
+        self.assertRaises(SystemError, size, UserList())
+        self.assertRaises(SystemError, size, {})
+        self.assertRaises(SystemError, size, 23)
+        self.assertRaises(SystemError, size, object())
+        # CRASHES size(NULL)
