@@ -153,6 +153,9 @@ struct _xi_state {
     // heap types
     // XXX Remove this field once we have a tp_* slot.
     struct _xidregistry registry;
+
+    // heap types
+    PyObject *PyExc_NotShareableError;
 };
 
 extern PyStatus _PyXI_Init(PyInterpreterState *interp);

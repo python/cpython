@@ -172,25 +172,49 @@ _check_xidata(PyThreadState *tstate, _PyCrossInterpreterData *data)
     return 0;
 }
 
-crossinterpdatafunc _PyCrossInterpreterData_Lookup(PyObject *);
+static crossinterpdatafunc _lookup_getdata_from_registry(
+                                            PyInterpreterState *, PyObject *);
 
-/* This is a separate func from _PyCrossInterpreterData_Lookup in order
-   to keep the registry code separate. */
 static crossinterpdatafunc
-_lookup_getdata(PyObject *obj)
+_lookup_getdata(PyInterpreterState *interp, PyObject *obj)
 {
-    crossinterpdatafunc getdata = _PyCrossInterpreterData_Lookup(obj);
-    if (getdata == NULL && PyErr_Occurred() == 0)
-        PyErr_Format(PyExc_ValueError,
+   /* Cross-interpreter objects are looked up by exact match on the class.
+      We can reassess this policy when we move from a global registry to a
+      tp_* slot. */
+    return _lookup_getdata_from_registry(interp, obj);
+}
+
+crossinterpdatafunc
+_PyCrossInterpreterData_Lookup(PyObject *obj)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _lookup_getdata(interp, obj);
+}
+
+static inline void
+_set_xid_lookup_failure(PyInterpreterState *interp, PyObject *obj)
+{
+    PyObject *exctype = interp->xi.PyExc_NotShareableError;
+    assert(exctype != NULL);
+    if (obj == NULL) {
+        PyErr_SetString(exctype,
+                        "object does not support cross-interpreter data");
+    }
+    else {
+        PyErr_Format(exctype,
                      "%S does not support cross-interpreter data", obj);
-    return getdata;
+    }
 }
 
 int
 _PyObject_CheckCrossInterpreterData(PyObject *obj)
 {
-    crossinterpdatafunc getdata = _lookup_getdata(obj);
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    crossinterpdatafunc getdata = _lookup_getdata(interp, obj);
     if (getdata == NULL) {
+        if (!PyErr_Occurred()) {
+            _set_xid_lookup_failure(interp, obj);
+        }
         return -1;
     }
     return 0;
@@ -212,9 +236,12 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
 
     // Call the "getdata" func for the object.
     Py_INCREF(obj);
-    crossinterpdatafunc getdata = _lookup_getdata(obj);
+    crossinterpdatafunc getdata = _lookup_getdata(interp, obj);
     if (getdata == NULL) {
         Py_DECREF(obj);
+        if (!PyErr_Occurred()) {
+            _set_xid_lookup_failure(interp, obj);
+        }
         return -1;
     }
     int res = getdata(tstate, obj, data);
@@ -474,17 +501,11 @@ _PyCrossInterpreterData_UnregisterClass(PyTypeObject *cls)
     return res;
 }
 
-
-/* Cross-interpreter objects are looked up by exact match on the class.
-   We can reassess this policy when we move from a global registry to a
-   tp_* slot. */
-
-crossinterpdatafunc
-_PyCrossInterpreterData_Lookup(PyObject *obj)
+static crossinterpdatafunc
+_lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _xidregistry *xidregistry = _get_xidregistry(interp, cls);
     PyThread_acquire_lock(xidregistry->mutex, WAIT_LOCK);
 
@@ -1286,11 +1307,21 @@ _PyXI_Exit(_PyXI_session *session)
 PyStatus
 _PyXI_Init(PyInterpreterState *interp)
 {
+    // Initialize NotShareableError (a heap type).
+    PyObject *exctype = PyErr_NewException("_interpreters.NotShareableError",
+                                           PyExc_ValueError, NULL);
+    if (exctype == NULL) {
+        PyErr_Clear();
+        return _PyStatus_ERR("could not initialize NotShareableError");
+    }
+    interp->xi.PyExc_NotShareableError = exctype;
+
     return _PyStatus_OK();
 }
 
 void
 _PyXI_Fini(PyInterpreterState *interp)
 {
-    // For now we don't do anything.
+    // Dealloc heap type exceptions.
+    Py_CLEAR(interp->xi.PyExc_NotShareableError);
 }
