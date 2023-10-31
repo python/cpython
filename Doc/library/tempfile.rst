@@ -409,7 +409,7 @@ Here are some examples of typical usage of the :mod:`tempfile` module::
     ...     fp.close()
     ... # the file is closed, but not removed
     ... # open the file again by using its name
-    ...     with open(fp.name) as f:
+    ...     with open(fp.name, mode='rb') as f:
     ...         f.read()
     b'Hello world!'
     >>>
