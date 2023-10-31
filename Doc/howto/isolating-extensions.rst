@@ -428,7 +428,7 @@ Not overriding ``tp_free``
 
 The :c:member:`~PyTypeObject.tp_free` slot of a heap type must be set to
 :c:func:`PyObject_GC_Del`.
-This is the default; avoid overriding it.
+This is the default; do not override it.
 
 
 Avoiding ``PyObject_New``
