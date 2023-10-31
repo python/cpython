@@ -1107,6 +1107,10 @@ New Features
   limited C API.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* Add :c:func:`PyErr_FormatUnraisable` function: similar to
+  :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
+  (Contributed by Serhiy Storchaka in :gh:`108082`.)
+
 * Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
   (Contributed by Victor Stinner in :gh:`111089`.)
 
@@ -1185,6 +1189,14 @@ Porting to Python 3.13
   truncate on purpose at the first null byte,
   ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
   (Contributed by Victor Stinner in :gh:`111089`.)
+
+* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
+  header file. If needed, it should now be included explicitly. For example, it
+  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
+  Including ``<stddef.h>`` explicitly was already needed by all other
+  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
 
 Deprecated
 ----------
