@@ -724,6 +724,14 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         assert(_PyInterpreterState_IsRunningMain(interp));
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
+    case _PyXI_ERR_MAIN_NS_FAILURE:
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to get __main__ namespace");
+        break;
+    case _PyXI_ERR_APPLY_NS_FAILURE:
+        PyErr_SetString(PyExc_RuntimeError,
+                        "failed to apply namespace to __main__");
+        break;
     case _PyXI_ERR_NOT_SHAREABLE:
         _set_xid_lookup_failure(interp, NULL, NULL);
         break;
@@ -794,6 +802,14 @@ _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
         // Raise an exception corresponding to the code.
         assert(info->code != _PyXI_ERR_NO_ERROR);
         (void)_PyXI_ApplyErrorCode(info->code, info->interp);
+        if (info->uncaught.type != NULL || info->uncaught.msg != NULL) {
+            // __context__ will be set to a proxy of the propagated exception.
+            PyObject *exc = PyErr_GetRaisedException();
+            _Py_excinfo_Apply(&info->uncaught, exctype);
+            PyObject *exc2 = PyErr_GetRaisedException();
+            PyException_SetContext(exc, exc2);
+            PyErr_SetRaisedException(exc);
+        }
     }
     assert(PyErr_Occurred());
 }
@@ -1212,14 +1228,15 @@ _capture_current_exception(_PyXI_session *session)
         // We want to actually capture the current exception.
         excval = PyErr_GetRaisedException();
     }
-    else if (errcode == _PyXI_ERR_NOT_SHAREABLE) {
-        // We will set the errcode, in addition to capturing the exception.
+    else if (errcode == _PyXI_ERR_ALREADY_RUNNING) {
+        // We don't need the exception info.
+        PyErr_Clear();
     }
     else {
         // We could do a variety of things here, depending on errcode.
-        // However, for now we simply ignore the exception and rely
-        // strictly on errcode.
-        PyErr_Clear();
+        // However, for now we simply capture the exception and save
+        // the errcode.
+        excval = PyErr_GetRaisedException();
     }
 
     // Capture the exception.
@@ -1227,7 +1244,17 @@ _capture_current_exception(_PyXI_session *session)
     *exc = (_PyXI_exception_info){
         .interp = session->init_tstate->interp,
     };
-    const char *failure = _PyXI_InitExceptionInfo(exc, excval, errcode);
+    const char *failure;
+    if (excval == NULL) {
+        failure = _PyXI_InitExceptionInfo(exc, NULL, errcode);
+    }
+    else {
+        failure = _PyXI_InitExceptionInfo(exc, excval,
+                                          _PyXI_ERR_UNCAUGHT_EXCEPTION);
+        if (failure == NULL && session->exc_override != NULL) {
+            exc->code = errcode;
+        }
+    }
 
     // Handle capture failure.
     if (failure != NULL) {
@@ -1302,11 +1329,13 @@ _PyXI_Enter(_PyXI_session *session,
     // Cache __main__.__dict__.
     PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
     if (main_mod == NULL) {
+        errcode = _PyXI_ERR_MAIN_NS_FAILURE;
         goto error;
     }
     PyObject *ns = PyModule_GetDict(main_mod);  // borrowed
     Py_DECREF(main_mod);
     if (ns == NULL) {
+        errcode = _PyXI_ERR_MAIN_NS_FAILURE;
         goto error;
     }
     session->main_ns = Py_NewRef(ns);
@@ -1314,19 +1343,21 @@ _PyXI_Enter(_PyXI_session *session,
     // Apply the cross-interpreter data.
     if (sharedns != NULL) {
         if (_PyXI_ApplyNamespace(sharedns, ns, NULL) < 0) {
+            errcode = _PyXI_ERR_APPLY_NS_FAILURE;
             goto error;
         }
         _PyXI_FreeNamespace(sharedns);
     }
 
     errcode = _PyXI_ERR_NO_ERROR;
+    assert(!PyErr_Occurred());
     return 0;
 
 error:
     assert(PyErr_Occurred());
-    if (errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION) {
-        session->exc_override = &errcode;
-    }
+    // We want to propagate all exceptions here directly (best effort).
+    assert(errcode != _PyXI_ERR_UNCAUGHT_EXCEPTION);
+    session->exc_override = &errcode;
     _capture_current_exception(session);
     _exit_session(session);
     if (sharedns != NULL) {
