@@ -604,8 +604,6 @@ although there is currently no date scheduled for their removal.
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
 
-* :mod:`importlib.resources`: First parameter to files is renamed to 'anchor'.
-
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
