@@ -385,12 +385,9 @@ class Analyzer:
     def analyze_pseudo(self, pseudo: parsing.Pseudo) -> PseudoInstruction:
         targets = [self.instrs[target] for target in pseudo.targets]
         assert targets
-        # Make sure the targets have the same fmt
-        fmts = list(set([t.instr_fmt for t in targets]))
-        assert len(fmts) == 1
         ignored_flags = {"HAS_EVAL_BREAK_FLAG", "HAS_DEOPT_FLAG", "HAS_ERROR_FLAG"}
         assert len({t.instr_flags.bitmap(ignore=ignored_flags) for t in targets}) == 1
-        return PseudoInstruction(pseudo.name, targets, fmts[0], targets[0].instr_flags)
+        return PseudoInstruction(pseudo.name, targets, targets[0].instr_flags)
 
     def analyze_instruction(
         self, instr: Instruction, offset: int
@@ -432,7 +429,6 @@ class Analyzer:
             "LOAD_FAST_LOAD_FAST",
             "LOAD_CONST_LOAD_FAST",
             "STORE_FAST_STORE_FAST",
-            "_BINARY_OP_INPLACE_ADD_UNICODE",
             "POP_JUMP_IF_TRUE",
             "POP_JUMP_IF_FALSE",
             "_ITER_JUMP_LIST",

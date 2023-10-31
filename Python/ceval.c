@@ -870,7 +870,7 @@ error:
         monitor_raise(tstate, frame, next_instr-1);
 exception_unwind:
         {
-            /* We can't use frame->f_lasti here, as RERAISE may have set it */
+            /* We can't use frame->instr_ptr here, as RERAISE may have set it */
             int offset = INSTR_OFFSET()-1;
             int level, handler, lasti;
             if (get_exception_handler(_PyFrame_GetCode(frame), offset, &level, &handler, &lasti) == 0) {
@@ -1007,7 +1007,6 @@ do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } wh
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
         OPT_STAT_INC(uops_executed);
-        UOP_EXE_INC(opcode);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif

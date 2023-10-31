@@ -27,6 +27,7 @@
 #undef DEOPT_IF
 #define DEOPT_IF(COND, INSTNAME) \
     if ((COND)) {                \
+        UOP_STAT_INC(INSTNAME, miss); \
         goto deoptimize_tier_two;\
     }
 
@@ -96,7 +97,7 @@ _PyUopExecute(_PyExecutorObject *executor, _PyInterpreterFrame *frame, PyObject 
                 (int)(stack_pointer - _PyFrame_Stackbase(frame)));
         next_uop++;
         OPT_STAT_INC(uops_executed);
-        UOP_EXE_INC(opcode);
+        UOP_STAT_INC(opcode, execution_count);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif
