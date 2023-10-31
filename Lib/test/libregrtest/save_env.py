@@ -96,7 +96,6 @@ class saved_test_environment:
         self.try_get_module('asyncio')
         return support.maybe_get_event_loop_policy()
     def restore_asyncio_events__event_loop_policy(self, policy):
-        asyncio = self.get_module('asyncio')
         support.set_event_loop_policy(policy)
 
     def get_sys_argv(self):
