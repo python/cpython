@@ -100,6 +100,8 @@ exec_tests = [
     # With
     "with x as y: pass",
     "with x as y, z as q: pass",
+    "with (x as y): pass",
+    "with (x, y): pass",
     # Raise
     "raise Exception('string')",
     # TryExcept
@@ -3015,6 +3017,8 @@ exec_results = [
 ('Module', [('If', (1, 0, 6, 6), ('Name', (1, 3, 1, 4), 'a', ('Load',)), [('Pass', (2, 2, 2, 6))], [('If', (3, 0, 6, 6), ('Name', (3, 5, 3, 6), 'b', ('Load',)), [('Pass', (4, 2, 4, 6))], [('Pass', (6, 2, 6, 6))])])], []),
 ('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',)))], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('With', (1, 0, 1, 25), [('withitem', ('Name', (1, 5, 1, 6), 'x', ('Load',)), ('Name', (1, 10, 1, 11), 'y', ('Store',))), ('withitem', ('Name', (1, 13, 1, 14), 'z', ('Load',)), ('Name', (1, 18, 1, 19), 'q', ('Store',)))], [('Pass', (1, 21, 1, 25))], None)], []),
+('Module', [('With', (1, 0, 1, 19), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), ('Name', (1, 11, 1, 12), 'y', ('Store',)))], [('Pass', (1, 15, 1, 19))], None)], []),
+('Module', [('With', (1, 0, 1, 17), [('withitem', ('Name', (1, 6, 1, 7), 'x', ('Load',)), None), ('withitem', ('Name', (1, 9, 1, 10), 'y', ('Load',)), None)], [('Pass', (1, 13, 1, 17))], None)], []),
 ('Module', [('Raise', (1, 0, 1, 25), ('Call', (1, 6, 1, 25), ('Name', (1, 6, 1, 15), 'Exception', ('Load',)), [('Constant', (1, 16, 1, 24), 'string', None)], []), None)], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [('ExceptHandler', (3, 0, 4, 6), ('Name', (3, 7, 3, 16), 'Exception', ('Load',)), None, [('Pass', (4, 2, 4, 6))])], [], [])], []),
 ('Module', [('Try', (1, 0, 4, 6), [('Pass', (2, 2, 2, 6))], [], [], [('Pass', (4, 2, 4, 6))])], []),

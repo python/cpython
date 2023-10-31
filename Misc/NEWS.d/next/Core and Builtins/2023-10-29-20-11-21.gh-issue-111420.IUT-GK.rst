@@ -1,0 +1,1 @@
+Allow type comments in parenthesized ``with`` statements
