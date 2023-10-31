@@ -18,4 +18,3 @@ class CAPITest(unittest.TestCase):
         self.assertFalse(check(b'abc'))
         self.assertFalse(check(42))
         self.assertFalse(check(object()))
-
