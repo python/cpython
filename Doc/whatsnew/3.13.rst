@@ -509,7 +509,7 @@ Pending Removal in Python 3.15
   (Contributed by Nikita Sobolev in :gh:`102029`.)
 
 * :func:`asyncio.set_event_loop_policy` will be removed along with the
-  rest of the asyncio policy system.
+  rest of the asyncio policy system in Python 3.15 or later.
 
 Pending Removal in Python 3.16
 ------------------------------
