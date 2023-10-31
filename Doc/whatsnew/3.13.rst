@@ -1107,6 +1107,10 @@ New Features
   limited C API.
   (Contributed by Victor Stinner in :gh:`85283`.)
 
+* Add :c:func:`PyErr_FormatUnraisable` function: similar to
+  :c:func:`PyErr_WriteUnraisable`, but allow to customize the warning mesage.
+  (Contributed by Serhiy Storchaka in :gh:`108082`.)
+
 * Add :c:func:`PyUnicode_AsUTF8` function to the limited C API.
   (Contributed by Victor Stinner in :gh:`111089`.)
 
