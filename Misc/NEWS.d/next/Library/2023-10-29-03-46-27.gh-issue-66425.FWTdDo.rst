@@ -1,0 +1,3 @@
+Remove the code to set the REMOTE_HOST header from wsgiref module,
+as it is unreachable. This header is used for performance reasons,
+which is not necessary in the wsgiref module.
