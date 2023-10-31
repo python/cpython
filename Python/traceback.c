@@ -1024,8 +1024,16 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit,
         if (cnt <= TB_RECURSIVE_CUTOFF) {
             if (tb_displayline(tb, f, code->co_filename, tb_lineno,
                                tb->tb_frame, code->co_name, indent, margin) < 0) {
+                goto error;
             }
 
+            if (PyErr_CheckSignals() < 0) {
+                goto error;
+            }
+        }
+        Py_CLEAR(code);
+        tb = tb->tb_next;
+    }
     if (cnt > TB_RECURSIVE_CUTOFF) {
         if (tb_print_line_repeated(f, cnt) < 0) {
             goto error;
