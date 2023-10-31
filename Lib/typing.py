@@ -2323,14 +2323,14 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints[name] = _eval_type(value, globalns, localns)
     return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
-def _get_type_var_args(reference, params):
+def _repack_args(reference, params):
     """transforms params to match the requested arguments
     of reference.
 
-    >>> _get_type_var_args((T, U, *Ts), (int, str, float, bool))
+    >>> _repack_args((T, U, *Ts), (int, str, float, bool))
     (int, str, (float, bool))
-    >>> _get_type_var_args((T, U, *Ts), (int, str, *Ts))
-    (int, str *Ts)
+    >>> _repack_args((T, U, *Ts), (int, str, *Ts))
+    (int, str, *Ts)
     """
 
     # find bounds of potential typevar tuple
@@ -2352,7 +2352,7 @@ def _get_type_var_args(reference, params):
         # tuple of typevars
         type_var_tuple_params = params[tuple_start:tuple_end]
 
-        # params contains typevartuple args
+        # if params might contain typevartuple args
         if len(params) > tuple_start:
             # if params[tuple_start] is *Ts keep it as-is
             if _is_unpacked_typevartuple(params[tuple_start]):
@@ -2378,7 +2378,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
 
     previous_params = substitutions[-2]
     new_params = substitutions[-1]
-    new_substitutions = _get_type_var_args(previous_params, new_params)
+    new_substitutions = _repack_args(previous_params, new_params)
 
     # get a mapping of typevar to value
     mapping = {}
@@ -2389,6 +2389,7 @@ def _substitute_type_hints(substitutions: "list[tuple[Any, ...]]", hints: "dict[
         if _is_unpacked_typevartuple(current):
             (previous_typevartuple,) = get_args(current)
             new_value = new_substitutions[i]
+
             if _is_unpacked_typevartuple(new_value):
                 (new_value,) = get_args(new_value)
 
