@@ -108,7 +108,7 @@ The :keyword:`try` statement works as follows.
 
 * If an exception occurs which does not match the exception named in the *except
   clause*, it is passed on to outer :keyword:`try` statements; if no handler is
-  found, it is an *unhandled exception* and execution stops with error message. 
+  found, it is an *unhandled exception* and execution stops with error message.
   The error message will provide information about the *unhandled exception*,
   as described in the :ref:`tut-exceptions` section.
 
