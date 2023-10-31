@@ -1402,7 +1402,12 @@ class DocTestRunner:
                     exc_msg_index = next(
                         index
                         for index, line in enumerate(formatted_ex)
-                        if line.startswith(f"{exception[0].__name__}:")
+                        if (
+                            line.startswith(f"{exception[0].__qualname__}:")
+                            or line.startswith(
+                                f"{exception[0].__module__}.{exception[0].__qualname__}:",
+                            )
+                        )
                     )
                     formatted_ex = formatted_ex[exc_msg_index:]
 
