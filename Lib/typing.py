@@ -2202,8 +2202,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         # track type hints of each base
         hint_tracking = {}
         hints = {}
-        # track previous bases for type hint changes
-        previous_bases = []
         # typeddicts cannot redefine pre-existing keys
         can_override = not is_typeddict(obj)
         for base in _get_all_bases(obj):
@@ -2224,7 +2222,13 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     param_tracking[base].append(args)
                 else:
                     param_tracking[origin].append(args)
-                    previous_bases.append(origin)
+                    # if we did scan it and it found no type hints then skip
+                    if not hint_tracking[origin]:
+                        hint_tracking.pop(origin)
+                        continue
+
+                    to_sub = _substitute_type_hints(param_tracking[origin], hint_tracking[origin])
+                    hints.update(to_sub)
 
             # this occurs if obj is
             # class Bar(Foo[str, U]): ...
@@ -2241,25 +2245,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                 # we can skip adding typevars here.
                 if type_vars_for_generic:
                     param_tracking[base].append(type_vars_for_generic)
-
-            # this is needed if the class inherits two or more generic classes
-            # class Baz(Foo[U, T], Bar[T]): ...
-            # we need to resolve the types for these attributes individually
-            # then update the type hints
-            while previous_bases:
-                origin = previous_bases.pop(0)
-
-                # we need to parse the type hints of this origin before we can continue
-                if origin not in hint_tracking:
-                    break
-
-                # if we did scan it and it found no type hints then skip
-                if not hint_tracking[origin]:
-                    hint_tracking.pop(origin)
-                    continue
-
-                to_sub = _substitute_type_hints(param_tracking[origin], hint_tracking[origin])
-                hints.update(to_sub)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
