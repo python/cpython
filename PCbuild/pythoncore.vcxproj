@@ -216,6 +216,7 @@
     <ClInclude Include="..\Include\internal\pycore_complexobject.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_crossinterp.h" />
     <ClInclude Include="..\Include\internal\pycore_descrobject.h" />
     <ClInclude Include="..\Include\internal\pycore_dict.h" />
     <ClInclude Include="..\Include\internal\pycore_dict_state.h" />
@@ -497,20 +498,6 @@
     <ClCompile Include="..\Objects\longobject.c" />
     <ClCompile Include="..\Objects\memoryobject.c" />
     <ClCompile Include="..\Objects\methodobject.c" />
-    <ClCompile Include="..\Objects\mimalloc\alloc-aligned.c" />
-    <ClCompile Include="..\Objects\mimalloc\alloc.c" />
-    <ClCompile Include="..\Objects\mimalloc\arena.c" />
-    <ClCompile Include="..\Objects\mimalloc\bitmap.c" />
-    <ClCompile Include="..\Objects\mimalloc\heap.c" />
-    <ClCompile Include="..\Objects\mimalloc\init.c" />
-    <ClCompile Include="..\Objects\mimalloc\options.c" />
-    <ClCompile Include="..\Objects\mimalloc\os.c" />
-    <ClCompile Include="..\Objects\mimalloc\page.c" />
-    <ClCompile Include="..\Objects\mimalloc\prim\prim.c" />
-    <ClCompile Include="..\Objects\mimalloc\random.c" />
-    <ClCompile Include="..\Objects\mimalloc\segment.c" />
-    <ClCompile Include="..\Objects\mimalloc\segment-map.c" />
-    <ClCompile Include="..\Objects\mimalloc\stats.c" />
     <ClCompile Include="..\Objects\moduleobject.c" />
     <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Objects\object.c" />
@@ -561,6 +548,7 @@
     <ClCompile Include="..\Python\codecs.c" />
     <ClCompile Include="..\Python\compile.c" />
     <ClCompile Include="..\Python\context.c" />
+    <ClCompile Include="..\Python\crossinterp.c" />
     <ClCompile Include="..\Python\dynamic_annotations.c" />
     <ClCompile Include="..\Python\dynload_win.c" />
     <ClCompile Include="..\Python\errors.c" />

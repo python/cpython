@@ -604,21 +604,6 @@ although there is currently no date scheduled for their removal.
   * ``EntryPoints`` tuple interface.
   * Implicit ``None`` on return values.
 
-* :mod:`importlib.resources`: First parameter to files is renamed to 'anchor'.
-* :mod:`importlib.resources` deprecated methods:
-
-  * ``contents()``
-  * ``is_resource()``
-  * ``open_binary()``
-  * ``open_text()``
-  * ``path()``
-  * ``read_binary()``
-  * ``read_text()``
-
-  Use ``files()`` instead.  Refer to `importlib-resources: Migrating from Legacy
-  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
-  for migration advice.
-
 * :mod:`mailbox`: Use of StringIO input and text mode is deprecated, use
   BytesIO and binary mode instead.
 
@@ -830,6 +815,24 @@ configparser
   deprecated in the docstring since Python 3.2,
   and with a deprecation warning since Python 3.11.
   (Contributed by Hugo van Kemenade in :gh:`104886`.)
+
+importlib
+---------
+
+* Remove :mod:`importlib.resources` deprecated methods:
+
+  * ``contents()``
+  * ``is_resource()``
+  * ``open_binary()``
+  * ``open_text()``
+  * ``path()``
+  * ``read_binary()``
+  * ``read_text()``
+
+  Use :func:`importlib.resources.files()` instead.  Refer to `importlib-resources: Migrating from Legacy
+  <https://importlib-resources.readthedocs.io/en/latest/using.html#migrating-from-legacy>`_
+  for migration advice.
+  (Contributed by Jason R. Coombs in :gh:`106532`.)
 
 locale
 ------

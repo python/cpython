@@ -561,14 +561,13 @@ _PyMem_GetCurrentAllocatorName(void)
 }
 
 
-#if defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_DebugEnabled(void)
 {
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
-#ifdef WITH_PYMALLOC
 static int
 _PyMem_PymallocEnabled(void)
 {
@@ -579,7 +578,7 @@ _PyMem_PymallocEnabled(void)
         return (_PyObject.malloc == _PyObject_Malloc);
     }
 }
-#endif
+
 #ifdef WITH_MIMALLOC
 static int
 _PyMem_MimallocEnabled(void)
@@ -591,8 +590,9 @@ _PyMem_MimallocEnabled(void)
         return (_PyObject.malloc == _PyObject_MiMalloc);
     }
 }
-#endif
-#endif // defined(WITH_PYMALLOC) || defined(WITH_MIMALLOC)
+#endif  // WITH_MIMALLOC
+
+#endif  // WITH_PYMALLOC
 
 
 static void
@@ -1073,7 +1073,7 @@ _PyInterpreterState_GetAllocatedBlocks(PyInterpreterState *interp)
 void
 _PyInterpreterState_FinalizeAllocatedBlocks(PyInterpreterState *interp)
 {
-#ifdef WITH_MIAMLLOC
+#ifdef WITH_MIMALLOC
     if (_PyMem_MimallocEnabled()) {
         return;
     }
@@ -2730,22 +2730,23 @@ static bool _collect_alloc_stats(
 static void
 py_mimalloc_print_stats(FILE *out)
 {
-    fprintf(out, "Small block threshold = %ld, in %u size classes.\n",
+    fprintf(out, "Small block threshold = %zd, in %u size classes.\n",
         MI_SMALL_OBJ_SIZE_MAX, MI_BIN_HUGE);
-    fprintf(out, "Medium block threshold = %ld\n",
+    fprintf(out, "Medium block threshold = %zd\n",
             MI_MEDIUM_OBJ_SIZE_MAX);
-    fprintf(out, "Large object max size = %ld\n",
+    fprintf(out, "Large object max size = %zd\n",
             MI_LARGE_OBJ_SIZE_MAX);
 
     mi_heap_t *heap = mi_heap_get_default();
-    struct _alloc_stats stats = {};
+    struct _alloc_stats stats;
+    memset(&stats, 0, sizeof(stats));
     mi_heap_visit_blocks(heap, false, &_collect_alloc_stats, &stats);
 
-    fprintf(out, "    Allocated Blocks: %ld\n", stats.allocated_blocks);
-    fprintf(out, "    Allocated Bytes: %ld\n", stats.allocated_bytes);
-    fprintf(out, "    Allocated Bytes w/ Overhead: %ld\n", stats.allocated_with_overhead);
-    fprintf(out, "    Bytes Reserved: %ld\n", stats.bytes_reserved);
-    fprintf(out, "    Bytes Committed: %ld\n", stats.bytes_committed);
+    fprintf(out, "    Allocated Blocks: %zd\n", stats.allocated_blocks);
+    fprintf(out, "    Allocated Bytes: %zd\n", stats.allocated_bytes);
+    fprintf(out, "    Allocated Bytes w/ Overhead: %zd\n", stats.allocated_with_overhead);
+    fprintf(out, "    Bytes Reserved: %zd\n", stats.bytes_reserved);
+    fprintf(out, "    Bytes Committed: %zd\n", stats.bytes_committed);
 }
 #endif
 

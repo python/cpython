@@ -138,6 +138,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             spam();
             DISPATCH();
         }
@@ -152,6 +155,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
             spam();
@@ -169,6 +175,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *res;
             spam();
             STACK_GROW(1);
@@ -186,6 +195,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             PyObject *res;
             value = stack_pointer[-1];
@@ -204,6 +216,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -225,6 +240,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *result;
@@ -249,6 +267,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP1);
             PREDICTED(OP1);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
             PyObject *arg;
@@ -259,6 +280,9 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP3);
             PyObject *arg;
             PyObject *res;
             arg = stack_pointer[-1];
@@ -278,6 +302,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             if (cond) goto label;
             DISPATCH();
         }
@@ -292,6 +319,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             if (cond) goto label;
             DISPATCH();
         }
@@ -306,6 +336,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *right;
             PyObject *left;
             PyObject *res;
@@ -326,12 +359,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 4;
+            INSTRUCTION_STATS(OP);
             PyObject *value;
             value = stack_pointer[-1];
-            uint16_t counter = read_u16(&next_instr[0].cache);
-            uint32_t extra = read_u32(&next_instr[1].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
+            uint32_t extra = read_u32(&this_instr[2].cache);
             STACK_SHRINK(1);
-            next_instr += 3;
             DISPATCH();
         }
     """
@@ -345,6 +380,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             goto somewhere;
         }
     """
@@ -366,18 +404,24 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            _Py_CODEUNIT *this_instr = frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(OP1);
             PyObject *right;
             PyObject *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            uint16_t counter = read_u16(&next_instr[0].cache);
+            uint16_t counter = read_u16(&this_instr[1].cache);
             op1(left, right);
-            next_instr += 1;
             DISPATCH();
         }
 
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(OP);
             PREDICTED(OP);
+            _Py_CODEUNIT *this_instr = next_instr - 6;
             static_assert(INLINE_CACHE_ENTRIES_OP == 5, "incorrect cache size");
             PyObject *right;
             PyObject *left;
@@ -387,22 +431,24 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             {
-                uint16_t counter = read_u16(&next_instr[0].cache);
+                uint16_t counter = read_u16(&this_instr[1].cache);
                 op1(left, right);
             }
             // OP2
             arg2 = stack_pointer[-3];
             {
-                uint32_t extra = read_u32(&next_instr[3].cache);
+                uint32_t extra = read_u32(&this_instr[4].cache);
                 res = op2(arg2, left, right);
             }
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
-            next_instr += 5;
             DISPATCH();
         }
 
         TARGET(OP3) {
+            frame->instr_ptr = next_instr;
+            next_instr += 6;
+            INSTRUCTION_STATS(OP3);
             PyObject *right;
             PyObject *left;
             PyObject *arg2;
@@ -413,7 +459,6 @@ class TestGeneratedCases(unittest.TestCase):
             res = op3(arg2, left, right);
             STACK_SHRINK(2);
             stack_pointer[-1] = res;
-            next_instr += 5;
             DISPATCH();
         }
     """
@@ -427,6 +472,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *above;
             PyObject **values;
             PyObject *below;
@@ -449,6 +497,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *below;
             PyObject **values;
             PyObject *above;
@@ -470,6 +521,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject **values;
             PyObject *above;
             values = stack_pointer - oparg;
@@ -489,6 +543,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject **values;
             PyObject *extra;
             values = stack_pointer - oparg;
@@ -509,6 +566,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             PyObject *cc;
             PyObject *input = NULL;
             PyObject *aa;
@@ -541,6 +601,9 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
             PyObject *right;
             PyObject *middle;
             PyObject *left;
@@ -580,6 +643,9 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
             PyObject *val1;
             PyObject *val2;
             // A
@@ -609,6 +675,9 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
             ham();
             DISPATCH();
         }
@@ -627,6 +696,9 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
             ham();
             DISPATCH();
         }

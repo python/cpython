@@ -25,18 +25,10 @@ class ActiveCacheEffect:
 
 
 FORBIDDEN_NAMES_IN_UOPS = (
-    "resume_with_error",
-    "kwnames",
     "next_instr",
     "oparg1",  # Proxy for super-instructions like LOAD_FAST_LOAD_FAST
     "JUMPBY",
     "DISPATCH",
-    "INSTRUMENTED_JUMP",
-    "throwflag",
-    "exception_unwind",
-    "import_from",
-    "import_name",
-    "_PyObject_CallNoArgs",  # Proxy for BEFORE_WITH
     "TIER_ONE_ONLY",
 )
 
@@ -61,6 +53,7 @@ class Instruction:
     # Computed by constructor
     always_exits: str  # If the block always exits, its last line; else ""
     has_deopt: bool
+    needs_this_instr: bool
     cache_offset: int
     cache_effects: list[parsing.CacheEffect]
     input_effects: list[StackEffect]
@@ -87,6 +80,7 @@ class Instruction:
             effect for effect in inst.inputs if isinstance(effect, parsing.CacheEffect)
         ]
         self.cache_offset = sum(c.size for c in self.cache_effects)
+        self.needs_this_instr = variable_used(self.inst, "this_instr") or any(c.name != UNUSED for c in self.cache_effects)
         self.input_effects = [
             effect for effect in inst.inputs if isinstance(effect, StackEffect)
         ]
@@ -164,7 +158,8 @@ class Instruction:
                 func = f"read_u{bits}"
             if tier == TIER_ONE:
                 out.emit(
-                    f"{typ}{ceffect.name} = {func}(&next_instr[{active.offset}].cache);"
+                    f"{typ}{ceffect.name} = "
+                    f"{func}(&this_instr[{active.offset + 1}].cache);"
                 )
             else:
                 out.emit(f"{typ}{ceffect.name} = ({typ.strip()})operand;")
@@ -291,7 +286,6 @@ class PseudoInstruction:
 
     name: str
     targets: list[Instruction]
-    instr_fmt: str
     instr_flags: InstructionFlags
 
 
