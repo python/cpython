@@ -99,12 +99,25 @@ Printing and clearing
       Use :func:`sys.unraisablehook`.
 
 
+.. c:function:: void PyErr_FormatUnraisable(const char *format, ...)
+
+   Similar to :c:func:`PyErr_WriteUnraisable`, but the *format* and subsequent
+   parameters help format the warning message; they have the same meaning and
+   values as in :c:func:`PyUnicode_FromFormat`.
+   ``PyErr_WriteUnraisable(obj)`` is roughtly equivalent to
+   ``PyErr_FormatUnraisable("Exception ignored in: %R, obj)``.
+   If *format* is ``NULL``, only the traceback is printed.
+
+   .. versionadded:: 3.13
+
+
 .. c:function:: void PyErr_DisplayException(PyObject *exc)
 
    Print the standard traceback display of ``exc`` to ``sys.stderr``, including
    chained exceptions and notes.
 
    .. versionadded:: 3.12
+
 
 Raising exceptions
 ==================
