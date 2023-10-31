@@ -3,6 +3,11 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#ifdef TIER_ONE
+    #error "This file is for Tier 2 only"
+#endif
+#define TIER_TWO 2
+
         case NOP: {
             break;
         }
@@ -3312,7 +3317,8 @@
 
         case _SET_IP: {
             TIER_TWO_ONLY
-            frame->instr_ptr = ip_offset + oparg;
+            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
+            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
             break;
         }
 
@@ -3343,3 +3349,5 @@
             stack_pointer[-1 - oparg] = top;
             break;
         }
+
+#undef TIER_TWO

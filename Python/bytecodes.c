@@ -2314,7 +2314,7 @@ dummy_func(
             Py_INCREF(executor);
             if (executor->execute == _PyUopExecute) {
                 self = (_PyUOpExecutorObject *)executor;
-                goto enter_tier_two;
+                GOTO_TIER_TWO();
             }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -3942,7 +3942,8 @@ dummy_func(
 
         op(_SET_IP, (--)) {
             TIER_TWO_ONLY
-            frame->instr_ptr = ip_offset + oparg;
+            // TODO: Put the code pointer in `operand` to avoid indirection via `frame`
+            frame->instr_ptr = _PyCode_CODE(_PyFrame_GetCode(frame)) + oparg;
         }
 
         op(_SAVE_RETURN_OFFSET, (--)) {

@@ -611,9 +611,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     return _PyEval_EvalFrame(tstate, f->f_frame, throwflag);
 }
 
-#define TIER_ONE 1
 #include "ceval_macros.h"
-
 
 int _Py_CheckRecursiveCallPy(
     PyThreadState *tstate)
@@ -952,8 +950,7 @@ resume_with_error:
 enter_tier_two:
 
 #undef LOAD_IP
-#define LOAD_IP(UNUSED) \
-do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+#define LOAD_IP(UNUSED) (void)0
 
 #undef GOTO_ERROR
 #define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
@@ -984,10 +981,7 @@ do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } wh
     #define DPRINTF(level, ...)
 #endif
 
-    CHECK_EVAL_BREAKER();
-
     OPT_STAT_INC(traces_executed);
-    _Py_CODEUNIT *ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive;
     _PyUOpInstruction *next_uop = self->trace;
     uint64_t operand;
 #ifdef Py_STATS
@@ -1013,16 +1007,18 @@ do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } wh
 
         switch (opcode) {
 
-#undef TIER_ONE
-#define TIER_TWO 2
 #include "executor_cases.c.h"
 
             default:
+#ifdef Py_DEBUG
             {
                 fprintf(stderr, "Unknown uop %d, oparg %d, operand %" PRIu64 "\n",
                         opcode, oparg, operand);
                 Py_FatalError("Unknown uop");
             }
+#else
+            Py_UNREACHABLE();
+#endif
 
         }
     }

@@ -377,27 +377,14 @@ static inline void _Py_LeaveRecursiveCallPy(PyThreadState *tstate)  {
 
 /* Implementation of "macros" that modify the instruction pointer,
  * stack pointer, or frame pointer.
- * These need to treated differently by tier 1 and 2. */
-
-#if TIER_ONE
+ * These need to treated differently by tier 1 and 2. 
+ * The Tier 1 version is here; Tier 2 is inlined in ceval.c. */
 
 #define LOAD_IP(OFFSET) do { \
         next_instr = frame->instr_ptr + (OFFSET); \
     } while (0)
 
-#define STORE_SP() \
-_PyFrame_SetStackPointer(frame, stack_pointer)
-
-#define LOAD_SP() \
-stack_pointer = _PyFrame_GetStackPointer(frame);
-
-#endif
-
-
-#if TIER_TWO
-
-#define LOAD_IP(UNUSED) \
-do { ip_offset = (_Py_CODEUNIT *)_PyFrame_GetCode(frame)->co_code_adaptive; } while (0)
+/* There's no STORE_IP(), it's inlined by the code generator. */
 
 #define STORE_SP() \
 _PyFrame_SetStackPointer(frame, stack_pointer)
@@ -405,8 +392,6 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 #define LOAD_SP() \
 stack_pointer = _PyFrame_GetStackPointer(frame);
 
-#endif
+/* Tier-switching macros. */
 
-
-
-
+#define GOTO_TIER_TWO() goto enter_tier_two;

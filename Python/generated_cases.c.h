@@ -3,6 +3,11 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#ifdef TIER_TWO
+    #error "This file is for Tier 1 only"
+#endif
+#define TIER_ONE 1
+
         TARGET(NOP) {
             frame->instr_ptr = next_instr;
             next_instr += 1;
@@ -3363,7 +3368,7 @@
             Py_INCREF(executor);
             if (executor->execute == _PyUopExecute) {
                 self = (_PyUOpExecutorObject *)executor;
-                goto enter_tier_two;
+                GOTO_TIER_TWO();
             }
             frame = executor->execute(executor, frame, stack_pointer);
             if (frame == NULL) {
@@ -5676,3 +5681,5 @@
             assert(0 && "Executing RESERVED instruction.");
             Py_UNREACHABLE();
         }
+
+#undef TIER_ONE
