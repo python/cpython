@@ -2176,6 +2176,7 @@ LIBSUBDIRS=	asyncio \
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
 		test/audiodata \
+		test/archivetestdata \
 		test/certdata \
 		test/certdata/capath \
 		test/cjkencodings \
@@ -2290,8 +2291,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/tracedmodules \
 		test/typinganndata \
 		test/xmltestdata \
-		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/xmltestdata/c14n-20
 
 COMPILEALL_OPTS=-j0
 
