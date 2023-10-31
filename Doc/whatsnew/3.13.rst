@@ -1186,6 +1186,14 @@ Porting to Python 3.13
   ``PyUnicode_AsUTF8AndSize(unicode, NULL)`` can be used instead.
   (Contributed by Victor Stinner in :gh:`111089`.)
 
+* On Windows, ``Python.h`` no longer includes the ``<stddef.h>`` standard
+  header file. If needed, it should now be included explicitly. For example, it
+  provides ``offsetof()`` function, and ``size_t`` and ``ptrdiff_t`` types.
+  Including ``<stddef.h>`` explicitly was already needed by all other
+  platforms, the ``HAVE_STDDEF_H`` macro is only defined on Windows.
+  (Contributed by Victor Stinner in :gh:`108765`.)
+
+
 Deprecated
 ----------
 
