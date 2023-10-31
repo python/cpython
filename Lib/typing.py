@@ -2117,6 +2117,41 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   types.MethodType, types.ModuleType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
+def _get_all_bases(cls):
+    """Correctly obtains the bases for classes
+    and typeddicts alike.
+    """
+    mro = reversed(cls.__mro__)
+
+    if not is_typeddict(cls):
+        yield from mro
+        return
+
+    traversing = list(mro)
+    visited = []
+
+    while traversing:
+        base = traversing.pop(0)
+
+        orig_bases = getattr(base, '__orig_bases__', ())
+        mro_changed = False
+
+        for orig_base in orig_bases:
+            origin = get_origin(orig_base)
+
+            if origin is not Generic:
+                new_base = orig_base if origin is None else origin
+                if new_base not in visited:
+                    traversing.insert(0, new_base)
+                    traversing.insert(1, base)
+                    mro_changed = True
+
+        if mro_changed:
+            continue
+
+        yield base
+
+        visited.append(base)
 
 def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
@@ -2169,12 +2204,9 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
         hints = {}
         # track previous bases for type hint changes
         previous_bases = []
-        searching = list(reversed(obj.__mro__))
         # typeddicts cannot redefine pre-existing keys
-        trust_annotations = not is_typeddict(obj)
-        while searching:
-            base = searching[0]
-
+        can_override = not is_typeddict(obj)
+        for base in _get_all_bases(obj):
             orig_bases = getattr(base, '__orig_bases__', ())
 
             # keep track of typevars and the values they are being
@@ -2183,10 +2215,6 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             for orig_base in orig_bases:
                 origin = get_origin(orig_base)
                 if origin is None:
-                    # if the base hasn't been discovered (re: typeddicts)
-                    # then search the base
-                    if not trust_annotations and orig_base not in searching:
-                        searching.insert(1, orig_base)
                     continue
 
                 args = get_args(orig_base)
@@ -2218,19 +2246,11 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             # class Baz(Foo[U, T], Bar[T]): ...
             # we need to resolve the types for these attributes individually
             # then update the type hints
-            skip_parse = False
-            filter_keys = {}
             while previous_bases:
                 origin = previous_bases.pop(0)
 
                 # we need to parse the type hints of this origin before we can continue
                 if origin not in hint_tracking:
-                    # an original base may not be present when dealing with typeddicts
-                    # so we need to scan it before scanning the one we are on
-                    if origin not in searching:
-                        searching.insert(0, origin)
-                        skip_parse = True
-
                     break
 
                 # if we did scan it and it found no type hints then skip
@@ -2239,14 +2259,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
                     continue
 
                 to_sub = _substitute_type_hints(param_tracking[origin], hint_tracking[origin])
-                if not trust_annotations:
-                    filter_keys.update(to_sub)
                 hints.update(to_sub)
-
-            if skip_parse:
-                continue
-
-            searching.pop(0)
 
             if globalns is None:
                 base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
@@ -2268,7 +2281,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
             hint_tracking[base] = {}
             for name, value in ann.items():
                 # skip pre-existing keys for typeddict
-                if name in filter_keys:
+                if not can_override and name in hints:
                     continue
 
                 if value is None:
