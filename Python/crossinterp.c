@@ -808,17 +808,22 @@ _sharednsitem_clear(_PyXI_namespace_item *item)
 }
 
 static int
-_sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns)
+_sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns, PyObject *dflt)
 {
     PyObject *name = PyUnicode_FromString(item->name);
     if (name == NULL) {
         return -1;
     }
-    assert(item->hasdata);
-    PyObject *value = _PyCrossInterpreterData_NewObject(&item->data);
-    if (value == NULL) {
-        Py_DECREF(name);
-        return -1;
+    PyObject *value;
+    if (item->hasdata) {
+        value = _PyCrossInterpreterData_NewObject(&item->data);
+        if (value == NULL) {
+            Py_DECREF(name);
+            return -1;
+        }
+    }
+    else {
+        value = Py_NewRef(dflt);
     }
     int res = PyDict_SetItem(ns, name, value);
     Py_DECREF(name);
@@ -977,10 +982,10 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
 }
 
 int
-_PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj)
+_PyXI_ApplyNamespace(_PyXI_namespace *ns, PyObject *nsobj, PyObject *dflt)
 {
     for (Py_ssize_t i=0; i < ns->len; i++) {
-        if (_sharednsitem_apply(&ns->items[i], nsobj) != 0) {
+        if (_sharednsitem_apply(&ns->items[i], nsobj, dflt) != 0) {
             return -1;
         }
     }
@@ -1178,7 +1183,7 @@ _PyXI_Enter(PyInterpreterState *interp, PyObject *nsupdates,
 
     // Apply the cross-interpreter data.
     if (sharedns != NULL) {
-        if (_PyXI_ApplyNamespace(sharedns, ns) < 0) {
+        if (_PyXI_ApplyNamespace(sharedns, ns, NULL) < 0) {
             goto error;
         }
         _PyXI_FreeNamespace(sharedns);
