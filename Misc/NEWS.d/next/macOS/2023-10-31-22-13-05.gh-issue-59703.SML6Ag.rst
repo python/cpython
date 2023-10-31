@@ -1,0 +1,1 @@
+Use the ``dladdr`` instead of deprecated macOS APIs in ``getpath.c``.
