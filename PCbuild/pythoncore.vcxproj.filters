@@ -1130,48 +1130,6 @@
     <ClCompile Include="..\Objects\methodobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\alloc-aligned.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\arena.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\bitmap.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\heap.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\init.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\options.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\os.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\page.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\prim\prim.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\random.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\segment-map.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Objects\mimalloc\stats.c">
-      <Filter>Objects\mimalloc</Filter>
-    </ClCompile>
     <ClCompile Include="..\Objects\moduleobject.c">
       <Filter>Objects</Filter>
     </ClCompile>
