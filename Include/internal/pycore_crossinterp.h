@@ -172,6 +172,7 @@ typedef enum error_code {
     _PyXI_ERR_OTHER = -2,
     _PyXI_ERR_NO_MEMORY = -3,
     _PyXI_ERR_ALREADY_RUNNING = -4,
+    _PyXI_ERR_NOT_SHAREABLE = -5,
 } _PyXI_errcode;
 
 PyAPI_FUNC(int) _PyXI_ApplyErrorCode(
@@ -198,14 +199,18 @@ PyAPI_FUNC(void) _PyXI_ApplyExceptionInfo(
     PyObject *exctype);
 
 
+typedef struct xi_session _PyXI_session;
 typedef struct _sharedns _PyXI_namespace;
 
 PyAPI_FUNC(void) _PyXI_FreeNamespace(_PyXI_namespace *ns);
 PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromNames(PyObject *names);
-PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromDict(PyObject *nsobj);
+PyAPI_FUNC(_PyXI_namespace *) _PyXI_NamespaceFromDict(
+    PyObject *nsobj,
+    _PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_FillNamespaceFromDict(
     _PyXI_namespace *ns,
-    PyObject *nsobj);
+    PyObject *nsobj,
+    _PyXI_session *session);
 PyAPI_FUNC(int) _PyXI_ApplyNamespace(
     _PyXI_namespace *ns,
     PyObject *nsobj,
@@ -222,7 +227,7 @@ PyAPI_FUNC(int) _PyXI_ApplyNamespace(
 // isolation between interpreters.  This includes setting objects
 // in the target's __main__ module on the way in, and capturing
 // uncaught exceptions on the way out.
-typedef struct xi_session {
+struct xi_session {
     // Once a session has been entered, this is the tstate that was
     // current before the session.  If it is different from cur_tstate
     // then we must have switched interpreters.  Either way, this will
@@ -253,12 +258,13 @@ typedef struct xi_session {
 
     // -- pre-allocated memory --
     _PyXI_exception_info _exc;
-} _PyXI_session;
+    _PyXI_errcode _exc_override;
+};
 
 PyAPI_FUNC(int) _PyXI_Enter(
+    _PyXI_session *session,
     PyInterpreterState *interp,
-    PyObject *nsupdates,
-    _PyXI_session *session);
+    PyObject *nsupdates);
 PyAPI_FUNC(void) _PyXI_Exit(_PyXI_session *session);
 
 PyAPI_FUNC(void) _PyXI_ApplyCapturedException(

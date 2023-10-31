@@ -192,11 +192,16 @@ _PyCrossInterpreterData_Lookup(PyObject *obj)
 }
 
 static inline void
-_set_xid_lookup_failure(PyInterpreterState *interp, PyObject *obj)
+_set_xid_lookup_failure(PyInterpreterState *interp,
+                        PyObject *obj, const char *msg)
 {
     PyObject *exctype = interp->xi.PyExc_NotShareableError;
     assert(exctype != NULL);
-    if (obj == NULL) {
+    if (msg != NULL) {
+        assert(obj == NULL);
+        PyErr_SetString(exctype, msg);
+    }
+    else if (obj == NULL) {
         PyErr_SetString(exctype,
                         "object does not support cross-interpreter data");
     }
@@ -213,7 +218,7 @@ _PyObject_CheckCrossInterpreterData(PyObject *obj)
     crossinterpdatafunc getdata = _lookup_getdata(interp, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(interp, obj);
+            _set_xid_lookup_failure(interp, obj, NULL);
         }
         return -1;
     }
@@ -240,7 +245,7 @@ _PyObject_GetCrossInterpreterData(PyObject *obj, _PyCrossInterpreterData *data)
     if (getdata == NULL) {
         Py_DECREF(obj);
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(interp, obj);
+            _set_xid_lookup_failure(interp, obj, NULL);
         }
         return -1;
     }
@@ -719,6 +724,9 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
         assert(_PyInterpreterState_IsRunningMain(interp));
         _PyInterpreterState_FailIfRunningMain(interp);
         break;
+    case _PyXI_ERR_NOT_SHAREABLE:
+        _set_xid_lookup_failure(interp, NULL, NULL);
+        break;
     default:
 #ifdef Py_DEBUG
         Py_UNREACHABLE();
@@ -778,6 +786,10 @@ _PyXI_ApplyExceptionInfo(_PyXI_exception_info *info, PyObject *exctype)
         // Raise an exception that proxies the propagated exception.
         _Py_excinfo_Apply(&info->uncaught, exctype);
     }
+    else if (info->code == _PyXI_ERR_NOT_SHAREABLE) {
+        // Propagate the exception directly.
+        _set_xid_lookup_failure(info->interp, NULL, info->uncaught.msg);
+    }
     else {
         // Raise an exception corresponding to the code.
         assert(info->code != _PyXI_ERR_NO_ERROR);
@@ -831,6 +843,8 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
             PyMem_RawFree(item->data);
         }
         item->data = NULL;
+        // The caller may want to propagate PyExc_NotShareableError
+        // if currently switched between interpreters.
         return -1;
     }
     return 0;
@@ -1007,9 +1021,14 @@ _PyXI_NamespaceFromNames(PyObject *names)
     return ns;
 }
 
+static void _propagate_not_shareable_error(_PyXI_session *);
+
+// All items are expected to be shareable.
 _PyXI_namespace *
-_PyXI_NamespaceFromDict(PyObject *nsobj)
+_PyXI_NamespaceFromDict(PyObject *nsobj, _PyXI_session *session)
 {
+    // session must be entered already, if provided.
+    assert(session == NULL || session->init_tstate != NULL);
     if (nsobj == NULL || nsobj == Py_None) {
         return NULL;
     }
@@ -1034,30 +1053,37 @@ _PyXI_NamespaceFromDict(PyObject *nsobj)
     for (Py_ssize_t i=0; i < len; i++) {
         PyObject *key, *value;
         if (!PyDict_Next(nsobj, &pos, &key, &value)) {
-            break;
+            goto error;
         }
         _PyXI_namespace_item *item = &ns->items[i];
         if (_sharednsitem_init(item, interpid, key) != 0) {
-            break;
+            goto error;
         }
         if (_sharednsitem_set_value(item, value) < 0) {
             _sharednsitem_clear(item);
-            break;
+            _propagate_not_shareable_error(session);
+            goto error;
         }
     }
-    if (PyErr_Occurred()) {
-        _PyXI_FreeNamespace(ns);
-        return NULL;
-    }
     return ns;
+
+error:
+    assert(PyErr_Occurred()
+           || (session != NULL && session->exc_override != NULL));
+    _PyXI_FreeNamespace(ns);
+    return NULL;
 }
 
 int
-_PyXI_FillNamespaceFromDict(_PyXI_namespace *ns, PyObject *nsobj)
+_PyXI_FillNamespaceFromDict(_PyXI_namespace *ns, PyObject *nsobj,
+                            _PyXI_session *session)
 {
+    // session must be entered already, if provided.
+    assert(session == NULL || session->init_tstate != NULL);
     for (Py_ssize_t i=0; i < ns->len; i++) {
         _PyXI_namespace_item *item = &ns->items[i];
         if (_sharednsitem_copy_from_ns(item, nsobj) < 0) {
+            _propagate_not_shareable_error(session);
             // Clear out the ones we set so far.
             for (Py_ssize_t j=0; j < i; j++) {
                 _sharednsitem_clear_data(&ns->items[j]);
@@ -1152,6 +1178,20 @@ _exit_session(_PyXI_session *session)
 }
 
 static void
+_propagate_not_shareable_error(_PyXI_session *session)
+{
+    if (session == NULL) {
+        return;
+    }
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (PyErr_ExceptionMatches(interp->xi.PyExc_NotShareableError)) {
+        // We want to propagate the exception directly.
+        session->_exc_override = _PyXI_ERR_NOT_SHAREABLE;
+        session->exc_override = &session->_exc_override;
+    }
+}
+
+static void
 _capture_current_exception(_PyXI_session *session)
 {
     assert(session->exc == NULL);
@@ -1171,6 +1211,9 @@ _capture_current_exception(_PyXI_session *session)
     if (errcode == _PyXI_ERR_UNCAUGHT_EXCEPTION) {
         // We want to actually capture the current exception.
         excval = PyErr_GetRaisedException();
+    }
+    else if (errcode == _PyXI_ERR_NOT_SHAREABLE) {
+        // We will set the errcode, in addition to capturing the exception.
     }
     else {
         // We could do a variety of things here, depending on errcode.
@@ -1229,13 +1272,13 @@ _PyXI_HasCapturedException(_PyXI_session *session)
 }
 
 int
-_PyXI_Enter(PyInterpreterState *interp, PyObject *nsupdates,
-            _PyXI_session *session)
+_PyXI_Enter(_PyXI_session *session,
+            PyInterpreterState *interp, PyObject *nsupdates)
 {
     // Convert the attrs for cross-interpreter use.
     _PyXI_namespace *sharedns = NULL;
     if (nsupdates != NULL) {
-        sharedns = _PyXI_NamespaceFromDict(nsupdates);
+        sharedns = _PyXI_NamespaceFromDict(nsupdates, NULL);
         if (sharedns == NULL && PyErr_Occurred()) {
             assert(session->exc == NULL);
             return -1;
